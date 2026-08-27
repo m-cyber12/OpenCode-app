@@ -1,0 +1,111 @@
+name: phase2-spike
+on:
+  push:
+    branches: [arena/01a044b6-opencode-app]
+  workflow_dispatch:
+
+jobs:
+  spike:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    env:
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
+      JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Environment probe
+        run: |
+          uname -a
+          nproc; free -h
+          ls -la /dev/kvm || echo "KVM_MISSING"
+          echo "EVENT phase2-spike env-probe"
+
+      - name: Install JDK + build deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq openjdk-17-jdk-headless unzip curl xz-utils zlib1g-dev libpcre2-dev make gcc
+          java -version 2>&1 | head -1
+          echo "EVENT phase2-spike jdk-ready"
+
+      - name: Install Android SDK cmdline-tools
+        run: |
+          mkdir -p "$ANDROID_HOME"
+          cd "$ANDROID_HOME"
+          curl -sSLo cmdtools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip \
+            || curl -sSLo cmdtools.zip https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip
+          unzip -q cmdtools.zip -d .
+          ls cmdline-tools
+          echo "EVENT phase2-spike sdk-tools-installed"
+
+      - name: Install emulator + platform-tools + system image
+        run: |
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/cmdline-tools/bin:$PATH"
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platform-tools" "emulator" "system-images;android-34;google_apis;x86_64" | tail -3
+          echo "EVENT phase2-spike sdk-installed"
+
+      - name: Create AVD
+        run: |
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/cmdline-tools/bin:$PATH"
+          echo no | avdmanager create avd -n spike -k "system-images;android-34;google_apis;x86_64" -d pixel_5 --force
+          echo "EVENT phase2-spike avd-created"
+
+      - name: Boot emulator
+        run: |
+          export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
+          nohup emulator -avd spike -no-window -no-audio -no-boot-anim -no-snapshot \
+            -gpu swiftshader_indirect -memory 2048 -cores 2 -accel on > "$ANDROID_HOME/emulator.log" 2>&1 &
+          echo $! > "$ANDROID_HOME/emulator.pid"
+          adb start-server
+          adb wait-for-device
+          # wait for boot completion (max 15 min)
+          for i in $(seq 1 150); do
+            B=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+            if [ "$B" = "1" ]; then echo "BOOT_COMPLETED after ~$((i*6))s"; break; fi
+            sleep 6
+          done
+          adb shell getprop ro.build.version.release | tr -d '\r'
+          adb shell getprop ro.product.cpu.abi | tr -d '\r'
+          tail -5 "$ANDROID_HOME/emulator.log"
+          echo "EVENT phase2-spike emulator-booted"
+
+      - name: Prepare spike artifacts (bundle, runtime, tools)
+        run: |
+          bash spike/scripts/01-prepare-artifacts.sh
+          echo "EVENT phase2-spike artifacts-ready"
+
+      - name: Run the chain on the emulator
+        run: |
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
+          bash spike/scripts/02-device-chain.sh
+          echo "EVENT phase2-spike chain-done"
+
+      - name: Collect and commit evidence
+        if: always()
+        run: |
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
+          mkdir -p docs/progress/phase2-evidence
+          cp -r spike/out/evidence/* docs/progress/phase2-evidence/ 2>/dev/null || true
+          cp "$ANDROID_HOME/emulator.log" docs/progress/phase2-evidence/emulator.log 2>/dev/null || true
+          git config user.name "arena-ai-coding-agent[bot]"
+          git config user.email "arena-ai-coding-agent[bot]@users.noreply.github.com"
+          git add docs/progress/phase2-evidence/ || true
+          git -c user.name="arena-ai-coding-agent[bot]" -c user.email="arena-ai-coding-agent[bot]@users.noreply.github.com" \
+            commit -m "phase2: spike evidence (auto)" || echo "nothing to commit"
+          git push origin "HEAD:arena/01a044b6-opencode-app" || echo "PUSH_FAILED"
+          echo "EVENT phase2-spike evidence-committed"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2-spike-evidence
+          path: |
+            spike/out/evidence/
+            docs/progress/phase2-evidence/
+            android-sdk/emulator.log
+          if-no-files-found: ignore
