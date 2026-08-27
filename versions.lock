@@ -1,0 +1,75 @@
+# versions.lock — pinned component versions (DRAFT, Phase 1)
+#
+# Populated from static inspection of upstream OpenCode (sst/opencode) at
+# commit 05ea5073be967c779d326929b2de6228dda4159d. All entries are NOT TESTED
+# on Android until Phase 2/3 proves them. Regenerate/update whenever the
+# pinned OpenCode version changes (Core Rule 7).
+
+opencode:
+  upstream: https://github.com/sst/opencode
+  commit: 05ea5073be967c779d326929b2de6228dda4159d   # inspected HEAD
+  version: 1.18.23                                    # packages/*/package.json
+
+runtime:
+  # Embedded host (Node path — the desktop app's sidecar precedent)
+  node: ">=22.5.0"      # required by node:sqlite (packages/core/src/database/sqlite.node.ts)
+  node_toolchain_types: 24.12.2
+  # CLI-only runtime (NOT required for the Android server path)
+  bun: 1.3.14           # root package.json "packageManager"
+  bun_types: 1.3.13
+
+native_components:
+  - name: "@lydell/node-pty"          # PTY addon (N-API)
+    version: 1.2.0-beta.12
+  - name: "@parcel/watcher"           # file-watcher addon (optional; graceful fallback)
+    version: 2.5.1
+  - name: ripgrep                     # downloaded ELF at runtime (packages/core/src/ripgrep/binary.ts)
+    version: 15.1.0
+    note: arm64-linux currently pinned to aarch64-unknown-linux-gnu; Android needs static musl arm64
+  - name: git                         # external, resolved at runtime; must be bundled (static arm64)
+    version: unpinned-upstream
+  - name: posix-shell                 # sh/bash/zsh/dash/ksh; must be bundled (static)
+    version: unpinned-upstream
+
+bun_only_components:                  # NOT needed for the embedded server
+  - name: "@ff-labs/fff-bun"          # native file search; ripgrep fallback exists
+    version: 0.9.4
+  - name: bun-pty
+    version: 0.4.8
+  - name: "@opentui/core"             # TUI renderer (platform binaries)
+    version: 0.4.5
+
+wasm_components:                      # portable; ship assets with the server bundle
+  - name: "@silvia-odwyer/photon-node"   # image processing
+    version: 0.3.4
+  - name: web-tree-sitter
+    version: 0.25.10
+  - name: tree-sitter-bash
+    version: 0.25.0
+  - name: tree-sitter-powershell
+    version: 0.25.10
+
+key_js_dependencies:
+  - name: "@modelcontextprotocol/sdk"   # MCP stdio/HTTP/SSE
+    version: 1.29.0
+  - name: effect                        # core framework
+    version: 4.0.0-beta.83
+  - name: hono                          # HTTP API
+    version: 4.10.7
+  - name: ws                            # WebSocket event stream
+    version: 8.21.0
+  - name: cross-spawn                   # child-process spawning
+    version: 7.0.6
+  - name: which                         # PATH lookup
+    version: 6.0.1
+  - name: xdg-basedir                   # XDG path resolution
+    version: 5.1.0
+  - name: drizzle-orm
+    version: 1.0.0-rc.2
+  - name: bonjour-service               # mDNS (serve/share; degrades silently)
+    version: 1.3.0
+
+abi_scope:
+  priority: arm64-v8a
+  emulator_only: x86_64
+  unsupported: [armeabi-v7a, x86]       # dropped by modern V8/Node & Bun
