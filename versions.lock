@@ -1,13 +1,19 @@
 # versions.lock — pinned component versions (DRAFT, Phase 1)
 #
-# Populated from static inspection of upstream OpenCode (sst/opencode) at
+# Populated from static inspection of upstream OpenCode at
 # commit 05ea5073be967c779d326929b2de6228dda4159d. All entries are NOT TESTED
 # on Android until Phase 2/3 proves them. Regenerate/update whenever the
 # pinned OpenCode version changes (Core Rule 7).
+#
+# NOTE (2026-08-27, Phase 1 correction): upstream org renamed SST -> Anomaly.
+# The canonical repo is now github.com/anomalyco/opencode; github.com/sst/opencode
+# 301-redirects to it (same repository id 975734319 — a rename, not a fork).
+# The default branch is `dev` (there is no `main`/`master`). The pinned commit
+# 05ea5073... is unchanged and is still HEAD of `dev` at package version 1.18.23.
 
 opencode:
-  upstream: https://github.com/sst/opencode
-  commit: 05ea5073be967c779d326929b2de6228dda4159d   # inspected HEAD
+  upstream: https://github.com/anomalyco/opencode
+  commit: 05ea5073be967c779d326929b2de6228dda4159d   # HEAD of `dev` (default branch)
   version: 1.18.23                                    # packages/*/package.json
 
 runtime:

@@ -423,3 +423,48 @@ Phase 1 ends here: the dependency map (§2/§3) and candidate architecture (§5)
 are written up. No spike, no Android/Gradle code, and no runtime execution were
 started in this run — that is Phase 2. The next session should read this report
 (and `phase0-repo-audit-report.md`) before beginning Phase 2.
+
+---
+
+## 8. Correction (appended 2026-08-27) — stale upstream org reference
+
+Per the honesty protocol this section is appended (not a rewrite): the body
+above is the record of what was true when Phase 1 was written. The following
+facts have changed since.
+
+1. **Upstream org renamed SST → Anomaly.** The canonical repository is now
+   **`https://github.com/anomalyco/opencode`**. `github.com/sst/opencode`
+   returns an HTTP **301 redirect** to `anomalyco/opencode`, and both names
+   resolve to the same GitHub repository id (`975734319`) — a **rename, not a
+   fork**. `sst/opencode` is therefore a stale reference and should no longer
+   be used in tooling or pins.
+
+2. **Default branch is `dev`, not `main`.** `anomalyco/opencode` has no
+   `main` (and no `master`) branch; `git remote show origin` reports
+   `HEAD branch: dev`. The pinned commit remains the **HEAD of `dev`**, so the
+   commit SHA itself did not change — only the report's "(HEAD of `main`)" note
+   was wrong. Where this report says "HEAD of `main`", read "HEAD of `dev`".
+
+3. **The pinned commit is still valid and unchanged.**
+   Commit `05ea5073be967c779d326929b2de6228dda4159d` exists under
+   `anomalyco/opencode`, is the current HEAD of `dev`, and still carries
+   package version `1.18.23` (`packages/opencode/package.json`,
+   `packages/core/package.json`). No re-pin was required.
+
+4. **All five cited file paths re-verified at that commit — present and
+   matching the report's descriptions:** `packages/opencode/script/build.ts`
+   (Bun `compile` build), `packages/opencode/script/build-node.ts`
+   (`target: "node"`, entrypoint `./src/node.ts` → `dist/node`),
+   `packages/opencode/src/node.ts` (exports `Config`, `Server`, `bootstrap`,
+   `Database`), `packages/desktop/src/main/server.ts`
+   (`utilityProcess.fork(sidecar.js)` + `/api/health` check), and
+   `packages/core/src/database/sqlite.node.ts` (`node:sqlite` `DatabaseSync`).
+   **No Phase 1 conclusion changed** — in particular the "Node server path"
+   finding (desktop sidecar running the real server under Node/V8) still holds
+   under `anomalyco/opencode` @ `dev`.
+
+5. **`versions.lock` updated:** `upstream:` → `https://github.com/anomalyco/opencode`,
+   with a comment recording the SST → Anomaly rename and the `dev` default
+   branch. `commit:` is unchanged (`05ea5073…`).
+
+Full evidence and labeling: see `docs/progress/phase1-correction-report.md`.
