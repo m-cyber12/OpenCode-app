@@ -1,0 +1,48 @@
+# versions.gates.lock — pins used by the Phase 3 gate suite (emulator target).
+# Complement to the repo-root versions.lock; updated 2026-08-29 (Phase 3).
+# Anything marked "sha256" is recorded per-run in the evidence bundle.
+
+emulator:
+  image: android-34/google_apis/x86_64   # picked at runtime from the runner's preinstalled SDK
+  abi: x86_64
+  product_abi: arm64-v8a                  # Phase 4 target; arm64 binaries are built+validated statically here (NOT runtime-tested: no arm64 emulator)
+
+opencode:
+  commit: 05ea5073be967c779d326929b2de6228dda4159d   # versions.lock pin (v1.18.23) — do NOT drift to dev HEAD
+  bundle: bun-target build of packages/opencode/src/node.ts (same as Phase 2)
+  version_define: 1.18.23-gates
+
+runtime:
+  bun_android_x64: 1.3.14       # @oven/bun-linux-x64-android — the emulator runtime (bionic)
+  bun_android_arm64: 1.3.14     # @oven/bun-linux-aarch64-android — product inventory (static check only)
+  host_bun: 1.3.14              # @oven/bun-linux-x64 (build host)
+
+tools:
+  ripgrep: 15.1.0               # static musl; x86_64-unknown-linux-musl (emulator) + aarch64-unknown-linux-musl (inventory)
+  git:
+    version: v2.48.1            # upstream tag; source commit recorded in git.upstream.commit.txt
+    x86_64: static musl (musl-gcc, built from source on the runner)
+    arm64: static musl (musl.cc aarch64 cross toolchain; fallback: gcc-aarch64-linux-gnu static glibc)
+    note: "Phase 2 blocker fixed: build via make directly with NO_PERL=YesPlease (git's configure demands perl)"
+  zlib: v1.3.1                  # built from source per toolchain for static linking
+  shell: /system/bin/sh         # Android's own mksh (MIRBSD KSH R59) — real shell, no bundling needed
+
+mcp:
+  sdk: 1.29.0                   # @modelcontextprotocol/sdk — real stdio MCP server + client on-device
+  zod: "^3.25.0"                # SDK peer; pinned for zod-to-json-schema compatibility
+
+js_deps:
+  jsonc-parser: 3.3.1           # external dep of the server bundle
+  node-pty: stub                # no Android build; bash tool verified to NOT need PTY (tool/bash.ts uses stdio pipes)
+  bun-pty: stub                 # same
+
+model:
+  provider: openrouter          # built-in provider (packages/llm/src/providers/openrouter.ts)
+  key_env: OPENROUTER_API_KEY   # GitHub secret; passed to the server process env only
+  model: nvidia/nemotron-3-ultra-550b-a55b:free   # OPENROUTER_MODEL override supported
+  note: "model gates (G12/G15 + model parts) are BLOCKED without the secret"
+
+server:
+  port: 4111
+  auth: opencode / gates-password   # OPENCODE_SERVER_USERNAME / OPENCODE_SERVER_PASSWORD
+  on_device_dir: /data/local/tmp/gates

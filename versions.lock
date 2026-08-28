@@ -44,20 +44,22 @@ runtime:
 native_components:
   - name: "@lydell/node-pty"          # PTY addon (N-API)
     version: 1.2.0-beta.12
-    note: "NO Android build; stub for spike; PTY/terminal degrades at use-time (Core Rule 6)"
+    note: "NO Android build; stub. PHASE 3 VERIFIED: the bash tool (tool/bash.ts) spawns the configured shell with stdio pipes (no PTY); PTY is only used by the lazy Pty service for the interactive terminal feature — documented degradation only"
   - name: bun-pty                     # bun-native PTY addon
     version: 0.4.8
-    note: "NO Android build; stub for spike; PTY/terminal degrades at use-time (Core Rule 6)"
+    note: "NO Android build; stub (same conclusion as @lydell/node-pty, Phase 3)"
   - name: "@parcel/watcher"           # file-watcher addon (optional; graceful fallback)
     version: 2.5.1
     note: "no Android binding; upstream's graceful fallback (watcher disabled) exercised in spike"
   - name: ripgrep                     # downloaded ELF at runtime (packages/core/src/ripgrep/binary.ts)
     version: 15.1.0
-    note: arm64-linux currently pinned to aarch64-unknown-linux-gnu; Android needs static musl arm64
-  - name: git                         # external, resolved at runtime; must be bundled (static)
-    version: unpinned-upstream        # spike built static git on the runner (gcc -static, no ssl/curl)
+    note: "static musl: x86_64-unknown-linux-musl (emulator, TESTED) + aarch64-unknown-linux-musl (product inventory, built/validated statically)"
+  - name: git                         # external, resolved at runtime; bundled static
+    version: v2.48.1                  # PHASE 3: built static-musl on the runner (G9 TESTED on emulator)
+    note: "Phase 2 blocker FIXED (2026-08-29): git's ./configure refuses to run without perl; build the Makefile directly with NO_PERL=YesPlease + static musl toolchain. HTTPS/curl disabled — local repo ops only (init/status/add/commit/diff/branches/log)"
   - name: posix-shell                 # sh/bash/zsh/dash/ksh; must be bundled (static)
-    version: unpinned-upstream        # spike used Android's own /system/bin/sh (mksh) — a real shell
+    version: android-system           # Android's own /system/bin/sh (mksh, MIRBSD KSH R59) — real shell, TESTED
+    note: "config shell: /system/bin/sh (Shell.preferred honors config 'shell')"
 
 bun_only_components:                  # NOT needed for the embedded server
   - name: "@ff-labs/fff-bun"          # native file search; ripgrep fallback exists
@@ -80,6 +82,7 @@ wasm_components:                      # portable; ship assets with the server bu
 key_js_dependencies:
   - name: "@modelcontextprotocol/sdk"   # MCP stdio/HTTP/SSE
     version: 1.29.0
+    note: "PHASE 3: used as the REAL MCP stdio server+client on-device (G10). npm deps: zod ^3.25||^4, zod-to-json-schema, hono, express, eventsource, jose, ajv, cors, cross-spawn, pkce-challenge, raw-body, content-type"
   - name: effect                        # core framework
     version: 4.0.0-beta.83
   - name: hono                          # HTTP API
@@ -96,6 +99,15 @@ key_js_dependencies:
     version: 1.0.0-rc.2
   - name: bonjour-service               # mDNS (serve/share; degrades silently)
     version: 1.3.0
+
+model:
+  # PHASE 3 (2026-08-29): OpenRouter is a built-in provider
+  # (packages/llm/src/providers/openrouter.ts; auth via OPENROUTER_API_KEY env).
+  # G15/G12 run the real agent loop against it. Key comes from the GitHub secret
+  # OPENROUTER_API_KEY (never committed); model id overridable via OPENROUTER_MODEL.
+  provider: openrouter
+  base_url: https://openrouter.ai/api/v1
+  model: nvidia/nemotron-3-ultra-550b-a55b:free
 
 abi_scope:
   priority: arm64-v8a
