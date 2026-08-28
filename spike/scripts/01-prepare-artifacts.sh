@@ -23,7 +23,14 @@ readelf -l "$OUT/bun" 2>/dev/null | grep -A1 INTERP || true   # expect /system/b
 
 echo "=== [3/6] OpenCode server bundle (bun-target build of upstream src/node.ts) ==="
 rm -rf /tmp/opencode && timeout 300 git clone --depth 1 --branch dev https://github.com/anomalyco/opencode /tmp/opencode
+# Pin to the exact commit from versions.lock (Core Rule 7) — do NOT float on dev HEAD
+PINNED_COMMIT="05ea5073be967c779d326929b2de6228dda4159d"
+if ! (cd /tmp/opencode && git fetch -q --depth 1 origin "$PINNED_COMMIT" && git checkout -q FETCH_HEAD); then
+  echo "FATAL: pinned commit $PINNED_COMMIT not found in upstream (per phase rules, report as blocker)"
+  exit 1
+fi
 (cd /tmp/opencode && git rev-parse HEAD > "$OUT/opencode/UPSTREAM_COMMIT.txt")
+echo "upstream commit: $(cat "$OUT/opencode/UPSTREAM_COMMIT.txt")"
 export PATH="$HOME/.bun/bin:$PATH"
 # models.dev snapshot via curl (bounded) instead of an in-bun fetch (which can hang)
 curl -fsSL --max-time 90 -o "$OUT/models-dev.json" "https://models.dev/api.json" \
