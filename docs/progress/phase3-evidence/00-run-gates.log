@@ -1,32 +1,10 @@
-=== RUN-GATES START 2026-08-28T22:29:37Z ===
+=== RUN-GATES START 2026-08-28T22:42:18Z ===
 OPENROUTER_MODEL=nvidia/nemotron-3-ultra-550b-a55b:free
 OPENROUTER_API_KEY=present (73 chars) — model gates will run
 ########## 1/8 environment probe ##########
-Linux runnervmgx7h7 6.17.0-1022-azure #22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
-4
-               total        used        free      shared  buff/cache   available
-Mem:            15Gi       1.5Gi        11Gi        39Mi       3.3Gi        14Gi
-Swap:          3.0Gi          0B       3.0Gi
-openjdk version "17.0.20.1" 2026-08-18
-OpenJDK Runtime Environment Temurin-17.0.20.1+1 (build 17.0.20.1+1)
-OpenJDK 64-Bit Server VM Temurin-17.0.20.1+1 (build 17.0.20.1+1, mixed mode, sharing)
 ########## 2/8 Android SDK resolution (preinstalled on GH runners; fresh install = fallback only) ##########
-total 72
-drwxrwxrwx 11 root root  4096 Aug 23 21:34 .
-drwxr-xr-x  3 root root  4096 Aug 23 21:29 ..
--rw-r--r--  1 root root    16 Aug 23 21:34 .knownPackages
-drwxrwxrwx  2 root root  4096 Aug 23 21:34 .temp
-drwxrwxrwx  8 root root  4096 Aug 23 21:30 build-tools
-drwxrwxrwx  4 root root  4096 Aug 23 21:34 cmake
-drwxrwxrwx  3 root root  4096 Aug 23 21:29 cmdline-tools
-drwxrwxrwx  4 root root  4096 Aug 23 21:34 extras
-drwxrwxrwx  2 root root  4096 Aug 23 21:30 licenses
-drwxrwxrwx  5 root root  4096 Aug 23 21:33 ndk
--rw-r--r--  1 root root 21274 Aug 23 21:34 packages-list.txt
-drwxrwxrwx  3 root root  4096 Aug 23 21:30 platform-tools
-drwxrwxrwx 19 root root  4096 Aug 23 21:32 platforms
 --- downloading cmdline-tools
--rw-r--r-- 1 runner runner 153607504 Aug 28 22:29 cmdtools.zip
+-rw-r--r-- 1 runner runner 153607504 Aug 28 22:42 cmdtools.zip
 /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
 /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
 --- sdkmanager licenses
@@ -35,43 +13,13 @@ yes: standard output: Broken pipe
 Loading package information...                                                  Loading local repository...                                                     [                                       ] 3% Loading local repository...        [                                       ] 3% Fetch remote repository...         [=                                      ] 3% Fetch remote repository...         [=                                      ] 4% Fetch remote repository...         [=                                      ] 5% Fetch remote repository...         [==                                     ] 5% Fetch remote repository...         [==                                     ] 6% Fetch remote repository...         [==                                     ] 7% Fetch remote repository...         [==                                     ] 7% Computing updates...               [===                                    ] 8% Computing updates...               [===                                    ] 10% Computing updates...              [===                                    ] 10% Installing Android Emulator       [===                                    ] 10% Downloading emulator-linux_x64-159[====                                   ] 10% Downloading emulator-linux_x64-159[====                                   ] 11% Downloading emulator-linux_x64-159[====                                   ] 12% Downloading emulator-linux_x64-159[=====                                  ] 13% Downloading emulator-linux_x64-159[=====                                  ] 14% Downloading emulator-linux_x64-159[=====                                  ] 15% Downloading emulator-linux_x64-159[======                                 ] 15% Downloading emulator-linux_x64-159[======                                 ] 16% Downloading emulator-linux_x64-159[======                                 ] 17% Downloading emulator-linux_x64-159[=======                                ] 18% Downloading emulator-linux_x64-159[=======                                ] 19% Downloading emulator-linux_x64-159[=======                                ] 20% Downloading emulator-linux_x64-159[========                               ] 20% Downloading emulator-linux_x64-159[========                               ] 21% Downloading emulator-linux_x64-159[========                               ] 21% Unzipping...                      [========                               ] 21% Unzipping... emulator/            [========                               ] 21% Unzipping... emulator/resources/  [========                               ] 21% Unzipping... emulator/qsn         [========                               ] 21% Unzipping... emulator/emulator    [========                               ] 21% Unzipping... emulator/netsimd     [========                               ] 22% Unzipping... emulator/netsimd     [========                               ] 22% Unzipping... emulator/bin64/      [========                               ] 22% Unzipping... emulator/qemu/       [========                               ] 22% Unzipping... emulator/NOTICE.txt  [========                               ] 22% Unzipping... emulator/crashpad_han[========                               ] 22% Unzipping... emulator/source.prope[========                               ] 22% Unzipping... emulator/nimble_bridg[========                               ] 22% Unzipping... emulator/LICENSE     [========                               ] 22% Unzipping... emulator/lib/        [========                               ] 22% Unzipping... emulator/qemu-img    [========                               ] 22% Unzipping... emulator/include/    [========                               ] 22% Unzipping... emulator/NOTICE.csv  [========                               ] 22% Unzipping... emulator/lib64/      [========                               ] 22% Unzipping... emulator/emulator-che[========                               ] 22% Unzipping... emulator/crashreport [========                               ] 22% Unzipping... emulator/mksdcard    [========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/sk[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/po[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/sk[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/bin64/e2fsck[========                               ] 22% Unzipping... emulator/bin64/fsck.e[========                               ] 22% Unzipping... emulator/bin64/tune2f[========                               ] 22% Unzipping... emulator/bin64/resize[========                               ] 22% Unzipping... emulator/bin64/mkfs.e[========                               ] 22% Unzipping... emulator/qemu/linux-x[=========                              ] 23% Unzipping... emulator/qemu/linux-x[=========                              ] 24% Unzipping... emulator/qemu/linux-x[=========                              ] 25% Unzipping... emulator/qemu/linux-x[==========                             ] 25% Unzipping... emulator/qemu/linux-x[==========                             ] 25% Unzipping... emulator/lib/emulator[==========                             ] 25% Unzipping... emulator/lib/rtc_serv[==========                             ] 25% Unzipping... emulator/lib/advanced[==========                             ] 25% Unzipping... emulator/lib/cmake/  [==========                             ] 25% Unzipping... emulator/lib/emulator[==========                             ] 25% Unzipping... emulator/lib/control_[==========                             ] 25% Unzipping... emulator/lib/emulated[==========                             ] 25% Unzipping... emulator/lib/rtc_serv[==========                             ] 25% Unzipping... emulator/lib/emu-orig[==========                             ] 25% Unzipping... emulator/lib/hardware[==========                             ] 25% Unzipping... emulator/lib/pkgconfi[==========                             ] 25% Unzipping... emulator/lib/pc-bios/[==========                             ] 25% Unzipping... emulator/lib/snapshot[==========                             ] 25% Unzipping... emulator/lib/adb_serv[==========                             ] 25% Unzipping... emulator/lib/hostapd.[==========                             ] 25% Unzipping... emulator/lib/grpc_end[==========                             ] 25% Unzipping... emulator/lib/ca-bundl[==========                             ] 25% Unzipping... emulator/lib/ui_contr[==========                             ] 25% Unzipping... emulator/lib/snapshot[==========                             ] 25% Unzipping... emulator/lib/ice_conf[==========                             ] 25% Unzipping... emulator/lib/libflatb[==========                             ] 26% Unzipping... emulator/lib/libflatb[==========                             ] 26% Unzipping... emulator/lib/emulator[==========                             ] 26% Unzipping... emulator/lib/waterfal[==========                             ] 26% Unzipping... emulator/lib/emulated[==========                             ] 26% Unzipping... emulator/lib/cmake/fl[==========                             ] 26% Unzipping... emulator/lib/pkgconfi[==========                             ] 26% Unzipping... emulator/lib/pc-bios/[==========                             ] 26% Unzipping... emulator/include/flat[==========                             ] 26% Unzipping... emulator/lib64/libgli[==========                             ] 26% Unzipping... emulator/lib64/libpro[==========                             ] 26% Unzipping... emulator/lib64/qt/   [==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libgfx[==========                             ] 26% Unzipping... emulator/lib64/gles_l[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/vulkan[==========                             ] 26% Unzipping... emulator/lib64/gles_s[==========                             ] 26% Unzipping... emulator/lib64/libemu[==========                             ] 26% Unzipping... emulator/lib64/libpro[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libtcm[==========                             ] 26% Unzipping... emulator/lib64/libima[==========                             ] 26% Unzipping... emulator/lib64/libc++[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libabs[==========                             ] 26% Unzipping... emulator/lib64/gles_a[==========                             ] 26% Unzipping... emulator/lib64/libsha[==========                             ] 26% Unzipping... emulator/lib64/libc++[==========                             ] 26% Unzipping... emulator/lib64/qt/res[==========                             ] 26% Unzipping... emulator/lib64/qt/lib[==========                             ] 26% Unzipping... emulator/lib64/qt/tra[==========                             ] 26% Unzipping... emulator/lib64/qt/plu[==========                             ] 26% Unzipping... emulator/lib64/qt/res[==========                             ] 27% Unzipping... emulator/lib64/qt/res[==========                             ] 27% Unzipping... emulator/lib64/qt/lib[===========                            ] 28% Unzipping... emulator/lib64/qt/lib[===========                            ] 29% Unzipping... emulator/lib64/qt/lib[===========                            ] 30% Unzipping... emulator/lib64/qt/lib[============                           ] 30% Unzipping... emulator/lib64/qt/lib[============                           ] 30% Unzipping... emulator/lib64/qt/tra[============                           ] 31% Unzipping... emulator/lib64/qt/tra[============                           ] 31% Unzipping... emulator/lib64/qt/plu[============                           ] 31% Unzipping... emulator/lib64/gles_l[============                           ] 31% Unzipping... emulator/lib64/vulkan[============                           ] 32% Unzipping... emulator/lib64/vulkan[============                           ] 32% Unzipping... emulator/lib64/gles_s[============                           ] 32% Unzipping... emulator/lib64/gles_a[=============                          ] 33% Unzipping... emulator/lib64/gles_a[=====================                  ] 55% Unzipping... emulator/lib64/gles_a[=====================                  ] 55% Installing Google APIs Intel x86_6[=====================                  ] 55% Downloading x86_64-34_r14.zip... e[======================                 ] 55% Downloading x86_64-34_r14.zip... e[======================                 ] 56% Downloading x86_64-34_r14.zip... e[======================                 ] 57% Downloading x86_64-34_r14.zip... e[=======================                ] 58% Downloading x86_64-34_r14.zip... e[=======================                ] 59% Downloading x86_64-34_r14.zip... e[=======================                ] 60% Downloading x86_64-34_r14.zip... e[========================               ] 60% Downloading x86_64-34_r14.zip... e[========================               ] 61% Downloading x86_64-34_r14.zip... e[========================               ] 62% Downloading x86_64-34_r14.zip... e[=========================              ] 63% Downloading x86_64-34_r14.zip... e[=========================              ] 64% Downloading x86_64-34_r14.zip... e[=========================              ] 65% Downloading x86_64-34_r14.zip... e[==========================             ] 65% Downloading x86_64-34_r14.zip... e[==========================             ] 66% Downloading x86_64-34_r14.zip... e[==========================             ] 66% Unzipping... emulator/lib64/gles_a[==========================             ] 66% Unzipping... x86_64/NOTICE.txt    [==========================             ] 66% Unzipping... x86_64/VerifiedBootPa[==========================             ] 66% Unzipping... x86_64/advancedFeatur[==========================             ] 66% Unzipping... x86_64/build.prop    [==========================             ] 66% Unzipping... x86_64/encryptionkey.[==========================             ] 66% Unzipping... x86_64/kernel-ranchu [==========================             ] 66% Unzipping... x86_64/ramdisk.img   [==========================             ] 66% Unzipping... x86_64/source.propert[==========================             ] 66% Unzipping... x86_64/system.img    [==========================             ] 67% Unzipping... x86_64/system.img    [===========================            ] 68% Unzipping... x86_64/system.img    [===========================            ] 69% Unzipping... x86_64/system.img    [===========================            ] 70% Unzipping... x86_64/system.img    [============================           ] 70% Unzipping... x86_64/system.img    [============================           ] 71% Unzipping... x86_64/system.img    [============================           ] 72% Unzipping... x86_64/system.img    [=============================          ] 73% Unzipping... x86_64/system.img    [=============================          ] 74% Unzipping... x86_64/system.img    [=============================          ] 75% Unzipping... x86_64/system.img    [==============================         ] 75% Unzipping... x86_64/system.img    [==============================         ] 76% Unzipping... x86_64/system.img    [==============================         ] 77% Unzipping... x86_64/system.img    [==============================         ] 77% Unzipping... x86_64/userdata.img  [==============================         ] 77% Unzipping... x86_64/vendor.img    [==============================         ] 77% Unzipping... x86_64/data/local.pro[==============================         ] 77% Unzipping... x86_64/data/misc/Gold[==============================         ] 77% Unzipping... x86_64/data/misc/apns[==============================         ] 77% Unzipping... x86_64/data/misc/emul[==============================         ] 77% Unzipping... x86_64/data/misc/gcec[==============================         ] 77% Unzipping... x86_64/data/misc/mode[==============================         ] 77% Unzipping... x86_64/data/misc/pixe[==============================         ] 78% Unzipping... x86_64/data/misc/pixe[=======================================] 100% Unzipping... x86_64/data/misc/pix
 
 SDK_INSTALL_DONE
-Android Debug Bridge version 1.0.41
-Version 37.0.1-15733141
-Installed as /usr/local/lib/android/sdk/platform-tools/adb
-Running on Linux 6.17.0-1022-azure (x86_64)
-/usr/local/lib/android/sdk/emulator/qemu/linux-x86_64/qemu-system-x86_64: error while loading shared libraries: libpulse.so.0: cannot open shared object file: No such file or directory
-android-34
 /usr/local/lib/android/sdk/system-images/android-34/google_apis/x86_64
 ########## 3/8 pick system image + create AVD (prefer google_apis x86_64, highest API) ##########
-Loading local repository...                                                     [=========                              ] 25% Loading local repository...       [=========                              ] 25% Fetch remote repository...        [=======================================] 100% Fetch remote repository...       
-Auto-selecting single ABI x86_64
-Do you wish to create a custom hardware profile? [no] offset 0, count -1, length 256
 MANUAL_AVD_WRITTEN
 total 12
-drwxr-xr-x 2 runner runner 4096 Aug 28 22:31 .
-drwxr-xr-x 3 runner runner 4096 Aug 28 22:31 ..
--rw-r--r-- 1 runner runner  364 Aug 28 22:31 config.ini
-total 16
-drwxr-xr-x  3 runner runner 4096 Aug 28 22:31 .
-drwxrwxrwx 14 root   root   4096 Aug 28 22:30 ..
-drwxr-xr-x  2 runner runner 4096 Aug 28 22:31 gates.avd
--rw-r--r--  1 runner runner  110 Aug 28 22:31 gates.ini
-avd.ini.displayname=gates
-hw.cpu.arch=x86_64
-hw.cpu.ncore=2
-hw.ramSize=2048
-hw.gpu.enabled=no
-hw.keyboard=yes
-hw.mainKeys=no
-hw.lcd.width=1080
-hw.lcd.height=2340
-hw.lcd.density=420
-hw.device.name=pixel_5
-hw.device.manufacturer=Google
-disk.dataPartition.size=2G
-image.sysdir.1=system-images/android-34/google_apis/x86_64/
-tag.display=google_apis
-tag.id=google_apis
+drwxr-xr-x 2 runner runner 4096 Aug 28 22:44 .
+drwxr-xr-x 3 runner runner 4096 Aug 28 22:44 ..
+-rw-r--r-- 1 runner runner  364 Aug 28 22:44 config.ini
 ########## 4/8 boot emulator ##########
 --- emulator accel-check
 accel:
@@ -79,7 +27,7 @@ accel:
 KVM (version 12) is installed and usable.
 accel
 --- starting emulator (headless)
-emulator pid=2553
+emulator pid=2456
 * daemon not running; starting now at tcp:5037
 * daemon started successfully
 BOOT_COMPLETED after ~48s
@@ -102,123 +50,43 @@ upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
 models.dev snapshot: 4427284 bytes
 bundle build complete
 total 36440
-drwxr-xr-x 2 runner runner     4096 Aug 28 22:32 .
-drwxr-xr-x 3 runner runner     4096 Aug 28 22:32 ..
--rw-r--r-- 1 runner runner 32840243 Aug 28 22:32 node.js
--rw-r--r-- 1 runner runner  1881634 Aug 28 22:32 photon_rs_bg-bq08arze.wasm
--rw-r--r-- 1 runner runner   205488 Aug 28 22:32 tree-sitter-3jzf13jk.wasm
--rw-r--r-- 1 runner runner  1380769 Aug 28 22:32 tree-sitter-bash-hq5s6fxb.wasm
--rw-r--r-- 1 runner runner   983236 Aug 28 22:32 tree-sitter-powershell-ryb2ffqs.wasm
+drwxr-xr-x 2 runner runner     4096 Aug 28 22:45 .
+drwxr-xr-x 3 runner runner     4096 Aug 28 22:45 ..
+-rw-r--r-- 1 runner runner 32840243 Aug 28 22:45 node.js
+-rw-r--r-- 1 runner runner  1881634 Aug 28 22:45 photon_rs_bg-bq08arze.wasm
+-rw-r--r-- 1 runner runner   205488 Aug 28 22:45 tree-sitter-3jzf13jk.wasm
+-rw-r--r-- 1 runner runner  1380769 Aug 28 22:45 tree-sitter-bash-hq5s6fxb.wasm
+-rw-r--r-- 1 runner runner   983236 Aug 28 22:45 tree-sitter-powershell-ryb2ffqs.wasm
 === [4/7] jsonc-parser + native-addon stubs (same documented degradation as Phase 2) ===
 === [5/7] ripgrep 15.1.0 (static musl; x86_64 for emulator + aarch64 inventory) ===
+curl: (22) The requested URL returned error: 404
+download attempt 1 failed: https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-aarch64-unknown-linux-musl.tar.gz
+curl: (22) The requested URL returned error: 404
+download attempt 2 failed: https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-aarch64-unknown-linux-musl.tar.gz
+curl: (22) The requested URL returned error: 404
+download attempt 3 failed: https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-aarch64-unknown-linux-musl.tar.gz
+WARNING: ripgrep aarch64 download failed after 3 attempts — aarch64 product inventory omitted (does not affect emulator gates)
+=== [6/7] static git v2.48.1 (PHASE 2 BLOCKER FIX) ===
+musl-tools installed
+warning: refs/tags/v2.48.1 6768cd3982a5cf8df192224d4da8c3f03d4cb964 is not a commit!
+Note: switching to 'f93ff170b93a1782659637824b25923245ac9dd1'.
 
-gzip: stdin: not in gzip format
-tar: Child returned status 1
-tar: Error is not recoverable: exiting now
-FATAL: ripgrep aarch64 download failed
-########## 6/8 run the gates on the emulator ##########
-=== GATES RUN START 2026-08-28T22:32:52Z ===
-restarting adbd as root
-device online after ~3s
-### [0] ANDROID HOST FACTS
--- id:
-uid=0(root) gid=0(root) groups=0(root),1004(input),1007(log),1011(adb),1015(sdcard_rw),1028(sdcard_r),1078(ext_data_rw),1079(ext_obb_rw),3001(net_bt_admin),3002(net_bt),3003(inet),3006(net_bw_stats),3009(readproc),3011(uhid),3012(readtracefs) context=u:r:su:s0
--- release:
-14
--- sdk:
-34
--- abi:
-x86_64
--- uname:
-Linux localhost 6.1.23-android14-4-00257-g7e35917775b8-ab9964412 #1 SMP PREEMPT Mon Apr 17 20:50:58 UTC 2023 x86_64 Toybox
-### PUSH ARTIFACTS
-/home/runner/work/OpenCode-app/OpenCode-app/phase3/out/bin/bun: 1 file pushed, 0 skipped. 195.2 MB/s (91788816 bytes in 0.448s)
-/home/runner/work/OpenCode-app/OpenCode-app/phase3/out/bin/rg: 1 file pushed, 0 skipped. 148.7 MB/s (5445512 bytes in 0.035s)
-adb: error: cannot stat '/home/runner/work/OpenCode-app/OpenCode-app/phase3/out/bin/git': No such file or directory
-/home/runner/work/OpenCode-app/OpenCode-app/phase3/scripts/device/: 12 files pushed, 0 skipped. 1.1 MB/s (54106 bytes in 0.048s)
-/home/runner/work/OpenCode-app/OpenCode-app/phase3/out/opencode/: 6 files pushed, 0 skipped. 132.9 MB/s (37291411 bytes in 0.268s)
-/home/runner/work/OpenCode-app/OpenCode-app/phase3/out/node_modules/: 23 files pushed, 0 skipped. 2.7 MB/s (213485 bytes in 0.074s)
-/home/runner/work/OpenCode-app/OpenCode-app/phase3/out/mcp/: 0 files pushed, 0 skipped.
-chmod: /data/local/tmp/gates/bin/git: No such file or directory
-/home/runner/work/OpenCode-app/OpenCode-app/phase3/out/.api-key.tmp: 1 file pushed, 0 skipped. 0.4 MB/s (73 bytes in 0.000s)
-KEY_PUSHED
-/home/runner/work/OpenCode-app/OpenCode-app/phase3/out/.api-key.tmp: 1 file pushed, 0 skipped. 0.5 MB/s (38 bytes in 0.000s)
-### RUN GATES (see gates-runner.device.log for the raw device transcript)
-### FETCH DEVICE RESULTS
-/data/local/tmp/gates/out/: 18 files pulled, 0 skipped. 0.2 MB/s (15729 bytes in 0.077s)
-/data/local/tmp/gates/server.log: 1 file pulled, 0 skipped. 0.0 MB/s (36 bytes in 0.042s)
-/data/local/tmp/gates/config/opencode:
-total 32
-drwxrwxrwx 2 root root 4096 2026-08-28 22:33 .
-drwxrwxrwx 3 root root 4096 2026-08-28 22:32 ..
--rw-rw-rw- 1 root root   63 2026-08-28 22:33 .gitignore
--rw-rw-rw- 1 root root  408 2026-08-28 22:32 opencode.jsonc
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
 
-/data/local/tmp/gates/data/opencode:
-total 2000
-drwxrwxrwx 4 root root    4096 2026-08-28 22:33 .
-drwxrwxrwx 3 root root    4096 2026-08-28 22:32 ..
-drwxrwxrwx 2 root root    4096 2026-08-28 22:33 log
--rw-r--r-- 1 root root  274432 2026-08-28 22:33 opencode-gates.db
--rw-r--r-- 1 root root   32768 2026-08-28 22:33 opencode-gates.db-shm
--rw-r--r-- 1 root root 1693352 2026-08-28 22:33 opencode-gates.db-wal
-drwxrwxrwx 2 root root    4096 2026-08-28 22:33 repos
-{
-  "$schema": "https://opencode.ai/config.json",
-  "shell": "/system/bin/sh",
-  "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
-  "mcp": {
-    "gates-mcp": {
-      "type": "local",
-      "command": ["/data/local/tmp/gates/bin/bun", "/data/local/tmp/gates/mcp/mcp-server.js"],
-      "enabled": true
-    }
-  },
-  "permission": {
-    "bash": "ask",
-    "edit": "ask",
-    "webfetch": "ask"
-  }
-}
-GATE_01: PASS execution-layer 
-GATE_02: FAIL userspace 
-GATE_03: PASS real-shell 
-GATE_04: PASS runtime 
-GATE_05: PASS opencode-start 
-GATE_06: PASS health-endpoint 
-GATE_07: PASS opencode-shell-exec 
-GATE_08: PASS file-read-write 
-GATE_09: FAIL real-git 
-GATE_10: FAIL mcp-stdio 
-GATE_11: FAIL streaming-sse 
-GATE_12: FAIL permissions 
-GATE_13: PASS stop-restart 
-GATE_14: FAIL reconnect 
-GATE_15: FAIL end-to-end 
-GATES_SUMMARY 2026-08-28T22:33:19Z
-total=15 pass=8 fail=7 blocked=0
-model_available=1
-=== GATES RUN END 2026-08-28T22:33:19Z ===
-########## 7/8 evidence bundle ##########
-EVIDENCE_READY
-########## 8/8 gate summary + result ##########
-GATE_01: PASS execution-layer 
-GATE_02: FAIL userspace 
-GATE_03: PASS real-shell 
-GATE_04: PASS runtime 
-GATE_05: PASS opencode-start 
-GATE_06: PASS health-endpoint 
-GATE_07: PASS opencode-shell-exec 
-GATE_08: PASS file-read-write 
-GATE_09: FAIL real-git 
-GATE_10: FAIL mcp-stdio 
-GATE_11: FAIL streaming-sse 
-GATE_12: FAIL permissions 
-GATE_13: PASS stop-restart 
-GATE_14: FAIL reconnect 
-GATE_15: FAIL end-to-end 
-GATES_SUMMARY 2026-08-28T22:33:19Z
-total=15 pass=8 fail=7 blocked=0
-model_available=1
-gate results: FAIL=7 BLOCKED=0
-GATES_HAVE_FAILURES — see docs/progress/phase3-evidence/ for per-gate logs
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+git source commit: f93ff170b93a1782659637824b25923245ac9dd1
+--- building static git (x86_64, CC=musl-gcc) ---
+git build FAILED for x86_64 (see git.status)
+STEP_FAILED rc=1: bash /home/runner/work/OpenCode-app/OpenCode-app/phase3/scripts/01-prepare-artifacts.sh
