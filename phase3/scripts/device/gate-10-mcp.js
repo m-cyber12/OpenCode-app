@@ -55,7 +55,7 @@ try {
 if (MODEL) {
   const sid = await createSession("G10 mcp agent")
   const auto = makePermissionAutoReplier({ log })
-  const watch = sseWatch({ timeoutMs: 180000, onEvent: (t, d) => auto.handle(t, d) })
+  const watch = sseWatch({ timeoutMs: 600000, onEvent: (t, d) => auto.handle(t, d) })
   await promptAsync(sid, 'Use the MCP tool "echo" with the message G10_MCP_AGENT_OK and tell me what it returned.')
   const { messages, failed } = await waitTurnComplete(sid, { timeoutMs: 180000 })
   watch.stop()

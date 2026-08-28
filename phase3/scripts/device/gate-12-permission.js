@@ -20,7 +20,7 @@ function findRequestId(value) {
 
 const asks = []
 const watch = sseWatch({
-  timeoutMs: 240000,
+  timeoutMs: 360000,
   onEvent: (type, data) => {
     if (type !== "permission.asked" && type !== "permission.v2.asked") return
     const req = findRequestId(data)

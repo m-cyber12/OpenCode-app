@@ -42,7 +42,10 @@ fi
 {
   echo "### PUSH ARTIFACTS"
   ADB shell "rm -rf $GATES_DIR/opencode $GATES_DIR/node_modules $GATES_DIR/mcp $GATES_DIR/device $GATES_DIR/out $GATES_DIR/logs"
-  ADB shell "mkdir -p $GATES_DIR/bin $GATES_DIR/project $GATES_DIR/mcp"
+  # NOTE: mcp/ must NOT be pre-created — adb push of a dir into an EXISTING
+  # remote dir nests it (remote/mcp/mcp/...); pushing to a non-existent path
+  # creates it with the CONTENTS in place (proven in Phase 2; hit in CI run #3).
+  ADB shell "mkdir -p $GATES_DIR/bin $GATES_DIR/project"
   ADB push "$OUT/bin/bun" "$GATES_DIR/bin/bun" | tail -1
   ADB push "$OUT/bin/rg" "$GATES_DIR/bin/rg" | tail -1
   ADB push "$OUT/bin/git" "$GATES_DIR/bin/git" | tail -1

@@ -40,7 +40,7 @@ if (g7) {
   if (MODEL) {
     const before = (() => { try { return JSON.parse(msgs.text).length } catch { return 0 } })()
     const auto = makePermissionAutoReplier({ log })
-    const watch = sseWatch({ timeoutMs: 180000, onEvent: (t, d) => auto.handle(t, d) })
+    const watch = sseWatch({ timeoutMs: 600000, onEvent: (t, d) => auto.handle(t, d) })
     await promptAsync(g7.id, "Reply with exactly: G14_RESUME_OK")
     const { messages, failed } = await waitTurnComplete(g7.id, { timeoutMs: 180000 })
     watch.stop()

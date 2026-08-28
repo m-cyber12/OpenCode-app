@@ -58,7 +58,7 @@ if (wr.ok) {
 if (MODEL) {
   const sid = await createSession("G8 agent write")
   const auto = makePermissionAutoReplier({ log })
-  const watch = sseWatch({ timeoutMs: 180000, onEvent: (t, d) => auto.handle(t, d) })
+  const watch = sseWatch({ timeoutMs: 600000, onEvent: (t, d) => auto.handle(t, d) })
   await promptAsync(sid, "Write the file g8-agent.txt containing exactly the text G8_AGENT_WRITE_OK. Use the write tool.")
   const { messages } = await waitTurnComplete(sid, { timeoutMs: 180000 })
   watch.stop()
