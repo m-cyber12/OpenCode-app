@@ -15,6 +15,12 @@ opencode:
   upstream: https://github.com/anomalyco/opencode
   commit: 05ea5073be967c779d326929b2de6228dda4159d   # HEAD of `dev` (default branch)
   version: 1.18.23                                    # packages/*/package.json
+  # NOTE (2026-08-28, Phase 2): the first spike run (evidence commit d161ccd) built the
+  # bundle from `dev` HEAD 755ebdb94ee7 (v1.18.25, "sync release versions for v1.18.25"),
+  # because the artifact script cloned dev without checking out the pinned commit.
+  # That was a real upstream release, one minor newer than the pin — the chain result
+  # is valid evidence, but it is NOT the pinned commit. The script is now fixed to
+  # checkout $PINNED_COMMIT; re-run to re-produce evidence at the exact pin.
 
 runtime:
   # PHASE 2 UPDATE (2026-08-27, spike evidence): the embedded Android host runtime

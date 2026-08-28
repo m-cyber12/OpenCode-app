@@ -16,48 +16,37 @@ bun platform=android arch=x64
 ripgrep 15.1.0 (rev af60c2de9d)
 git not bundled (build failed on runner)
 === [5] OPENCODE SERVER START ===
-server pid=4909; waiting for boot...
+server pid=4869; waiting for boot...
 --- server.log (first 60 lines) ---
 SERVER_READY http://127.0.0.1:4111/
 === [6] OPENCODE HEALTH / SESSION / CONFIG (on-device, via bun fetch) ===
 HTTP 200 /global/health -> {"healthy":true,"version":"1.18.23-spike"}
-HTTP 200 /session -> {"id":"ses_fb83f1934ffedXuYljGQlPHQZt","slug":"quick-planet","projectID":"global","directory":"/data/local/tmp/spike","path":"data/local/tmp/spike","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,
-HTTP 200 /session -> [{"id":"ses_fb83f1934ffedXuYljGQlPHQZt","slug":"quick-planet","projectID":"global","directory":"/data/local/tmp/spike","path":"data/local/tmp/spike","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0
+HTTP 200 /session -> {"id":"ses_fb8397118ffeYNLEgvFMFfrCSa","slug":"proud-cactus","projectID":"global","directory":"/data/local/tmp/spike","path":"data/local/tmp/spike","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,
+HTTP 200 /session -> [{"id":"ses_fb8397118ffeYNLEgvFMFfrCSa","slug":"proud-cactus","projectID":"global","directory":"/data/local/tmp/spike","path":"data/local/tmp/spike","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0
 HTTP 200 /config -> {"$schema":"https://opencode.ai/config.json","command":{},"plugin":[],"username":"root","mode":{},"agent":{}}
-SPAWN stdout: SPAWN_OK shell=5225
+SPAWN stdout: SPAWN_OK shell=5306
 /data/local/tmp/spike/project
-SPAWN stdout: -rw-rw-rw-
-SPAWN stdout: 1
-SPAWN stdout: 
-SPAWN stdout: r
-SPAWN stdout: o
-SPAWN stdout: o
-SPAWN stdout: t
-SPAWN stdout: 
-SPAWN stdout: root 80
-SPAWN stdout: 2026-08-28 09:43
-SPAWN stdout: R
-SPAWN stdout: EADME.md
+SPAWN stdout: -rw-rw-rw- 1 root root 80 2026-08-28 09:49 README.md
 SPAWN exit code: 0
 HEALTH_CHECK_PASS
 === [7] STORAGE EVIDENCE (sqlite + config on Android) ===
 total 380
-drwxrwxrwx 4 root root   4096 2026-08-28 09:43 .
-drwxrwxrwx 3 root root   4096 2026-08-28 09:43 ..
-drwxrwxrwx 2 root root   4096 2026-08-28 09:43 log
--rw-r--r-- 1 root root   4096 2026-08-28 09:43 opencode-spike.db
--rw-r--r-- 1 root root  32768 2026-08-28 09:43 opencode-spike.db-shm
--rw-r--r-- 1 root root 304912 2026-08-28 09:43 opencode-spike.db-wal
-drwxrwxrwx 2 root root   4096 2026-08-28 09:43 repos
+drwxrwxrwx 4 root root   4096 2026-08-28 09:49 .
+drwxrwxrwx 3 root root   4096 2026-08-28 09:49 ..
+drwxrwxrwx 2 root root   4096 2026-08-28 09:49 log
+-rw-r--r-- 1 root root   4096 2026-08-28 09:49 opencode-spike.db
+-rw-r--r-- 1 root root  32768 2026-08-28 09:49 opencode-spike.db-shm
+-rw-r--r-- 1 root root 304912 2026-08-28 09:49 opencode-spike.db-wal
+drwxrwxrwx 2 root root   4096 2026-08-28 09:49 repos
 total 32
-drwxrwxrwx 2 root root 4096 2026-08-28 09:43 .
-drwxrwxrwx 3 root root 4096 2026-08-28 09:43 ..
--rw-rw-rw- 1 root root   63 2026-08-28 09:43 .gitignore
--rw-rw-rw- 1 root root   50 2026-08-28 09:43 opencode.jsonc
+drwxrwxrwx 2 root root 4096 2026-08-28 09:49 .
+drwxrwxrwx 3 root root 4096 2026-08-28 09:49 ..
+-rw-rw-rw- 1 root root   63 2026-08-28 09:49 .gitignore
+-rw-rw-rw- 1 root root   50 2026-08-28 09:49 opencode.jsonc
 total 24
-drwxrwxrwx 3 root root 4096 2026-08-28 09:43 .
-drwxrwxrwx 3 root root 4096 2026-08-28 09:43 ..
-drwxrwxrwx 3 root root 4096 2026-08-28 09:43 locks
+drwxrwxrwx 3 root root 4096 2026-08-28 09:49 .
+drwxrwxrwx 3 root root 4096 2026-08-28 09:49 ..
+drwxrwxrwx 3 root root 4096 2026-08-28 09:49 locks
 === [8] W^X EXEC-RESTRICTION PROBE (Android 10+ rule; informational for Phase 3) ===
 su: failed to exec -c: No such file or directory
 WX_PROBE_EXEC_ALLOWED
