@@ -1,0 +1,97 @@
+# versions.lock — pinned component versions (DRAFT, Phase 1)
+#
+# Populated from static inspection of upstream OpenCode at
+# commit 05ea5073be967c779d326929b2de6228dda4159d. All entries are NOT TESTED
+# on Android until Phase 2/3 proves them. Regenerate/update whenever the
+# pinned OpenCode version changes (Core Rule 7).
+#
+# NOTE (2026-08-27, Phase 1 correction): upstream org renamed SST -> Anomaly.
+# The canonical repo is now github.com/anomalyco/opencode; github.com/sst/opencode
+# 301-redirects to it (same repository id 975734319 — a rename, not a fork).
+# The default branch is `dev` (there is no `main`/`master`). The pinned commit
+# 05ea5073... is unchanged and is still HEAD of `dev` at package version 1.18.23.
+
+opencode:
+  upstream: https://github.com/anomalyco/opencode
+  commit: 05ea5073be967c779d326929b2de6228dda4159d   # HEAD of `dev` (default branch)
+  version: 1.18.23                                    # packages/*/package.json
+
+runtime:
+  # PHASE 2 UPDATE (2026-08-27, spike evidence): the embedded Android host runtime
+  # is Bun-for-Android (official @oven/bun-linux-x64-android / -aarch64-android npm
+  # packages; bionic-linked, interp /system/bin/linker64), pinned to the same 1.3.14
+  # as the repo's packageManager. Bun 1.3.14 does NOT implement node:sqlite, so the
+  # server bundle is built with Bun.build target "bun" to resolve upstream's own
+  # "#db" bun condition (packages/opencode/src/storage/db.bun.ts -> bun:sqlite).
+  # The upstream Node path (desktop sidecar precedent) stays valid for Phase 3 if a
+  # Node-for-Android runtime becomes available; the spike chose the available,
+  # pinned runtime. Evidence: docs/progress/phase2-*.
+  bun_android_x64: 1.3.14        # @oven/bun-linux-x64-android (spike-tested x86_64)
+  bun_android_arm64: 1.3.14      # @oven/bun-linux-aarch64-android (product target arm64-v8a)
+  host_bun_for_build: 1.3.14     # @oven/bun-linux-x64 (build host)
+  node: ">=22.5.0"               # node:sqlite requirement; NOT the Android runtime in the spike
+  node_toolchain_types: 24.12.2
+  # CLI-only runtime (NOT required for the Android server path)
+  bun: 1.3.14           # root package.json "packageManager"
+  bun_types: 1.3.13
+
+native_components:
+  - name: "@lydell/node-pty"          # PTY addon (N-API)
+    version: 1.2.0-beta.12
+    note: "NO Android build; stub for spike; PTY/terminal degrades at use-time (Core Rule 6)"
+  - name: bun-pty                     # bun-native PTY addon
+    version: 0.4.8
+    note: "NO Android build; stub for spike; PTY/terminal degrades at use-time (Core Rule 6)"
+  - name: "@parcel/watcher"           # file-watcher addon (optional; graceful fallback)
+    version: 2.5.1
+    note: "no Android binding; upstream's graceful fallback (watcher disabled) exercised in spike"
+  - name: ripgrep                     # downloaded ELF at runtime (packages/core/src/ripgrep/binary.ts)
+    version: 15.1.0
+    note: arm64-linux currently pinned to aarch64-unknown-linux-gnu; Android needs static musl arm64
+  - name: git                         # external, resolved at runtime; must be bundled (static)
+    version: unpinned-upstream        # spike built static git on the runner (gcc -static, no ssl/curl)
+  - name: posix-shell                 # sh/bash/zsh/dash/ksh; must be bundled (static)
+    version: unpinned-upstream        # spike used Android's own /system/bin/sh (mksh) — a real shell
+
+bun_only_components:                  # NOT needed for the embedded server
+  - name: "@ff-labs/fff-bun"          # native file search; ripgrep fallback exists
+    version: 0.9.4
+  - name: bun-pty
+    version: 0.4.8
+  - name: "@opentui/core"             # TUI renderer (platform binaries)
+    version: 0.4.5
+
+wasm_components:                      # portable; ship assets with the server bundle
+  - name: "@silvia-odwyer/photon-node"   # image processing
+    version: 0.3.4
+  - name: web-tree-sitter
+    version: 0.25.10
+  - name: tree-sitter-bash
+    version: 0.25.0
+  - name: tree-sitter-powershell
+    version: 0.25.10
+
+key_js_dependencies:
+  - name: "@modelcontextprotocol/sdk"   # MCP stdio/HTTP/SSE
+    version: 1.29.0
+  - name: effect                        # core framework
+    version: 4.0.0-beta.83
+  - name: hono                          # HTTP API
+    version: 4.10.7
+  - name: ws                            # WebSocket event stream
+    version: 8.21.0
+  - name: cross-spawn                   # child-process spawning
+    version: 7.0.6
+  - name: which                         # PATH lookup
+    version: 6.0.1
+  - name: xdg-basedir                   # XDG path resolution
+    version: 5.1.0
+  - name: drizzle-orm
+    version: 1.0.0-rc.2
+  - name: bonjour-service               # mDNS (serve/share; degrades silently)
+    version: 1.3.0
+
+abi_scope:
+  priority: arm64-v8a
+  emulator_only: x86_64
+  unsupported: [armeabi-v7a, x86]       # dropped by modern V8/Node & Bun
