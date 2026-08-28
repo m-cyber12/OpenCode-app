@@ -1,28 +1,38 @@
-[2026-08-28T22:33:09Z] === G9: real git ===
+[2026-08-28T23:10:24Z] === G9: real git ===
 -- version:
-/data/local/tmp/gates/device/gates-runner.sh[500]: git: inaccessible or not found
+git version 2.48.1
 -- init:
-/data/local/tmp/gates/device/gates-runner.sh[500]: git: inaccessible or not found
+warning: templates not found in /home/runner/share/git-core/templates
+warning: re-init: ignored --initial-branch=main
+INIT_OK
 -- status:
-/data/local/tmp/gates/device/gates-runner.sh[500]: git: inaccessible or not found
+?? g8-write.txt
 -- add:
-/data/local/tmp/gates/device/gates-runner.sh[500]: git: inaccessible or not found
+ADD_OK
 -- diff (staged):
-/data/local/tmp/gates/device/gates-runner.sh[500]: git: inaccessible or not found
+ notes.txt | 1 +
+ 1 file changed, 1 insertion(+)
 -- commit:
-/data/local/tmp/gates/device/gates-runner.sh[500]: git: inaccessible or not found
+COMMIT_OK
 -- log:
-/data/local/tmp/gates/device/gates-runner.sh[500]: git: inaccessible or not found
+fea1ff1 g9: commit from the Android runtime
+ce8e9e7 gates fixture: initial import
 -- branches:
-/data/local/tmp/gates/device/gates-runner.sh[500]: git: inaccessible or not found
-/data/local/tmp/gates/device/gates-runner.sh[500]: git: inaccessible or not found
-/data/local/tmp/gates/device/gates-runner.sh[500]: git: inaccessible or not found
+  feature/g9
+* main
+BRANCH_CHECKOUT_OK
 -- status after:
-/data/local/tmp/gates/device/gates-runner.sh[500]: git: inaccessible or not found
+?? g8-write.txt
 -- git through OpenCode (server-side shell endpoint, same git binary):
 assert ok: session id present
 shell HTTP 200
 --- git via OpenCode output ---
-/system/bin/sh: git: inaccessible or not found
+?? g8-write.txt
+BRANCHES
+  feature/g9
+* main
+LOG
+fea1ff1 g9: commit from the Android runtime
+ce8e9e7 gates fixture: initial import
 
-G9_OPENCODE_GIT_MISSING_EXPECTED_OUTPUT
+G9_OPENCODE_GIT_OK

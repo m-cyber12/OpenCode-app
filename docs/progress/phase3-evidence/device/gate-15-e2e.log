@@ -1,15 +1,16 @@
-[2026-08-28T22:33:18Z] === G15: end-to-end project inspection ===
+[2026-08-28T23:10:37Z] === G15: end-to-end project inspection ===
 assert ok: session id present
 --- prompting the real agent ---
-114 | }
-115 | 
-116 | // Send a prompt asynchronously (the agent loop starts server-side).
-117 | export async function promptAsync(sessionID, text) {
-118 |   const r = await post(`/session/${sessionID}/prompt_async`, { text })
-119 |   if (r.status !== 204 && !r.ok) throw new Error("prompt_async failed: " + r.status + " " + r.text.slice(0, 300))
-                                                 ^
-error: prompt_async failed: 400 {"name":"BadRequest","data":{"message":"Missing key\n  at [\"parts\"]","kind":"Payload"}}
-      at promptAsync (/data/local/tmp/gates/device/gates-lib.js:119:44)
+prompt_async accepted (204)
+--- assistant reply (0 chars) ---
 
-Bun v1.3.14 (Android x64)
+--- tools used: [] ---
+--- tool outputs ---
+
+--- events seen (1): {"server.connected":1}
+--- tools streamed as events: []
+--- permissions allowed: []
+assert ok: agent turn did not fail
+ASSERT_FAILED: explanation is substantive (0 chars)
+G15_FAIL
 GATE_15: FAIL end-to-end 

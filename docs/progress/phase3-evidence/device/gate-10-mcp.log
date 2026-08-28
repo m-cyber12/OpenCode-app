@@ -1,25 +1,16 @@
-[2026-08-28T22:33:09Z] === G10: MCP stdio ===
-mcp status attempt 0: {"status":"failed","error":"MCP error -32000: Connection closed"}
-MCP connect failed: MCP error -32000: Connection closed
-ASSERT_FAILED: OpenCode reports gates-mcp connected
-32 |   log("MCP_STATUS_OK " + statusText.slice(0, 200))
-33 | } catch (e) { log(e.message); ok = false }
-34 | 
-35 | // ---- 2) direct SDK round-trip over stdio (real child process + JSON-RPC) ----
-36 | const out = await new Promise((resolve, reject) => {
-37 |   const child = spawn("/data/local/tmp/gates/bin/bun", ["/data/local/tmp/gates/mcp/mcp-roundtrip.js"], { cwd: "/data/local/tmp/gates/mcp" })
-                     ^
-ENOENT: no such file or directory, posix_spawn '/data/local/tmp/gates/bin/bun'
-      path: "/data/local/tmp/gates/bin/bun",
-   syscall: "spawn /data/local/tmp/gates/bin/bun",
-     errno: -2,
- spawnargs: [ "/data/local/tmp/gates/mcp/mcp-roundtrip.js" ],
-      code: "ENOENT"
+[2026-08-28T23:10:24Z] === G10: MCP stdio ===
+mcp status attempt 0: {"status":"connected"}
+assert ok: OpenCode reports gates-mcp connected
+MCP_STATUS_OK {"gates-mcp":{"status":"connected"}}
+[mcp-roundtrip] TOOLS=["echo","write_marker"]
+[mcp-roundtrip] CALL={"content":[{"type":"text","text":"echo:G10_MCP_ROUNDTRIP_OK"}]}
+assert ok: mcp roundtrip child exited 0 (got 0)
+assert ok: SDK client got the echo tool result
+assert ok: tools/list includes echo
+assert ok: session id present
+prompt_async accepted (204)
+--- assistant text ---
 
-      at spawn (node:child_process:667:35)
-      at spawn (node:child_process:14:39)
-      at <anonymous> (/data/local/tmp/gates/device/gate-10-mcp.js:37:17)
-      at new Promise (1:11)
-      at /data/local/tmp/gates/device/gate-10-mcp.js:36:19
-
-Bun v1.3.14 (Android x64)
+assert ok: agent turn did not fail
+ASSERT_FAILED: agent reported the MCP tool result
+G10_FAIL

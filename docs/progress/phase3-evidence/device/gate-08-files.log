@@ -1,7 +1,7 @@
-[2026-08-28T22:33:08Z] === G8: read/write project files ===
+[2026-08-28T23:10:23Z] === G8: read/write project files ===
 list HTTP 200
 assert ok: file list ok
-files: src, README.md, notes.txt
+files: .git, src, README.md, notes.txt
 assert ok: README.md listed
 assert ok: notes.txt listed
 G8_READ_OK
@@ -19,14 +19,9 @@ g8-write.txt: G8_WRITE_OK | second line
 assert ok: file content written through OpenCode shell exec
 G8_WRITE_OK
 assert ok: session id present
-114 | }
-115 | 
-116 | // Send a prompt asynchronously (the agent loop starts server-side).
-117 | export async function promptAsync(sessionID, text) {
-118 |   const r = await post(`/session/${sessionID}/prompt_async`, { text })
-119 |   if (r.status !== 204 && !r.ok) throw new Error("prompt_async failed: " + r.status + " " + r.text.slice(0, 300))
-                                                 ^
-error: prompt_async failed: 400 {"name":"BadRequest","data":{"message":"Missing key\n  at [\"parts\"]","kind":"Payload"}}
-      at promptAsync (/data/local/tmp/gates/device/gates-lib.js:119:44)
-
-Bun v1.3.14 (Android x64)
+prompt_async accepted (204)
+permissions allowed: []
+assert ok: agent-written file readable
+g8-agent.txt: 
+ASSERT_FAILED: agent write tool wrote the file
+G8_FAIL

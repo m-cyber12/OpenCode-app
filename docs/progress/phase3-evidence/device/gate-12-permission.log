@@ -1,14 +1,15 @@
-[2026-08-28T22:33:11Z] === G12: permissions/tool approval ===
+[2026-08-28T23:10:27Z] === G12: permissions/tool approval ===
 assert ok: session id present
-114 | }
-115 | 
-116 | // Send a prompt asynchronously (the agent loop starts server-side).
-117 | export async function promptAsync(sessionID, text) {
-118 |   const r = await post(`/session/${sessionID}/prompt_async`, { text })
-119 |   if (r.status !== 204 && !r.ok) throw new Error("prompt_async failed: " + r.status + " " + r.text.slice(0, 300))
-                                                 ^
-error: prompt_async failed: 400 {"name":"BadRequest","data":{"message":"Missing key\n  at [\"parts\"]","kind":"Payload"}}
-      at promptAsync (/data/local/tmp/gates/device/gates-lib.js:119:44)
+prompt_async accepted (204)
+ASKED id=per_04aa390770012YFwgr135txptS permission=edit patterns=["g8-agent.txt"]
+reply per_04aa390770012YFwgr135txptS HTTP 200 true
+assert ok: permission request was asked and replied
+--- assistant text ---
 
-Bun v1.3.14 (Android x64)
+--- bash tool outputs ---
+
+asks seen: [{"id":"per_04aa390770012YFwgr135txptS","permission":"edit"}]
+assert ok: agent turn did not fail
+ASSERT_FAILED: command output present after approval
+G12_FAIL
 GATE_12: FAIL permissions 
