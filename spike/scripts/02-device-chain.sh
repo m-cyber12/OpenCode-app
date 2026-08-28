@@ -51,13 +51,14 @@ sleep 3
 
 echo "=== SPIKE CHAIN END $(date -u +%FT%TZ) ===" | tee -a "$LOG"
 
+# --- fetch device-side logs back for evidence ---
+{
+  echo "### FETCH DEVICE LOGS"
+  ADB pull /data/local/tmp/spike/server.log "$OUT/server.log" 2>&1 | tail -1
+  ADB shell 'ls -la /data/local/tmp/spike/data/opencode /data/local/tmp/spike/config/opencode 2>/dev/null' | tee "$OUT/device-storage.txt"
+  ADB shell 'cat /data/local/tmp/spike/config/opencode/opencode.jsonc 2>/dev/null' | tee "$OUT/device-config.txt"
+} 2>&1 | tee -a "$LOG"
+
 # --- assemble the evidence bundle (logs + provenance only, no binaries) ---
-mkdir -p "$OUT/evidence"
-cp "$OUT/device-chain.log" "$OUT/evidence/" 2>/dev/null || true
-cp "$OUT/device-chain.device.log" "$OUT/evidence/" 2>/dev/null || true
-cp "$OUT/bun.sha256" "$OUT/evidence/" 2>/dev/null || true
-cp "$OUT/opencode/UPSTREAM_COMMIT.txt" "$OUT/evidence/" 2>/dev/null || true
-cp "$SPIKE_DIR/versions.spike.lock" "$OUT/evidence/" 2>/dev/null || true
-cp "$SPIKE_DIR/../versions.lock" "$OUT/evidence/" 2>/dev/null || true
-ls -la "$OUT/evidence/"
+bash "$SPIKE_DIR/scripts/53-evidence.sh"
 echo "EVIDENCE_READY"

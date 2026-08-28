@@ -5,7 +5,7 @@ Everything needed to run the Phase 2 spike on a real Android emulator.
 ## What this proves
 
 ```
-Android native host (emulator, Android 14 x86_64)
+Android native host (emulator, Android x86_64 — API 31+ from the runner's preinstalled SDK)
   → execution layer (Android native ELF loader / bionic — no proot, per Phase 1)
     → minimal Linux userspace (Android system + bundled static/bionic tools)
       → real shell (/system/bin/sh, mksh)
@@ -15,9 +15,10 @@ Android native host (emulator, Android 14 x86_64)
 
 ## How to run (one-time user step)
 
-The GitHub App token used by this sandbox has no `workflows` permission, so
-**only a credential with that permission can add the workflow file**. Push it
-from a machine that has one (e.g. the fine-grained PAT you provided):
+The GitHub App token used by the sandbox has no `workflows` permission, so
+only a credential with that permission can add the workflow file. Push it
+from a machine that has one (a PAT with **Workflows: read & write** + **Contents: read & write**,
+or any credential with workflow access):
 
 ```bash
 git clone https://github.com/m-cyber12/OpenCode-app.git
@@ -26,31 +27,45 @@ git checkout arena/01a044b6-opencode-app
 mkdir -p .github/workflows
 cp spike/workflow/phase2-spike.yml .github/workflows/phase2-spike.yml
 git add .github/workflows/phase2-spike.yml
-git commit -m "phase2: enable spike workflow"
+git commit -m "phase2: enable spike workflow (v2)"
 git push origin arena/01a044b6-opencode-app
 ```
 
-The push itself triggers the workflow (branch filter
-`arena/01a044b6-opencode-app`). Track it at
-https://github.com/m-cyber12/OpenCode-app/actions — the run installs the
-Android SDK, boots an Android 14 x86_64 emulator with KVM, runs the chain,
-and commits its logs to
-`docs/progress/phase2-evidence/` on the same branch.
+The push triggers the workflow (branch filter `arena/01a044b6-opencode-app`).
+It can also be re-run from the Actions UI (**Run workflow** → workflow_dispatch).
 
-`workflow_dispatch:` is also enabled, so it can be re-run from the Actions UI
-without another push.
+**Important:** the workflow re-runs on every push to this branch that touches
+non-evidence files, so if a future spike fix is needed, just push the fix and
+the workflow runs again automatically. The workflow's evidence commits do NOT
+re-trigger it (`paths-ignore`).
 
 ## Layout
 
 | Path | Purpose |
 |------|---------|
 | `workflow/phase2-spike.yml` | The GitHub Actions workflow (copy to `.github/workflows/`) |
-| `scripts/01-prepare-artifacts.sh` | Runner-side: build OpenCode bundle, fetch bun-android, build static git, fetch musl ripgrep |
-| `scripts/02-device-chain.sh` | Runner-side: adb driver that runs the whole chain on the emulator and captures logs |
+| `scripts/00-run-all.sh` | Single orchestrator: probe → SDK → AVD → boot → artifacts → device chain → evidence |
+| `scripts/01-prepare-artifacts.sh` | Runner-side: build OpenCode bundle, fetch bun-android, ripgrep, static git |
+| `scripts/02-device-chain.sh` | Runner-side: adb driver that runs the chain on the emulator and captures logs |
+| `scripts/50-install-sdk.sh` | Fallback: fresh SDK install (only if the preinstalled SDK is missing) |
+| `scripts/51-manual-avd.sh` | avdmanager-free AVD creation fallback (writes config.ini directly) |
+| `scripts/52-boot-emulator.sh` | Headless emulator boot + boot-completed wait + diagnostics |
+| `scripts/53-evidence.sh` | Assemble evidence bundle (logs + provenance) |
 | `scripts/device/device-chain.sh` | Device-side: the actual chain (shell → runtime → OpenCode server → health/session checks) |
 | `scripts/device/launch-server.js` | OpenCode server launcher (mirrors `packages/desktop/src/main/sidecar.ts`) |
 | `scripts/device/health-check.js` | On-device HTTP checks via bun fetch |
 | `versions.spike.lock` | Pins for every component of the spike environment |
+
+## Why v2 (what failed in v1, 2026-08-27 run 33113504275)
+
+v1 installed the SDK from scratch inside the workflow (`sdkmanager` download).
+On the runner that step silently did nothing (sdkmanager not on PATH; the
+`| tail -3` pipe masked the `command not found` and exited 0), so "Create AVD"
+failed instantly with no system image. v2 uses the **Android SDK preinstalled
+on GitHub-hosted ubuntu runners** (`/usr/local/lib/android/sdk` — emulator,
+platform-tools, cmdline-tools, system images, licenses), with the fresh-install
+path demoted to a fallback, and every step now logs into `spike/out/` which is
+committed as evidence even on failure.
 
 ## Notes
 

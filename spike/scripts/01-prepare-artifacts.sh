@@ -25,7 +25,19 @@ echo "=== [3/6] OpenCode server bundle (bun-target build of upstream src/node.ts
 rm -rf /tmp/opencode && git clone --depth 1 --branch dev https://github.com/anomalyco/opencode /tmp/opencode
 (cd /tmp/opencode && git rev-parse HEAD > "$OUT/opencode/UPSTREAM_COMMIT.txt")
 export PATH="$HOME/.bun/bin:$PATH"
-(cd /tmp/opencode && bun install | tail -2) || (cd /tmp/opencode && bun install --ignore-scripts | tail -2)
+if ! (cd /tmp/opencode && bun install | tail -2); then
+  echo "bun install failed; patching out git-dep ghostty-web (web UI only, not in server bundle) and retrying"
+  python3 - <<'EOF'
+import json
+p = "/tmp/opencode/packages/app/package.json"
+d = json.load(open(p))
+for sec in ("dependencies","optionalDependencies","devDependencies","peerDependencies"):
+    if sec in d and "ghostty-web" in d[sec]:
+        del d[sec]["ghostty-web"]; print("removed ghostty-web from", sec)
+json.dump(d, open(p,"w"), indent=2); open(p,"a").write("\n")
+EOF
+  (cd /tmp/opencode && bun install --ignore-scripts | tail -2)
+fi
 (cd /tmp/opencode/packages/opencode && bun -e '
 const generated = { modelsData: await (await fetch("https://models.dev/api.json")).text() };
 await Bun.build({
