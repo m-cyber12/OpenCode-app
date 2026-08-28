@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# 01-prepare-artifacts.sh — build/fetch everything the device chain needs.
+# Runs on the GitHub Actions runner (full network). Outputs into spike/out/.
+set -euo pipefail
+SPIKE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+OUT="$SPIKE_DIR/out"
+mkdir -p "$OUT/node_modules/jsonc-parser" "$OUT/node_modules/@lydell/node-pty" "$OUT/node_modules/bun-pty" "$OUT/opencode/dist/node"
+export PATH="$HOME/.bun/bin:$PATH"
+
+echo "=== [1/6] bun (host, for building) ==="
+curl -sL --max-time 180 -o /tmp/bun-host.tgz "https://registry.npmjs.org/@oven/bun-linux-x64/-/bun-linux-x64-1.3.14.tgz"
+mkdir -p "$HOME/.bun/bin" /tmp/bun-host-x && tar xzf /tmp/bun-host.tgz -C /tmp/bun-host-x
+mv /tmp/bun-host-x/package/bin/bun "$HOME/.bun/bin/bun" && chmod +x "$HOME/.bun/bin/bun"
+bun --version
+
+echo "=== [2/6] bun for Android (x86_64, bionic) ==="
+curl -sL --max-time 180 -o /tmp/bun-android.tgz "https://registry.npmjs.org/@oven/bun-linux-x64-android/-/bun-linux-x64-android-1.3.14.tgz"
+mkdir -p /tmp/bun-android && tar xzf /tmp/bun-android.tgz -C /tmp/bun-android
+cp /tmp/bun-android/package/bin/bun "$OUT/bun"
+chmod +x "$OUT/bun"
+sha256sum "$OUT/bun" > "$OUT/bun.sha256"
+readelf -l "$OUT/bun" 2>/dev/null | grep -A1 INTERP || true   # expect /system/bin/linker64 (bionic)
+
+echo "=== [3/6] OpenCode server bundle (bun-target build of upstream src/node.ts) ==="
+rm -rf /tmp/opencode && timeout 300 git clone --depth 1 --branch dev https://github.com/anomalyco/opencode /tmp/opencode
+# Pin to the exact commit from versions.lock (Core Rule 7) — do NOT float on dev HEAD
+PINNED_COMMIT="05ea5073be967c779d326929b2de6228dda4159d"
+if ! (cd /tmp/opencode && git fetch -q --depth 1 origin "$PINNED_COMMIT" && git checkout -q FETCH_HEAD); then
+  echo "FATAL: pinned commit $PINNED_COMMIT not found in upstream (per phase rules, report as blocker)"
+  exit 1
+fi
+(cd /tmp/opencode && git rev-parse HEAD > "$OUT/opencode/UPSTREAM_COMMIT.txt")
+echo "upstream commit: $(cat "$OUT/opencode/UPSTREAM_COMMIT.txt")"
+export PATH="$HOME/.bun/bin:$PATH"
+# models.dev snapshot via curl (bounded) instead of an in-bun fetch (which can hang)
+curl -fsSL --max-time 90 -o "$OUT/models-dev.json" "https://models.dev/api.json" \
+  && echo "models.dev snapshot: $(wc -c < "$OUT/models-dev.json") bytes" \
+  || { echo "models.dev fetch FAILED; using empty snapshot (server boots, provider list empty)"; echo '{}' > "$OUT/models-dev.json"; }
+if ! timeout 480 bash -c 'cd /tmp/opencode && bun install | tail -2'; then
+  echo "bun install failed; patching out git-dep ghostty-web (web UI only, not in server bundle) and retrying"
+  python3 - <<'EOF'
+import json
+p = "/tmp/opencode/packages/app/package.json"
+d = json.load(open(p))
+for sec in ("dependencies","optionalDependencies","devDependencies","peerDependencies"):
+    if sec in d and "ghostty-web" in d[sec]:
+        del d[sec]["ghostty-web"]; print("removed ghostty-web from", sec)
+json.dump(d, open(p,"w"), indent=2); open(p,"a").write("\n")
+EOF
+  timeout 480 bash -c 'cd /tmp/opencode && bun install --ignore-scripts | tail -2'
+fi
+(cd /tmp/opencode/packages/opencode && MODELS_DEV_API_JSON="$OUT/models-dev.json" timeout 300 bun -e '
+const generated = { modelsData: await Bun.file(process.env.MODELS_DEV_API_JSON || "/dev/null").text() };
+await Bun.build({
+  target: "bun",
+  entrypoints: ["./src/node.ts"],
+  outdir: "./dist/spike",
+  format: "esm",
+  sourcemap: "linked",
+  external: ["jsonc-parser", "@lydell/node-pty", "bun-pty"],
+  define: {
+    OPENCODE_MODELS_DEV: generated.modelsData,
+    OPENCODE_VERSION: `"1.18.23-spike"`,
+    OPENCODE_CHANNEL: `"spike"`,
+  },
+  files: { "opencode-web-ui.gen.ts": "" },
+});
+console.log("bundle build complete");
+')
+cp /tmp/opencode/packages/opencode/dist/spike/node.js "$OUT/opencode/dist/node/"
+cp /tmp/opencode/packages/opencode/dist/spike/*.wasm "$OUT/opencode/dist/node/"
+ls -la "$OUT/opencode/dist/node/"
+
+echo "=== [4/6] jsonc-parser + native-addon stubs ==="
+# jsonc-parser is external in the bundle; ship the package (from the npm registry,
+# same version the opencode lockfile uses). NOTE: do NOT try to locate it inside
+# the bun store with find — bun's store layout varies and a failed lookup previously
+# caused `cp -r /.` to copy the whole filesystem (the 2h hang in run #3).
+mkdir -p "$OUT/node_modules/jsonc-parser"
+curl -fsSL --max-time 120 -o /tmp/jsonc-parser.tgz "https://registry.npmjs.org/jsonc-parser/-/jsonc-parser-3.3.1.tgz" \
+  || { echo "FATAL: could not download jsonc-parser from registry.npmjs.org"; exit 1; }
+mkdir -p /tmp/jsonc-parser-x && tar xzf /tmp/jsonc-parser.tgz -C /tmp/jsonc-parser-x --strip-components=1
+cp -r /tmp/jsonc-parser-x/. "$OUT/node_modules/jsonc-parser/"
+ls "$OUT/node_modules/jsonc-parser/" | head -5
+cat > "$OUT/node_modules/@lydell/node-pty/package.json" <<'EOF'
+{ "name": "@lydell/node-pty", "version": "0.0.0-stub", "main": "index.js", "type": "commonjs" }
+EOF
+cat > "$OUT/node_modules/@lydell/node-pty/index.js" <<'EOF'
+// Stub: node-pty has no Android build. PTY/terminal degrades at use-time (documented).
+module.exports = { spawn() { throw new Error("node-pty unavailable on Android (stub)"); } };
+EOF
+cat > "$OUT/node_modules/bun-pty/package.json" <<'EOF'
+{ "name": "bun-pty", "version": "0.0.0-stub", "main": "index.js", "type": "commonjs" }
+EOF
+cat > "$OUT/node_modules/bun-pty/index.js" <<'EOF'
+// Stub: bun-pty has no Android build. PTY/terminal degrades at use-time (documented).
+module.exports = { spawn() { throw new Error("bun-pty unavailable on Android (stub)"); } };
+EOF
+
+echo "=== [5/6] ripgrep 15.1.0 (musl static) ==="
+curl -sL --max-time 180 -o /tmp/rg.tar.gz "https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz"
+tar xzf /tmp/rg.tar.gz -C /tmp
+cp /tmp/ripgrep-15.1.0-x86_64-unknown-linux-musl/rg "$OUT/rg"
+chmod +x "$OUT/rg"
+
+echo "=== [6/6] static git (best-effort) ==="
+if git clone --depth 1 https://github.com/git/git /tmp/git-src 2>/dev/null; then
+  (cd /tmp/git-src \
+    && make -j2 configure \
+    && ./configure --prefix=/usr CC=gcc CFLAGS="-O2 -static" LDFLAGS="-static" \
+         --without-iconv --without-tcltk --without-perl --without-python \
+         --without-curl --without-openssl --without-expat --without-libpcre2 \
+    && timeout 600 make -j2 all 2>&1 | tail -2) \
+  && cp /tmp/git-src/git "$OUT/git" && chmod +x "$OUT/git" \
+  || echo "GIT_BUILD_FAILED (spike continues without git)" > "$OUT/git.status"
+else
+  echo "GIT_CLONE_FAILED (spike continues without git)" > "$OUT/git.status"
+fi
+ls -la "$OUT/"
+echo "ARTIFACTS_READY"

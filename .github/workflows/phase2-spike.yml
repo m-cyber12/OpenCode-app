@@ -1,0 +1,53 @@
+name: phase2-spike
+on:
+  push:
+    branches: [arena/01a044b6-opencode-app]
+    paths-ignore:
+      - 'docs/progress/phase2-evidence/**'
+  workflow_dispatch:
+
+jobs:
+  spike:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run the whole spike (probe → SDK → AVD → boot → chain → evidence)
+        run: |
+          bash spike/scripts/00-run-all.sh
+        shell: bash
+
+      - name: Collect and commit evidence
+        if: always()
+        run: |
+          mkdir -p docs/progress/phase2-evidence
+          cp -r spike/out/evidence/. docs/progress/phase2-evidence/ 2>/dev/null || true
+          cp spike/out/00-run-all.log docs/progress/phase2-evidence/ 2>/dev/null || true
+          git add -A docs/progress/phase2-evidence/ || true
+          if git diff --cached --quiet; then
+            echo "no evidence changes; skipping commit"
+          else
+            git config user.name "arena-ai-coding-agent[bot]"
+            git config user.email "arena-ai-coding-agent[bot]@users.noreply.github.com"
+            git -c user.name="arena-ai-coding-agent[bot]" -c user.email="arena-ai-coding-agent[bot]@users.noreply.github.com" \
+              commit -m "phase2: spike evidence (auto)" || true
+            git push origin "HEAD:arena/01a044b6-opencode-app" || echo "PUSH_FAILED"
+          fi
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2-spike-evidence
+          path: |
+            spike/out/evidence/
+            spike/out/emulator.log
+            docs/progress/phase2-evidence/
+          if-no-files-found: ignore
