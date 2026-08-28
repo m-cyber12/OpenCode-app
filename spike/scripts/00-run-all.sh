@@ -9,7 +9,7 @@ mkdir -p "$OUT"
 MAINLOG="$OUT/00-run-all.log"
 : > "$MAINLOG"
 step() { echo; echo "########## $1 ##########"; echo "########## $1 ##########" >> "$MAINLOG"; }
-run() { "$@" 2>&1 | tee -a "$MAINLOG"; }
+run() { timeout 1500 "$@" 2>&1 | tee -a "$MAINLOG"; }   # per-phase cap (25 min); failures still logged
 
 echo "=== RUN-ALL START $(date -u +%FT%TZ) ===" | tee -a "$MAINLOG"
 

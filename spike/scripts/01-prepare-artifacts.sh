@@ -8,13 +8,13 @@ mkdir -p "$OUT/node_modules/jsonc-parser" "$OUT/node_modules/@lydell/node-pty" "
 export PATH="$HOME/.bun/bin:$PATH"
 
 echo "=== [1/6] bun (host, for building) ==="
-curl -sL -o /tmp/bun-host.tgz "https://registry.npmjs.org/@oven/bun-linux-x64/-/bun-linux-x64-1.3.14.tgz"
+curl -sL --max-time 180 -o /tmp/bun-host.tgz "https://registry.npmjs.org/@oven/bun-linux-x64/-/bun-linux-x64-1.3.14.tgz"
 mkdir -p "$HOME/.bun/bin" /tmp/bun-host-x && tar xzf /tmp/bun-host.tgz -C /tmp/bun-host-x
 mv /tmp/bun-host-x/package/bin/bun "$HOME/.bun/bin/bun" && chmod +x "$HOME/.bun/bin/bun"
 bun --version
 
 echo "=== [2/6] bun for Android (x86_64, bionic) ==="
-curl -sL -o /tmp/bun-android.tgz "https://registry.npmjs.org/@oven/bun-linux-x64-android/-/bun-linux-x64-android-1.3.14.tgz"
+curl -sL --max-time 180 -o /tmp/bun-android.tgz "https://registry.npmjs.org/@oven/bun-linux-x64-android/-/bun-linux-x64-android-1.3.14.tgz"
 mkdir -p /tmp/bun-android && tar xzf /tmp/bun-android.tgz -C /tmp/bun-android
 cp /tmp/bun-android/package/bin/bun "$OUT/bun"
 chmod +x "$OUT/bun"
@@ -22,10 +22,14 @@ sha256sum "$OUT/bun" > "$OUT/bun.sha256"
 readelf -l "$OUT/bun" 2>/dev/null | grep -A1 INTERP || true   # expect /system/bin/linker64 (bionic)
 
 echo "=== [3/6] OpenCode server bundle (bun-target build of upstream src/node.ts) ==="
-rm -rf /tmp/opencode && git clone --depth 1 --branch dev https://github.com/anomalyco/opencode /tmp/opencode
+rm -rf /tmp/opencode && timeout 300 git clone --depth 1 --branch dev https://github.com/anomalyco/opencode /tmp/opencode
 (cd /tmp/opencode && git rev-parse HEAD > "$OUT/opencode/UPSTREAM_COMMIT.txt")
 export PATH="$HOME/.bun/bin:$PATH"
-if ! (cd /tmp/opencode && bun install | tail -2); then
+# models.dev snapshot via curl (bounded) instead of an in-bun fetch (which can hang)
+curl -fsSL --max-time 90 -o "$OUT/models-dev.json" "https://models.dev/api.json" \
+  && echo "models.dev snapshot: $(wc -c < "$OUT/models-dev.json") bytes" \
+  || { echo "models.dev fetch FAILED; using empty snapshot (server boots, provider list empty)"; echo '{}' > "$OUT/models-dev.json"; }
+if ! timeout 480 bash -c 'cd /tmp/opencode && bun install | tail -2'; then
   echo "bun install failed; patching out git-dep ghostty-web (web UI only, not in server bundle) and retrying"
   python3 - <<'EOF'
 import json
@@ -36,10 +40,10 @@ for sec in ("dependencies","optionalDependencies","devDependencies","peerDepende
         del d[sec]["ghostty-web"]; print("removed ghostty-web from", sec)
 json.dump(d, open(p,"w"), indent=2); open(p,"a").write("\n")
 EOF
-  (cd /tmp/opencode && bun install --ignore-scripts | tail -2)
+  timeout 480 bash -c 'cd /tmp/opencode && bun install --ignore-scripts | tail -2'
 fi
-(cd /tmp/opencode/packages/opencode && bun -e '
-const generated = { modelsData: await (await fetch("https://models.dev/api.json")).text() };
+(cd /tmp/opencode/packages/opencode && MODELS_DEV_API_JSON="$OUT/models-dev.json" timeout 300 bun -e '
+const generated = { modelsData: await Bun.file(process.env.MODELS_DEV_API_JSON || "/dev/null").text() };
 await Bun.build({
   target: "bun",
   entrypoints: ["./src/node.ts"],
@@ -81,7 +85,7 @@ module.exports = { spawn() { throw new Error("bun-pty unavailable on Android (st
 EOF
 
 echo "=== [5/6] ripgrep 15.1.0 (musl static) ==="
-curl -sL -o /tmp/rg.tar.gz "https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz"
+curl -sL --max-time 180 -o /tmp/rg.tar.gz "https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz"
 tar xzf /tmp/rg.tar.gz -C /tmp
 cp /tmp/ripgrep-15.1.0-x86_64-unknown-linux-musl/rg "$OUT/rg"
 chmod +x "$OUT/rg"
@@ -93,7 +97,7 @@ if git clone --depth 1 https://github.com/git/git /tmp/git-src 2>/dev/null; then
     && ./configure --prefix=/usr CC=gcc CFLAGS="-O2 -static" LDFLAGS="-static" \
          --without-iconv --without-tcltk --without-perl --without-python \
          --without-curl --without-openssl --without-expat --without-libpcre2 \
-    && make -j2 all 2>&1 | tail -2) \
+    && timeout 600 make -j2 all 2>&1 | tail -2) \
   && cp /tmp/git-src/git "$OUT/git" && chmod +x "$OUT/git" \
   || echo "GIT_BUILD_FAILED (spike continues without git)" > "$OUT/git.status"
 else
