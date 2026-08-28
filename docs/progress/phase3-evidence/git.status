@@ -30,17 +30,17 @@ musl-gcc -O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN  -o minigzip64 minigzip64.o -
     BUILTIN git-annotate
     BUILTIN git-apply
     BUILTIN git-archive
-    BUILTIN git-bisect
     BUILTIN git-blame
-    BUILTIN git-bugreport
+    BUILTIN git-bisect
     BUILTIN git-branch
+    BUILTIN git-bugreport
     BUILTIN git-bundle
     BUILTIN git-cat-file
     BUILTIN git-check-attr
     BUILTIN git-check-ignore
     BUILTIN git-check-mailmap
-    BUILTIN git-checkout--worker
     BUILTIN git-check-ref-format
+    BUILTIN git-checkout--worker
     BUILTIN git-checkout
     BUILTIN git-checkout-index
     BUILTIN git-clean
@@ -50,16 +50,16 @@ musl-gcc -O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN  -o minigzip64 minigzip64.o -
     BUILTIN git-commit-tree
     BUILTIN git-commit
     BUILTIN git-config
+    BUILTIN git-count-objects
     BUILTIN git-credential-cache--daemon
     BUILTIN git-credential-cache
-    BUILTIN git-count-objects
     BUILTIN git-credential-store
     BUILTIN git-credential
     BUILTIN git-describe
-    BUILTIN git-diff-files
     BUILTIN git-diagnose
-    BUILTIN git-diff-index
+    BUILTIN git-diff-files
     BUILTIN git-diff-tree
+    BUILTIN git-diff-index
     BUILTIN git-diff
     BUILTIN git-difftool
     BUILTIN git-fast-export
@@ -71,12 +71,12 @@ musl-gcc -O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN  -o minigzip64 minigzip64.o -
     BUILTIN git-for-each-repo
     BUILTIN git-fsck
     BUILTIN git-fsmonitor--daemon
-    BUILTIN git-gc
     BUILTIN git-get-tar-commit-id
+    BUILTIN git-gc
     BUILTIN git-grep
     BUILTIN git-hash-object
-    BUILTIN git-hook
     BUILTIN git-help
+    BUILTIN git-hook
     BUILTIN git-index-pack
     BUILTIN git-init-db
     BUILTIN git-interpret-trailers
@@ -88,37 +88,37 @@ musl-gcc -O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN  -o minigzip64 minigzip64.o -
     BUILTIN git-mailsplit
     BUILTIN git-merge-base
     BUILTIN git-merge-file
-    BUILTIN git-merge-index
     BUILTIN git-merge-ours
+    BUILTIN git-merge-index
     BUILTIN git-merge-recursive
     BUILTIN git-merge-tree
     BUILTIN git-mktag
     BUILTIN git-merge
-    BUILTIN git-multi-pack-index
     BUILTIN git-mktree
+    BUILTIN git-multi-pack-index
     BUILTIN git-mv
     BUILTIN git-name-rev
     BUILTIN git-notes
-    BUILTIN git-pack-redundant
     BUILTIN git-pack-objects
+    BUILTIN git-pack-redundant
     BUILTIN git-pack-refs
     BUILTIN git-patch-id
     BUILTIN git-prune-packed
     BUILTIN git-prune
     BUILTIN git-pull
-    BUILTIN git-range-diff
     BUILTIN git-push
+    BUILTIN git-range-diff
+    BUILTIN git-rebase
     BUILTIN git-read-tree
     BUILTIN git-receive-pack
-    BUILTIN git-rebase
     BUILTIN git-reflog
     BUILTIN git-refs
     BUILTIN git-remote-ext
     BUILTIN git-remote-fd
     BUILTIN git-remote
     BUILTIN git-repack
-    BUILTIN git-replay
     BUILTIN git-replace
+    BUILTIN git-replay
     BUILTIN git-rerere
     BUILTIN git-reset
     BUILTIN git-rev-list
@@ -132,19 +132,19 @@ musl-gcc -O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN  -o minigzip64 minigzip64.o -
     BUILTIN git-show-ref
     BUILTIN git-sparse-checkout
     BUILTIN git-stash
-    BUILTIN git-submodule--helper
     BUILTIN git-stripspace
+    BUILTIN git-submodule--helper
     BUILTIN git-symbolic-ref
     BUILTIN git-tag
     BUILTIN git-unpack-file
     BUILTIN git-unpack-objects
+    BUILTIN git-update-ref
     BUILTIN git-update-index
     BUILTIN git-update-server-info
-    BUILTIN git-update-ref
     BUILTIN git-upload-archive
     BUILTIN git-upload-pack
-    BUILTIN git-var
     BUILTIN git-verify-commit
+    BUILTIN git-var
     BUILTIN git-verify-pack
     BUILTIN git-verify-tag
     BUILTIN git-worktree
@@ -155,19 +155,19 @@ musl-gcc -O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN  -o minigzip64 minigzip64.o -
     BUILTIN git-fsck-objects
     BUILTIN git-init
     BUILTIN git-maintenance
-    BUILTIN git-merge-subtree
     BUILTIN git-restore
-    BUILTIN git-stage
+    BUILTIN git-merge-subtree
     BUILTIN git-show
+    BUILTIN git-stage
     BUILTIN git-status
     BUILTIN git-switch
-    BUILTIN git-version
     BUILTIN git-whatchanged
+    BUILTIN git-version
     SUBDIR templates
     CC oss-fuzz/dummy-cmd-main.o
     CC oss-fuzz/fuzz-commit-graph.o
-    CC oss-fuzz/fuzz-config.o
     CC oss-fuzz/fuzz-credential-from-url-gently.o
+    CC oss-fuzz/fuzz-config.o
     CC oss-fuzz/fuzz-date.o
     CC oss-fuzz/fuzz-pack-headers.o
     CC oss-fuzz/fuzz-pack-idx.o
@@ -185,8 +185,8 @@ musl-gcc -O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN  -o minigzip64 minigzip64.o -
     CC t/helper/test-tool.o
     CC t/helper/test-advise.o
     CC t/helper/test-bitmap.o
-    CC t/helper/test-bloom.o
     CC t/helper/test-bundle-uri.o
+    CC t/helper/test-bloom.o
     CC t/helper/test-cache-tree.o
     CC t/helper/test-chmtime.o
     CC t/helper/test-config.o
@@ -195,8 +195,8 @@ musl-gcc -O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN  -o minigzip64 minigzip64.o -
     CC t/helper/test-date.o
     CC t/helper/test-delete-gpgsig.o
     CC t/helper/test-delta.o
-    CC t/helper/test-drop-caches.o
     CC t/helper/test-dir-iterator.o
+    CC t/helper/test-drop-caches.o
     CC t/helper/test-dump-cache-tree.o
     CC t/helper/test-dump-fsmonitor.o
     CC t/helper/test-dump-split-index.o
@@ -266,8 +266,8 @@ musl-gcc -O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN  -o minigzip64 minigzip64.o -
     GEN bin-wrappers/git-cvsserver
     GEN bin-wrappers/test-fake-ssh
     GEN bin-wrappers/test-tool
-    CC t/unit-tests/lib-oid.o
     CC t/unit-tests/t-example-decorate.o
+    CC t/unit-tests/lib-oid.o
     CC t/unit-tests/lib-reftable.o
     CC t/unit-tests/t-hash.o
     CC t/unit-tests/t-hashmap.o
@@ -351,14 +351,14 @@ aarch64-linux-gnu-gcc -O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN  -o example exam
 aarch64-linux-gnu-gcc -O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN  -o minigzip minigzip.o -L. libz.a
 aarch64-linux-gnu-gcc -O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN  -o example64 example64.o -L. libz.a
 aarch64-linux-gnu-gcc -O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN  -o minigzip64 minigzip64.o -L. libz.a
-libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
 ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
 /usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
 path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
 /usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
 ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+    LINK oss-fuzz/fuzz-url-decode-mem
 /usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
 connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
 /usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
@@ -473,8 +473,8 @@ ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applicatio
     CC t/unit-tests/t-strcmp-offset.o
     CC t/unit-tests/t-trailer.o
     CC t/unit-tests/t-urlmatch-normalization.o
-    LINK t/helper/test-fake-ssh
     * new test suites
+    LINK t/helper/test-fake-ssh
     LINK t/helper/test-tool
 /usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
 connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
@@ -490,13 +490,13 @@ path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applicatio
 ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     MKDIR -p t/unit-tests/bin
     LINK t/unit-tests/bin/t-example-decorate
-    LINK t/unit-tests/bin/t-hash
 /usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
 connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
 /usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
 path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
 /usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
 ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+    LINK t/unit-tests/bin/t-hash
     LINK t/unit-tests/bin/t-hashmap
 /usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
 connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
@@ -511,20 +511,20 @@ path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applicatio
 /usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
 ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-mem-pool
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-oid-array
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-oidmap
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-oidtree
 /usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
 connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
@@ -532,113 +532,113 @@ connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked appl
 path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
 /usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
 ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-prio-queue
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-reftable-basics
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-reftable-block
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-reftable-merged
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-reftable-pq
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-reftable-reader
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-reftable-readwrite
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-reftable-record
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-reftable-stack
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-reftable-tree
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-strbuf
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-strcmp-offset
+    LINK t/unit-tests/bin/t-trailer
 /usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
 connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
 /usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
 path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
 /usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
 ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-    LINK t/unit-tests/bin/t-trailer
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     LINK t/unit-tests/bin/t-urlmatch-normalization
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
+connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
+path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
+ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     GEN t/unit-tests/clar-decls.h
     GEN t/unit-tests/clar.suite
     CC t/unit-tests/u-ctype.o
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(connect.o): in function `git_connect':
-connect.c:(.text+0x218c): warning: Using 'getaddrinfo' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(path.o): in function `interpolate_path':
-path.c:(.text+0x1b1c): warning: Using 'getpwnam' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
-/usr/lib/gcc-cross/aarch64-linux-gnu/13/../../../../aarch64-linux-gnu/bin/ld: libgit.a(ident.o): in function `ident_default_name':
-ident.c:(.text+0x258): warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
     CC t/unit-tests/u-strvec.o
     CC t/unit-tests/clar/clar.o
     CC t/unit-tests/unit-test.o

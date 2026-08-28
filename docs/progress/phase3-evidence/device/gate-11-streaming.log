@@ -1,21 +1,24 @@
-[2026-08-28T23:21:07Z] === G11: streaming/SSE ===
+[2026-08-28T23:36:17Z] === G11: streaming/SSE ===
 assert ok: session id present
 shell HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M15ATKYQTNV5YXG41TVBR7EB","input":"{\"command\":\"echo G11_STREAM_EVENT_OK\"}","output":"\"G11_STREAM_EVENT_OK\\n\"","error":null}]}]
-events seen (31): {"server.connected":1,"message.updated":6,"message.part.updated":12,"session.status":1,"session.idle":1,"message.part.delta":10}
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M15BPD431VTB1HNMMH93ESHK","input":"{\"command\":\"echo G11_STREAM_EVENT_OK\"}","output":"\"G11_STREAM_EVENT_OK\\n\"","error":null}]}]
+events seen (9): {"server.connected":1,"message.part.updated":4,"message.updated":2,"session.status":1,"session.idle":1}
 assert ok: part update events streamed
 assert ok: message update events streamed
 assert ok: session.status events streamed
-assert ok: multiple events streamed (31)
+assert ok: multiple events streamed (9)
 G11_SSE_OK
 assert ok: session id present
 prompt_async accepted (204)
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"Say exactly: G11_STREAM_MODEL_OK","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[]}]
-model events seen (1): ["server.connected"]
-text parts streamed: []
-session.status sequence: []
+[{"role":"user","parts":[{"type":"text","text":"Say exactly: G11_STREAM_MODEL_OK","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user is asking me to say exactly \"G11_STREAM_MODEL_OK\". This is a simple request to output that exact string.","input":"null","output":"null","error":null},{"type":"text","text":"G11_STREAM_MODEL_OK","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
+model events seen (45): ["server.connected","session.status","message.updated","message.updated","session.updated","session.updated","session.diff","message.updated","message.updated","session.status","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.part.delta","message.part.delta","message.part.delta","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.updated","message.updated","message.updated","message.updated","session.status","session.status","session.idle","session.updated","session.updated","session.diff","message.updated","message.updated"]
+text parts streamed: [{"id":"prt_04abb5797001q9tocwdEnxsNvQ","updates":4,"text":"G11_STREAM_MODEL_OK"}]
+session.status sequence: ["busy","busy","busy","idle"]
 assert ok: agent turn did not fail
-ASSERT_FAILED: streamed text contains the reply
-G11_FAIL
+assert ok: streamed text contains the reply
+assert ok: text part streamed progressively (>=2 updates)
+assert ok: status busy→idle observed
+G11_MODEL_STREAM_OK
+G11_PASS

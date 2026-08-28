@@ -1,18 +1,21 @@
-[2026-08-28T23:21:15Z] === G14: reconnect to the recovered session ===
+[2026-08-28T23:36:57Z] === G14: reconnect to the recovered session ===
 assert ok: session list ok
-sessions after restart: ["G8 agent write","G12 permission","G11 model stream","G11 stream","G10 mcp agent","G9 git via opencode","G8 files","G7 shell exec"]
+sessions after restart: ["G12 permission","G11 model stream","G11 stream","G10 mcp agent","G9 git via opencode","G8 agent write","G8 files","G7 shell exec"]
 assert ok: pre-restart session (G7 shell exec) still listed
-recovered session id: ses_fb552c8b1ffeRKra3QwOae9Rye
+recovered session id: ses_fb545aab3ffe6VKqzuieXQgf1x
 assert ok: session messages retrievable after restart
 assert ok: message history intact (4 messages)
 assert ok: shell output still in history
 G14_HISTORY_OK
 prompt_async accepted (204)
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M15ATERNVZYK7Z36WMW0EY24","input":"{\"command\":\"echo probe\"}","output":"\"probe\\n\"","error":null}]},{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M15ATEWAVM2K4XAXNQKT9XMR","input":"{\"command\":\"echo G7_SHELL_OK from=$(pwd) uname=$(uname -m) shell=$0 && ls -1 | head -3\"}","output":"\"G7_SHELL_OK from=/data/local/tmp/gates/project uname=x86_64 shell=/system/bin/sh\\nREADME.md\\nnotes.txt\\nsrc\\n\"","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M15BMP4NJ0QAF2XZAN270H56","input":"{\"command\":\"echo probe\"}","output":"\"probe\\n\"","error":null}]},{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M15BMP72QANCT9PTPDNDF6FG","input":"{\"command\":\"echo G7_SHELL_OK from=$(pwd) uname=$(uname -m) shell=$0 && ls -1 | head -3\"}","output":"\"G7_SHELL_OK from=/data/local/tmp/gates/project uname=x86_64 shell=/system/bin/sh\\nREADME.md\\nnotes.txt\\nsrc\\n\"","error":null}]},{"role":"user","parts":[{"type":"text","text":"Reply with exactly: G14_RESUME_OK","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user is asking me to reply with exactly \"G14_RESUME_OK\". I'll do that.","input":"null","output":"null","error":null},{"type":"text","text":"G14_RESUME_OK","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
 --- continued session assistant text ---
 
 
+G14_RESUME_OK
 assert ok: continued turn did not fail
-ASSERT_FAILED: new reply present in the SAME session
-G14_FAIL
+assert ok: new reply present in the SAME session
+assert ok: message list grew
+G14_RESUME_OK
+G14_PASS
