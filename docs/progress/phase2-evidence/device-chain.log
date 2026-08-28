@@ -1,4 +1,4 @@
-=== SPIKE CHAIN START 2026-08-28T09:49:31Z ===
+=== SPIKE CHAIN START 2026-08-28T09:53:16Z ===
 ### [0] ANDROID HOST FACTS
 -- id:
 uid=0(root) gid=0(root) groups=0(root),1004(input),1007(log),1011(adb),1015(sdcard_rw),1028(sdcard_r),1078(ext_data_rw),1079(ext_obb_rw),3001(net_bt_admin),3002(net_bt),3003(inet),3006(net_bw_stats),3009(readproc),3011(uhid),3012(readtracefs) context=u:r:su:s0
@@ -16,14 +16,14 @@ console=ttynull stack_depot_disable=on cgroup_disable=pressure bootconfig 8250.n
 -rwxr-xr-x 1 root shell 328192 2024-07-11 18:31 /system/bin/sh
 SHELL_INTERP_OK
 ### PUSH ARTIFACTS
-/home/runner/work/OpenCode-app/OpenCode-app/spike/out/bun: 1 file pushed, 0 skipped. 155.2 MB/s (91788816 bytes in 0.564s)
-/home/runner/work/OpenCode-app/OpenCode-app/spike/out/rg: 1 file pushed, 0 skipped. 128.3 MB/s (5445512 bytes in 0.040s)
+/home/runner/work/OpenCode-app/OpenCode-app/spike/out/bun: 1 file pushed, 0 skipped. 184.5 MB/s (91788816 bytes in 0.474s)
+/home/runner/work/OpenCode-app/OpenCode-app/spike/out/rg: 1 file pushed, 0 skipped. 161.0 MB/s (5445512 bytes in 0.032s)
 no git artifact
-/home/runner/work/OpenCode-app/OpenCode-app/spike/scripts/device/device-chain.sh: 1 file pushed, 0 skipped. 10.4 MB/s (3507 bytes in 0.000s)
-/home/runner/work/OpenCode-app/OpenCode-app/spike/scripts/device/launch-server.js: 1 file pushed, 0 skipped. 1.2 MB/s (707 bytes in 0.001s)
-/home/runner/work/OpenCode-app/OpenCode-app/spike/scripts/device/health-check.js: 1 file pushed, 0 skipped. 5.1 MB/s (1633 bytes in 0.000s)
-/home/runner/work/OpenCode-app/OpenCode-app/spike/out/opencode/: 6 files pushed, 0 skipped. 149.5 MB/s (37257222 bytes in 0.238s)
-/home/runner/work/OpenCode-app/OpenCode-app/spike/out/node_modules/: 23 files pushed, 0 skipped. 4.6 MB/s (213364 bytes in 0.044s)
+/home/runner/work/OpenCode-app/OpenCode-app/spike/scripts/device/device-chain.sh: 1 file pushed, 0 skipped. 13.7 MB/s (3507 bytes in 0.000s)
+/home/runner/work/OpenCode-app/OpenCode-app/spike/scripts/device/launch-server.js: 1 file pushed, 0 skipped. 1.4 MB/s (707 bytes in 0.000s)
+/home/runner/work/OpenCode-app/OpenCode-app/spike/scripts/device/health-check.js: 1 file pushed, 0 skipped. 4.8 MB/s (1633 bytes in 0.000s)
+/home/runner/work/OpenCode-app/OpenCode-app/spike/out/opencode/: 6 files pushed, 0 skipped. 92.0 MB/s (37257222 bytes in 0.386s)
+/home/runner/work/OpenCode-app/OpenCode-app/spike/out/node_modules/: 23 files pushed, 0 skipped. 4.5 MB/s (213364 bytes in 0.045s)
 PUSHED
 ### RUN DEVICE CHAIN (see device-chain.device.log for the raw device transcript)
 === [1] ANDROID NATIVE HOST / EXECUTION LAYER ===
@@ -44,62 +44,63 @@ bun platform=android arch=x64
 ripgrep 15.1.0 (rev af60c2de9d)
 git not bundled (build failed on runner)
 === [5] OPENCODE SERVER START ===
-server pid=4869; waiting for boot...
+server pid=4874; waiting for boot...
 --- server.log (first 60 lines) ---
 SERVER_READY http://127.0.0.1:4111/
 === [6] OPENCODE HEALTH / SESSION / CONFIG (on-device, via bun fetch) ===
 HTTP 200 /global/health -> {"healthy":true,"version":"1.18.23-spike"}
-HTTP 200 /session -> {"id":"ses_fb8397118ffeYNLEgvFMFfrCSa","slug":"proud-cactus","projectID":"global","directory":"/data/local/tmp/spike","path":"data/local/tmp/spike","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,
-HTTP 200 /session -> [{"id":"ses_fb8397118ffeYNLEgvFMFfrCSa","slug":"proud-cactus","projectID":"global","directory":"/data/local/tmp/spike","path":"data/local/tmp/spike","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0
+HTTP 200 /session -> {"id":"ses_fb8360183ffeYhXVirawIjJczC","slug":"stellar-engine","projectID":"global","directory":"/data/local/tmp/spike","path":"data/local/tmp/spike","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":
+HTTP 200 /session -> [{"id":"ses_fb8360183ffeYhXVirawIjJczC","slug":"stellar-engine","projectID":"global","directory":"/data/local/tmp/spike","path":"data/local/tmp/spike","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read"
 HTTP 200 /config -> {"$schema":"https://opencode.ai/config.json","command":{},"plugin":[],"username":"root","mode":{},"agent":{}}
-SPAWN stdout: SPAWN_OK shell=5306
+SPAWN stdout: SPAWN_OK shell=5109
 /data/local/tmp/spike/project
-SPAWN stdout: -rw-rw-rw- 1 root root 80 2026-08-28 09:49 README.md
+SPAWN stdout: -rw-rw-rw- 1 root root 80
+SPAWN stdout: 2026-08-28 09:53 README.md
 SPAWN exit code: 0
 HEALTH_CHECK_PASS
 === [7] STORAGE EVIDENCE (sqlite + config on Android) ===
 total 380
-drwxrwxrwx 4 root root   4096 2026-08-28 09:49 .
-drwxrwxrwx 3 root root   4096 2026-08-28 09:49 ..
-drwxrwxrwx 2 root root   4096 2026-08-28 09:49 log
--rw-r--r-- 1 root root   4096 2026-08-28 09:49 opencode-spike.db
--rw-r--r-- 1 root root  32768 2026-08-28 09:49 opencode-spike.db-shm
--rw-r--r-- 1 root root 304912 2026-08-28 09:49 opencode-spike.db-wal
-drwxrwxrwx 2 root root   4096 2026-08-28 09:49 repos
+drwxrwxrwx 4 root root   4096 2026-08-28 09:53 .
+drwxrwxrwx 3 root root   4096 2026-08-28 09:53 ..
+drwxrwxrwx 2 root root   4096 2026-08-28 09:53 log
+-rw-r--r-- 1 root root   4096 2026-08-28 09:53 opencode-spike.db
+-rw-r--r-- 1 root root  32768 2026-08-28 09:53 opencode-spike.db-shm
+-rw-r--r-- 1 root root 304912 2026-08-28 09:53 opencode-spike.db-wal
+drwxrwxrwx 2 root root   4096 2026-08-28 09:53 repos
 total 32
-drwxrwxrwx 2 root root 4096 2026-08-28 09:49 .
-drwxrwxrwx 3 root root 4096 2026-08-28 09:49 ..
--rw-rw-rw- 1 root root   63 2026-08-28 09:49 .gitignore
--rw-rw-rw- 1 root root   50 2026-08-28 09:49 opencode.jsonc
+drwxrwxrwx 2 root root 4096 2026-08-28 09:53 .
+drwxrwxrwx 3 root root 4096 2026-08-28 09:53 ..
+-rw-rw-rw- 1 root root   63 2026-08-28 09:53 .gitignore
+-rw-rw-rw- 1 root root   50 2026-08-28 09:53 opencode.jsonc
 total 24
-drwxrwxrwx 3 root root 4096 2026-08-28 09:49 .
-drwxrwxrwx 3 root root 4096 2026-08-28 09:49 ..
-drwxrwxrwx 3 root root 4096 2026-08-28 09:49 locks
+drwxrwxrwx 3 root root 4096 2026-08-28 09:53 .
+drwxrwxrwx 3 root root 4096 2026-08-28 09:53 ..
+drwxrwxrwx 3 root root 4096 2026-08-28 09:53 locks
 === [8] W^X EXEC-RESTRICTION PROBE (Android 10+ rule; informational for Phase 3) ===
 su: failed to exec -c: No such file or directory
 WX_PROBE_EXEC_ALLOWED
 === [9] SERVER LOG TAIL ===
 SERVER_READY http://127.0.0.1:4111/
 DEVICE_CHAIN_DONE
-=== SPIKE CHAIN END 2026-08-28T09:49:51Z ===
+=== SPIKE CHAIN END 2026-08-28T09:53:36Z ===
 ### FETCH DEVICE LOGS
-/data/local/tmp/spike/server.log: 1 file pulled, 0 skipped. 0.0 MB/s (36 bytes in 0.044s)
+/data/local/tmp/spike/server.log: 1 file pulled, 0 skipped. 0.0 MB/s (36 bytes in 0.042s)
 /data/local/tmp/spike/config/opencode:
 total 32
-drwxrwxrwx 2 root root 4096 2026-08-28 09:49 .
-drwxrwxrwx 3 root root 4096 2026-08-28 09:49 ..
--rw-rw-rw- 1 root root   63 2026-08-28 09:49 .gitignore
--rw-rw-rw- 1 root root   50 2026-08-28 09:49 opencode.jsonc
+drwxrwxrwx 2 root root 4096 2026-08-28 09:53 .
+drwxrwxrwx 3 root root 4096 2026-08-28 09:53 ..
+-rw-rw-rw- 1 root root   63 2026-08-28 09:53 .gitignore
+-rw-rw-rw- 1 root root   50 2026-08-28 09:53 opencode.jsonc
 
 /data/local/tmp/spike/data/opencode:
 total 380
-drwxrwxrwx 4 root root   4096 2026-08-28 09:49 .
-drwxrwxrwx 3 root root   4096 2026-08-28 09:49 ..
-drwxrwxrwx 2 root root   4096 2026-08-28 09:49 log
--rw-r--r-- 1 root root   4096 2026-08-28 09:49 opencode-spike.db
--rw-r--r-- 1 root root  32768 2026-08-28 09:49 opencode-spike.db-shm
--rw-r--r-- 1 root root 304912 2026-08-28 09:49 opencode-spike.db-wal
-drwxrwxrwx 2 root root   4096 2026-08-28 09:49 repos
+drwxrwxrwx 4 root root   4096 2026-08-28 09:53 .
+drwxrwxrwx 3 root root   4096 2026-08-28 09:53 ..
+drwxrwxrwx 2 root root   4096 2026-08-28 09:53 log
+-rw-r--r-- 1 root root   4096 2026-08-28 09:53 opencode-spike.db
+-rw-r--r-- 1 root root  32768 2026-08-28 09:53 opencode-spike.db-shm
+-rw-r--r-- 1 root root 304912 2026-08-28 09:53 opencode-spike.db-wal
+drwxrwxrwx 2 root root   4096 2026-08-28 09:53 repos
 {
   "$schema": "https://opencode.ai/config.json"
 }
