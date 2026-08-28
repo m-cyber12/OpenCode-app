@@ -8,6 +8,12 @@ export ANDROID_AVD_HOME="${ANDROID_AVD_HOME:-$ANDROID_HOME/avd}"
 export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
 
 EMU="$ANDROID_HOME/emulator/emulator"
+
+# GH runners ship /dev/kvm but the runner user may lack permissions — fix it.
+if [ -e /dev/kvm ]; then
+  sudo chmod 666 /dev/kvm 2>/dev/null || true
+fi
+
 echo "--- emulator accel-check"
 "$EMU" -accel-check 2>&1 | tee -a "$OUT/52-boot-emulator.log" || true
 
@@ -39,7 +45,7 @@ if [ "$BOOTED" = 1 ]; then
   echo "abi=$(adb shell getprop ro.product.cpu.abi | tr -d '\r')"
   echo "EMULATOR_BOOTED"
 else
-  echo "EMULATOR_BOOT_TIMEOUT"
+  echo "EMULATOR_BOOT_FAILED (process died or timed out)"
   tail -30 "$OUT/emulator.log"
   exit 1
 fi

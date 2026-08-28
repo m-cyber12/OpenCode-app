@@ -11,10 +11,17 @@ ADB() { adb "$@"; }
 
 echo "=== SPIKE CHAIN START $(date -u +%FT%TZ) ===" | tee "$LOG"
 
-# --- root adb ---
+# --- root adb + bounded device wait (never block forever) ---
 ADB root || true
-ADB wait-for-device
-sleep 3
+DEVICE_ONLINE=0
+for i in $(seq 1 30); do
+  if adb get-state 2>/dev/null | grep -q device; then DEVICE_ONLINE=1; echo "device online after ~$((i*3))s"; break; fi
+  sleep 3
+done
+if [ "$DEVICE_ONLINE" != 1 ]; then
+  echo "NO_DEVICE: emulator is not online — aborting device chain (see emulator.log)"
+  exit 1
+fi
 
 # --- 0. Android host facts ---
 {

@@ -65,10 +65,16 @@ cp /tmp/opencode/packages/opencode/dist/spike/*.wasm "$OUT/opencode/dist/node/"
 ls -la "$OUT/opencode/dist/node/"
 
 echo "=== [4/6] jsonc-parser + native-addon stubs ==="
-JSONC=$(find /tmp/opencode/node_modules/.bun -maxdepth 2 -type d -name jsonc-parser | head -1)
-if [ -z "$JSONC" ]; then JSONC=$(find /tmp/opencode/packages -maxdepth 3 -type d -name jsonc-parser | head -1); fi
-echo "jsonc-parser at: $JSONC"
-cp -r "$JSONC/." "$OUT/node_modules/jsonc-parser/"
+# jsonc-parser is external in the bundle; ship the package (from the npm registry,
+# same version the opencode lockfile uses). NOTE: do NOT try to locate it inside
+# the bun store with find — bun's store layout varies and a failed lookup previously
+# caused `cp -r /.` to copy the whole filesystem (the 2h hang in run #3).
+mkdir -p "$OUT/node_modules/jsonc-parser"
+curl -fsSL --max-time 120 -o /tmp/jsonc-parser.tgz "https://registry.npmjs.org/jsonc-parser/-/jsonc-parser-3.3.1.tgz" \
+  || { echo "FATAL: could not download jsonc-parser from registry.npmjs.org"; exit 1; }
+mkdir -p /tmp/jsonc-parser-x && tar xzf /tmp/jsonc-parser.tgz -C /tmp/jsonc-parser-x --strip-components=1
+cp -r /tmp/jsonc-parser-x/. "$OUT/node_modules/jsonc-parser/"
+ls "$OUT/node_modules/jsonc-parser/" | head -5
 cat > "$OUT/node_modules/@lydell/node-pty/package.json" <<'EOF'
 { "name": "@lydell/node-pty", "version": "0.0.0-stub", "main": "index.js", "type": "commonjs" }
 EOF
