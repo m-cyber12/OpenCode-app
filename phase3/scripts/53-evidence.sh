@@ -30,6 +30,9 @@ fi
 [ -f "$OUT/device-config.txt" ] && cp "$OUT/device-config.txt" "$EVID/device-config.txt"
 [ -f "$OUT/device-storage.txt" ] && cp "$OUT/device-storage.txt" "$EVID/device-storage.txt"
 [ -f "$OUT/server.log" ] && cp "$OUT/server.log" "$EVID/server.log"
+if [ -d "$OUT/device-server-log" ]; then
+  cp -r "$OUT/device-server-log" "$EVID/server-log/"
+fi
 
 # --- key scrubbing (defense in depth; keys should never have been logged) ---
 if grep -rl "sk-or-v1-" "$EVID" 2>/dev/null; then

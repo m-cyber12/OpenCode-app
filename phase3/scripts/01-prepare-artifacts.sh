@@ -246,6 +246,7 @@ build_git() {  # $1=label  $2=make-extra  $3=zlib-prefix
       CFLAGS="-O2 -I$zprefix/include" \
       LDFLAGS="-static -L$zprefix/lib" \
       ZLIB_PATH="$zprefix" \
+      NO_REGEX=NeedsStartEnd \
       NO_PERL=YesPlease NO_PYTHON=YesPlease NO_TCLTK=YesPlease NO_GETTEXT=YesPlease \
       NO_ICONV=YesPlease NO_CURL=YesPlease NO_OPENSSL=YesPlease NO_EXPAT=YesPlease \
       NO_LIBPCRE2=YesPlease NO_INSTALL_HARDLINKS=YesPlease all 2>&1 | tail -300 | tee -a "$GIT_STATUS" ) \

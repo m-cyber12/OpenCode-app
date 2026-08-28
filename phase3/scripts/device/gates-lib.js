@@ -139,7 +139,25 @@ export async function waitTurnComplete(sessionID, { timeoutMs = 240000, pollMs =
         const running = parts.some((p) => ["running", "queued", "pending"].includes(p.state?.status))
         const done = info.role === "assistant" && (info.time?.completed || !running)
         const failed = parts.some((p) => p.state?.status === "error" || p.state?.status === "failed")
-        if (done || failed) return { messages: msgs, failed }
+        if (done || failed) {
+          // diagnostic dump — shows exactly what the server stored for this
+          // turn (empty text parts, error parts, tool states, ...)
+          log("=== messages dump (turn done, failed=" + failed + ") ===")
+          log(JSON.stringify(msgs.map((m) => ({
+            role: m.info?.role ?? m.role,
+            parts: (m.parts ?? []).map((p) => ({
+              type: p.type,
+              state: p.state?.status,
+              text: (p.text ?? "").slice(0, 120),
+              tool: typeof p.tool === "string" ? p.tool : p.tool?.name,
+              callID: p.callID,
+              input: JSON.stringify(p.state?.input ?? p.input ?? null).slice(0, 200),
+              output: JSON.stringify(p.state?.output ?? p.state?.metadata?.output ?? null).slice(0, 200),
+              error: p.state?.error ?? p.error ?? null,
+            })),
+          }))).slice(0, 3000))
+          return { messages: msgs, failed }
+        }
       }
     }
     if (Date.now() > deadline) throw new Error("waitTurnComplete timeout")
@@ -193,7 +211,7 @@ export function makePermissionAutoReplier({ log } = {}) {
       const req = findPermissionRequest(data) ?? {}
       const id = req.id
       if (!id) { log?.("permission asked without id: " + JSON.stringify(data).slice(0, 200)); return }
-      log?.(`permission.asked id=${id} permission=${req.permission ?? "?"} patterns=${JSON.stringify(req.patterns ?? [])}`)
+      log?.(`permission.asked id=${id} session=${req.sessionID ?? "?"} permission=${req.permission ?? "?"} patterns=${JSON.stringify(req.patterns ?? [])}`)
       const r = await post(`/permission/${id}/reply`, { reply: "once" })
       if (!r.ok) log?.("permission reply failed: " + r.status + " " + r.text.slice(0, 200))
       else allowed.push({ id, permission: req.permission, patterns: req.patterns })

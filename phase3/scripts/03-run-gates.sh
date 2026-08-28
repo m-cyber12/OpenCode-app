@@ -101,6 +101,9 @@ rm -f "$KEYFILE_LOCAL"
   ADB shell "ls -la $GATES_DIR/data/opencode $GATES_DIR/config/opencode 2>/dev/null" | tee "$OUT/device-storage.txt"
   ADB shell "cat $GATES_DIR/config/opencode/opencode.jsonc 2>/dev/null" | tee "$OUT/device-config.txt"
   ADB shell "cat $GATES_DIR/out/GATES_SUMMARY.txt 2>/dev/null" | tee "$OUT/GATES_SUMMARY.device.txt"
+  # the OpenCode server log directory (model/provider errors land here)
+  rm -rf "$OUT/device-server-log"
+  ADB pull "$GATES_DIR/data/opencode/log" "$OUT/device-server-log" 2>&1 | tail -1 || true
 } 2>&1 | tee -a "$LOG"
 if [ ! -s "$OUT/GATES_SUMMARY.device.txt" ]; then
   log "FATAL: no GATES_SUMMARY from the device — the runner did not complete (see device/gates-runner.log)"

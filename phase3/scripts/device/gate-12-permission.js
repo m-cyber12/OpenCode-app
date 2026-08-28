@@ -24,7 +24,7 @@ const watch = sseWatch({
   onEvent: (type, data) => {
     if (type !== "permission.asked" && type !== "permission.v2.asked") return
     const req = findRequestId(data)
-    if (req) { asks.push(req); log("ASKED id=" + req.id + " permission=" + req.permission + " patterns=" + JSON.stringify(req.patterns)) }
+    if (req) { asks.push(req); log("ASKED id=" + req.id + " session=" + (req.sessionID ?? "?") + " permission=" + req.permission + " patterns=" + JSON.stringify(req.patterns)) }
     else log("ASKED (unparsed) " + JSON.stringify(data).slice(0, 300))
   },
 })
