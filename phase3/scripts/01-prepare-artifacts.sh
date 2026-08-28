@@ -15,6 +15,12 @@ mkdir -p "$OUT/node_modules/jsonc-parser" "$OUT/node_modules/@lydell/node-pty" "
          "$OUT/opencode/dist/node" "$OUT/mcp" "$OUT/bin"
 export PATH="$HOME/.bun/bin:$PATH"
 
+# self-log everything (CI run #2 lesson: when prep aborts, its partial logs
+# must still reach the evidence — the orchestrator tees stdout, but separate
+# files like git.status only survive if we duplicate output here).
+: > "$OUT/prep.log"
+exec > >(tee -a "$OUT/prep.log") 2>&1
+
 # Sandbox dry-run fallback: GATES_PREP_ALLOW_FALLBACK=1 lets steps that need
 # github.com release assets substitute a host binary and mark it in
 # $OUT/bin/ARTIFACT_SOURCE.txt. CI never sets this — download failures there
@@ -181,8 +187,12 @@ else
   echo "FATAL: ripgrep x86_64 download failed" | tee -a "$OUT/bin/ARTIFACT_SOURCE.txt"; exit 1
 fi
 chmod +x "$OUT/bin/rg"
-if fetch_tar "https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-aarch64-unknown-linux-musl.tar.gz" /tmp/rg-arm64.tar.gz ripgrep-15.1.0-aarch64-unknown-linux-musl; then
-  cp /tmp/ripgrep-15.1.0-aarch64-unknown-linux-musl/rg "$OUT/bin/rg-arm64"
+# NOTE: ripgrep 15.1.0 publishes aarch64-unknown-linux-GNU only (verified via
+# the GitHub release API; the -musl name 404s — CI run #2). glibc static is
+# inventory-only: it does NOT run on Android (bionic), so it is never pushed.
+if fetch_tar "https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-aarch64-unknown-linux-gnu.tar.gz" /tmp/rg-arm64.tar.gz ripgrep-15.1.0-aarch64-unknown-linux-gnu; then
+  cp /tmp/ripgrep-15.1.0-aarch64-unknown-linux-gnu/rg "$OUT/bin/rg-arm64"
+  echo "NOTE: rg-arm64 is glibc static (inventory only; NOT Android-runnable)" | tee -a "$OUT/bin/ARTIFACT_SOURCE.txt"
 elif allow_fallback; then
   echo "FALLBACK: rg-arm64 omitted (no host substitute; aarch64 inventory not built in this sandbox)" | tee -a "$OUT/bin/ARTIFACT_SOURCE.txt"
 else
@@ -221,11 +231,14 @@ build_git() {  # $1=label  $2=make-extra  $3=zlib-prefix
   cc="$(echo "$extra" | grep -o 'CC=[^ ]*' | cut -d= -f2 || true)"
   [ -z "$cc" ] && cc="musl-gcc"
   echo "--- building static git ($label, CC=$cc) ---" | tee -a "$GIT_STATUS"
+  # build output goes to git.status AND stdout (so it reaches prep.log and the
+  # orchestrator's 00-run-gates.log for evidence even when prep aborts)
   ( cd /tmp/git-src && make clean >/dev/null 2>&1 || true
     if [ -n "$zprefix" ]; then
       ( cd /tmp/zlib && make clean >/dev/null 2>&1 || true
         CC="$cc" ./configure --static --prefix="$zprefix" >/dev/null \
-          && make -j4 >/dev/null && make install >/dev/null ) \
+          && make -j4 2>&1 | tail -100 | tee -a "$GIT_STATUS" >/dev/null \
+          && make install >/dev/null 2>&1 | tail -20 | tee -a "$GIT_STATUS" >/dev/null ) \
         || { echo "zlib build FAILED for $label" | tee -a "$GIT_STATUS"; return 1; }
     fi
     timeout 900 make -j4 \
@@ -235,7 +248,7 @@ build_git() {  # $1=label  $2=make-extra  $3=zlib-prefix
       ZLIB_PATH="$zprefix" \
       NO_PERL=YesPlease NO_PYTHON=YesPlease NO_TCLTK=YesPlease NO_GETTEXT=YesPlease \
       NO_ICONV=YesPlease NO_CURL=YesPlease NO_OPENSSL=YesPlease NO_EXPAT=YesPlease \
-      NO_LIBPCRE2=YesPlease NO_INSTALL_HARDLINKS=YesPlease all >/dev/null 2>>"$GIT_STATUS" ) \
+      NO_LIBPCRE2=YesPlease NO_INSTALL_HARDLINKS=YesPlease all 2>&1 | tail -300 | tee -a "$GIT_STATUS" ) \
     || { echo "git build FAILED for $label (see git.status)" | tee -a "$GIT_STATUS"; return 1; }
   cp /tmp/git-src/git "$OUT/bin/$label-git"
   chmod +x "$OUT/bin/$label-git"
@@ -243,14 +256,23 @@ build_git() {  # $1=label  $2=make-extra  $3=zlib-prefix
   echo "$label build OK: $(file "$OUT/bin/$label-git" | cut -d: -f2)" | tee -a "$GIT_STATUS"
 }
 
-# x86_64 (emulator target) — musl-gcc if available, else gcc -static.
-# CI run #1 lesson: the x86_64 build is REQUIRED for G2/G9; a failure here must
-# abort prep (the final [ -x ] check below makes it fatal — no `|| true`).
+# x86_64 (emulator target) — try musl (best for Android: fully static, no
+# NSS/dlopen), then fall back to gcc -static (glibc). CI run #2 lesson: the
+# musl-gcc build failed on the runner; the gcc fallback (verified locally,
+# git 2.48.1 static) keeps G2/G9 unblocked. Fatal only if BOTH fail (checked
+# by the [ -x ] test below).
 if command -v musl-gcc >/dev/null 2>&1; then
-  build_git "x86_64" "CC=musl-gcc" "/tmp/zlib-x86_64"
+  if build_git "x86_64" "CC=musl-gcc" "/tmp/zlib-x86_64"; then
+    echo "x86_64 toolchain: musl" | tee -a "$GIT_STATUS"
+  else
+    echo "x86_64 musl build FAILED — falling back to gcc -static (glibc)" | tee -a "$GIT_STATUS"
+    build_git "x86_64" "CC=gcc" "/tmp/zlib-x86_64" || true
+    echo "x86_64 toolchain: gcc-static (glibc)" | tee -a "$GIT_STATUS"
+  fi
 else
   echo "musl-gcc not available; using gcc -static (glibc) for x86_64" | tee -a "$GIT_STATUS"
-  build_git "x86_64" "CC=gcc" "/tmp/zlib-x86_64"
+  build_git "x86_64" "CC=gcc" "/tmp/zlib-x86_64" || true
+  echo "x86_64 toolchain: gcc-static (glibc)" | tee -a "$GIT_STATUS"
 fi
 
 # aarch64 (product target inventory) — musl.cc cross toolchain, else glibc cross

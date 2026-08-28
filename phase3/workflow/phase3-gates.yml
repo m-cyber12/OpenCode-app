@@ -54,6 +54,8 @@ jobs:
           mkdir -p docs/progress/phase3-evidence
           cp -r phase3/out/evidence/. docs/progress/phase3-evidence/ 2>/dev/null || true
           cp phase3/out/00-run-gates.log docs/progress/phase3-evidence/ 2>/dev/null || true
+          cp phase3/out/prep.log docs/progress/phase3-evidence/ 2>/dev/null || true
+          cp phase3/out/git.status docs/progress/phase3-evidence/ 2>/dev/null || true
           git add -A docs/progress/phase3-evidence/ || true
           if git diff --cached --quiet; then
             echo "no evidence changes; skipping commit"
@@ -73,6 +75,8 @@ jobs:
           path: |
             phase3/out/evidence/
             phase3/out/emulator.log
+            phase3/out/prep.log
+            phase3/out/git.status
             docs/progress/phase3-evidence/
           if-no-files-found: ignore
 
