@@ -1,14 +1,14 @@
-# PHASE 3 — RUNTIME GATES (G1–G15) on a real Android emulator.
+# PHASE 3 - RUNTIME GATES (G1-G15) on a real Android emulator.
 #
 # HOW TO INSTALL (needed once): copy this file to `.github/workflows/phase3-gates.yml`
 # on the `arena/01a049f8-opencode-app` branch (the session bot token cannot push
-# workflow files — verified 2026-08-29). After that, every push to the branch
+# workflow files - verified 2026-08-29). After that, every push to the branch
 # runs the full gate suite and commits evidence to docs/progress/phase3-evidence/.
 #
 # Model credentials: add a repo secret named OPENROUTER_API_KEY
-# (Settings → Secrets and variables → Actions). Without it, model-driven gates
+# (Settings -> Secrets and variables -> Actions). Without it, model-driven gates
 # (G12, G15, and the model parts of G7/G8/G10/G11) are reported BLOCKED with
-# root cause "no model credentials" — everything else still runs.
+# root cause "no model credentials" - everything else still runs.
 # The model id is overridable via the OPENROUTER_MODEL variable/secret below.
 name: phase3-gates
 
@@ -34,7 +34,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Fix /dev/kvm permissions (Phase 2 lesson: never assume KVM just works)
+      - name: "Fix /dev/kvm permissions (Phase 2 lesson: never assume KVM just works)"
         run: |
           if [ -e /dev/kvm ]; then
             sudo chmod 666 /dev/kvm || true
@@ -43,7 +43,7 @@ jobs:
             echo "KVM_MISSING (emulator will be slow/unusable; gates will fail loudly)"
           fi
 
-      - name: Run the Phase 3 gate suite (probe → SDK → AVD → boot → artifacts → gates → evidence)
+      - name: "Run the Phase 3 gate suite (probe -> SDK -> AVD -> boot -> artifacts -> gates -> evidence)"
         run: |
           bash phase3/scripts/00-run-gates.sh
         shell: bash
