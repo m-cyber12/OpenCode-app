@@ -18,12 +18,12 @@ runtime:
   host_bun: 1.3.14              # @oven/bun-linux-x64 (build host)
 
 tools:
-  ripgrep: 15.1.0               # static musl; x86_64-unknown-linux-musl (emulator) + aarch64-unknown-linux-musl (inventory)
+  ripgrep: 15.1.0               # x86_64-unknown-linux-musl (emulator, runs); aarch64 release is glibc-static only (inventory, NOT Android-runnable)
   git:
     version: v2.48.1            # upstream tag; source commit recorded in git.upstream.commit.txt
     x86_64: static musl (musl-gcc, built from source on the runner)
     arm64: static musl (musl.cc aarch64 cross toolchain; fallback: gcc-aarch64-linux-gnu static glibc)
-    note: "Phase 2 blocker fixed: build via make directly with NO_PERL=YesPlease (git's configure demands perl)"
+    note: "Phase 2 blocker fixed: build via make directly with NO_PERL=YesPlease (git's configure demands perl) + NO_REGEX=NeedsStartEnd for musl (REG_STARTEND); x86_64 musl-static verified on emulator, aarch64 glibc-static built as inventory"
   zlib: v1.3.1                  # built from source per toolchain for static linking
   shell: /system/bin/sh         # Android's own mksh (MIRBSD KSH R59) — real shell, no bundling needed
 

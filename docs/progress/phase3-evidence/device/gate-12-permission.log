@@ -1,18 +1,18 @@
-[2026-08-28T23:36:35Z] === G12: permissions/tool approval ===
+[2026-08-28T23:49:44Z] === G12: permissions/tool approval ===
 assert ok: session id present
 prompt_async accepted (204)
-ASKED id=per_04abb9af4001S7qj0F0u2zDOfq session=ses_fb544880affedON9q9JcJDrUZF permission=bash patterns=["echo G12_PERM_OK"]
-reply per_04abb9af4001S7qj0F0u2zDOfq HTTP 200 true
+ASKED id=per_04ac788e5001chYMfSk7Gq7b01 session=ses_fb5387cb3ffeoAshyK7S0xYj6D permission=bash patterns=["echo G12_PERM_OK"]
+reply per_04ac788e5001chYMfSk7Gq7b01 HTTP 200 true
 assert ok: permission request was asked and replied
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"Run the shell command: echo G12_PERM_OK and tell me what it printed.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to run a shell command and tell them what it printed. This is a simple task","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"bash","callID":"call-f76c96af-ec34-423d-8976-ef8124c1949e","input":"{\"command\":\"echo G12_PERM_OK\"}","output":"\"G12_PERM_OK\\n\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The command printed \"G12_PERM_OK\"","input":"null","output":"null","error":null},{"type":"text","text":"G12_PERM_OK","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"Run the shell command: echo G12_PERM_OK and tell me what it printed.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to run a simple shell command and tell them what it printed","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"bash","callID":"call-f11f67f6-8df4-42a9-be90-ad38c8b433f8","input":"{\"command\":\"echo G12_PERM_OK\"}","output":"\"G12_PERM_OK\\n\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The command printed \"G12_PERM_OK\"","input":"null","output":"null","error":null},{"type":"text","text":"It printed: `G12_PERM_OK`","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
 --- assistant text ---
 
-G12_PERM_OK
+It printed: `G12_PERM_OK`
 --- bash tool outputs ---
 G12_PERM_OK
 
-asks seen: [{"id":"per_04abb9af4001S7qj0F0u2zDOfq","permission":"bash"}]
+asks seen: [{"id":"per_04ac788e5001chYMfSk7Gq7b01","permission":"bash"}]
 assert ok: agent turn did not fail
 assert ok: command output present after approval
 assert ok: permission.v2.asked event observed
