@@ -1,0 +1,21 @@
+[2026-08-28T22:32:55Z] MODEL_AVAILABLE=1 (key present, 73 chars)
+[2026-08-28T22:32:55Z] === GATES RUNNER START 2026-08-28T22:32:55Z ===
+[2026-08-28T22:32:55Z] uname: Linux localhost 6.1.23-android14-4-00257-g7e35917775b8-ab9964412 #1 SMP PREEMPT Mon Apr 17 20:50:58 UTC 2023 x86_64 Toybox
+[2026-08-28T22:32:55Z] release=14 sdk=34 abi=x86_64
+[2026-08-28T22:32:55Z] --- preparing project fixture ---
+config written: {   "$schema": "https://opencode.ai/config.json",   "shell": "/system/bin/sh",   "model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",   "mcp": {     "gates-mcp": {       "type": "local",     
+GATE_01: PASS execution-layer 
+GATE_02: FAIL userspace 
+GATE_03: PASS real-shell 
+GATE_04: PASS runtime 
+GATE_05: PASS opencode-start 
+GATE_06: PASS health-endpoint 
+GATE_07: PASS opencode-shell-exec 
+GATE_08: PASS file-read-write 
+GATE_09: FAIL real-git 
+GATE_10: FAIL mcp-stdio 
+GATE_11: FAIL streaming-sse 
+GATE_13: PASS stop-restart 
+GATE_14: FAIL reconnect 
+[2026-08-28T22:33:19Z] === GATES RUNNER END ===
+GATES_RUNNER_DONE

@@ -1,0 +1,24 @@
+[2026-08-28T22:33:03Z] === G7: OpenCode executes a shell command ===
+assert ok: session id present
+G7_SESSION_ID=ses_fb57eafc7ffe2aLvNwS0gaecEk
+G7_SESSION_ID=ses_fb57eafc7ffe2aLvNwS0gaecEk
+shell endpoint HTTP 200
+tool parts: 2
+  tool="bash" state.status=completed
+  tool="bash" state.status=completed
+--- tool outputs ---
+probe
+
+G7_SHELL_OK from=/data/local/tmp/gates/project uname=x86_64 shell=/system/bin/sh
+README.md
+notes.txt
+src
+
+assert ok: shell output contains G7_SHELL_OK
+assert ok: tool part completed
+SSE events seen: ["server.connected","message.part.updated","message.updated","session.status","session.idle"]
+bash tool part lifecycle (streamed): ["running","running","running","running","completed","completed"]
+assert ok: SSE message.part.updated events streamed
+assert ok: SSE session.status events streamed
+assert ok: bash tool part streamed running→completed
+G7_PASS

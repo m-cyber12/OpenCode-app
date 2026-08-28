@@ -1,0 +1,20 @@
+[2026-08-28T22:33:17Z] === G14: reconnect to the recovered session ===
+assert ok: session list ok
+sessions after restart: ["G12 permission","G11 model stream","G11 stream","G9 git via opencode","G8 agent write","G8 files","G7 shell exec"]
+assert ok: pre-restart session (G7 shell exec) still listed
+recovered session id: ses_fb57eafc7ffe2aLvNwS0gaecEk
+assert ok: session messages retrievable after restart
+assert ok: message history intact (4 messages)
+assert ok: shell output still in history
+G14_HISTORY_OK
+114 | }
+115 | 
+116 | // Send a prompt asynchronously (the agent loop starts server-side).
+117 | export async function promptAsync(sessionID, text) {
+118 |   const r = await post(`/session/${sessionID}/prompt_async`, { text })
+119 |   if (r.status !== 204 && !r.ok) throw new Error("prompt_async failed: " + r.status + " " + r.text.slice(0, 300))
+                                                 ^
+error: prompt_async failed: 400 {"name":"BadRequest","data":{"message":"Missing key\n  at [\"parts\"]","kind":"Payload"}}
+      at promptAsync (/data/local/tmp/gates/device/gates-lib.js:119:44)
+
+Bun v1.3.14 (Android x64)

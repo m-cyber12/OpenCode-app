@@ -1,0 +1,21 @@
+[2026-08-28T22:33:09Z] === G11: streaming/SSE ===
+assert ok: session id present
+shell HTTP 200
+events seen (17): {"server.connected":1,"message.updated":6,"message.part.updated":8,"session.status":1,"session.idle":1}
+assert ok: part update events streamed
+assert ok: message update events streamed
+assert ok: session.status events streamed
+assert ok: multiple events streamed (17)
+G11_SSE_OK
+assert ok: session id present
+114 | }
+115 | 
+116 | // Send a prompt asynchronously (the agent loop starts server-side).
+117 | export async function promptAsync(sessionID, text) {
+118 |   const r = await post(`/session/${sessionID}/prompt_async`, { text })
+119 |   if (r.status !== 204 && !r.ok) throw new Error("prompt_async failed: " + r.status + " " + r.text.slice(0, 300))
+                                                 ^
+error: prompt_async failed: 400 {"name":"BadRequest","data":{"message":"Missing key\n  at [\"parts\"]","kind":"Payload"}}
+      at promptAsync (/data/local/tmp/gates/device/gates-lib.js:119:44)
+
+Bun v1.3.14 (Android x64)
