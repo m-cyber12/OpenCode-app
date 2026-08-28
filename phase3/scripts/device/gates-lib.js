@@ -123,10 +123,34 @@ export async function promptAsync(sessionID, text) {
   log("prompt_async accepted (" + r.status + ")")
 }
 
-// Poll session messages until the last message is a completed assistant message
-// (no part still running). Returns the WithParts array [{info, parts}].
-export async function waitTurnComplete(sessionID, { timeoutMs = 240000, pollMs = 3000 } = {}) {
+// Poll session messages until the agent turn for this session is FINAL.
+// A turn is not over just because the last message is an assistant message:
+// reasoning/step-start parts carry no `state` field, and a tool-call message
+// is completed BEFORE the tool runs and the model produces the final text
+// (observed in CI runs #4/#5: every turn 'completed' instantly with empty
+// text, then G13's stop aborted the turns that were still genuinely running).
+// So: the last message must be a COMPLETED assistant message AND the message
+// list must stay stable across several consecutive polls.
+export async function waitTurnComplete(sessionID, { timeoutMs = 240000, pollMs = 3000, stablePolls = 3 } = {}) {
   const deadline = Date.now() + timeoutMs
+  let lastCount = -1
+  let stable = 0
+  const dump = (msgs, failed) => {
+    log("=== messages dump (turn done, failed=" + failed + ") ===")
+    log(JSON.stringify(msgs.map((m) => ({
+      role: m.info?.role ?? m.role,
+      parts: (m.parts ?? []).map((p) => ({
+        type: p.type,
+        state: p.state?.status,
+        text: (p.text ?? "").slice(0, 120),
+        tool: typeof p.tool === "string" ? p.tool : p.tool?.name,
+        callID: p.callID,
+        input: JSON.stringify(p.state?.input ?? p.input ?? null).slice(0, 200),
+        output: JSON.stringify(p.state?.output ?? p.state?.metadata?.output ?? null).slice(0, 200),
+        error: p.state?.error ?? p.error ?? null,
+      })),
+    }))).slice(0, 3000))
+  }
   for (;;) {
     const r = await get(`/session/${sessionID}/message`)
     if (r.ok) {
@@ -136,27 +160,20 @@ export async function waitTurnComplete(sessionID, { timeoutMs = 240000, pollMs =
         const last = msgs[msgs.length - 1]
         const info = last.info ?? last
         const parts = last.parts ?? []
-        const running = parts.some((p) => ["running", "queued", "pending"].includes(p.state?.status))
-        const done = info.role === "assistant" && (info.time?.completed || !running)
-        const failed = parts.some((p) => p.state?.status === "error" || p.state?.status === "failed")
-        if (done || failed) {
-          // diagnostic dump — shows exactly what the server stored for this
-          // turn (empty text parts, error parts, tool states, ...)
-          log("=== messages dump (turn done, failed=" + failed + ") ===")
-          log(JSON.stringify(msgs.map((m) => ({
-            role: m.info?.role ?? m.role,
-            parts: (m.parts ?? []).map((p) => ({
-              type: p.type,
-              state: p.state?.status,
-              text: (p.text ?? "").slice(0, 120),
-              tool: typeof p.tool === "string" ? p.tool : p.tool?.name,
-              callID: p.callID,
-              input: JSON.stringify(p.state?.input ?? p.input ?? null).slice(0, 200),
-              output: JSON.stringify(p.state?.output ?? p.state?.metadata?.output ?? null).slice(0, 200),
-              error: p.state?.error ?? p.error ?? null,
-            })),
-          }))).slice(0, 3000))
-          return { messages: msgs, failed }
+        const failed = parts.some((p) => p.state?.status === "error" || p.state?.status === "failed") || info.role === "error"
+        const completed = info.role === "assistant" && !!info.time?.completed
+        if (failed) { dump(msgs, true); return { messages: msgs, failed: true } }
+        if (completed) {
+          if (msgs.length === lastCount) {
+            stable++
+            if (stable >= stablePolls) { dump(msgs, false); return { messages: msgs, failed: false } }
+          } else {
+            lastCount = msgs.length
+            stable = 1
+          }
+        } else {
+          lastCount = msgs.length
+          stable = 0
         }
       }
     }
@@ -201,8 +218,10 @@ export function findPermissionRequest(value) {
 
 // Auto-reply to permission requests as they arrive: fires on every
 // `permission.asked` (legacy) / `permission.v2.asked` event and replies "once"
-// (records what it allowed).
-export function makePermissionAutoReplier({ log } = {}) {
+// (records what it allowed). With `sessionID` set, only asks belonging to that
+// session are replied to (CI run #5 lesson: gates run concurrently with
+// still-running turns from earlier sessions — G12 replied to G8's ask).
+export function makePermissionAutoReplier({ log, sessionID } = {}) {
   const allowed = []
   return {
     allowed,
@@ -211,6 +230,10 @@ export function makePermissionAutoReplier({ log } = {}) {
       const req = findPermissionRequest(data) ?? {}
       const id = req.id
       if (!id) { log?.("permission asked without id: " + JSON.stringify(data).slice(0, 200)); return }
+      if (sessionID && req.sessionID && req.sessionID !== sessionID) {
+        log?.(`permission.asked (ignored, other session) id=${id} session=${req.sessionID} permission=${req.permission ?? "?"}`)
+        return
+      }
       log?.(`permission.asked id=${id} session=${req.sessionID ?? "?"} permission=${req.permission ?? "?"} patterns=${JSON.stringify(req.patterns ?? [])}`)
       const r = await post(`/permission/${id}/reply`, { reply: "once" })
       if (!r.ok) log?.("permission reply failed: " + r.status + " " + r.text.slice(0, 200))

@@ -24,8 +24,14 @@ const watch = sseWatch({
   onEvent: (type, data) => {
     if (type !== "permission.asked" && type !== "permission.v2.asked") return
     const req = findRequestId(data)
-    if (req) { asks.push(req); log("ASKED id=" + req.id + " session=" + (req.sessionID ?? "?") + " permission=" + req.permission + " patterns=" + JSON.stringify(req.patterns)) }
-    else log("ASKED (unparsed) " + JSON.stringify(data).slice(0, 300))
+    if (!req) { log("ASKED (unparsed) " + JSON.stringify(data).slice(0, 300)); return }
+    // only asks belonging to THIS gate's session (CI run #5 lesson: G12's
+    // watch caught G8's still-running session's ask and replied to it)
+    if (req.sessionID && req.sessionID !== sid) {
+      log("ASKED (ignored, other session) id=" + req.id + " session=" + req.sessionID + " permission=" + req.permission)
+      return
+    }
+    asks.push(req); log("ASKED id=" + req.id + " session=" + (req.sessionID ?? "?") + " permission=" + req.permission + " patterns=" + JSON.stringify(req.patterns))
   },
 })
 

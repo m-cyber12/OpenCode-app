@@ -7,7 +7,7 @@ let ok = true
 const sid = await createSession("G15 e2e")
 
 const seen = []
-const auto = makePermissionAutoReplier({ log })
+const auto = makePermissionAutoReplier({ log, sessionID: sid })
 const watch = sseWatch({
   timeoutMs: 600000,
   onEvent: (t, d) => { seen.push(t); auto.handle(t, d) },
