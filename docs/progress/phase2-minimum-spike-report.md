@@ -29,7 +29,9 @@ Android native host (emulator, Android 14 / API 34 / x86_64, KVM-accelerated)
 
 This is **TESTED evidence** (honesty protocol): every link above actually
 executed on the emulator, with logs committed at
-`docs/progress/phase2-evidence/` (evidence commit `d161ccd`).
+`docs/progress/phase2-evidence/` (evidence commits `d161ccd` and `d7f434c`).
+The final evidence run (`d7f434c`, run 33160700480) reproduced the chain at
+the **exact pinned upstream commit `05ea5073`** (v1.18.23) — see §3.4.
 
 ---
 
@@ -168,14 +170,17 @@ DEVICE_CHAIN_DONE
 - The device chain ran as `adb root` (system-image emulator). A production app
   runs in the app sandbox with W^X constraints — Phase 3's job, not this spike's.
 
-### 3.4 Version pin drift (honesty note, Core Rule 7)
+### 3.4 Version pin drift (honesty note, Core Rule 7) — RESOLVED
 
 The first successful run built the bundle from `dev` **HEAD `755ebdb9` (v1.18.25)**,
 not the pinned `05ea5073` (v1.18.23): the artifact script cloned `dev` without
-checking out the pinned commit. The chain result is still real upstream code (one
-minor release newer) and remains valid evidence, but it does not match the pin.
+checking out the pinned commit. The chain result was still real upstream code (one
+minor release newer) and remains valid evidence, but it did not match the pin.
 **Fixed** in commit `0019d2d` (script now fetches and checks out the exact pinned
-commit and fails loudly if it cannot); `versions.lock` updated with the note.
+commit and fails loudly if it cannot), and **re-verified**: run 33160700480
+reproduced the full chain with `UPSTREAM_COMMIT.txt = 05ea5073be967c779d326929b2de6228dda4159d`
+(evidence commit `d7f434c`) — health/session/config/spawn all green again at the
+exact pin. `versions.lock` updated with the drift note.
 
 ---
 
@@ -216,8 +221,8 @@ Phase 3 gate agenda (from this phase's findings):
 | Static git bundled and runnable | **BLOCKED** (build failed on runner; not runtime-tested) |
 | PTY/terminal via node-pty/bun-pty on Android | **BLOCKED** (no Android builds; stubbed, documented degradation) |
 | W^X exec-restriction behavior in a real app sandbox | **NOT TESTED** (probe invalid under `adb root`; deferred to Phase 3) |
-| Bundle built at the pinned commit `05ea5073` | **IMPLEMENTED** (script fixed in `0019d2d`; re-run pending) |
-| First run bundle provenance (dev HEAD `755ebdb9`, v1.18.25) | **TESTED** (`UPSTREAM_COMMIT.txt`; drift documented in `versions.lock`) |
+| Bundle built at the pinned commit `05ea5073` and chain re-verified at the pin | **TESTED** (evidence `d7f434c`, `UPSTREAM_COMMIT.txt = 05ea5073…`) |
+| First run bundle provenance (dev HEAD `755ebdb9`, v1.18.25) | **TESTED** (evidence `d161ccd`; drift documented in `versions.lock`) |
 | This report + spike package + evidence | **IMPLEMENTED** |
 
 ---
