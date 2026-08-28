@@ -1,4 +1,4 @@
-[2026-08-28T23:10:24Z] === G10: MCP stdio ===
+[2026-08-28T23:21:06Z] === G10: MCP stdio ===
 mcp status attempt 0: {"status":"connected"}
 assert ok: OpenCode reports gates-mcp connected
 MCP_STATUS_OK {"gates-mcp":{"status":"connected"}}
@@ -9,6 +9,8 @@ assert ok: SDK client got the echo tool result
 assert ok: tools/list includes echo
 assert ok: session id present
 prompt_async accepted (204)
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"Use the MCP tool \"echo\" with the message G10_MCP_AGENT_OK and tell me what it returned.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[]}]
 --- assistant text ---
 
 assert ok: agent turn did not fail

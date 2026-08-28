@@ -1,14 +1,16 @@
-[2026-08-28T23:10:27Z] === G12: permissions/tool approval ===
+[2026-08-28T23:21:09Z] === G12: permissions/tool approval ===
 assert ok: session id present
 prompt_async accepted (204)
-ASKED id=per_04aa390770012YFwgr135txptS permission=edit patterns=["g8-agent.txt"]
-reply per_04aa390770012YFwgr135txptS HTTP 200 true
+ASKED id=per_04aad58f8001rd13UzxMMfGABT session=ses_fb552b425ffebjCYWBOz4xu6sq permission=edit patterns=["g8-agent.txt"]
+reply per_04aad58f8001rd13UzxMMfGABT HTTP 200 true
 assert ok: permission request was asked and replied
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"Run the shell command: echo G12_PERM_OK and tell me what it printed.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"","input":"null","output":"null","error":null}]}]
 --- assistant text ---
 
 --- bash tool outputs ---
 
-asks seen: [{"id":"per_04aa390770012YFwgr135txptS","permission":"edit"}]
+asks seen: [{"id":"per_04aad58f8001rd13UzxMMfGABT","permission":"edit"}]
 assert ok: agent turn did not fail
 ASSERT_FAILED: command output present after approval
 G12_FAIL

@@ -1,8 +1,10 @@
-[2026-08-28T23:10:19Z] === G7: OpenCode executes a shell command ===
+[2026-08-28T23:21:00Z] === G7: OpenCode executes a shell command ===
 assert ok: session id present
-G7_SESSION_ID=ses_fb55c925affeqai8H7ysOVIGPe
-G7_SESSION_ID=ses_fb55c925affeqai8H7ysOVIGPe
+G7_SESSION_ID=ses_fb552c8b1ffeRKra3QwOae9Rye
+G7_SESSION_ID=ses_fb552c8b1ffeRKra3QwOae9Rye
 shell endpoint HTTP 200
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M15ATERNVZYK7Z36WMW0EY24","input":"{\"command\":\"echo probe\"}","output":"\"probe\\n\"","error":null}]},{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M15ATEWAVM2K4XAXNQKT9XMR","input":"{\"command\":\"echo G7_SHELL_OK from=$(pwd) uname=$(uname -m) shell=$0 && ls -1 | head -3\"}","output":"\"G7_SHELL_OK from=/data/local/tmp/gates/project uname=x86_64 shell=/system/bin/sh\\nREADME.md\\nnotes.txt\\nsrc\\n\"","error":null}]}]
 tool parts: 2
   tool="bash" state.status=completed
   tool="bash" state.status=completed
@@ -16,7 +18,7 @@ src
 
 assert ok: shell output contains G7_SHELL_OK
 assert ok: tool part completed
-SSE events seen: ["server.connected","message.part.updated","message.updated","session.status","session.idle"]
+SSE events seen: ["server.connected","message.part.updated","models-dev.refreshed","message.updated","session.status","session.idle"]
 bash tool part lifecycle (streamed): ["running","running","running","running","completed","completed"]
 assert ok: SSE message.part.updated events streamed
 assert ok: SSE session.status events streamed

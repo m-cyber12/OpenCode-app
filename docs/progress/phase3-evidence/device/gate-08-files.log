@@ -1,4 +1,4 @@
-[2026-08-28T23:10:23Z] === G8: read/write project files ===
+[2026-08-28T23:21:05Z] === G8: read/write project files ===
 list HTTP 200
 assert ok: file list ok
 files: .git, src, README.md, notes.txt
@@ -14,12 +14,16 @@ rg matches: ["README.md"]
 assert ok: ripgrep found the marker
 assert ok: session id present
 shell write HTTP 200
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M15ATJXA1XMD997ZPSRZ6HAH","input":"{\"command\":\"printf 'G8_WRITE_OK\\\\n' > g8-write.txt && printf 'second line\\\\n' >> g8-write.txt\"}","output":"\"\"","error":null}]}]
 assert ok: written file readable
 g8-write.txt: G8_WRITE_OK | second line
 assert ok: file content written through OpenCode shell exec
 G8_WRITE_OK
 assert ok: session id present
 prompt_async accepted (204)
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"Write the file g8-agent.txt containing exactly the text G8_AGENT_WRITE_OK. Use the write tool.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[]}]
 permissions allowed: []
 assert ok: agent-written file readable
 g8-agent.txt: 

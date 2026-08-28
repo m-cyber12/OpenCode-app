@@ -1,13 +1,15 @@
-[2026-08-28T23:10:37Z] === G15: end-to-end project inspection ===
+[2026-08-28T23:21:15Z] === G15: end-to-end project inspection ===
 assert ok: session id present
 --- prompting the real agent ---
 prompt_async accepted (204)
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"Inspect this project and explain what it does.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null}]}]
 --- assistant reply (0 chars) ---
 
 --- tools used: [] ---
 --- tool outputs ---
 
---- events seen (1): {"server.connected":1}
+--- events seen (86): {"server.connected":1,"message.part.updated":10,"session.updated":8,"session.status":5,"message.updated":8,"session.diff":2,"plugin.added":45,"catalog.updated":2,"reference.updated":1,"integration.updated":1,"message.part.delta":3}
 --- tools streamed as events: []
 --- permissions allowed: []
 assert ok: agent turn did not fail
