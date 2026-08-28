@@ -36,9 +36,13 @@ fi
 } 2>&1 | tee -a "$LOG"
 
 # --- push artifacts ---
+# adb push semantics: pushing a local dir to a NON-existent remote path creates
+# that path and copies the CONTENTS into it (proven in Phase 2). If the remote
+# dir already exists, adb nests (remote/name) — so wipe the layout first.
 {
   echo "### PUSH ARTIFACTS"
-  ADB shell "mkdir -p $GATES_DIR/bin $GATES_DIR/project $GATES_DIR/mcp $GATES_DIR/opencode $GATES_DIR/node_modules"
+  ADB shell "rm -rf $GATES_DIR/opencode $GATES_DIR/node_modules $GATES_DIR/mcp $GATES_DIR/device $GATES_DIR/out $GATES_DIR/logs"
+  ADB shell "mkdir -p $GATES_DIR/bin $GATES_DIR/project"
   ADB push "$OUT/bin/bun" "$GATES_DIR/bin/bun" | tail -1
   ADB push "$OUT/bin/rg" "$GATES_DIR/bin/rg" | tail -1
   ADB push "$OUT/bin/git" "$GATES_DIR/bin/git" | tail -1
