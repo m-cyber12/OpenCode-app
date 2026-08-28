@@ -33,6 +33,10 @@ try {
 } catch (e) { log(e.message); ok = false }
 
 // ---- 2) direct SDK round-trip over stdio (real child process + JSON-RPC) ----
+// NOTE: spawn with a missing cwd fails with ENOENT at posix_spawn (observed in
+// CI run #1 when mcp/ had not been pushed) — create the cwd defensively.
+import { mkdirSync } from "node:fs"
+try { mkdirSync("/data/local/tmp/gates/mcp", { recursive: true }) } catch {}
 const out = await new Promise((resolve, reject) => {
   const child = spawn("/data/local/tmp/gates/bin/bun", ["/data/local/tmp/gates/mcp/mcp-roundtrip.js"], { cwd: "/data/local/tmp/gates/mcp" })
   let so = "", se = ""

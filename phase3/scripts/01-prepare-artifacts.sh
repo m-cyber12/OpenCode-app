@@ -156,7 +156,23 @@ module.exports = { spawn() { throw new Error("bun-pty unavailable on Android (st
 EOF
 
 echo "=== [5/7] ripgrep 15.1.0 (static musl; x86_64 for emulator + aarch64 inventory) ==="
-if curl -sL --max-time 180 -o /tmp/rg-x64.tar.gz "https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz" && tar xzf /tmp/rg-x64.tar.gz -C /tmp; then
+# CI run #1 lesson: a single transient download failure aborted prep here and the
+# gates then ran against missing artifacts. Retry downloads (3x), keep the
+# emulator-required x86_64 rg FATAL, and treat aarch64 (inventory-only) as a
+# warning after retries.
+fetch_tar() {  # fetch_tar <url> <out.tgz> <expect-dir>
+  local url="$1" out="$2" dir="$3"
+  for attempt in 1 2 3; do
+    if curl -fsSL --retry 2 --max-time 240 -o "$out" "$url" && tar xzf "$out" -C /tmp 2>/dev/null && [ -d "/tmp/$dir" ]; then
+      return 0
+    fi
+    echo "download attempt $attempt failed: $url" | tee -a "$OUT/bin/ARTIFACT_SOURCE.txt"
+    rm -f "$out"
+    sleep 5
+  done
+  return 1
+}
+if fetch_tar "https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz" /tmp/rg-x64.tar.gz ripgrep-15.1.0-x86_64-unknown-linux-musl; then
   cp /tmp/ripgrep-15.1.0-x86_64-unknown-linux-musl/rg "$OUT/bin/rg"
 elif allow_fallback && [ -x /usr/bin/rg ]; then
   cp /usr/bin/rg "$OUT/bin/rg"
@@ -165,12 +181,12 @@ else
   echo "FATAL: ripgrep x86_64 download failed" | tee -a "$OUT/bin/ARTIFACT_SOURCE.txt"; exit 1
 fi
 chmod +x "$OUT/bin/rg"
-if curl -sL --max-time 180 -o /tmp/rg-arm64.tar.gz "https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-aarch64-unknown-linux-musl.tar.gz" && tar xzf /tmp/rg-arm64.tar.gz -C /tmp; then
+if fetch_tar "https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/ripgrep-15.1.0-aarch64-unknown-linux-musl.tar.gz" /tmp/rg-arm64.tar.gz ripgrep-15.1.0-aarch64-unknown-linux-musl; then
   cp /tmp/ripgrep-15.1.0-aarch64-unknown-linux-musl/rg "$OUT/bin/rg-arm64"
 elif allow_fallback; then
   echo "FALLBACK: rg-arm64 omitted (no host substitute; aarch64 inventory not built in this sandbox)" | tee -a "$OUT/bin/ARTIFACT_SOURCE.txt"
 else
-  echo "FATAL: ripgrep aarch64 download failed" | tee -a "$OUT/bin/ARTIFACT_SOURCE.txt"; exit 1
+  echo "WARNING: ripgrep aarch64 download failed after 3 attempts — aarch64 product inventory omitted (does not affect emulator gates)" | tee -a "$OUT/bin/ARTIFACT_SOURCE.txt"
 fi
 chmod +x "$OUT/bin/rg-arm64" 2>/dev/null || true
 if [ -f "$OUT/bin/rg-arm64" ]; then
@@ -227,12 +243,14 @@ build_git() {  # $1=label  $2=make-extra  $3=zlib-prefix
   echo "$label build OK: $(file "$OUT/bin/$label-git" | cut -d: -f2)" | tee -a "$GIT_STATUS"
 }
 
-# x86_64 (emulator target) — musl-gcc if available, else gcc -static
+# x86_64 (emulator target) — musl-gcc if available, else gcc -static.
+# CI run #1 lesson: the x86_64 build is REQUIRED for G2/G9; a failure here must
+# abort prep (the final [ -x ] check below makes it fatal — no `|| true`).
 if command -v musl-gcc >/dev/null 2>&1; then
-  build_git "x86_64" "CC=musl-gcc" "/tmp/zlib-x86_64" || true
+  build_git "x86_64" "CC=musl-gcc" "/tmp/zlib-x86_64"
 else
   echo "musl-gcc not available; using gcc -static (glibc) for x86_64" | tee -a "$GIT_STATUS"
-  build_git "x86_64" "CC=gcc" "/tmp/zlib-x86_64" || true
+  build_git "x86_64" "CC=gcc" "/tmp/zlib-x86_64"
 fi
 
 # aarch64 (product target inventory) — musl.cc cross toolchain, else glibc cross
@@ -259,6 +277,8 @@ if [ -x "$OUT/bin/x86_64-git" ]; then
   cp "$OUT/bin/x86_64-git" "$OUT/bin/git"
 else
   echo "GIT_X86_64_BUILD_FAILED" | tee -a "$GIT_STATUS"
+  echo "FATAL: x86_64 static git is required for G2/G9 on the emulator" | tee -a "$GIT_STATUS"
+  exit 1
 fi
 
 echo "=== [7/7] MCP SDK $MCP_SDK_PIN + test server (real @modelcontextprotocol/sdk, stdio) ==="
@@ -275,7 +295,11 @@ cat > "$OUT/mcp/package.json" <<EOF
   }
 }
 EOF
-(cd "$OUT/mcp" && bun install 2>&1 | tail -3)
+if ! (cd "$OUT/mcp" && bun install 2>&1 | tail -3); then
+  echo "FATAL: MCP SDK install failed — G10 requires the real @modelcontextprotocol/sdk on device" | tee -a "$OUT/mcp/install.status"
+  exit 1
+fi
+[ -d "$OUT/mcp/node_modules/@modelcontextprotocol/sdk" ] || { echo "FATAL: MCP SDK node_modules missing after install" | tee -a "$OUT/mcp/install.status"; exit 1; }
 (cd "$OUT/mcp" && bun pm ls 2>/dev/null | head -20 > "$OUT/mcp/deps.txt" || true)
 echo "MCP node_modules size: $(du -sh "$OUT/mcp/node_modules" 2>/dev/null | cut -f1)"
 

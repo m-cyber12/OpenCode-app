@@ -16,6 +16,8 @@ for f in "$OUT"/*.log; do [ -f "$f" ] && cp "$f" "$EVID/"; done
 [ -f "$OUT/git.upstream.commit.txt" ] && cp "$OUT/git.upstream.commit.txt" "$EVID/"
 [ -f "$OUT/models-dev.json" ] && cp "$OUT/models-dev.json" "$EVID/models-dev.snapshot.json"
 [ -f "$OUT/mcp/deps.txt" ] && cp "$OUT/mcp/deps.txt" "$EVID/mcp-deps.txt"
+[ -f "$OUT/bin/ARTIFACT_SOURCE.txt" ] && cp "$OUT/bin/ARTIFACT_SOURCE.txt" "$EVID/ARTIFACT_SOURCE.txt"
+[ -f "$OUT/mcp/install.status" ] && cp "$OUT/mcp/install.status" "$EVID/mcp-install.status"
 [ -f "$DIR/../versions.lock" ] && cp "$DIR/../versions.lock" "$EVID/versions.lock"
 cp "$DIR/versions.gates.lock" "$EVID/versions.gates.lock" 2>/dev/null || true
 

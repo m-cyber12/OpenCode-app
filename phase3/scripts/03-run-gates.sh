@@ -42,7 +42,7 @@ fi
 {
   echo "### PUSH ARTIFACTS"
   ADB shell "rm -rf $GATES_DIR/opencode $GATES_DIR/node_modules $GATES_DIR/mcp $GATES_DIR/device $GATES_DIR/out $GATES_DIR/logs"
-  ADB shell "mkdir -p $GATES_DIR/bin $GATES_DIR/project"
+  ADB shell "mkdir -p $GATES_DIR/bin $GATES_DIR/project $GATES_DIR/mcp"
   ADB push "$OUT/bin/bun" "$GATES_DIR/bin/bun" | tail -1
   ADB push "$OUT/bin/rg" "$GATES_DIR/bin/rg" | tail -1
   ADB push "$OUT/bin/git" "$GATES_DIR/bin/git" | tail -1
@@ -52,6 +52,18 @@ fi
   ADB push "$OUT/mcp" "$GATES_DIR/mcp" | tail -1
   ADB shell "chmod 755 $GATES_DIR/bin/bun $GATES_DIR/bin/rg $GATES_DIR/bin/git && echo PUSHED"
 } 2>&1 | tee -a "$LOG"
+
+# --- verify the device layout BEFORE running gates (CI run #1 lesson: prep died
+#     after rg, git/mcp were never pushed, and the gates ran against missing
+#     artifacts, producing 7 misleading FAILs). Fail fast and loudly instead. ---
+{
+  echo "### VERIFY DEVICE LAYOUT"
+  ADB shell "for f in $GATES_DIR/bin/bun $GATES_DIR/bin/rg $GATES_DIR/bin/git $GATES_DIR/opencode/dist/node/node.js $GATES_DIR/mcp/mcp-server.js $GATES_DIR/mcp/node_modules/@modelcontextprotocol/sdk/package.json; do [ -f \$f ] || echo MISSING: \$f; done; echo LAYOUT_CHECK_DONE"
+} 2>&1 | tee -a "$LOG"
+if ADB shell "for f in $GATES_DIR/bin/bun $GATES_DIR/bin/rg $GATES_DIR/bin/git $GATES_DIR/opencode/dist/node/node.js $GATES_DIR/mcp/mcp-server.js; do [ -f \$f ] || echo MISSING: \$f; done" 2>/dev/null | grep -q MISSING; then
+  log "FATAL: device artifact layout incomplete — see VERIFY DEVICE LAYOUT above"
+  exit 1
+fi
 
 # --- pass the model key (if any) without putting it on any command line ---
 # The key is written to a 600-perm file on the device; the server reads it there.
@@ -70,8 +82,11 @@ ADB push "$KEYFILE_LOCAL" "$GATES_DIR/.model" | tail -1
 rm -f "$KEYFILE_LOCAL"
 
 # --- run the gates on device ---
+# NOTE: gates-runner.sh execs its own stdout to $GATES_DIR/out/gates-runner.log
+# on the device (full transcript is pulled back below), so the host-side tee
+# stays empty by design. The GATES_SUMMARY.txt on device is the result signal.
 {
-  echo "### RUN GATES (see gates-runner.device.log for the raw device transcript)"
+  echo "### RUN GATES (device transcript: device/gates-runner.log)"
   ADB shell "sh $GATES_DIR/device/gates-runner.sh" | tee "$OUT/gates-runner.device.log"
 } 2>&1 | tee -a "$LOG"
 
@@ -84,5 +99,9 @@ rm -f "$KEYFILE_LOCAL"
   ADB shell "cat $GATES_DIR/config/opencode/opencode.jsonc 2>/dev/null" | tee "$OUT/device-config.txt"
   ADB shell "cat $GATES_DIR/out/GATES_SUMMARY.txt 2>/dev/null" | tee "$OUT/GATES_SUMMARY.device.txt"
 } 2>&1 | tee -a "$LOG"
+if [ ! -s "$OUT/GATES_SUMMARY.device.txt" ]; then
+  log "FATAL: no GATES_SUMMARY from the device — the runner did not complete (see device/gates-runner.log)"
+  exit 1
+fi
 
 echo "=== GATES RUN END $(date -u +%FT%TZ) ===" | tee -a "$LOG"

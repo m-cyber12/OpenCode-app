@@ -114,8 +114,11 @@ export async function createSession(title) {
 }
 
 // Send a prompt asynchronously (the agent loop starts server-side).
+// Payload verified against the pinned upstream (05ea5073): PromptInput is
+// { parts: TextPartInput[] } — a bare { text } body is rejected with
+// 'Missing key at ["parts"]' (observed on the emulator, CI run #1).
 export async function promptAsync(sessionID, text) {
-  const r = await post(`/session/${sessionID}/prompt_async`, { text })
+  const r = await post(`/session/${sessionID}/prompt_async`, { parts: [{ type: "text", text }] })
   if (r.status !== 204 && !r.ok) throw new Error("prompt_async failed: " + r.status + " " + r.text.slice(0, 300))
   log("prompt_async accepted (" + r.status + ")")
 }

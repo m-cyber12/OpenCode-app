@@ -10,7 +10,18 @@ mkdir -p "$OUT"
 MAINLOG="$OUT/00-run-gates.log"
 : > "$MAINLOG"
 step() { echo; echo "########## $1 ##########"; echo "########## $1 ##########" >> "$MAINLOG"; }
-run() { timeout 1500 "$@" 2>&1 | tee -a "$MAINLOG"; }   # per-phase cap; failures still logged
+# run_c: run a CRITICAL step; its failure must stop the pipeline (CI run #1
+# lesson: prep died at step 5/7 but the gates still ran against missing
+# artifacts, producing 7 misleading FAILs). The pipe to tee must not swallow
+# the exit code.
+run_c() {
+  timeout 1500 "$@" 2>&1 | tee -a "$MAINLOG"
+  local rc=${PIPESTATUS[0]}
+  if [ "$rc" -ne 0 ]; then
+    echo "STEP_FAILED rc=$rc: $*" | tee -a "$MAINLOG"
+    exit 1
+  fi
+}
 
 echo "=== RUN-GATES START $(date -u +%FT%TZ) ===" | tee -a "$MAINLOG"
 echo "OPENROUTER_MODEL=${OPENROUTER_MODEL:-<unset>}" | tee -a "$MAINLOG"
@@ -43,7 +54,7 @@ echo "preinstalled emulator=$HAS_EMU system-images=$HAS_IMG"
 
 if [ "$HAS_EMU" = 0 ] || [ "$HAS_IMG" = 0 ]; then
   echo "Preinstalled SDK incomplete — installing fresh (fallback path)."
-  run bash "$DIR/scripts/50-install-sdk.sh"
+  run_c bash "$DIR/scripts/50-install-sdk.sh"
 else
   echo "Using preinstalled Android SDK."
 fi
@@ -84,25 +95,25 @@ if [ -n "$AVDM" ]; then
   fi
 fi
 if [ "$AVD_OK" = 0 ]; then
-  run bash "$DIR/scripts/51-manual-avd.sh" "$API" "$TAG" "$ABI"
+  run_c bash "$DIR/scripts/51-manual-avd.sh" "$API" "$TAG" "$ABI"
 fi
 run ls -la "$ANDROID_AVD_HOME"
 run cat "$ANDROID_AVD_HOME/gates.avd/config.ini"
 
 # ---------------------------------------------------------------------------
 step "4/8 boot emulator"
-run bash "$DIR/scripts/02-boot-emulator.sh"
+run_c bash "$DIR/scripts/02-boot-emulator.sh"
 
 # ---------------------------------------------------------------------------
 step "5/8 prepare gate artifacts (bundle, runtime, tools, static git, MCP)"
-run bash "$DIR/scripts/01-prepare-artifacts.sh"
+run_c bash "$DIR/scripts/01-prepare-artifacts.sh"
 
 # ---------------------------------------------------------------------------
 step "6/8 run the gates on the emulator"
-run bash "$DIR/scripts/03-run-gates.sh"
+run_c bash "$DIR/scripts/03-run-gates.sh"
 
 step "7/8 evidence bundle"
-run bash "$DIR/scripts/53-evidence.sh"
+run_c bash "$DIR/scripts/53-evidence.sh"
 
 step "8/8 gate summary + result"
 if [ -f "$OUT/evidence/GATES_SUMMARY.txt" ]; then
