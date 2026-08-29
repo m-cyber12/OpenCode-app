@@ -12,6 +12,7 @@
 #   * commit evidence even on failure (workflow if: always()).
 set -uo pipefail
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
+REPO="$(cd "$DIR/.." && pwd)"
 OUT="$DIR/out"
 EV="$OUT/evidence"
 mkdir -p "$OUT" "$EV"
@@ -73,8 +74,8 @@ ls -la "$DIR/out/engine/jniLibs/x86_64" "$DIR/out/engine/assets" 2>&1 | tee -a "
 
 step "6/9 build the APK + run JVM unit tests"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"
-run_c 1200 "'$DIR/gradlew' -p '$DIR' :app:assembleDebug :app:testDebugUnitTest --no-daemon --stacktrace"
-APK="$(ls "$DIR/app/build/outputs/apk/debug/"*.apk | head -1)"
+run_c 1800 "'$REPO/gradlew' -p '$REPO' :app:assembleDebug :app:testDebugUnitTest --no-daemon --stacktrace"
+APK="$(ls "$REPO/app/build/outputs/apk/debug/"*.apk | head -1)"
 [ -f "$APK" ] || { echo "FATAL: APK not produced"; exit 1; }
 echo "APK: $APK ($(stat -c%s "$APK") bytes)" | tee -a "$MAINLOG"
 
@@ -95,7 +96,7 @@ cp "$MAINLOG" "$EV/00-run-phase4.log" 2>/dev/null || true
 cp "$OUT/emulator.log" "$EV/" 2>/dev/null || true
 cp "$DIR/out/engine/assets/runtime-manifest.json" "$EV/" 2>/dev/null || true
 cp "$DIR/out/engine/build.status" "$EV/payload-build.status" 2>/dev/null || true
-"$DIR/gradlew" -p "$DIR" :app:dependencies --configuration debugRuntimeClasspath --no-daemon > "$EV/app-dependencies.txt" 2>&1 || true
+"$REPO/gradlew" -p "$REPO" :app:dependencies --configuration debugRuntimeClasspath --no-daemon > "$EV/app-dependencies.txt" 2>&1 || true
 
 echo "=== PHASE 4 END $(date -u +%FT%TZ) gates_rc=$GATE_RC ===" | tee -a "$MAINLOG"
 cat "$EV/GATES_SUMMARY.txt" 2>/dev/null | tee -a "$MAINLOG"

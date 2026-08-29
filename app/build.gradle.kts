@@ -14,6 +14,7 @@
 // phase4/scripts/10-build-payload.sh on a networked runner; it is gitignored.
 // The preBuild task fails fast with an actionable message if it is missing.
 import org.gradle.api.GradleException
+import java.io.File
 
 plugins {
     id("com.android.application")
@@ -114,13 +115,28 @@ tasks.register("verifyRuntimePayload") {
                     "into phase4/out/engine/."
             )
         }
-        val abis = listOf("arm64-v8a", "x86_64")
         val libs = listOf("libbun.so", "libgit.so", "librg.so")
-        for (abi in abis) for (lib in libs) {
-            val f = jni.dir(abi).file(lib).asFile
-            if (!f.isFile) throw GradleException("Runtime payload incomplete: missing $f")
+        val abis = listOf("arm64-v8a", "x86_64")
+        // Require all three executables for every ABI that is actually being
+        // packaged; require at least one complete ABI (CI emulator builds x86_64
+        // only; release builds pass both). This fails loud on a partial ABI.
+        var completeAbis = 0
+        for (abi in abis) {
+            val abiDir = jni.dir(abi).asFile
+            val present = libs.map { File(abiDir, it) }
+            val have = present.count { it.isFile }
+            if (have == 0) {
+                println("Runtime payload note: ABI $abi not built (skipped; pass it to 10-build-payload.sh).")
+                continue
+            }
+            if (have != libs.size) {
+                val missing = present.filterNot { it.isFile }
+                throw GradleException("Runtime payload incomplete for ABI $abi: missing ${missing.map { it.name }}")
+            }
+            completeAbis++
         }
-        println("Runtime payload OK: ${mf.path} present, all ${abis.size}x${libs.size} JNI libs found.")
+        if (completeAbis == 0) throw GradleException("Runtime payload incomplete: no JNI exec libs found under ${jni.asFile}")
+        println("Runtime payload OK: $completeAbis complete ABI(s), manifest present.")
     }
 }
 
