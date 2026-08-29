@@ -1,4 +1,4 @@
-=== PHASE 4 START 2026-08-29T21:41:41Z ===
+=== PHASE 4 START 2026-08-29T21:50:07Z ===
 ########## 1/9 environment probe ##########
 Linux runnervmgx7h7 6.17.0-1022-azure #22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
 4
@@ -17,7 +17,7 @@ packages-list.txt
 platform-tools
 platforms
 --- downloading cmdline-tools
--rw-r--r-- 1 runner runner 153607504 Aug 29 21:41 cmdtools.zip
+-rw-r--r-- 1 runner runner 153607504 Aug 29 21:50 cmdtools.zip
 /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
 /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
 --- sdkmanager licenses
@@ -41,7 +41,7 @@ accel:
 KVM (version 12) is installed and usable.
 accel
 --- starting emulator (headless)
-emulator pid=2538
+emulator pid=2468
 * daemon not running; starting now at tcp:5037
 * daemon started successfully
 BOOT_COMPLETED after ~48s
@@ -59,7 +59,5 @@ EMULATOR_BOOTED
 === [2/6] Bun-for-Android (bionic) per ABI ===
 bun x64 -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/jniLibs/x86_64/libbun.so (91788816 bytes)
 === [2b/6] seccomp compatibility shim per ABI (NDK clang) ===
-NDK clang dir: /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/python3/bin
-/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/10-build-payload.sh: line 87: /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/python3/bin/x86_64-linux-android29-clang: No such file or directory
-FATAL: shim build failed for x86_64
+FATAL: Android NDK clang not found under /usr/local/lib/android/sdk/ndk
 STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/10-build-payload.sh' x86_64
