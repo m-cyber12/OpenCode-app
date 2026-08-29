@@ -119,8 +119,9 @@ class PayloadExtractor(
             return Result.Extracted(manifest)
         } catch (t: Throwable) {
             staging.deleteRecursively()
-            logger.host("extraction FAILED: ${t.message}")
-            return Result.Failed("extraction failed: ${t.message}", t)
+            logger.host("extraction FAILED: ${t.javaClass.simpleName}: ${t.message}")
+            logger.host(t.stackTraceToString().take(1500))
+            return Result.Failed("extraction failed: ${t.javaClass.simpleName}: ${t.message}", t)
         }
     }
 

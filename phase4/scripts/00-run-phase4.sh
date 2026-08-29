@@ -79,6 +79,17 @@ APK="$(ls "$REPO/app/build/outputs/apk/debug/"*.apk | head -1)"
 [ -f "$APK" ] || { echo "FATAL: APK not produced"; exit 1; }
 echo "APK: $APK ($(stat -c%s "$APK") bytes)" | tee -a "$MAINLOG"
 
+# Ground-truth: confirm the payload asset + exec libs are actually INSIDE the
+# APK (CI run: a srcDir glitch left the asset out -> on-device FileNotFound).
+{
+  echo "--- APK lib/ entries ---"; unzip -l "$APK" | grep "lib/" || echo "MISSING lib/"
+  echo "--- APK asset entries ---"; unzip -l "$APK" | grep -E "assets/runtime" || echo "MISSING assets/runtime"
+} | tee "$EV/apk-contents.txt"
+unzip -l "$APK" | grep -q "assets/runtime-payload.tar.gz" \
+  || { echo "FATAL: runtime-payload.tar.gz not packaged in APK"; exit 1; }
+unzip -l "$APK" | grep -q "lib/x86_64/libbun.so" \
+  || { echo "FATAL: lib/x86_64/libbun.so not packaged in APK"; exit 1; }
+
 step "7/9 install the real app + launch"
 adb install -r -g "$APK" 2>&1 | tail -3 | tee -a "$MAINLOG"
 adb shell pm list packages | grep ai.opencode | tee -a "$MAINLOG"

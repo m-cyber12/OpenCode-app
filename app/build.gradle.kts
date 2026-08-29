@@ -14,6 +14,7 @@
 // phase4/scripts/10-build-payload.sh on a networked runner; it is gitignored.
 // The preBuild task fails fast with an actionable message if it is missing.
 import org.gradle.api.GradleException
+import org.gradle.api.tasks.Copy
 import java.io.File
 
 plugins {
@@ -22,6 +23,11 @@ plugins {
 }
 
 val engineDir = layout.projectDirectory.dir("../phase4/out/engine")
+// Generated, build-owned copies of the payload. Registering THSE (rather than
+// pointing srcDirs straight at the runner output) makes the packaging tasks
+// depend on a real Copy, guaranteeing mergeAssets/mergeJniLibs see the files.
+val engineAssetsGen = layout.buildDirectory.dir("generated/engine/assets")
+val engineJniGen = layout.buildDirectory.dir("generated/engine/jniLibs")
 
 android {
     namespace = "ai.opencode.android"
@@ -66,10 +72,11 @@ android {
 
     sourceSets {
         getByName("main") {
-            // Runtime payload (runner-generated, gitignored) — exec bits and
-            // the compressed JS payload. Missing payload fails preBuild below.
-            jniLibs.srcDir(engineDir.dir("jniLibs").asFile)
-            assets.srcDir(engineDir.dir("assets").asFile)
+            // Build-owned copies of the runner-generated payload (see Copy
+            // tasks below). These are stable directories mergeAssets/
+            // mergeJniLibs always see.
+            assets.srcDir(engineAssetsGen)
+            jniLibs.srcDir(engineJniGen)
         }
     }
 
@@ -100,14 +107,22 @@ dependencies {
     testImplementation("org.json:json:20240303")
 }
 
-// Fail fast with an actionable message if the runtime payload was never built.
-tasks.register("verifyRuntimePayload") {
+// Copy the runner-generated payload into build-owned dirs that mergeAssets /
+// mergeJniLibs consume, after verifying it is complete. This both fails fast
+// with an actionable message if 10-build-payload.sh was never run, and makes
+// the merge tasks depend on a real copy (so the files are always staged).
+val verifyAndStagePayload = tasks.register("verifyAndStagePayload") {
     group = "opencode"
-    description = "Ensures phase4/out/engine (built by 10-build-payload.sh) is present."
-    val manifest = engineDir.file("assets/runtime-manifest.json")
-    val jni = engineDir.dir("jniLibs")
+    description = "Verifies and stages phase4/out/engine into generated asset/jniLibs dirs."
+    val srcAssets = engineDir.dir("assets")
+    val srcJni = engineDir.dir("jniLibs")
+    val manifest = srcAssets.file("runtime-manifest.json")
+    inputs.dir(srcAssets).optional()
+    inputs.dir(srcJni).optional()
+    outputs.dir(engineAssetsGen)
+    outputs.dir(engineJniGen)
     doLast {
-        val mf = manifest.asFile
+        val mf = manifest.get().asFile
         if (!mf.isFile) {
             throw GradleException(
                 "Embedded runtime payload missing: ${mf.path} not found.\n" +
@@ -118,12 +133,9 @@ tasks.register("verifyRuntimePayload") {
         }
         val libs = listOf("libbun.so", "libgit.so", "librg.so")
         val abis = listOf("arm64-v8a", "x86_64")
-        // Require all three executables for every ABI that is actually being
-        // packaged; require at least one complete ABI (CI emulator builds x86_64
-        // only; release builds pass both). This fails loud on a partial ABI.
         var completeAbis = 0
         for (abi in abis) {
-            val abiDir = jni.dir(abi).asFile
+            val abiDir = srcJni.dir(abi).get().asFile
             val present = libs.map { File(abiDir, it) }
             val have = present.count { it.isFile }
             if (have == 0) {
@@ -136,11 +148,19 @@ tasks.register("verifyRuntimePayload") {
             }
             completeAbis++
         }
-        if (completeAbis == 0) throw GradleException("Runtime payload incomplete: no JNI exec libs found under ${jni.asFile}")
-        println("Runtime payload OK: $completeAbis complete ABI(s), manifest present.")
+        if (completeAbis == 0) {
+            throw GradleException("Runtime payload incomplete: no JNI exec libs found under ${srcJni.get().asFile}")
+        }
+        val assetsDst = engineAssetsGen.get().asFile.apply { mkdirs() }
+        val jniDst = engineJniGen.get().asFile.apply { mkdirs() }
+        assetsDst.deleteRecursively(); assetsDst.mkdirs()
+        jniDst.deleteRecursively(); jniDst.mkdirs()
+        srcAssets.get().asFile.copyRecursively(assetsDst, overwrite = true)
+        srcJni.get().asFile.copyRecursively(jniDst, overwrite = true)
+        println("Runtime payload OK: $completeAbis complete ABI(s); staged assets + jniLibs.")
     }
 }
 
 tasks.named("preBuild") {
-    dependsOn("verifyRuntimePayload")
+    dependsOn(verifyAndStagePayload)
 }

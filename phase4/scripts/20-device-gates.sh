@@ -157,41 +157,35 @@ done
 log "server password: ${PASSWD:0:6}… (${#PASSWD} chars)"
 
 # ---------------------------------------------------------------------------
+log "=== early diagnostics (app uid) ==="
+{
+  echo "--- supervisor log (host) ---"
+  rash "cat '$FILES/log/runtime.log' 2>&1 | tail -80"
+  echo "--- bin symlinks (filesDir/bin) ---"
+  rash "ls -la '$FILES/bin/' 2>&1"
+  echo "--- exercise execs THROUGH symlinks (the production path the server/agent uses) ---"
+  rash "'$FILES/bin/bun' --version 2>&1; echo bun_rc=\$?"
+  rash "'$FILES/bin/git' --version 2>&1; echo git_rc=\$?"
+  rash "'$FILES/bin/rg' --version 2>&1; echo rg_rc=\$?"
+  echo "--- flat payload present ---"
+  rash "ls -la '$FILES/launcher.js' '$FILES/opencode/dist/node/node.js' 2>&1; ls -d '$FILES/node_modules' 2>&1"
+  echo "--- live processes (app uid) ---"
+  rash 'for p in /proc/[0-9]*/cmdline; do c=$(tr "\000" " " < "$p" 2>/dev/null); case "$c" in *launcher.js*|*libbun*) echo "$p: $c";; esac; done'
+} > "$EV/early-diag.txt" 2>&1
+cat "$EV/early-diag.txt" >> "$LOG"
+
 log "=== H1 extraction + version validation ==="
 H1=1
 rash "ls -l '$FILES/opencode/dist/node/node.js' '$FILES/launcher.js' '$FILES/runtime/.extracted'" >>"$LOG" 2>&1
-rash "grep -o '\"payloadVersion\":[0-9]*' '$FILES/runtime/.extracted'" | tee -a "$LOG"
-if rash "grep -q '\"payloadVersion\":4' '$FILES/runtime/.extracted'"; then
-  log "H1 marker payloadVersion=4"; H1=0
+rash "grep -o '\"payloadVersion\":[0-9]*' '$FILES/runtime/.extracted'" | tee -a "$LOG" || true
+BUNVER=$(rash "'$FILES/bin/bun' --version 2>&1" | tr -d '\r ')
+case "$BUNVER" in 1.3.*) EXEC_OK=1;; *) EXEC_OK=0;; esac
+log "H1 bun via symlink: '$BUNVER' exec_ok=$EXEC_OK"
+if [ "$EXEC_OK" = "1" ]    && rash "test -f '$FILES/opencode/dist/node/node.js'"    && rash "test -f '$FILES/launcher.js'"    && rash "test -d '$FILES/node_modules'"    && rash "grep -q '\"payloadVersion\":4' '$FILES/runtime/.extracted'"; then
+  log "H1 flat payload + marker + execs OK"; H1=0
+else
+  log "H1 payload/exec check failed (see early-diag.txt)"
 fi
-NL=$(native_lib_dir)
-log "H1 nativeLibraryDir (from pm path): $NL"
-# Probe as the APP uid: the shell user cannot traverse /data/app, so an
-# `adb shell ls` there is a false negative. run-as runs as the app uid and CAN.
-rash "ls -l '$NL/libbun.so' '$NL/libgit.so' '$NL/librg.so' 2>&1" | tee -a "$LOG"
-EXECS=$(rash "n=0; for f in libbun.so libgit.so librg.so; do test -x '$NL/'\$f && n=\$((n+1)); done; echo \$n" | tr -d '\r ')
-log "H1 executable libs in nativeLibraryDir: $EXECS/3"
-[ "$EXECS" = "3" ] || H1=1
-
-# Early diagnostics regardless of gate state: run each bundled binary directly
-# from nativeLibraryDir as the app uid (this is what the supervisor does), and
-# dump the supervisor log + process tree so a boot failure is never invisible.
-log "=== early diagnostics (app uid) ==="
-{
-  echo "--- nativeLibraryDir binaries directly ---"
-  rash "'$NL/libbun.so' --version 2>&1; echo bun_rc=\$?"
-  rash "'$NL/libgit.so' --version 2>&1; echo git_rc=\$?"
-  rash "'$NL/librg.so' --version 2>&1; echo rg_rc=\$?"
-  echo "--- bin symlinks ---"
-  rash "ls -la '$FILES/bin/' 2>&1"
-  echo "--- runtime.log (host) ---"
-  rash "cat '$FILES/log/runtime.log' 2>&1 | tail -60"
-  echo "--- launcher/node bundle present ---"
-  rash "ls -la '$FILES/launcher.js' '$FILES/opencode/dist/node/node.js' 2>&1"
-  echo "--- live processes (app uid) ---"
-  rash 'for p in /proc/[0-9]*/cmdline; do c=$(tr "\000" " " < "$p" 2>/dev/null); case "$c" in *bun*|*launcher*|*opencode*) echo "$(dirname $p | xargs basename): $c";; esac; done'
-} >> "$EV/early-diag.txt" 2>&1
-cat "$EV/early-diag.txt" >> "$LOG"
 hp "$H1" 1 "extraction-and-version"
 
 log "=== H2 health-gated start ==="
@@ -203,11 +197,16 @@ hp "$H2" 2 "health-gated-start"
 
 log "=== H3 duplicate-process prevention ==="
 H3=1
-adb shell am start-foreground-service -n "$PKG/ai.opencode.android.runtime.RuntimeService" >/dev/null 2>&1 \
-  || adb shell am startservice -n "$PKG/ai.opencode.android.runtime.RuntimeService" >/dev/null 2>&1 || true
-sleep 4
+# Trigger start multiple times the way the app can (MainActivity is exported;
+# starting a non-exported service straight from shell is denied). The
+# supervisor's idempotent start() + /proc sweep must still yield exactly one.
+for _ in 1 2 3; do
+  adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
+  sleep 1
+done
+sleep 5
 COUNT=$(count_launchers)
-log "H3 live launcher.js processes after double-start: $COUNT"
+log "H3 live launcher.js processes after repeated starts: $COUNT"
 CODE=$(curl -s -o /dev/null -w '%{http_code}' -u "opencode:$PASSWD" --max-time 4 http://127.0.0.1:4111/global/health)
 [ "$COUNT" = "1" ] && [ "$CODE" = "200" ] && H3=0
 hp "$H3" 3 "no-duplicate-process"
