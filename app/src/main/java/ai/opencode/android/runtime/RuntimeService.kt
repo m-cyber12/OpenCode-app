@@ -59,11 +59,9 @@ class RuntimeService : Service() {
     }
 
     override fun onDestroy() {
-        // Service going away because it was explicitly stopped (stopSelf).
-        // The stop action already requested manager shutdown; ensure it.
-        if (stopRequested) {
-            RuntimeManager.get(this).stop()
-        }
+        // The ACTION_STOP path has already asked the manager to shut the
+        // runtime down gracefully; nothing else to do (START_NOT_STICKY: the
+        // runtime restarts only when the app next starts the service).
         super.onDestroy()
     }
 
@@ -98,23 +96,18 @@ class RuntimeService : Service() {
         const val NOTIF_ID = 4204
         const val ACTION_STOP = "ai.opencode.android.STOP_RUNTIME"
 
-        @Volatile
-        private var stopRequested = false
-
         fun start(context: Context) {
-            stopRequested = false
             val intent = Intent(context, RuntimeService::class.java)
             context.startForegroundService(intent)
         }
 
         /**
          * Graceful, explicit stop. We send a start-with-stop action because a
-         * service that was started with startForegroundService must be stopped
-         * via the service itself (it posts its FGS notification first, then
-         * tears the supervisor down and stops itself within the FGS window).
+         * service that was started with startForegroundService must go through
+         * the service (it posts its FGS notification first, then asks the
+         * supervisor to shut the runtime down and stops itself).
          */
         fun stop(context: Context) {
-            stopRequested = true
             val intent = Intent(context, RuntimeService::class.java).apply { action = ACTION_STOP }
             runCatching { context.startForegroundService(intent) }
         }

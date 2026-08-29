@@ -36,6 +36,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
 
     @Volatile private var supervisorThread: Thread? = null
     @Volatile private var running = false
+    @Volatile private var userStopRequested = false
     @Volatile private var generation = 0   // bumped on stop/reset; invalidates old supervisor loops
     @Volatile var abi: String? = null
         private set
@@ -65,6 +66,8 @@ class RuntimeManager private constructor(private val appContext: Context) {
             }
             running = true
             generation++
+            // A fresh start (app launch) clears a prior stop request.
+            userStopRequested = false
         }
         val gen = generation
         supervisorThread = Thread({ supervise(gen) }, "opencode-supervisor").apply { isDaemon = true; start() }
@@ -72,13 +75,16 @@ class RuntimeManager private constructor(private val appContext: Context) {
 
     /** Graceful stop (idempotent). Never blocks the calling (main) thread. */
     fun stop() {
+        val wasRunning: Boolean
         synchronized(restartLock) {
-            if (!running) {
-                logger.host("stop() ignored: not running")
-                return
-            }
+            wasRunning = running
+            userStopRequested = true
             running = false
             generation++
+        }
+        if (!wasRunning) {
+            logger.host("stop() ignored: not running")
+            return
         }
         Thread({
             try {
@@ -90,14 +96,21 @@ class RuntimeManager private constructor(private val appContext: Context) {
         }, "opencode-stop").apply { isDaemon = true; start() }
     }
 
-    /** Wipe extracted payload + data and bring the runtime back up (recovery test hook). */
+    /**
+     * Wipe the extracted payload and bring the runtime back up (corruption
+     * recovery test hook). Runs synchronously on one thread: it first forces
+     * the current supervisor loop invalid (generation bump + process stop),
+     * wipes the runtime dir, then enters a fresh supervisor loop on the same
+     * thread. Exactly one loop is active for the new generation.
+     */
     fun resetAndRestart() {
-        synchronized(restartLock) {
-            running = false
-            generation++
-        }
         Thread({
             try {
+                synchronized(restartLock) {
+                    running = false
+                    userStopRequested = false
+                    generation++
+                }
                 logger.host("resetAndRestart: stopping + wiping runtime dir")
                 process.stop()
                 paths.runtimeDir.deleteRecursively()
