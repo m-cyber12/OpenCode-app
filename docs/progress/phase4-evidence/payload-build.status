@@ -50,37 +50,5 @@ NDK toolchain candidates:
   /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android34-clang
   /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android35-clang
 NDK clang dir: /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin
-seccomp-shim x86_64 -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/jniLibs/x86_64/libseccompshim.so (5488 bytes)
-=== [3/6] static git v2.48.1 per ABI (NO_PERL recipe, Phase 3-proven) ===
-git source: f93ff170b93a1782659637824b25923245ac9dd1
---- static git (x86_64, CC=musl-gcc) ---
-    LINK t/unit-tests/bin/t-reftable-merged
-    LINK t/unit-tests/bin/t-reftable-pq
-    LINK t/unit-tests/bin/t-reftable-reader
-    LINK t/unit-tests/bin/t-reftable-readwrite
-    LINK t/unit-tests/bin/t-reftable-record
-    LINK t/unit-tests/bin/t-reftable-stack
-    LINK t/unit-tests/bin/t-reftable-tree
-    LINK t/unit-tests/bin/t-strbuf
-    LINK t/unit-tests/bin/t-strcmp-offset
-    LINK t/unit-tests/bin/t-trailer
-    LINK t/unit-tests/bin/t-urlmatch-normalization
-    GEN t/unit-tests/clar-decls.h
-    GEN t/unit-tests/clar.suite
-    CC t/unit-tests/u-ctype.o
-    CC t/unit-tests/u-strvec.o
-    CC t/unit-tests/clar/clar.o
-    CC t/unit-tests/unit-test.o
-    LINK t/unit-tests/bin/unit-tests
-    GEN gitweb/static/gitweb.js
-    GEN gitweb/gitweb.cgi
-x86_64 git OK: git version 2.48.1
-=== [4/6] ripgrep 15.1.0 per ABI ===
-x86_64 rg (musl-static) OK
-=== [5/6] OpenCode server bundle @ 05ea5073be967c779d326929b2de6228dda4159d (pinned, fail-loud) ===
-upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
-bundle build complete
-=== [6/6] stage payload, compute manifest ===
-payload tarball: 16549453 bytes sha256=839563f412116bde52fc22c6081fcaa6c5a8849c89b11ed91635a2d61e1279c4
-=== engine layout ===
-PAYLOAD_READY
+seccomp helpers x86_64 -> libseccompshim.so (5816 B), libexecshim.so (7032 B)
+FATAL: libexecshim.so (x86_64) is not a PIE/DYN executable
