@@ -13,6 +13,12 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- INTERNET: the embedded OpenCode server listens on 127.0.0.1:4111 and
+         is reached over loopback (health checks, app UI, SDK client); loopback
+         TCP still requires this permission — without it the UID is denied by
+         netd and connects fail with EPERM (observed in CI gate runs). The
+         network security config permits cleartext for loopback ONLY. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

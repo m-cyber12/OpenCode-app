@@ -71,14 +71,14 @@ write_stdin_runas() { # $1=remote-relative-to-files ; content on stdin
   rash "mkdir -p \$(dirname '$FILES/$1'); echo '$b64' | base64 -d > '$FILES/$1'; echo wrote_$1_rc=\$?"
 }
 
-# Helper to run bun with an inline JS expression AS THE APP UID. Writes the JS
-# to a temp file under files dir (stdin-free, no argv quoting), runs it.
-rash_bun_eval() { # $1=js  (output to stdout)
-  local js="$1"
-  rash "cat > '$FILES/tmp-eval.js' <<'JSEOF'
-$js
-JSEOF
-'$FILES/bin/bun' '$FILES/tmp-eval.js' 2>&1; rc=\$?; rm -f '$FILES/tmp-eval.js'; exit \$rc"
+# Helper to run bun with an inline JS expression AS THE APP UID. The JS is
+# pushed via base64 (mksh running under run-as cannot create heredoc temp
+# files in /data/local/tmp: "can't create temporary file ... Permission
+# denied"), then bun runs the file. $1=js
+rash_bun_eval() {
+  local b64
+  b64=$(printf '%s' "$1" | base64 -w0)
+  rash "echo '$b64' | base64 -d > '$FILES/tmp-eval.js'; '$FILES/bin/bun' '$FILES/tmp-eval.js' 2>&1; rc=\$?; rm -f '$FILES/tmp-eval.js'; exit \$rc"
 }
 
 # ---------------------------------------------------------------------------
@@ -321,7 +321,8 @@ H6=1
 adb shell am broadcast -a ai.opencode.android.DEBUG_STOP -n "$PKG/ai.opencode.android.runtime.DebugControlReceiver" >>"$LOG" 2>&1 || true
 for _ in $(seq 1 20); do [ "$(count_launchers)" = "0" ] && break; sleep 2; done
 LEFTOVER=$(count_launchers)
-CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 -u "opencode:$PASSWD" http://127.0.0.1:4111/global/health 2>/dev/null || echo 000)
+CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 -u "opencode:$PASSWD" http://127.0.0.1:4111/global/health 2>/dev/null)
+[ -z "$CODE" ] && CODE=000
 log "H6 leftover launchers=$LEFTOVER port-code=$CODE"
 [ "$LEFTOVER" = "0" ] && [ "$CODE" = "000" ] && H6=0
 hp "$H6" 6 "graceful-stop-no-zombies"
