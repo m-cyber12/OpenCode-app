@@ -67,6 +67,8 @@ class RuntimePaths private constructor(context: Context) {
     fun bunBinary(): File = File(nativeLibraryDir, "libbun.so")
     fun gitBinary(): File = File(nativeLibraryDir, "libgit.so")
     fun rgBinary(): File = File(nativeLibraryDir, "librg.so")
+    /** PIE wrapper that installs the seccomp SIGSYS handler then execs bun. */
+    fun execShimBinary(): File = File(nativeLibraryDir, "libexecshim.so")
 
     // Flat layout (matches the proven Phase 3 gate): bundle and node_modules
     // are direct children of filesDir; runtimeDir holds only host metadata.

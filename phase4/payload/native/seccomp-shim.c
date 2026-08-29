@@ -62,7 +62,7 @@ static void sigsys_handler(int signo, siginfo_t *info, void *uctx) {
 
 static int installed = 0;
 
-/* Called once from JS via bun:ffi. Returns 0 on success (mirrors sigaction). */
+/* Install the SIGSYS handler. Returns 0 on success (mirrors sigaction). */
 __attribute__((visibility("default"))) int opencode_seccomp_init(void) {
     if (installed) return 0;
     struct sigaction sa;
@@ -74,4 +74,13 @@ __attribute__((visibility("default"))) int opencode_seccomp_init(void) {
     int rc = sigaction(SIGSYS, &sa, 0);
     if (rc == 0) installed = 1;
     return rc;
+}
+
+/* When LD_PRELOADed into bun (by libexecshim.so) this constructor runs during
+   dynamic linking — BEFORE bun's own initialization where it traps `access`
+   (syscall 21) and epoll_pwait2 (441). This is the load point that actually
+   fires; the bun:ffi path in launcher.js is a redundant backstop. */
+__attribute__((constructor))
+static void opencode_seccomp_auto_init(void) {
+    opencode_seccomp_init();
 }

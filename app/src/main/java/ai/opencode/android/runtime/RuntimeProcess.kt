@@ -55,16 +55,34 @@ class RuntimeProcess(
         require(bun.canExecute()) { "bun binary not executable: $bun" }
         require(paths.launcher.isFile) { "launcher missing: ${paths.launcher}" }
 
+        // Launch through the PIE exec shim (nativeLibraryDir/libexecshim.so).
+        // It LD_PRELOADs libseccompshim.so (constructor installs the SIGSYS ->
+        // ENOSYS handler before bun's native init) and then execv()s bun. Direct
+        // exec of bun dies with SIGSYS during its own startup (syscall 21
+        // access / 441 epoll_pwait2), before any JS or bun:ffi hook can run.
+        val exec = paths.execShimBinary()
+        if (!exec.canExecute()) {
+            // Fallback: direct bun (older payloads without the shim).
+            logger.host("exec shim missing ($exec); launching bun directly")
+        }
+        val entry = if (exec.canExecute()) exec.absolutePath else bun.absolutePath
+
         // Duplicate-process prevention: kill any live server for THIS payload
         // before starting (also covers a crashed app leaving the server behind).
         killStaleServer()
 
-        val pb = ProcessBuilder(bun.absolutePath, paths.launcher.absolutePath)
+        val fullEnv = HashMap(env)
+        // Tell the shim what to exec and where the preload handler lives.
+        fullEnv["OPENCODE_BUN_EXEC"] = bun.absolutePath
+        fullEnv["OPENCODE_SECCOMP_SHIM"] =
+            java.io.File(paths.nativeLibraryDir, "libseccompshim.so").absolutePath
+
+        val pb = ProcessBuilder(entry, paths.launcher.absolutePath)
         pb.directory(paths.filesDir)
         pb.redirectErrorStream(false)
         pb.environment().apply {
             clear()
-            putAll(env)
+            putAll(fullEnv)
         }
         val p = pb.start()
         process = p

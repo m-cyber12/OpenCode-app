@@ -74,7 +74,7 @@ note "=== [2b/6] seccomp compatibility shim per ABI (NDK clang) ==="
 # handler mapping them to ENOSYS so Bun's fallbacks engage. Built from
 # phase4/payload/native/seccomp-shim.c into jniLibs as libseccompshim.so; the
 # launcher dlopens it (OPENCODE_SECCOMP_SHIM -> nativeLibraryDir).
-SHIM_SRC="$DIR/payload/native/seccomp-shim.c"
+NATIVE_SRC="$DIR/payload/native"
 NDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}/ndk"
 # Find the toolchain bin dir that actually contains a target clang wrapper.
 # Match the <triple>29-clang wrappers (not the NDK's python3/bin, which has
@@ -91,30 +91,38 @@ if [ -z "$NDK_BIN" ] || [ ! -x "$NDK_BIN/clang" ]; then
   exit 1
 fi
 note "NDK clang dir: $NDK_BIN"
-if [ -z "$NDK_BIN" ] || [ ! -x "$NDK_BIN/clang" ]; then
-  note "FATAL: NDK clang not found (looked for .../toolchains/llvm/prebuilt/linux-x86_64/bin/clang)"
-  exit 1
-fi
-build_shim() {  # $1=abi  $2=target-triple
-  local abi="$1" triple="$2" out="$ENGINE/jniLibs/$abi/libseccompshim.so"
-  mkdir -p "$(dirname "$out")"
-  if ! "$NDK_BIN/${triple}29-clang" -O2 -fPIC -shared \
-        -Wl,-z,max-page-size=16384 \
-        -o "$out" "$SHIM_SRC" 2>"$WORK/shim-$abi.cc.log"; then
-    note "FATAL: shim build failed for $abi; clang stderr:"
-    cat "$WORK/shim-$abi.cc.log" | tee -a "$STATUS"
-    exit 1
+# Build both native helpers per ABI:
+#   libseccompshim.so  shared lib; LD_PRELOADed into bun; its constructor
+#                      installs the SIGSYS->ENOSYS handler before bun init.
+#   libexecshim.so     PIE executable (the actual server entrypoint) that sets
+#                      LD_PRELOAD and execv()s libbun.so. Shipped/exec'd from
+#                      nativeLibraryDir (W^X allows execution there).
+build_native() {  # $1=abi  $2=target-triple
+  local abi="$1" triple="$2" outdir="$ENGINE/jniLibs/$abi"
+  mkdir -p "$outdir"
+  local cc="$NDK_BIN/${triple}29-clang"
+  # preload handler library
+  if ! "$cc" -O2 -fPIC -shared -Wl,-z,max-page-size=16384 \
+        -o "$outdir/libseccompshim.so" "$NATIVE_SRC/seccomp-shim.c" 2>"$WORK/shim-$abi.log"; then
+    note "FATAL: libseccompshim build failed for $abi; clang stderr:"; cat "$WORK/shim-$abi.log" | tee -a "$STATUS"; exit 1
   fi
-  chmod 755 "$out"
-  note "seccomp-shim $abi -> $out ($(stat -c%s "$out") bytes)"
-  # Fail-loud sanity: the exported symbol must be present.
-  "$NDK_BIN/llvm-nm" -D "$out" 2>/dev/null | grep -q opencode_seccomp_init \
-    || { note "FATAL: opencode_seccomp_init missing from $out"; exit 1; }
+  # PIE wrapper executable
+  if ! "$cc" -O2 -fPIE -pie -Wl,-z,max-page-size=16384 \
+        -o "$outdir/libexecshim.so" "$NATIVE_SRC/exec-shim.c" 2>"$WORK/exec-$abi.log"; then
+    note "FATAL: libexecshim build failed for $abi; clang stderr:"; cat "$WORK/exec-$abi.log" | tee -a "$STATUS"; exit 1
+  fi
+  chmod 755 "$outdir/libseccompshim.so" "$outdir/libexecshim.so"
+  note "seccomp helpers $abi -> libseccompshim.so ($(stat -c%s "$outdir/libseccompshim.so") B)," \
+       "libexecshim.so ($(stat -c%s "$outdir/libexecshim.so") B)"
+  "$NDK_BIN/llvm-nm" -D "$outdir/libseccompshim.so" 2>/dev/null | grep -q opencode_seccomp_init \
+    || { note "FATAL: opencode_seccomp_init missing from libseccompshim.so ($abi)"; exit 1; }
+  "$NDK_BIN/llvm-readelf" -h "$outdir/libexecshim.so" 2>/dev/null | grep -q 'DYN' \
+    || { note "FATAL: libexecshim.so ($abi) is not a PIE/DYN executable"; exit 1; }
 }
 for abi in "${ABIS[@]}"; do
   case "$abi" in
-    x86_64)    build_shim "x86_64" "x86_64-linux-android" ;;
-    arm64-v8a) build_shim "arm64-v8a" "aarch64-linux-android" ;;
+    x86_64)    build_native "x86_64" "x86_64-linux-android" ;;
+    arm64-v8a) build_native "arm64-v8a" "aarch64-linux-android" ;;
   esac
 done
 
