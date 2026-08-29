@@ -87,8 +87,11 @@ step "7/9 verify APK contents, install the real app + launch"
   echo "--- APK lib/ entries ---"; unzip -l "$APK" | grep "lib/" || echo "MISSING lib/"
   echo "--- APK asset entries ---"; unzip -l "$APK" | grep -E "assets/runtime" || echo "MISSING assets/runtime"
 } | tee "$EV/apk-contents.txt"
-unzip -l "$APK" | grep -q "assets/runtime-payload.tar.gz" \
-  || { echo "FATAL: runtime-payload.tar.gz not packaged in APK"; exit 1; }
+# AAPT may store the gzipped payload decompressed as assets/runtime-payload.tar
+# (zip re-compresses it); the app's extractor accepts both names and both
+# encodings, so the packaging check matches either.
+unzip -l "$APK" | grep -qE "assets/runtime-payload\.tar(\.gz)?$" \
+  || { echo "FATAL: runtime-payload asset not packaged in APK"; exit 1; }
 unzip -l "$APK" | grep -q "lib/x86_64/libbun.so" \
   || { echo "FATAL: lib/x86_64/libbun.so not packaged in APK"; exit 1; }
 

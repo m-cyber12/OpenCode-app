@@ -67,6 +67,41 @@ class PayloadExtractor(
         return extract(manifest)
     }
 
+    /**
+     * Opens the payload tar stream. AGP/AAPT may repackage `runtime-payload.tar.gz`
+     * — observed in CI: the asset is stored as `runtime-payload.tar` already
+     * decompressed (zip re-compresses it). Handle both names and both
+     * encodings (gzip magic 0x1f 0x8b -> gunzip; else raw tar).
+     */
+    private fun openPayloadStream(): InputStream? {
+        val candidates = listOf(PAYLOAD_ASSET, "runtime-payload.tar")
+        for (name in candidates) {
+            val raw = try {
+                context.assets.open(name)
+            } catch (_: Throwable) {
+                continue
+            }
+            val buffered = raw.buffered()
+            return try {
+                buffered.mark(2)
+                val magic = ByteArray(2)
+                val read = buffered.read(magic)
+                buffered.reset()
+                if (read == 2 && magic[0] == 0x1f.toByte() && magic[1] == 0x8b.toByte()) {
+                    logger.host("payload asset '$name' is gzip; gunzipping")
+                    java.util.zip.GZIPInputStream(buffered, 1 shl 16)
+                } else {
+                    logger.host("payload asset '$name' is a raw tar (AAPT decompressed the .gz)")
+                    buffered
+                }
+            } catch (t: Throwable) {
+                raw.close()
+                return null
+            }
+        }
+        return null
+    }
+
     private fun extract(manifest: RuntimeManifest): Result {
         val staging = File(paths.filesDir, "payload.staging")
         val oldRoots = listOf("opencode", "node_modules", "launcher.js")
@@ -74,10 +109,10 @@ class PayloadExtractor(
             staging.deleteRecursively()
             staging.mkdirs()
 
-            context.assets.open(PAYLOAD_ASSET).use { raw ->
-                GZIPInputStream(raw, 1 shl 16).use { gz ->
-                    unpackTar(gz, staging)
-                }
+            val payload = openPayloadStream()
+                ?: return Result.Failed("runtime-payload asset missing inside the APK (tried runtime-payload.tar.gz / .tar)")
+            payload.use { stream ->
+                unpackTar(stream, staging)
             }
 
             // Verify every extracted entry BEFORE promoting (flat, filesDir-relative).
