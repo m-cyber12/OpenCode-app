@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  OpenCode Android app — Phase 4 runtime host.
+
+  Foreground service rationale (required by phase rules): the embedded OpenCode
+  server is a long-running user agent — agent turns, shell commands and MCP
+  servers keep running after the user leaves the chat screen. Without a
+  foreground service Android can kill the process on background/doze, killing
+  in-flight agent work and child processes. RuntimeService therefore runs as a
+  foreground service with a low-priority, dismissible notification so the user
+  knows the agent is alive. Type specialUse (persistent local compute, not one
+  of the narrow platform categories) with the required justification string.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+        android:allowBackup="false"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:extractNativeLibs="true"
+        android:theme="@style/Theme.OpenCodeApp">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.OpenCodeApp">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".runtime.RuntimeService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Embedded OpenCode agent runtime: long-running local AI agent with shell/git/MCP child processes that must survive backgrounding and doze." />
+        </service>
+
+        <!-- Debug/test hooks: gated on BuildConfig.DEBUG inside the class.
+             Lets CI stop/restart/reset the runtime via adb without root. -->
+        <receiver
+            android:name=".runtime.DebugControlReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="ai.opencode.android.DEBUG_STOP" />
+                <action android:name="ai.opencode.android.DEBUG_RESET" />
+            </intent-filter>
+        </receiver>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

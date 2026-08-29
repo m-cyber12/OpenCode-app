@@ -113,3 +113,51 @@ abi_scope:
   priority: arm64-v8a
   emulator_only: x86_64
   unsupported: [armeabi-v7a, x86]       # dropped by modern V8/Node & Bun
+
+# ============================================================================
+# PHASE 4 (2026-08-29) — EMBEDDED RUNTIME HOST packaging/layout
+# The app (app/ module, Kotlin/Compose, applicationId ai.opencode.android)
+# ships EVERYTHING in one APK; the user never downloads or installs anything.
+# Executables are packaged as JNI libs (lib<name>.so per ABI) so Android
+# extracts them to the exec-allowed nativeLibraryDir (W^X, API 29+); the JS
+# payload ships as a compressed assets tar.gz, extracted+validated (sha256)
+# into filesDir/runtime on first run.
+# ============================================================================
+android_host:
+  app_module: app/
+  application_id: ai.opencode.android
+  min_sdk: 29            # W^X: exec only from nativeLibraryDir; ABI gate enforces 64-bit
+  target_sdk: 34
+  compile_sdk: 34
+  kotlin: 1.9.24
+  agp: 8.5.2
+  gradle: 8.9
+  compose_bom: 2024.06.00
+  payload_version: 4     # bumped on payload/layout change; drives re-extraction
+  # per-ABI JNI executables (Android extracts to nativeLibraryDir, exec-allowed):
+  jni_libs:
+    - { name: libbun.so,  source: "@oven/bun-linux-{x64|aarch64}-android@1.3.14", bionic: true }
+    - { name: libgit.so,  source: "static git v2.48.1 (NO_PERL=YesPlease, musl/NDK static, NO_CURL/OPENSSL/EXPAT)" }
+    - { name: librg.so,   source: "ripgrep 15.1.0 (x86_64 musl-static official; arm64 NDK/bionic build)" }
+  # compressed JS payload (assets/, extracted to filesDir/runtime, sha256 verified):
+  payload_assets:
+    - runtime-payload.tar.gz   # opencode/dist/node/node.js bundle + *.wasm + node_modules + launcher.js
+    - runtime-manifest.json    # versions + per-file sha256/size + payload tarball sha256
+  data_layout:
+    files_dir: "/data/data/<pkg>/files"
+    runtime:   "files/runtime/opencode/dist/node/node.js (from assets, validated)"
+    symlinks:  "files/bin/{bun,git,rg} -> /data/app/.../lib64/lib{ bun,git,rg }.so"
+    xdg:       "files/xdg/{data,config,state,cache,tmp} (HOME=files/home)"
+    workspaces: "files/workspaces/<project>"
+    logs:      "files/log/runtime.log + files/log/crashes/ + xdg/state/opencode/log/"
+    secrets:   "files/secrets/server-password (random, 600), openrouter-api-key (optional)"
+  abi_support:
+    shipping: [arm64-v8a]
+    emulator_ci: [x86_64]
+    rejected_with_message: [armeabi-v7a, x86]   # AbiGate -> UNSUPPORTED_DEVICE state
+  lifecycle:
+    foreground_service: "RuntimeService (type specialUse) — keeps the agent + shell/git/MCP child processes alive across background/doze"
+    health: "poll GET /global/health with Basic auth (not 'process launched')"
+    restart: "crash -> bounded exponential backoff (1s..30s, max 8 attempts) then FATAL"
+    stop: "SIGTERM (graceful) -> SIGKILL -> /proc sweep (no zombies/duplicates)"
+    duplicate_prevention: "single RuntimeService + pidfile + /proc launcher.js sweep + single port bind"
