@@ -58,6 +58,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true   // needed for BuildConfig.DEBUG (debug control receiver)
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"
