@@ -1,99 +1,38 @@
 --- supervisor log (host) ---
+2026-08-29T15:39:01.581Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-08-29T15:39:01.788Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-08-29T15:39:01.920Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-08-29T15:39:01.923Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-08-29T15:39:03.029Z [host] extraction complete: 30 files validated
+2026-08-29T15:39:03.030Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-08-29T15:39:03.031Z [host] symlink bun -> /data/app/~~YijKxa3AcbI5uYpfmNUUhQ==/ai.opencode.android.debug-p_iwgrui3AkjiFoaWM00IQ==/lib/x86_64/libbun.so (exec=true)
+2026-08-29T15:39:03.032Z [host] symlink git -> /data/app/~~YijKxa3AcbI5uYpfmNUUhQ==/ai.opencode.android.debug-p_iwgrui3AkjiFoaWM00IQ==/lib/x86_64/libgit.so (exec=true)
+2026-08-29T15:39:03.033Z [host] symlink rg -> /data/app/~~YijKxa3AcbI5uYpfmNUUhQ==/ai.opencode.android.debug-p_iwgrui3AkjiFoaWM00IQ==/lib/x86_64/librg.so (exec=true)
+2026-08-29T15:39:03.036Z [host] generated fresh server password (stored 600 at server-password)
+2026-08-29T15:39:03.037Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-29T15:39:03.044Z [host] server started: pid=6060 abi=x86_64 port=4111
 --- bin symlinks (filesDir/bin) ---
-cache
-code_cache
-files
---- exercise execs THROUGH symlinks (the production path the server/agent uses) ---
-Bun is a fast JavaScript runtime, package manager, bundler, and test runner. (1.3.14+0d9b296af)
-
-Usage: bun <command> [...flags] [...args]
-
-Commands:
-  run       ./my-script.ts       Execute a file with Bun
-            lint                 Run a package.json script
-  test                           Run unit tests with Bun
-  x         eslint               Execute a package binary (CLI), installing if needed (bunx)
-  repl                           Start a REPL session with Bun
-  exec                           Run a shell script directly with Bun
-
-  install                        Install dependencies for a package.json (bun i)
-  add       lyra                 Add a dependency to package.json (bun a)
-  remove    is-array             Remove a dependency from package.json (bun rm)
-  update    @remix-run/dev       Update outdated dependencies
-  audit                          Check installed packages for vulnerabilities
-  outdated                       Display latest versions of outdated dependencies
-  link      [<package>]          Register or link a local npm package
-  unlink                         Unregister a local npm package
-  publish                        Publish a package to the npm registry
-  patch <pkg>                    Prepare a package for patching
-  pm <subcommand>                Additional package management utilities
-  info      @evan/duckdb         Display package metadata from the registry
-  why       @zarfjs/zarf         Explain why a package is installed
-
-  build     ./a.ts ./b.jsx       Bundle TypeScript & JavaScript into a single file
-
-  init                           Start an empty Bun project from a built-in template
-  create    elysia               Create a new project from a template (bun c)
-  upgrade                        Upgrade to latest version of Bun.
-  feedback  ./file1 ./file2      Provide feedback to the Bun team.
-
-  <command> --help               Print help text for command.
-
-Learn more about Bun:            https://bun.com/docs
-Join our Discord community:      https://bun.com/discord
+total 40
+drwx------  2 u0_a192 u0_a192 4096 2026-08-29 15:39 .
+drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-29 15:39 ..
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-29 15:39 bun -> /data/app/~~YijKxa3AcbI5uYpfmNUUhQ==/ai.opencode.android.debug-p_iwgrui3AkjiFoaWM00IQ==/lib/x86_64/libbun.so
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-29 15:39 git -> /data/app/~~YijKxa3AcbI5uYpfmNUUhQ==/ai.opencode.android.debug-p_iwgrui3AkjiFoaWM00IQ==/lib/x86_64/libgit.so
+lrwxrwxrwx  1 u0_a192 u0_a192  107 2026-08-29 15:39 rg -> /data/app/~~YijKxa3AcbI5uYpfmNUUhQ==/ai.opencode.android.debug-p_iwgrui3AkjiFoaWM00IQ==/lib/x86_64/librg.so
+--- execs THROUGH symlinks ---
+1.3.14
 bun_rc=0
-usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]
-           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]
-           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--no-lazy-fetch]
-           [--no-optional-locks] [--no-advice] [--bare] [--git-dir=<path>]
-           [--work-tree=<path>] [--namespace=<name>] [--config-env=<name>=<envvar>]
-           <command> [<args>]
+git version 2.48.1
+git_rc=0
+ripgrep 15.1.0 (rev af60c2de9d)
 
-These are common Git commands used in various situations:
+features:+pcre2
+simd(compile):+SSE2,-SSSE3,-AVX2
+simd(runtime):+SSE2,+SSSE3,-AVX2
 
-start a working area (see also: git help tutorial)
-   clone     Clone a repository into a new directory
-   init      Create an empty Git repository or reinitialize an existing one
-
-work on the current change (see also: git help everyday)
-   add       Add file contents to the index
-   mv        Move or rename a file, a directory, or a symlink
-   restore   Restore working tree files
-   rm        Remove files from the working tree and from the index
-
-examine the history and state (see also: git help revisions)
-   bisect    Use binary search to find the commit that introduced a bug
-   diff      Show changes between commits, commit and working tree, etc
-   grep      Print lines matching a pattern
-   log       Show commit logs
-   show      Show various types of objects
-   status    Show the working tree status
-
-grow, mark and tweak your common history
-   branch    List, create, or delete branches
-   commit    Record changes to the repository
-   merge     Join two or more development histories together
-   rebase    Reapply commits on top of another base tip
-   reset     Reset current HEAD to the specified state
-   switch    Switch branches
-   tag       Create, list, delete or verify a tag object signed with GPG
-
-collaborate (see also: git help workflows)
-   fetch     Download objects and refs from another repository
-   pull      Fetch from and integrate with another repository or a local branch
-   push      Update remote refs along with associated objects
-
-'git help -a' and 'git help -g' list available subcommands and some
-concept guides. See 'git help <command>' or 'git help <concept>'
-to read about a specific subcommand or concept.
-See 'git help git' for an overview of the system.
-git_rc=1
-rg: ripgrep requires at least one pattern to execute a search
-rg_rc=2
+PCRE2 10.45 is available (JIT is available)
+rg_rc=0
 --- flat payload present ---
-cache
-code_cache
-files
-ls: /data/data/ai.opencode.android.debug/files/node_modules: Permission denied
---- live processes (app uid) ---
-/system/bin/sh: syntax error: unexpected 'do'
+-rw------- 1 u0_a192 u0_a192     2825 2026-08-29 15:39 /data/data/ai.opencode.android.debug/files/launcher.js
+-rw------- 1 u0_a192 u0_a192 32838711 2026-08-29 15:39 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
+drwx------ 5 u0_a192 u0_a192 4096 2026-08-29 15:39 /data/data/ai.opencode.android.debug/files/node_modules
+--- live server processes (app uid) ---

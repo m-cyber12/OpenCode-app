@@ -1,159 +1,92 @@
-[2026-08-29T12:44:29Z] === device facts ===
-[2026-08-29T12:44:29Z] === host bun (runner) to drive gates over adb forward ===
-[2026-08-29T12:44:30Z] === provision fixture + MCP + config + key (run-as) ===
-[2026-08-29T12:44:30Z] no OPENROUTER_API_KEY — model-driven assertions skipped
-[2026-08-29T12:44:30Z] === launch the app (starts RuntimeService) ===
-[2026-08-29T12:45:36Z] server password: … (0 chars)
-[2026-08-29T12:45:36Z] === early diagnostics (app uid) ===
+[2026-08-29T15:38:56Z] === device facts ===
+[2026-08-29T15:38:56Z] === host bun (runner) to drive gates over adb forward ===
+[2026-08-29T15:38:57Z] === provision fixture + MCP + config + key (run-as) ===
+{
+  "$schema": "https://opencode.ai/config.json",
+  "shell": "/system/bin/sh",
+[2026-08-29T15:39:00Z] no OPENROUTER_API_KEY — model-driven assertions skipped
+[2026-08-29T15:39:00Z] === launch the app (starts RuntimeService) ===
+[2026-08-29T15:39:05Z] server password: b47a88… (48 chars)
+[2026-08-29T15:39:05Z] === early diagnostics (app uid) ===
 --- supervisor log (host) ---
+2026-08-29T15:39:01.581Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-08-29T15:39:01.788Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-08-29T15:39:01.920Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-08-29T15:39:01.923Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-08-29T15:39:03.029Z [host] extraction complete: 30 files validated
+2026-08-29T15:39:03.030Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-08-29T15:39:03.031Z [host] symlink bun -> /data/app/~~YijKxa3AcbI5uYpfmNUUhQ==/ai.opencode.android.debug-p_iwgrui3AkjiFoaWM00IQ==/lib/x86_64/libbun.so (exec=true)
+2026-08-29T15:39:03.032Z [host] symlink git -> /data/app/~~YijKxa3AcbI5uYpfmNUUhQ==/ai.opencode.android.debug-p_iwgrui3AkjiFoaWM00IQ==/lib/x86_64/libgit.so (exec=true)
+2026-08-29T15:39:03.033Z [host] symlink rg -> /data/app/~~YijKxa3AcbI5uYpfmNUUhQ==/ai.opencode.android.debug-p_iwgrui3AkjiFoaWM00IQ==/lib/x86_64/librg.so (exec=true)
+2026-08-29T15:39:03.036Z [host] generated fresh server password (stored 600 at server-password)
+2026-08-29T15:39:03.037Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-29T15:39:03.044Z [host] server started: pid=6060 abi=x86_64 port=4111
 --- bin symlinks (filesDir/bin) ---
-cache
-code_cache
-files
---- exercise execs THROUGH symlinks (the production path the server/agent uses) ---
-Bun is a fast JavaScript runtime, package manager, bundler, and test runner. (1.3.14+0d9b296af)
-
-Usage: bun <command> [...flags] [...args]
-
-Commands:
-  run       ./my-script.ts       Execute a file with Bun
-            lint                 Run a package.json script
-  test                           Run unit tests with Bun
-  x         eslint               Execute a package binary (CLI), installing if needed (bunx)
-  repl                           Start a REPL session with Bun
-  exec                           Run a shell script directly with Bun
-
-  install                        Install dependencies for a package.json (bun i)
-  add       lyra                 Add a dependency to package.json (bun a)
-  remove    is-array             Remove a dependency from package.json (bun rm)
-  update    @remix-run/dev       Update outdated dependencies
-  audit                          Check installed packages for vulnerabilities
-  outdated                       Display latest versions of outdated dependencies
-  link      [<package>]          Register or link a local npm package
-  unlink                         Unregister a local npm package
-  publish                        Publish a package to the npm registry
-  patch <pkg>                    Prepare a package for patching
-  pm <subcommand>                Additional package management utilities
-  info      @evan/duckdb         Display package metadata from the registry
-  why       @zarfjs/zarf         Explain why a package is installed
-
-  build     ./a.ts ./b.jsx       Bundle TypeScript & JavaScript into a single file
-
-  init                           Start an empty Bun project from a built-in template
-  create    elysia               Create a new project from a template (bun c)
-  upgrade                        Upgrade to latest version of Bun.
-  feedback  ./file1 ./file2      Provide feedback to the Bun team.
-
-  <command> --help               Print help text for command.
-
-Learn more about Bun:            https://bun.com/docs
-Join our Discord community:      https://bun.com/discord
+total 40
+drwx------  2 u0_a192 u0_a192 4096 2026-08-29 15:39 .
+drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-29 15:39 ..
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-29 15:39 bun -> /data/app/~~YijKxa3AcbI5uYpfmNUUhQ==/ai.opencode.android.debug-p_iwgrui3AkjiFoaWM00IQ==/lib/x86_64/libbun.so
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-29 15:39 git -> /data/app/~~YijKxa3AcbI5uYpfmNUUhQ==/ai.opencode.android.debug-p_iwgrui3AkjiFoaWM00IQ==/lib/x86_64/libgit.so
+lrwxrwxrwx  1 u0_a192 u0_a192  107 2026-08-29 15:39 rg -> /data/app/~~YijKxa3AcbI5uYpfmNUUhQ==/ai.opencode.android.debug-p_iwgrui3AkjiFoaWM00IQ==/lib/x86_64/librg.so
+--- execs THROUGH symlinks ---
+1.3.14
 bun_rc=0
-usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]
-           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]
-           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--no-lazy-fetch]
-           [--no-optional-locks] [--no-advice] [--bare] [--git-dir=<path>]
-           [--work-tree=<path>] [--namespace=<name>] [--config-env=<name>=<envvar>]
-           <command> [<args>]
+git version 2.48.1
+git_rc=0
+ripgrep 15.1.0 (rev af60c2de9d)
 
-These are common Git commands used in various situations:
+features:+pcre2
+simd(compile):+SSE2,-SSSE3,-AVX2
+simd(runtime):+SSE2,+SSSE3,-AVX2
 
-start a working area (see also: git help tutorial)
-   clone     Clone a repository into a new directory
-   init      Create an empty Git repository or reinitialize an existing one
-
-work on the current change (see also: git help everyday)
-   add       Add file contents to the index
-   mv        Move or rename a file, a directory, or a symlink
-   restore   Restore working tree files
-   rm        Remove files from the working tree and from the index
-
-examine the history and state (see also: git help revisions)
-   bisect    Use binary search to find the commit that introduced a bug
-   diff      Show changes between commits, commit and working tree, etc
-   grep      Print lines matching a pattern
-   log       Show commit logs
-   show      Show various types of objects
-   status    Show the working tree status
-
-grow, mark and tweak your common history
-   branch    List, create, or delete branches
-   commit    Record changes to the repository
-   merge     Join two or more development histories together
-   rebase    Reapply commits on top of another base tip
-   reset     Reset current HEAD to the specified state
-   switch    Switch branches
-   tag       Create, list, delete or verify a tag object signed with GPG
-
-collaborate (see also: git help workflows)
-   fetch     Download objects and refs from another repository
-   pull      Fetch from and integrate with another repository or a local branch
-   push      Update remote refs along with associated objects
-
-'git help -a' and 'git help -g' list available subcommands and some
-concept guides. See 'git help <command>' or 'git help <concept>'
-to read about a specific subcommand or concept.
-See 'git help git' for an overview of the system.
-git_rc=1
-rg: ripgrep requires at least one pattern to execute a search
-rg_rc=2
+PCRE2 10.45 is available (JIT is available)
+rg_rc=0
 --- flat payload present ---
-cache
-code_cache
-files
-ls: /data/data/ai.opencode.android.debug/files/node_modules: Permission denied
---- live processes (app uid) ---
-/system/bin/sh: syntax error: unexpected 'do'
-[2026-08-29T12:45:37Z] === H1 extraction + version validation ===
-cache
-code_cache
-files
-[2026-08-29T12:45:37Z] H1 bun via symlink: 'BunisafastJavaScriptruntime,packagemanager,bundler,andtestrunner.(1.3.14+0d9b296af)
-
-Usage:bun<command>[...flags][...args]
-
-Commands:
-run./my-script.tsExecuteafilewithBun
-lintRunapackage.jsonscript
-testRununittestswithBun
-xviteExecuteapackagebinary(CLI),installingifneeded(bunx)
-replStartaREPLsessionwithBun
-execRunashellscriptdirectlywithBun
-
-installInstalldependenciesforapackage.json(buni)
-addelysiaAddadependencytopackage.json(buna)
-removereduxRemoveadependencyfrompackage.json(bunrm)
-update@shumai/shumaiUpdateoutdateddependencies
-auditCheckinstalledpackagesforvulnerabilities
-outdatedDisplaylatestversionsofoutdateddependencies
-link[<package>]Registerorlinkalocalnpmpackage
-unlinkUnregisteralocalnpmpackage
-publishPublishapackagetothenpmregistry
-patch<pkg>Prepareapackageforpatching
-pm<subcommand>Additionalpackagemanagementutilities
-infohonoDisplaypackagemetadatafromtheregistry
-whyreactExplainwhyapackageisinstalled
-
-build./a.ts./b.jsxBundleTypeScript&JavaScriptintoasinglefile
-
-initStartanemptyBunprojectfromabuilt-intemplate
-createviteCreateanewprojectfromatemplate(bunc)
-upgradeUpgradetolatestversionofBun.
-feedback./file1./file2ProvidefeedbacktotheBunteam.
-
-<command>--helpPrinthelptextforcommand.
-
-LearnmoreaboutBun:https://bun.com/docs
-JoinourDiscordcommunity:https://bun.com/discord' exec_ok=0
-[2026-08-29T12:45:37Z] H1 payload/exec check failed (see early-diag.txt)
-[2026-08-29T12:45:37Z] === H2 health-gated start ===
-[2026-08-29T12:48:08Z] H2 health timeout; runtime log tail:
-[2026-08-29T12:48:08Z] === H3 duplicate-process prevention ===
-[2026-08-29T12:48:18Z] H3 live launcher.js processes after repeated starts: 1
-[2026-08-29T12:48:18Z] === G1..G4 in-sandbox exec/userspace/shell/runtime (bin symlinks -> nativeLibraryDir) ===
-[2026-08-29T12:48:18Z] === G5/G6 server start + health ===
-[2026-08-29T12:48:18Z] === G7..G12, G15 real agent gates over the app server ===
-[2026-08-29T12:48:18Z] --- G07 (gate-07-shell.js) model=0 ---
+-rw------- 1 u0_a192 u0_a192     2825 2026-08-29 15:39 /data/data/ai.opencode.android.debug/files/launcher.js
+-rw------- 1 u0_a192 u0_a192 32838711 2026-08-29 15:39 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
+drwx------ 5 u0_a192 u0_a192 4096 2026-08-29 15:39 /data/data/ai.opencode.android.debug/files/node_modules
+--- live server processes (app uid) ---
+[2026-08-29T15:39:05Z] === H1 extraction + version validation ===
+-rw------- 1 u0_a192 u0_a192     2825 2026-08-29 15:39 /data/data/ai.opencode.android.debug/files/launcher.js
+-rw------- 1 u0_a192 u0_a192 32838711 2026-08-29 15:39 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
+-rw------- 1 u0_a192 u0_a192      108 2026-08-29 15:39 /data/data/ai.opencode.android.debug/files/runtime/.extracted
+[2026-08-29T15:39:05Z] H1 bun via symlink: '1.3.14' exec_ok=1
+[2026-08-29T15:39:05Z] H1 payload/exec check failed (see early-diag.txt)
+[2026-08-29T15:39:05Z] === H2 health-gated start ===
+[2026-08-29T15:41:36Z] H2 health timeout; runtime log tail:
+2026-08-29T15:39:01.581Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-08-29T15:39:01.788Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-08-29T15:39:01.920Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-08-29T15:39:01.923Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-08-29T15:39:03.029Z [host] extraction complete: 30 files validated
+2026-08-29T15:39:03.030Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-08-29T15:39:03.031Z [host] symlink bun -> /data/app/~~YijKxa3AcbI5uYpfmNUUhQ==/ai.opencode.android.debug-p_iwgrui3AkjiFoaWM00IQ==/lib/x86_64/libbun.so (exec=true)
+2026-08-29T15:39:03.032Z [host] symlink git -> /data/app/~~YijKxa3AcbI5uYpfmNUUhQ==/ai.opencode.android.debug-p_iwgrui3AkjiFoaWM00IQ==/lib/x86_64/libgit.so (exec=true)
+2026-08-29T15:39:03.033Z [host] symlink rg -> /data/app/~~YijKxa3AcbI5uYpfmNUUhQ==/ai.opencode.android.debug-p_iwgrui3AkjiFoaWM00IQ==/lib/x86_64/librg.so (exec=true)
+2026-08-29T15:39:03.036Z [host] generated fresh server password (stored 600 at server-password)
+2026-08-29T15:39:03.037Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-29T15:39:03.044Z [host] server started: pid=6060 abi=x86_64 port=4111
+2026-08-29T15:39:48.169Z [crash] server did not become healthy: healthy=false http=-1 body=socket failed: EPERM (Operation not permitted)
+2026-08-29T15:39:48.172Z [host] server stopped (graceful=true)
+2026-08-29T15:39:48.173Z [host] restart backoff: 1160ms (attempt 1/8)
+2026-08-29T15:39:49.425Z [host] state -> STARTING (starting OpenCode server (attempt 2))
+2026-08-29T15:39:49.452Z [host] server started: pid=6133 abi=x86_64 port=4111
+2026-08-29T15:40:34.539Z [crash] server did not become healthy: healthy=false http=-1 body=socket failed: EPERM (Operation not permitted)
+2026-08-29T15:40:34.542Z [host] server stopped (graceful=true)
+2026-08-29T15:40:34.543Z [host] restart backoff: 1963ms (attempt 2/8)
+2026-08-29T15:40:36.545Z [host] state -> STARTING (starting OpenCode server (attempt 3))
+2026-08-29T15:40:36.552Z [host] server started: pid=6184 abi=x86_64 port=4111
+2026-08-29T15:41:21.641Z [crash] server did not become healthy: healthy=false http=-1 body=socket failed: EPERM (Operation not permitted)
+2026-08-29T15:41:21.644Z [host] server stopped (graceful=true)
+2026-08-29T15:41:21.645Z [host] restart backoff: 3799ms (attempt 3/8)
+2026-08-29T15:41:25.648Z [host] state -> STARTING (starting OpenCode server (attempt 4))
+2026-08-29T15:41:25.654Z [host] server started: pid=6234 abi=x86_64 port=4111
+[2026-08-29T15:41:36Z] === H3 duplicate-process prevention ===
+[2026-08-29T15:41:45Z] H3 live launcher.js processes after repeated starts: 0
+[2026-08-29T15:41:45Z] === G1..G4 in-sandbox exec/userspace/shell/runtime (bin symlinks -> nativeLibraryDir) ===
+[2026-08-29T15:41:45Z] === G5/G6 server start + health ===
+[2026-08-29T15:41:45Z] === G7..G12, G15 real agent gates over the app server ===
+[2026-08-29T15:41:45Z] --- G07 (gate-07-shell.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -170,7 +103,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-29T12:48:18Z] --- G08 (gate-08-files.js) model=0 ---
+[2026-08-29T15:41:45Z] --- G08 (gate-08-files.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -186,7 +119,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-29T12:48:18Z] --- G09 (gate-09-opencode-git.js) model=0 ---
+[2026-08-29T15:41:45Z] --- G09 (gate-09-opencode-git.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -203,7 +136,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-29T12:48:18Z] --- G10 (gate-10-mcp.js) model=0 ---
+[2026-08-29T15:41:45Z] --- G10 (gate-10-mcp.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -219,7 +152,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-29T12:48:18Z] --- G11 (gate-11-stream.js) model=0 ---
+[2026-08-29T15:41:45Z] --- G11 (gate-11-stream.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -236,7 +169,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-29T12:48:18Z] --- G12 (gate-12-permission.js) model=0 ---
+[2026-08-29T15:41:45Z] --- G12 (gate-12-permission.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -253,7 +186,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-29T12:48:18Z] --- G15 (gate-15-e2e.js) model=0 ---
+[2026-08-29T15:41:45Z] --- G15 (gate-15-e2e.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -270,20 +203,20 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-29T12:48:18Z] === H4 crash detection + restart with backoff ===
-[2026-08-29T12:48:18Z] H4 server pid: 
-[2026-08-29T12:48:18Z] H4 SIGKILL sent; waiting for supervisor restart...
-[2026-08-29T12:49:59Z] === H5 corruption recovery (debug reset + live corruption) ===
+[2026-08-29T15:41:45Z] === H4 crash detection + restart with backoff ===
+[2026-08-29T15:41:45Z] H4 server pid: 6234
+[2026-08-29T15:41:45Z] H4 SIGKILL sent; waiting for supervisor restart...
+[2026-08-29T15:43:26Z] === H5 corruption recovery (debug reset + live corruption) ===
 Broadcasting: Intent { act=ai.opencode.android.DEBUG_RESET flg=0x400000 cmp=ai.opencode.android.debug/ai.opencode.android.runtime.DebugControlReceiver }
 Broadcast completed: result=0
-[2026-08-29T12:52:30Z] === H6 graceful stop: no zombies, port down ===
+[2026-08-29T15:45:57Z] === H6 graceful stop: no zombies, port down ===
 Broadcasting: Intent { act=ai.opencode.android.DEBUG_STOP flg=0x400000 cmp=ai.opencode.android.debug/ai.opencode.android.runtime.DebugControlReceiver }
 Broadcast completed: result=0
-[2026-08-29T12:53:46Z] H6 leftover launchers=1 port-code=000000
-[2026-08-29T12:53:46Z] === G14 reconnect: sessions persist across restart ===
-[2026-08-29T12:56:17Z] === H7 logs & diagnostics ===
-[2026-08-29T12:56:17Z] === H8 ABI/device gate ===
-[2026-08-29T12:56:17Z] H8 abi=x86_64 sdk=34 -> supported
-[2026-08-29T12:56:17Z] === pull logs into evidence ===
-[2026-08-29T12:56:17Z] === SUMMARY ===
-[2026-08-29T12:56:17Z] G failures present (13); core gate failures fail CI (model-gate skips without a key are expected).
+[2026-08-29T15:45:57Z] H6 leftover launchers=0 port-code=000000
+[2026-08-29T15:45:57Z] === G14 reconnect: sessions persist across restart ===
+[2026-08-29T15:48:28Z] === H7 logs & diagnostics ===
+[2026-08-29T15:48:28Z] === H8 ABI/device gate ===
+[2026-08-29T15:48:28Z] H8 abi=x86_64 sdk=34 -> supported
+[2026-08-29T15:48:28Z] === pull logs into evidence ===
+[2026-08-29T15:48:28Z] === SUMMARY ===
+[2026-08-29T15:48:28Z] G failures present (11); core gate failures fail CI (model-gate skips without a key are expected).
