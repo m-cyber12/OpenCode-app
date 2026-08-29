@@ -68,19 +68,21 @@ sed -i 's/-avd gates/-avd phase4/' "$DIR/scripts/02-boot-emulator.sh"
 run_c 1400 "bash '$DIR/scripts/02-boot-emulator.sh'"
 
 step "5/9 build the embedded runtime payload (bun/git/rg + OpenCode bundle)"
-run_c 3000 "bash '$DIR/scripts/10-build-payload.sh' x86_64"
-run_c 600 "bash '$DIR/scripts/11-build-mcp.sh'"
+run_c 3600 "bash '$DIR/scripts/10-build-payload.sh' x86_64"
+run_c 900 "bash '$DIR/scripts/11-build-mcp.sh'"
 ls -la "$DIR/out/engine/jniLibs/x86_64" "$DIR/out/engine/assets" 2>&1 | tee -a "$MAINLOG"
 
 step "6/9 build the APK + run JVM unit tests"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"
-run_c 1800 "'$REPO/gradlew' -p '$REPO' :app:assembleDebug :app:testDebugUnitTest --no-daemon --stacktrace"
+# Cold first run downloads Gradle + all AGP/Compose deps; give it room.
+run_c 3000 "'$REPO/gradlew' -p '$REPO' :app:assembleDebug :app:testDebugUnitTest --no-daemon --stacktrace"
 APK="$(ls "$REPO/app/build/outputs/apk/debug/"*.apk | head -1)"
 [ -f "$APK" ] || { echo "FATAL: APK not produced"; exit 1; }
 echo "APK: $APK ($(stat -c%s "$APK") bytes)" | tee -a "$MAINLOG"
 
+step "7/9 verify APK contents, install the real app + launch"
 # Ground-truth: confirm the payload asset + exec libs are actually INSIDE the
-# APK (CI run: a srcDir glitch left the asset out -> on-device FileNotFound).
+# APK (a srcDir glitch left the asset out -> on-device FileNotFound).
 {
   echo "--- APK lib/ entries ---"; unzip -l "$APK" | grep "lib/" || echo "MISSING lib/"
   echo "--- APK asset entries ---"; unzip -l "$APK" | grep -E "assets/runtime" || echo "MISSING assets/runtime"
@@ -90,7 +92,10 @@ unzip -l "$APK" | grep -q "assets/runtime-payload.tar.gz" \
 unzip -l "$APK" | grep -q "lib/x86_64/libbun.so" \
   || { echo "FATAL: lib/x86_64/libbun.so not packaged in APK"; exit 1; }
 
-step "7/9 install the real app + launch"
+adb install -r -g "$APK" 2>&1 | tail -3 | tee -a "$MAINLOG"
+adb shell pm list packages | grep ai.opencode | tee -a "$MAINLOG"
+# Clear logcat so the gate run captures only this app's boot/process output.
+adb logcat -c 2>/dev/null || true
 adb install -r -g "$APK" 2>&1 | tail -3 | tee -a "$MAINLOG"
 adb shell pm list packages | grep ai.opencode | tee -a "$MAINLOG"
 # Clear logcat so the gate run captures only this app's boot/process output.
