@@ -1,4 +1,4 @@
-=== PHASE 4 START 2026-08-29T10:19:27Z ===
+=== PHASE 4 START 2026-08-29T10:54:17Z ===
 ########## 1/9 environment probe ##########
 Linux runnervmgx7h7 6.17.0-1022-azure #22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
 4
@@ -17,7 +17,7 @@ packages-list.txt
 platform-tools
 platforms
 --- downloading cmdline-tools
--rw-r--r-- 1 runner runner 153607504 Aug 29 10:19 cmdtools.zip
+-rw-r--r-- 1 runner runner 153607504 Aug 29 10:54 cmdtools.zip
 /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
 /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
 --- sdkmanager licenses
@@ -41,7 +41,7 @@ accel:
 KVM (version 12) is installed and usable.
 accel
 --- starting emulator (headless)
-emulator pid=2550
+emulator pid=2538
 * daemon not running; starting now at tcp:5037
 * daemon started successfully
 BOOT_COMPLETED after ~48s
@@ -106,11 +106,11 @@ x86_64 rg (musl-static) OK
 upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
 bundle build complete
 === [6/6] stage payload, compute manifest ===
-payload tarball: 16551285 bytes sha256=3091aba91969d766acc8e744a422728ccf0b89c371a1c34662e2167fa9e4340b
+payload tarball: 16551281 bytes sha256=42b86d2110828bb3425a5324eceb47395f52820462db1b42b21ccfe370132ed9
 manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/assets/runtime-manifest.json
 === engine layout ===
 1590 ./build.status
-16551285 ./assets/runtime-payload.tar.gz
+16551281 ./assets/runtime-payload.tar.gz
 5171 ./assets/runtime-manifest.json
 4415648 ./jniLibs/x86_64/libgit.so
 5445512 ./jniLibs/x86_64/librg.so
@@ -119,22 +119,22 @@ manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/eng
 PAYLOAD_READY
 + zod-to-json-schema@3.25.2
 
-92 packages installed [197.00ms]
+92 packages installed [258.00ms]
 MCP_READY: 26M
 /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/assets:
 total 16180
-drwxr-xr-x 2 runner runner     4096 Aug 29 10:24 .
-drwxr-xr-x 4 runner runner     4096 Aug 29 10:22 ..
--rw-r--r-- 1 runner runner     5171 Aug 29 10:24 runtime-manifest.json
--rw-r--r-- 1 runner runner 16551285 Aug 29 10:24 runtime-payload.tar.gz
+drwxr-xr-x 2 runner runner     4096 Aug 29 10:58 .
+drwxr-xr-x 4 runner runner     4096 Aug 29 10:56 ..
+-rw-r--r-- 1 runner runner     5171 Aug 29 10:58 runtime-manifest.json
+-rw-r--r-- 1 runner runner 16551281 Aug 29 10:58 runtime-payload.tar.gz
 
 /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/jniLibs/x86_64:
-total 99284
-drwxr-xr-x 2 runner runner     4096 Aug 29 10:23 .
-drwxr-xr-x 4 runner runner     4096 Aug 29 10:22 ..
--rwxr-xr-x 1 runner runner 91788816 Aug 29 10:22 libbun.so
--rwxr-xr-x 1 runner runner  4415648 Aug 29 10:23 libgit.so
--rwxr-xr-x 1 runner runner  5445512 Aug 29 10:23 librg.so
+total 99288
+drwxr-xr-x 2 runner runner     4096 Aug 29 10:57 .
+drwxr-xr-x 4 runner runner     4096 Aug 29 10:55 ..
+-rwxr-xr-x 1 runner runner 91788816 Aug 29 10:55 libbun.so
+-rwxr-xr-x 1 runner runner  4415648 Aug 29 10:57 libgit.so
+-rwxr-xr-x 1 runner runner  5445512 Aug 29 10:57 librg.so
 ########## 6/9 build the APK + run JVM unit tests ##########
 Downloading https://services.gradle.org/distributions/gradle-8.9-bin.zip
 ............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
@@ -151,243 +151,767 @@ For more details see https://docs.gradle.org/8.9/release-notes.html
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
-> Task :app:verifyRuntimePayload
-Runtime payload note: ABI arm64-v8a not built (skipped; pass it to 10-build-payload.sh).
-Runtime payload OK: 1 complete ABI(s), manifest present.
+> Configure project :app
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:125:27: Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:138:42: Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:139:38: Overload resolution ambiguity: 
+public constructor File(p0: File!, p1: String!) defined in java.io.File
+public constructor File(p0: String!, p1: String!) defined in java.io.File
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:140:38: Type mismatch: inferred type is Unit but Boolean was expected
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:140:43: Unresolved reference: isFile
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:146:49: Type mismatch: inferred type is Unit but Boolean was expected
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:146:54: Unresolved reference: isFile
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:147:108: Unresolved reference: name
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:152:102: Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:158:19: Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:159:16: Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl
 
-> Task :app:preBuild
-> Task :app:preDebugBuild
-> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
-> Task :app:checkKotlinGradlePluginConfigurationErrors
-> Task :app:generateDebugBuildConfig
-> Task :app:generateDebugResValues
-> Task :app:checkDebugAarMetadata
-> Task :app:mapDebugSourceSetPaths
-> Task :app:generateDebugResources
-> Task :app:packageDebugResources
-> Task :app:mergeDebugResources
-> Task :app:createDebugCompatibleScreenManifests
-> Task :app:extractDeepLinksDebug
-> Task :app:parseDebugLocalResources
+FAILURE: Build completed with 2 failures.
 
-> Task :app:processDebugMainManifest
-/home/runner/work/OpenCode-app/OpenCode-app/app/src/main/AndroidManifest.xml:24:9-41 Warning:
-	android:extractNativeLibs should not be specified in this source AndroidManifest.xml file. See https://d.android.com/guide/topics/manifest/application-element#extractNativeLibs for more information.
-The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml file and update the build file accordingly. See https://d.android.com/studio/build/agp-upgrade-assistant for more information.
+1: Task failed with an exception.
+-----------
+* Where:
+Build file '/home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts' line: 125
 
-> Task :app:processDebugManifest
-> Task :app:javaPreCompileDebug
-> Task :app:mergeDebugShaders
-> Task :app:compileDebugShaders NO-SOURCE
-> Task :app:processDebugManifestForPackage
-> Task :app:generateDebugAssets UP-TO-DATE
-> Task :app:processDebugResources
-> Task :app:mergeDebugAssets
-> Task :app:desugarDebugFileDependencies
-> Task :app:mergeDebugStartupProfile
-> Task :app:checkDebugDuplicateClasses
-> Task :app:mergeDebugJniLibFolders
-> Task :app:compressDebugAssets
-> Task :app:compileDebugKotlin
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:40:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:85:13 Variable 't' is never used
+* What went wrong:
+Script compilation errors:
 
-> Task :app:mergeExtDexDebug
-> Task :app:compileDebugJavaWithJavac
-> Task :app:dexBuilderDebug
-> Task :app:mergeDebugGlobalSynthetics
-> Task :app:processDebugJavaRes
-> Task :app:mergeLibDexDebug
-> Task :app:mergeProjectDexDebug
-> Task :app:mergeDebugNativeLibs
-> Task :app:mergeDebugJavaResource
-> Task :app:validateSigningDebug
-> Task :app:writeDebugAppMetadata
-> Task :app:writeDebugSigningConfigVersions
-> Task :app:preDebugUnitTestBuild
-> Task :app:bundleDebugClassesToRuntimeJar
-> Task :app:bundleDebugClassesToCompileJar
-> Task :app:javaPreCompileDebugUnitTest FROM-CACHE
+  Line 125:         val mf = manifest.get().asFile
+                                      ^ Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+                                          public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+                                          public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+                                          public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                                          public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+                                          public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl
 
-> Task :app:stripDebugDebugSymbols
-Unable to strip the following libraries, packaging them as they are: libbun.so, libgit.so, librg.so.
+  Line 138:             val abiDir = srcJni.dir(abi).get().asFile
+                                                     ^ Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+                                                         public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+                                                         public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+                                                         public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                                                         public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+                                                         public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl
 
-> Task :app:packageDebug
-There are no .so files available to package in the APK for arm64-v8a.
+  Line 139:             val present = libs.map { File(abiDir, it) }
+                                                 ^ Overload resolution ambiguity: 
+                                                     public constructor File(p0: File!, p1: String!) defined in java.io.File
+                                                     public constructor File(p0: String!, p1: String!) defined in java.io.File
 
-> Task :app:compileDebugUnitTestKotlin
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractorTest.kt:103:37 Unsafe use of a nullable receiver of type File?
+  Line 140:             val have = present.count { it.isFile }
+                                                 ^ Type mismatch: inferred type is Unit but Boolean was expected
 
-> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
-> Task :app:processDebugUnitTestJavaRes
+  Line 140:             val have = present.count { it.isFile }
+                                                      ^ Unresolved reference: isFile
 
-> Task :app:testDebugUnitTest
+  Line 146:                 val missing = present.filterNot { it.isFile }
+                                                            ^ Type mismatch: inferred type is Unit but Boolean was expected
 
-AbiGateTest > apiBelow29IsRejectedEvenWithArm64 PASSED
+  Line 146:                 val missing = present.filterNot { it.isFile }
+                                                                 ^ Unresolved reference: isFile
 
-AbiGateTest > x86_64IsSupportedForEmulator PASSED
+  Line 147:                 throw GradleException("Runtime payload incomplete for ABI $abi: missing ${missing.map { it.name }}")
+                                                                                                                       ^ Unresolved reference: name
 
-AbiGateTest > arm64IsSupported PASSED
+  Line 152:             throw GradleException("Runtime payload incomplete: no JNI exec libs found under ${srcJni.get().asFile}")
+                                                                                                                 ^ Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+                                                                                                                     public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+                                                                                                                     public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+                                                                                                                     public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                                                                                                                     public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+                                                                                                                     public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl
 
-AbiGateTest > x86_32OnlyIsRejected PASSED
+  Line 158:         srcAssets.get().asFile.copyRecursively(assetsDst, overwrite = true)
+                              ^ Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+                                  public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+                                  public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+                                  public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                                  public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+                                  public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl
 
-AbiGateTest > prefersArm64WhenBothAbisPresent PASSED
+  Line 159:         srcJni.get().asFile.copyRecursively(jniDst, overwrite = true)
+                           ^ Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+                               public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+                               public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+                               public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                               public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+                               public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl
 
-AbiGateTest > armeabiV7aOnlyIsRejected PASSED
+11 errors
 
-ManifestTest > roundTripsVersionsAndEntries PASSED
+* Try:
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
 
-ManifestTest > unknownFieldsTolerated PASSED
+* Exception is:
+ScriptCompilationException(scriptCompilationErrors=[ScriptCompilationError(message=Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (125:27)), ScriptCompilationError(message=Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (138:42)), ScriptCompilationError(message=Overload resolution ambiguity: 
+public constructor File(p0: File!, p1: String!) defined in java.io.File
+public constructor File(p0: String!, p1: String!) defined in java.io.File, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (139:38)), ScriptCompilationError(message=Type mismatch: inferred type is Unit but Boolean was expected, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (140:38)), ScriptCompilationError(message=Unresolved reference: isFile, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (140:43)), ScriptCompilationError(message=Type mismatch: inferred type is Unit but Boolean was expected, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (146:49)), ScriptCompilationError(message=Unresolved reference: isFile, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (146:54)), ScriptCompilationError(message=Unresolved reference: name, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (147:108)), ScriptCompilationError(message=Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (152:102)), ScriptCompilationError(message=Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (158:19)), ScriptCompilationError(message=Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (159:16))])
+	at org.gradle.kotlin.dsl.support.KotlinCompilerKt.compileKotlinScriptModuleTo(KotlinCompiler.kt:190)
+	at org.gradle.kotlin.dsl.support.KotlinCompilerKt.compileKotlinScriptToDirectory(KotlinCompiler.kt:148)
+	at org.gradle.kotlin.dsl.execution.ResidualProgramCompiler$compileScript$1.invoke(ResidualProgramCompiler.kt:712)
+	at org.gradle.kotlin.dsl.execution.ResidualProgramCompiler$compileScript$1.invoke(ResidualProgramCompiler.kt:711)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator$InterpreterHost$runCompileBuildOperation$1.call(KotlinScriptEvaluator.kt:186)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator$InterpreterHost$runCompileBuildOperation$1.call(KotlinScriptEvaluator.kt:183)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator$InterpreterHost.runCompileBuildOperation(KotlinScriptEvaluator.kt:183)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost$compileSecondStageOf$cacheDir$1$1$1$1$1.invoke(Interpreter.kt:490)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost$compileSecondStageOf$cacheDir$1$1$1$1$1.invoke(Interpreter.kt:490)
+	at org.gradle.kotlin.dsl.execution.ResidualProgramCompiler.compileScript-C5AE47M(ResidualProgramCompiler.kt:711)
+	at org.gradle.kotlin.dsl.execution.ResidualProgramCompiler.compileScript-C5AE47M$default(ResidualProgramCompiler.kt:704)
+	at org.gradle.kotlin.dsl.execution.ResidualProgramCompiler.emitStage2ProgramFor(ResidualProgramCompiler.kt:363)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost$compileSecondStageOf$cacheDir$1.invoke(Interpreter.kt:491)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost$compileSecondStageOf$cacheDir$1.invoke(Interpreter.kt:467)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator$KotlinScriptCompilationAndInstrumentation.compile(KotlinScriptEvaluator.kt:408)
+	at org.gradle.internal.scripts.BuildScriptCompilationAndInstrumentation.execute(BuildScriptCompilationAndInstrumentation.java:95)
+	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:105)
+	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:59)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:56)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:56)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.CancelExecutionStep.execute(CancelExecutionStep.java:42)
+	at org.gradle.internal.execution.steps.TimeoutStep.executeWithoutTimeout(TimeoutStep.java:75)
+	at org.gradle.internal.execution.steps.TimeoutStep.execute(TimeoutStep.java:55)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:50)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:28)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:61)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:26)
+	at org.gradle.internal.execution.steps.NoInputChangesStep.execute(NoInputChangesStep.java:30)
+	at org.gradle.internal.execution.steps.NoInputChangesStep.execute(NoInputChangesStep.java:21)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:69)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:46)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:189)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeAndStoreInCache(BuildCacheStep.java:145)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$executeWithCache$4(BuildCacheStep.java:101)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$executeWithCache$5(BuildCacheStep.java:101)
+	at org.gradle.internal.Try$Success.map(Try.java:175)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithCache(BuildCacheStep.java:85)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$0(BuildCacheStep.java:74)
+	at org.gradle.internal.Either$Left.fold(Either.java:115)
+	at org.gradle.internal.execution.caching.CachingState.fold(CachingState.java:62)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:73)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:48)
+	at org.gradle.internal.execution.steps.NeverUpToDateStep.execute(NeverUpToDateStep.java:34)
+	at org.gradle.internal.execution.steps.NeverUpToDateStep.execute(NeverUpToDateStep.java:22)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:27)
+	at org.gradle.internal.execution.steps.ResolveNonIncrementalCachingStateStep.executeDelegate(ResolveNonIncrementalCachingStateStep.java:50)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:71)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:39)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:105)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:54)
+	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:64)
+	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:43)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
+	at org.gradle.internal.execution.steps.AssignImmutableWorkspaceStep.lambda$executeInTemporaryWorkspace$3(AssignImmutableWorkspaceStep.java:209)
+	at org.gradle.internal.execution.workspace.impl.CacheBasedImmutableWorkspaceProvider$1.withTemporaryWorkspace(CacheBasedImmutableWorkspaceProvider.java:119)
+	at org.gradle.internal.execution.steps.AssignImmutableWorkspaceStep.executeInTemporaryWorkspace(AssignImmutableWorkspaceStep.java:199)
+	at org.gradle.internal.execution.steps.AssignImmutableWorkspaceStep.lambda$execute$0(AssignImmutableWorkspaceStep.java:121)
+	at org.gradle.internal.execution.steps.AssignImmutableWorkspaceStep.execute(AssignImmutableWorkspaceStep.java:121)
+	at org.gradle.internal.execution.steps.AssignImmutableWorkspaceStep.execute(AssignImmutableWorkspaceStep.java:90)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:38)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:48)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:35)
+	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:61)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator$InterpreterHost.cachedDirFor(KotlinScriptEvaluator.kt:278)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost.compileSecondStageOf(Interpreter.kt:467)
+	at Program.loadSecondStageFor(Unknown Source)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost.evaluateSecondStageOf(Interpreter.kt:431)
+	at Program.execute(Unknown Source)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost.eval(Interpreter.kt:514)
+	at org.gradle.kotlin.dsl.execution.Interpreter.eval(Interpreter.kt:213)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator.evaluate(KotlinScriptEvaluator.kt:124)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPluginFactory$create$1.invoke(KotlinScriptPluginFactory.kt:51)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPluginFactory$create$1.invoke(KotlinScriptPluginFactory.kt:48)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPlugin.apply(KotlinScriptPlugin.kt:35)
+	at org.gradle.configuration.BuildOperationScriptPlugin$1.run(BuildOperationScriptPlugin.java:68)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.configuration.BuildOperationScriptPlugin.lambda$apply$0(BuildOperationScriptPlugin.java:65)
+	at org.gradle.internal.code.DefaultUserCodeApplicationContext.apply(DefaultUserCodeApplicationContext.java:44)
+	at org.gradle.configuration.BuildOperationScriptPlugin.apply(BuildOperationScriptPlugin.java:65)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.lambda$applyToMutableState$1(DefaultProjectStateRegistry.java:407)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.fromMutableState(DefaultProjectStateRegistry.java:425)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.applyToMutableState(DefaultProjectStateRegistry.java:406)
+	at org.gradle.configuration.project.BuildScriptProcessor.execute(BuildScriptProcessor.java:46)
+	at org.gradle.configuration.project.BuildScriptProcessor.execute(BuildScriptProcessor.java:27)
+	at org.gradle.configuration.project.ConfigureActionsProjectEvaluator.evaluate(ConfigureActionsProjectEvaluator.java:35)
+	at org.gradle.configuration.project.LifecycleProjectEvaluator$EvaluateProject.lambda$run$0(LifecycleProjectEvaluator.java:109)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.lambda$applyToMutableState$1(DefaultProjectStateRegistry.java:407)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.lambda$fromMutableState$2(DefaultProjectStateRegistry.java:430)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withReplacedLocks(DefaultWorkerLeaseService.java:363)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.fromMutableState(DefaultProjectStateRegistry.java:430)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.applyToMutableState(DefaultProjectStateRegistry.java:406)
+	at org.gradle.configuration.project.LifecycleProjectEvaluator$EvaluateProject.run(LifecycleProjectEvaluator.java:100)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.configuration.project.LifecycleProjectEvaluator.evaluate(LifecycleProjectEvaluator.java:72)
+	at org.gradle.api.internal.project.DefaultProject.evaluate(DefaultProject.java:756)
+	at org.gradle.api.internal.project.DefaultProject.evaluate(DefaultProject.java:157)
+	at org.gradle.api.internal.project.ProjectLifecycleController.lambda$ensureSelfConfigured$2(ProjectLifecycleController.java:84)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$14(StateTransitionController.java:255)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:254)
+	at org.gradle.internal.model.StateTransitionController.lambda$maybeTransitionIfNotCurrentlyTransitioning$10(StateTransitionController.java:199)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:34)
+	at org.gradle.internal.model.StateTransitionController.maybeTransitionIfNotCurrentlyTransitioning(StateTransitionController.java:195)
+	at org.gradle.api.internal.project.ProjectLifecycleController.ensureSelfConfigured(ProjectLifecycleController.java:84)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.ensureConfigured(DefaultProjectStateRegistry.java:381)
+	at org.gradle.execution.TaskPathProjectEvaluator.configure(TaskPathProjectEvaluator.java:34)
+	at org.gradle.execution.TaskPathProjectEvaluator.configureHierarchy(TaskPathProjectEvaluator.java:50)
+	at org.gradle.configuration.DefaultProjectsPreparer.prepareProjects(DefaultProjectsPreparer.java:42)
+	at org.gradle.configuration.BuildTreePreparingProjectsPreparer.prepareProjects(BuildTreePreparingProjectsPreparer.java:65)
+	at org.gradle.configuration.BuildOperationFiringProjectsPreparer$ConfigureBuild.run(BuildOperationFiringProjectsPreparer.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.configuration.BuildOperationFiringProjectsPreparer.prepareProjects(BuildOperationFiringProjectsPreparer.java:40)
+	at org.gradle.initialization.VintageBuildModelController.lambda$prepareProjects$2(VintageBuildModelController.java:84)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$14(StateTransitionController.java:255)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:254)
+	at org.gradle.internal.model.StateTransitionController.lambda$transitionIfNotPreviously$11(StateTransitionController.java:213)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:34)
+	at org.gradle.internal.model.StateTransitionController.transitionIfNotPreviously(StateTransitionController.java:209)
+	at org.gradle.initialization.VintageBuildModelController.prepareProjects(VintageBuildModelController.java:84)
+	at org.gradle.initialization.VintageBuildModelController.prepareToScheduleTasks(VintageBuildModelController.java:71)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$prepareToScheduleTasks$6(DefaultBuildLifecycleController.java:175)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$14(StateTransitionController.java:255)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:254)
+	at org.gradle.internal.model.StateTransitionController.lambda$maybeTransition$9(StateTransitionController.java:190)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:34)
+	at org.gradle.internal.model.StateTransitionController.maybeTransition(StateTransitionController.java:186)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.prepareToScheduleTasks(DefaultBuildLifecycleController.java:173)
+	at org.gradle.internal.buildtree.DefaultBuildTreeWorkPreparer.scheduleRequestedTasks(DefaultBuildTreeWorkPreparer.java:36)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1.apply(VintageBuildTreeWorkController.kt:36)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1.apply(VintageBuildTreeWorkController.kt:35)
+	at org.gradle.composite.internal.DefaultIncludedBuildTaskGraph.withNewWorkGraph(DefaultIncludedBuildTaskGraph.java:112)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController.scheduleAndRunRequestedTasks(VintageBuildTreeWorkController.kt:35)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.lambda$scheduleAndRunTasks$1(DefaultBuildTreeLifecycleController.java:77)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.lambda$runBuild$4(DefaultBuildTreeLifecycleController.java:120)
+	at org.gradle.internal.model.StateTransitionController.lambda$transition$6(StateTransitionController.java:169)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.lambda$transition$7(StateTransitionController.java:169)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
+	at org.gradle.internal.model.StateTransitionController.transition(StateTransitionController.java:169)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.runBuild(DefaultBuildTreeLifecycleController.java:117)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.scheduleAndRunTasks(DefaultBuildTreeLifecycleController.java:77)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.scheduleAndRunTasks(DefaultBuildTreeLifecycleController.java:72)
+	at org.gradle.tooling.internal.provider.ExecuteBuildActionRunner.run(ExecuteBuildActionRunner.java:31)
+	at org.gradle.launcher.exec.ChainingBuildActionRunner.run(ChainingBuildActionRunner.java:35)
+	at org.gradle.internal.buildtree.ProblemReportingBuildActionRunner.run(ProblemReportingBuildActionRunner.java:49)
+	at org.gradle.launcher.exec.BuildOutcomeReportingBuildActionRunner.run(BuildOutcomeReportingBuildActionRunner.java:65)
+	at org.gradle.tooling.internal.provider.FileSystemWatchingBuildActionRunner.run(FileSystemWatchingBuildActionRunner.java:140)
+	at org.gradle.launcher.exec.BuildCompletionNotifyingBuildActionRunner.run(BuildCompletionNotifyingBuildActionRunner.java:41)
+	at org.gradle.launcher.exec.RootBuildLifecycleBuildActionExecutor.lambda$execute$0(RootBuildLifecycleBuildActionExecutor.java:40)
+	at org.gradle.composite.internal.DefaultRootBuildState.run(DefaultRootBuildState.java:130)
+	at org.gradle.launcher.exec.RootBuildLifecycleBuildActionExecutor.execute(RootBuildLifecycleBuildActionExecutor.java:40)
+	at org.gradle.internal.buildtree.InitDeprecationLoggingActionExecutor.execute(InitDeprecationLoggingActionExecutor.java:62)
+	at org.gradle.internal.buildtree.InitProblems.execute(InitProblems.java:36)
+	at org.gradle.internal.buildtree.DefaultBuildTreeContext.execute(DefaultBuildTreeContext.java:40)
+	at org.gradle.launcher.exec.BuildTreeLifecycleBuildActionExecutor.lambda$execute$0(BuildTreeLifecycleBuildActionExecutor.java:71)
+	at org.gradle.internal.buildtree.BuildTreeState.run(BuildTreeState.java:60)
+	at org.gradle.launcher.exec.BuildTreeLifecycleBuildActionExecutor.execute(BuildTreeLifecycleBuildActionExecutor.java:71)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor$3.call(RunAsBuildOperationBuildActionExecutor.java:61)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor$3.call(RunAsBuildOperationBuildActionExecutor.java:57)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor.execute(RunAsBuildOperationBuildActionExecutor.java:57)
+	at org.gradle.launcher.exec.RunAsWorkerThreadBuildActionExecutor.lambda$execute$0(RunAsWorkerThreadBuildActionExecutor.java:36)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:267)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:131)
+	at org.gradle.launcher.exec.RunAsWorkerThreadBuildActionExecutor.execute(RunAsWorkerThreadBuildActionExecutor.java:36)
+	at org.gradle.tooling.internal.provider.continuous.ContinuousBuildActionExecutor.execute(ContinuousBuildActionExecutor.java:110)
+	at org.gradle.tooling.internal.provider.SubscribableBuildActionExecutor.execute(SubscribableBuildActionExecutor.java:64)
+	at org.gradle.internal.session.DefaultBuildSessionContext.execute(DefaultBuildSessionContext.java:46)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor$ActionImpl.apply(BuildSessionLifecycleBuildActionExecutor.java:92)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor$ActionImpl.apply(BuildSessionLifecycleBuildActionExecutor.java:80)
+	at org.gradle.internal.session.BuildSessionState.run(BuildSessionState.java:71)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor.execute(BuildSessionLifecycleBuildActionExecutor.java:62)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor.execute(BuildSessionLifecycleBuildActionExecutor.java:41)
+	at org.gradle.internal.buildprocess.execution.StartParamsValidatingActionExecutor.execute(StartParamsValidatingActionExecutor.java:64)
+	at org.gradle.internal.buildprocess.execution.StartParamsValidatingActionExecutor.execute(StartParamsValidatingActionExecutor.java:32)
+	at org.gradle.internal.buildprocess.execution.SessionFailureReportingActionExecutor.execute(SessionFailureReportingActionExecutor.java:51)
+	at org.gradle.internal.buildprocess.execution.SessionFailureReportingActionExecutor.execute(SessionFailureReportingActionExecutor.java:39)
+	at org.gradle.internal.buildprocess.execution.SetupLoggingActionExecutor.execute(SetupLoggingActionExecutor.java:47)
+	at org.gradle.internal.buildprocess.execution.SetupLoggingActionExecutor.execute(SetupLoggingActionExecutor.java:31)
+	at org.gradle.launcher.daemon.server.exec.ExecuteBuild.doBuild(ExecuteBuild.java:70)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.WatchForDisconnection.execute(WatchForDisconnection.java:39)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.ResetDeprecationLogger.execute(ResetDeprecationLogger.java:29)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.RequestStopIfSingleUsedDaemon.execute(RequestStopIfSingleUsedDaemon.java:35)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.ForwardClientInput.lambda$execute$0(ForwardClientInput.java:40)
+	at org.gradle.internal.daemon.clientinput.ClientInputForwarder.forwardInput(ClientInputForwarder.java:80)
+	at org.gradle.launcher.daemon.server.exec.ForwardClientInput.execute(ForwardClientInput.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.LogAndCheckHealth.execute(LogAndCheckHealth.java:53)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.LogToClient.doBuild(LogToClient.java:63)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.EstablishBuildEnvironment.doBuild(EstablishBuildEnvironment.java:84)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.StartBuildOrRespondWithBusy$1.run(StartBuildOrRespondWithBusy.java:52)
+	at org.gradle.launcher.daemon.server.DaemonStateCoordinator.lambda$runCommand$0(DaemonStateCoordinator.java:320)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
 
-PayloadExtractorTest > verifyDetectsCorruptedContent PASSED
+==============================================================================
 
-PayloadExtractorTest > unpackTarExtractsFilesAndNestedDirs PASSED
+2: Task failed with an exception.
+-----------
+* Where:
+Build file '/home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts' line: 125
 
-PayloadExtractorTest > verifyDetectsMissingMarker PASSED
+* What went wrong:
+Script compilation errors:
 
-PayloadExtractorTest > unpackTarRejectsPathEscape PASSED
+  Line 125:         val mf = manifest.get().asFile
+                                      ^ Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+                                          public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+                                          public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+                                          public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                                          public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+                                          public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl
 
-> Task :app:createDebugApkListingFileRedirect
-> Task :app:assembleDebug
+  Line 138:             val abiDir = srcJni.dir(abi).get().asFile
+                                                     ^ Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+                                                         public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+                                                         public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+                                                         public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                                                         public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+                                                         public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl
 
-BUILD SUCCESSFUL in 2m 20s
-46 actionable tasks: 45 executed, 1 from cache
-APK: /home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk (86238241 bytes)
-########## 7/9 install the real app + launch ##########
-Performing Streamed Install
-Success
-package:ai.opencode.android.debug
-########## 8/9 run Phase 4 gates (host lifecycle + G1..G12/G14/G15) ##########
-[2026-08-29T10:26:30Z] === device facts ===
-release=14
-sdk=34
-abi=x86_64
-[2026-08-29T10:26:30Z] === host bun (runner) to drive gates over adb forward ===
-1.3.14
-[2026-08-29T10:26:31Z] === provision fixture + MCP + config + key (run-as) ===
-mkdir: Needs 1 argument (see "mkdir --help")
-sh: can't create /data/data/ai.opencode.android.debug/files/workspaces/gates/README.md: No such file or directory
-sh: can't create /data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js: No such file or directory
-/system/bin/sh: git: inaccessible or not found
-/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/20-device-gates.sh: line 41: /usr/local/lib/android/sdk/platform-tools/adb: Argument list too long
-tar: mcp.tgz: No such file or directory
-sh: can't create /data/data/ai.opencode.android.debug/files/xdg/config/opencode/opencode.jsonc: No such file or directory
-[2026-08-29T10:26:32Z] no OPENROUTER_API_KEY — model-driven assertions skipped
-[2026-08-29T10:26:32Z] === launch the app (starts RuntimeService) ===
-[2026-08-29T10:27:38Z] server password: … (0 chars)
-[2026-08-29T10:27:38Z] === H1 extraction + version validation ===
-grep: no REGEX
-grep: no REGEX
-[2026-08-29T10:27:38Z] H1 nativeLibraryDir (from pm path): /data/app/~~yTiCqGYNHLEapXoID_2bXA==/ai.opencode.android.debug-FgR3_vOeLXK-sw7JCBINtA==/lib64
-cache
-code_cache
-files
-[2026-08-29T10:27:38Z] H1 executable libs in nativeLibraryDir: /3
-[2026-08-29T10:27:38Z] === early diagnostics (app uid) ===
-H1: FAIL extraction-and-version 
-[2026-08-29T10:27:38Z] === H2 health-gated start ===
-[2026-08-29T10:30:09Z] H2 health timeout; runtime log tail:
-H2: FAIL health-gated-start 
-[2026-08-29T10:30:09Z] === H3 duplicate-process prevention ===
-[2026-08-29T10:30:15Z] H3 live launcher.js processes after double-start: 1
-H3: FAIL no-duplicate-process 
-[2026-08-29T10:30:15Z] === G1..G4 in-sandbox exec/userspace/shell/runtime (bin symlinks -> nativeLibraryDir) ===
-G01: FAIL execution-layer 
-G02: FAIL userspace 
-G03: FAIL real-shell 
-G04: FAIL runtime 
-[2026-08-29T10:30:15Z] === G5/G6 server start + health ===
-G05: PASS opencode-start 
-G06: FAIL health-endpoint 
-[2026-08-29T10:30:15Z] === G7..G12, G15 real agent gates over the app server ===
-[2026-08-29T10:30:15Z] --- G07 (gate-07-shell.js) model=0 ---
-G07: FAIL gate-07-shell.js 
-[2026-08-29T10:30:15Z] --- G08 (gate-08-files.js) model=0 ---
-G08: FAIL gate-08-files.js 
-[2026-08-29T10:30:15Z] --- G09 (gate-09-opencode-git.js) model=0 ---
-G09: FAIL gate-09-opencode-git.js 
-[2026-08-29T10:30:15Z] --- G10 (gate-10-mcp.js) model=0 ---
-G10: FAIL gate-10-mcp.js 
-[2026-08-29T10:30:15Z] --- G11 (gate-11-stream.js) model=0 ---
-G11: FAIL gate-11-stream.js 
-[2026-08-29T10:30:15Z] --- G12 (gate-12-permission.js) model=0 ---
-G12: FAIL gate-12-permission.js 
-[2026-08-29T10:30:15Z] --- G15 (gate-15-e2e.js) model=0 ---
-G15: FAIL gate-15-e2e.js 
-[2026-08-29T10:30:15Z] === H4 crash detection + restart with backoff ===
-[2026-08-29T10:30:15Z] H4 server pid: 
-[2026-08-29T10:30:15Z] H4 SIGKILL sent; waiting for supervisor restart...
-H4: FAIL crash-restart-backoff 
-[2026-08-29T10:31:56Z] === H5 corruption recovery (debug reset + live corruption) ===
-H5: FAIL corruption-recovery 
-[2026-08-29T10:34:27Z] === H6 graceful stop: no zombies, port down ===
-[2026-08-29T10:35:39Z] H6 leftover launchers=1 port-code=000000
-H6: FAIL graceful-stop-no-zombies 
-[2026-08-29T10:35:39Z] === G14 reconnect: sessions persist across restart ===
-G14: FAIL reconnect-sessions-persist 
-[2026-08-29T10:38:10Z] === H7 logs & diagnostics ===
-H7: FAIL logs-and-diagnostics 
-[2026-08-29T10:38:10Z] === H8 ABI/device gate ===
-[2026-08-29T10:38:10Z] H8 abi=x86_64 sdk=34 -> supported
-H8: PASS abi-device-gate 
-[2026-08-29T10:38:10Z] === pull logs into evidence ===
-[2026-08-29T10:38:10Z] === SUMMARY ===
-H1: FAIL extraction-and-version 
-H2: FAIL health-gated-start 
-H3: FAIL no-duplicate-process 
-G01: FAIL execution-layer 
-G02: FAIL userspace 
-G03: FAIL real-shell 
-G04: FAIL runtime 
-G05: PASS opencode-start 
-G06: FAIL health-endpoint 
-G07: FAIL gate-07-shell.js 
-G08: FAIL gate-08-files.js 
-G09: FAIL gate-09-opencode-git.js 
-G10: FAIL gate-10-mcp.js 
-G11: FAIL gate-11-stream.js 
-G12: FAIL gate-12-permission.js 
-G15: FAIL gate-15-e2e.js 
-H4: FAIL crash-restart-backoff 
-H5: FAIL corruption-recovery 
-H6: FAIL graceful-stop-no-zombies 
-G14: FAIL reconnect-sessions-persist 
-H7: FAIL logs-and-diagnostics 
-H8: PASS abi-device-gate 
-PHASE4_SUMMARY 2026-08-29T10:38:10Z
-h_total=8 h_pass=1 h_fail=7
-g_total=13 g_pass=1 g_fail=13
-model_available=0
-device_abi=x86_64 sdk=34
-[2026-08-29T10:38:10Z] G failures present (13); core gate failures fail CI (model-gate skips without a key are expected).
-device gates rc=1
-logcat captured: 54 lines
-########## 9/9 collect evidence ##########
-=== PHASE 4 END 2026-08-29T10:38:20Z gates_rc=1 ===
-H1: FAIL extraction-and-version 
-H2: FAIL health-gated-start 
-H3: FAIL no-duplicate-process 
-G01: FAIL execution-layer 
-G02: FAIL userspace 
-G03: FAIL real-shell 
-G04: FAIL runtime 
-G05: PASS opencode-start 
-G06: FAIL health-endpoint 
-G07: FAIL gate-07-shell.js 
-G08: FAIL gate-08-files.js 
-G09: FAIL gate-09-opencode-git.js 
-G10: FAIL gate-10-mcp.js 
-G11: FAIL gate-11-stream.js 
-G12: FAIL gate-12-permission.js 
-G15: FAIL gate-15-e2e.js 
-H4: FAIL crash-restart-backoff 
-H5: FAIL corruption-recovery 
-H6: FAIL graceful-stop-no-zombies 
-G14: FAIL reconnect-sessions-persist 
-H7: FAIL logs-and-diagnostics 
-H8: PASS abi-device-gate 
-PHASE4_SUMMARY 2026-08-29T10:38:10Z
-h_total=8 h_pass=1 h_fail=7
-g_total=13 g_pass=1 g_fail=13
-model_available=0
-device_abi=x86_64 sdk=34
+  Line 139:             val present = libs.map { File(abiDir, it) }
+                                                 ^ Overload resolution ambiguity: 
+                                                     public constructor File(p0: File!, p1: String!) defined in java.io.File
+                                                     public constructor File(p0: String!, p1: String!) defined in java.io.File
+
+  Line 140:             val have = present.count { it.isFile }
+                                                 ^ Type mismatch: inferred type is Unit but Boolean was expected
+
+  Line 140:             val have = present.count { it.isFile }
+                                                      ^ Unresolved reference: isFile
+
+  Line 146:                 val missing = present.filterNot { it.isFile }
+                                                            ^ Type mismatch: inferred type is Unit but Boolean was expected
+
+  Line 146:                 val missing = present.filterNot { it.isFile }
+                                                                 ^ Unresolved reference: isFile
+
+  Line 147:                 throw GradleException("Runtime payload incomplete for ABI $abi: missing ${missing.map { it.name }}")
+                                                                                                                       ^ Unresolved reference: name
+
+  Line 152:             throw GradleException("Runtime payload incomplete: no JNI exec libs found under ${srcJni.get().asFile}")
+                                                                                                                 ^ Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+                                                                                                                     public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+                                                                                                                     public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+                                                                                                                     public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                                                                                                                     public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+                                                                                                                     public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl
+
+  Line 158:         srcAssets.get().asFile.copyRecursively(assetsDst, overwrite = true)
+                              ^ Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+                                  public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+                                  public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+                                  public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                                  public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+                                  public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl
+
+  Line 159:         srcJni.get().asFile.copyRecursively(jniDst, overwrite = true)
+                           ^ Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+                               public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+                               public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+                               public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                               public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+                               public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl
+
+11 errors
+
+* Try:
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+* Exception is:
+ScriptCompilationException(scriptCompilationErrors=[ScriptCompilationError(message=Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (125:27)), ScriptCompilationError(message=Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (138:42)), ScriptCompilationError(message=Overload resolution ambiguity: 
+public constructor File(p0: File!, p1: String!) defined in java.io.File
+public constructor File(p0: String!, p1: String!) defined in java.io.File, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (139:38)), ScriptCompilationError(message=Type mismatch: inferred type is Unit but Boolean was expected, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (140:38)), ScriptCompilationError(message=Unresolved reference: isFile, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (140:43)), ScriptCompilationError(message=Type mismatch: inferred type is Unit but Boolean was expected, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (146:49)), ScriptCompilationError(message=Unresolved reference: isFile, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (146:54)), ScriptCompilationError(message=Unresolved reference: name, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (147:108)), ScriptCompilationError(message=Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (152:102)), ScriptCompilationError(message=Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (158:19)), ScriptCompilationError(message=Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
+public inline operator fun <K, V> Map<out TypeVariable(K), TypeVariable(V)>.get(key: TypeVariable(K)): TypeVariable(V)? defined in kotlin.collections
+public operator fun MatchGroupCollection.get(name: String): MatchGroup? defined in kotlin.text
+public operator fun <T : Any> NamedDomainObjectCollection<TypeVariable(T)>.get(name: String): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public operator fun ExtensionContainer.get(name: String): Any defined in org.gradle.kotlin.dsl
+public inline fun <S : Any, T : SoftwareComponent> BinaryCollection<TypeVariable(T)>.get(type: KClass<TypeVariable(S)>, spec: Spec<in TypeVariable(S)>): BinaryProvider<TypeVariable(S)> defined in org.gradle.kotlin.dsl, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-16505073381488733132.tmp/build.gradle.kts (159:16))])
+	at org.gradle.kotlin.dsl.support.KotlinCompilerKt.compileKotlinScriptModuleTo(KotlinCompiler.kt:190)
+	at org.gradle.kotlin.dsl.support.KotlinCompilerKt.compileKotlinScriptToDirectory(KotlinCompiler.kt:148)
+	at org.gradle.kotlin.dsl.execution.ResidualProgramCompiler$compileScript$1.invoke(ResidualProgramCompiler.kt:712)
+	at org.gradle.kotlin.dsl.execution.ResidualProgramCompiler$compileScript$1.invoke(ResidualProgramCompiler.kt:711)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator$InterpreterHost$runCompileBuildOperation$1.call(KotlinScriptEvaluator.kt:186)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator$InterpreterHost$runCompileBuildOperation$1.call(KotlinScriptEvaluator.kt:183)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator$InterpreterHost.runCompileBuildOperation(KotlinScriptEvaluator.kt:183)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost$compileSecondStageOf$cacheDir$1$1$1$1$1.invoke(Interpreter.kt:490)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost$compileSecondStageOf$cacheDir$1$1$1$1$1.invoke(Interpreter.kt:490)
+	at org.gradle.kotlin.dsl.execution.ResidualProgramCompiler.compileScript-C5AE47M(ResidualProgramCompiler.kt:711)
+	at org.gradle.kotlin.dsl.execution.ResidualProgramCompiler.compileScript-C5AE47M$default(ResidualProgramCompiler.kt:704)
+	at org.gradle.kotlin.dsl.execution.ResidualProgramCompiler.emitStage2ProgramFor(ResidualProgramCompiler.kt:363)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost$compileSecondStageOf$cacheDir$1.invoke(Interpreter.kt:491)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost$compileSecondStageOf$cacheDir$1.invoke(Interpreter.kt:467)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator$KotlinScriptCompilationAndInstrumentation.compile(KotlinScriptEvaluator.kt:408)
+	at org.gradle.internal.scripts.BuildScriptCompilationAndInstrumentation.execute(BuildScriptCompilationAndInstrumentation.java:95)
+	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:105)
+	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:59)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:56)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:56)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.CancelExecutionStep.execute(CancelExecutionStep.java:42)
+	at org.gradle.internal.execution.steps.TimeoutStep.executeWithoutTimeout(TimeoutStep.java:75)
+	at org.gradle.internal.execution.steps.TimeoutStep.execute(TimeoutStep.java:55)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:50)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:28)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:61)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:26)
+	at org.gradle.internal.execution.steps.NoInputChangesStep.execute(NoInputChangesStep.java:30)
+	at org.gradle.internal.execution.steps.NoInputChangesStep.execute(NoInputChangesStep.java:21)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:69)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:46)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:189)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeAndStoreInCache(BuildCacheStep.java:145)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$executeWithCache$4(BuildCacheStep.java:101)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$executeWithCache$5(BuildCacheStep.java:101)
+	at org.gradle.internal.Try$Success.map(Try.java:175)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithCache(BuildCacheStep.java:85)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$0(BuildCacheStep.java:74)
+	at org.gradle.internal.Either$Left.fold(Either.java:115)
+	at org.gradle.internal.execution.caching.CachingState.fold(CachingState.java:62)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:73)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:48)
+	at org.gradle.internal.execution.steps.NeverUpToDateStep.execute(NeverUpToDateStep.java:34)
+	at org.gradle.internal.execution.steps.NeverUpToDateStep.execute(NeverUpToDateStep.java:22)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:27)
+	at org.gradle.internal.execution.steps.ResolveNonIncrementalCachingStateStep.executeDelegate(ResolveNonIncrementalCachingStateStep.java:50)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:71)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:39)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:105)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:54)
+	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:64)
+	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:43)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
+	at org.gradle.internal.execution.steps.AssignImmutableWorkspaceStep.lambda$executeInTemporaryWorkspace$3(AssignImmutableWorkspaceStep.java:209)
+	at org.gradle.internal.execution.workspace.impl.CacheBasedImmutableWorkspaceProvider$1.withTemporaryWorkspace(CacheBasedImmutableWorkspaceProvider.java:119)
+	at org.gradle.internal.execution.steps.AssignImmutableWorkspaceStep.executeInTemporaryWorkspace(AssignImmutableWorkspaceStep.java:199)
+	at org.gradle.internal.execution.steps.AssignImmutableWorkspaceStep.lambda$execute$0(AssignImmutableWorkspaceStep.java:121)
+	at org.gradle.internal.execution.steps.AssignImmutableWorkspaceStep.execute(AssignImmutableWorkspaceStep.java:121)
+	at org.gradle.internal.execution.steps.AssignImmutableWorkspaceStep.execute(AssignImmutableWorkspaceStep.java:90)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:38)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:48)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:35)
+	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:61)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator$InterpreterHost.cachedDirFor(KotlinScriptEvaluator.kt:278)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost.compileSecondStageOf(Interpreter.kt:467)
+	at Program.loadSecondStageFor(Unknown Source)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost.evaluateSecondStageOf(Interpreter.kt:431)
+	at Program.execute(Unknown Source)
+	at org.gradle.kotlin.dsl.execution.Interpreter$ProgramHost.eval(Interpreter.kt:514)
+	at org.gradle.kotlin.dsl.execution.Interpreter.eval(Interpreter.kt:213)
+	at org.gradle.kotlin.dsl.provider.StandardKotlinScriptEvaluator.evaluate(KotlinScriptEvaluator.kt:124)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPluginFactory$create$1.invoke(KotlinScriptPluginFactory.kt:51)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPluginFactory$create$1.invoke(KotlinScriptPluginFactory.kt:48)
+	at org.gradle.kotlin.dsl.provider.KotlinScriptPlugin.apply(KotlinScriptPlugin.kt:35)
+	at org.gradle.configuration.BuildOperationScriptPlugin$1.run(BuildOperationScriptPlugin.java:68)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.configuration.BuildOperationScriptPlugin.lambda$apply$0(BuildOperationScriptPlugin.java:65)
+	at org.gradle.internal.code.DefaultUserCodeApplicationContext.apply(DefaultUserCodeApplicationContext.java:44)
+	at org.gradle.configuration.BuildOperationScriptPlugin.apply(BuildOperationScriptPlugin.java:65)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.lambda$applyToMutableState$1(DefaultProjectStateRegistry.java:407)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.fromMutableState(DefaultProjectStateRegistry.java:425)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.applyToMutableState(DefaultProjectStateRegistry.java:406)
+	at org.gradle.configuration.project.BuildScriptProcessor.execute(BuildScriptProcessor.java:46)
+	at org.gradle.configuration.project.BuildScriptProcessor.execute(BuildScriptProcessor.java:27)
+	at org.gradle.configuration.project.ConfigureActionsProjectEvaluator.evaluate(ConfigureActionsProjectEvaluator.java:35)
+	at org.gradle.configuration.project.LifecycleProjectEvaluator$EvaluateProject.lambda$run$0(LifecycleProjectEvaluator.java:109)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.lambda$applyToMutableState$1(DefaultProjectStateRegistry.java:407)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.lambda$fromMutableState$2(DefaultProjectStateRegistry.java:430)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withReplacedLocks(DefaultWorkerLeaseService.java:363)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.fromMutableState(DefaultProjectStateRegistry.java:430)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.applyToMutableState(DefaultProjectStateRegistry.java:406)
+	at org.gradle.configuration.project.LifecycleProjectEvaluator$EvaluateProject.run(LifecycleProjectEvaluator.java:100)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.configuration.project.LifecycleProjectEvaluator.evaluate(LifecycleProjectEvaluator.java:72)
+	at org.gradle.api.internal.project.DefaultProject.evaluate(DefaultProject.java:756)
+	at org.gradle.api.internal.project.DefaultProject.evaluate(DefaultProject.java:157)
+	at org.gradle.api.internal.project.ProjectLifecycleController.lambda$ensureSelfConfigured$2(ProjectLifecycleController.java:84)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$14(StateTransitionController.java:255)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:254)
+	at org.gradle.internal.model.StateTransitionController.lambda$maybeTransitionIfNotCurrentlyTransitioning$10(StateTransitionController.java:199)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:34)
+	at org.gradle.internal.model.StateTransitionController.maybeTransitionIfNotCurrentlyTransitioning(StateTransitionController.java:195)
+	at org.gradle.api.internal.project.ProjectLifecycleController.ensureSelfConfigured(ProjectLifecycleController.java:84)
+	at org.gradle.api.internal.project.DefaultProjectStateRegistry$ProjectStateImpl.ensureConfigured(DefaultProjectStateRegistry.java:381)
+	at org.gradle.execution.TaskPathProjectEvaluator.configure(TaskPathProjectEvaluator.java:34)
+	at org.gradle.execution.TaskPathProjectEvaluator.configureHierarchy(TaskPathProjectEvaluator.java:50)
+	at org.gradle.configuration.DefaultProjectsPreparer.prepareProjects(DefaultProjectsPreparer.java:42)
+	at org.gradle.configuration.BuildTreePreparingProjectsPreparer.prepareProjects(BuildTreePreparingProjectsPreparer.java:65)
+	at org.gradle.configuration.BuildOperationFiringProjectsPreparer$ConfigureBuild.run(BuildOperationFiringProjectsPreparer.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.configuration.BuildOperationFiringProjectsPreparer.prepareProjects(BuildOperationFiringProjectsPreparer.java:40)
+	at org.gradle.initialization.VintageBuildModelController.lambda$prepareProjects$2(VintageBuildModelController.java:84)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$14(StateTransitionController.java:255)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:254)
+	at org.gradle.internal.model.StateTransitionController.lambda$transitionIfNotPreviously$11(StateTransitionController.java:213)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:34)
+	at org.gradle.internal.model.StateTransitionController.transitionIfNotPreviously(StateTransitionController.java:209)
+	at org.gradle.initialization.VintageBuildModelController.prepareProjects(VintageBuildModelController.java:84)
+	at org.gradle.initialization.VintageBuildModelController.prepareToScheduleTasks(VintageBuildModelController.java:71)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$prepareToScheduleTasks$6(DefaultBuildLifecycleController.java:175)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$14(StateTransitionController.java:255)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:254)
+	at org.gradle.internal.model.StateTransitionController.lambda$maybeTransition$9(StateTransitionController.java:190)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:34)
+	at org.gradle.internal.model.StateTransitionController.maybeTransition(StateTransitionController.java:186)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.prepareToScheduleTasks(DefaultBuildLifecycleController.java:173)
+	at org.gradle.internal.buildtree.DefaultBuildTreeWorkPreparer.scheduleRequestedTasks(DefaultBuildTreeWorkPreparer.java:36)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1.apply(VintageBuildTreeWorkController.kt:36)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1.apply(VintageBuildTreeWorkController.kt:35)
+	at org.gradle.composite.internal.DefaultIncludedBuildTaskGraph.withNewWorkGraph(DefaultIncludedBuildTaskGraph.java:112)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController.scheduleAndRunRequestedTasks(VintageBuildTreeWorkController.kt:35)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.lambda$scheduleAndRunTasks$1(DefaultBuildTreeLifecycleController.java:77)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.lambda$runBuild$4(DefaultBuildTreeLifecycleController.java:120)
+	at org.gradle.internal.model.StateTransitionController.lambda$transition$6(StateTransitionController.java:169)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.lambda$transition$7(StateTransitionController.java:169)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
+	at org.gradle.internal.model.StateTransitionController.transition(StateTransitionController.java:169)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.runBuild(DefaultBuildTreeLifecycleController.java:117)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.scheduleAndRunTasks(DefaultBuildTreeLifecycleController.java:77)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.scheduleAndRunTasks(DefaultBuildTreeLifecycleController.java:72)
+	at org.gradle.tooling.internal.provider.ExecuteBuildActionRunner.run(ExecuteBuildActionRunner.java:31)
+	at org.gradle.launcher.exec.ChainingBuildActionRunner.run(ChainingBuildActionRunner.java:35)
+	at org.gradle.internal.buildtree.ProblemReportingBuildActionRunner.run(ProblemReportingBuildActionRunner.java:49)
+	at org.gradle.launcher.exec.BuildOutcomeReportingBuildActionRunner.run(BuildOutcomeReportingBuildActionRunner.java:65)
+	at org.gradle.tooling.internal.provider.FileSystemWatchingBuildActionRunner.run(FileSystemWatchingBuildActionRunner.java:140)
+	at org.gradle.launcher.exec.BuildCompletionNotifyingBuildActionRunner.run(BuildCompletionNotifyingBuildActionRunner.java:41)
+	at org.gradle.launcher.exec.RootBuildLifecycleBuildActionExecutor.lambda$execute$0(RootBuildLifecycleBuildActionExecutor.java:40)
+	at org.gradle.composite.internal.DefaultRootBuildState.run(DefaultRootBuildState.java:130)
+	at org.gradle.launcher.exec.RootBuildLifecycleBuildActionExecutor.execute(RootBuildLifecycleBuildActionExecutor.java:40)
+	at org.gradle.internal.buildtree.InitDeprecationLoggingActionExecutor.execute(InitDeprecationLoggingActionExecutor.java:62)
+	at org.gradle.internal.buildtree.InitProblems.execute(InitProblems.java:36)
+	at org.gradle.internal.buildtree.DefaultBuildTreeContext.execute(DefaultBuildTreeContext.java:40)
+	at org.gradle.launcher.exec.BuildTreeLifecycleBuildActionExecutor.lambda$execute$0(BuildTreeLifecycleBuildActionExecutor.java:71)
+	at org.gradle.internal.buildtree.BuildTreeState.run(BuildTreeState.java:60)
+	at org.gradle.launcher.exec.BuildTreeLifecycleBuildActionExecutor.execute(BuildTreeLifecycleBuildActionExecutor.java:71)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor$3.call(RunAsBuildOperationBuildActionExecutor.java:61)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor$3.call(RunAsBuildOperationBuildActionExecutor.java:57)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.launcher.exec.RunAsBuildOperationBuildActionExecutor.execute(RunAsBuildOperationBuildActionExecutor.java:57)
+	at org.gradle.launcher.exec.RunAsWorkerThreadBuildActionExecutor.lambda$execute$0(RunAsWorkerThreadBuildActionExecutor.java:36)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:267)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:131)
+	at org.gradle.launcher.exec.RunAsWorkerThreadBuildActionExecutor.execute(RunAsWorkerThreadBuildActionExecutor.java:36)
+	at org.gradle.tooling.internal.provider.continuous.ContinuousBuildActionExecutor.execute(ContinuousBuildActionExecutor.java:110)
+	at org.gradle.tooling.internal.provider.SubscribableBuildActionExecutor.execute(SubscribableBuildActionExecutor.java:64)
+	at org.gradle.internal.session.DefaultBuildSessionContext.execute(DefaultBuildSessionContext.java:46)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor$ActionImpl.apply(BuildSessionLifecycleBuildActionExecutor.java:92)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor$ActionImpl.apply(BuildSessionLifecycleBuildActionExecutor.java:80)
+	at org.gradle.internal.session.BuildSessionState.run(BuildSessionState.java:71)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor.execute(BuildSessionLifecycleBuildActionExecutor.java:62)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor.execute(BuildSessionLifecycleBuildActionExecutor.java:41)
+	at org.gradle.internal.buildprocess.execution.StartParamsValidatingActionExecutor.execute(StartParamsValidatingActionExecutor.java:64)
+	at org.gradle.internal.buildprocess.execution.StartParamsValidatingActionExecutor.execute(StartParamsValidatingActionExecutor.java:32)
+	at org.gradle.internal.buildprocess.execution.SessionFailureReportingActionExecutor.execute(SessionFailureReportingActionExecutor.java:51)
+	at org.gradle.internal.buildprocess.execution.SessionFailureReportingActionExecutor.execute(SessionFailureReportingActionExecutor.java:39)
+	at org.gradle.internal.buildprocess.execution.SetupLoggingActionExecutor.execute(SetupLoggingActionExecutor.java:47)
+	at org.gradle.internal.buildprocess.execution.SetupLoggingActionExecutor.execute(SetupLoggingActionExecutor.java:31)
+	at org.gradle.launcher.daemon.server.exec.ExecuteBuild.doBuild(ExecuteBuild.java:70)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.WatchForDisconnection.execute(WatchForDisconnection.java:39)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.ResetDeprecationLogger.execute(ResetDeprecationLogger.java:29)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.RequestStopIfSingleUsedDaemon.execute(RequestStopIfSingleUsedDaemon.java:35)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.ForwardClientInput.lambda$execute$0(ForwardClientInput.java:40)
+	at org.gradle.internal.daemon.clientinput.ClientInputForwarder.forwardInput(ClientInputForwarder.java:80)
+	at org.gradle.launcher.daemon.server.exec.ForwardClientInput.execute(ForwardClientInput.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.LogAndCheckHealth.execute(LogAndCheckHealth.java:53)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.LogToClient.doBuild(LogToClient.java:63)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.EstablishBuildEnvironment.doBuild(EstablishBuildEnvironment.java:84)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.StartBuildOrRespondWithBusy$1.run(StartBuildOrRespondWithBusy.java:52)
+	at org.gradle.launcher.daemon.server.DaemonStateCoordinator.lambda$runCommand$0(DaemonStateCoordinator.java:320)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+
+==============================================================================
+
+BUILD FAILED in 1m 4s
+STEP_FAILED rc=1: '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:assembleDebug :app:testDebugUnitTest --no-daemon --stacktrace
