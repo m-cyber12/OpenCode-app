@@ -75,9 +75,19 @@ note "=== [2b/6] seccomp compatibility shim per ABI (NDK clang) ==="
 # phase4/payload/native/seccomp-shim.c into jniLibs as libseccompshim.so; the
 # launcher dlopens it (OPENCODE_SECCOMP_SHIM -> nativeLibraryDir).
 SHIM_SRC="$DIR/payload/native/seccomp-shim.c"
-NDK_BIN="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/ndk" -type f -path '*toolchains/llvm/prebuilt/linux-x86_64/bin/clang' 2>/dev/null | sort | tail -1 | xargs -r dirname)"
-if [ -z "$NDK_BIN" ]; then
-  note "FATAL: Android NDK clang not found under ${ANDROID_HOME:-/usr/local/lib/android/sdk}/ndk"
+NDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}/ndk"
+# Find the toolchain bin dir that actually contains a target clang wrapper.
+# Match the <triple>29-clang wrappers (not the NDK's python3/bin, which has
+# no clang). Take the newest NDK if several are installed.
+NDK_BIN=""
+for c in $(find "$NDK_ROOT" -type f -name 'x86_64-linux-android29-clang' 2>/dev/null | sort -r); do
+  d="$(dirname "$c")"
+  if [ -x "$d/clang" ]; then NDK_BIN="$d"; break; fi
+done
+note "NDK toolchain candidates:"
+find "$NDK_ROOT" -type f -name 'x86_64-linux-android*-clang' 2>/dev/null | sort | sed 's/^/  /' | tee -a "$STATUS"
+if [ -z "$NDK_BIN" ] || [ ! -x "$NDK_BIN/clang" ]; then
+  note "FATAL: Android NDK clang not found under $NDK_ROOT"
   exit 1
 fi
 note "NDK clang dir: $NDK_BIN"
