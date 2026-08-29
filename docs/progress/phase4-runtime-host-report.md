@@ -278,3 +278,31 @@ commits evidence on failure and is re-runnable via `workflow_dispatch`).
 green. No Phase 5 work (chat/project UI, session client beyond gate drivers)
 was pulled forward; the current UI is intentionally a status/diagnostics host
 screen.
+
+---
+
+## 6. CI iteration log (added after the workflow was installed)
+
+The workflow was installed to `.github/workflows/phase4-runtime-host.yml`
+(user credential) and pushed, triggering real runs on GitHub Actions:
+
+| Run | Result | Root cause from evidence | Fix |
+|---|---|---|---|
+| `33245508902` | FAIL (~4 min) | Orchestrator called `$DIR/gradlew` with `DIR=phase4/`, but the Gradle wrapper lives at the **repo root** (`127: gradlew: No such file or directory`). Payload build itself succeeded (bun x64 91 MB, static git 2.48.1, rg 15.1.0, pinned bundle, 30-file manifest). | Gradle invocations + APK path now use `$REPO` (`$DIR/..`). Payload verifier relaxed to "all three execs per packaged ABI; ≥1 complete ABI" so the x86_64-only emulator build is valid. |
+| `33246314091` | FAIL (Kotlin compile) | (a) `BuildConfig` unresolved — AGP 8 doesn't generate it without `buildFeatures.buildConfig=true`; (b) `Process.pid()` is Java 9+ and **absent from Android's `java.lang.Process`**; (c) `?: continue` used in a `for`-loop. | Enabled `buildConfig`; replaced `pid()` with a `/proc` scan (`findServerPid()` matches the launcher cmdline, excludes our own pid); fixed the loop guard. |
+| `33246314091` (after fixes, gates) | FAIL (server never became healthy) | Evidence: server didn't bind; deeper diagnosis was impossible because **logcat and the server stderr were not captured** and the nativeLibraryDir probe ran as the `shell` user (which can't traverse `/data/app`, a false negative). Most likely root cause identified: the payload extracted **under `filesDir/runtime/`**, burying `node_modules/jsonc-parser` so the bundle's `import "jsonc-parser"` could not be resolved by Bun's walk-up from `runtime/opencode/dist/node/`. In the Phase 3 working layout `node_modules` sat at the cwd root. | Extract the payload **flat into `filesDir`** (matches the proven Phase 3 layout: `filesDir/launcher.js`, `filesDir/node_modules/…`, `filesDir/opencode/dist/node/node.js`); host marker/staging stay in `filesDir/runtime/`. Added: logcat capture into evidence, an "early diagnostics" block (run each JNI binary directly as the app uid, dump host log + process tree), and the nativeLibraryDir probe now runs under `run-as` (app uid). |
+| `33247549107` | **in progress / result pending at report time** | The flat-layout + diagnostics fixes (commit `e10a637`). The early-diag block and `logcat.txt` will make any remaining boot failure directly visible in `docs/progress/phase4-evidence/`. | — |
+
+**Evidence committed by CI** (`docs/progress/phase4-evidence/`) so far includes the
+payload build status (all components built), the APK (86 MB), the device gate
+log, per-gate outputs, and the emulator log. The H/G gates are not green yet;
+the honest state is **IMPLEMENTED, under live CI validation — the first runs
+found and fixed three real defects (Gradle path, Android API incompatibility,
+payload layout); the current run determines whether the server now boots
+on-device.** This section will be updated when `33247549107` (or the next run)
+produces `GATES_SUMMARY.txt` with H/G results.
+
+Note: the dev sandbox's GitHub token expired mid-monitoring (`HTTP 401: Bad
+credentials`), so this session could not poll the final result or fetch the
+latest evidence; the run and its evidence commit happen independently on
+GitHub and can be read from the branch / Actions tab.
