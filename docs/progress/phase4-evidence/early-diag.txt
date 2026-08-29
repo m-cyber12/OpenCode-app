@@ -1,23 +1,30 @@
 --- supervisor log (host) ---
-2026-08-29T22:13:55.227Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-2026-08-29T22:13:55.238Z [host] state -> EXTRACTING (validating embedded runtime)
-2026-08-29T22:13:55.245Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
-2026-08-29T22:13:55.247Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
-2026-08-29T22:13:56.385Z [host] extraction complete: 30 files validated
-2026-08-29T22:13:56.386Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-2026-08-29T22:13:56.387Z [host] symlink bun -> /data/app/~~tOCkGpdYya_YZAZ2o1QcLA==/ai.opencode.android.debug-cr7GR9s8ebasHSbAEqoanA==/lib/x86_64/libbun.so (exec=true)
-2026-08-29T22:13:56.387Z [host] symlink git -> /data/app/~~tOCkGpdYya_YZAZ2o1QcLA==/ai.opencode.android.debug-cr7GR9s8ebasHSbAEqoanA==/lib/x86_64/libgit.so (exec=true)
-2026-08-29T22:13:56.388Z [host] symlink rg -> /data/app/~~tOCkGpdYya_YZAZ2o1QcLA==/ai.opencode.android.debug-cr7GR9s8ebasHSbAEqoanA==/lib/x86_64/librg.so (exec=true)
-2026-08-29T22:13:56.391Z [host] generated fresh server password (stored 600 at server-password)
-2026-08-29T22:13:56.393Z [host] state -> STARTING (starting OpenCode server (attempt 1))
-2026-08-29T22:13:56.398Z [host] server started: pid=6056 abi=x86_64 port=4111
+2026-08-29T23:14:47.384Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-08-29T23:14:47.427Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-08-29T23:14:47.578Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-08-29T23:14:47.605Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-08-29T23:14:48.550Z [host] extraction complete: 30 files validated
+2026-08-29T23:14:48.551Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-08-29T23:14:48.552Z [host] symlink bun -> /data/app/~~YK3a2sqT8adk16VY1RNXXA==/ai.opencode.android.debug-xweBOm1gwmhpwr-9XNgw7Q==/lib/x86_64/libbun.so (exec=true)
+2026-08-29T23:14:48.553Z [host] symlink git -> /data/app/~~YK3a2sqT8adk16VY1RNXXA==/ai.opencode.android.debug-xweBOm1gwmhpwr-9XNgw7Q==/lib/x86_64/libgit.so (exec=true)
+2026-08-29T23:14:48.554Z [host] symlink rg -> /data/app/~~YK3a2sqT8adk16VY1RNXXA==/ai.opencode.android.debug-xweBOm1gwmhpwr-9XNgw7Q==/lib/x86_64/librg.so (exec=true)
+2026-08-29T23:14:48.557Z [host] generated fresh server password (stored 600 at server-password)
+2026-08-29T23:14:48.559Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-29T23:14:48.574Z [host] server started: pid=6105 abi=x86_64 port=4111
+2026-08-29T23:14:48.632Z [server] [stderr] [seccomp] shim not found at /data/app/~~YK3a2sqT8adk16VY1RNXXA==/ai.opencode.android.debug-xweBOm1gwmhpwr-9XNgw7Q==/lib/x86_64/libseccompshim.so; server may hit SIGSYS
+2026-08-29T23:14:50.203Z [server] [stderr] SERVER_BOOT_FAILED
+2026-08-29T23:14:50.205Z [server] [stderr] Error: ENOSYS: function not implemented, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
+2026-08-29T23:14:50.206Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
+2026-08-29T23:14:50.207Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
+2026-08-29T23:14:50.207Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
+2026-08-29T23:14:50.208Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
 --- bin symlinks (filesDir/bin) ---
 total 40
-drwx------  2 u0_a192 u0_a192 4096 2026-08-29 22:13 .
-drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-29 22:13 ..
-lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-29 22:13 bun -> /data/app/~~tOCkGpdYya_YZAZ2o1QcLA==/ai.opencode.android.debug-cr7GR9s8ebasHSbAEqoanA==/lib/x86_64/libbun.so
-lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-29 22:13 git -> /data/app/~~tOCkGpdYya_YZAZ2o1QcLA==/ai.opencode.android.debug-cr7GR9s8ebasHSbAEqoanA==/lib/x86_64/libgit.so
-lrwxrwxrwx  1 u0_a192 u0_a192  107 2026-08-29 22:13 rg -> /data/app/~~tOCkGpdYya_YZAZ2o1QcLA==/ai.opencode.android.debug-cr7GR9s8ebasHSbAEqoanA==/lib/x86_64/librg.so
+drwx------  2 u0_a192 u0_a192 4096 2026-08-29 23:14 .
+drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-29 23:14 ..
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-29 23:14 bun -> /data/app/~~YK3a2sqT8adk16VY1RNXXA==/ai.opencode.android.debug-xweBOm1gwmhpwr-9XNgw7Q==/lib/x86_64/libbun.so
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-29 23:14 git -> /data/app/~~YK3a2sqT8adk16VY1RNXXA==/ai.opencode.android.debug-xweBOm1gwmhpwr-9XNgw7Q==/lib/x86_64/libgit.so
+lrwxrwxrwx  1 u0_a192 u0_a192  107 2026-08-29 23:14 rg -> /data/app/~~YK3a2sqT8adk16VY1RNXXA==/ai.opencode.android.debug-xweBOm1gwmhpwr-9XNgw7Q==/lib/x86_64/librg.so
 --- execs THROUGH symlinks ---
 1.3.14
 bun_rc=0
@@ -32,7 +39,7 @@ simd(runtime):+SSE2,+SSSE3,-AVX2
 PCRE2 10.45 is available (JIT is available)
 rg_rc=0
 --- flat payload present ---
--rw------- 1 u0_a192 u0_a192     4514 2026-08-29 22:13 /data/data/ai.opencode.android.debug/files/launcher.js
--rw------- 1 u0_a192 u0_a192 32841122 2026-08-29 22:13 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
-drwx------ 5 u0_a192 u0_a192 4096 2026-08-29 22:13 /data/data/ai.opencode.android.debug/files/node_modules
+-rw------- 1 u0_a192 u0_a192     4514 2026-08-29 23:14 /data/data/ai.opencode.android.debug/files/launcher.js
+-rw------- 1 u0_a192 u0_a192 32841123 2026-08-29 23:14 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
+drwx------ 5 u0_a192 u0_a192 4096 2026-08-29 23:14 /data/data/ai.opencode.android.debug/files/node_modules
 --- live server processes (app uid) ---
