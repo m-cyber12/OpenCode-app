@@ -116,7 +116,12 @@ build_native() {  # $1=abi  $2=target-triple
        "libexecshim.so ($(stat -c%s "$outdir/libexecshim.so") B)"
   "$NDK_BIN/llvm-nm" -D "$outdir/libseccompshim.so" 2>/dev/null | grep -q opencode_seccomp_init \
     || { note "FATAL: opencode_seccomp_init missing from libseccompshim.so ($abi)"; exit 1; }
-  "$NDK_BIN/llvm-readelf" -h "$outdir/libexecshim.so" 2>/dev/null | grep -q 'DYN' \
+  # The wrapper must be a PIE (DYN) executable so Android will exec it from
+  # nativeLibraryDir (ET_EXEC fixed-address binaries are rejected). llvm-readelf
+  # is bundled with the NDK; fall back to the host readelf if absent.
+  READELF="$NDK_BIN/llvm-readelf"
+  [ -x "$READELF" ] || READELF="$(command -v llvm-readelf readelf | head -1)"
+  "$READELF" -h "$outdir/libexecshim.so" 2>/dev/null | tee -a "$STATUS" | grep -q 'DYN' \
     || { note "FATAL: libexecshim.so ($abi) is not a PIE/DYN executable"; exit 1; }
 }
 for abi in "${ABIS[@]}"; do
