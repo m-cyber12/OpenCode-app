@@ -2,36 +2,6 @@
 1.3.14
 === [2/6] Bun-for-Android (bionic) per ABI ===
 bun x64 -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/jniLibs/x86_64/libbun.so (91788816 bytes)
-=== [3/6] static git v2.48.1 per ABI (NO_PERL recipe, Phase 3-proven) ===
-git source: f93ff170b93a1782659637824b25923245ac9dd1
---- static git (x86_64, CC=musl-gcc) ---
-    LINK t/unit-tests/bin/t-reftable-merged
-    LINK t/unit-tests/bin/t-reftable-pq
-    LINK t/unit-tests/bin/t-reftable-reader
-    LINK t/unit-tests/bin/t-reftable-readwrite
-    LINK t/unit-tests/bin/t-reftable-record
-    LINK t/unit-tests/bin/t-reftable-stack
-    LINK t/unit-tests/bin/t-reftable-tree
-    LINK t/unit-tests/bin/t-strbuf
-    LINK t/unit-tests/bin/t-strcmp-offset
-    LINK t/unit-tests/bin/t-trailer
-    GEN t/unit-tests/clar-decls.h
-    LINK t/unit-tests/bin/t-urlmatch-normalization
-    GEN t/unit-tests/clar.suite
-    CC t/unit-tests/u-ctype.o
-    CC t/unit-tests/u-strvec.o
-    CC t/unit-tests/clar/clar.o
-    CC t/unit-tests/unit-test.o
-    LINK t/unit-tests/bin/unit-tests
-    GEN gitweb/static/gitweb.js
-    GEN gitweb/gitweb.cgi
-x86_64 git OK: git version 2.48.1
-=== [4/6] ripgrep 15.1.0 per ABI ===
-x86_64 rg (musl-static) OK
-=== [5/6] OpenCode server bundle @ 05ea5073be967c779d326929b2de6228dda4159d (pinned, fail-loud) ===
-upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
-bundle build complete
-=== [6/6] stage payload, compute manifest ===
-payload tarball: 16551287 bytes sha256=005bd9346d8740fe3196bb4d4aeafd9fe68bb8a4e82df8c0e747de793d3c3bb4
-=== engine layout ===
-PAYLOAD_READY
+=== [2b/6] seccomp compatibility shim per ABI (NDK clang) ===
+NDK clang dir: /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/python3/bin
+FATAL: shim build failed for x86_64
