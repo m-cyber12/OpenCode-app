@@ -170,7 +170,7 @@ log "=== early diagnostics (app uid) ==="
   echo "--- flat payload present ---"
   rash "ls -la '$FILES/launcher.js' '$FILES/opencode/dist/node/node.js' 2>&1; ls -d '$FILES/node_modules' 2>&1"
   echo "--- live processes (app uid) ---"
-  rash 'for p in /proc/[0-9]*/cmdline; do c=$(tr "\000" " " < "$p" 2>/dev/null); case "$c" in *launcher.js*|*libbun*) echo "$p: $c";; esac; done'
+  rash 'for d in /proc/[0-9]*; do c=$(tr "\000" " " < "$d/cmdline" 2>/dev/null); case "$c" in *launcher.js*) echo "$d $c";; esac; done'
 } > "$EV/early-diag.txt" 2>&1
 cat "$EV/early-diag.txt" >> "$LOG"
 
