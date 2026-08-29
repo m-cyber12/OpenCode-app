@@ -75,18 +75,26 @@ note "=== [2b/6] seccomp compatibility shim per ABI (NDK clang) ==="
 # phase4/payload/native/seccomp-shim.c into jniLibs as libseccompshim.so; the
 # launcher dlopens it (OPENCODE_SECCOMP_SHIM -> nativeLibraryDir).
 SHIM_SRC="$DIR/payload/native/seccomp-shim.c"
-NDK_BIN="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/ndk" -type d -path '*toolchains/llvm/prebuilt/*/bin' 2>/dev/null | sort | tail -1)"
+NDK_BIN="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/ndk" -type f -path '*toolchains/llvm/prebuilt/linux-x86_64/bin/clang' 2>/dev/null | sort | tail -1 | xargs -r dirname)"
 if [ -z "$NDK_BIN" ]; then
   note "FATAL: Android NDK clang not found under ${ANDROID_HOME:-/usr/local/lib/android/sdk}/ndk"
   exit 1
 fi
 note "NDK clang dir: $NDK_BIN"
+if [ -z "$NDK_BIN" ] || [ ! -x "$NDK_BIN/clang" ]; then
+  note "FATAL: NDK clang not found (looked for .../toolchains/llvm/prebuilt/linux-x86_64/bin/clang)"
+  exit 1
+fi
 build_shim() {  # $1=abi  $2=target-triple
   local abi="$1" triple="$2" out="$ENGINE/jniLibs/$abi/libseccompshim.so"
   mkdir -p "$(dirname "$out")"
-  "$NDK_BIN/${triple}29-clang" -O2 -fPIC -shared \
-    -Wl,-z,max-page-size=16384 \
-    -o "$out" "$SHIM_SRC" || { note "FATAL: shim build failed for $abi"; exit 1; }
+  if ! "$NDK_BIN/${triple}29-clang" -O2 -fPIC -shared \
+        -Wl,-z,max-page-size=16384 \
+        -o "$out" "$SHIM_SRC" 2>"$WORK/shim-$abi.cc.log"; then
+    note "FATAL: shim build failed for $abi; clang stderr:"
+    cat "$WORK/shim-$abi.cc.log" | tee -a "$STATUS"
+    exit 1
+  fi
   chmod 755 "$out"
   note "seccomp-shim $abi -> $out ($(stat -c%s "$out") bytes)"
   # Fail-loud sanity: the exported symbol must be present.
