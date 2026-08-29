@@ -29,11 +29,17 @@ class RuntimePaths private constructor(context: Context) {
     val nativeLibraryDir: File = File(context.applicationInfo.nativeLibraryDir)
 
     val binDir: File = File(filesDir, "bin")
+    // The payload is extracted FLAT into filesDir (matching the proven Phase 3
+    // layout): filesDir/launcher.js, filesDir/node_modules/<jsonc-parser,
+    // node-pty, bun-pty>, filesDir/opencode/dist/node/node.js. Bun resolves
+    // node_modules by walking up from the bundle dir; the bundle sits in
+    // filesDir/opencode/dist/node/, so it finds filesDir/node_modules. The
+    // extraction marker and staging still live in filesDir/runtime/ which is
+    // NOT part of the payload tarball (it's host metadata).
     val runtimeDir: File = File(filesDir, "runtime")
     val extractionMarker: File = File(runtimeDir, ".extracted")
-    // launcher.js ships INSIDE the checksummed payload (runtime/), so it is
-    // validated like every other runtime file and restored on re-extraction.
-    val launcher: File = File(runtimeDir, "launcher.js")
+    val launcher: File = File(filesDir, "launcher.js")
+    val nodeModulesDir: File = File(filesDir, "node_modules")
 
     val xdgData: File = File(filesDir, "xdg/data")
     val xdgConfig: File = File(filesDir, "xdg/config")
@@ -62,8 +68,10 @@ class RuntimePaths private constructor(context: Context) {
     fun gitBinary(): File = File(nativeLibraryDir, "libgit.so")
     fun rgBinary(): File = File(nativeLibraryDir, "librg.so")
 
-    val serverBundle: File = File(runtimeDir, "opencode/dist/node/node.js")
-    val nodeModules: File = File(runtimeDir, "node_modules")
+    // Flat layout (matches the proven Phase 3 gate): bundle and node_modules
+    // are direct children of filesDir; runtimeDir holds only host metadata.
+    val serverBundle: File = File(filesDir, "opencode/dist/node/node.js")
+    val nodeModules: File = File(filesDir, "node_modules")
 
     fun ensureDirs() {
         listOf(

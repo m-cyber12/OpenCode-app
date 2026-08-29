@@ -82,6 +82,8 @@ echo "APK: $APK ($(stat -c%s "$APK") bytes)" | tee -a "$MAINLOG"
 step "7/9 install the real app + launch"
 adb install -r -g "$APK" 2>&1 | tail -3 | tee -a "$MAINLOG"
 adb shell pm list packages | grep ai.opencode | tee -a "$MAINLOG"
+# Clear logcat so the gate run captures only this app's boot/process output.
+adb logcat -c 2>/dev/null || true
 
 step "8/9 run Phase 4 gates (host lifecycle + G1..G12/G14/G15)"
 # The device gates script reads OPENROUTER_API_KEY from env (passes it in).
@@ -90,6 +92,10 @@ bash "$DIR/scripts/20-device-gates.sh" 2>&1 | tee -a "$MAINLOG"
 GATE_RC=${PIPESTATUS[0]}
 set -e
 echo "device gates rc=$GATE_RC" | tee -a "$MAINLOG"
+# Always capture logcat (the OpenCode host tags + native crashes) into evidence.
+adb logcat -d 2>/dev/null | grep -E "OpenCode|AndroidRuntime|DEBUG|libc|FATAL|bun|opencode" \
+  > "$EV/logcat.txt" 2>&1 || adb logcat -d > "$EV/logcat.txt" 2>&1 || true
+echo "logcat captured: $(wc -l < "$EV/logcat.txt" 2>/dev/null || echo 0) lines" | tee -a "$MAINLOG"
 
 step "9/9 collect evidence"
 cp "$MAINLOG" "$EV/00-run-phase4.log" 2>/dev/null || true

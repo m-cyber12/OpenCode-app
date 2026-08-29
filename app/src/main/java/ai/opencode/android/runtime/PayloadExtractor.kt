@@ -53,14 +53,12 @@ class PayloadExtractor(
         }
 
         val verify = verifyExtraction(
-            root = paths.runtimeDir,
+            root = paths.filesDir,
             marker = paths.extractionMarker,
             serverBundle = paths.serverBundle,
             launcher = paths.launcher,
             manifest = manifest,
         )
-        // launcher is inside runtime/ here (manifest entries are runtime-relative).
-        check(paths.launcher.parentFile == paths.runtimeDir) { "launcher must live in runtimeDir" }
         if (verify == null) {
             logger.host("extraction valid (${manifest.entries.size} files, ${manifest.opencodeVersion} @ ${manifest.opencodeCommit.take(7)})")
             return Result.AlreadyValid(manifest)
@@ -70,8 +68,8 @@ class PayloadExtractor(
     }
 
     private fun extract(manifest: RuntimeManifest): Result {
-        val staging = File(paths.filesDir, "runtime.staging")
-        val old = File(paths.filesDir, "runtime.old")
+        val staging = File(paths.filesDir, "payload.staging")
+        val oldRoots = listOf("opencode", "node_modules", "launcher.js")
         try {
             staging.deleteRecursively()
             staging.mkdirs()
@@ -82,7 +80,7 @@ class PayloadExtractor(
                 }
             }
 
-            // Verify every extracted entry BEFORE swapping in.
+            // Verify every extracted entry BEFORE promoting (flat, filesDir-relative).
             for (e in manifest.entries) {
                 val f = File(staging, e.path)
                 if (!f.isFile) return Result.Failed("extraction incomplete: ${e.path} missing")
@@ -92,16 +90,24 @@ class PayloadExtractor(
                     return Result.Failed("extraction sha256 mismatch on ${e.path}")
             }
 
-            // Atomic-ish swap: move current aside, put staging in place,
-            // write the marker, then remove the old copy.
-            old.deleteRecursively()
-            if (paths.runtimeDir.exists()) paths.runtimeDir.renameTo(old)
-            if (!staging.renameTo(paths.runtimeDir)) {
-                // Same-parent rename cannot cross filesystems here; fall back to copy.
-                staging.copyRecursively(paths.runtimeDir, overwrite = true)
-                staging.deleteRecursively()
+            // Promote: move each payload top-level entry into filesDir, keeping
+            // any old copy aside until success. Same parent -> rename is atomic.
+            paths.runtimeDir.mkdirs()
+            for (name in oldRoots) {
+                val src = File(staging, name)
+                val dst = File(paths.filesDir, name)
+                val bak = File(paths.filesDir, "$name.bak")
+                if (!src.exists()) continue
+                bak.deleteRecursively()
+                if (dst.exists()) dst.renameTo(bak)
+                if (!src.renameTo(dst)) {
+                    src.copyRecursively(dst, overwrite = true)
+                    src.deleteRecursively()
+                }
+                bak.deleteRecursively()
             }
-            // launcher.js is part of the payload (runtime/launcher.js) — nothing to copy.
+            staging.deleteRecursively()
+
             paths.extractionMarker.writeText(
                 org.json.JSONObject()
                     .put("payloadVersion", manifest.payloadVersion)
@@ -109,7 +115,6 @@ class PayloadExtractor(
                     .put("extractedAt", System.currentTimeMillis())
                     .toString(),
             )
-            old.deleteRecursively()
             logger.host("extraction complete: ${manifest.entries.size} files validated")
             return Result.Extracted(manifest)
         } catch (t: Throwable) {

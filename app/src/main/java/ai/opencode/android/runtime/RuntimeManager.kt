@@ -111,10 +111,18 @@ class RuntimeManager private constructor(private val appContext: Context) {
                     userStopRequested = false
                     generation++
                 }
-                logger.host("resetAndRestart: stopping + wiping runtime dir")
+                logger.host("resetAndRestart: stopping + wiping extracted payload")
                 process.stop()
-                paths.runtimeDir.deleteRecursively()
+                paths.runtimeDir.deleteRecursively()          // marker + host metadata
                 paths.extractionMarker.delete()
+                paths.launcher.delete()                       // flat payload entries
+                paths.nodeModulesDir.deleteRecursively()
+                File(paths.filesDir, "opencode").deleteRecursively()
+                File(paths.filesDir, "payload.staging").deleteRecursively()
+                File(paths.filesDir, "runtime.old").deleteRecursively()
+                listOf("opencode.bak", "node_modules.bak", "launcher.js.bak").forEach {
+                    File(paths.filesDir, it).deleteRecursively()
+                }
                 val gen: Int
                 synchronized(restartLock) {
                     running = true

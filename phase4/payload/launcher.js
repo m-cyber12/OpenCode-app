@@ -12,10 +12,14 @@ const path = require("path");
 
 // The Kotlin host (RuntimeEnv) exports these absolute paths explicitly so the
 // launcher works regardless of cwd/HOME layout.
-const filesDir = process.env.OPENCODE_FILES_DIR || path.dirname(process.env.HOME || "/data/local/tmp/x");
+// filesDir is the flat payload root (bundle at <filesDir>/opencode/dist/node/
+// node.js and deps at <filesDir>/node_modules); HOME is filesDir/home.
+const filesDir =
+  process.env.OPENCODE_FILES_DIR ||
+  path.dirname(process.env.HOME || "/data/data/x/files/home");
 const bundlePath =
   process.env.OPENCODE_BUNDLE ||
-  path.join(filesDir, "runtime", "opencode", "dist", "node", "node.js");
+  path.join(filesDir, "opencode", "dist", "node", "node.js");
 
 const port = Number(process.env.OPENCODE_SERVER_PORT || "4111");
 const hostname = process.env.OPENCODE_SERVER_HOSTNAME || "127.0.0.1";

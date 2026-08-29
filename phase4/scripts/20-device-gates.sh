@@ -159,17 +159,39 @@ log "server password: ${PASSWD:0:6}… (${#PASSWD} chars)"
 # ---------------------------------------------------------------------------
 log "=== H1 extraction + version validation ==="
 H1=1
-rash "ls -l '$FILES/runtime/opencode/dist/node/node.js' '$FILES/runtime/launcher.js' '$FILES/runtime/.extracted'" >>"$LOG" 2>&1
+rash "ls -l '$FILES/opencode/dist/node/node.js' '$FILES/launcher.js' '$FILES/runtime/.extracted'" >>"$LOG" 2>&1
 rash "grep -o '\"payloadVersion\":[0-9]*' '$FILES/runtime/.extracted'" | tee -a "$LOG"
 if rash "grep -q '\"payloadVersion\":4' '$FILES/runtime/.extracted'"; then
   log "H1 marker payloadVersion=4"; H1=0
 fi
 NL=$(native_lib_dir)
-log "H1 nativeLibraryDir: $NL"
-adb shell "ls -l $NL/libbun.so $NL/libgit.so $NL/librg.so" >>"$LOG" 2>&1
-EXECS=$(adb shell "for f in libbun.so libgit.so librg.so; do test -x $NL/\$f && echo \$f; done" | tr -d '\r' | wc -l | tr -d ' ')
+log "H1 nativeLibraryDir (from pm path): $NL"
+# Probe as the APP uid: the shell user cannot traverse /data/app, so an
+# `adb shell ls` there is a false negative. run-as runs as the app uid and CAN.
+rash "ls -l '$NL/libbun.so' '$NL/libgit.so' '$NL/librg.so' 2>&1" | tee -a "$LOG"
+EXECS=$(rash "n=0; for f in libbun.so libgit.so librg.so; do test -x '$NL/'\$f && n=\$((n+1)); done; echo \$n" | tr -d '\r ')
 log "H1 executable libs in nativeLibraryDir: $EXECS/3"
 [ "$EXECS" = "3" ] || H1=1
+
+# Early diagnostics regardless of gate state: run each bundled binary directly
+# from nativeLibraryDir as the app uid (this is what the supervisor does), and
+# dump the supervisor log + process tree so a boot failure is never invisible.
+log "=== early diagnostics (app uid) ==="
+{
+  echo "--- nativeLibraryDir binaries directly ---"
+  rash "'$NL/libbun.so' --version 2>&1; echo bun_rc=\$?"
+  rash "'$NL/libgit.so' --version 2>&1; echo git_rc=\$?"
+  rash "'$NL/librg.so' --version 2>&1; echo rg_rc=\$?"
+  echo "--- bin symlinks ---"
+  rash "ls -la '$FILES/bin/' 2>&1"
+  echo "--- runtime.log (host) ---"
+  rash "cat '$FILES/log/runtime.log' 2>&1 | tail -60"
+  echo "--- launcher/node bundle present ---"
+  rash "ls -la '$FILES/launcher.js' '$FILES/opencode/dist/node/node.js' 2>&1"
+  echo "--- live processes (app uid) ---"
+  rash 'for p in /proc/[0-9]*/cmdline; do c=$(tr "\000" " " < "$p" 2>/dev/null); case "$c" in *bun*|*launcher*|*opencode*) echo "$(dirname $p | xargs basename): $c";; esac; done'
+} >> "$EV/early-diag.txt" 2>&1
+cat "$EV/early-diag.txt" >> "$LOG"
 hp "$H1" 1 "extraction-and-version"
 
 log "=== H2 health-gated start ==="
@@ -250,11 +272,11 @@ H5=1
 adb shell am broadcast -a ai.opencode.android.DEBUG_RESET -n "$PKG/ai.opencode.android.runtime.DebugControlReceiver" >>"$LOG" 2>&1 || true
 if [ "$(wait_healthy 150)" = "HEALTH_OK" ]; then
   log "H5 reset+re-extract -> healthy"
-  rash "echo CORRUPT_MARKER >> '$FILES/runtime/opencode/dist/node/node.js'"
+  rash "echo CORRUPT_MARKER >> '$FILES/opencode/dist/node/node.js'"
   SPID2=$(rash "cat '$FILES/runtime.pid' 2>/dev/null" | tr -d '\r ')
   rash "kill -9 $SPID2 2>/dev/null; true"
   if [ "$(wait_healthy 150)" = "HEALTH_OK" ]; then
-    MARK=$(rash "grep -c CORRUPT_MARKER '$FILES/runtime/opencode/dist/node/node.js' 2>/dev/null || echo 1" | tr -d '\r')
+    MARK=$(rash "grep -c CORRUPT_MARKER '$FILES/opencode/dist/node/node.js' 2>/dev/null || echo 1" | tr -d '\r')
     log "H5 corruption marker present after recovery (want 0): $MARK"
     [ "$MARK" = "0" ] && H5=0
   fi
@@ -303,7 +325,7 @@ hp "$H8" 8 "abi-device-gate"
 log "=== pull logs into evidence ==="
 rash "tail -300 '$FILES/log/runtime.log'" > "$EV/runtime.log" 2>/dev/null || true
 rash "for f in '$FILES/xdg/state/opencode/log/'*; do echo '###' \$f; tail -80 \$f 2>/dev/null; done" > "$EV/opencode-server.log" 2>/dev/null || true
-rash "ls -la '$FILES/runtime/opencode/dist/node' '$FILES/bin' 2>/dev/null" > "$EV/device-layout.txt" 2>&1 || true
+rash "ls -la '$FILES/opencode/dist/node' '$FILES/bin' 2>/dev/null" > "$EV/device-layout.txt" 2>&1 || true
 
 cat >> "$SUMMARY" <<EOF
 PHASE4_SUMMARY $(date -u +%FT%TZ)
