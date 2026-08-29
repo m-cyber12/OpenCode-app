@@ -68,6 +68,38 @@ for abi in "${ABIS[@]}"; do
   esac
 done
 
+note "=== [2b/6] seccomp compatibility shim per ABI (NDK clang) ==="
+# Android's per-app seccomp filter kills newer syscalls with SIGSYS instead of
+# ENOSYS (observed x86_64 epoll_pwait2=441). The shim installs a SIGSYS
+# handler mapping them to ENOSYS so Bun's fallbacks engage. Built from
+# phase4/payload/native/seccomp-shim.c into jniLibs as libseccompshim.so; the
+# launcher dlopens it (OPENCODE_SECCOMP_SHIM -> nativeLibraryDir).
+SHIM_SRC="$DIR/payload/native/seccomp-shim.c"
+NDK_BIN="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/ndk" -type d -path '*toolchains/llvm/prebuilt/*/bin' 2>/dev/null | sort | tail -1)"
+if [ -z "$NDK_BIN" ]; then
+  note "FATAL: Android NDK clang not found under ${ANDROID_HOME:-/usr/local/lib/android/sdk}/ndk"
+  exit 1
+fi
+note "NDK clang dir: $NDK_BIN"
+build_shim() {  # $1=abi  $2=target-triple
+  local abi="$1" triple="$2" out="$ENGINE/jniLibs/$abi/libseccompshim.so"
+  mkdir -p "$(dirname "$out")"
+  "$NDK_BIN/${triple}29-clang" -O2 -fPIC -shared \
+    -Wl,-z,max-page-size=16384 \
+    -o "$out" "$SHIM_SRC" || { note "FATAL: shim build failed for $abi"; exit 1; }
+  chmod 755 "$out"
+  note "seccomp-shim $abi -> $out ($(stat -c%s "$out") bytes)"
+  # Fail-loud sanity: the exported symbol must be present.
+  "$NDK_BIN/llvm-nm" -D "$out" 2>/dev/null | grep -q opencode_seccomp_init \
+    || { note "FATAL: opencode_seccomp_init missing from $out"; exit 1; }
+}
+for abi in "${ABIS[@]}"; do
+  case "$abi" in
+    x86_64)    build_shim "x86_64" "x86_64-linux-android" ;;
+    arm64-v8a) build_shim "arm64-v8a" "aarch64-linux-android" ;;
+  esac
+done
+
 note "=== [3/6] static git $GIT_PIN per ABI (NO_PERL recipe, Phase 3-proven) ==="
 curl -fsSL --retry 3 --max-time 180 -o "$WORK/zlib.tgz" \
   "https://github.com/madler/zlib/archive/refs/tags/${ZLIB_PIN}.tar.gz"

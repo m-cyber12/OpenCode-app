@@ -44,7 +44,42 @@ if (!process.env.OPENROUTER_API_KEY) {
   } catch {}
 }
 
+// Android app-uid seccomp compatibility (see phase4/payload/native/seccomp-shim.c).
+// Android's per-app seccomp filter turns newer syscalls into a fatal SIGSYS
+// instead of ENOSYS (observed: x86_64 syscall 441 = epoll_pwait2 killing the
+// server on its first event-loop wait). dlopen the tiny NDK-built shim and call
+// opencode_seccomp_init() BEFORE the OpenCode bundle is imported; the shim's
+// SIGSYS handler then maps every trapped syscall to ENOSYS so Bun's own
+// fallbacks engage (epoll_pwait2 -> epoll_pwait, close_range -> fd loop, ...).
+// Loaded synchronously so it is active before any server code runs.
+function installSeccompShim() {
+  const shimPath = process.env.OPENCODE_SECCOMP_SHIM;
+  if (!shimPath) {
+    console.log("[seccomp] no shim path env (OPENCODE_SECCOMP_SHIM); skipping");
+    return;
+  }
+  if (!fs.existsSync(shimPath)) {
+    console.error("[seccomp] shim not found at " + shimPath + "; server may hit SIGSYS");
+    return;
+  }
+  try {
+    // bun:ffi is available on bun-android. dlopen() returns a symbol handle;
+    // its name must be the .so path WITHOUT the trailing ".so" suffix.
+    const { dlopen } = require("bun:ffi");
+    const stem = shimPath.endsWith(".so") ? shimPath.slice(0, -3) : shimPath;
+    const handle = dlopen(stem, {
+      opencode_seccomp_init: { args: [], returns: "int" },
+    });
+    const rc = handle.symbols.opencode_seccomp_init();
+    if (rc === 0) console.log("[seccomp] shim installed OK (" + shimPath + ")");
+    else console.error("[seccomp] opencode_seccomp_init returned " + rc);
+  } catch (e) {
+    console.error("[seccomp] failed to load shim: " + (e && e.message ? e.message : e));
+  }
+}
+
 async function main() {
+  installSeccompShim();
   const mod = await import(bundlePath);
   const Server = mod.Server;
   const listener = await Server.listen({ port, hostname, cors: [] });

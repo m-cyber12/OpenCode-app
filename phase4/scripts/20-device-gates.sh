@@ -199,15 +199,18 @@ cat "$EV/early-diag.txt" >> "$LOG"
 log "=== H1 extraction + version validation ==="
 H1=1
 rash "ls -l '$FILES/opencode/dist/node/node.js' '$FILES/launcher.js' '$FILES/runtime/.extracted'" >>"$LOG" 2>&1
-rash "grep -o '"payloadVersion":[0-9]*' '$FILES/runtime/.extracted'" | tee -a "$LOG" || true
+MARKER=$(rash "cat '$FILES/runtime/.extracted' 2>/dev/null" | tr -d '\r')
+log "H1 marker: $MARKER"
 BUNVER=$(rash "'$FILES/bin/bun' --version 2>&1" | tr -d '\r ')
 case "$BUNVER" in 1.3.*) EXEC_OK=1;; *) EXEC_OK=0;; esac
 log "H1 bun via symlink: '$BUNVER' exec_ok=$EXEC_OK"
-if [ "$EXEC_OK" = "1" ] \
-   && rash "test -f '$FILES/opencode/dist/node/node.js'" \
-   && rash "test -f '$FILES/launcher.js'" \
-   && rash "test -d '$FILES/node_modules'" \
-   && rash "grep -q '"payloadVersion":4' '$FILES/runtime/.extracted'"; then
+H1_NODE=1; rash "test -f '$FILES/opencode/dist/node/node.js'" && H1_NODE=0
+H1_LAUNCH=1; rash "test -f '$FILES/launcher.js'" && H1_LAUNCH=0
+H1_NM=1; rash "test -d '$FILES/node_modules'" && H1_NM=0
+H1_MARK=1; echo "$MARKER" | grep -q '"payloadVersion":4' && H1_MARK=0
+log "H1 node=$H1_NODE launcher=$H1_LAUNCH node_modules=$H1_NM marker=$H1_MARK exec=$EXEC_OK"
+if [ "$EXEC_OK" = "1" ] && [ "$H1_NODE" = 0 ] && [ "$H1_LAUNCH" = 0 ] \
+   && [ "$H1_NM" = 0 ] && [ "$H1_MARK" = 0 ]; then
   log "H1 flat payload + marker + execs OK"; H1=0
 else
   log "H1 payload/exec check failed (see early-diag.txt)"
