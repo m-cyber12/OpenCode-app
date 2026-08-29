@@ -1,0 +1,24 @@
+[2026-08-28T23:49:27Z] === G11: streaming/SSE ===
+assert ok: session id present
+shell HTTP 200
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M15CEG0VY4M064G5VJ128EZX","input":"{\"command\":\"echo G11_STREAM_EVENT_OK\"}","output":"\"G11_STREAM_EVENT_OK\\n\"","error":null}]}]
+events seen (17): {"server.connected":1,"message.updated":6,"message.part.updated":8,"session.status":1,"session.idle":1}
+assert ok: part update events streamed
+assert ok: message update events streamed
+assert ok: session.status events streamed
+assert ok: multiple events streamed (17)
+G11_SSE_OK
+assert ok: session id present
+prompt_async accepted (204)
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"Say exactly: G11_STREAM_MODEL_OK","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to output exactly \"G11_STREAM_MODEL_OK\". This is a simple request - I just need to output that exact s","input":"null","output":"null","error":null},{"type":"text","text":"G11_STREAM_MODEL_OK","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
+model events seen (43): ["server.connected","session.updated","session.updated","session.diff","message.updated","message.updated","session.status","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.part.delta","message.part.delta","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.updated","message.updated","message.updated","message.updated","session.status","session.status","session.idle","session.updated","session.updated","session.diff","message.updated","message.updated"]
+text parts streamed: [{"id":"prt_04ac76301001SEqHIeem2tFY2H","updates":4,"text":"G11_STREAM_MODEL_OK"}]
+session.status sequence: ["busy","busy","idle"]
+assert ok: agent turn did not fail
+assert ok: streamed text contains the reply
+assert ok: text part streamed progressively (>=2 updates)
+assert ok: status busy→idle observed
+G11_MODEL_STREAM_OK
+G11_PASS

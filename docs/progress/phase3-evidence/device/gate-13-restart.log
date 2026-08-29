@@ -1,0 +1,11 @@
+[2026-08-28T23:50:10Z] === G13: stop and restart the OpenCode process ===
+server pid=6698
+SERVER_STOPPED_AFTER_TERM
+-- port check (expect connection refused):
+PORT_DOWN
+-- restart with the same data dirs:
+[2026-08-28T23:50:11Z] server pid=7178; waiting for boot...
+[2026-08-28T23:50:13Z] server ready after ~2s
+RESTART_READY
+HTTP 200 /global/health -> {"healthy":true,"version":"1.18.23-gates"}
+G6_PASS

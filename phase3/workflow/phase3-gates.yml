@@ -1,0 +1,88 @@
+# PHASE 3 - RUNTIME GATES (G1-G15) on a real Android emulator.
+#
+# HOW TO INSTALL (needed once): copy this file to `.github/workflows/phase3-gates.yml`
+# on the `arena/01a049f8-opencode-app` branch (the session bot token cannot push
+# workflow files - verified 2026-08-29). After that, every push to the branch
+# runs the full gate suite and commits evidence to docs/progress/phase3-evidence/.
+#
+# Model credentials: add a repo secret named OPENROUTER_API_KEY
+# (Settings -> Secrets and variables -> Actions). Without it, model-driven gates
+# (G12, G15, and the model parts of G7/G8/G10/G11) are reported BLOCKED with
+# root cause "no model credentials" - everything else still runs.
+# The model id is overridable via the OPENROUTER_MODEL variable/secret below.
+name: phase3-gates
+
+on:
+  push:
+    branches: [arena/01a049f8-opencode-app]
+    paths-ignore:
+      - 'docs/progress/phase3-evidence/**'
+  workflow_dispatch:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_MODEL: nvidia/nemotron-3-ultra-550b-a55b:free
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Fix /dev/kvm permissions (Phase 2 lesson: never assume KVM just works)"
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm || true
+            ls -la /dev/kvm
+          else
+            echo "KVM_MISSING (emulator will be slow/unusable; gates will fail loudly)"
+          fi
+
+      - name: "Run the Phase 3 gate suite (probe -> SDK -> AVD -> boot -> artifacts -> gates -> evidence)"
+        run: |
+          bash phase3/scripts/00-run-gates.sh
+        shell: bash
+
+      - name: Collect and commit evidence
+        if: always()
+        run: |
+          mkdir -p docs/progress/phase3-evidence
+          cp -r phase3/out/evidence/. docs/progress/phase3-evidence/ 2>/dev/null || true
+          cp phase3/out/00-run-gates.log docs/progress/phase3-evidence/ 2>/dev/null || true
+          cp phase3/out/prep.log docs/progress/phase3-evidence/ 2>/dev/null || true
+          cp phase3/out/git.status docs/progress/phase3-evidence/ 2>/dev/null || true
+          git add -A docs/progress/phase3-evidence/ || true
+          if git diff --cached --quiet; then
+            echo "no evidence changes; skipping commit"
+          else
+            git config user.name "arena-ai-coding-agent[bot]"
+            git config user.email "arena-ai-coding-agent[bot]@users.noreply.github.com"
+            git -c user.name="arena-ai-coding-agent[bot]" -c user.email="arena-ai-coding-agent[bot]@users.noreply.github.com" \
+              commit -m "phase3: gates evidence (auto)" || true
+            git push origin "HEAD:arena/01a049f8-opencode-app" || echo "PUSH_FAILED"
+          fi
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3-gates-evidence
+          path: |
+            phase3/out/evidence/
+            phase3/out/emulator.log
+            phase3/out/prep.log
+            phase3/out/git.status
+            docs/progress/phase3-evidence/
+          if-no-files-found: ignore
+
+      - name: Gate summary (readable in the Actions log)
+        if: always()
+        run: |
+          if [ -f phase3/out/evidence/GATES_SUMMARY.txt ]; then
+            cat phase3/out/evidence/GATES_SUMMARY.txt
+          fi

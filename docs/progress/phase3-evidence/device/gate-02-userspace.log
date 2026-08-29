@@ -1,0 +1,39 @@
+[2026-08-28T23:48:15Z] === G2: minimal userspace boots ===
+-- env:
+ANDROID_ART_ROOT=/apex/com.android.art
+ANDROID_ASSETS=/system/app
+ANDROID_BOOTLOGO=1
+ANDROID_DATA=/data
+ANDROID_I18N_ROOT=/apex/com.android.i18n
+ANDROID_ROOT=/system
+ANDROID_SOCKET_adbd=25
+ANDROID_STORAGE=/storage
+ANDROID_TZDATA_ROOT=/apex/com.android.tzdata
+ASEC_MOUNTPOINT=/mnt/asec
+BOOTCLASSPATH=/apex/com.android.art/javalib/core-oj.jar:/apex/com.android.art/javalib/core-libart.jar:/apex/com.android.art/javalib/okhttp.jar:/apex/com.android.art/javalib/bouncycastle.jar:/apex/com.android.art/javalib/apache-xml.jar:/system/framework/framework.jar:/system/framework/framework-graphics.jar:/system/framework/ext.jar:/system/framework/telephony-common.jar:/system/framework/voip-common.jar:/system/framework/ims-common.jar:/apex/com.android.i18n/javalib/core-icu4j.jar:/apex/com.android.adservices/javalib/framework-adservices.jar:/apex/com.android.adservices/javalib/framework-sdksandbox.jar:/apex/com.android.appsearch/javalib/framework-appsearch.jar:/apex/com.android.btservices/javalib/framework-bluetooth.jar:/apex/com.android.configinfrastructure/javalib/framework-configinfrastructure.jar:/apex/com.android.conscrypt/javalib/conscrypt.jar:/apex/com.android.devicelock/javalib/framework-devicelock.jar:/apex/com.android.healthfitness/javalib/framework-healthfitness.jar:/apex/com.android.ipsec/javalib/android.net.ipsec.ike.jar:/apex/com.android.media/javalib/updatable-media.jar:/apex/com.android.mediaprovider/javalib/framework-mediaprovider.jar:/apex/com.android.ondevicepersonalization/javalib/framework-ondevicepersonalization.jar:/apex/com.android.os.statsd/javalib/framework-statsd.jar:/apex/com.android.permission/javalib/framework-permission.jar:/apex/com.android.permission/javalib/framework-permission-s.jar:/apex/com.android.scheduling/javalib/framework-scheduling.jar:/apex/com.android.sdkext/javalib/framework-sdkextensions.jar:/apex/com.android.tethering/javalib/framework-connectivity.jar:/apex/com.android.tethering/javalib/framework-connectivity-t.jar:/apex/com.android.tethering/javalib/framework-tethering.jar:/apex/com.android.uwb/javalib/framework-uwb.jar:/apex/com.android.virt/javalib/framework-virtualization.jar:/apex/com.android.wifi/javalib/framework-wifi.jar
+DEX2OATBOOTCLASSPATH=/apex/com.android.art/javalib/core-oj.jar:/apex/com.android.art/javalib/core-libart.jar:/apex/com.android.art/javalib/okhttp.jar:/apex/com.android.art/javalib/bouncycastle.jar:/apex/com.android.art/javalib/apache-xml.jar:/system/framework/framework.jar:/system/framework/framework-graphics.jar:/system/framework/ext.jar:/system/framework/telephony-common.jar:/system/framework/voip-common.jar:/system/framework/ims-common.jar:/apex/com.android.i18n/javalib/core-icu4j.jar
+DOWNLOAD_CACHE=/data/cache
+EXTERNAL_STORAGE=/sdcard
+GATES_DIR=/data/local/tmp/gates
+GIT_AUTHOR_EMAIL=gates@localhost
+GIT_AUTHOR_NAME=gates
+GIT_COMMITTER_EMAIL=gates@localhost
+GIT_COMMITTER_NAME=gates
+GIT_EDITOR=true
+-- dirs:
+drwxrwxrwx 2 root root 4096 2026-08-28 23:48 /data/local/tmp/gates/cache
+drwxrwxrwx 3 root root 4096 2026-08-28 23:48 /data/local/tmp/gates/config
+drwxrwxrwx 3 root root 4096 2026-08-28 23:48 /data/local/tmp/gates/data
+drwxrwxrwx 2 root root 4096 2026-08-28 23:48 /data/local/tmp/gates/home
+drwxrwxrwx 2 root root 4096 2026-08-28 23:48 /data/local/tmp/gates/state
+drwxrwxrwx 2 root root 4096 2026-08-28 23:48 /data/local/tmp/gates/tmp
+-- /proc:
+Linux version 6.1.23-android14-4-00257-g7e35917775b8-ab9964412 (build-user@build-host) (Android (9796371, based on r487747) clang version 17.0.0 (https://android.googlesource.com/toolchain/llvm-project d9f89f4d16663d5012e5c09495f3b30ece3d2362), LLD 17.0.0) #1 SMP PREEMPT Mon Apr 17 20:50:58 UTC 2023
+0.44 4.25 2.70 1/2628 6649
+-- tmp writable:
+probe
+-- bundled tools:
+ripgrep 15.1.0 (rev af60c2de9d)
+git version 2.48.1
+-- sqlite via bun:
+SQLITE_ROW={"v":"userspace-ok"}

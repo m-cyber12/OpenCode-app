@@ -1,0 +1,98 @@
+[2026-08-28T23:50:26Z] === G15: end-to-end project inspection ===
+assert ok: session id present
+--- prompting the real agent ---
+prompt_async accepted (204)
+permission.asked id=per_04ac82c50001Qj0OS8VyM6aIEq session=ses_fb537d985ffejLXk3FrlkkEtxC permission=bash patterns=["ls -la"]
+permission.asked id=per_04ac836ca001hZQI7KlhzR7U0g session=ses_fb537d985ffejLXk3FrlkkEtxC permission=bash patterns=["ls -la src/"]
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"Inspect this project and explain what it does.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to inspect the project and explain what it does. Let me start by exploring the directory structure to ","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"bash","callID":"call-6a7835c5-466e-4ec7-85b2-5c6b9d51b43a","input":"{\"command\":\"ls -la\"}","output":"\"total 64\\ndrwxrwxrwx  4 root root 4096 2026-08-28 23:49 .\\ndrwxrwxrwx 16 root root 4096 2026-08-28 23:48 ..\\ndrwxrwxrwx  5 root root 4096 2026-08-28 23:49 .git\\n-rw-rw-rw-  1 root root  443 2026-08-2","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"Let me read the README and explore the src directory to understand the project.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"call-114ab680-98d7-4dfa-a500-394eb463673b","input":"{\"filePath\":\"/data/local/tmp/gates/project/README.md\"}","output":"\"<path>/data/local/tmp/gates/project/README.md</path>\\n<type>file</type>\\n<content>\\n1: # Phase-3 gates project — G15-E2E-MARKER\\n2: \\n3: This repository is the fixture project for the Phase 3 runtime","error":null},{"type":"tool","state":"completed","text":"","tool":"bash","callID":"call-6e549424-ef1f-41dd-af85-105548e12db4","input":"{\"command\":\"ls -la src/\"}","output":"\"total 24\\ndrwxrwxrwx 2 root root 4096 2026-08-28 23:48 .\\ndrwxrwxrwx 4 root root 4096 2026-08-28 23:49 ..\\n-rw-rw-rw- 1 root root  152 2026-08-28 23:48 app.js\\n\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"Let me read the app.js file and also check the other text files to understand the project better.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"call-0ea13b57-a615-480a-a4c9-acfc794ce78f","input":"{\"filePath\":\"/data/local/tmp/gates/project/src/app.js\"}","output":"\"<path>/data/local/tmp/gates/project/src/app.js</path>\\n<type>file</type>\\n<content>\\n1: // A tiny fixture module for the gates project.\\n2: export function describeProject() {\\n3:   return \\\"Phase-3 ","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"call-780bd0e6-ed54-4aa7-a17f-b4bce059fda4","input":"{\"filePath\":\"/data/local/tmp/gates/project/notes.txt\"}","output":"\"<path>/data/local/tmp/gates/project/notes.txt</path>\\n<type>file</type>\\n<content>\\n1: Phase 3 gate fixture notes\
+--- assistant reply (594 chars) ---
+
+
+
+This is a **Phase-3 gates fixture project** (G15-E2E-MARKER) designed to test the real OpenCode agent running on an Android emulator. 
+
+It's a minimal Android app project that:
+- Runs the real OpenCode server on-device under Bun-for-Android
+- Has real shell, Git, ripgrep, and MCP support (no mocks/remote fallback)
+- Contains a tiny fixture module (`src/app.js`) exporting a `describeProject()` function
+- Used specifically for **G15** gate: asking the agent to inspect and explain the project
+- Also exercises real Git operations for **G9** gate (init, status, add, commit, diff, branches)
+--- tools used: ["bash","read","bash","read","read","read","read"] ---
+--- tool outputs ---
+total 64
+drwxrwxrwx  4 root root 4096 2026-08-28 23:49 .
+drwxrwxrwx 16 root root 4096 2026-08-28 23:48 ..
+drwxrwxrwx  5 root root 4096 2026-08-28 23:49 .git
+-rw-rw-rw-  1 root root  443 2026-08-28 23:48 README.md
+-rw-rw-rw-  1 root root   17 2026-08-28 23:48 g8-agent.txt
+-rw-rw-rw-  1 root root   24 2026-08-28 23:48 g8-write.txt
+-rw-rw-rw-  1 root root  183 2026-08-28 23:49 notes.txt
+drwxrwxrwx  2
+---
+<path>/data/local/tmp/gates/project/README.md</path>
+<type>file</type>
+<content>
+1: # Phase-3 gates project — G15-E2E-MARKER
+2: 
+3: This repository is the fixture project for the Phase 3 runtime gates (G1–G15):
+4: it exists to be inspected by the real OpenCode agent running on the Android
+5: emulator. It is an Android app project whose agent backend is the real
+6: OpenCode server, running on-devic
+---
+total 24
+drwxrwxrwx 2 root root 4096 2026-08-28 23:48 .
+drwxrwxrwx 4 root root 4096 2026-08-28 23:49 ..
+-rw-rw-rw- 1 root root  152 2026-08-28 23:48 app.js
+
+---
+<path>/data/local/tmp/gates/project/src/app.js</path>
+<type>file</type>
+<content>
+1: // A tiny fixture module for the gates project.
+2: export function describeProject() {
+3:   return "Phase-3 gates project: real OpenCode agent on Android";
+4: }
+
+(End of file - total 4 lines)
+</content>
+---
+<path>/data/local/tmp/gates/project/notes.txt</path>
+<type>file</type>
+<content>
+1: Phase 3 gate fixture notes
+2: - G9 exercises real git in this repo (init/status/add/commit/diff/branches)
+3: - G15 asks the agent to inspect this project and explain what it does
+4: g9 change
+
+(End of file - total 4 lines)
+</content>
+---
+<path>/data/local/tmp/gates/project/g8-agent.txt</path>
+<type>file</type>
+<content>
+1: G8_AGENT_WRITE_OK
+
+(End of file - total 1 lines)
+</content>
+---
+<path>/data/local/tmp/gates/project/g8-write.txt</path>
+<type>file</type>
+<content>
+1: G8_WRITE_OK
+2: second line
+
+(End of file - total 2 lines)
+</content>
+--- events seen (229): {"server.connected":1,"session.status":10,"message.updated":34,"session.updated":10,"session.diff":5,"message.part.updated":90,"message.part.delta":73,"permission.asked":2,"permission.replied":2,"server.heartbeat":1,"session.idle":1}
+--- tools streamed as events: [{"tool":"bash","status":"completed","callID":"call-6a7835c5-466e-4ec7-85b2-5c6b9d51b43a","input":{"command":"ls -la"}},{"tool":"read","status":"completed","callID":"call-114ab680-98d7-4dfa-a500-394eb463673b","input":{"filePath":"/data/local/tmp/gates/project/README.md"}},{"tool":"bash","status":"completed","callID":"call-6e549424-ef1f-41dd-af85-105548e12db4","input":{"command":"ls -la src/"}},{"tool":"read","status":"completed","callID":"call-0ea13b57-a615-480a-a4c9-acfc794ce78f","input":{"filePath":"/data/local/tmp/gates/project/src/app.js"}},{"tool":"read","status":"completed","callID":"call-780bd0e6-ed54-4aa7-a17f-b4bce059fda4","input":{"filePath":"/data/local/tmp/gates/project/notes.txt"}},{"tool":"read","status":"completed","callID":"call-737d55bd-6a80-4855-87a0-8412c0e7f71f","input":{"filePath":"/data/local/tmp/gates/project/g8-agent.txt"}},{"tool":"read","status":"completed","callID":"call-94a8b7d0-07ef-415a-b242-442cdf42d947","input":{"filePath":"/data/local/tmp/gates/project/g8-write.txt"}}]
+--- permissions allowed: ["bash","bash"]
+assert ok: agent turn did not fail
+assert ok: explanation is substantive (594 chars)
+assert ok: explanation reflects the actual project
+assert ok: real tools executed: ["bash","read","bash","read","read","read","read"]
+assert ok: tool parts streamed over SSE
+assert ok: session.status events streamed
+assert ok: message events streamed
+G15_PASS
+GATE_15: PASS end-to-end 

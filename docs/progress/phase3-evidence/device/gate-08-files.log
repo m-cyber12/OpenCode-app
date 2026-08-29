@@ -1,0 +1,32 @@
+[2026-08-28T23:48:28Z] === G8: read/write project files ===
+list HTTP 200
+assert ok: file list ok
+files: .git, src, README.md, notes.txt
+assert ok: README.md listed
+assert ok: notes.txt listed
+G8_READ_OK
+assert ok: file content ok
+README head: # Phase-3 gates project — G15-E2E-MARKER  This repository is the fixture project
+assert ok: README content readable
+G8_READ_OK
+assert ok: find (ripgrep) ok
+rg matches: ["README.md"]
+assert ok: ripgrep found the marker
+assert ok: session id present
+shell write HTTP 200
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M15CCQ9FDXT1F6FRRXHED02R","input":"{\"command\":\"printf 'G8_WRITE_OK\\\\n' > g8-write.txt && printf 'second line\\\\n' >> g8-write.txt\"}","output":"\"\"","error":null}]}]
+assert ok: written file readable
+g8-write.txt: G8_WRITE_OK | second line
+assert ok: file content written through OpenCode shell exec
+G8_WRITE_OK
+assert ok: session id present
+prompt_async accepted (204)
+permission.asked id=per_04ac6b9dd0014CITLRDYfWNFfO session=ses_fb5398b20ffeMLyCnDg1BH2aHU permission=edit patterns=["g8-agent.txt"]
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"Write the file g8-agent.txt containing exactly the text G8_AGENT_WRITE_OK. Use the write tool.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to write a file called g8-agent.txt with the exact text \"G8_AGENT_WRITE_OK\". I'll use the write tool t","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"write","callID":"call-7734677e-da5b-4281-b035-fa71a80cd491","input":"{\"content\":\"G8_AGENT_WRITE_OK\",\"filePath\":\"/data/local/tmp/gates/project/g8-agent.txt\"}","output":"\"Wrote file successfully.\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null},{"type":"patch","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The file was written successfully. I should confirm this to the user.","input":"null","output":"null","error":null},{"type":"text","text":"Done. The file g8-agent.txt has been created with the content \"G8_AGENT_WRITE_OK\".","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
+permissions allowed: [{"id":"per_04ac6b9dd0014CITLRDYfWNFfO","permission":"edit","patterns":["g8-agent.txt"]}]
+assert ok: agent-written file readable
+g8-agent.txt: G8_AGENT_WRITE_OK
+assert ok: agent write tool wrote the file
+G8_PASS
