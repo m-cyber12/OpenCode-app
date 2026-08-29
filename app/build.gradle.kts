@@ -66,8 +66,8 @@ android {
         getByName("main") {
             // Runtime payload (runner-generated, gitignored) — exec bits and
             // the compressed JS payload. Missing payload fails preBuild below.
-            jniLibs.srcDir(engineDir.dir("jniLibs"))
-            assets.srcDir(engineDir.dir("assets"))
+            jniLibs.srcDir(engineDir.dir("jniLibs").asFile)
+            assets.srcDir(engineDir.dir("assets").asFile)
         }
     }
 
