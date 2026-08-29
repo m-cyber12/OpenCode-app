@@ -1,18 +1,99 @@
---- nativeLibraryDir binaries directly ---
--version: /data/app/~~yTiCqGYNHLEapXoID_2bXA==/ai.opencode.android.debug-FgR3_vOeLXK-sw7JCBINtA==/lib64/libbun.so: inaccessible or not found
-bun_rc=127
--version: /data/app/~~yTiCqGYNHLEapXoID_2bXA==/ai.opencode.android.debug-FgR3_vOeLXK-sw7JCBINtA==/lib64/libgit.so: inaccessible or not found
-git_rc=127
--version: /data/app/~~yTiCqGYNHLEapXoID_2bXA==/ai.opencode.android.debug-FgR3_vOeLXK-sw7JCBINtA==/lib64/librg.so: inaccessible or not found
-rg_rc=127
---- bin symlinks ---
+--- supervisor log (host) ---
+--- bin symlinks (filesDir/bin) ---
 cache
 code_cache
 files
---- runtime.log (host) ---
---- launcher/node bundle present ---
+--- exercise execs THROUGH symlinks (the production path the server/agent uses) ---
+Bun is a fast JavaScript runtime, package manager, bundler, and test runner. (1.3.14+0d9b296af)
+
+Usage: bun <command> [...flags] [...args]
+
+Commands:
+  run       ./my-script.ts       Execute a file with Bun
+            lint                 Run a package.json script
+  test                           Run unit tests with Bun
+  x         nuxi                 Execute a package binary (CLI), installing if needed (bunx)
+  repl                           Start a REPL session with Bun
+  exec                           Run a shell script directly with Bun
+
+  install                        Install dependencies for a package.json (bun i)
+  add       @evan/duckdb         Add a dependency to package.json (bun a)
+  remove    moment               Remove a dependency from package.json (bun rm)
+  update    @zarfjs/zarf         Update outdated dependencies
+  audit                          Check installed packages for vulnerabilities
+  outdated                       Display latest versions of outdated dependencies
+  link      [<package>]          Register or link a local npm package
+  unlink                         Unregister a local npm package
+  publish                        Publish a package to the npm registry
+  patch <pkg>                    Prepare a package for patching
+  pm <subcommand>                Additional package management utilities
+  info      zod                  Display package metadata from the registry
+  why       tailwindcss          Explain why a package is installed
+
+  build     ./a.ts ./b.jsx       Bundle TypeScript & JavaScript into a single file
+
+  init                           Start an empty Bun project from a built-in template
+  create    svelte               Create a new project from a template (bun c)
+  upgrade                        Upgrade to latest version of Bun.
+  feedback  ./file1 ./file2      Provide feedback to the Bun team.
+
+  <command> --help               Print help text for command.
+
+Learn more about Bun:            https://bun.com/docs
+Join our Discord community:      https://bun.com/discord
+bun_rc=0
+usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]
+           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]
+           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--no-lazy-fetch]
+           [--no-optional-locks] [--no-advice] [--bare] [--git-dir=<path>]
+           [--work-tree=<path>] [--namespace=<name>] [--config-env=<name>=<envvar>]
+           <command> [<args>]
+
+These are common Git commands used in various situations:
+
+start a working area (see also: git help tutorial)
+   clone     Clone a repository into a new directory
+   init      Create an empty Git repository or reinitialize an existing one
+
+work on the current change (see also: git help everyday)
+   add       Add file contents to the index
+   mv        Move or rename a file, a directory, or a symlink
+   restore   Restore working tree files
+   rm        Remove files from the working tree and from the index
+
+examine the history and state (see also: git help revisions)
+   bisect    Use binary search to find the commit that introduced a bug
+   diff      Show changes between commits, commit and working tree, etc
+   grep      Print lines matching a pattern
+   log       Show commit logs
+   show      Show various types of objects
+   status    Show the working tree status
+
+grow, mark and tweak your common history
+   branch    List, create, or delete branches
+   commit    Record changes to the repository
+   merge     Join two or more development histories together
+   rebase    Reapply commits on top of another base tip
+   reset     Reset current HEAD to the specified state
+   switch    Switch branches
+   tag       Create, list, delete or verify a tag object signed with GPG
+
+collaborate (see also: git help workflows)
+   fetch     Download objects and refs from another repository
+   pull      Fetch from and integrate with another repository or a local branch
+   push      Update remote refs along with associated objects
+
+'git help -a' and 'git help -g' list available subcommands and some
+concept guides. See 'git help <command>' or 'git help <concept>'
+to read about a specific subcommand or concept.
+See 'git help git' for an overview of the system.
+git_rc=1
+rg: ripgrep requires at least one pattern to execute a search
+rg_rc=2
+--- flat payload present ---
 cache
 code_cache
 files
+ls: /data/data/ai.opencode.android.debug/files/node_modules: Permission denied
 --- live processes (app uid) ---
 /system/bin/sh: syntax error: unexpected 'do'

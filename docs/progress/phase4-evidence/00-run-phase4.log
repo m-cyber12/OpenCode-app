@@ -1,4 +1,4 @@
-=== PHASE 4 START 2026-08-29T11:34:07Z ===
+=== PHASE 4 START 2026-08-29T12:14:43Z ===
 ########## 1/9 environment probe ##########
 Linux runnervmgx7h7 6.17.0-1022-azure #22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
 4
@@ -17,7 +17,7 @@ packages-list.txt
 platform-tools
 platforms
 --- downloading cmdline-tools
--rw-r--r-- 1 runner runner 153607504 Aug 29 11:34 cmdtools.zip
+-rw-r--r-- 1 runner runner 153607504 Aug 29 12:14 cmdtools.zip
 /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
 /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
 --- sdkmanager licenses
@@ -41,7 +41,7 @@ accel:
 KVM (version 12) is installed and usable.
 accel
 --- starting emulator (headless)
-emulator pid=2541
+emulator pid=2529
 * daemon not running; starting now at tcp:5037
 * daemon started successfully
 BOOT_COMPLETED after ~48s
@@ -106,11 +106,11 @@ x86_64 rg (musl-static) OK
 upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
 bundle build complete
 === [6/6] stage payload, compute manifest ===
-payload tarball: 16551279 bytes sha256=c1ea97466bcfd01e60d6bd39c7bbee511f994aa59a31e5c7cff23d3bd5edaac6
+payload tarball: 16551285 bytes sha256=9244e7aece8b02940afcedeb2c1a634238de173edb857037974d440e1b128c30
 manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/assets/runtime-manifest.json
 === engine layout ===
 1590 ./build.status
-16551279 ./assets/runtime-payload.tar.gz
+16551285 ./assets/runtime-payload.tar.gz
 5171 ./assets/runtime-manifest.json
 4415648 ./jniLibs/x86_64/libgit.so
 5445512 ./jniLibs/x86_64/librg.so
@@ -119,22 +119,22 @@ manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/eng
 PAYLOAD_READY
 + zod-to-json-schema@3.25.2
 
-92 packages installed [283.00ms]
+92 packages installed [274.00ms]
 MCP_READY: 26M
 /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/assets:
 total 16180
-drwxr-xr-x 2 runner runner     4096 Aug 29 11:38 .
-drwxr-xr-x 4 runner runner     4096 Aug 29 11:36 ..
--rw-r--r-- 1 runner runner     5171 Aug 29 11:38 runtime-manifest.json
--rw-r--r-- 1 runner runner 16551279 Aug 29 11:38 runtime-payload.tar.gz
+drwxr-xr-x 2 runner runner     4096 Aug 29 12:18 .
+drwxr-xr-x 4 runner runner     4096 Aug 29 12:16 ..
+-rw-r--r-- 1 runner runner     5171 Aug 29 12:18 runtime-manifest.json
+-rw-r--r-- 1 runner runner 16551285 Aug 29 12:18 runtime-payload.tar.gz
 
 /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/jniLibs/x86_64:
 total 99284
-drwxr-xr-x 2 runner runner     4096 Aug 29 11:37 .
-drwxr-xr-x 4 runner runner     4096 Aug 29 11:35 ..
--rwxr-xr-x 1 runner runner 91788816 Aug 29 11:35 libbun.so
--rwxr-xr-x 1 runner runner  4415648 Aug 29 11:37 libgit.so
--rwxr-xr-x 1 runner runner  5445512 Aug 29 11:37 librg.so
+drwxr-xr-x 2 runner runner     4096 Aug 29 12:17 .
+drwxr-xr-x 4 runner runner     4096 Aug 29 12:16 ..
+-rwxr-xr-x 1 runner runner 91788816 Aug 29 12:16 libbun.so
+-rwxr-xr-x 1 runner runner  4415648 Aug 29 12:17 libgit.so
+-rwxr-xr-x 1 runner runner  5445512 Aug 29 12:17 librg.so
 ########## 6/9 build the APK + run JVM unit tests ##########
 Downloading https://services.gradle.org/distributions/gradle-8.9-bin.zip
 ............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
@@ -180,37 +180,39 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:mergeDebugShaders
 > Task :app:compileDebugShaders NO-SOURCE
 > Task :app:generateDebugAssets UP-TO-DATE
-> Task :app:processDebugManifestForPackage
-> Task :app:processDebugResources
 > Task :app:mergeDebugAssets
 > Task :app:desugarDebugFileDependencies
 > Task :app:mergeDebugStartupProfile
 > Task :app:checkDebugDuplicateClasses
 > Task :app:mergeDebugJniLibFolders
 > Task :app:compressDebugAssets
+> Task :app:processDebugManifestForPackage
+> Task :app:mergeExtDexDebug
+> Task :app:mergeLibDexDebug
+> Task :app:mergeDebugNativeLibs
+> Task :app:validateSigningDebug
+> Task :app:writeDebugAppMetadata
+
+> Task :app:stripDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libbun.so, libgit.so, librg.so.
+
+> Task :app:writeDebugSigningConfigVersions
+> Task :app:preDebugUnitTestBuild
+> Task :app:javaPreCompileDebugUnitTest FROM-CACHE
+> Task :app:processDebugResources
+
 > Task :app:compileDebugKotlin
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:40:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:85:13 Variable 't' is never used
 
-> Task :app:mergeExtDexDebug
 > Task :app:compileDebugJavaWithJavac
 > Task :app:dexBuilderDebug
 > Task :app:mergeDebugGlobalSynthetics
 > Task :app:processDebugJavaRes
-> Task :app:mergeLibDexDebug
-> Task :app:mergeProjectDexDebug
-> Task :app:mergeDebugNativeLibs
-> Task :app:mergeDebugJavaResource
-> Task :app:validateSigningDebug
-> Task :app:writeDebugAppMetadata
-> Task :app:writeDebugSigningConfigVersions
-> Task :app:preDebugUnitTestBuild
-> Task :app:javaPreCompileDebugUnitTest FROM-CACHE
-> Task :app:bundleDebugClassesToCompileJar
 > Task :app:bundleDebugClassesToRuntimeJar
-
-> Task :app:stripDebugDebugSymbols
-Unable to strip the following libraries, packaging them as they are: libbun.so, libgit.so, librg.so.
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:mergeProjectDexDebug
+> Task :app:mergeDebugJavaResource
 
 > Task :app:packageDebug
 There are no .so files available to package in the APK for arm64-v8a.
@@ -250,7 +252,179 @@ PayloadExtractorTest > unpackTarRejectsPathEscape PASSED
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 2m 21s
+BUILD SUCCESSFUL in 2m 28s
 46 actionable tasks: 45 executed, 1 from cache
-APK: /home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk (86237985 bytes)
+APK: /home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk (86238785 bytes)
 ########## 7/9 verify APK contents, install the real app + launch ##########
+Performing Streamed Install
+Success
+package:ai.opencode.android.debug
+Performing Streamed Install
+Success
+package:ai.opencode.android.debug
+########## 8/9 run Phase 4 gates (host lifecycle + G1..G12/G14/G15) ##########
+[2026-08-29T12:20:55Z] === device facts ===
+release=14
+sdk=34
+abi=x86_64
+[2026-08-29T12:20:55Z] === host bun (runner) to drive gates over adb forward ===
+1.3.14
+[2026-08-29T12:20:56Z] === provision fixture + MCP + config + key (run-as) ===
+mkdir: Needs 1 argument (see "mkdir --help")
+sh: can't create /data/data/ai.opencode.android.debug/files/workspaces/gates/README.md: No such file or directory
+sh: can't create /data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js: No such file or directory
+/system/bin/sh: git: inaccessible or not found
+/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/20-device-gates.sh: line 41: /usr/local/lib/android/sdk/platform-tools/adb: Argument list too long
+tar: mcp.tgz: No such file or directory
+sh: can't create /data/data/ai.opencode.android.debug/files/xdg/config/opencode/opencode.jsonc: No such file or directory
+[2026-08-29T12:20:57Z] no OPENROUTER_API_KEY — model-driven assertions skipped
+[2026-08-29T12:20:57Z] === launch the app (starts RuntimeService) ===
+[2026-08-29T12:22:03Z] server password: … (0 chars)
+[2026-08-29T12:22:03Z] === early diagnostics (app uid) ===
+[2026-08-29T12:22:03Z] === H1 extraction + version validation ===
+grep: no REGEX
+[2026-08-29T12:22:03Z] H1 bun via symlink: 'BunisafastJavaScriptruntime,packagemanager,bundler,andtestrunner.(1.3.14+0d9b296af)
+
+Usage:bun<command>[...flags][...args]
+
+Commands:
+run./my-script.tsExecuteafilewithBun
+lintRunapackage.jsonscript
+testRununittestswithBun
+xnuxiExecuteapackagebinary(CLI),installingifneeded(bunx)
+replStartaREPLsessionwithBun
+execRunashellscriptdirectlywithBun
+
+installInstalldependenciesforapackage.json(buni)
+addzodAddadependencytopackage.json(buna)
+removebabel-coreRemoveadependencyfrompackage.json(bunrm)
+updatetailwindcssUpdateoutdateddependencies
+auditCheckinstalledpackagesforvulnerabilities
+outdatedDisplaylatestversionsofoutdateddependencies
+link[<package>]Registerorlinkalocalnpmpackage
+unlinkUnregisteralocalnpmpackage
+publishPublishapackagetothenpmregistry
+patch<pkg>Prepareapackageforpatching
+pm<subcommand>Additionalpackagemanagementutilities
+infoelysiaDisplaypackagemetadatafromtheregistry
+why@shumai/shumaiExplainwhyapackageisinstalled
+
+build./a.ts./b.jsxBundleTypeScript&JavaScriptintoasinglefile
+
+initStartanemptyBunprojectfromabuilt-intemplate
+createviteCreateanewprojectfromatemplate(bunc)
+upgradeUpgradetolatestversionofBun.
+feedback./file1./file2ProvidefeedbacktotheBunteam.
+
+<command>--helpPrinthelptextforcommand.
+
+LearnmoreaboutBun:https://bun.com/docs
+JoinourDiscordcommunity:https://bun.com/discord' exec_ok=0
+[2026-08-29T12:22:03Z] H1 payload/exec check failed (see early-diag.txt)
+H1: FAIL extraction-and-version 
+[2026-08-29T12:22:03Z] === H2 health-gated start ===
+[2026-08-29T12:24:34Z] H2 health timeout; runtime log tail:
+H2: FAIL health-gated-start 
+[2026-08-29T12:24:34Z] === H3 duplicate-process prevention ===
+[2026-08-29T12:24:44Z] H3 live launcher.js processes after repeated starts: 1
+H3: FAIL no-duplicate-process 
+[2026-08-29T12:24:44Z] === G1..G4 in-sandbox exec/userspace/shell/runtime (bin symlinks -> nativeLibraryDir) ===
+G01: FAIL execution-layer 
+G02: FAIL userspace 
+G03: FAIL real-shell 
+G04: FAIL runtime 
+[2026-08-29T12:24:44Z] === G5/G6 server start + health ===
+G05: PASS opencode-start 
+G06: FAIL health-endpoint 
+[2026-08-29T12:24:44Z] === G7..G12, G15 real agent gates over the app server ===
+[2026-08-29T12:24:44Z] --- G07 (gate-07-shell.js) model=0 ---
+G07: FAIL gate-07-shell.js 
+[2026-08-29T12:24:44Z] --- G08 (gate-08-files.js) model=0 ---
+G08: FAIL gate-08-files.js 
+[2026-08-29T12:24:44Z] --- G09 (gate-09-opencode-git.js) model=0 ---
+G09: FAIL gate-09-opencode-git.js 
+[2026-08-29T12:24:44Z] --- G10 (gate-10-mcp.js) model=0 ---
+G10: FAIL gate-10-mcp.js 
+[2026-08-29T12:24:44Z] --- G11 (gate-11-stream.js) model=0 ---
+G11: FAIL gate-11-stream.js 
+[2026-08-29T12:24:44Z] --- G12 (gate-12-permission.js) model=0 ---
+G12: FAIL gate-12-permission.js 
+[2026-08-29T12:24:44Z] --- G15 (gate-15-e2e.js) model=0 ---
+G15: FAIL gate-15-e2e.js 
+[2026-08-29T12:24:44Z] === H4 crash detection + restart with backoff ===
+[2026-08-29T12:24:44Z] H4 server pid: 
+[2026-08-29T12:24:44Z] H4 SIGKILL sent; waiting for supervisor restart...
+H4: FAIL crash-restart-backoff 
+[2026-08-29T12:26:25Z] === H5 corruption recovery (debug reset + live corruption) ===
+H5: FAIL corruption-recovery 
+[2026-08-29T12:28:56Z] === H6 graceful stop: no zombies, port down ===
+[2026-08-29T12:30:07Z] H6 leftover launchers=1 port-code=000000
+H6: FAIL graceful-stop-no-zombies 
+[2026-08-29T12:30:07Z] === G14 reconnect: sessions persist across restart ===
+G14: FAIL reconnect-sessions-persist 
+[2026-08-29T12:32:37Z] === H7 logs & diagnostics ===
+H7: FAIL logs-and-diagnostics 
+[2026-08-29T12:32:37Z] === H8 ABI/device gate ===
+[2026-08-29T12:32:37Z] H8 abi=x86_64 sdk=34 -> supported
+H8: PASS abi-device-gate 
+[2026-08-29T12:32:37Z] === pull logs into evidence ===
+[2026-08-29T12:32:37Z] === SUMMARY ===
+H1: FAIL extraction-and-version 
+H2: FAIL health-gated-start 
+H3: FAIL no-duplicate-process 
+G01: FAIL execution-layer 
+G02: FAIL userspace 
+G03: FAIL real-shell 
+G04: FAIL runtime 
+G05: PASS opencode-start 
+G06: FAIL health-endpoint 
+G07: FAIL gate-07-shell.js 
+G08: FAIL gate-08-files.js 
+G09: FAIL gate-09-opencode-git.js 
+G10: FAIL gate-10-mcp.js 
+G11: FAIL gate-11-stream.js 
+G12: FAIL gate-12-permission.js 
+G15: FAIL gate-15-e2e.js 
+H4: FAIL crash-restart-backoff 
+H5: FAIL corruption-recovery 
+H6: FAIL graceful-stop-no-zombies 
+G14: FAIL reconnect-sessions-persist 
+H7: FAIL logs-and-diagnostics 
+H8: PASS abi-device-gate 
+PHASE4_SUMMARY 2026-08-29T12:32:37Z
+h_total=8 h_pass=1 h_fail=7
+g_total=13 g_pass=1 g_fail=13
+model_available=0
+device_abi=x86_64 sdk=34
+[2026-08-29T12:32:37Z] G failures present (13); core gate failures fail CI (model-gate skips without a key are expected).
+device gates rc=1
+logcat captured: 322 lines
+########## 9/9 collect evidence ##########
+=== PHASE 4 END 2026-08-29T12:32:47Z gates_rc=1 ===
+H1: FAIL extraction-and-version 
+H2: FAIL health-gated-start 
+H3: FAIL no-duplicate-process 
+G01: FAIL execution-layer 
+G02: FAIL userspace 
+G03: FAIL real-shell 
+G04: FAIL runtime 
+G05: PASS opencode-start 
+G06: FAIL health-endpoint 
+G07: FAIL gate-07-shell.js 
+G08: FAIL gate-08-files.js 
+G09: FAIL gate-09-opencode-git.js 
+G10: FAIL gate-10-mcp.js 
+G11: FAIL gate-11-stream.js 
+G12: FAIL gate-12-permission.js 
+G15: FAIL gate-15-e2e.js 
+H4: FAIL crash-restart-backoff 
+H5: FAIL corruption-recovery 
+H6: FAIL graceful-stop-no-zombies 
+G14: FAIL reconnect-sessions-persist 
+H7: FAIL logs-and-diagnostics 
+H8: PASS abi-device-gate 
+PHASE4_SUMMARY 2026-08-29T12:32:37Z
+h_total=8 h_pass=1 h_fail=7
+g_total=13 g_pass=1 g_fail=13
+model_available=0
+device_abi=x86_64 sdk=34
