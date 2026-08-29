@@ -1,26 +1,45 @@
-[2026-08-29T09:54:56Z] === device facts ===
-[2026-08-29T09:54:56Z] === host bun (runner) to drive gates over adb forward ===
-[2026-08-29T09:54:58Z] === provision fixture + MCP + config + key (run-as) ===
-[2026-08-29T09:54:58Z] no OPENROUTER_API_KEY — model-driven assertions skipped
-[2026-08-29T09:54:58Z] === launch the app (starts RuntimeService) ===
-[2026-08-29T09:56:04Z] server password: … (0 chars)
-[2026-08-29T09:56:04Z] === H1 extraction + version validation ===
+[2026-08-29T10:26:30Z] === device facts ===
+[2026-08-29T10:26:30Z] === host bun (runner) to drive gates over adb forward ===
+[2026-08-29T10:26:31Z] === provision fixture + MCP + config + key (run-as) ===
+[2026-08-29T10:26:32Z] no OPENROUTER_API_KEY — model-driven assertions skipped
+[2026-08-29T10:26:32Z] === launch the app (starts RuntimeService) ===
+[2026-08-29T10:27:38Z] server password: … (0 chars)
+[2026-08-29T10:27:38Z] === H1 extraction + version validation ===
 cache
 code_cache
 files
-[2026-08-29T09:56:05Z] H1 nativeLibraryDir: /data/app/~~GdiTyKPuNwwQZk-gSFvQzw==/ai.opencode.android.debug-SnT7pvsX6WjVEwGfrboDEg==/lib64
-ls: /data/app/~~GdiTyKPuNwwQZk-gSFvQzw==/ai.opencode.android.debug-SnT7pvsX6WjVEwGfrboDEg==/lib64/libbun.so: No such file or directory
-ls: /data/app/~~GdiTyKPuNwwQZk-gSFvQzw==/ai.opencode.android.debug-SnT7pvsX6WjVEwGfrboDEg==/lib64/libgit.so: No such file or directory
-ls: /data/app/~~GdiTyKPuNwwQZk-gSFvQzw==/ai.opencode.android.debug-SnT7pvsX6WjVEwGfrboDEg==/lib64/librg.so: No such file or directory
-[2026-08-29T09:56:05Z] H1 executable libs in nativeLibraryDir: 0/3
-[2026-08-29T09:56:05Z] === H2 health-gated start ===
-[2026-08-29T09:58:35Z] H2 health timeout; runtime log tail:
-[2026-08-29T09:58:36Z] === H3 duplicate-process prevention ===
-[2026-08-29T09:58:41Z] H3 live launcher.js processes after double-start: 1
-[2026-08-29T09:58:41Z] === G1..G4 in-sandbox exec/userspace/shell/runtime (bin symlinks -> nativeLibraryDir) ===
-[2026-08-29T09:58:42Z] === G5/G6 server start + health ===
-[2026-08-29T09:58:42Z] === G7..G12, G15 real agent gates over the app server ===
-[2026-08-29T09:58:42Z] --- G07 (gate-07-shell.js) model=0 ---
+[2026-08-29T10:27:38Z] H1 nativeLibraryDir (from pm path): /data/app/~~yTiCqGYNHLEapXoID_2bXA==/ai.opencode.android.debug-FgR3_vOeLXK-sw7JCBINtA==/lib64
+cache
+code_cache
+files
+[2026-08-29T10:27:38Z] H1 executable libs in nativeLibraryDir: /3
+[2026-08-29T10:27:38Z] === early diagnostics (app uid) ===
+--- nativeLibraryDir binaries directly ---
+-version: /data/app/~~yTiCqGYNHLEapXoID_2bXA==/ai.opencode.android.debug-FgR3_vOeLXK-sw7JCBINtA==/lib64/libbun.so: inaccessible or not found
+bun_rc=127
+-version: /data/app/~~yTiCqGYNHLEapXoID_2bXA==/ai.opencode.android.debug-FgR3_vOeLXK-sw7JCBINtA==/lib64/libgit.so: inaccessible or not found
+git_rc=127
+-version: /data/app/~~yTiCqGYNHLEapXoID_2bXA==/ai.opencode.android.debug-FgR3_vOeLXK-sw7JCBINtA==/lib64/librg.so: inaccessible or not found
+rg_rc=127
+--- bin symlinks ---
+cache
+code_cache
+files
+--- runtime.log (host) ---
+--- launcher/node bundle present ---
+cache
+code_cache
+files
+--- live processes (app uid) ---
+/system/bin/sh: syntax error: unexpected 'do'
+[2026-08-29T10:27:38Z] === H2 health-gated start ===
+[2026-08-29T10:30:09Z] H2 health timeout; runtime log tail:
+[2026-08-29T10:30:09Z] === H3 duplicate-process prevention ===
+[2026-08-29T10:30:15Z] H3 live launcher.js processes after double-start: 1
+[2026-08-29T10:30:15Z] === G1..G4 in-sandbox exec/userspace/shell/runtime (bin symlinks -> nativeLibraryDir) ===
+[2026-08-29T10:30:15Z] === G5/G6 server start + health ===
+[2026-08-29T10:30:15Z] === G7..G12, G15 real agent gates over the app server ===
+[2026-08-29T10:30:15Z] --- G07 (gate-07-shell.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -37,7 +56,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-29T09:58:42Z] --- G08 (gate-08-files.js) model=0 ---
+[2026-08-29T10:30:15Z] --- G08 (gate-08-files.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -53,7 +72,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-29T09:58:42Z] --- G09 (gate-09-opencode-git.js) model=0 ---
+[2026-08-29T10:30:15Z] --- G09 (gate-09-opencode-git.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -70,7 +89,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-29T09:58:42Z] --- G10 (gate-10-mcp.js) model=0 ---
+[2026-08-29T10:30:15Z] --- G10 (gate-10-mcp.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -86,7 +105,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-29T09:58:42Z] --- G11 (gate-11-stream.js) model=0 ---
+[2026-08-29T10:30:15Z] --- G11 (gate-11-stream.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -103,7 +122,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-29T09:58:42Z] --- G12 (gate-12-permission.js) model=0 ---
+[2026-08-29T10:30:15Z] --- G12 (gate-12-permission.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -120,7 +139,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-29T09:58:42Z] --- G15 (gate-15-e2e.js) model=0 ---
+[2026-08-29T10:30:15Z] --- G15 (gate-15-e2e.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -137,20 +156,20 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-29T09:58:42Z] === H4 crash detection + restart with backoff ===
-[2026-08-29T09:58:42Z] H4 server pid: 
-[2026-08-29T09:58:42Z] H4 SIGKILL sent; waiting for supervisor restart...
-[2026-08-29T10:00:22Z] === H5 corruption recovery (debug reset + live corruption) ===
+[2026-08-29T10:30:15Z] === H4 crash detection + restart with backoff ===
+[2026-08-29T10:30:15Z] H4 server pid: 
+[2026-08-29T10:30:15Z] H4 SIGKILL sent; waiting for supervisor restart...
+[2026-08-29T10:31:56Z] === H5 corruption recovery (debug reset + live corruption) ===
 Broadcasting: Intent { act=ai.opencode.android.DEBUG_RESET flg=0x400000 cmp=ai.opencode.android.debug/ai.opencode.android.runtime.DebugControlReceiver }
 Broadcast completed: result=0
-[2026-08-29T10:02:53Z] === H6 graceful stop: no zombies, port down ===
+[2026-08-29T10:34:27Z] === H6 graceful stop: no zombies, port down ===
 Broadcasting: Intent { act=ai.opencode.android.DEBUG_STOP flg=0x400000 cmp=ai.opencode.android.debug/ai.opencode.android.runtime.DebugControlReceiver }
 Broadcast completed: result=0
-[2026-08-29T10:04:11Z] H6 leftover launchers=1 port-code=000000
-[2026-08-29T10:04:11Z] === G14 reconnect: sessions persist across restart ===
-[2026-08-29T10:06:42Z] === H7 logs & diagnostics ===
-[2026-08-29T10:06:42Z] === H8 ABI/device gate ===
-[2026-08-29T10:06:42Z] H8 abi=x86_64 sdk=34 -> supported
-[2026-08-29T10:06:42Z] === pull logs into evidence ===
-[2026-08-29T10:06:42Z] === SUMMARY ===
-[2026-08-29T10:06:42Z] G failures present (13); core gate failures fail CI (model-gate skips without a key are expected).
+[2026-08-29T10:35:39Z] H6 leftover launchers=1 port-code=000000
+[2026-08-29T10:35:39Z] === G14 reconnect: sessions persist across restart ===
+[2026-08-29T10:38:10Z] === H7 logs & diagnostics ===
+[2026-08-29T10:38:10Z] === H8 ABI/device gate ===
+[2026-08-29T10:38:10Z] H8 abi=x86_64 sdk=34 -> supported
+[2026-08-29T10:38:10Z] === pull logs into evidence ===
+[2026-08-29T10:38:10Z] === SUMMARY ===
+[2026-08-29T10:38:10Z] G failures present (13); core gate failures fail CI (model-gate skips without a key are expected).
