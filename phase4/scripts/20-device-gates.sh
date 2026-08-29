@@ -37,12 +37,15 @@ rec() { echo "$1: $2 $3 ${4:-}" | tee -a "$SUMMARY"; }
 hp() { if [ "${1:-1}" = "0" ]; then HPASS=$((HPASS+1)); rec "H$2" PASS "$3"; else HFAIL=$((HFAIL+1)); rec "H$2" FAIL "$3"; fi; }
 gp() { if [ "${1:-1}" = "0" ]; then GPASS=$((GPASS+1)); rec "G$2" PASS "$3"; else GFAIL=$((GFAIL+1)); rec "G$2" FAIL "$3"; fi; }
 
-# run a command as the app uid (debug build)
-rash() { adb shell run-as "$PKG" sh -c "$1"; }
+# Run a shell script AS THE APP UID (debug build) by piping it over stdin.
+# Piping (vs. `adb shell ... sh -c "$1"`) avoids adb's outer-shell re-tokenizing
+# argv, which dropped flags (`bun --version` -> `bun`) and mangled quotes. The
+# argument is the exact script text; FILES/WORKDIR expand on-device.
+rash() { printf '%s\n' "$1" | adb shell run-as "$PKG" sh; }
 
 # Count live server processes (cmdline contains launcher.js), app uid only.
 count_launchers() {
-  rash 'n=0; for p in /proc/[0-9]*; do c=$(tr "\000" " " < "$p/cmdline" 2>/dev/null); case "$c" in *launcher.js*) n=$((n+1));; esac; done; echo "$n"' | tr -d '\r'
+  rash 'n=0; for p in /proc/[0-9]*; do c=$(tr "\000" " " < "$p/cmdline" 2>/dev/null); case "$c" in *launcher.js*) n=$((n+1));; esac; done; echo "$n"' | tr -d '[:space:]'
 }
 
 native_lib_dir() {
@@ -58,6 +61,24 @@ push_file_runas() { # $1=local  $2=remote-relative-to-files
   local b64
   b64=$(base64 -w0 "$1")
   rash "mkdir -p \$(dirname '$FILES/$2'); echo '$b64' | base64 -d > '$FILES/$2'"
+}
+
+# Write a file under files dir from stdin, as the app uid (stdin piped into
+# rash -> run-as -> base64 decode; survives any content incl. quotes/colons).
+write_stdin_runas() { # $1=remote-relative-to-files ; content on stdin
+  local b64
+  b64=$(base64 -w0)
+  rash "mkdir -p \$(dirname '$FILES/$1'); echo '$b64' | base64 -d > '$FILES/$1'; echo wrote_$1_rc=\$?"
+}
+
+# Helper to run bun with an inline JS expression AS THE APP UID. Writes the JS
+# to a temp file under files dir (stdin-free, no argv quoting), runs it.
+rash_bun_eval() { # $1=js  (output to stdout)
+  local js="$1"
+  rash "cat > '$FILES/tmp-eval.js' <<'JSEOF'
+$js
+JSEOF
+'$FILES/bin/bun' '$FILES/tmp-eval.js' 2>&1; rc=\$?; rm -f '$FILES/tmp-eval.js'; exit \$rc"
 }
 
 # ---------------------------------------------------------------------------
@@ -79,14 +100,14 @@ fi
 
 # ---------------------------------------------------------------------------
 log "=== provision fixture + MCP + config + key (run-as) ==="
-rash "mkdir -p '$WORKDIR/src' '$FILES/mcp' '$FILES/xdg/config/opencode' '$FILES/secrets'"
-adb shell "run-as $PKG sh -c 'cat > $WORKDIR/README.md'" <<'EOF'
+rash "mkdir -p '$WORKDIR/src' '$FILES/mcp' '$FILES/xdg/config/opencode' '$FILES/secrets'; echo provision_dirs_rc=\$?"
+cat <<'EOF' | write_stdin_runas "workspaces/gates/README.md"
 # gates fixture
 
 A tiny project for the Phase 4 production-host gates: a README and a small JS
 file so glob/read tools have something to find. "gates fixture" marker.
 EOF
-adb shell "run-as $PKG sh -c 'cat > $WORKDIR/src/app.js'" <<'EOF'
+cat <<'EOF' | write_stdin_runas "workspaces/gates/src/app.js"
 export function greet(name) {
   return "hello " + name;
 }
@@ -99,7 +120,7 @@ if [ -d "$OUT/mcp/node_modules/@modelcontextprotocol" ]; then
   rash "cd '$FILES/mcp' && tar xzf mcp.tgz && rm mcp.tgz && echo MCP_PUSHED"
 fi
 
-adb shell "run-as $PKG sh -c 'cat > $FILES/xdg/config/opencode/opencode.jsonc'" <<EOF
+cat > "$OUT/opencode.jsonc" <<EOF
 {
   "\$schema": "https://opencode.ai/config.json",
   "shell": "/system/bin/sh",
@@ -117,6 +138,7 @@ adb shell "run-as $PKG sh -c 'cat > $FILES/xdg/config/opencode/opencode.jsonc'" 
   }
 }
 EOF
+push_file_runas "$OUT/opencode.jsonc" "xdg/config/opencode/opencode.jsonc"
 rash "cat '$FILES/xdg/config/opencode/opencode.jsonc' | head -3" | tee -a "$LOG"
 
 MODEL=0
@@ -160,28 +182,32 @@ log "server password: ${PASSWD:0:6}… (${#PASSWD} chars)"
 log "=== early diagnostics (app uid) ==="
 {
   echo "--- supervisor log (host) ---"
-  rash "cat '$FILES/log/runtime.log' 2>&1 | tail -80"
+  rash "tail -80 '$FILES/log/runtime.log' 2>&1"
   echo "--- bin symlinks (filesDir/bin) ---"
   rash "ls -la '$FILES/bin/' 2>&1"
-  echo "--- exercise execs THROUGH symlinks (the production path the server/agent uses) ---"
+  echo "--- execs THROUGH symlinks ---"
   rash "'$FILES/bin/bun' --version 2>&1; echo bun_rc=\$?"
   rash "'$FILES/bin/git' --version 2>&1; echo git_rc=\$?"
   rash "'$FILES/bin/rg' --version 2>&1; echo rg_rc=\$?"
   echo "--- flat payload present ---"
-  rash "ls -la '$FILES/launcher.js' '$FILES/opencode/dist/node/node.js' 2>&1; ls -d '$FILES/node_modules' 2>&1"
-  echo "--- live processes (app uid) ---"
-  rash 'for d in /proc/[0-9]*; do c=$(tr "\000" " " < "$d/cmdline" 2>/dev/null); case "$c" in *launcher.js*) echo "$d $c";; esac; done'
+  rash "ls -la '$FILES/launcher.js' '$FILES/opencode/dist/node/node.js' 2>&1; ls -ld '$FILES/node_modules' 2>&1"
+  echo "--- live server processes (app uid) ---"
+  rash 'for p in /proc/[0-9]*/cmdline; do c=$(tr "\000" " " < "$p" 2>/dev/null); case "$c" in *launcher.js*) echo "$p $c";; esac; done'
 } > "$EV/early-diag.txt" 2>&1
 cat "$EV/early-diag.txt" >> "$LOG"
 
 log "=== H1 extraction + version validation ==="
 H1=1
 rash "ls -l '$FILES/opencode/dist/node/node.js' '$FILES/launcher.js' '$FILES/runtime/.extracted'" >>"$LOG" 2>&1
-rash "grep -o '\"payloadVersion\":[0-9]*' '$FILES/runtime/.extracted'" | tee -a "$LOG" || true
+rash "grep -o '"payloadVersion":[0-9]*' '$FILES/runtime/.extracted'" | tee -a "$LOG" || true
 BUNVER=$(rash "'$FILES/bin/bun' --version 2>&1" | tr -d '\r ')
 case "$BUNVER" in 1.3.*) EXEC_OK=1;; *) EXEC_OK=0;; esac
 log "H1 bun via symlink: '$BUNVER' exec_ok=$EXEC_OK"
-if [ "$EXEC_OK" = "1" ]    && rash "test -f '$FILES/opencode/dist/node/node.js'"    && rash "test -f '$FILES/launcher.js'"    && rash "test -d '$FILES/node_modules'"    && rash "grep -q '\"payloadVersion\":4' '$FILES/runtime/.extracted'"; then
+if [ "$EXEC_OK" = "1" ] \
+   && rash "test -f '$FILES/opencode/dist/node/node.js'" \
+   && rash "test -f '$FILES/launcher.js'" \
+   && rash "test -d '$FILES/node_modules'" \
+   && rash "grep -q '"payloadVersion":4' '$FILES/runtime/.extracted'"; then
   log "H1 flat payload + marker + execs OK"; H1=0
 else
   log "H1 payload/exec check failed (see early-diag.txt)"
@@ -213,10 +239,12 @@ hp "$H3" 3 "no-duplicate-process"
 
 # ---------------------------------------------------------------------------
 log "=== G1..G4 in-sandbox exec/userspace/shell/runtime (bin symlinks -> nativeLibraryDir) ==="
-rash "'$FILES/bin/bun' --version; '$FILES/bin/bun' -e 'console.log(\"bun platform=\"+process.platform+\" arch=\"+process.arch)'" > "$EV/g01-exec-layer.txt" 2>&1
+{ rash "'$FILES/bin/bun' --version"
+  rash_bun_eval 'console.log("bun platform="+process.platform+" arch="+process.arch)'
+} > "$EV/g01-exec-layer.txt" 2>&1
 rash "'$FILES/bin/rg' --version | head -1; '$FILES/bin/git' --version" > "$EV/g02-userspace.txt" 2>&1
-rash "/system/bin/sh -c 'x=G3_VAR; echo \$x | tr a-z A-Z; echo pipe_ok; false; echo rc=\$?'" > "$EV/g03-shell.txt" 2>&1
-rash "'$FILES/bin/bun' -e 'const cp=require(\"child_process\");const r=cp.spawnSync(\"/system/bin/sh\",[\"-c\",\"echo BUN_SPAWN_OK\"],{encoding:\"utf8\"});console.log(r.stdout.trim());const {Database}=require(\"bun:sqlite\");const db=new Database(\":memory:\");db.run(\"CREATE TABLE t(v)\");db.run(\"INSERT INTO t VALUES (?)\",[\"BUN_SQLITE_OK\"]);console.log(db.query(\"SELECT v FROM t\").get().v);'" > "$EV/g04-runtime.txt" 2>&1
+rash 'x=G3_VAR; echo $x | tr a-z A-Z; echo pipe_ok; false; echo rc=$?' > "$EV/g03-shell.txt" 2>&1
+rash_bun_eval 'const cp=require("child_process");const r=cp.spawnSync("/system/bin/sh",["-c","echo BUN_SPAWN_OK"],{encoding:"utf8"});console.log(r.stdout.trim());const {Database}=require("bun:sqlite");const db=new Database(":memory:");db.run("CREATE TABLE t(v)");db.run("INSERT INTO t VALUES (?)",["BUN_SQLITE_OK"]);console.log(db.query("SELECT v FROM t").get().v);' > "$EV/g04-runtime.txt" 2>&1
 G1=1; grep -q "1.3.14" "$EV/g01-exec-layer.txt" && grep -q "platform=android" "$EV/g01-exec-layer.txt" && G1=0
 G2=1; grep -q "ripgrep 15.1.0" "$EV/g02-userspace.txt" && grep -q "git version" "$EV/g02-userspace.txt" && G2=0
 G3=1; grep -q "G3_VAR" "$EV/g03-shell.txt" && grep -q "rc=1" "$EV/g03-shell.txt" && G3=0
@@ -234,8 +262,13 @@ export OPENCODE_BASE="http://127.0.0.1:4111"
 export OPENCODE_SERVER_PASSWORD="$PASSWD"
 export OPENCODE_SERVER_USERNAME="opencode"
 export OPENCODE_DIRECTORY="$WORKDIR"
-export OPENCODE_MCP_DIR="$FILES/mcp"
-export OPENCODE_BUN_BIN="$FILES/bin/bun"
+# gate-10's MCP stdio roundtrip spawns bun ON THE CI HOST (the gate drivers run
+# on the host over adb forward). 11-build-mcp.sh assembled the SDK server +
+# client in $OUT/mcp (with node_modules), so point the roundtrip at the host
+# bun and that host dir. Part 1 of the gate (OpenCode's own MCP client
+# connection) is exercised on-device against the app-server's mcp/ dir.
+export OPENCODE_MCP_DIR="$OUT/mcp"
+export OPENCODE_BUN_BIN="$HOST_BUN"
 run_gate() { # $1=num $2=file $3=model
   log "--- G$1 ($2) model=$3 ---"
   if "$HOST_BUN" "$DEVICE_GATES/$2" "$3" > "$EV/g$1.log" 2>&1; then gp 0 "$1" "$2"; else
