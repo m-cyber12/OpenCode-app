@@ -313,5 +313,14 @@ model_available=$MODEL
 device_abi=$DEV_ABI sdk=$SDK
 EOF
 log "=== SUMMARY ==="; cat "$SUMMARY"
-[ "$HFAIL" -eq 0 ] || exit 1
-exit 0
+# Honest CI signal: H failures are always fatal. G failures are fatal when the
+# server is healthy and the failure is a core (non-model) capability; model
+# gates with no key are skipped by the drivers (they log, but do not run the
+# model assertion), and are reported here for the human/agent reader.
+RC=0
+[ "$HFAIL" -eq 0 ] || RC=1
+if [ "$GFAIL" -gt 0 ]; then
+  log "G failures present ($GFAIL); core gate failures fail CI (model-gate skips without a key are expected)."
+  RC=1
+fi
+exit "$RC"

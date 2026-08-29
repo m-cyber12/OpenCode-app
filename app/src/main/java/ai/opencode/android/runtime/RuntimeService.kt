@@ -44,7 +44,12 @@ class RuntimeService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startInForeground()
         if (intent?.action == ACTION_STOP) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                @Suppress("DEPRECATION")
+                stopForeground(true)
+            }
             manager.stop()
             stopSelf()
             return START_NOT_STICKY
