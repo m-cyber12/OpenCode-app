@@ -48,9 +48,9 @@ object RuntimeEnv {
         env["OPENCODE_BUNDLE"] = paths.serverBundle.absolutePath
         env["OPENCODE_API_KEY_FILE"] = paths.apiKeyFile.absolutePath
         // Native seccomp compatibility shim (jniLib -> nativeLibraryDir). The
-        // launcher dlopens it before starting the server so blocked syscalls
-        // (e.g. epoll_pwait2 on the x86_64 app-uid filter) return ENOSYS and
-        // Bun's fallbacks engage instead of dying with SIGSYS.
+        // exec shim sets this path as LD_PRELOAD before Bun is exec'd, so the
+        // constructor is active before native startup. launcher.js also tries
+        // bun:ffi as a backstop where that Bun build provides it.
         env["OPENCODE_SECCOMP_SHIM"] = File(paths.nativeLibraryDir, "libseccompshim.so").absolutePath
         if (!apiKey.isNullOrBlank()) env["OPENROUTER_API_KEY"] = apiKey
         return env

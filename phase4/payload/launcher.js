@@ -63,8 +63,9 @@ function installSeccompShim() {
     return;
   }
   try {
-    // bun:ffi is available on bun-android. dlopen() returns a symbol handle;
-    // its name must be the .so path WITHOUT the trailing ".so" suffix.
+    // Some Bun-for-Android builds provide bun:ffi. dlopen() returns a symbol
+    // handle; this is only a backstop because the exec shim already
+    // LD_PRELOADs the library before Bun's native startup.
     const { dlopen } = require("bun:ffi");
     const stem = shimPath.endsWith(".so") ? shimPath.slice(0, -3) : shimPath;
     const handle = dlopen(stem, {

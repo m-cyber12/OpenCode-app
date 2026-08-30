@@ -6,8 +6,9 @@
  * Bun binary (and the static musl `git`/`rg` that OpenCode spawns) hit these.
  *
  * This PIE executable is launched from nativeLibraryDir. Before exec'ing bun
- * it installs TWO layers of compatibility so both the dynamic bun server and
- * its STATIC children are covered:
+ * on x86_64 it installs TWO layers of compatibility so both the dynamic bun
+ * server and its STATIC children are covered. On arm64 Android 15 the wrapper
+ * deliberately uses only the preload layer; see install_errno_filter().
  *
  *  1) A seccomp BPF filter that returns an errno directly for syscalls whose
  *     "unsupported" semantics are safe (epoll_pwait2 -> ENOSYS so callers use
