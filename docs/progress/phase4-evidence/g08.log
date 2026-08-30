@@ -1,15 +1,21 @@
-16 | }
-17 | 
-18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
-19 |   const sep = path.includes("?") ? "&" : "?"
-20 |   const url = BASE + path + sep + "directory=" + encodeURIComponent(directory)
-21 |   const r = await fetch(url, {
-                       ^
-error: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
-  path: "http://127.0.0.1:4111/file?path=.&directory=%2Fdata%2Fdata%2Fai.opencode.android.debug%2Ffiles%2Fworkspaces%2Fgates",
- errno: 0,
-  code: "ECONNRESET"
-
-      at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
-
-Bun v1.3.14 (Linux x64)
+list HTTP 200
+assert ok: file list ok
+files: src, README.md, notes.txt
+assert ok: README.md listed
+assert ok: notes.txt listed
+G8_READ_OK
+assert ok: file content ok
+README head: # gates fixture  A tiny project for the Phase 4 production-host gates: a README,
+assert ok: README content readable
+G8_READ_OK
+ASSERT_FAILED: find (ripgrep) ok
+assert ok: session id present
+shell write HTTP 200
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19FH0KTGKKZA2922THCHX9N","input":"{\"command\":\"printf 'G8_WRITE_OK\\\\n' > g8-write.txt && printf 'second line\\\\n' >> g8-write.txt\"}","output":"\"\"","error":null}]}]
+assert ok: written file readable
+g8-write.txt: G8_WRITE_OK | second line
+assert ok: file content written through OpenCode shell exec
+G8_WRITE_OK
+(model mode skipped: no OPENROUTER_API_KEY — agent write-tool part not run)
+G8_FAIL
