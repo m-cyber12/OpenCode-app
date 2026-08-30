@@ -1,16 +1,18 @@
 list HTTP 200
 assert ok: file list ok
-files: src, README.md
+files: src, README.md, notes.txt
 assert ok: README.md listed
-ASSERT_FAILED: notes.txt listed
+assert ok: notes.txt listed
+G8_READ_OK
 assert ok: file content ok
-README head: # gates fixture  A tiny project for the Phase 4 production-host gates: a README 
-ASSERT_FAILED: README content readable
+README head: # gates fixture  A tiny project for the Phase 4 production-host gates: a README,
+assert ok: README content readable
+G8_READ_OK
 ASSERT_FAILED: find (ripgrep) ok
 assert ok: session id present
 shell write HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M195QJXM71GH4VRJ45BPX9E3","input":"{\"command\":\"printf 'G8_WRITE_OK\\\\n' > g8-write.txt && printf 'second line\\\\n' >> g8-write.txt\"}","output":"\"\"","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19A6YTVB8XY9E9ERQ20NT9D","input":"{\"command\":\"printf 'G8_WRITE_OK\\\\n' > g8-write.txt && printf 'second line\\\\n' >> g8-write.txt\"}","output":"\"\"","error":null}]}]
 assert ok: written file readable
 g8-write.txt: G8_WRITE_OK | second line
 assert ok: file content written through OpenCode shell exec

@@ -1,9 +1,9 @@
 assert ok: session id present
-G7_SESSION_ID=ses_fada45d02ffe7ednIhbzQ099LZ
-G7_SESSION_ID=ses_fada45d02ffe7ednIhbzQ099LZ
+G7_SESSION_ID=ses_fad5caebfffebvrfnicmx0m2HN
+G7_SESSION_ID=ses_fad5caebfffebvrfnicmx0m2HN
 shell endpoint HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M195Q9BCAK258MEASY2PC3R0","input":"{\"command\":\"echo probe\"}","output":"\"probe\\n\"","error":null}]},{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M195Q9DGY7VFBX511C71J27T","input":"{\"command\":\"echo G7_SHELL_OK from=$(pwd) uname=$(uname -m) shell=$0 && ls -1 | head -3\"}","output":"\"G7_SHELL_OK from=/data/data/ai.opencode.android.debug/files/workspaces/gates uname=x86_64 shell=/system/bin/sh\\nREADME.md\\nsrc\\n\"","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19A6N2FFYHYXS4BK3CKE3BB","input":"{\"command\":\"echo probe\"}","output":"\"probe\\n\"","error":null}]},{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19A6N50M9VCDSBPED687CH5","input":"{\"command\":\"echo G7_SHELL_OK from=$(pwd) uname=$(uname -m) shell=$0 && ls -1 | head -3\"}","output":"\"G7_SHELL_OK from=/data/data/ai.opencode.android.debug/files/workspaces/gates uname=x86_64 shell=/system/bin/sh\\nREADME.md\\nnotes.txt\\nsrc\\n\"","error":null}]}]
 tool parts: 2
   tool="bash" state.status=completed
   tool="bash" state.status=completed
@@ -12,12 +12,13 @@ probe
 
 G7_SHELL_OK from=/data/data/ai.opencode.android.debug/files/workspaces/gates uname=x86_64 shell=/system/bin/sh
 README.md
+notes.txt
 src
 
 assert ok: shell output contains G7_SHELL_OK
 assert ok: tool part completed
-SSE events seen: ["server.connected","message.updated","message.part.updated","session.status","session.idle"]
-bash tool part lifecycle (streamed): ["running","running","running","running","running","running","completed","completed"]
+SSE events seen: ["server.connected","message.part.updated","message.updated","session.status","session.idle"]
+bash tool part lifecycle (streamed): ["running","running","running","running","completed","completed"]
 assert ok: SSE message.part.updated events streamed
 assert ok: SSE session.status events streamed
 assert ok: bash tool part streamed running→completed

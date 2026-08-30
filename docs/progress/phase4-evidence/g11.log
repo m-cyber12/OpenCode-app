@@ -1,7 +1,7 @@
 assert ok: session id present
 shell HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M195QZDPDDJ59RP3BTN6ZNMH","input":"{\"command\":\"echo G11_STREAM_EVENT_OK\"}","output":"\"G11_STREAM_EVENT_OK\\n\"","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19A7BFEAFFRJYFRMAFSCCMQ","input":"{\"command\":\"echo G11_STREAM_EVENT_OK\"}","output":"\"G11_STREAM_EVENT_OK\\n\"","error":null}]}]
 events seen (17): {"server.connected":1,"message.updated":6,"message.part.updated":8,"session.status":1,"session.idle":1}
 assert ok: part update events streamed
 assert ok: message update events streamed
