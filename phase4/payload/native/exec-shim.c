@@ -73,6 +73,19 @@ static int install_errno_filter(void) {
     rules[n++] = (struct rule){ (long)__NR_clone3, ENOSYS };
     rules[n++] = (struct rule){ (long)__NR_faccessat2, ENOSYS };
     rules[n++] = (struct rule){ (long)__NR_statx, ENOSYS };
+#ifdef __NR_openat2
+    rules[n++] = (struct rule){ (long)__NR_openat2, ENOSYS };  /* -> openat */
+#endif
+#ifdef __NR_rseq
+    rules[n++] = (struct rule){ (long)__NR_rseq, ENOSYS };     /* optional fast-path */
+#endif
+#ifdef __NR_futex_waitv
+    rules[n++] = (struct rule){ (long)__NR_futex_waitv, ENOSYS }; /* -> futex */
+#endif
+#ifdef __NR_getdents64
+    /* getdents64 is allowed by bionic on arm64; do NOT map it. Listed only to
+       avoid accidental omission audits. */
+#endif
 #ifdef __NR_access /* legacy access(2): arm64 has no such syscall */
     rules[n++] = (struct rule){ (long)__NR_access, ENOENT };
 #endif

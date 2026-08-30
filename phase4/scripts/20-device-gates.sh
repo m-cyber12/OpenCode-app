@@ -195,6 +195,14 @@ log "=== early diagnostics (app uid) ==="
   rash "'$FILES/bin/bun' --version 2>&1; echo bun_rc=\$?"
   rash "'$FILES/bin/git' --version 2>&1; echo git_rc=\$?"
   rash "'$FILES/bin/rg' --version 2>&1; echo rg_rc=\$?"
+  echo "--- static git/rg THROUGH THE SECCOMP SHIM (BPF filter path) ---"
+  # nativeLibraryDir = dirname of the bun symlink target (contains libexecshim.so)
+  NATIVE_DIR=$(rash "ls -l '$FILES/bin/bun' 2>/dev/null | sed -e 's/.* -> //' -e 's#/libbun.so##'" | tr -d '\r')
+  echo "nativeLibraryDir=$NATIVE_DIR"
+  rash "OPENCODE_BUN_EXEC='$FILES/bin/git' '$NATIVE_DIR/libexecshim.so' --version 2>&1; echo shim_git_rc=\$?"
+  rash "OPENCODE_BUN_EXEC='$FILES/bin/rg' '$NATIVE_DIR/libexecshim.so' --version 2>&1; echo shim_rg_rc=\$?"
+  echo "--- spawned-child syscall trace (logcat seccomp/SIGSYS for git/rg pids) ---"
+  adb logcat -d 2>/dev/null | grep -aiE 'disallowed|seccomp|fatal signal 31|SIGSYS' | tail -10 || echo "(no seccomp kills logged)"
   echo "--- flat payload present ---"
   rash "ls -la '$FILES/launcher.js' '$FILES/opencode/dist/node/node.js' 2>&1; ls -ld '$FILES/node_modules' 2>&1"
   echo "--- live server processes (app uid) ---"
@@ -383,7 +391,11 @@ hp "$H6" 6 "graceful-stop-no-zombies"
 
 log "=== G14 reconnect: sessions persist across restart ==="
 G14=1
+# H6 stopped the runtime via manager.stop() (userStopRequested). The app process
+# may have been torn down when the FGS stopped; relaunch it and give the process
+# time to come up before polling health.
 adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
+sleep 8
 PASSWD=$(rash "cat '$FILES/secrets/server-password' 2>/dev/null" | tr -d '\r\n ')
 if [ "$(wait_healthy 150)" = "HEALTH_OK" ]; then
   NSESS=$(curl -s -u "opencode:$PASSWD" "http://127.0.0.1:4111/session?directory=$WORKDIR" 2>/dev/null | grep -o 'ses_' | wc -l | tr -d ' ')
