@@ -14,10 +14,11 @@ try {
   diagSid = await createSession("G9 seccomp probe")
   const nrs = [
     441, 436, 327, 328, 435, 439, 332, 21,          // already mapped (controls)
-    444, 445, 446, 447, 448, 449, 450, 451, 452,    // landlock..cachestat range
-    453, 454, 455, 456, 457,                          // map_shadow_stack..futex_wake
-    319, 425, 426, 268,                              // memfd_create/io_uring/lchmod
-    334,                                             // rseq
+    // legacy FS syscalls bionic implements via *at (so the app filter traps
+    // the raw legacy forms): the static musl git/rg may call these raw. The
+    // probe child dies (probe_rc=159, no RESULT line) on the one Android traps.
+    2, 4, 6, 82, 83, 84, 87, 88, 89, 90, 92,        // open/stat/lstat/rename/mkdir/rmdir/unlink/symlink/readlink/chmod/chown
+    159, 268, 258, 318, 334,                        // getrlimit?/fchmodat/newfstatat/getrandom/rseq
   ]
   const cmd =
     `for n in ${nrs.join(" ")}; do ` +
