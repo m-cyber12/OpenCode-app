@@ -1,30 +1,30 @@
 --- supervisor log (host) ---
-2026-08-30T15:24:33.240Z [host] start() ignored: supervisor already running
-2026-08-30T15:24:33.295Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-2026-08-30T15:24:33.299Z [host] state -> EXTRACTING (validating embedded runtime)
-2026-08-30T15:24:33.310Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
-2026-08-30T15:24:33.312Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
-2026-08-30T15:24:34.565Z [host] extraction complete: 30 files validated
-2026-08-30T15:24:34.566Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-2026-08-30T15:24:34.567Z [host] symlink bun -> /data/app/~~ykZnzdSp4XIdzkZXA4WuOA==/ai.opencode.android.debug-A7eYZzBvKUOmXa67SNgPFw==/lib/x86_64/libbun.so (exec=true)
-2026-08-30T15:24:34.568Z [host] symlink git -> /data/app/~~ykZnzdSp4XIdzkZXA4WuOA==/ai.opencode.android.debug-A7eYZzBvKUOmXa67SNgPFw==/lib/x86_64/libchildshim.so (exec=true)
-2026-08-30T15:24:34.569Z [host] symlink rg -> /data/app/~~ykZnzdSp4XIdzkZXA4WuOA==/ai.opencode.android.debug-A7eYZzBvKUOmXa67SNgPFw==/lib/x86_64/libchildshim.so (exec=true)
-2026-08-30T15:24:34.572Z [host] generated fresh server password (stored 600 at server-password)
-2026-08-30T15:24:34.574Z [host] state -> STARTING (starting OpenCode server (attempt 1))
-2026-08-30T15:24:34.606Z [host] server started: pid=6116 abi=x86_64 port=4111
-2026-08-30T15:24:34.614Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~ykZnzdSp4XIdzkZXA4WuOA==/ai.opencode.android.debug-A7eYZzBvKUOmXa67SNgPFw==/lib/x86_64/libbun.so
-2026-08-30T15:24:34.616Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
-2026-08-30T15:24:34.721Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-08-30T15:24:36.833Z [server] SERVER_READY http://127.0.0.1:4111/
-2026-08-30T15:24:36.844Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
-2026-08-30T15:24:36.851Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-08-30T15:41:07.044Z [host] start() ignored: supervisor already running
+2026-08-30T15:41:07.102Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-08-30T15:41:07.105Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-08-30T15:41:07.119Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-08-30T15:41:07.122Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-08-30T15:41:08.378Z [host] extraction complete: 30 files validated
+2026-08-30T15:41:08.379Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-08-30T15:41:08.380Z [host] symlink bun -> /data/app/~~IvgKxyDWHC2tRbgBa-NGwg==/ai.opencode.android.debug-oMyqB41QHDjrCsospoLh4w==/lib/x86_64/libbun.so (exec=true)
+2026-08-30T15:41:08.381Z [host] symlink git -> /data/app/~~IvgKxyDWHC2tRbgBa-NGwg==/ai.opencode.android.debug-oMyqB41QHDjrCsospoLh4w==/lib/x86_64/libchildshim.so (exec=true)
+2026-08-30T15:41:08.382Z [host] symlink rg -> /data/app/~~IvgKxyDWHC2tRbgBa-NGwg==/ai.opencode.android.debug-oMyqB41QHDjrCsospoLh4w==/lib/x86_64/libchildshim.so (exec=true)
+2026-08-30T15:41:08.385Z [host] generated fresh server password (stored 600 at server-password)
+2026-08-30T15:41:08.386Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-30T15:41:08.432Z [host] server started: pid=6380 abi=x86_64 port=4111
+2026-08-30T15:41:08.445Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~IvgKxyDWHC2tRbgBa-NGwg==/ai.opencode.android.debug-oMyqB41QHDjrCsospoLh4w==/lib/x86_64/libbun.so
+2026-08-30T15:41:08.446Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-08-30T15:41:08.469Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T15:41:10.538Z [server] SERVER_READY http://127.0.0.1:4111/
+2026-08-30T15:41:10.569Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
+2026-08-30T15:41:10.576Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
 --- bin symlinks (filesDir/bin) ---
 total 40
-drwx------  2 u0_a192 u0_a192 4096 2026-08-30 15:24 .
-drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-30 15:24 ..
-lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 15:24 bun -> /data/app/~~ykZnzdSp4XIdzkZXA4WuOA==/ai.opencode.android.debug-A7eYZzBvKUOmXa67SNgPFw==/lib/x86_64/libbun.so
-lrwxrwxrwx  1 u0_a192 u0_a192  114 2026-08-30 15:24 git -> /data/app/~~ykZnzdSp4XIdzkZXA4WuOA==/ai.opencode.android.debug-A7eYZzBvKUOmXa67SNgPFw==/lib/x86_64/libchildshim.so
-lrwxrwxrwx  1 u0_a192 u0_a192  114 2026-08-30 15:24 rg -> /data/app/~~ykZnzdSp4XIdzkZXA4WuOA==/ai.opencode.android.debug-A7eYZzBvKUOmXa67SNgPFw==/lib/x86_64/libchildshim.so
+drwx------  2 u0_a192 u0_a192 4096 2026-08-30 15:41 .
+drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-30 15:41 ..
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 15:41 bun -> /data/app/~~IvgKxyDWHC2tRbgBa-NGwg==/ai.opencode.android.debug-oMyqB41QHDjrCsospoLh4w==/lib/x86_64/libbun.so
+lrwxrwxrwx  1 u0_a192 u0_a192  114 2026-08-30 15:41 git -> /data/app/~~IvgKxyDWHC2tRbgBa-NGwg==/ai.opencode.android.debug-oMyqB41QHDjrCsospoLh4w==/lib/x86_64/libchildshim.so
+lrwxrwxrwx  1 u0_a192 u0_a192  114 2026-08-30 15:41 rg -> /data/app/~~IvgKxyDWHC2tRbgBa-NGwg==/ai.opencode.android.debug-oMyqB41QHDjrCsospoLh4w==/lib/x86_64/libchildshim.so
 --- execs THROUGH symlinks ---
 1.3.14
 bun_rc=0
@@ -43,8 +43,8 @@ simd(runtime):+SSE2,+SSSE3,-AVX2
 PCRE2 10.45 is available (JIT is available)
 rg_rc=0
 --- bin/git and bin/rg symlink targets (should be libchildshim.so) ---
-lrwxrwxrwx 1 u0_a192 u0_a192 114 2026-08-30 15:24 /data/data/ai.opencode.android.debug/files/bin/git -> /data/app/~~ykZnzdSp4XIdzkZXA4WuOA==/ai.opencode.android.debug-A7eYZzBvKUOmXa67SNgPFw==/lib/x86_64/libchildshim.so
-lrwxrwxrwx 1 u0_a192 u0_a192 114 2026-08-30 15:24 /data/data/ai.opencode.android.debug/files/bin/rg -> /data/app/~~ykZnzdSp4XIdzkZXA4WuOA==/ai.opencode.android.debug-A7eYZzBvKUOmXa67SNgPFw==/lib/x86_64/libchildshim.so
+lrwxrwxrwx 1 u0_a192 u0_a192 114 2026-08-30 15:41 /data/data/ai.opencode.android.debug/files/bin/git -> /data/app/~~IvgKxyDWHC2tRbgBa-NGwg==/ai.opencode.android.debug-oMyqB41QHDjrCsospoLh4w==/lib/x86_64/libchildshim.so
+lrwxrwxrwx 1 u0_a192 u0_a192 114 2026-08-30 15:41 /data/data/ai.opencode.android.debug/files/bin/rg -> /data/app/~~IvgKxyDWHC2tRbgBa-NGwg==/ai.opencode.android.debug-oMyqB41QHDjrCsospoLh4w==/lib/x86_64/libchildshim.so
 --- child-shim git/rg version (aggressive ENOSYS filter then execs real lib) ---
 [child-shim] installing filter (n=8 len=21)...
 [child-shim] filter installed
@@ -66,6 +66,55 @@ child_rg_rc=0
 fatal: not a git repository (or any parent up to mount point /)
 Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
 child_git_status_rc=128
+--- syscall probe via child-shim (which new syscalls are ENOSYS/allowed/trap) ---
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 441 ...
+[child-shim] probe syscall 441 -> r=-1 errno=38 (Function not implemented)
+probe_441_rc=0
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 436 ...
+[child-shim] probe syscall 436 -> r=0 errno=0 (Success)
+probe_436_rc=0
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 327 ...
+[child-shim] probe syscall 327 -> r=-1 errno=38 (Function not implemented)
+probe_327_rc=0
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 328 ...
+[child-shim] probe syscall 328 -> r=-1 errno=29 (Illegal seek)
+probe_328_rc=0
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 435 ...
+[child-shim] probe syscall 435 -> r=-1 errno=38 (Function not implemented)
+probe_435_rc=0
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 439 ...
+[child-shim] probe syscall 439 -> r=-1 errno=14 (Bad address)
+probe_439_rc=0
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 332 ...
+[child-shim] probe syscall 332 -> r=-1 errno=38 (Function not implemented)
+probe_332_rc=0
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 21 ...
+[child-shim] probe syscall 21 -> r=-1 errno=14 (Bad address)
+probe_21_rc=0
 --- any seccomp/trap kills logged (capture the signal + syscall) ---
 [child-shim] installing filter (n=8 len=21)...
 [child-shim] filter installed
@@ -74,8 +123,8 @@ Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
 trace2_rc=128
 (nothing logged)
 --- flat payload present ---
--rw------- 1 u0_a192 u0_a192     4514 2026-08-30 15:24 /data/data/ai.opencode.android.debug/files/launcher.js
--rw------- 1 u0_a192 u0_a192 32845290 2026-08-30 15:24 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
-drwx------ 5 u0_a192 u0_a192 4096 2026-08-30 15:24 /data/data/ai.opencode.android.debug/files/node_modules
+-rw------- 1 u0_a192 u0_a192     4514 2026-08-30 15:41 /data/data/ai.opencode.android.debug/files/launcher.js
+-rw------- 1 u0_a192 u0_a192 32845286 2026-08-30 15:41 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
+drwx------ 5 u0_a192 u0_a192 4096 2026-08-30 15:41 /data/data/ai.opencode.android.debug/files/node_modules
 --- live server processes (app uid) ---
-/proc/6116/cmdline /data/app/~~ykZnzdSp4XIdzkZXA4WuOA==/ai.opencode.android.debug-A7eYZzBvKUOmXa67SNgPFw==/lib/x86_64/libbun.so /data/user/0/ai.opencode.android.debug/files/launcher.js 
+/proc/6380/cmdline /data/app/~~IvgKxyDWHC2tRbgBa-NGwg==/ai.opencode.android.debug-oMyqB41QHDjrCsospoLh4w==/lib/x86_64/libbun.so /data/user/0/ai.opencode.android.debug/files/launcher.js 

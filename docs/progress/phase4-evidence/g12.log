@@ -2,10 +2,10 @@ assert ok: session id present
 prompt_async accepted (204)
 ASSERT_FAILED: permission request was asked and replied
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"Run the shell command: echo G12_PERM_OK and tell me what it printed.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to run the command `echo G12_PERM_OK`.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"bash","callID":"call_4ec2e1d57acc4c0b8451ff87","input":"{\"command\":\"echo G12_PERM_OK\"}","output":"\"G12_PERM_OK\\n\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The output was \"G12_PERM_OK\".","input":"null","output":"null","error":null},{"type":"text","text":"It printed `G12_PERM_OK`.","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"Run the shell command: echo G12_PERM_OK and tell me what it printed.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to run a shell command and tell them the output.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"bash","callID":"call_176be1b4b37a4fb5ae1cd35c","input":"{\"command\":\"echo G12_PERM_OK\"}","output":"\"G12_PERM_OK\\n\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"text","text":"It printed: `G12_PERM_OK`","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
 --- assistant text ---
 
-It printed `G12_PERM_OK`.
+It printed: `G12_PERM_OK`
 --- bash tool outputs ---
 G12_PERM_OK
 
