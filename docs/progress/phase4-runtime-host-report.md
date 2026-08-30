@@ -1,10 +1,10 @@
 # Phase 4 — production embedded runtime host report
 
-**Date:** 2026-08-30
+**Date:** 2026-08-31
 **Branch:** `arena/01a04ca1-opencode-app`
 **Scope:** APK-owned extraction, process lifecycle, recovery, diagnostics, ABI gating, and in-APK runtime packaging.
 **Pinned OpenCode:** `05ea5073be967c779d326929b2de6228dda4159d` (v1.18.23), unchanged from Phase 3.
-**Current validation state:** Phase 4's production implementation, both-ABI packaging, Gradle build/tests, and the Android x86_64 emulator suite are validated. The arm64-v8a binaries are packaged and inspected in the APK; no arm64 emulator/device execution was available, so arm64 runtime execution remains **NOT TESTED**.
+**Current validation state:** Phase 4's production implementation, both-ABI packaging, Gradle build/tests, and the Android x86_64 emulator suite are validated. The arm64-v8a binaries are packaged and inspected in the APK. A real Android 15 arm64 device exposed a startup failure; an arm64-specific native compatibility patch is now present, but the rebuilt APK has not yet been executed on that device, so the fix remains **NOT TESTED/BLOCKED** pending device evidence.
 
 ## 1. Executive result and evidence
 
@@ -160,12 +160,41 @@ These are explicit capability losses; the app does not silently fall back to Ter
 | 33329413542 / evidence 2e7d21d | **SUCCESS** | x86_64 APK, Gradle tests, H1–H8, G01–G15 all passed on API-34 emulator |
 | 33329943774 / evidence f0c11ec | FAIL | Both-ABI build exposed arm64-only compile failure: `__NR_access` is not defined on arm64 |
 | 33330083624 / evidence dca0a3a | **SUCCESS** | `#ifdef __NR_access` fix worked; both ABI slices built, Gradle/APK passed, and x86_64 emulator H/G suite was fully green |
+| 33335804059 / evidence b02a3f7 | FAIL | The first arm64 BPF-skip patch did not compile: `arch` was scoped out by the architecture guard; no APK/device result was produced |
+| 33335963268 | IN PROGRESS at report update | Re-run after the compile-scope correction in `b744714`; result must be checked separately from the real RMX3830 retest |
 
-The Phase 4 implementation and required x86_64 Android validation are complete. The arm64-v8a artifacts are included in the final APK and pass build/package evidence. The only remaining explicit limitation is that arm64 runtime execution itself is **NOT TESTED**; the available CI emulator was x86_64. This report does not claim arm64 device execution.
+The Phase 4 implementation and required x86_64 Android validation are complete. The arm64-v8a artifacts are included in the final APK and pass build/package evidence. The real-device incident below remains the merge blocker; this report does not claim the arm64 fix until a rebuilt APK reaches health on the RMX3830.
 
-## 7. Local verification performed in this checkout
+## 7. Real-device arm64 Android 15 incident and follow-up
+
+**Status: BLOCKED pending retest; the patch is IMPLEMENTED but NOT TESTED on the phone.**
+
+The reported device is a Realme `RMX3830`, Android 15/API 35, ABI `arm64-v8a`. The prior APK's runtime evidence showed the exec wrapper's `starting` line and then no `execv`, Bun, `SERVER_READY`, or health evidence. The failure therefore occurred before the embedded Bun server became observable. This is execution evidence of the failure, not evidence that arm64 was fixed.
+
+The follow-up patch is intentionally narrow:
+
+- `exec-shim.c` now detects `__aarch64__` at compile time, logs `[exec-shim] arm64: skipping child BPF filter; using LD_PRELOAD seccomp handler`, and avoids installing the wrapper's second `PR_SET_SECCOMP` filter on arm64. x86_64 retains the previously tested exec-surviving BPF filter.
+- `seccomp-shim.c` now logs whether its preload constructor and SIGSYS handler installation succeed or fail.
+- `launcher.js` now logs entry, bundle import, and listener binding milestones before `SERVER_READY`.
+- `RuntimeProcess.kt` records early process exit codes, including exits observed during stop, to make an arm64 failure diagnosable instead of only reporting an unsuccessful health poll.
+
+The rationale is a leading hypothesis, not a proven root cause: on the affected arm64 Android 15 path, the inherited application seccomp policy may trap the wrapper's own `PR_SET_NO_NEW_PRIVS`/`PR_SET_SECCOMP` setup or another early wrapper syscall. Skipping the child filter lets the dynamic-linker preload constructor install the compatibility handler before Bun initialization. The arm64 Bun artifact was also inspected: it is an AArch64 PIE/DYN using `/system/bin/linker64`, with 16-KB-compatible load alignment and Android bionic dependencies, so ELF packaging alone is not currently the leading explanation.
+
+Required validation before calling this fixed:
+
+1. Rebuild the APK from the patched branch and install that APK on the RMX3830; record APK/version and SHA-256.
+2. Capture `adb shell getconf PAGE_SIZE` and device ABI/API metadata.
+3. Capture runtime and filtered logcat output from a clean launch. The log must show the arm64 skip diagnostic, preload constructor/handler result, `execv`/launcher milestones, `SERVER_READY`, and HTTP health on `127.0.0.1:4111`.
+4. Exercise stop/restart once and verify no stale launcher/PID remains; preserve failure logs if any milestone is absent.
+5. Rerun the x86_64 G1–G14/H gates after the arm64 patch and record both results separately.
+
+Until those steps have executed, the arm64 embedded-server requirement is **BLOCKED**, and no merge-ready claim is made.
+
+## 8. Local verification performed in this checkout
 
 - Confirmed branch is `arena/01a04ca1-opencode-app`.
 - `bash -n` passed for the Phase 4 orchestration, payload, and device-gate scripts.
+- `node --check phase4/payload/launcher.js` passed.
+- Host GCC syntax checks passed for both native shim sources; this sandbox has no Android arm64 cross compiler, Android SDK/JDK/KVM, or connected RMX3830 and therefore cannot substitute for arm64 device execution.
 - `git diff --check` passed for the changes.
-- CI run 33330083624 supplied the Gradle/JVM test, both-ABI APK, and Android emulator evidence; this sandbox itself has no Android SDK/JDK/KVM and cannot reproduce that execution locally.
+- CI run 33330083624 supplied the Gradle/JVM test, both-ABI APK, and Android emulator evidence; the current post-patch CI run is tracked in §6 and does not replace real-device evidence.
