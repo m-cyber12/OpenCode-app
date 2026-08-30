@@ -75,10 +75,24 @@ class RuntimePaths private constructor(context: Context) {
     val serverBundle: File = File(filesDir, "opencode/dist/node/node.js")
     val nodeModules: File = File(filesDir, "node_modules")
 
+    // OpenCode creates these at startup. Pre-create them in the host because
+    // the app-uid seccomp filter denies the access() probe Bun uses to check a
+    // path (mapped to ENOSYS by the seccomp shim), which otherwise makes Bun
+    // decide an existing XDG dir is absent and then mkdir() it itself.
+    val xdgDataOpencode: File = File(xdgData, "opencode")
+    val xdgConfigOpencode: File = File(xdgConfig, "opencode")
+    val xdgStateOpencode: File = File(xdgState, "opencode")
+    val xdgCacheOpencode: File = File(xdgCache, "opencode")
+    val xdgStateOpencodeLog: File = File(xdgStateOpencode, "log")
+
     fun ensureDirs() {
         listOf(
             binDir, runtimeDir, xdgData, xdgConfig, xdgState, xdgCache, tmp, home,
             workspaces, logDir, crashDir, diagnosticsDir, secretsDir,
+            // OpenCode app-data subtree (pre-created so Bun never has to mkdir
+            // under the app seccomp filter):
+            xdgDataOpencode, xdgConfigOpencode, xdgStateOpencode, xdgCacheOpencode,
+            xdgStateOpencodeLog,
         ).forEach { it.mkdirs() }
     }
 
