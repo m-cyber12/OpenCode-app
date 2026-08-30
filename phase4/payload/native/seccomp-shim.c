@@ -69,10 +69,11 @@ static int map_errno(long nr) {
         case __NR_clone3:      return ENOSYS;   /* -> clone */
         case __NR_statx:       return ENOSYS;   /* -> fstatat */
         case __NR_faccessat2:  return ENOSYS;   /* -> faccessat libc wrapper */
-        /* Raw access() (legacy): on arm64 it can only reach here as a true trap
-           so report the probed path absent; on x86_64 access is EMULATED with
-           faccessat in the handler and never reaches this mapping. */
+#ifdef __NR_access
+        /* Raw access() (legacy): on arm64 it is not a syscall, while on
+           x86_64 it is emulated with faccessat in the handler. */
         case __NR_access:      return ENOENT;
+#endif
         default:               return ENOSYS;
     }
 }
