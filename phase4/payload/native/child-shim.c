@@ -100,12 +100,25 @@ static int is_allowed_modern(long nr) {
     }
 }
 
-/* Modern-syscall floor: syscalls >= this on the running arch are "new" (post-
-   ~5.0) and candidates for the zygote filter's TRAP (SIGSYS). Legacy syscalls
-   below the floor are universally allowed by the zygote filter (proven by the
-   untrusted_app probe), so we don't even need to trace them. x86_64 legacy
-   ends at 292 (rseq); arm64 ends at 292. Use 293. */
-#define SHIM_MODERN_FLOOR 293
+/* Modern-syscall floor: syscalls >= this on the running arch are "new" and
+   candidates for the zygote filter's TRAP (SIGSYS). Legacy syscalls below the
+   floor are universally allowed by the zygote filter (proven by the
+   untrusted_app probe), so we don't even trace them. The floor is arch-
+   specific because x86_64 and arm64 (generic) number syscalls differently:
+     - x86_64: rseq=334; the bionic whitelist covers up through ~334 (getrandom
+       318, execveat 320, statx 332, rseq 334 are all allowed). The first
+       commonly-trapped optional call is clone3=435/close_range=436, but to be
+       safe we trace everything >= 335 (openat2=437 etc. land here).
+     - arm64 (generic table): rseq=293; whitelist covers 293. Trace >= 294.
+   Known-good modern calls at/above the floor (rseq/openat2/futex_waitv) are
+   on the explicit allow-list and still run, so the conservative floor is safe. */
+#if defined(__x86_64__)
+  #define SHIM_MODERN_FLOOR 335
+#elif defined(__aarch64__)
+  #define SHIM_MODERN_FLOOR 294
+#else
+  #define SHIM_MODERN_FLOOR 294
+#endif
 
 /* Build a BPF that:
    - validates arch (ALLOW on mismatch),
