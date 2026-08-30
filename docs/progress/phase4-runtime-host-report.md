@@ -21,7 +21,7 @@ The decisive completed Android run was GitHub Actions **33330083624**, whose CI 
 - Payload build: `PAYLOAD_READY`, 2 complete ABIs; Git 2.48.1, ripgrep 15.1.0, Bun 1.3.14, and the pinned OpenCode bundle.
 - No `OPENROUTER_API_KEY` was supplied (`model_available=0`). Model-dependent content assertions are therefore not claimed as a real external-model round trip; see §4.
 
-A preceding both-ABI attempt (**33329943774**) exposed an arm64 portability defect: `seccomp-shim.c` referenced x86_64-only `__NR_access`. Commit `424162f` added the architecture guard. The follow-up **33330083624** built both ABIs, packaged both into the APK, and passed the complete x86_64 Android suite. Arm64 binary packaging is therefore **TESTED**; arm64 execution on an Android arm64 device remains **NOT TESTED**.
+A preceding both-ABI attempt (**33329943774**) exposed an arm64 portability defect: `seccomp-shim.c` referenced x86_64-only `__NR_access`. Commit `424162f` added the architecture guard. The follow-up **33330083624** built both ABIs, packaged both into the APK, and passed the complete x86_64 Android suite. The arm64 BPF-skip patch initially exposed a compile-scope error in **33335804059**; `b744714` corrected that, and CI run **33335963268** completed successfully. Arm64 binary packaging is therefore **TESTED** again; arm64 execution on the RMX3830 Android arm64 device remains **NOT TESTED**.
 
 Relevant committed evidence is under `docs/progress/phase4-evidence/`, especially:
 
@@ -161,7 +161,7 @@ These are explicit capability losses; the app does not silently fall back to Ter
 | 33329943774 / evidence f0c11ec | FAIL | Both-ABI build exposed arm64-only compile failure: `__NR_access` is not defined on arm64 |
 | 33330083624 / evidence dca0a3a | **SUCCESS** | `#ifdef __NR_access` fix worked; both ABI slices built, Gradle/APK passed, and x86_64 emulator H/G suite was fully green |
 | 33335804059 / evidence b02a3f7 | FAIL | The first arm64 BPF-skip patch did not compile: `arch` was scoped out by the architecture guard; no APK/device result was produced |
-| 33335963268 | IN PROGRESS at report update | Re-run after the compile-scope correction in `b744714`; result must be checked separately from the real RMX3830 retest |
+| 33335963268 | **SUCCESS** | Re-run after the compile-scope correction in `b744714`; the Android build/package and existing x86_64 gates completed successfully. This still does not replace the real RMX3830 retest |
 
 The Phase 4 implementation and required x86_64 Android validation are complete. The arm64-v8a artifacts are included in the final APK and pass build/package evidence. The real-device incident below remains the merge blocker; this report does not claim the arm64 fix until a rebuilt APK reaches health on the RMX3830.
 
