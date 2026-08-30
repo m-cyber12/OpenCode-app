@@ -205,9 +205,12 @@ log "=== early diagnostics (app uid) ==="
   adb logcat -d 2>/dev/null | grep -aiE 'disallowed|seccomp|fatal signal 31|SIGSYS|Bad system' | tail -10 || echo "(no seccomp kills logged)"
   echo "--- run static git/rg UNDER THE FILTER with logcat captured to name the trapped syscall ---"
   adb logcat -c 2>/dev/null || true
-  rash "OPENCODE_BUN_EXEC='$FILES/bin/git' '$NATIVE_DIR/libexecshim.so' status 2>&1; echo trace_git_rc=\$?"
+  rash "OPENCODE_BPF_LOG=1 OPENCODE_BUN_EXEC='$FILES/bin/git' '$NATIVE_DIR/libexecshim.so' status 2>&1; echo trace_git_rc=\$?"
   sleep 1
-  adb logcat -d 2>/dev/null | grep -aiE 'disallowed|seccomp|signal 31|SIGSYS|syscall|libgit|librg' | tail -15
+  echo "--- logcat: seccomp audit (RET_LOG names each syscall nr; the one the Android filter then TRAPs is the git killer) ---"
+  adb logcat -d 2>/dev/null | grep -aiE 'seccomp|SIGSYS|signal 31|syscall|audit|disallowed|libgit|librg' | grep -aviE 'avc:|denied|exec-shim' | tail -25
+  echo "--- dmesg fallback (may require root; ignore failure) ---"
+  adb shell "dmesg 2>/dev/null | grep -aiE 'seccomp|syscall' | tail -20" || echo "(dmesg unavailable)"
   echo "--- (end child seccomp trace) ---"
   echo "--- flat payload present ---"
   rash "ls -la '$FILES/launcher.js' '$FILES/opencode/dist/node/node.js' 2>&1; ls -ld '$FILES/node_modules' 2>&1"

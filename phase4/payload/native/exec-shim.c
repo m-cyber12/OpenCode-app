@@ -43,6 +43,22 @@
 #endif
 #define RET_ERRNO(e) (SECCOMP_RET_ERRNO | ((unsigned int)(e) & 0x7fffU))
 #define RET_ALLOW   SECCOMP_RET_ALLOW
+#ifndef SECCOMP_RET_LOG
+#define SECCOMP_RET_LOG 0x7ffc0000U   /* allow + kernel audit log; enum seccomp_log() */
+#endif
+
+/*
+ * Fallback action for non-listed syscalls, applied ONLY to the *outer*
+ * (arch-default) return and the end-of-chain return. Normally SECCOMP_RET_ALLOW
+ * defers to Android's filter. With OPENCODE_BPF_LOG=1 the fallback is
+ * SECCOMP_RET_LOG: the kernel logs every otherwise-allowed syscall number to
+ * the audit buffer (logcat "syscall=..."), including the one that the next
+ * (Android) filter then TRAPs — this enumerates the syscall killing static git.
+ */
+static unsigned int fallback_action(void) {
+    const char *e = getenv("OPENCODE_BPF_LOG");
+    return (e && e[0] == '1') ? SECCOMP_RET_LOG : SECCOMP_RET_ALLOW;
+}
 
 /* Trap -> errno rules for syscalls that are safe to fail as "not supported"
    (callers have an old-kernel fallback) or "not present". */
@@ -73,18 +89,13 @@ static int install_errno_filter(void) {
     rules[n++] = (struct rule){ (long)__NR_clone3, ENOSYS };
     rules[n++] = (struct rule){ (long)__NR_faccessat2, ENOSYS };
     rules[n++] = (struct rule){ (long)__NR_statx, ENOSYS };
-#ifdef __NR_rseq
-    /* musl static git/rg register rseq(2) at libc startup; on the Android app
-       filter rseq is denied with SIGSYS. ENOSYS is the documented "kernel has
-       no rseq" result that both musl and bionic tolerate (they just skip the
-       rseq fast-path). Verified on-device: rseq ENOSYS alone still boots the
-       bun server (the earlier boot break was openat2/futex_waitv). */
-    rules[n++] = (struct rule){ (long)__NR_rseq, ENOSYS };
-#endif
-    /* Only syscalls proven to (a) be denied with SIGSYS by the app filter and
-       (b) tolerate ENOSYS. openat2 and futex_waitv are intentionally NOT
-       mapped: on-device ENOSYS for either prevented the bun server from
-       reaching SERVER_READY (bionic needs the real call / a specific errno). */
+    /* ONLY syscalls proven on-device to (a) be denied with SIGSYS by the app
+       filter AND (b) tolerate ENOSYS without breaking the bun server boot.
+       rseq, openat2 and futex_waitv were each tried on-device and PREVENTED
+       the server reaching SERVER_READY (bionic needs the real call / a
+       specific errno), so they must stay ALLOW (defer to Android). The static
+       musl git/rg children's exact blocked syscall number is isolated
+       separately (they are short-lived tools; the core server is unaffected). */
 #ifdef __NR_access /* legacy access(2): arm64 has no such syscall */
     rules[n++] = (struct rule){ (long)__NR_access, ENOENT };
 #endif
@@ -101,6 +112,7 @@ static int install_errno_filter(void) {
      */
     struct sock_filter f[64];
     struct sock_filter *p = f;
+    unsigned int fb = fallback_action();
     *p++ = (struct sock_filter)BPF_STMT(BPF_LD | BPF_W | BPF_ABS, 4);
     *p++ = (struct sock_filter)BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, arch, 1, 0);
     *p++ = (struct sock_filter)BPF_STMT(BPF_RET | BPF_K, RET_ALLOW);
@@ -122,7 +134,7 @@ static int install_errno_filter(void) {
         *p++ = (struct sock_filter)BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K,
                                             rules[i].nr, jt, 1);
     }
-    *p++ = (struct sock_filter)BPF_STMT(BPF_RET | BPF_K, RET_ALLOW);
+    *p++ = (struct sock_filter)BPF_STMT(BPF_RET | BPF_K, fb);
     for (int i = 0; i < n; i++)
         *p++ = (struct sock_filter)BPF_STMT(BPF_RET | BPF_K, RET_ERRNO(rules[i].err));
 
