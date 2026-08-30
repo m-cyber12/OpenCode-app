@@ -1,11 +1,12 @@
-112 | }
-113 | 
-114 | // Create a session bound to the fixture directory.
-115 | export async function createSession(title) {
-116 |   const r = await post("/session", { title })
-117 |   if (!r.ok) throw new Error("session create failed: " + r.status + " " + r.text.slice(0, 300))
-                             ^
-error: session create failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_b98b48bf"}}
-      at createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:117:24)
-
-Bun v1.3.14 (Linux x64)
+assert ok: session id present
+shell HTTP 200
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M195QZDPDDJ59RP3BTN6ZNMH","input":"{\"command\":\"echo G11_STREAM_EVENT_OK\"}","output":"\"G11_STREAM_EVENT_OK\\n\"","error":null}]}]
+events seen (17): {"server.connected":1,"message.updated":6,"message.part.updated":8,"session.status":1,"session.idle":1}
+assert ok: part update events streamed
+assert ok: message update events streamed
+assert ok: session.status events streamed
+assert ok: multiple events streamed (17)
+G11_SSE_OK
+(model mode skipped: no OPENROUTER_API_KEY — text-delta streaming not exercised)
+G11_PASS

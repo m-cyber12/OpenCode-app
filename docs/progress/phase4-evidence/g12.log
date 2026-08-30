@@ -1,11 +1,16 @@
-112 | }
-113 | 
-114 | // Create a session bound to the fixture directory.
-115 | export async function createSession(title) {
-116 |   const r = await post("/session", { title })
-117 |   if (!r.ok) throw new Error("session create failed: " + r.status + " " + r.text.slice(0, 300))
-                             ^
-error: session create failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_52737b1f"}}
-      at createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:117:24)
+assert ok: session id present
+prompt_async accepted (204)
+ASSERT_FAILED: permission request was asked and replied
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"Run the shell command: echo G12_PERM_OK and tell me what it printed.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to run a shell command. Let me do that.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"bash","callID":"call_39304c79de814b8d99d5f551","input":"{\"command\":\"echo G12_PERM_OK\"}","output":"\"G12_PERM_OK\\n\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"text","text":"G12_PERM_OK","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
+--- assistant text ---
 
-Bun v1.3.14 (Linux x64)
+G12_PERM_OK
+--- bash tool outputs ---
+G12_PERM_OK
+
+asks seen: []
+assert ok: agent turn did not fail
+assert ok: command output present after approval
+ASSERT_FAILED: permission.v2.asked event observed
+G12_FAIL

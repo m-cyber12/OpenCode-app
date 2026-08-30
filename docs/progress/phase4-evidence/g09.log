@@ -1,11 +1,8 @@
-112 | }
-113 | 
-114 | // Create a session bound to the fixture directory.
-115 | export async function createSession(title) {
-116 |   const r = await post("/session", { title })
-117 |   if (!r.ok) throw new Error("session create failed: " + r.status + " " + r.text.slice(0, 300))
-                             ^
-error: session create failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_c962f825"}}
-      at createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:117:24)
+assert ok: session id present
+shell HTTP 200
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M195QRX758Z9CEB9XZQST0VJ","input":"{\"command\":\"git status --short && echo BRANCHES && git branch && echo LOG && git log --oneline -3\"}","output":"\"Bad system call \\n\"","error":null}]}]
+--- git via OpenCode output ---
+Bad system call 
 
-Bun v1.3.14 (Linux x64)
+G9_OPENCODE_GIT_MISSING_EXPECTED_OUTPUT

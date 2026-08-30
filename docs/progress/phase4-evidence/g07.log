@@ -1,11 +1,24 @@
-112 | }
-113 | 
-114 | // Create a session bound to the fixture directory.
-115 | export async function createSession(title) {
-116 |   const r = await post("/session", { title })
-117 |   if (!r.ok) throw new Error("session create failed: " + r.status + " " + r.text.slice(0, 300))
-                             ^
-error: session create failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_9c4ada34"}}
-      at createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:117:24)
+assert ok: session id present
+G7_SESSION_ID=ses_fada45d02ffe7ednIhbzQ099LZ
+G7_SESSION_ID=ses_fada45d02ffe7ednIhbzQ099LZ
+shell endpoint HTTP 200
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M195Q9BCAK258MEASY2PC3R0","input":"{\"command\":\"echo probe\"}","output":"\"probe\\n\"","error":null}]},{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M195Q9DGY7VFBX511C71J27T","input":"{\"command\":\"echo G7_SHELL_OK from=$(pwd) uname=$(uname -m) shell=$0 && ls -1 | head -3\"}","output":"\"G7_SHELL_OK from=/data/data/ai.opencode.android.debug/files/workspaces/gates uname=x86_64 shell=/system/bin/sh\\nREADME.md\\nsrc\\n\"","error":null}]}]
+tool parts: 2
+  tool="bash" state.status=completed
+  tool="bash" state.status=completed
+--- tool outputs ---
+probe
 
-Bun v1.3.14 (Linux x64)
+G7_SHELL_OK from=/data/data/ai.opencode.android.debug/files/workspaces/gates uname=x86_64 shell=/system/bin/sh
+README.md
+src
+
+assert ok: shell output contains G7_SHELL_OK
+assert ok: tool part completed
+SSE events seen: ["server.connected","message.updated","message.part.updated","session.status","session.idle"]
+bash tool part lifecycle (streamed): ["running","running","running","running","running","running","completed","completed"]
+assert ok: SSE message.part.updated events streamed
+assert ok: SSE session.status events streamed
+assert ok: bash tool part streamed running→completed
+G7_PASS

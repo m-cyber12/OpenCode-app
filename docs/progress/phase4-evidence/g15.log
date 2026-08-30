@@ -1,11 +1,78 @@
-112 | }
-113 | 
-114 | // Create a session bound to the fixture directory.
-115 | export async function createSession(title) {
-116 |   const r = await post("/session", { title })
-117 |   if (!r.ok) throw new Error("session create failed: " + r.status + " " + r.text.slice(0, 300))
-                             ^
-error: session create failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_efc9b18e"}}
-      at createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:117:24)
+assert ok: session id present
+--- prompting the real agent ---
+prompt_async accepted (204)
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"Inspect this project and explain what it does.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to inspect the project in the current working directory and explain what it does. Let me start by expl","input":"null","output":"null","error":null},{"type":"text","text":"\n\n","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"call_b73c09bbcf2b47589413142a","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates</path>\\n<type>directory</type>\\n<entries>\\nREADME.md\\ng8-write.txt\\nsrc/\\n\\n(3 entries)\\n</entries>\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"call_a3aa3388ac5a41d69bc213f2","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md</path>\\n<type>file</type>\\n<content>\\n1: # gates fixture\\n2: \\n3: A tiny project for the Phase 4 production-host gates: a R","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"call_a2e274b73d334c3aa7d08b46","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/g8-write.txt\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/g8-write.txt</path>\\n<type>file</type>\\n<content>\\n1: G8_WRITE_OK\\n2: second line\\n\\n(End of file - total 2 lines)\\n</content>\"","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"call_dd0465ecba3d4d2693bcc70f","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/src\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/src</path>\\n<type>directory</type>\\n<entries>\\napp.js\\n\\n(1 entries)\\n</entries>\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"call_558f0a96bfb649cd819618c4","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js</path>\\n<type>file</type>\\n<content>\\n1: export function greet(name) {\\n2:   return \\\"hello \\\" + name;\\n3: }\\n\\n(End of fi","error":null},{"type":"step-finish","text":"","input":"null","
+--- assistant reply (487 chars) ---
 
-Bun v1.3.14 (Linux x64)
+
+
+
+
+This is a tiny test fixture project, not a real application. Contents:
+
+- `README.md` — describes it as a "gates fixture" for Phase 4 production-host gates testing (gives glob/read tools something to find)
+- `g8-write.txt` — a marker file containing `G8_WRITE_OK`
+- `src/app.js` — a single module exporting `greet(name)` returning `"hello " + name`
+
+Purpose: it's a minimal scaffold used to verify file access tools (glob/read/write) work correctly in a production-host environment.
+--- tools used: ["read","read","read","read","read"] ---
+--- tool outputs ---
+<path>/data/data/ai.opencode.android.debug/files/workspaces/gates</path>
+<type>directory</type>
+<entries>
+README.md
+g8-write.txt
+src/
+
+(3 entries)
+</entries>
+---
+<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md</path>
+<type>file</type>
+<content>
+1: # gates fixture
+2: 
+3: A tiny project for the Phase 4 production-host gates: a README and a small JS
+4: file so glob/read tools have something to find. "gates fixture" marker.
+
+(End of file - total 4 lines)
+</content>
+---
+<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/g8-write.txt</path>
+<type>file</type>
+<content>
+1: G8_WRITE_OK
+2: second line
+
+(End of file - total 2 lines)
+</content>
+---
+<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/src</path>
+<type>directory</type>
+<entries>
+app.js
+
+(1 entries)
+</entries>
+---
+<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js</path>
+<type>file</type>
+<content>
+1: export function greet(name) {
+2:   return "hello " + name;
+3: }
+
+(End of file - total 3 lines)
+</content>
+--- events seen (166): {"server.connected":1,"session.status":10,"message.updated":34,"session.updated":10,"session.diff":5,"message.part.updated":62,"message.part.delta":42,"session.idle":1,"server.heartbeat":1}
+--- tools streamed as events: [{"tool":"read","status":"completed","callID":"call_b73c09bbcf2b47589413142a","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"read","status":"completed","callID":"call_a3aa3388ac5a41d69bc213f2","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md"}},{"tool":"read","status":"completed","callID":"call_a2e274b73d334c3aa7d08b46","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/g8-write.txt"}},{"tool":"read","status":"completed","callID":"call_dd0465ecba3d4d2693bcc70f","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src"}},{"tool":"read","status":"completed","callID":"call_558f0a96bfb649cd819618c4","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js"}}]
+--- permissions allowed: []
+assert ok: agent turn did not fail
+assert ok: explanation is substantive (487 chars)
+assert ok: explanation reflects the actual project
+assert ok: real tools executed: ["read","read","read","read","read"]
+assert ok: tool parts streamed over SSE
+assert ok: session.status events streamed
+assert ok: message events streamed
+G15_PASS
