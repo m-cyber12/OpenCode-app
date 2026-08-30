@@ -96,11 +96,9 @@ ELF Header:
 === [3/6] Git v2.48.1 per ABI (Android/Bionic, NO_PERL recipe) ===
 git source: f93ff170b93a1782659637824b25923245ac9dd1
 --- Android Git (arm64-v8a, CC=/usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang) ---
-arm64-v8a Android Git OK: /home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/10-build-payload.sh: line 191: /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/jniLibs/arm64-v8a/libgit.so: cannot execute binary file: Exec format error
-cross binary
+arm64-v8a Android Git built (cross-ABI host execution skipped)
 --- Android Git (x86_64, CC=/usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang) ---
-x86_64 Android Git OK: /home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/10-build-payload.sh: line 191: /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/jniLibs/x86_64/libgit.so: cannot execute: required file not found
-cross binary
+x86_64 Android Git built (cross-ABI host execution skipped)
 === [4/6] ripgrep 15.1.0 per ABI (Android/Bionic source build) ===
 --- Android ripgrep (arm64-v8a, target=aarch64-linux-android) ---
 arm64-v8a Android ripgrep OK:  ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
@@ -110,6 +108,6 @@ x86_64 Android ripgrep OK:  ELF 64-bit LSB pie executable, x86-64, version 1 (SY
 upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
 bundle build complete
 === [6/6] stage payload, compute manifest ===
-payload tarball: 16549896 bytes sha256=a3993acc4a79e39691f712012db90430fd85c266287a6ec92444892d7f635db2
+payload tarball: 16549893 bytes sha256=02dee6f3c9869532ec260adac33ed7b35af5a2e932736f2e9c4b1c4dd29f93e1
 === engine layout ===
 PAYLOAD_READY
