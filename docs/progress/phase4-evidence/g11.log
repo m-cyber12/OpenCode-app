@@ -1,16 +1,12 @@
-16 | }
-17 | 
-18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
-19 |   const sep = path.includes("?") ? "&" : "?"
-20 |   const url = BASE + path + sep + "directory=" + encodeURIComponent(directory)
-21 |   const r = await fetch(url, {
-                       ^
-error: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
-  path: "http://127.0.0.1:4111/session?directory=%2Fdata%2Fdata%2Fai.opencode.android.debug%2Ffiles%2Fworkspaces%2Fgates",
- errno: 0,
-  code: "ECONNRESET"
-
-      at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
-      at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
-
-Bun v1.3.14 (Linux x64)
+assert ok: session id present
+shell HTTP 200
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19HQ04XEM25SKA2B4R0V0GD","input":"{\"command\":\"echo G11_STREAM_EVENT_OK\"}","output":"\"G11_STREAM_EVENT_OK\\n\"","error":null}]}]
+events seen (18): {"server.connected":1,"session.status":2,"message.updated":6,"message.part.updated":8,"session.idle":1}
+assert ok: part update events streamed
+assert ok: message update events streamed
+assert ok: session.status events streamed
+assert ok: multiple events streamed (18)
+G11_SSE_OK
+(model mode skipped: no OPENROUTER_API_KEY — text-delta streaming not exercised)
+G11_PASS

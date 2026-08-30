@@ -1,16 +1,43 @@
-16 | }
-17 | 
-18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
-19 |   const sep = path.includes("?") ? "&" : "?"
-20 |   const url = BASE + path + sep + "directory=" + encodeURIComponent(directory)
-21 |   const r = await fetch(url, {
-                       ^
-error: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
-  path: "http://127.0.0.1:4111/session?directory=%2Fdata%2Fdata%2Fai.opencode.android.debug%2Ffiles%2Fworkspaces%2Fgates",
- errno: 0,
-  code: "ECONNRESET"
+assert ok: session id present
+--- prompting the real agent ---
+prompt_async accepted (204)
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"Inspect this project and explain what it does.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to inspect this project and explain what it does. Let me start by exploring the project structure.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"task","callID":"call_2bfa322d52c14bddaeac4dec","input":"{\"description\":\"Explore project structure\",\"prompt\":\"Explore the project at /data/data/ai.opencode.android.debug/files/workspaces/gates. I need to understand:\\n1. What files and directories exist (lis","output":"\"<task id=\\\"ses_face250f5ffeUyjm7sVaPXTAQv\\\" state=\\\"completed\\\">\\n<task_result>\\nI have a complete picture of this small project. Let me provide a comprehensive summary.\\n\\n## Project Summary: `gates","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"text","text":"This is a **test fixture**, not a real application. It's a deliberately minimal JavaScript project (`src/app.js:1`) used","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
+--- assistant reply (671 chars) ---
 
-      at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
-      at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
+This is a **test fixture**, not a real application. It's a deliberately minimal JavaScript project (`src/app.js:1`) used to validate the host system's developer-tooling "gates" (Phase 4 production-host checks).
 
-Bun v1.3.14 (Linux x64)
+- **Language:** Plain JS with ES-module syntax — no framework, dependencies, or build config.
+- **Functionality:** A single trivial `greet(name)` function returning `"hello " + name`.
+- **Real purpose:** Sentinal markers embedded across files for automated tooling verification:
+  - `G15-E2E-MARKER` in `README.md`, `notes.txt`, and `src/app.js` — verifies glob/read/ripgrep content-search.
+  - `G8_WRITE_OK` in `g8-write.txt` — verifies the file-write gate.
+--- tools used: ["task"] ---
+--- tool outputs ---
+<task id="ses_face250f5ffeUyjm7sVaPXTAQv" state="completed">
+<task_result>
+I have a complete picture of this small project. Let me provide a comprehensive summary.
+
+## Project Summary: `gates` fixture
+
+### Top-Level Structure
+```
+/data/data/ai.opencode.android.debug/files/workspaces/gates/
+├── README.md
+├── g8-write.txt
+├── notes.txt
+└── src/
+    └── app.js
+```
+
+### Files Read
+
+**1. `README.md`** 
+--- events seen (483): {"server.connected":1,"session.updated":24,"message.updated":56,"message.part.updated":112,"session.status":16,"session.diff":8,"message.part.delta":259,"session.created":2,"server.heartbeat":3,"session.idle":2}
+--- tools streamed as events: [{"tool":"task","status":"completed","callID":"call_2bfa322d52c14bddaeac4dec","input":{"description":"Explore project structure","prompt":"Explore the project at /data/data/ai.opencode.android.debug/files/workspaces/gates. I need to understand:\n1. What files and directories exist (list the top-level structure and key subdirectories)\n2. Read any README, package.json, Cargo.toml, go.mod, pyproject.toml, or similar project config files\n3. Read key source files to understand what the project does\n4. Summarize: what is this project, what language/framework does it use, and what does it do?\n\nBe thorough - read at least the main entry points and any configuration files. Return a comprehensive summary.","subagent_type":"explore"}},{"tool":"read","status":"completed","callID":"call_30e131cfc7a842acbdc6d78a","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"glob","status":"error","callID":"call_e85f6e99c61342c3b3007a83","input":{"pattern":"*","path":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"glob","status":"error","callID":"call_31e7df0685e244028d9e6a15","input":{"pattern":"**/{README*,package.json,Cargo.toml,go.mod,pyproject.toml,setup.py,Makefile,Dockerfile,*.cabal,build.gradle,pom.xml,.gitignore,LICENSE*}","path":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"read","status":"completed","callID":"call_18e9579d74f54402aacfdae0","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md"}},{"tool":"read","status":"completed","callID":"call_4cd2742d8a9448c9a9c07625","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/g8-write.txt"}},{"tool":"read","status":"completed","callID":"call_b0fa21cb472b438799e519ab","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt"}},{"tool":"read","status":"completed","callID":"call_515c873518f244158a4fe09b","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src"}},{"tool":"read","status":"completed","callID":"call_9b1a1657580142929e555f8c","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js"}}]
+--- permissions allowed: []
+assert ok: agent turn did not fail
+assert ok: explanation is substantive (671 chars)
+assert ok: explanation reflects the actual project
+ASSERT_FAILED: real tools executed: []
+G15_FAIL
