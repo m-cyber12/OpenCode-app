@@ -74,4 +74,15 @@ ELF Header:
 === [3/6] Git v2.48.1 per ABI (Android/Bionic, NO_PERL recipe) ===
 git source: f93ff170b93a1782659637824b25923245ac9dd1
 --- Android Git (x86_64, CC=/usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang) ---
-FATAL: Android Git build failed for x86_64
+x86_64 Android Git OK: /home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/10-build-payload.sh: line 191: /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/jniLibs/x86_64/libgit.so: cannot execute: required file not found
+cross binary
+=== [4/6] ripgrep 15.1.0 per ABI (Android/Bionic source build) ===
+--- Android ripgrep (x86_64, target=x86_64-linux-android) ---
+x86_64 Android ripgrep OK:  ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
+=== [5/6] OpenCode server bundle @ 05ea5073be967c779d326929b2de6228dda4159d (pinned, fail-loud) ===
+upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
+bundle build complete
+=== [6/6] stage payload, compute manifest ===
+payload tarball: 16549770 bytes sha256=23e92b44ec6358961900829ea99801147147b067dc841e8366b903110be2e475
+=== engine layout ===
+PAYLOAD_READY
