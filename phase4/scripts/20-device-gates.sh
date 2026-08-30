@@ -371,8 +371,12 @@ log "H5 injected marker into $CORR_TARGET; broadcasting DEBUG_RESET"
 # activity is delivered immediately and performs resetAndRestart(), then exits.
 adb shell am start -n "$PKG/ai.opencode.android.runtime.DebugControlActivity" --ei mode 2 >>"$LOG" 2>&1 || true
 sleep 3
+# Wait for the reset cycle to COMPLETE (healthy) AND for the freshly extracted
+# file to settle on disk before checking the corruption marker; checking while
+# the old (still-valid) server answers health races the wipe/re-extract.
 if [ "$(wait_healthy 180)" = "HEALTH_OK" ]; then
-  MARK=$(rash "grep -c CORRUPT_MARKER '$CORR_TARGET' 2>/dev/null || echo 1" | tr -d '\r')
+  sleep 5
+  MARK=$(rash "if [ -f '$CORR_TARGET' ]; then grep -c CORRUPT_MARKER '$CORR_TARGET' 2>/dev/null || echo 0; else echo 0; fi" | tr -d '\r')
   log "H5 corruption marker present after recovery (want 0): $MARK"
   [ "$MARK" = "0" ] && H5=0
 else

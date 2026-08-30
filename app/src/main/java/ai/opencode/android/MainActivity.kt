@@ -71,6 +71,16 @@ class MainActivity : ComponentActivity() {
         RuntimeService.start(this)
     }
 
+    override fun onStart() {
+        super.onStart()
+        // Re-assert the runtime whenever the activity comes to the foreground.
+        // onCreate only fires on a cold start; after a debug STOP tore the FGS
+        // down (or the system dropped a backgrounded service), re-launching the
+        // activity can arrive as onNewIntent/onStart without onCreate, so the
+        // supervisor/FGS must be (re)started here too. start() is idempotent.
+        RuntimeService.start(this)
+    }
+
     private fun shareDiagnostics() {
         val mgr = RuntimeManager.get(this)
         Thread {

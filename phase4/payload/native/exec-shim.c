@@ -73,11 +73,18 @@ static int install_errno_filter(void) {
     rules[n++] = (struct rule){ (long)__NR_clone3, ENOSYS };
     rules[n++] = (struct rule){ (long)__NR_faccessat2, ENOSYS };
     rules[n++] = (struct rule){ (long)__NR_statx, ENOSYS };
-    /* Only the five new syscalls the Termux/Bun port proves have userspace
-       fallbacks, plus legacy access -> ENOENT. openat2 ENOSYS, rseq ENOSYS and
-       futex_waitv ENOSYS were each tried on-device and PREVENTED the bun
-       server from reaching SERVER_READY (bionic needs the real call), so they
-       are intentionally NOT intercepted. */
+#ifdef __NR_rseq
+    /* musl static git/rg register rseq(2) at libc startup; on the Android app
+       filter rseq is denied with SIGSYS. ENOSYS is the documented "kernel has
+       no rseq" result that both musl and bionic tolerate (they just skip the
+       rseq fast-path). Verified on-device: rseq ENOSYS alone still boots the
+       bun server (the earlier boot break was openat2/futex_waitv). */
+    rules[n++] = (struct rule){ (long)__NR_rseq, ENOSYS };
+#endif
+    /* Only syscalls proven to (a) be denied with SIGSYS by the app filter and
+       (b) tolerate ENOSYS. openat2 and futex_waitv are intentionally NOT
+       mapped: on-device ENOSYS for either prevented the bun server from
+       reaching SERVER_READY (bionic needs the real call / a specific errno). */
 #ifdef __NR_access /* legacy access(2): arm64 has no such syscall */
     rules[n++] = (struct rule){ (long)__NR_access, ENOENT };
 #endif
