@@ -202,6 +202,12 @@ log "=== early diagnostics (app uid) ==="
   rash "cd '$WORKDIR' && '$FILES/bin/rg' --version 2>&1; echo child_rg_rc=\$?"
   echo "--- git status THROUGH the child-shim in the gates repo (the G09 path) ---"
   rash "cd '$WORKDIR' && '$FILES/bin/git' status --short 2>&1; echo child_git_status_rc=\$?"
+  echo "--- syscall probe via child-shim (which new syscalls are ENOSYS/allowed/trap) ---"
+  # Run raw new syscalls after the child filter installs; a TRAP names the nr.
+  NATIVE_DIR=""
+  for nr in 441 436 327 328 435 439 332 21; do
+    rash "OPENCODE_CHILD_PROBE=$nr '$FILES/bin/git' 2>&1; echo probe_${nr}_rc=\$?"
+  done
   echo "--- any seccomp/trap kills logged (capture the signal + syscall) ---"
   adb logcat -c 2>/dev/null || true
   rash "cd '$WORKDIR' && '$FILES/bin/git' status --short 2>&1; echo trace2_rc=\$?"
@@ -402,11 +408,15 @@ hp "$H6" 6 "graceful-stop-no-zombies"
 
 log "=== G14 reconnect: sessions persist across restart ==="
 G14=1
-# H6 stopped the runtime via manager.stop() (userStopRequested). The app process
-# may have been torn down when the FGS stopped; relaunch it and give the process
-# time to come up before polling health.
+# H6 stopped the runtime (userStopRequested) and the FGS. A plain task-to-front
+# am start (result code 3) can reuse the task without delivering onStart, so do
+# a clean cold launch: force-stop the app then start MainActivity, which
+# onCreate/onStart the runtime via RuntimeService. Sessions persist in the
+# on-disk SQLite DB, so they survive process death.
+adb shell am force-stop "$PKG"
+sleep 2
 adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
-sleep 8
+sleep 10
 PASSWD=$(rash "cat '$FILES/secrets/server-password' 2>/dev/null" | tr -d '\r\n ')
 if [ "$(wait_healthy 150)" = "HEALTH_OK" ]; then
   NSESS=$(curl -s -u "opencode:$PASSWD" "http://127.0.0.1:4111/session?directory=$WORKDIR" 2>/dev/null | grep -o 'ses_' | wc -l | tr -d ' ')

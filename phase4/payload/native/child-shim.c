@@ -135,7 +135,35 @@ static int install_filter(void) {
     return 0;
 }
 
+/*
+ * Diagnostic probe (env OPENCODE_CHILD_PROBE=NR): instead of execing the tool,
+ * make the raw syscall NR and report its errno, then exit 0. Used to bisect the
+ * exact syscall number the static tools need mapped: after install_filter(), a
+ * call the filter returns ENOSYS for reports errno=38; a call Android traps
+ * kills the process (the probe that fails names the number); an allowed call
+ * reports its natural errno. This runs in the WRAPPER process (static binary
+ * not needed), under run-as it uses run-as policy — interpret accordingly.
+ */
+static int probe(long nr) {
+    fprintf(stderr, "[child-shim] probe syscall %ld ...\n", nr);
+    fflush(stderr);
+    long r = syscall((int)nr, 0, 0, 0, 0, 0, 0);
+    int e = errno;
+    fprintf(stderr, "[child-shim] probe syscall %ld -> r=%ld errno=%d (%s)\n",
+            nr, r, e, strerror(e));
+    return 0;
+}
+
 int main(int argc, char **argv) {
+    /* Diagnostic probe mode (before installing the filter). */
+    const char *probe_env = getenv("OPENCODE_CHILD_PROBE");
+    if (probe_env && *probe_env) {
+        install_filter();
+        fprintf(stderr, "[child-shim] probe after-filter\n");
+        fflush(stderr);
+        return probe(strtol(probe_env, NULL, 10));
+    }
+
     /* Tool from argv[0] basename (the bin/git|bin/rg symlink path). */
     const char *a0 = argv[0] ? argv[0] : "";
     char buf0[4096];
