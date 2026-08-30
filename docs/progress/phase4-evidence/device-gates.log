@@ -1,103 +1,82 @@
-[2026-08-30T14:37:43Z] === device facts ===
-[2026-08-30T14:37:43Z] === host bun (runner) to drive gates over adb forward ===
-[2026-08-30T14:37:44Z] === provision fixture + MCP + config + key (run-as) ===
+[2026-08-30T15:07:53Z] === device facts ===
+[2026-08-30T15:07:53Z] === host bun (runner) to drive gates over adb forward ===
+[2026-08-30T15:07:54Z] === provision fixture + MCP + config + key (run-as) ===
 {
   "$schema": "https://opencode.ai/config.json",
   "shell": "/system/bin/sh",
-[2026-08-30T14:37:47Z] no OPENROUTER_API_KEY — model-driven assertions skipped
-[2026-08-30T14:37:47Z] === launch the app (starts RuntimeService) ===
-[2026-08-30T14:37:52Z] server password: d8963c… (48 chars)
-[2026-08-30T14:37:52Z] === early diagnostics (app uid) ===
+[2026-08-30T15:07:57Z] no OPENROUTER_API_KEY — model-driven assertions skipped
+[2026-08-30T15:07:57Z] === launch the app (starts RuntimeService) ===
+[2026-08-30T15:08:02Z] server password: 8f050a… (48 chars)
+[2026-08-30T15:08:02Z] === early diagnostics (app uid) ===
 --- supervisor log (host) ---
-2026-08-30T14:37:48.548Z [host] start() ignored: supervisor already running
-2026-08-30T14:37:48.562Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-2026-08-30T14:37:48.565Z [host] state -> EXTRACTING (validating embedded runtime)
-2026-08-30T14:37:48.574Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
-2026-08-30T14:37:48.577Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
-2026-08-30T14:37:49.864Z [host] extraction complete: 30 files validated
-2026-08-30T14:37:49.865Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-2026-08-30T14:37:49.866Z [host] symlink bun -> /data/app/~~SzEL_aQIEZBQsW_dBPddqw==/ai.opencode.android.debug-LbPkL5HbCOUxQq3S8T2j6A==/lib/x86_64/libbun.so (exec=true)
-2026-08-30T14:37:49.867Z [host] symlink git -> /data/app/~~SzEL_aQIEZBQsW_dBPddqw==/ai.opencode.android.debug-LbPkL5HbCOUxQq3S8T2j6A==/lib/x86_64/libgit.so (exec=true)
-2026-08-30T14:37:49.868Z [host] symlink rg -> /data/app/~~SzEL_aQIEZBQsW_dBPddqw==/ai.opencode.android.debug-LbPkL5HbCOUxQq3S8T2j6A==/lib/x86_64/librg.so (exec=true)
-2026-08-30T14:37:49.871Z [host] generated fresh server password (stored 600 at server-password)
-2026-08-30T14:37:49.872Z [host] state -> STARTING (starting OpenCode server (attempt 1))
-2026-08-30T14:37:49.877Z [host] server started: pid=6424 abi=x86_64 port=4111
-2026-08-30T14:37:49.887Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~SzEL_aQIEZBQsW_dBPddqw==/ai.opencode.android.debug-LbPkL5HbCOUxQq3S8T2j6A==/lib/x86_64/libbun.so
-2026-08-30T14:37:49.887Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
-2026-08-30T14:37:49.923Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-08-30T14:37:51.895Z [server] SERVER_READY http://127.0.0.1:4111/
-2026-08-30T14:37:51.941Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
-2026-08-30T14:37:51.949Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-08-30T15:07:58.510Z [host] start() ignored: supervisor already running
+2026-08-30T15:07:58.526Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-08-30T15:07:58.529Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-08-30T15:07:58.535Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-08-30T15:07:58.538Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-08-30T15:07:59.691Z [host] extraction complete: 30 files validated
+2026-08-30T15:07:59.692Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-08-30T15:07:59.693Z [host] symlink bun -> /data/app/~~XTA8pmaZQ6HucaZe0CRqzg==/ai.opencode.android.debug-ixUMh4CljB8b2K_gUad38Q==/lib/x86_64/libbun.so (exec=true)
+2026-08-30T15:07:59.694Z [host] symlink git -> /data/app/~~XTA8pmaZQ6HucaZe0CRqzg==/ai.opencode.android.debug-ixUMh4CljB8b2K_gUad38Q==/lib/x86_64/libchildshim.so (exec=true)
+2026-08-30T15:07:59.695Z [host] symlink rg -> /data/app/~~XTA8pmaZQ6HucaZe0CRqzg==/ai.opencode.android.debug-ixUMh4CljB8b2K_gUad38Q==/lib/x86_64/libchildshim.so (exec=true)
+2026-08-30T15:07:59.698Z [host] generated fresh server password (stored 600 at server-password)
+2026-08-30T15:07:59.699Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-30T15:07:59.704Z [host] server started: pid=6082 abi=x86_64 port=4111
+2026-08-30T15:07:59.712Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~XTA8pmaZQ6HucaZe0CRqzg==/ai.opencode.android.debug-ixUMh4CljB8b2K_gUad38Q==/lib/x86_64/libbun.so
+2026-08-30T15:07:59.712Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-08-30T15:07:59.782Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T15:08:01.896Z [server] SERVER_READY http://127.0.0.1:4111/
+2026-08-30T15:08:01.913Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
+2026-08-30T15:08:01.914Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
 --- bin symlinks (filesDir/bin) ---
 total 40
-drwx------  2 u0_a192 u0_a192 4096 2026-08-30 14:37 .
-drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-30 14:37 ..
-lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 14:37 bun -> /data/app/~~SzEL_aQIEZBQsW_dBPddqw==/ai.opencode.android.debug-LbPkL5HbCOUxQq3S8T2j6A==/lib/x86_64/libbun.so
-lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 14:37 git -> /data/app/~~SzEL_aQIEZBQsW_dBPddqw==/ai.opencode.android.debug-LbPkL5HbCOUxQq3S8T2j6A==/lib/x86_64/libgit.so
-lrwxrwxrwx  1 u0_a192 u0_a192  107 2026-08-30 14:37 rg -> /data/app/~~SzEL_aQIEZBQsW_dBPddqw==/ai.opencode.android.debug-LbPkL5HbCOUxQq3S8T2j6A==/lib/x86_64/librg.so
+drwx------  2 u0_a192 u0_a192 4096 2026-08-30 15:07 .
+drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-30 15:07 ..
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 15:07 bun -> /data/app/~~XTA8pmaZQ6HucaZe0CRqzg==/ai.opencode.android.debug-ixUMh4CljB8b2K_gUad38Q==/lib/x86_64/libbun.so
+lrwxrwxrwx  1 u0_a192 u0_a192  114 2026-08-30 15:07 git -> /data/app/~~XTA8pmaZQ6HucaZe0CRqzg==/ai.opencode.android.debug-ixUMh4CljB8b2K_gUad38Q==/lib/x86_64/libchildshim.so
+lrwxrwxrwx  1 u0_a192 u0_a192  114 2026-08-30 15:07 rg -> /data/app/~~XTA8pmaZQ6HucaZe0CRqzg==/ai.opencode.android.debug-ixUMh4CljB8b2K_gUad38Q==/lib/x86_64/libchildshim.so
 --- execs THROUGH symlinks ---
 1.3.14
 bun_rc=0
-git version 2.48.1
-git_rc=0
-ripgrep 15.1.0 (rev af60c2de9d)
-
-features:+pcre2
-simd(compile):+SSE2,-SSSE3,-AVX2
-simd(runtime):+SSE2,+SSSE3,-AVX2
-
-PCRE2 10.45 is available (JIT is available)
-rg_rc=0
---- static git/rg THROUGH THE SECCOMP SHIM (BPF filter path) ---
-nativeLibraryDir=/data/app/~~SzEL_aQIEZBQsW_dBPddqw==/ai.opencode.android.debug-LbPkL5HbCOUxQq3S8T2j6A==/lib/x86_64
-[exec-shim] opencode-execshim-bpf-v2 starting; target=/data/data/ai.opencode.android.debug/files/bin/git
-[exec-shim] seccomp BPF errno filter installed (8 rules)
-git version 2.48.1
-shim_git_rc=0
-[exec-shim] opencode-execshim-bpf-v2 starting; target=/data/data/ai.opencode.android.debug/files/bin/rg
-[exec-shim] seccomp BPF errno filter installed (8 rules)
-ripgrep 15.1.0 (rev af60c2de9d)
-
-features:+pcre2
-simd(compile):+SSE2,-SSSE3,-AVX2
-simd(runtime):+SSE2,+SSSE3,-AVX2
-
-PCRE2 10.45 is available (JIT is available)
-shim_rg_rc=0
---- spawned-child syscall trace (logcat seccomp/SIGSYS for git/rg pids) ---
-08-30 14:37:49.888  6371  6427 I OpenCode/server: [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
-08-30 14:37:49.925  6371  6427 I OpenCode/server: [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
---- run static git/rg UNDER THE FILTER with logcat captured to name the trapped syscall ---
-[exec-shim] opencode-execshim-bpf-v2 starting; target=/data/data/ai.opencode.android.debug/files/bin/git
-[exec-shim] seccomp BPF errno filter installed (8 rules)
-fatal: not a git repository (or any parent up to mount point /)
-Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
-trace_git_rc=128
---- logcat: seccomp audit (RET_LOG names each syscall nr; the one the Android filter then TRAPs is the git killer) ---
---- dmesg fallback (may require root; ignore failure) ---
---- (end child seccomp trace) ---
+Trap 
+git_rc=133
+Trap 
+rg_rc=133
+--- bin/git and bin/rg symlink targets (should be libchildshim.so) ---
+lrwxrwxrwx 1 u0_a192 u0_a192 114 2026-08-30 15:07 /data/data/ai.opencode.android.debug/files/bin/git -> /data/app/~~XTA8pmaZQ6HucaZe0CRqzg==/ai.opencode.android.debug-ixUMh4CljB8b2K_gUad38Q==/lib/x86_64/libchildshim.so
+lrwxrwxrwx 1 u0_a192 u0_a192 114 2026-08-30 15:07 /data/data/ai.opencode.android.debug/files/bin/rg -> /data/app/~~XTA8pmaZQ6HucaZe0CRqzg==/ai.opencode.android.debug-ixUMh4CljB8b2K_gUad38Q==/lib/x86_64/libchildshim.so
+--- child-shim git/rg version (aggressive ENOSYS filter then execs real lib) ---
+Trap 
+child_git_rc=133
+Trap 
+child_rg_rc=133
+--- git status THROUGH the child-shim in the gates repo (the G09 path) ---
+Trap 
+child_git_status_rc=133
+--- any seccomp kills logged ---
+(no seccomp kills logged)
 --- flat payload present ---
--rw------- 1 u0_a192 u0_a192     4514 2026-08-30 14:37 /data/data/ai.opencode.android.debug/files/launcher.js
--rw------- 1 u0_a192 u0_a192 32845290 2026-08-30 14:37 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
-drwx------ 5 u0_a192 u0_a192 4096 2026-08-30 14:37 /data/data/ai.opencode.android.debug/files/node_modules
+-rw------- 1 u0_a192 u0_a192     4514 2026-08-30 15:07 /data/data/ai.opencode.android.debug/files/launcher.js
+-rw------- 1 u0_a192 u0_a192 32845290 2026-08-30 15:07 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
+drwx------ 5 u0_a192 u0_a192 4096 2026-08-30 15:07 /data/data/ai.opencode.android.debug/files/node_modules
 --- live server processes (app uid) ---
-/proc/6424/cmdline /data/app/~~SzEL_aQIEZBQsW_dBPddqw==/ai.opencode.android.debug-LbPkL5HbCOUxQq3S8T2j6A==/lib/x86_64/libbun.so /data/user/0/ai.opencode.android.debug/files/launcher.js 
-[2026-08-30T14:37:54Z] === H1 extraction + version validation ===
--rw------- 1 u0_a192 u0_a192     4514 2026-08-30 14:37 /data/data/ai.opencode.android.debug/files/launcher.js
--rw------- 1 u0_a192 u0_a192 32845290 2026-08-30 14:37 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
--rw------- 1 u0_a192 u0_a192      108 2026-08-30 14:37 /data/data/ai.opencode.android.debug/files/runtime/.extracted
-[2026-08-30T14:37:54Z] H1 marker: {"payloadVersion":4,"opencodeCommit":"05ea5073be967c779d326929b2de6228dda4159d","extractedAt":1788100669864}
-[2026-08-30T14:37:54Z] H1 bun via symlink: '1.3.14' exec_ok=1
-[2026-08-30T14:37:54Z] H1 node=0 launcher=0 node_modules=0 marker=0 exec=1
-[2026-08-30T14:37:54Z] H1 flat payload + marker + execs OK
-[2026-08-30T14:37:54Z] === H2 health-gated start ===
-[2026-08-30T14:37:54Z] H2 health: {"healthy":true,"version":"1.18.23-android"}
-[2026-08-30T14:37:54Z] === H3 duplicate-process prevention ===
-[2026-08-30T14:38:02Z] H3 live launcher.js processes after repeated starts: 1
-[2026-08-30T14:38:02Z] === G1..G4 in-sandbox exec/userspace/shell/runtime (bin symlinks -> nativeLibraryDir) ===
-[2026-08-30T14:38:02Z] === G5/G6 server start + health ===
+/proc/6082/cmdline /data/app/~~XTA8pmaZQ6HucaZe0CRqzg==/ai.opencode.android.debug-ixUMh4CljB8b2K_gUad38Q==/lib/x86_64/libbun.so /data/user/0/ai.opencode.android.debug/files/launcher.js 
+[2026-08-30T15:08:02Z] === H1 extraction + version validation ===
+-rw------- 1 u0_a192 u0_a192     4514 2026-08-30 15:07 /data/data/ai.opencode.android.debug/files/launcher.js
+-rw------- 1 u0_a192 u0_a192 32845290 2026-08-30 15:07 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
+-rw------- 1 u0_a192 u0_a192      108 2026-08-30 15:07 /data/data/ai.opencode.android.debug/files/runtime/.extracted
+[2026-08-30T15:08:03Z] H1 marker: {"payloadVersion":4,"opencodeCommit":"05ea5073be967c779d326929b2de6228dda4159d","extractedAt":1788102479691}
+[2026-08-30T15:08:03Z] H1 bun via symlink: '1.3.14' exec_ok=1
+[2026-08-30T15:08:03Z] H1 node=0 launcher=0 node_modules=0 marker=0 exec=1
+[2026-08-30T15:08:03Z] H1 flat payload + marker + execs OK
+[2026-08-30T15:08:03Z] === H2 health-gated start ===
+[2026-08-30T15:08:03Z] H2 health: {"healthy":true,"version":"1.18.23-android"}
+[2026-08-30T15:08:03Z] === H3 duplicate-process prevention ===
+[2026-08-30T15:08:11Z] H3 live launcher.js processes after repeated starts: 1
+[2026-08-30T15:08:11Z] === G1..G4 in-sandbox exec/userspace/shell/runtime (bin symlinks -> nativeLibraryDir) ===
+[2026-08-30T15:08:11Z] === G5/G6 server start + health ===
 --- POST /session?directory=<workdir> ---
-{"id":"ses_face4daccffeMBo327ZZigGPqK","slug":"playful-squid","projectID":"global","directory":"/data/data/ai.opencode.android.debug/files/workspaces/gates","path":"data/data/ai.opencode.android.debug/files/workspaces/gates","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}},"title":"diag","version":"1.18.23-android","time":{"created":1788100683059,"updated":1788100683059}}
+{"id":"ses_facc94145ffeb9Eln2xQ6j8G3G","slug":"stellar-nebula","projectID":"global","directory":"/data/data/ai.opencode.android.debug/files/workspaces/gates","path":"data/data/ai.opencode.android.debug/files/workspaces/gates","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}},"title":"diag","version":"1.18.23-android","time":{"created":1788102491835,"updated":1788102491835}}
 HTTP 200
 --- GET /config ---
 {"$schema":"https://opencode.ai/config.json","shell":"/system/bin/sh","command":{},"plugin":[],"username":"unknown","mode":{},"agent":{},"mcp":{"gates-mcp":{"type":"local","command":["/data/data/ai.opencode.android.debug/files/bin/bun","/data/data/ai.opencode.android.debug/files/mcp/mcp-server.js"],"environment":{}}},"permission":{"edit":{"/data/data/ai.opencode.android.debug/files/workspaces/gates/*":"ask"},"bash":{"/data/data/ai.opencode.android.debug/files/workspaces/gates/*":"ask"},"webfetch":"ask"}}
@@ -105,59 +84,62 @@ HTTP 200
 
 --- workspace dir (app uid) ---
 total 40
-drwxrwxrwx 3 u0_a192 u0_a192 4096 2026-08-30 14:37 .
-drwxrwxrwx 3 u0_a192 u0_a192 4096 2026-08-30 14:37 ..
--rw-rw-rw- 1 u0_a192 u0_a192  231 2026-08-30 14:37 README.md
--rw-rw-rw- 1 u0_a192 u0_a192   91 2026-08-30 14:37 notes.txt
-drwxrwxrwx 2 u0_a192 u0_a192 4096 2026-08-30 14:37 src
+drwxrwxrwx 3 u0_a192 u0_a192 4096 2026-08-30 15:07 .
+drwxrwxrwx 3 u0_a192 u0_a192 4096 2026-08-30 15:07 ..
+-rw-rw-rw- 1 u0_a192 u0_a192  231 2026-08-30 15:07 README.md
+-rw-rw-rw- 1 u0_a192 u0_a192   91 2026-08-30 15:07 notes.txt
+drwxrwxrwx 2 u0_a192 u0_a192 4096 2026-08-30 15:07 src
 --- .opencode:
 ls: /data/data/ai.opencode.android.debug/files/workspaces/gates/.opencode: No such file or directory
 --- xdg state/data opencode ---
 /data/data/ai.opencode.android.debug/files/xdg/data/opencode:
 total 380
-drwx------ 4 u0_a192 u0_a192   4096 2026-08-30 14:37 .
-drwx------ 3 u0_a192 u0_a192   4096 2026-08-30 14:37 ..
-drwx------ 2 u0_a192 u0_a192   4096 2026-08-30 14:37 log
--rw------- 1 u0_a192 u0_a192   4096 2026-08-30 14:37 opencode-android.db
--rw------- 1 u0_a192 u0_a192  32768 2026-08-30 14:37 opencode-android.db-shm
--rw------- 1 u0_a192 u0_a192 304912 2026-08-30 14:38 opencode-android.db-wal
-drwx------ 2 u0_a192 u0_a192   4096 2026-08-30 14:37 repos
+drwx------ 4 u0_a192 u0_a192   4096 2026-08-30 15:08 .
+drwx------ 3 u0_a192 u0_a192   4096 2026-08-30 15:07 ..
+drwx------ 2 u0_a192 u0_a192   4096 2026-08-30 15:08 log
+-rw------- 1 u0_a192 u0_a192   4096 2026-08-30 15:08 opencode-android.db
+-rw------- 1 u0_a192 u0_a192  32768 2026-08-30 15:08 opencode-android.db-shm
+-rw------- 1 u0_a192 u0_a192 304912 2026-08-30 15:08 opencode-android.db-wal
+drwx------ 2 u0_a192 u0_a192   4096 2026-08-30 15:08 repos
 
 /data/data/ai.opencode.android.debug/files/xdg/data/opencode/log:
-total 20
-drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 14:37 .
-drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 14:37 ..
--rw------- 1 u0_a192 u0_a192    0 2026-08-30 14:37 opencode.log
+total 24
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 15:08 .
+drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 15:08 ..
+-rw------- 1 u0_a192 u0_a192  459 2026-08-30 15:08 opencode.log
 
 /data/data/ai.opencode.android.debug/files/xdg/data/opencode/repos:
 total 16
-drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 14:37 .
-drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 14:37 ..
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 15:08 .
+drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 15:08 ..
 
 /data/data/ai.opencode.android.debug/files/xdg/state/opencode:
 total 32
-drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 14:37 .
-drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 14:37 ..
-drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 14:38 locks
-drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 14:37 log
+drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 15:08 .
+drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 15:07 ..
+drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 15:08 locks
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 15:07 log
 
 /data/data/ai.opencode.android.debug/files/xdg/state/opencode/locks:
 total 24
-drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 14:38 .
-drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 14:37 ..
-drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 14:38 5843ba2f93205c5b45cbcc9789fdc1badd8a9d27.lock
+drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 15:08 .
+drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 15:08 ..
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 15:08 5843ba2f93205c5b45cbcc9789fdc1badd8a9d27.lock
 
 /data/data/ai.opencode.android.debug/files/xdg/state/opencode/locks/5843ba2f93205c5b45cbcc9789fdc1badd8a9d27.lock:
 total 28
-drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 14:38 .
-drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 14:38 ..
--rw------- 1 u0_a192 u0_a192    0 2026-08-30 14:38 heartbeat
--rw------- 1 u0_a192 u0_a192  121 2026-08-30 14:38 meta.json
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 15:08 .
+drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 15:08 ..
+-rw------- 1 u0_a192 u0_a192    0 2026-08-30 15:08 heartbeat
+-rw------- 1 u0_a192 u0_a192  121 2026-08-30 15:08 meta.json
 --- OpenCode server log (has the 500 stack) ---
 ### /data/data/ai.opencode.android.debug/files/xdg/data/opencode/log/opencode.log
-[2026-08-30T14:38:03Z] === G7..G12, G15 real agent gates over the app server ===
-[2026-08-30T14:38:03Z] --- G07 (gate-07-shell.js) model=0 ---
-[2026-08-30T14:38:13Z] --- G08 (gate-08-files.js) model=0 ---
+timestamp=2026-08-30T15:08:11.581Z level=INFO run=b00b4590 message="creating instance" directory=/data/data/ai.opencode.android.debug/files/workspaces/gates
+timestamp=2026-08-30T15:08:11.584Z level=INFO run=b00b4590 message=fromDirectory directory=/data/data/ai.opencode.android.debug/files/workspaces/gates
+timestamp=2026-08-30T15:08:11.601Z level=INFO run=b00b4590 message=bootstrapping directory=/data/data/ai.opencode.android.debug/files/workspaces/gates
+[2026-08-30T15:08:12Z] === G7..G12, G15 real agent gates over the app server ===
+[2026-08-30T15:08:12Z] --- G07 (gate-07-shell.js) model=0 ---
+[2026-08-30T15:08:22Z] --- G08 (gate-08-files.js) model=0 ---
 list HTTP 200
 assert ok: file list ok
 files: src, README.md, notes.txt
@@ -172,33 +154,33 @@ ASSERT_FAILED: find (ripgrep) ok
 assert ok: session id present
 shell write HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19HPKNXVJ5YD5JYTDMC8S8F","input":"{\"command\":\"printf 'G8_WRITE_OK\\\\n' > g8-write.txt && printf 'second line\\\\n' >> g8-write.txt\"}","output":"\"\"","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19KDTN5DF3ZPEH0QPJ1HNVK","input":"{\"command\":\"printf 'G8_WRITE_OK\\\\n' > g8-write.txt && printf 'second line\\\\n' >> g8-write.txt\"}","output":"\"\"","error":null}]}]
 assert ok: written file readable
 g8-write.txt: G8_WRITE_OK | second line
 assert ok: file content written through OpenCode shell exec
 G8_WRITE_OK
 (model mode skipped: no OPENROUTER_API_KEY — agent write-tool part not run)
 G8_FAIL
-[2026-08-30T14:38:19Z] --- G09 (gate-09-opencode-git.js) model=0 ---
+[2026-08-30T15:08:29Z] --- G09 (gate-09-opencode-git.js) model=0 ---
 assert ok: session id present
 shell HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19HPSMZ2JMV3FDQ672G38FR","input":"{\"command\":\"git status --short && echo BRANCHES && git branch && echo LOG && git log --oneline -3\"}","output":"\"Bad system call \\n\"","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19KE0MF9P5NA9XRPH4VVC22","input":"{\"command\":\"git status --short && echo BRANCHES && git branch && echo LOG && git log --oneline -3\"}","output":"\"Trap \\n\"","error":null}]}]
 --- git via OpenCode output ---
-Bad system call 
+Trap 
 
 G9_OPENCODE_GIT_MISSING_EXPECTED_OUTPUT
-[2026-08-30T14:38:26Z] --- G10 (gate-10-mcp.js) model=0 ---
-[2026-08-30T14:38:26Z] --- G11 (gate-11-stream.js) model=0 ---
-[2026-08-30T14:38:34Z] --- G12 (gate-12-permission.js) model=0 ---
+[2026-08-30T15:08:35Z] --- G10 (gate-10-mcp.js) model=0 ---
+[2026-08-30T15:08:36Z] --- G11 (gate-11-stream.js) model=0 ---
+[2026-08-30T15:08:44Z] --- G12 (gate-12-permission.js) model=0 ---
 assert ok: session id present
 prompt_async accepted (204)
 ASSERT_FAILED: permission request was asked and replied
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"Run the shell command: echo G12_PERM_OK and tell me what it printed.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to run a simple shell command and report the output.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"bash","callID":"call_8c17a83dcf524d26909211e3","input":"{\"command\":\"echo G12_PERM_OK\"}","output":"\"G12_PERM_OK\\n\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The command output shows \"G12_PERM_OK\" was printed.","input":"null","output":"null","error":null},{"type":"text","text":"`G12_PERM_OK`","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"Run the shell command: echo G12_PERM_OK and tell me what it printed.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to run a shell command and report what it printed.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"bash","callID":"call_ab8e8ff399944499a5db3d1d","input":"{\"command\":\"echo G12_PERM_OK\"}","output":"\"G12_PERM_OK\\n\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to run a shell command and report what it printed. The command `echo G12_PERM_OK` was executed and it ","input":"null","output":"null","error":null},{"type":"text","text":"G12_PERM_OK","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
 --- assistant text ---
 
-`G12_PERM_OK`
+G12_PERM_OK
 --- bash tool outputs ---
 G12_PERM_OK
 
@@ -207,48 +189,22 @@ assert ok: agent turn did not fail
 assert ok: command output present after approval
 ASSERT_FAILED: permission.v2.asked event observed
 G12_FAIL
-[2026-08-30T14:40:41Z] --- G15 (gate-15-e2e.js) model=0 ---
-I have a complete picture of this small project. Let me provide a comprehensive summary.
-
-## Project Summary: `gates` fixture
-
-### Top-Level Structure
-```
-/data/data/ai.opencode.android.debug/files/workspaces/gates/
-├── README.md
-├── g8-write.txt
-├── notes.txt
-└── src/
-    └── app.js
-```
-
-### Files Read
-
-**1. `README.md`** 
---- events seen (483): {"server.connected":1,"session.updated":24,"message.updated":56,"message.part.updated":112,"session.status":16,"session.diff":8,"message.part.delta":259,"session.created":2,"server.heartbeat":3,"session.idle":2}
---- tools streamed as events: [{"tool":"task","status":"completed","callID":"call_2bfa322d52c14bddaeac4dec","input":{"description":"Explore project structure","prompt":"Explore the project at /data/data/ai.opencode.android.debug/files/workspaces/gates. I need to understand:\n1. What files and directories exist (list the top-level structure and key subdirectories)\n2. Read any README, package.json, Cargo.toml, go.mod, pyproject.toml, or similar project config files\n3. Read key source files to understand what the project does\n4. Summarize: what is this project, what language/framework does it use, and what does it do?\n\nBe thorough - read at least the main entry points and any configuration files. Return a comprehensive summary.","subagent_type":"explore"}},{"tool":"read","status":"completed","callID":"call_30e131cfc7a842acbdc6d78a","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"glob","status":"error","callID":"call_e85f6e99c61342c3b3007a83","input":{"pattern":"*","path":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"glob","status":"error","callID":"call_31e7df0685e244028d9e6a15","input":{"pattern":"**/{README*,package.json,Cargo.toml,go.mod,pyproject.toml,setup.py,Makefile,Dockerfile,*.cabal,build.gradle,pom.xml,.gitignore,LICENSE*}","path":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"read","status":"completed","callID":"call_18e9579d74f54402aacfdae0","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md"}},{"tool":"read","status":"completed","callID":"call_4cd2742d8a9448c9a9c07625","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/g8-write.txt"}},{"tool":"read","status":"completed","callID":"call_b0fa21cb472b438799e519ab","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt"}},{"tool":"read","status":"completed","callID":"call_515c873518f244158a4fe09b","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src"}},{"tool":"read","status":"completed","callID":"call_9b1a1657580142929e555f8c","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js"}}]
---- permissions allowed: []
-assert ok: agent turn did not fail
-assert ok: explanation is substantive (671 chars)
-assert ok: explanation reflects the actual project
-ASSERT_FAILED: real tools executed: []
-G15_FAIL
-[2026-08-30T14:41:20Z] === H4 crash detection + restart with backoff ===
-[2026-08-30T14:41:20Z] H4 server pid: 6424
-[2026-08-30T14:41:20Z] H4 SIGKILL sent; waiting for supervisor restart...
-[2026-08-30T14:41:33Z] H4 crash lines=1 backoff lines=1
-[2026-08-30T14:41:33Z] === H5 corruption recovery (corrupt payload -> DEBUG_RESET re-extracts) ===
-[2026-08-30T14:41:33Z] H5 injected marker into /data/data/ai.opencode.android.debug/files/opencode/dist/node/photon_rs_bg-bq08arze.wasm; broadcasting DEBUG_RESET
+[2026-08-30T15:10:50Z] --- G15 (gate-15-e2e.js) model=0 ---
+[2026-08-30T15:11:11Z] === H4 crash detection + restart with backoff ===
+[2026-08-30T15:11:11Z] H4 server pid: 6082
+[2026-08-30T15:11:11Z] H4 SIGKILL sent; waiting for supervisor restart...
+[2026-08-30T15:11:20Z] H4 crash lines=1 backoff lines=1
+[2026-08-30T15:11:20Z] === H5 corruption recovery (corrupt payload -> DEBUG_RESET re-extracts) ===
+[2026-08-30T15:11:20Z] H5 injected marker into /data/data/ai.opencode.android.debug/files/opencode/dist/node/photon_rs_bg-bq08arze.wasm; broadcasting DEBUG_RESET
 Starting: Intent { cmp=ai.opencode.android.debug/ai.opencode.android.runtime.DebugControlActivity (has extras) }
-[2026-08-30T14:41:49Z] H5 corruption marker present after recovery (want 0): 0
-0
-[2026-08-30T14:41:49Z] === H6 graceful stop: no zombies, port down ===
+[2026-08-30T15:11:36Z] H5 corruption marker present after recovery (want 0): 0
+[2026-08-30T15:11:36Z] === H6 graceful stop: no zombies, port down ===
 Starting: Intent { cmp=ai.opencode.android.debug/ai.opencode.android.runtime.DebugControlActivity (has extras) }
-[2026-08-30T14:41:53Z] H6 leftover launchers=0 port-code=000
-[2026-08-30T14:41:53Z] === G14 reconnect: sessions persist across restart ===
-[2026-08-30T14:44:32Z] === H7 logs & diagnostics ===
-[2026-08-30T14:44:32Z] === H8 ABI/device gate ===
-[2026-08-30T14:44:32Z] H8 abi=x86_64 sdk=34 -> supported
-[2026-08-30T14:44:32Z] === pull logs into evidence ===
-[2026-08-30T14:44:32Z] === SUMMARY ===
-[2026-08-30T14:44:32Z] G failures present (5); core gate failures fail CI (model-gate skips without a key are expected).
+[2026-08-30T15:11:40Z] H6 leftover launchers=0 port-code=000
+[2026-08-30T15:11:40Z] === G14 reconnect: sessions persist across restart ===
+[2026-08-30T15:14:19Z] === H7 logs & diagnostics ===
+[2026-08-30T15:14:19Z] === H8 ABI/device gate ===
+[2026-08-30T15:14:19Z] H8 abi=x86_64 sdk=34 -> supported
+[2026-08-30T15:14:19Z] === pull logs into evidence ===
+[2026-08-30T15:14:19Z] === SUMMARY ===
+[2026-08-30T15:14:19Z] G failures present (5); core gate failures fail CI (model-gate skips without a key are expected).

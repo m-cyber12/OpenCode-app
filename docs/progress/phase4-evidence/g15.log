@@ -2,42 +2,76 @@ assert ok: session id present
 --- prompting the real agent ---
 prompt_async accepted (204)
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"Inspect this project and explain what it does.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to inspect this project and explain what it does. Let me start by exploring the project structure.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"task","callID":"call_2bfa322d52c14bddaeac4dec","input":"{\"description\":\"Explore project structure\",\"prompt\":\"Explore the project at /data/data/ai.opencode.android.debug/files/workspaces/gates. I need to understand:\\n1. What files and directories exist (lis","output":"\"<task id=\\\"ses_face250f5ffeUyjm7sVaPXTAQv\\\" state=\\\"completed\\\">\\n<task_result>\\nI have a complete picture of this small project. Let me provide a comprehensive summary.\\n\\n## Project Summary: `gates","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"text","text":"This is a **test fixture**, not a real application. It's a deliberately minimal JavaScript project (`src/app.js:1`) used","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
---- assistant reply (671 chars) ---
+[{"role":"user","parts":[{"type":"text","text":"Inspect this project and explain what it does.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to inspect a project and explain what it does. I need to first understand the project structure. I'll ","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"bash","callID":"call_a48d1bdd35b540038acf15fe","input":"{\"command\":\"ls -la\"}","output":"\"total 48\\ndrwxrwxrwx 3 u0_a192 u0_a192 4096 2026-08-30 15:08 .\\ndrwxrwxrwx 3 u0_a192 u0_a192 4096 2026-08-30 15:07 ..\\n-rw-rw-rw- 1 u0_a192 u0_a192  231 2026-08-30 15:07 README.md\\n-rw------- 1 u0_a1","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"Let me read the README.md, notes.txt, and list the contents of the src directory to understand the project.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"call_a386defdb35f459bb67f8385","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md</path>\\n<type>file</type>\\n<content>\\n1: # gates fixture\\n2: \\n3: A tiny project for the Phase 4 production-host gates: a R","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"call_44b6027ffffa4ac7b579baae","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt</path>\\n<type>file</type>\\n<content>\\n1: gates notes\\n2: G15-E2E-MARKER in notes too, so /find (ripgrep) always matches a t","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"call_b7131a65c83b43f8a11169d4","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/src\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/src</path>\\n<type>directory</type>\\n<entries>\\napp.js\\n\\n(1 entries)\\n</entries>\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"Now let me read the src/app.js file to understand what the JavaScript file does.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"call_b5155712c2af40a18d1aae11","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js\"}","output":"\"<path>/data/data/ai.opencode.android.d
+--- assistant reply (515 chars) ---
 
-This is a **test fixture**, not a real application. It's a deliberately minimal JavaScript project (`src/app.js:1`) used to validate the host system's developer-tooling "gates" (Phase 4 production-host checks).
 
-- **Language:** Plain JS with ES-module syntax — no framework, dependencies, or build config.
-- **Functionality:** A single trivial `greet(name)` function returning `"hello " + name`.
-- **Real purpose:** Sentinal markers embedded across files for automated tooling verification:
-  - `G15-E2E-MARKER` in `README.md`, `notes.txt`, and `src/app.js` — verifies glob/read/ripgrep content-search.
-  - `G8_WRITE_OK` in `g8-write.txt` — verifies the file-write gate.
---- tools used: ["task"] ---
+
+A tiny test fixture (not a real app) used for opencode's "Phase 4 production-host gates":
+
+- `README.md` – describes the project purpose
+- `notes.txt` – plain notes for ripgrep/find tests
+- `src/app.js` – exports a `greet(name)` function returning `"hello " + name`
+
+Every file contains the unique marker `G15-E2E-MARKER` so the E2E test harness (glob, read, ripgrep) always has something to find and verify. It exists purely to exercise the file tooling gates on the Android host, not to do anything functional.
+--- tools used: ["bash","read","read","read","read"] ---
 --- tool outputs ---
-<task id="ses_face250f5ffeUyjm7sVaPXTAQv" state="completed">
-<task_result>
-I have a complete picture of this small project. Let me provide a comprehensive summary.
+total 48
+drwxrwxrwx 3 u0_a192 u0_a192 4096 2026-08-30 15:08 .
+drwxrwxrwx 3 u0_a192 u0_a192 4096 2026-08-30 15:07 ..
+-rw-rw-rw- 1 u0_a192 u0_a192  231 2026-08-30 15:07 README.md
+-rw------- 1 u0_a192 u0_a192   24 2026-08-30 15:08 g8-write.txt
+-rw-rw-rw- 1 u0_a192 u0_a192   91 2026-08-30 15:07 notes.txt
+drwxrwxrwx 2 u0_a192 u0_a192 4096 2026-08-30 15:07 src
 
-## Project Summary: `gates` fixture
+---
+<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md</path>
+<type>file</type>
+<content>
+1: # gates fixture
+2: 
+3: A tiny project for the Phase 4 production-host gates: a README, notes file and
+4: a small JS file so glob/read/ripgrep tools have something to find.
+5: G15-E2E-MARKER present for the file content + ripgrep search gates.
 
-### Top-Level Structure
-```
-/data/data/ai.opencode.android.debug/files/workspaces/gates/
-├── README.md
-├── g8-write.txt
-├── notes.txt
-└── src/
-    └── app.js
-```
+(End of file - total 5 lines)
+</content>
+---
+<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt</path>
+<type>file</type>
+<content>
+1: gates notes
+2: G15-E2E-MARKER in notes too, so /find (ripgrep) always matches a tracked file.
 
-### Files Read
+(End of file - total 2 lines)
+</content>
+---
+<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/src</path>
+<type>directory</type>
+<entries>
+app.js
 
-**1. `README.md`** 
---- events seen (483): {"server.connected":1,"session.updated":24,"message.updated":56,"message.part.updated":112,"session.status":16,"session.diff":8,"message.part.delta":259,"session.created":2,"server.heartbeat":3,"session.idle":2}
---- tools streamed as events: [{"tool":"task","status":"completed","callID":"call_2bfa322d52c14bddaeac4dec","input":{"description":"Explore project structure","prompt":"Explore the project at /data/data/ai.opencode.android.debug/files/workspaces/gates. I need to understand:\n1. What files and directories exist (list the top-level structure and key subdirectories)\n2. Read any README, package.json, Cargo.toml, go.mod, pyproject.toml, or similar project config files\n3. Read key source files to understand what the project does\n4. Summarize: what is this project, what language/framework does it use, and what does it do?\n\nBe thorough - read at least the main entry points and any configuration files. Return a comprehensive summary.","subagent_type":"explore"}},{"tool":"read","status":"completed","callID":"call_30e131cfc7a842acbdc6d78a","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"glob","status":"error","callID":"call_e85f6e99c61342c3b3007a83","input":{"pattern":"*","path":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"glob","status":"error","callID":"call_31e7df0685e244028d9e6a15","input":{"pattern":"**/{README*,package.json,Cargo.toml,go.mod,pyproject.toml,setup.py,Makefile,Dockerfile,*.cabal,build.gradle,pom.xml,.gitignore,LICENSE*}","path":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"read","status":"completed","callID":"call_18e9579d74f54402aacfdae0","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md"}},{"tool":"read","status":"completed","callID":"call_4cd2742d8a9448c9a9c07625","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/g8-write.txt"}},{"tool":"read","status":"completed","callID":"call_b0fa21cb472b438799e519ab","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt"}},{"tool":"read","status":"completed","callID":"call_515c873518f244158a4fe09b","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src"}},{"tool":"read","status":"completed","callID":"call_9b1a1657580142929e555f8c","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js"}}]
+(1 entries)
+</entries>
+---
+<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js</path>
+<type>file</type>
+<content>
+1: // G15-E2E-MARKER source marker
+2: export function greet(name) {
+3:   return "hello " + name;
+4: }
+
+(End of file - total 4 lines)
+</content>
+--- events seen (211): {"server.connected":1,"session.status":10,"message.updated":34,"session.updated":10,"session.diff":5,"message.part.updated":70,"message.part.delta":78,"server.heartbeat":2,"session.idle":1}
+--- tools streamed as events: [{"tool":"bash","status":"completed","callID":"call_a48d1bdd35b540038acf15fe","input":{"command":"ls -la"}},{"tool":"read","status":"completed","callID":"call_a386defdb35f459bb67f8385","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md"}},{"tool":"read","status":"completed","callID":"call_44b6027ffffa4ac7b579baae","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt"}},{"tool":"read","status":"completed","callID":"call_b7131a65c83b43f8a11169d4","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src"}},{"tool":"read","status":"completed","callID":"call_b5155712c2af40a18d1aae11","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js"}}]
 --- permissions allowed: []
 assert ok: agent turn did not fail
-assert ok: explanation is substantive (671 chars)
+assert ok: explanation is substantive (515 chars)
 assert ok: explanation reflects the actual project
-ASSERT_FAILED: real tools executed: []
-G15_FAIL
+assert ok: real tools executed: ["bash","read","read","read","read"]
+assert ok: tool parts streamed over SSE
+assert ok: session.status events streamed
+assert ok: message events streamed
+G15_PASS

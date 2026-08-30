@@ -2,10 +2,10 @@ assert ok: session id present
 prompt_async accepted (204)
 ASSERT_FAILED: permission request was asked and replied
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"Run the shell command: echo G12_PERM_OK and tell me what it printed.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to run a simple shell command and report the output.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"bash","callID":"call_8c17a83dcf524d26909211e3","input":"{\"command\":\"echo G12_PERM_OK\"}","output":"\"G12_PERM_OK\\n\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The command output shows \"G12_PERM_OK\" was printed.","input":"null","output":"null","error":null},{"type":"text","text":"`G12_PERM_OK`","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"Run the shell command: echo G12_PERM_OK and tell me what it printed.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to run a shell command and report what it printed.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"bash","callID":"call_ab8e8ff399944499a5db3d1d","input":"{\"command\":\"echo G12_PERM_OK\"}","output":"\"G12_PERM_OK\\n\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to run a shell command and report what it printed. The command `echo G12_PERM_OK` was executed and it ","input":"null","output":"null","error":null},{"type":"text","text":"G12_PERM_OK","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
 --- assistant text ---
 
-`G12_PERM_OK`
+G12_PERM_OK
 --- bash tool outputs ---
 G12_PERM_OK
 

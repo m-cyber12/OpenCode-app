@@ -1,8 +1,8 @@
 assert ok: session id present
 shell HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19HPSMZ2JMV3FDQ672G38FR","input":"{\"command\":\"git status --short && echo BRANCHES && git branch && echo LOG && git log --oneline -3\"}","output":"\"Bad system call \\n\"","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19KE0MF9P5NA9XRPH4VVC22","input":"{\"command\":\"git status --short && echo BRANCHES && git branch && echo LOG && git log --oneline -3\"}","output":"\"Trap \\n\"","error":null}]}]
 --- git via OpenCode output ---
-Bad system call 
+Trap 
 
 G9_OPENCODE_GIT_MISSING_EXPECTED_OUTPUT
