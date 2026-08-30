@@ -101,8 +101,24 @@ static long trap_number(ucontext_t *uc) {
 static long emulate(int nr,
                     long a0, long a1, long a2, long a3, long a4) {
     switch (nr) {
-        case 83:  /* mkdir(path, mode) -> mkdirat(AT_FDCWD, path, mode) */
-            return syscall(__NR_mkdirat, AT_FDCWD, a0, a1);
+        case 83: { /* mkdir(path, mode) -> mkdirat(AT_FDCWD, path, mode) */
+            const char *p = (const char *)a0;
+            long r = syscall(__NR_mkdirat, AT_FDCWD, p, a1);
+            if (r == 0) return 0;
+            int e = errno;
+            /* If the directory already exists (the host pre-creates the
+               OpenCode XDG subtree), treat mkdir as success — Bun's recursive
+               mkdir ignores EEXIST anyway. Re-check with faccessat to be sure. */
+            if (syscall(__NR_faccessat, AT_FDCWD, p, 0 /*F_OK*/, 0) == 0)
+                return 0;
+            static int logged_mkdir = 0;
+            if (!logged_mkdir) {
+                logged_mkdir = 1;
+                dprintf(2, "[seccomp] mkdirat(%s) failed errno=%d\n",
+                        p ? p : "(null)", e);
+            }
+            return -e;
+        }
         case 21:  /* access(path, mode) -> faccessat(AT_FDCWD, path, mode, 0) */
             return syscall(__NR_faccessat, AT_FDCWD, (const char *)a0, a1, 0);
         default:
