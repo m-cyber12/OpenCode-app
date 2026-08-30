@@ -1,7 +1,203 @@
 assert ok: session id present
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19PZQM98DDFPMTPX0B1PZYP","input":"{\"command\":\"for n in 441 436 327 328 435 439 332 21 444 445 446 447 448 449 450 451 452 453 454 455 456 457 319 425 426 268 334; do echo \\\"=== nr=$n ===\\\"; OPENCODE_CHILD_PROBE=$n /data/data/ai.openco","output":"\"=== nr=441 ===\\n[child-shim] installing filter (n=8 len=21)...\\n[child-shim] filter installed\\n[child-shim] probe after-filter\\n[child-shim] probe syscall 441 ...\\n[child-shim] probe syscall 441 -> r","error":null}]}]
+--- seccomp syscall probe (untrusted_app) ---
+=== nr=441 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 441 ...
+[child-shim] probe syscall 441 -> r=-1 errno=38 (Function not implemented)
+probe_rc_441=0
+=== nr=436 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 436 ...
+[child-shim] probe syscall 436 -> r=0 errno=0 (Success)
+probe_rc_436=0
+=== nr=327 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 327 ...
+[child-shim] probe syscall 327 -> r=-1 errno=38 (Function not implemented)
+probe_rc_327=0
+=== nr=328 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 328 ...
+[child-shim] probe syscall 328 -> r=-1 errno=9 (Bad file descriptor)
+probe_rc_328=0
+=== nr=435 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 435 ...
+[child-shim] probe syscall 435 -> r=-1 errno=38 (Function not implemented)
+probe_rc_435=0
+=== nr=439 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 439 ...
+[child-shim] probe syscall 439 -> r=-1 errno=38 (Function not implemented)
+probe_rc_439=0
+=== nr=332 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 332 ...
+[child-shim] probe syscall 332 -> r=-1 errno=38 (Function not implemented)
+probe_rc_332=0
+=== nr=21 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 21 ...
+[seccomp] faccessat((null),0x0) errno=14
+[child-shim] probe syscall 21 -> r=-1 errno=14 (Bad address)
+probe_rc_21=0
+=== nr=444 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 444 ...
+[child-shim] probe syscall 444 -> r=-1 errno=38 (Function not implemented)
+probe_rc_444=0
+=== nr=445 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 445 ...
+[child-shim] probe syscall 445 -> r=-1 errno=38 (Function not implemented)
+probe_rc_445=0
+=== nr=446 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 446 ...
+[child-shim] probe syscall 446 -> r=-1 errno=38 (Function not implemented)
+probe_rc_446=0
+=== nr=447 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 447 ...
+[child-shim] probe syscall 447 -> r=-1 errno=38 (Function not implemented)
+probe_rc_447=0
+=== nr=448 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 448 ...
+[child-shim] probe syscall 448 -> r=-1 errno=38 (Function not implemented)
+probe_rc_448=0
+=== nr=449 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 449 ...
+[child-shim] probe syscall 449 -> r=-1 errno=38 (Function not implemented)
+probe_rc_449=0
+=== nr=450 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 450 ...
+[child-shim] probe syscall 450 -> r=-1 errno=38 (Function not implemented)
+probe_rc_450=0
+=== nr=451 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 451 ...
+[child-shim] probe syscall 451 -> r=-1 errno=38 (Function not implemented)
+probe_rc_451=0
+=== nr=452 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 452 ...
+[child-shim] probe syscall 452 -> r=-1 errno=38 (Function not implemented)
+probe_rc_452=0
+=== nr=453 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 453 ...
+[child-shim] probe syscall 453 -> r=-1 errno=38 (Function not implemented)
+probe_rc_453=0
+=== nr=454 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 454 ...
+[child-shim] probe syscall 454 -> r=-1 errno=38 (Function not implemented)
+probe_rc_454=0
+=== nr=455 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 455 ...
+[child-shim] probe syscall 455 -> r=-1 errno=38 (Function not implemented)
+probe_rc_455=0
+=== nr=456 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 456 ...
+[child-shim] probe syscall 456 -> r=-1 errno=38 (Function not implemented)
+probe_rc_456=0
+=== nr=457 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 457 ...
+[child-shim] probe syscall 457 -> r=-1 errno=38 (Function not implemented)
+probe_rc_457=0
+=== nr=319 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 319 ...
+[child-shim] probe syscall 319 -> r=-1 errno=14 (Bad address)
+probe_rc_319=0
+=== nr=425 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 425 ...
+[child-shim] probe syscall 425 -> r=-1 errno=38 (Function not implemented)
+probe_rc_425=0
+=== nr=426 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 426 ...
+[child-shim] probe syscall 426 -> r=-1 errno=38 (Function not implemented)
+probe_rc_426=0
+=== nr=268 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 268 ...
+[child-shim] probe syscall 268 -> r=-1 errno=14 (Bad address)
+probe_rc_268=0
+=== nr=334 ===
+[child-shim] installing filter (n=8 len=21)...
+[child-shim] filter installed
+[child-shim] probe after-filter
+[child-shim] probe syscall 334 ...
+[child-shim] probe syscall 334 -> r=-1 errno=38 (Function not implemented)
+probe_rc_334=0
+PROBE_BATCH_DONE
+
+assert ok: session id present
 shell HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19NAQC87NZ3T82K71JCYCBP","input":"{\"command\":\"git status --short && echo BRANCHES && git branch && echo LOG && git log --oneline -3\"}","output":"\"[child-shim] installing filter (n=8 len=21)...\\n[child-shim] filter installed\\nBad system call \\n\"","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19PZXP58ZYTDXXTYN47NQ3B","input":"{\"command\":\"git status --short && echo BRANCHES && git branch && echo LOG && git log --oneline -3\"}","output":"\"[child-shim] installing filter (n=8 len=21)...\\n[child-shim] filter installed\\nBad system call \\n\"","error":null}]}]
 --- git via OpenCode output ---
 [child-shim] installing filter (n=8 len=21)...
 [child-shim] filter installed
