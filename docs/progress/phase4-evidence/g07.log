@@ -1,25 +1,16 @@
-assert ok: session id present
-G7_SESSION_ID=ses_fad07a6d5ffe89UleqDGQQgCvs
-G7_SESSION_ID=ses_fad07a6d5ffe89UleqDGQQgCvs
-shell endpoint HTTP 200
-=== messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19FGPZNFMRK925S2XZGTNZ3","input":"{\"command\":\"echo probe\"}","output":"\"probe\\n\"","error":null}]},{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19FGQ28GT51CQB1R938G23A","input":"{\"command\":\"echo G7_SHELL_OK from=$(pwd) uname=$(uname -m) shell=$0 && ls -1 | head -3\"}","output":"\"G7_SHELL_OK from=/data/data/ai.opencode.android.debug/files/workspaces/gates uname=x86_64 shell=/system/bin/sh\\nREADME.md\\nnotes.txt\\nsrc\\n\"","error":null}]}]
-tool parts: 2
-  tool="bash" state.status=completed
-  tool="bash" state.status=completed
---- tool outputs ---
-probe
+16 | }
+17 | 
+18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
+19 |   const sep = path.includes("?") ? "&" : "?"
+20 |   const url = BASE + path + sep + "directory=" + encodeURIComponent(directory)
+21 |   const r = await fetch(url, {
+                       ^
+error: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+  path: "http://127.0.0.1:4111/session?directory=%2Fdata%2Fdata%2Fai.opencode.android.debug%2Ffiles%2Fworkspaces%2Fgates",
+ errno: 0,
+  code: "ECONNRESET"
 
-G7_SHELL_OK from=/data/data/ai.opencode.android.debug/files/workspaces/gates uname=x86_64 shell=/system/bin/sh
-README.md
-notes.txt
-src
+      at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
+      at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
-assert ok: shell output contains G7_SHELL_OK
-assert ok: tool part completed
-SSE events seen: ["server.connected","message.part.updated","message.updated","session.status","session.idle"]
-bash tool part lifecycle (streamed): ["running","running","running","running","completed","completed"]
-assert ok: SSE message.part.updated events streamed
-assert ok: SSE session.status events streamed
-assert ok: bash tool part streamed running→completed
-G7_PASS
+Bun v1.3.14 (Linux x64)

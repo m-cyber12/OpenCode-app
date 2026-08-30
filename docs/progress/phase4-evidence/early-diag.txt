@@ -1,27 +1,25 @@
 --- supervisor log (host) ---
-2026-08-30T13:59:47.703Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-2026-08-30T13:59:47.747Z [host] state -> EXTRACTING (validating embedded runtime)
-2026-08-30T13:59:47.754Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
-2026-08-30T13:59:47.757Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
-2026-08-30T13:59:49.080Z [host] extraction complete: 30 files validated
-2026-08-30T13:59:49.081Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-2026-08-30T13:59:49.082Z [host] symlink bun -> /data/app/~~5HSGWmeDgZ5Y76ah7kIYiw==/ai.opencode.android.debug-Vwdjw6z7pfNNSkOYgQHqCg==/lib/x86_64/libbun.so (exec=true)
-2026-08-30T13:59:49.083Z [host] symlink git -> /data/app/~~5HSGWmeDgZ5Y76ah7kIYiw==/ai.opencode.android.debug-Vwdjw6z7pfNNSkOYgQHqCg==/lib/x86_64/libgit.so (exec=true)
-2026-08-30T13:59:49.084Z [host] symlink rg -> /data/app/~~5HSGWmeDgZ5Y76ah7kIYiw==/ai.opencode.android.debug-Vwdjw6z7pfNNSkOYgQHqCg==/lib/x86_64/librg.so (exec=true)
-2026-08-30T13:59:49.086Z [host] generated fresh server password (stored 600 at server-password)
-2026-08-30T13:59:49.088Z [host] state -> STARTING (starting OpenCode server (attempt 1))
-2026-08-30T13:59:49.094Z [host] server started: pid=5959 abi=x86_64 port=4111
-2026-08-30T13:59:49.136Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~5HSGWmeDgZ5Y76ah7kIYiw==/ai.opencode.android.debug-Vwdjw6z7pfNNSkOYgQHqCg==/lib/x86_64/libbun.so
-2026-08-30T13:59:49.142Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
-2026-08-30T13:59:49.178Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-08-30T13:59:51.444Z [server] SERVER_READY http://127.0.0.1:4111/
+2026-08-30T14:17:44.380Z [host] start() ignored: supervisor already running
+2026-08-30T14:17:44.414Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-08-30T14:17:44.517Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-08-30T14:17:44.532Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-08-30T14:17:44.540Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-08-30T14:17:45.827Z [host] extraction complete: 30 files validated
+2026-08-30T14:17:45.828Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-08-30T14:17:45.829Z [host] symlink bun -> /data/app/~~jA3K4lvXXyoDQfsqXSmGuQ==/ai.opencode.android.debug-Vd5dPIwxgpAG9nxt6LWsbg==/lib/x86_64/libbun.so (exec=true)
+2026-08-30T14:17:45.830Z [host] symlink git -> /data/app/~~jA3K4lvXXyoDQfsqXSmGuQ==/ai.opencode.android.debug-Vd5dPIwxgpAG9nxt6LWsbg==/lib/x86_64/libgit.so (exec=true)
+2026-08-30T14:17:45.831Z [host] symlink rg -> /data/app/~~jA3K4lvXXyoDQfsqXSmGuQ==/ai.opencode.android.debug-Vd5dPIwxgpAG9nxt6LWsbg==/lib/x86_64/librg.so (exec=true)
+2026-08-30T14:17:45.834Z [host] generated fresh server password (stored 600 at server-password)
+2026-08-30T14:17:45.835Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-30T14:17:45.842Z [host] server started: pid=6086 abi=x86_64 port=4111
+2026-08-30T14:17:45.876Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~jA3K4lvXXyoDQfsqXSmGuQ==/ai.opencode.android.debug-Vd5dPIwxgpAG9nxt6LWsbg==/lib/x86_64/libbun.so
 --- bin symlinks (filesDir/bin) ---
 total 40
-drwx------  2 u0_a192 u0_a192 4096 2026-08-30 13:59 .
-drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-30 13:59 ..
-lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 13:59 bun -> /data/app/~~5HSGWmeDgZ5Y76ah7kIYiw==/ai.opencode.android.debug-Vwdjw6z7pfNNSkOYgQHqCg==/lib/x86_64/libbun.so
-lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 13:59 git -> /data/app/~~5HSGWmeDgZ5Y76ah7kIYiw==/ai.opencode.android.debug-Vwdjw6z7pfNNSkOYgQHqCg==/lib/x86_64/libgit.so
-lrwxrwxrwx  1 u0_a192 u0_a192  107 2026-08-30 13:59 rg -> /data/app/~~5HSGWmeDgZ5Y76ah7kIYiw==/ai.opencode.android.debug-Vwdjw6z7pfNNSkOYgQHqCg==/lib/x86_64/librg.so
+drwx------  2 u0_a192 u0_a192 4096 2026-08-30 14:17 .
+drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-30 14:17 ..
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 14:17 bun -> /data/app/~~jA3K4lvXXyoDQfsqXSmGuQ==/ai.opencode.android.debug-Vd5dPIwxgpAG9nxt6LWsbg==/lib/x86_64/libbun.so
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 14:17 git -> /data/app/~~jA3K4lvXXyoDQfsqXSmGuQ==/ai.opencode.android.debug-Vd5dPIwxgpAG9nxt6LWsbg==/lib/x86_64/libgit.so
+lrwxrwxrwx  1 u0_a192 u0_a192  107 2026-08-30 14:17 rg -> /data/app/~~jA3K4lvXXyoDQfsqXSmGuQ==/ai.opencode.android.debug-Vd5dPIwxgpAG9nxt6LWsbg==/lib/x86_64/librg.so
 --- execs THROUGH symlinks ---
 1.3.14
 bun_rc=0
@@ -36,34 +34,22 @@ simd(runtime):+SSE2,+SSSE3,-AVX2
 PCRE2 10.45 is available (JIT is available)
 rg_rc=0
 --- static git/rg THROUGH THE SECCOMP SHIM (BPF filter path) ---
-nativeLibraryDir=/data/app/~~5HSGWmeDgZ5Y76ah7kIYiw==/ai.opencode.android.debug-Vwdjw6z7pfNNSkOYgQHqCg==/lib/x86_64
+nativeLibraryDir=/data/app/~~jA3K4lvXXyoDQfsqXSmGuQ==/ai.opencode.android.debug-Vd5dPIwxgpAG9nxt6LWsbg==/lib/x86_64
 [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/data/ai.opencode.android.debug/files/bin/git
-[exec-shim] seccomp BPF errno filter installed (8 rules)
-git version 2.48.1
-shim_git_rc=0
+Trap 
+shim_git_rc=133
 [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/data/ai.opencode.android.debug/files/bin/rg
-[exec-shim] seccomp BPF errno filter installed (8 rules)
-ripgrep 15.1.0 (rev af60c2de9d)
-
-features:+pcre2
-simd(compile):+SSE2,-SSSE3,-AVX2
-simd(runtime):+SSE2,+SSSE3,-AVX2
-
-PCRE2 10.45 is available (JIT is available)
-shim_rg_rc=0
+Trap 
+shim_rg_rc=133
 --- spawned-child syscall trace (logcat seccomp/SIGSYS for git/rg pids) ---
-08-30 13:59:49.147  5916  5962 I OpenCode/server: [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
-08-30 13:59:49.179  5916  5962 I OpenCode/server: [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+(no seccomp kills logged)
 --- run static git/rg UNDER THE FILTER with logcat captured to name the trapped syscall ---
 [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/data/ai.opencode.android.debug/files/bin/git
-[exec-shim] seccomp BPF errno filter installed (8 rules)
-fatal: not a git repository (or any parent up to mount point /)
-Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
-trace_git_rc=128
+Trap 
+trace_git_rc=133
 --- (end child seccomp trace) ---
 --- flat payload present ---
--rw------- 1 u0_a192 u0_a192     4514 2026-08-30 13:59 /data/data/ai.opencode.android.debug/files/launcher.js
--rw------- 1 u0_a192 u0_a192 32845290 2026-08-30 13:59 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
-drwx------ 5 u0_a192 u0_a192 4096 2026-08-30 13:59 /data/data/ai.opencode.android.debug/files/node_modules
+-rw------- 1 u0_a192 u0_a192     4514 2026-08-30 14:17 /data/data/ai.opencode.android.debug/files/launcher.js
+-rw------- 1 u0_a192 u0_a192 32845290 2026-08-30 14:17 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
+drwx------ 5 u0_a192 u0_a192 4096 2026-08-30 14:17 /data/data/ai.opencode.android.debug/files/node_modules
 --- live server processes (app uid) ---
-/proc/5959/cmdline /data/app/~~5HSGWmeDgZ5Y76ah7kIYiw==/ai.opencode.android.debug-Vwdjw6z7pfNNSkOYgQHqCg==/lib/x86_64/libbun.so /data/user/0/ai.opencode.android.debug/files/launcher.js 
