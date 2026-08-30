@@ -9,29 +9,26 @@ import { post, createSession, waitTurnComplete, toolParts, toolOutput, log } fro
 // the child-shim probe: it installs our BPF ENOSYS filter then issues the raw
 // syscall. ENOSYS (38) / a natural errno => the call is covered/allowed; a
 // missing RESULT line (process killed) => Android's outer filter TRAPs it.
+// Light diagnostic: run one real `git --version` THROUGH the server with
+// OPENCODE_CHILD_TRACE=1 so the ptrace supervisor logs every modern syscall it
+// spoofs to -ENOSYS (the numbers that would otherwise SIGSYS). This is the
+// evidence that the ptrace+SECCOMP_RET_TRACE child-shim is intercepting the
+// zygote filter's trapped calls in the untrusted_app context. Not a blocker.
 let diagSid
 try {
-  diagSid = await createSession("G9 seccomp probe")
-  const nrs = [
-    441, 436, 327, 328, 435, 439, 332, 21,          // already mapped (controls)
-    // legacy FS syscalls bionic implements via *at (so the app filter traps
-    // the raw legacy forms): the static musl git/rg may call these raw. The
-    // probe child dies (probe_rc=159, no RESULT line) on the one Android traps.
-    2, 4, 6, 82, 83, 84, 87, 88, 89, 90, 92,        // open/stat/lstat/rename/mkdir/rmdir/unlink/symlink/readlink/chmod/chown
-    159, 268, 258, 318, 334,                        // getrlimit?/fchmodat/newfstatat/getrandom/rseq
-  ]
+  diagSid = await createSession("G9 child-shim trace")
   const cmd =
-    `for n in ${nrs.join(" ")}; do ` +
-    `echo "=== nr=$n ==="; OPENCODE_CHILD_PROBE=$n /data/data/ai.opencode.android.debug/files/bin/git 2>&1; ` +
-    `echo "probe_rc_$n=$?"; done; echo PROBE_BATCH_DONE`
+    `OPENCODE_CHILD_TRACE=1 git --version 2>&1; echo "trace_rc=$?"; ` +
+    `OPENCODE_CHILD_PROBE=441 /data/data/ai.opencode.android.debug/files/bin/git 2>&1; ` +
+    `echo "probe_rc_441=$?"; echo TRACE_DONE`
   const pr = await post(`/session/${diagSid}/shell`, { agent: "build", command: cmd })
   if (pr.ok) {
-    const dm = await waitTurnComplete(diagSid, { timeoutMs: 180000 })
+    const dm = await waitTurnComplete(diagSid, { timeoutMs: 120000 })
     const dout = toolParts(dm.messages).map(toolOutput).join("\n")
-    log("--- seccomp syscall probe (untrusted_app) ---\n" + dout)
+    log("--- child-shim ptrace trace (untrusted_app) ---\n" + dout)
   }
 } catch (e) {
-  log("seccomp probe error: " + e.message)
+  log("child-shim trace error: " + e.message)
 }
 
 const sid = await createSession("G9 git via opencode")
