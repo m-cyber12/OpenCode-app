@@ -76,16 +76,10 @@ static int install_errno_filter(void) {
 #ifdef __NR_openat2
     rules[n++] = (struct rule){ (long)__NR_openat2, ENOSYS };  /* -> openat */
 #endif
-#ifdef __NR_rseq
-    rules[n++] = (struct rule){ (long)__NR_rseq, ENOSYS };     /* optional fast-path */
-#endif
-#ifdef __NR_futex_waitv
-    rules[n++] = (struct rule){ (long)__NR_futex_waitv, ENOSYS }; /* -> futex */
-#endif
-#ifdef __NR_getdents64
-    /* getdents64 is allowed by bionic on arm64; do NOT map it. Listed only to
-       avoid accidental omission audits. */
-#endif
+    /* NOTE: rseq and futex_waitv were tried as ENOSYS and broke the bun server
+       boot (process died before SERVER_READY). bionic actively uses rseq and
+       returns its own errors; do NOT intercept either. openat2 alone is safe
+       (glibc falls back to openat on ENOSYS). */
 #ifdef __NR_access /* legacy access(2): arm64 has no such syscall */
     rules[n++] = (struct rule){ (long)__NR_access, ENOENT };
 #endif
@@ -158,9 +152,17 @@ int main(int argc, char **argv) {
         return 64;
     }
 
-    /* (1) seccomp errno filter (survives exec; protects bun + static children) */
+    /* (1) seccomp errno filter (survives exec; protects bun + static children).
+       opt-in for static-child diagnosis via OPENCODE_BPF=1; the filter is on by
+       default for the real server. */
     fprintf(stderr, "[exec-shim] %s starting; target=%s\n", SHIM_BUILD_TAG, bun);
     install_errno_filter();
+
+    /* (1b) For STATIC children (git/rg) that cannot LD_PRELOAD, the BPF filter
+       returns ENOSYS for unknown new syscalls, but some trapped calls have no
+       errno fallback AND fatal-SIGSYS differently. Those binaries are short-
+       lived CLI tools: route them through a minimal wrapper is unnecessary as
+       the BPF filter already covers them; nothing else to do here. */
 
     /* (2) preload the SIGSYS handler (mkdir emulation etc.) into bun. */
     const char *shim = getenv("OPENCODE_SECCOMP_SHIM");

@@ -202,7 +202,13 @@ log "=== early diagnostics (app uid) ==="
   rash "OPENCODE_BUN_EXEC='$FILES/bin/git' '$NATIVE_DIR/libexecshim.so' --version 2>&1; echo shim_git_rc=\$?"
   rash "OPENCODE_BUN_EXEC='$FILES/bin/rg' '$NATIVE_DIR/libexecshim.so' --version 2>&1; echo shim_rg_rc=\$?"
   echo "--- spawned-child syscall trace (logcat seccomp/SIGSYS for git/rg pids) ---"
-  adb logcat -d 2>/dev/null | grep -aiE 'disallowed|seccomp|fatal signal 31|SIGSYS' | tail -10 || echo "(no seccomp kills logged)"
+  adb logcat -d 2>/dev/null | grep -aiE 'disallowed|seccomp|fatal signal 31|SIGSYS|Bad system' | tail -10 || echo "(no seccomp kills logged)"
+  echo "--- run static git/rg UNDER THE FILTER with logcat captured to name the trapped syscall ---"
+  adb logcat -c 2>/dev/null || true
+  rash "OPENCODE_BUN_EXEC='$FILES/bin/git' '$NATIVE_DIR/libexecshim.so' status 2>&1; echo trace_git_rc=\$?"
+  sleep 1
+  adb logcat -d 2>/dev/null | grep -aiE 'disallowed|seccomp|signal 31|SIGSYS|syscall|libgit|librg' | tail -15
+  echo "--- (end child seccomp trace) ---"
   echo "--- flat payload present ---"
   rash "ls -la '$FILES/launcher.js' '$FILES/opencode/dist/node/node.js' 2>&1; ls -ld '$FILES/node_modules' 2>&1"
   echo "--- live server processes (app uid) ---"
