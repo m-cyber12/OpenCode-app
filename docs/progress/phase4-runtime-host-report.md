@@ -21,7 +21,7 @@ The decisive completed Android run was GitHub Actions **33330083624**, whose CI 
 - Payload build: `PAYLOAD_READY`, 2 complete ABIs; Git 2.48.1, ripgrep 15.1.0, Bun 1.3.14, and the pinned OpenCode bundle.
 - No `OPENROUTER_API_KEY` was supplied (`model_available=0`). Model-dependent content assertions are therefore not claimed as a real external-model round trip; see §4.
 
-A preceding both-ABI attempt (**33329943774**) exposed an arm64 portability defect: `seccomp-shim.c` referenced x86_64-only `__NR_access`. Commit `424162f` added the architecture guard. The follow-up **33330083624** built both ABIs, packaged both into the APK, and passed the complete x86_64 Android suite. The arm64 BPF-skip patch initially exposed a compile-scope error in **33335804059**; `b744714` corrected that, and CI runs **33335963268** and **33336625302** completed successfully. The latter produced committed post-patch evidence (`14cdaeb`) with both ABI helpers packaged and H1–H8/G01–G15 green on x86_64. Arm64 binary packaging is therefore **TESTED** again; arm64 execution on the RMX3830 Android arm64 device remains **NOT TESTED**.
+A preceding both-ABI attempt (**33329943774**) exposed an arm64 portability defect: `seccomp-shim.c` referenced x86_64-only `__NR_access`. Commit `424162f` added the architecture guard. The follow-up **33330083624** built both ABIs, packaged both into the APK, and passed the complete x86_64 Android suite. The arm64 BPF-skip patch initially exposed a compile-scope error in **33335804059**; `b744714` corrected that, and CI runs **33335963268**, **33336625302**, and **33341713633** completed successfully. The latter produced committed post-patch evidence (`b3c2b04`) with both ABI helpers packaged, strict-version/lifecycle changes built, and H1–H8/G01–G15 green on x86_64. Arm64 binary packaging is therefore **TESTED** again; arm64 execution on the RMX3830 Android arm64 device remains **NOT TESTED**.
 
 Relevant committed evidence is under `docs/progress/phase4-evidence/`, especially:
 
@@ -166,6 +166,7 @@ These are explicit capability losses; the app does not silently fall back to Ter
 | 33335804059 / evidence b02a3f7 | FAIL | The first arm64 BPF-skip patch did not compile: `arch` was scoped out by the architecture guard; no APK/device result was produced |
 | 33335963268 | **SUCCESS** | Re-run after the compile-scope correction in `b744714`; the Android build/package and existing x86_64 gates completed successfully. This still does not replace the real RMX3830 retest |
 | 33336625302 / evidence 14cdaeb | **SUCCESS** | Post-patch APK build/package and x86_64 emulator H/G suite; arm64 helper compilation/package passed, but this is not arm64 device execution |
+| 33341713633 / evidence b3c2b04 | **SUCCESS** | Version/lifecycle hardening plus clean payload rebuild; both ABI helpers packaged and x86_64 H1–H8/G01–G15 remained green |
 
 The Phase 4 implementation and required x86_64 Android validation are complete. The arm64-v8a artifacts are included in the final APK and pass build/package evidence. The real-device incident below remains the merge blocker; this report does not claim the arm64 fix until a rebuilt APK reaches health on the RMX3830.
 

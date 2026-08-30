@@ -57,12 +57,12 @@ blocker; no arm64 fix claim is made yet.
 
 ## Gate status from post-fix evidence
 
-CI run `33336625302` (evidence commit `14cdaeb`) completed successfully with
-both ABI native helpers compiled and packaged. On the API-34 x86_64 emulator:
-H1–H8 PASS, G01–G15 PASS, and device-gates exit code 0. The run had no
-`OPENROUTER_API_KEY`, so model-dependent assertions were skipped and no real
-external-model round trip is claimed. This does not constitute arm64 runtime
-execution evidence.
+CI run `33341713633` (evidence commit `b3c2b04`) completed successfully with
+both ABI native helpers compiled and packaged after the version/lifecycle
+hardening changes. On the API-34 x86_64 emulator: H1–H8 PASS, G01–G15 PASS,
+and device-gates exit code 0. The run had no `OPENROUTER_API_KEY`, so
+model-dependent assertions were skipped and no real external-model round trip
+is claimed. This does not constitute arm64 runtime execution evidence.
 
 ## Next steps for the arm64 blocker
 
