@@ -68,6 +68,7 @@ struct rule {
 };
 
 static int install_errno_filter(void) {
+    unsigned int arch = 0;
 #if defined(__aarch64__)
     /*
      * Android 15 arm64 devices can deliver the app's inherited seccomp TRAP
@@ -85,7 +86,7 @@ static int install_errno_filter(void) {
     fprintf(stderr, "[exec-shim] arm64: skipping child BPF filter; using LD_PRELOAD seccomp handler\n");
     return 0;
 #elif defined(__x86_64__)
-    unsigned int arch = AUDIT_ARCH_X86_64;
+    arch = AUDIT_ARCH_X86_64;
 #else
     return 0; /* unknown ABI: skip filter, rely on default behaviour */
 #endif
