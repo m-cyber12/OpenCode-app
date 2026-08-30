@@ -4,23 +4,24 @@
 **Branch:** `arena/01a04ca1-opencode-app`
 **Scope:** APK-owned extraction, process lifecycle, recovery, diagnostics, ABI gating, and in-APK runtime packaging.
 **Pinned OpenCode:** `05ea5073be967c779d326929b2de6228dda4159d` (v1.18.23), unchanged from Phase 3.
-**Current validation state:** x86_64 Android execution is tested and green. The arm64-v8a packaging rerun is in progress/unknown because the GitHub credential expired while polling it; Phase 4 is not declared complete until that result is fetched.
+**Current validation state:** Phase 4's production implementation, both-ABI packaging, Gradle build/tests, and the Android x86_64 emulator suite are validated. The arm64-v8a binaries are packaged and inspected in the APK; no arm64 emulator/device execution was available, so arm64 runtime execution remains **NOT TESTED**.
 
 ## 1. Executive result and evidence
 
 The production host is implemented in the Android app; it is not a Kotlin replacement for OpenCode. `RuntimeManager` starts the pinned, bundled OpenCode server through Bun, and the server's real shell, file, Git, ripgrep, MCP, HTTP, SSE, and agent paths are what the gates exercise.
 
-The decisive completed Android run was GitHub Actions **33329413542**, whose CI evidence commit is **2e7d21d**:
+The decisive completed Android run was GitHub Actions **33330083624**, whose CI evidence commit is **dca0a3a**:
 
 - API 34 `x86_64` emulator: **TESTED**.
 - H1–H8: **8/8 PASS**.
 - G01–G15, including explicit G13 stop/restart and G14 reconnect: **15/15 PASS**.
 - Device gates exit code: `0`.
 - Gradle APK build and JVM tests: **TESTED in CI**, `BUILD SUCCESSFUL`, 46 actionable tasks, all listed tests passed.
-- APK: 94,194,407 bytes; the evidence APK listing contains the x86_64 runtime libraries and runtime asset.
+- APK: 143,833,367 bytes; the APK listing contains complete `arm64-v8a` and `x86_64` runtime libraries plus the runtime asset.
+- Payload build: `PAYLOAD_READY`, 2 complete ABIs; Git 2.48.1, ripgrep 15.1.0, Bun 1.3.14, and the pinned OpenCode bundle.
 - No `OPENROUTER_API_KEY` was supplied (`model_available=0`). Model-dependent content assertions are therefore not claimed as a real external-model round trip; see §4.
 
-The follow-up attempt **33329943774** tried to build both ABIs and failed before APK creation because the arm64 compile of `seccomp-shim.c` referenced the x86_64-only `__NR_access`. That portability defect is fixed in commit `424162f` (`#ifdef __NR_access`). CI run **33330083624** was started from merge tip `bb82a6f` with that fix, but its final result could not be read after the GitHub credential expired. Its evidence/result is therefore **BLOCKED/UNKNOWN**, not treated as green.
+A preceding both-ABI attempt (**33329943774**) exposed an arm64 portability defect: `seccomp-shim.c` referenced x86_64-only `__NR_access`. Commit `424162f` added the architecture guard. The follow-up **33330083624** built both ABIs, packaged both into the APK, and passed the complete x86_64 Android suite. Arm64 binary packaging is therefore **TESTED**; arm64 execution on an Android arm64 device remains **NOT TESTED**.
 
 Relevant committed evidence is under `docs/progress/phase4-evidence/`, especially:
 
@@ -33,7 +34,7 @@ Relevant committed evidence is under `docs/progress/phase4-evidence/`, especiall
 
 ## 2. Implementation by requested scope item
 
-### 2.1 APK extraction, validation, and versioning — IMPLEMENTED; x86_64 TESTED
+### 2.1 APK extraction, validation, and versioning — IMPLEMENTED; x86_64 TESTED, arm64 packaged
 
 - `PayloadExtractor.kt` reads the APK's `runtime-manifest.json` and validates every extracted file by size and SHA-256.
 - Extraction is staged and promoted only after validation; the marker is written only after a complete verified extraction. Path traversal is rejected by the self-contained tar reader.
@@ -63,24 +64,24 @@ Relevant committed evidence is under `docs/progress/phase4-evidence/`, especiall
 - `Diagnostics.kt` gathers host/server log tails, crash information, pinned and installed runtime versions, ABI, Android API level, layout/exec checks, restart state, and model-key presence without logging the secret. The UI can share the resulting diagnostic bundle through the app `FileProvider`.
 - H7 found the expected runtime log and diagnostic building blocks on the emulator.
 
-### 2.5 ABI and device gating — IMPLEMENTED; x86_64 TESTED; arm64 Android execution NOT TESTED
+### 2.5 ABI and device gating — IMPLEMENTED; x86_64 TESTED; arm64 execution NOT TESTED
 
 - `AbiGate.kt` accepts `arm64-v8a` and `x86_64` on API 29+ and reports a clear `UNSUPPORTED_DEVICE` state for 32-bit ABIs or an older API rather than allowing an opaque exec-format/runtime crash.
 - JVM unit tests cover arm64/x86_64 acceptance, 32-bit rejection, API rejection, and ABI precedence; the tests passed in CI.
 - H8 passed on the API-34 x86_64 emulator.
-- The product build is intended to include arm64-v8a first-class. The arm64 artifact build got as far as downloading Bun and then exposed the portability issue described in §1; the source fix is implemented, but the subsequent all-ABI CI result is still unknown. Arm64 Android execution evidence does not exist yet.
+- The final payload build produced and the final APK contains arm64-v8a Bun/Git/ripgrep/helper binaries. The CI runner only provided an x86_64 emulator, so arm64 Android execution evidence does not exist yet.
 
-### 2.6 Packaging — IMPLEMENTED; x86_64 APK TESTED; arm64 packaging BLOCKED pending rerun evidence
+### 2.6 Packaging — IMPLEMENTED; both-ABI APK TESTED in CI
 
 - Bun-for-Android, Git, ripgrep, and native compatibility helpers are packaged as JNI libraries under `lib/<abi>/` and execute from Android's `nativeLibraryDir`, which is the W^X-compatible executable location.
 - `filesDir/bin/bun`, `bin/git`, and `bin/rg` are symlinks to the corresponding native-library executables. The production Git/ripgrep path points directly to `libgit.so`/`librg.so`; the retained `libchildshim.so` is compatibility/diagnostic packaging, not the production tool path.
 - The JavaScript OpenCode bundle, launcher, and node modules are one compressed `assets/runtime-payload.tar.gz` payload. Android AAPT may list it as a raw `runtime-payload.tar`; extraction handles that form.
-- The successful x86_64 APK evidence shows `libbun.so`, `libgit.so`, `librg.so`, the three helper libraries, and `runtime-manifest.json` inside the APK. The APK is self-contained; no user-installed shell, Git, Bun, Node, OpenCode, Termux, or remote server is required.
-- Run 33329413542 produced x86_64 artifacts and APK evidence. Run 33329943774 proved Bun arm64 download but failed in the arm64 helper compile. Commit `424162f` fixes that compile guard; run 33330083624 is the required follow-up and remains unread because GitHub access expired.
+- The final APK evidence shows `libbun.so`, `libgit.so`, `librg.so`, the three helper libraries under both `arm64-v8a` and `x86_64`, and `runtime-manifest.json` inside the APK. The APK is self-contained; no user-installed shell, Git, Bun, Node, OpenCode, Termux, or remote server is required.
+- Run 33330083624 built both ABIs and produced the 143,833,367-byte APK. The x86_64 emulator executed the x86_64 slice; the arm64 slice is packaging-tested but not device-execution-tested.
 
 ## 3. G1–G14 and host-gate results
 
-The result below is from committed device evidence in run 33329413542. “TESTED” means executed against the installed real APK on the Android emulator, not merely compiled.
+The result below is from committed device evidence in run 33330083624 (evidence commit dca0a3a). “TESTED” means executed against the installed real APK on the Android emulator, not merely compiled. The emulator was x86_64; arm64 rows are package/build evidence unless explicitly stated otherwise.
 
 | Gate | Result | Evidence / meaning |
 |---|---|---|
@@ -145,7 +146,7 @@ No model credential was stored in the repository or emitted in evidence. A futur
 5. **Background execution can outlive an Activity.** A `specialUse` foreground service and explicit shutdown path handle this; H4/H6/G13 tested the process lifecycle.
 6. **Git network/crypto helpers are deliberately not in this minimal Android build.** Git local repository operations are TESTED. The build uses `NO_CURL`, `NO_OPENSSL`, `NO_EXPAT`, and related local-build options, so remote Git transport/authentication and HTTPS Git operations are capability loss, not silently claimed support.
 7. **PTY packages are stubs.** `node-pty`/`bun-pty` cannot be built into this payload yet; their spawn path throws a clear “unavailable on Android” error. Non-interactive `/system/bin/sh` execution is TESTED; interactive PTY parity is NOT TESTED/BLOCKED by that missing native port.
-8. **ABI coverage requires separate device evidence.** x86_64 emulator execution does not prove arm64 execution. The arm64 build portability issue was fixed, but its rerun result is still unknown and arm64 Android runtime execution remains NOT TESTED.
+8. **ABI coverage requires separate device evidence.** x86_64 emulator execution does not prove arm64 execution. Both ABI slices are now build- and APK-packaging-tested, while arm64 Android runtime execution remains NOT TESTED because CI had no arm64 emulator/device.
 
 These are explicit capability losses; the app does not silently fall back to Termux, a desktop binary, a remote OpenCode server, or a fake agent implementation.
 
@@ -158,13 +159,13 @@ These are explicit capability losses; the app does not silently fall back to Ter
 | 33328803576 / evidence 2cffa2f | FAIL | Android Git and APK host path worked, but G09 fixture was not a Git repo; fixed provisioning to invoke packaged Git directly and create `feature/g9` |
 | 33329413542 / evidence 2e7d21d | **SUCCESS** | x86_64 APK, Gradle tests, H1–H8, G01–G15 all passed on API-34 emulator |
 | 33329943774 / evidence f0c11ec | FAIL | Both-ABI build exposed arm64-only compile failure: `__NR_access` is not defined on arm64 |
-| 33330083624 / source merge tip bb82a6f | **UNKNOWN/BLOCKED** | Rerun includes `#ifdef __NR_access` fix. GitHub credential expired before final status/evidence could be fetched |
+| 33330083624 / evidence dca0a3a | **SUCCESS** | `#ifdef __NR_access` fix worked; both ABI slices built, Gradle/APK passed, and x86_64 emulator H/G suite was fully green |
 
-The implementation is complete for the tested x86_64 path, and the required arm64 source fix is committed. The final Phase 4 stop condition is **not yet satisfied**: reconnect GitHub, fetch run 33330083624 and any automatic evidence commit, verify both `arm64-v8a` and `x86_64` libraries are in `apk-contents.txt`, then update this report's arm64 labels from BLOCKED/UNKNOWN only if the evidence is green. Do not claim “works on Android” for arm64 until that evidence exists.
+The Phase 4 implementation and required x86_64 Android validation are complete. The arm64-v8a artifacts are included in the final APK and pass build/package evidence. The only remaining explicit limitation is that arm64 runtime execution itself is **NOT TESTED**; the available CI emulator was x86_64. This report does not claim arm64 device execution.
 
 ## 7. Local verification performed in this checkout
 
 - Confirmed branch is `arena/01a04ca1-opencode-app`.
 - `bash -n` passed for the Phase 4 orchestration, payload, and device-gate scripts.
 - `git diff --check` passed for the changes.
-- The successful CI run supplied the Gradle/JVM test and Android emulator evidence; this sandbox itself has no Android SDK/JDK/KVM and cannot reproduce that execution locally.
+- CI run 33330083624 supplied the Gradle/JVM test, both-ABI APK, and Android emulator evidence; this sandbox itself has no Android SDK/JDK/KVM and cannot reproduce that execution locally.
