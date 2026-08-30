@@ -1,5 +1,5 @@
 --- POST /session?directory=<workdir> ---
-{"id":"ses_fabc9b6a7ffeQ5zwEE1RdFEntM","slug":"neon-garden","projectID":"7cdeee54224ddd0136495c8096cf56e8e6b3e6cb","directory":"/data/data/ai.opencode.android.debug/files/workspaces/gates","path":"","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}},"title":"diag","version":"1.18.23-android","time":{"created":1788119239000,"updated":1788119239000}}
+{"id":"ses_fab63308affeQWZK0hvtaMcWit","slug":"jolly-circuit","projectID":"a0e1988417ef93b31e593684a85e4c02b832ec52","directory":"/data/data/ai.opencode.android.debug/files/workspaces/gates","path":"","cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}},"title":"diag","version":"1.18.23-android","time":{"created":1788125958005,"updated":1788125958005}}
 HTTP 200
 --- GET /config ---
 {"$schema":"https://opencode.ai/config.json","shell":"/system/bin/sh","command":{},"plugin":[],"username":"unknown","mode":{},"agent":{},"mcp":{"gates-mcp":{"type":"local","command":["/data/data/ai.opencode.android.debug/files/bin/bun","/data/data/ai.opencode.android.debug/files/mcp/mcp-server.js"],"environment":{}}},"permission":{"edit":{"/data/data/ai.opencode.android.debug/files/workspaces/gates/*":"ask"},"bash":{"/data/data/ai.opencode.android.debug/files/workspaces/gates/*":"ask"},"webfetch":"ask"}}
@@ -7,54 +7,64 @@ HTTP 200
 
 --- workspace dir (app uid) ---
 total 48
-drwxrwxrwx 4 u0_a192 u0_a192 4096 2026-08-30 19:46 .
-drwxrwxrwx 3 u0_a192 u0_a192 4096 2026-08-30 19:46 ..
-drwxrwxrwx 5 u0_a192 u0_a192 4096 2026-08-30 19:47 .git
--rw-rw-rw- 1 u0_a192 u0_a192  231 2026-08-30 19:46 README.md
--rw-rw-rw- 1 u0_a192 u0_a192   91 2026-08-30 19:46 notes.txt
-drwxrwxrwx 2 u0_a192 u0_a192 4096 2026-08-30 19:46 src
+drwxrwxrwx 4 u0_a192 u0_a192 4096 2026-08-30 21:38 .
+drwxrwxrwx 3 u0_a192 u0_a192 4096 2026-08-30 21:38 ..
+drwxrwxrwx 5 u0_a192 u0_a192 4096 2026-08-30 21:39 .git
+-rw-rw-rw- 1 u0_a192 u0_a192  231 2026-08-30 21:38 README.md
+-rw-rw-rw- 1 u0_a192 u0_a192   91 2026-08-30 21:38 notes.txt
+drwxrwxrwx 2 u0_a192 u0_a192 4096 2026-08-30 21:38 src
 --- .opencode:
 ls: /data/data/ai.opencode.android.debug/files/workspaces/gates/.opencode: No such file or directory
 --- xdg state/data opencode ---
 /data/data/ai.opencode.android.debug/files/xdg/data/opencode:
 total 388
-drwx------ 4 u0_a192 u0_a192   4096 2026-08-30 19:47 .
-drwx------ 3 u0_a192 u0_a192   4096 2026-08-30 19:47 ..
-drwx------ 2 u0_a192 u0_a192   4096 2026-08-30 19:47 log
--rw------- 1 u0_a192 u0_a192   4096 2026-08-30 19:47 opencode-android.db
--rw------- 1 u0_a192 u0_a192  32768 2026-08-30 19:47 opencode-android.db-shm
--rw------- 1 u0_a192 u0_a192 313152 2026-08-30 19:47 opencode-android.db-wal
-drwx------ 2 u0_a192 u0_a192   4096 2026-08-30 19:47 repos
+drwx------ 4 u0_a192 u0_a192   4096 2026-08-30 21:39 .
+drwx------ 3 u0_a192 u0_a192   4096 2026-08-30 21:39 ..
+drwx------ 2 u0_a192 u0_a192   4096 2026-08-30 21:39 log
+-rw------- 1 u0_a192 u0_a192   4096 2026-08-30 21:39 opencode-android.db
+-rw------- 1 u0_a192 u0_a192  32768 2026-08-30 21:39 opencode-android.db-shm
+-rw------- 1 u0_a192 u0_a192 313152 2026-08-30 21:39 opencode-android.db-wal
+drwx------ 2 u0_a192 u0_a192   4096 2026-08-30 21:39 repos
 
 /data/data/ai.opencode.android.debug/files/xdg/data/opencode/log:
 total 20
-drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 19:47 .
-drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 19:47 ..
--rw------- 1 u0_a192 u0_a192    0 2026-08-30 19:47 opencode.log
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 21:39 .
+drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 21:39 ..
+-rw------- 1 u0_a192 u0_a192    0 2026-08-30 21:39 opencode.log
 
 /data/data/ai.opencode.android.debug/files/xdg/data/opencode/repos:
 total 16
-drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 19:47 .
-drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 19:47 ..
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 21:39 .
+drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 21:39 ..
 
 /data/data/ai.opencode.android.debug/files/xdg/state/opencode:
 total 32
-drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 19:47 .
-drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 19:47 ..
-drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 19:47 locks
-drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 19:47 log
+drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 21:39 .
+drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 21:39 ..
+drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 21:39 locks
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 21:39 log
 
 /data/data/ai.opencode.android.debug/files/xdg/state/opencode/locks:
 total 24
-drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 19:47 .
-drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 19:47 ..
-drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 19:47 5843ba2f93205c5b45cbcc9789fdc1badd8a9d27.lock
+drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 21:39 .
+drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 21:39 ..
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 21:39 5843ba2f93205c5b45cbcc9789fdc1badd8a9d27.lock
 
 /data/data/ai.opencode.android.debug/files/xdg/state/opencode/locks/5843ba2f93205c5b45cbcc9789fdc1badd8a9d27.lock:
 total 28
-drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 19:47 .
-drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 19:47 ..
--rw------- 1 u0_a192 u0_a192    0 2026-08-30 19:47 heartbeat
--rw------- 1 u0_a192 u0_a192  121 2026-08-30 19:47 meta.json
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 21:39 .
+drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 21:39 ..
+-rw------- 1 u0_a192 u0_a192    0 2026-08-30 21:39 heartbeat
+-rw------- 1 u0_a192 u0_a192  121 2026-08-30 21:39 meta.json
 --- OpenCode server log (has the 500 stack) ---
 ### /data/data/ai.opencode.android.debug/files/xdg/data/opencode/log/opencode.log
+timestamp=2026-08-30T21:39:17.750Z level=INFO run=ea763636 message="creating instance" directory=/data/data/ai.opencode.android.debug/files/workspaces/gates
+timestamp=2026-08-30T21:39:17.752Z level=INFO run=ea763636 message=fromDirectory directory=/data/data/ai.opencode.android.debug/files/workspaces/gates
+timestamp=2026-08-30T21:39:17.817Z level=INFO run=ea763636 message=bootstrapping directory=/data/data/ai.opencode.android.debug/files/workspaces/gates
+timestamp=2026-08-30T21:39:17.823Z level=INFO run=ea763636 message=loading path=/data/user/0/ai.opencode.android.debug/files/xdg/config/opencode/config.json
+timestamp=2026-08-30T21:39:17.824Z level=INFO run=ea763636 message=loading path=/data/user/0/ai.opencode.android.debug/files/xdg/config/opencode/opencode.json
+timestamp=2026-08-30T21:39:17.825Z level=INFO run=ea763636 message=loading path=/data/user/0/ai.opencode.android.debug/files/xdg/config/opencode/opencode.jsonc
+timestamp=2026-08-30T21:39:17.998Z level=INFO run=ea763636 message="all LSPs are disabled"
+timestamp=2026-08-30T21:39:18.000Z level=INFO run=ea763636 message="all formatters are disabled"
+timestamp=2026-08-30T21:39:18.000Z level=INFO run=ea763636 message=init
+timestamp=2026-08-30T21:39:18.005Z level=INFO run=ea763636 message=created id=ses_fab63308affeQWZK0hvtaMcWit slug=jolly-circuit version=1.18.23-android projectID=a0e1988417ef93b31e593684a85e4c02b832ec52 directory=/data/data/ai.opencode.android.debug/files/workspaces/gates path="" workspaceID=undefined parentID=undefined title=diag agent=undefined model=undefined metadata=undefined permission=undefined cost=0 tokens.input=0 tokens.output=0 tokens.reasoning=0 tokens.cache.read=0 tokens.cache.write=0 time.created=1788125958005 time.updated=1788125958005
