@@ -123,7 +123,7 @@ val verifyAndStagePayload = tasks.register("verifyAndStagePayload") {
                     "into phase4/out/engine/."
             )
         }
-        val libs = listOf("libbun.so", "libgit.so", "librg.so", "libseccompshim.so", "libexecshim.so")
+        val libs = listOf("libbun.so", "libgit.so", "librg.so", "libseccompshim.so", "libexecshim.so", "libchildshim.so")
         val abis = listOf("arm64-v8a", "x86_64")
         var completeAbis = 0
         for (abi in abis) {

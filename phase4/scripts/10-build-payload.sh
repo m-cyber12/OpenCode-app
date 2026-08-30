@@ -111,9 +111,15 @@ build_native() {  # $1=abi  $2=target-triple
         -o "$outdir/libexecshim.so" "$NATIVE_SRC/exec-shim.c" 2>"$WORK/exec-$abi.log"; then
     note "FATAL: libexecshim build failed for $abi; clang stderr:"; cat "$WORK/exec-$abi.log" | tee -a "$STATUS"; exit 1
   fi
-  chmod 755 "$outdir/libseccompshim.so" "$outdir/libexecshim.so"
+  # PIE child-tool wrapper (static musl git/rg seccomp filter + exec)
+  if ! "$cc" -O2 -fPIE -pie -Wl,-z,max-page-size=16384 \
+        -o "$outdir/libchildshim.so" "$NATIVE_SRC/child-shim.c" 2>"$WORK/child-$abi.log"; then
+    note "FATAL: libchildshim build failed for $abi; clang stderr:"; cat "$WORK/child-$abi.log" | tee -a "$STATUS"; exit 1
+  fi
+  chmod 755 "$outdir/libseccompshim.so" "$outdir/libexecshim.so" "$outdir/libchildshim.so"
   note "seccomp helpers $abi -> libseccompshim.so ($(stat -c%s "$outdir/libseccompshim.so") B)," \
-       "libexecshim.so ($(stat -c%s "$outdir/libexecshim.so") B)"
+       "libexecshim.so ($(stat -c%s "$outdir/libexecshim.so") B)," \
+       "libchildshim.so ($(stat -c%s "$outdir/libchildshim.so") B)"
   "$NDK_BIN/llvm-nm" -D "$outdir/libseccompshim.so" 2>/dev/null | grep -q opencode_seccomp_init \
     || { note "FATAL: opencode_seccomp_init missing from libseccompshim.so ($abi)"; exit 1; }
   # The wrapper must be a PIE (DYN) executable so Android will exec it from
@@ -123,6 +129,8 @@ build_native() {  # $1=abi  $2=target-triple
   [ -x "$READELF" ] || READELF="$(command -v llvm-readelf readelf | head -1)"
   "$READELF" -h "$outdir/libexecshim.so" 2>/dev/null | tee -a "$STATUS" | grep -q 'DYN' \
     || { note "FATAL: libexecshim.so ($abi) is not a PIE/DYN executable"; exit 1; }
+  "$READELF" -h "$outdir/libchildshim.so" 2>/dev/null | grep -q 'DYN' \
+    || { note "FATAL: libchildshim.so ($abi) is not a PIE/DYN executable"; exit 1; }
 }
 for abi in "${ABIS[@]}"; do
   case "$abi" in

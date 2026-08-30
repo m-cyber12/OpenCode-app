@@ -53,9 +53,13 @@ data class Diagnostics(
             sb.appendLine("filesDir=${paths.filesDir}")
             sb.appendLine("nativeLibraryDir=${paths.nativeLibraryDir}")
             listOf(
-                "bun" to paths.bunBinary(), "git" to paths.gitBinary(), "rg" to paths.rgBinary(),
+                "bun" to paths.bunBinary(),
+                "git(libgit.so)" to File(paths.nativeLibraryDir, "libgit.so"),
+                "rg(librg.so)" to File(paths.nativeLibraryDir, "librg.so"),
+                "child-shim" to paths.childShimBinary(),
                 "server bundle" to paths.serverBundle, "launcher" to paths.launcher,
-                "bin/bun" to paths.bunLink, "marker" to paths.extractionMarker,
+                "bin/bun" to paths.bunLink, "bin/git" to paths.gitLink, "bin/rg" to paths.rgLink,
+                "marker" to paths.extractionMarker,
             ).forEach { (name, f) ->
                 sb.appendLine("  $name: exists=${f.exists()} exec=${runCatching { f.canExecute() }.getOrDefault(false)} size=${runCatching { f.length() }.getOrDefault(-1)} path=$f")
             }

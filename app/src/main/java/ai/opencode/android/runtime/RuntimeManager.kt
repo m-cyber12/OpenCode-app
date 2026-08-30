@@ -262,10 +262,13 @@ class RuntimeManager private constructor(private val appContext: Context) {
     private fun ensureBinSymlinks() {
         paths.binDir.mkdirs()
         data class Link(val link: File, val target: File, val name: String)
+        // git/rg symlink to the child-shim (seccomp wrapper), NOT directly to
+        // libgit.so/librg.so: the static musl tools need the aggressive ENOSYS
+        // filter the shim installs (they die SIGSYS under the zygote app policy).
         val links = listOf(
             Link(paths.bunLink, paths.bunBinary(), "bun"),
-            Link(paths.gitLink, paths.gitBinary(), "git"),
-            Link(paths.rgLink, paths.rgBinary(), "rg"),
+            Link(paths.gitLink, paths.childShimBinary(), "git"),
+            Link(paths.rgLink, paths.childShimBinary(), "rg"),
         )
         for (l in links) {
             try {

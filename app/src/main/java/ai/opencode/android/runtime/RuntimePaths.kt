@@ -65,8 +65,14 @@ class RuntimePaths private constructor(context: Context) {
 
     /** The actual bun executable in nativeLibraryDir (installed by the package manager). */
     fun bunBinary(): File = File(nativeLibraryDir, "libbun.so")
-    fun gitBinary(): File = File(nativeLibraryDir, "libgit.so")
-    fun rgBinary(): File = File(nativeLibraryDir, "librg.so")
+    /**
+     * The static-musl child tools are linked via [childShimBinary] (not directly
+     * to libgit.so/librg.so): the shim installs an aggressive ENOSYS seccomp
+     * filter that lets the static tools survive the zygote app-uid policy (they
+     * have no dynamic linker to LD_PRELOAD and are killed SIGSYS on optional new
+     * syscalls). The shim resolves the real lib next to /proc/self/exe.
+     */
+    fun childShimBinary(): File = File(nativeLibraryDir, "libchildshim.so")
     /** PIE wrapper that installs the seccomp SIGSYS handler then execs bun. */
     fun execShimBinary(): File = File(nativeLibraryDir, "libexecshim.so")
 

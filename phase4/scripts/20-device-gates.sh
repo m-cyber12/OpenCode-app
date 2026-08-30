@@ -195,23 +195,15 @@ log "=== early diagnostics (app uid) ==="
   rash "'$FILES/bin/bun' --version 2>&1; echo bun_rc=\$?"
   rash "'$FILES/bin/git' --version 2>&1; echo git_rc=\$?"
   rash "'$FILES/bin/rg' --version 2>&1; echo rg_rc=\$?"
-  echo "--- static git/rg THROUGH THE SECCOMP SHIM (BPF filter path) ---"
-  # nativeLibraryDir = dirname of the bun symlink target (contains libexecshim.so)
-  NATIVE_DIR=$(rash "ls -l '$FILES/bin/bun' 2>/dev/null | sed -e 's/.* -> //' -e 's#/libbun.so##'" | tr -d '\r')
-  echo "nativeLibraryDir=$NATIVE_DIR"
-  rash "OPENCODE_BUN_EXEC='$FILES/bin/git' '$NATIVE_DIR/libexecshim.so' --version 2>&1; echo shim_git_rc=\$?"
-  rash "OPENCODE_BUN_EXEC='$FILES/bin/rg' '$NATIVE_DIR/libexecshim.so' --version 2>&1; echo shim_rg_rc=\$?"
-  echo "--- spawned-child syscall trace (logcat seccomp/SIGSYS for git/rg pids) ---"
-  adb logcat -d 2>/dev/null | grep -aiE 'disallowed|seccomp|fatal signal 31|SIGSYS|Bad system' | tail -10 || echo "(no seccomp kills logged)"
-  echo "--- run static git/rg UNDER THE FILTER with logcat captured to name the trapped syscall ---"
-  adb logcat -c 2>/dev/null || true
-  rash "OPENCODE_BPF_LOG=1 OPENCODE_BUN_EXEC='$FILES/bin/git' '$NATIVE_DIR/libexecshim.so' status 2>&1; echo trace_git_rc=\$?"
-  sleep 1
-  echo "--- logcat: seccomp audit (RET_LOG names each syscall nr; the one the Android filter then TRAPs is the git killer) ---"
-  adb logcat -d 2>/dev/null | grep -aiE 'seccomp|SIGSYS|signal 31|syscall|audit|disallowed|libgit|librg' | grep -aviE 'avc:|denied|exec-shim' | tail -25
-  echo "--- dmesg fallback (may require root; ignore failure) ---"
-  adb shell "dmesg 2>/dev/null | grep -aiE 'seccomp|syscall' | tail -20" || echo "(dmesg unavailable)"
-  echo "--- (end child seccomp trace) ---"
+  echo "--- bin/git and bin/rg symlink targets (should be libchildshim.so) ---"
+  rash "ls -l '$FILES/bin/git' '$FILES/bin/rg' 2>&1"
+  echo "--- child-shim git/rg version (aggressive ENOSYS filter then execs real lib) ---"
+  rash "cd '$WORKDIR' && '$FILES/bin/git' --version 2>&1; echo child_git_rc=\$?"
+  rash "cd '$WORKDIR' && '$FILES/bin/rg' --version 2>&1; echo child_rg_rc=\$?"
+  echo "--- git status THROUGH the child-shim in the gates repo (the G09 path) ---"
+  rash "cd '$WORKDIR' && '$FILES/bin/git' status --short 2>&1; echo child_git_status_rc=\$?"
+  echo "--- any seccomp kills logged ---"
+  adb logcat -d 2>/dev/null | grep -aiE 'disallowed|fatal signal 31|SIGSYS|Bad system' | grep -aviE 'avc:' | tail -10 || echo "(no seccomp kills logged)"
   echo "--- flat payload present ---"
   rash "ls -la '$FILES/launcher.js' '$FILES/opencode/dist/node/node.js' 2>&1; ls -ld '$FILES/node_modules' 2>&1"
   echo "--- live server processes (app uid) ---"
@@ -379,7 +371,10 @@ sleep 3
 # the old (still-valid) server answers health races the wipe/re-extract.
 if [ "$(wait_healthy 180)" = "HEALTH_OK" ]; then
   sleep 5
-  MARK=$(rash "if [ -f '$CORR_TARGET' ]; then grep -c CORRUPT_MARKER '$CORR_TARGET' 2>/dev/null || echo 0; else echo 0; fi" | tr -d '\r')
+  # grep -c prints 0 on no match (exit 1); do NOT add a fallback echo or MARK
+  # becomes "0\n0" and the [ = "0" ] test fails. Missing file -> 0.
+  MARK=$(rash "if [ -f '$CORR_TARGET' ]; then grep -c CORRUPT_MARKER '$CORR_TARGET' 2>/dev/null; else echo 0; fi" | tr -d '\r[:space:]')
+  MARK=${MARK:-0}
   log "H5 corruption marker present after recovery (want 0): $MARK"
   [ "$MARK" = "0" ] && H5=0
 else
