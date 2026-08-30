@@ -42,6 +42,7 @@ Relevant committed evidence is under `docs/progress/phase4-evidence/`, especiall
 - The OpenCode payload is flat in app-private storage (`filesDir/launcher.js`, `filesDir/node_modules`, and `filesDir/opencode/...`) so Bun's normal module resolution is preserved. Host metadata remains under `filesDir/runtime/`.
 - H1 on the API-34 emulator validated first-run extraction, the marker, the flat payload, executable access, and pinned versions.
 - The app now rejects an APK manifest whose payload, OpenCode, Bun, Git, or ripgrep versions/commit differ from the pinned `RuntimeVersion`/`versions.lock` contract; it fails clearly instead of re-extracting an incompatible payload forever.
+- The payload builder validates requested ABIs and clears its generated engine directory before each build, preventing a partial/previous invocation from silently supplying an ABI artifact that was not rebuilt.
 
 ### 2.2 Real lifecycle: start, health, stop, crash, restart, duplicate prevention — IMPLEMENTED; x86_64 TESTED
 

@@ -29,9 +29,18 @@ DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ENGINE="$DIR/out/engine"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-mkdir -p "$ENGINE/jniLibs/arm64-v8a" "$ENGINE/jniLibs/x86_64" "$ENGINE/assets"
 
 if [ "$#" -gt 0 ]; then ABIS=("$@"); else ABIS=(arm64-v8a x86_64); fi
+for abi in "${ABIS[@]}"; do
+  case "$abi" in
+    arm64-v8a|x86_64) ;;
+    *) echo "FATAL: unsupported build ABI '$abi' (expected arm64-v8a or x86_64)" >&2; exit 2 ;;
+  esac
+done
+# Never let a partial or previous invocation silently supply an ABI artifact
+# that this invocation did not build.
+rm -rf "$ENGINE"
+mkdir -p "$ENGINE/jniLibs/arm64-v8a" "$ENGINE/jniLibs/x86_64" "$ENGINE/assets"
 
 PINNED_COMMIT="05ea5073be967c779d326929b2de6228dda4159d"
 GIT_PIN="v2.48.1"
@@ -188,7 +197,14 @@ build_git_android() {  # $1=abi $2=target triple $3=lib dir
   [ -x "$WORK/git-src/git" ] || { note "FATAL: Android Git binary missing for $abi"; return 1; }
   cp "$WORK/git-src/git" "$outdir/libgit.so"
   chmod 755 "$outdir/libgit.so"
-  note "$abi Android Git OK: $("$outdir/libgit.so" --version 2>&1 | head -1 || echo 'cross binary')"
+  if git_version=$("$outdir/libgit.so" --version 2>&1 | head -1); then
+    note "$abi Android Git host execution: $git_version"
+  else
+    # The build host is x86_64; arm64 and Android dynamic-linker binaries are
+    # intentionally not executed here. Device gates execute the exact binary
+    # through the installed APK instead.
+    note "$abi Android Git built (cross-ABI host execution skipped)"
+  fi
 }
 
 for abi in "${ABIS[@]}"; do
