@@ -123,11 +123,20 @@ static int install_errno_filter(void) {
         return -1;
     }
     if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &prog) < 0) {
-        fprintf(stderr, "[exec-shim] seccomp filter failed: %s\n", strerror(errno));
+        /* Loudly non-fatal: the LD_PRELOAD SIGSYS handler still covers bun.
+           If this fires on-device the evidence log will show it (static
+           git/rg children would then still trap). */
+        fprintf(stderr, "[exec-shim] seccomp BPF filter NOT installed: %s\n",
+                strerror(errno));
         return -1;
     }
+    fprintf(stderr, "[exec-shim] seccomp BPF errno filter installed (%d rules)\n", n);
     return 0;
 }
+
+/* Marker string grepped for in the on-device evidence log to prove the
+   exec-surviving BPF filter (which protects static git/rg children) is live. */
+#define SHIM_BUILD_TAG "opencode-execshim-bpf-v2"
 
 int main(int argc, char **argv) {
     const char *bun = getenv("OPENCODE_BUN_EXEC");
@@ -137,6 +146,7 @@ int main(int argc, char **argv) {
     }
 
     /* (1) seccomp errno filter (survives exec; protects bun + static children) */
+    fprintf(stderr, "[exec-shim] %s starting; target=%s\n", SHIM_BUILD_TAG, bun);
     install_errno_filter();
 
     /* (2) preload the SIGSYS handler (mkdir emulation etc.) into bun. */

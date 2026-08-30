@@ -352,10 +352,10 @@ log "H5 injected marker into $CORR_TARGET; broadcasting DEBUG_RESET"
 # (observed: broadcasts were "Enqueued" but never delivered while the app sat
 # in the background after the G-gates idle window, so reset/stop never ran).
 # A TOP/foreground app receives explicit broadcasts immediately.
-adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
-sleep 2
-adb shell am broadcast -a ai.opencode.android.DEBUG_RESET -n "$PKG/ai.opencode.android.runtime.DebugControlReceiver" >>"$LOG" 2>&1 || true
-# Give the receiver a moment to be delivered + begin reset before health polling.
+# Use the exported DebugControlActivity (a background manifest BroadcastReceiver
+# is deferred on API 34: broadcasts were "Enqueued" but never delivered). The
+# activity is delivered immediately and performs resetAndRestart(), then exits.
+adb shell am start -n "$PKG/ai.opencode.android.runtime.DebugControlActivity" --ei mode 2 >>"$LOG" 2>&1 || true
 sleep 3
 if [ "$(wait_healthy 180)" = "HEALTH_OK" ]; then
   MARK=$(rash "grep -c CORRUPT_MARKER '$CORR_TARGET' 2>/dev/null || echo 1" | tr -d '\r')
@@ -369,10 +369,9 @@ hp "$H5" 5 "corruption-recovery"
 # ---------------------------------------------------------------------------
 log "=== H6 graceful stop: no zombies, port down ==="
 H6=1
-# Foreground the app so the manifest receiver is delivered (see H5 note).
-adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
-sleep 2
-adb shell am broadcast -a ai.opencode.android.DEBUG_STOP -n "$PKG/ai.opencode.android.runtime.DebugControlReceiver" >>"$LOG" 2>&1 || true
+# Use the exported DebugControlActivity (see H5 note): delivered immediately,
+# performs manager.stop() graceful shutdown, then exits.
+adb shell am start -n "$PKG/ai.opencode.android.runtime.DebugControlActivity" --ei mode 1 >>"$LOG" 2>&1 || true
 sleep 3
 for _ in $(seq 1 20); do [ "$(count_launchers)" = "0" ] && break; sleep 2; done
 LEFTOVER=$(count_launchers)

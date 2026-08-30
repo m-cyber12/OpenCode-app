@@ -52,7 +52,16 @@
         </service>
 
         <!-- Debug/test hooks: gated on BuildConfig.DEBUG inside the class.
-             Lets CI stop/restart/reset the runtime via adb without root. -->
+             Lets CI stop/restart/reset the runtime via adb without root.
+             The Activity is the reliable path (a background manifest receiver
+             is deferred on API 34); the receiver is kept as a fallback. -->
+        <activity
+            android:name=".runtime.DebugControlActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:stateNotNeeded="true" />
         <receiver
             android:name=".runtime.DebugControlReceiver"
             android:exported="false">

@@ -27,11 +27,14 @@ class DebugControlReceiver : BroadcastReceiver() {
                 // background: the startForegroundService may be denied so the
                 // action never arrives, leaving the server running (observed
                 // H6: leftover launcher + port 200).
+                android.util.Log.i("OpenCode/debug", "DEBUG_STOP received -> manager.stop()")
                 RuntimeManager.get(context).stop()
             }
             "ai.opencode.android.DEBUG_RESET" -> {
+                android.util.Log.i("OpenCode/debug", "DEBUG_RESET received -> manager.resetAndRestart()")
                 manager.resetAndRestart()
             }
+            else -> {}
         }
     }
 }
