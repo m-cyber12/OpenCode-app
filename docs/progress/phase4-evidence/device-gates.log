@@ -1,37 +1,37 @@
-[2026-08-30T10:08:42Z] === device facts ===
-[2026-08-30T10:08:42Z] === host bun (runner) to drive gates over adb forward ===
-[2026-08-30T10:08:43Z] === provision fixture + MCP + config + key (run-as) ===
+[2026-08-30T10:36:34Z] === device facts ===
+[2026-08-30T10:36:34Z] === host bun (runner) to drive gates over adb forward ===
+[2026-08-30T10:36:35Z] === provision fixture + MCP + config + key (run-as) ===
 {
   "$schema": "https://opencode.ai/config.json",
   "shell": "/system/bin/sh",
-[2026-08-30T10:08:46Z] no OPENROUTER_API_KEY — model-driven assertions skipped
-[2026-08-30T10:08:46Z] === launch the app (starts RuntimeService) ===
-[2026-08-30T10:08:51Z] server password: eb19ac… (48 chars)
-[2026-08-30T10:08:51Z] === early diagnostics (app uid) ===
+[2026-08-30T10:36:38Z] no OPENROUTER_API_KEY — model-driven assertions skipped
+[2026-08-30T10:36:38Z] === launch the app (starts RuntimeService) ===
+[2026-08-30T10:36:43Z] server password: bbfdcc… (48 chars)
+[2026-08-30T10:36:43Z] === early diagnostics (app uid) ===
 --- supervisor log (host) ---
-2026-08-30T10:08:48.011Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-2026-08-30T10:08:48.038Z [host] state -> EXTRACTING (validating embedded runtime)
-2026-08-30T10:08:48.253Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
-2026-08-30T10:08:48.267Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
-2026-08-30T10:08:49.272Z [host] extraction complete: 30 files validated
-2026-08-30T10:08:49.273Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-2026-08-30T10:08:49.274Z [host] symlink bun -> /data/app/~~nEzaHpi7MLMt03JrxZ9OOA==/ai.opencode.android.debug-IeB2q76VUB-PT1kEdoKXwQ==/lib/x86_64/libbun.so (exec=true)
-2026-08-30T10:08:49.275Z [host] symlink git -> /data/app/~~nEzaHpi7MLMt03JrxZ9OOA==/ai.opencode.android.debug-IeB2q76VUB-PT1kEdoKXwQ==/lib/x86_64/libgit.so (exec=true)
-2026-08-30T10:08:49.276Z [host] symlink rg -> /data/app/~~nEzaHpi7MLMt03JrxZ9OOA==/ai.opencode.android.debug-IeB2q76VUB-PT1kEdoKXwQ==/lib/x86_64/librg.so (exec=true)
-2026-08-30T10:08:49.279Z [host] generated fresh server password (stored 600 at server-password)
-2026-08-30T10:08:49.280Z [host] state -> STARTING (starting OpenCode server (attempt 1))
-2026-08-30T10:08:49.286Z [host] server started: pid=6622 abi=x86_64 port=4111
-2026-08-30T10:08:49.451Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-08-30T10:08:51.553Z [server] SERVER_READY http://127.0.0.1:4111/
-2026-08-30T10:08:51.570Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
-2026-08-30T10:08:51.571Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-08-30T10:36:39.372Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-08-30T10:36:39.380Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-08-30T10:36:39.391Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-08-30T10:36:39.394Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-08-30T10:36:40.553Z [host] extraction complete: 30 files validated
+2026-08-30T10:36:40.554Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-08-30T10:36:40.556Z [host] symlink bun -> /data/app/~~muqx3nc_3OfNMsb8lsk44w==/ai.opencode.android.debug-On4uEUF4hFX7cR5ugPN0PA==/lib/x86_64/libbun.so (exec=true)
+2026-08-30T10:36:40.557Z [host] symlink git -> /data/app/~~muqx3nc_3OfNMsb8lsk44w==/ai.opencode.android.debug-On4uEUF4hFX7cR5ugPN0PA==/lib/x86_64/libgit.so (exec=true)
+2026-08-30T10:36:40.558Z [host] symlink rg -> /data/app/~~muqx3nc_3OfNMsb8lsk44w==/ai.opencode.android.debug-On4uEUF4hFX7cR5ugPN0PA==/lib/x86_64/librg.so (exec=true)
+2026-08-30T10:36:40.564Z [host] generated fresh server password (stored 600 at server-password)
+2026-08-30T10:36:40.566Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-30T10:36:40.575Z [host] server started: pid=5984 abi=x86_64 port=4111
+2026-08-30T10:36:40.716Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T10:36:42.843Z [server] SERVER_READY http://127.0.0.1:4111/
+2026-08-30T10:36:42.853Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
+2026-08-30T10:36:42.860Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
 --- bin symlinks (filesDir/bin) ---
 total 40
-drwx------  2 u0_a192 u0_a192 4096 2026-08-30 10:08 .
-drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-30 10:08 ..
-lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 10:08 bun -> /data/app/~~nEzaHpi7MLMt03JrxZ9OOA==/ai.opencode.android.debug-IeB2q76VUB-PT1kEdoKXwQ==/lib/x86_64/libbun.so
-lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 10:08 git -> /data/app/~~nEzaHpi7MLMt03JrxZ9OOA==/ai.opencode.android.debug-IeB2q76VUB-PT1kEdoKXwQ==/lib/x86_64/libgit.so
-lrwxrwxrwx  1 u0_a192 u0_a192  107 2026-08-30 10:08 rg -> /data/app/~~nEzaHpi7MLMt03JrxZ9OOA==/ai.opencode.android.debug-IeB2q76VUB-PT1kEdoKXwQ==/lib/x86_64/librg.so
+drwx------  2 u0_a192 u0_a192 4096 2026-08-30 10:36 .
+drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-30 10:36 ..
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 10:36 bun -> /data/app/~~muqx3nc_3OfNMsb8lsk44w==/ai.opencode.android.debug-On4uEUF4hFX7cR5ugPN0PA==/lib/x86_64/libbun.so
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 10:36 git -> /data/app/~~muqx3nc_3OfNMsb8lsk44w==/ai.opencode.android.debug-On4uEUF4hFX7cR5ugPN0PA==/lib/x86_64/libgit.so
+lrwxrwxrwx  1 u0_a192 u0_a192  107 2026-08-30 10:36 rg -> /data/app/~~muqx3nc_3OfNMsb8lsk44w==/ai.opencode.android.debug-On4uEUF4hFX7cR5ugPN0PA==/lib/x86_64/librg.so
 --- execs THROUGH symlinks ---
 1.3.14
 bun_rc=0
@@ -46,22 +46,189 @@ simd(runtime):+SSE2,+SSSE3,-AVX2
 PCRE2 10.45 is available (JIT is available)
 rg_rc=0
 --- flat payload present ---
--rw------- 1 u0_a192 u0_a192     4514 2026-08-30 10:08 /data/data/ai.opencode.android.debug/files/launcher.js
--rw------- 1 u0_a192 u0_a192 32845338 2026-08-30 10:08 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
-drwx------ 5 u0_a192 u0_a192 4096 2026-08-30 10:08 /data/data/ai.opencode.android.debug/files/node_modules
+-rw------- 1 u0_a192 u0_a192     4514 2026-08-30 10:36 /data/data/ai.opencode.android.debug/files/launcher.js
+-rw------- 1 u0_a192 u0_a192 32845338 2026-08-30 10:36 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
+drwx------ 5 u0_a192 u0_a192 4096 2026-08-30 10:36 /data/data/ai.opencode.android.debug/files/node_modules
 --- live server processes (app uid) ---
-/proc/6622/cmdline /data/app/~~nEzaHpi7MLMt03JrxZ9OOA==/ai.opencode.android.debug-IeB2q76VUB-PT1kEdoKXwQ==/lib/x86_64/libbun.so /data/user/0/ai.opencode.android.debug/files/launcher.js 
-[2026-08-30T10:08:52Z] === H1 extraction + version validation ===
--rw------- 1 u0_a192 u0_a192     4514 2026-08-30 10:08 /data/data/ai.opencode.android.debug/files/launcher.js
--rw------- 1 u0_a192 u0_a192 32845338 2026-08-30 10:08 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
--rw------- 1 u0_a192 u0_a192      108 2026-08-30 10:08 /data/data/ai.opencode.android.debug/files/runtime/.extracted
-[2026-08-30T10:08:52Z] H1 marker: {"payloadVersion":4,"opencodeCommit":"05ea5073be967c779d326929b2de6228dda4159d","extractedAt":1788084529271}
-[2026-08-30T10:08:52Z] H1 bun via symlink: '1.3.14' exec_ok=1
-[2026-08-30T10:08:52Z] H1 node=0 launcher=0 node_modules=0 marker=0 exec=1
-[2026-08-30T10:08:52Z] H1 flat payload + marker + execs OK
-[2026-08-30T10:08:52Z] === H2 health-gated start ===
-[2026-08-30T10:08:52Z] H2 health: {"healthy":true,"version":"1.18.23-android"}
-[2026-08-30T10:08:52Z] === H3 duplicate-process prevention ===
-[2026-08-30T10:09:00Z] H3 live launcher.js processes after repeated starts: 1
-[2026-08-30T10:09:00Z] === G1..G4 in-sandbox exec/userspace/shell/runtime (bin symlinks -> nativeLibraryDir) ===
-[2026-08-30T10:09:01Z] === G5/G6 server start + health ===
+/proc/5984/cmdline /data/app/~~muqx3nc_3OfNMsb8lsk44w==/ai.opencode.android.debug-On4uEUF4hFX7cR5ugPN0PA==/lib/x86_64/libbun.so /data/user/0/ai.opencode.android.debug/files/launcher.js 
+[2026-08-30T10:36:43Z] === H1 extraction + version validation ===
+-rw------- 1 u0_a192 u0_a192     4514 2026-08-30 10:36 /data/data/ai.opencode.android.debug/files/launcher.js
+-rw------- 1 u0_a192 u0_a192 32845338 2026-08-30 10:36 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
+-rw------- 1 u0_a192 u0_a192      108 2026-08-30 10:36 /data/data/ai.opencode.android.debug/files/runtime/.extracted
+[2026-08-30T10:36:43Z] H1 marker: {"payloadVersion":4,"opencodeCommit":"05ea5073be967c779d326929b2de6228dda4159d","extractedAt":1788086200552}
+[2026-08-30T10:36:43Z] H1 bun via symlink: '1.3.14' exec_ok=1
+[2026-08-30T10:36:43Z] H1 node=0 launcher=0 node_modules=0 marker=0 exec=1
+[2026-08-30T10:36:43Z] H1 flat payload + marker + execs OK
+[2026-08-30T10:36:43Z] === H2 health-gated start ===
+[2026-08-30T10:36:43Z] H2 health: {"healthy":true,"version":"1.18.23-android"}
+[2026-08-30T10:36:43Z] === H3 duplicate-process prevention ===
+[2026-08-30T10:36:52Z] H3 live launcher.js processes after repeated starts: 1
+[2026-08-30T10:36:52Z] === G1..G4 in-sandbox exec/userspace/shell/runtime (bin symlinks -> nativeLibraryDir) ===
+[2026-08-30T10:36:52Z] === G5/G6 server start + health ===
+--- POST /session?directory=<workdir> ---
+{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_a6e25598"}}
+HTTP 500
+--- GET /config ---
+{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_86c3140c"}}
+HTTP 500
+
+--- workspace dir (app uid) ---
+total 32
+drwxrwxrwx 3 u0_a192 u0_a192 4096 2026-08-30 10:36 .
+drwxrwxrwx 3 u0_a192 u0_a192 4096 2026-08-30 10:36 ..
+-rw-rw-rw- 1 u0_a192 u0_a192  167 2026-08-30 10:36 README.md
+drwxrwxrwx 2 u0_a192 u0_a192 4096 2026-08-30 10:36 src
+--- .opencode:
+ls: /data/data/ai.opencode.android.debug/files/workspaces/gates/.opencode: No such file or directory
+--- xdg state/data opencode ---
+/data/data/ai.opencode.android.debug/files/xdg/data/opencode:
+total 340
+drwx------ 4 u0_a192 u0_a192   4096 2026-08-30 10:36 .
+drwx------ 3 u0_a192 u0_a192   4096 2026-08-30 10:36 ..
+drwx------ 2 u0_a192 u0_a192   4096 2026-08-30 10:36 log
+-rw------- 1 u0_a192 u0_a192   4096 2026-08-30 10:36 opencode-android.db
+-rw------- 1 u0_a192 u0_a192  32768 2026-08-30 10:36 opencode-android.db-shm
+-rw------- 1 u0_a192 u0_a192 263712 2026-08-30 10:36 opencode-android.db-wal
+drwx------ 2 u0_a192 u0_a192   4096 2026-08-30 10:36 repos
+
+/data/data/ai.opencode.android.debug/files/xdg/data/opencode/log:
+total 24
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 10:36 .
+drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 10:36 ..
+-rw------- 1 u0_a192 u0_a192 1118 2026-08-30 10:36 opencode.log
+
+/data/data/ai.opencode.android.debug/files/xdg/data/opencode/repos:
+total 16
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 10:36 .
+drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 10:36 ..
+
+/data/data/ai.opencode.android.debug/files/xdg/state/opencode:
+total 32
+drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 10:36 .
+drwx------ 3 u0_a192 u0_a192 4096 2026-08-30 10:36 ..
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 10:36 locks
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 10:36 log
+
+/data/data/ai.opencode.android.debug/files/xdg/state/opencode/locks:
+total 16
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 10:36 .
+drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 10:36 ..
+
+/data/data/ai.opencode.android.debug/files/xdg/state/opencode/log:
+total 16
+drwx------ 2 u0_a192 u0_a192 4096 2026-08-30 10:36 .
+drwx------ 4 u0_a192 u0_a192 4096 2026-08-30 10:36 ..
+--- OpenCode server log (has the 500 stack) ---
+### /data/data/ai.opencode.android.debug/files/xdg/data/opencode/log/opencode.log
+timestamp=2026-08-30T10:36:44.463Z level=ERROR run=97eee41e message="Failed to fetch models.dev" cause="Cause([Fail(PlatformError: Unknown: FileSystem.rename (/data/user/0/ai.opencode.android.debug/files/xdg/cache/opencode/models.json.5984.1788086204453.tmp) (cause: Error: ENOSYS: function not implemented, rename '/data/user/0/ai.opencode.android.debug/files/xdg/cache/opencode/models.json.5984.1788086204453.tmp' -> '/data/user/0/ai.opencode.android.debug/files/xdg/cache/opencode/models.json'))])"
+timestamp=2026-08-30T10:36:52.442Z level=INFO run=97eee41e message="creating instance" directory=/data/data/ai.opencode.android.debug/files/workspaces/gates
+timestamp=2026-08-30T10:36:52.443Z level=INFO run=97eee41e message=fromDirectory directory=/data/data/ai.opencode.android.debug/files/workspaces/gates
+timestamp=2026-08-30T10:36:52.452Z level=INFO run=97eee41e message=bootstrapping directory=/data/data/ai.opencode.android.debug/files/workspaces/gates
+timestamp=2026-08-30T10:36:52.466Z level=INFO run=97eee41e message=loading path=/data/user/0/ai.opencode.android.debug/files/xdg/config/opencode/config.json
+[2026-08-30T10:36:52Z] === G7..G12, G15 real agent gates over the app server ===
+[2026-08-30T10:36:52Z] --- G07 (gate-07-shell.js) model=0 ---
+112 | }
+113 | 
+114 | // Create a session bound to the fixture directory.
+115 | export async function createSession(title) {
+116 |   const r = await post("/session", { title })
+117 |   if (!r.ok) throw new Error("session create failed: " + r.status + " " + r.text.slice(0, 300))
+                             ^
+error: session create failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_9c4ada34"}}
+      at createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:117:24)
+
+Bun v1.3.14 (Linux x64)
+[2026-08-30T10:36:52Z] --- G08 (gate-08-files.js) model=0 ---
+list HTTP 500
+ASSERT_FAILED: file list ok
+ASSERT_FAILED: file content ok
+ASSERT_FAILED: find (ripgrep) ok
+112 | }
+113 | 
+114 | // Create a session bound to the fixture directory.
+115 | export async function createSession(title) {
+116 |   const r = await post("/session", { title })
+117 |   if (!r.ok) throw new Error("session create failed: " + r.status + " " + r.text.slice(0, 300))
+                             ^
+error: session create failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_1d9ddd0d"}}
+      at createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:117:24)
+
+Bun v1.3.14 (Linux x64)
+[2026-08-30T10:36:52Z] --- G09 (gate-09-opencode-git.js) model=0 ---
+112 | }
+113 | 
+114 | // Create a session bound to the fixture directory.
+115 | export async function createSession(title) {
+116 |   const r = await post("/session", { title })
+117 |   if (!r.ok) throw new Error("session create failed: " + r.status + " " + r.text.slice(0, 300))
+                             ^
+error: session create failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_c962f825"}}
+      at createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:117:24)
+
+Bun v1.3.14 (Linux x64)
+[2026-08-30T10:36:52Z] --- G10 (gate-10-mcp.js) model=0 ---
+ASSERT_FAILED: OpenCode reports gates-mcp connected
+[mcp-roundtrip] TOOLS=["echo","write_marker"]
+[mcp-roundtrip] CALL={"content":[{"type":"text","text":"echo:G10_MCP_ROUNDTRIP_OK"}]}
+assert ok: mcp roundtrip child exited 0 (got 0)
+assert ok: SDK client got the echo tool result
+assert ok: tools/list includes echo
+(model mode skipped: no OPENROUTER_API_KEY — agent MCP-tool part not run)
+G10_FAIL
+[2026-08-30T10:37:53Z] --- G11 (gate-11-stream.js) model=0 ---
+112 | }
+113 | 
+114 | // Create a session bound to the fixture directory.
+115 | export async function createSession(title) {
+116 |   const r = await post("/session", { title })
+117 |   if (!r.ok) throw new Error("session create failed: " + r.status + " " + r.text.slice(0, 300))
+                             ^
+error: session create failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_b98b48bf"}}
+      at createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:117:24)
+
+Bun v1.3.14 (Linux x64)
+[2026-08-30T10:37:53Z] --- G12 (gate-12-permission.js) model=0 ---
+112 | }
+113 | 
+114 | // Create a session bound to the fixture directory.
+115 | export async function createSession(title) {
+116 |   const r = await post("/session", { title })
+117 |   if (!r.ok) throw new Error("session create failed: " + r.status + " " + r.text.slice(0, 300))
+                             ^
+error: session create failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_52737b1f"}}
+      at createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:117:24)
+
+Bun v1.3.14 (Linux x64)
+[2026-08-30T10:37:53Z] --- G15 (gate-15-e2e.js) model=0 ---
+112 | }
+113 | 
+114 | // Create a session bound to the fixture directory.
+115 | export async function createSession(title) {
+116 |   const r = await post("/session", { title })
+117 |   if (!r.ok) throw new Error("session create failed: " + r.status + " " + r.text.slice(0, 300))
+                             ^
+error: session create failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_efc9b18e"}}
+      at createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:117:24)
+
+Bun v1.3.14 (Linux x64)
+[2026-08-30T10:37:53Z] === H4 crash detection + restart with backoff ===
+[2026-08-30T10:37:53Z] H4 server pid: 5984
+[2026-08-30T10:37:53Z] H4 SIGKILL sent; waiting for supervisor restart...
+[2026-08-30T10:38:02Z] H4 crash lines=1 backoff lines=1
+[2026-08-30T10:38:02Z] === H5 corruption recovery (corrupt payload -> DEBUG_RESET re-extracts) ===
+[2026-08-30T10:38:02Z] H5 injected marker into /data/data/ai.opencode.android.debug/files/opencode/dist/node/photon_rs_bg-bq08arze.wasm; broadcasting DEBUG_RESET
+Broadcasting: Intent { act=ai.opencode.android.DEBUG_RESET flg=0x400000 cmp=ai.opencode.android.debug/ai.opencode.android.runtime.DebugControlReceiver }
+Broadcast completed: result=0
+[2026-08-30T10:38:03Z] H5 corruption marker present after recovery (want 0): 1
+[2026-08-30T10:38:03Z] === H6 graceful stop: no zombies, port down ===
+Broadcasting: Intent { act=ai.opencode.android.DEBUG_STOP flg=0x400000 cmp=ai.opencode.android.debug/ai.opencode.android.runtime.DebugControlReceiver }
+Broadcast completed: result=0
+[2026-08-30T10:38:48Z] H6 leftover launchers=1 port-code=200
+[2026-08-30T10:38:48Z] === G14 reconnect: sessions persist across restart ===
+[2026-08-30T10:38:48Z] G14 sessions after restart: 0
+[2026-08-30T10:38:48Z] === H7 logs & diagnostics ===
+[2026-08-30T10:38:48Z] === H8 ABI/device gate ===
+[2026-08-30T10:38:48Z] H8 abi=x86_64 sdk=34 -> supported
+[2026-08-30T10:38:48Z] === pull logs into evidence ===
+[2026-08-30T10:38:49Z] === SUMMARY ===
+[2026-08-30T10:38:49Z] G failures present (8); core gate failures fail CI (model-gate skips without a key are expected).
