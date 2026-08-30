@@ -1,42 +1,26 @@
 /*
  * exec-shim.c — the actual process entrypoint for the embedded Bun server.
  *
- * Why this exists: Android installs a seccomp filter in Zygote that denies
- * newer syscalls with SECCOMP_RET_TRAP -> a FATAL SIGSYS (not -ENOSYS). The
- * official @oven/bun-linux-*-android binary calls some of these during its
- * OWN native startup, before any JavaScript can run — observed:
+ * Android installs a seccomp filter in Zygote that denies newer/legacy
+ * syscalls with SECCOMP_RET_TRAP -> a fatal SIGSYS (not -ENOSYS). The official
+ * Bun binary (and the static musl `git`/`rg` that OpenCode spawns) hit these.
  *
- *   Fatal signal 31 (SIGSYS), code 1 (SYS_SECCOMP), syscall 441 (epoll_pwait2)
- *     then, with only a JS-side handler installed (too late):
- *   Fatal signal 31 (SIGSYS), code 1 (SYS_SECCOMP), syscall 21  (access)
+ * This PIE executable is launched from nativeLibraryDir. Before exec'ing bun
+ * it installs TWO layers of compatibility so both the dynamic bun server and
+ * its STATIC children are covered:
  *
- * so a handler loaded from launcher.js via bun:ffi is too late. This wrapper
- * is the executable the supervisor launches (shipped in nativeLibraryDir as
- * libexecshim.so). It installs the SIGSYS -> ENOSYS handler FIRST THING in
- * main(), before bun's code is mapped, then execve()s the real bun with the
- * same argv. Every trapped syscall then returns -ENOSYS and Bun's fallbacks
- * engage (epoll_pwait2 -> epoll_pwait, access -> the caller sees -1/ENOENT,
- * close_range -> fd loop, ...). On execve the handler resets, so we re-exec
- * INTO a wrapper process that stays alive; see note below.
+ *  1) A seccomp BPF filter that returns an errno directly for syscalls whose
+ *     "unsupported" semantics are safe (epoll_pwait2 -> ENOSYS so callers use
+ *     epoll_pwait; access -> ENOENT so existence checks report absent; etc.).
+ *     Crucially, seccomp FILTERS survive execve(), so this also protects the
+ *     static musl git/rg children (which ignore LD_PRELOAD — they have no
+ *     dynamic linker). Filter returns SECCOMP_RET_ALLOW for everything else so
+ *     Android's own filter is consulted unchanged.
  *
- * Note: execve replaces this image with bun, dropping the handler. Therefore
- * we do NOT exec bun directly — the signal handler is process state and would
- * vanish. Instead the wrapper installs the handler and then uses a small
- * launcher: it maps the bun ELF? No — simplest correct design: the wrapper
- * forks; the child installs the handler and uses fexecve? Signals still reset.
- *
- * Correct mechanism (what this file actually does): install the SIGSYS handler
- * in the current process, then exec bun via a NON-resetting path is impossible.
- * So instead we LD_PRELOAD? The handler must live in the address space of bun.
- * The clean answer: make this wrapper's handler survive by exec'ing bun with
- * seccomp STILL TRAPPING but the handler provided by a library loaded into bun.
- * That is exactly libseccompshim.so loaded via LD_PRELOAD, whose __attribute__((
- * constructor)) installs the handler before bun main() runs.
- *
- * So: libexecshim.so sets LD_PRELOAD=<nativeLibraryDir>/libseccompshim.so (if
- * not already set) and execve()s bun. libseccompshim.so provides a constructor
- * that installs the SIGSYS handler; because it is preloaded its constructor
- * runs during dynamic linking, before bun's main / native init.
+ *  2) LD_PRELOAD=libseccompshim.so, whose constructor installs a SIGSYS
+ *     handler for the cases an errno cannot satisfy — e.g. a trapped legacy
+ *     mkdir(2) must actually create the directory (emulated via mkdirat).
+ *     Dynamic-linker only (bun); the static children are covered by (1).
  */
 
 #ifndef _GNU_SOURCE
@@ -46,21 +30,112 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <libgen.h>
+#include <stddef.h>
+#include <errno.h>
+#include <sys/prctl.h>
+#include <linux/seccomp.h>
+#include <linux/filter.h>
+#include <linux/audit.h>
+#include <sys/syscall.h>
+
+#ifndef SECCOMP_RET_ERRNO
+#define SECCOMP_RET_ERRNO 0x00050000U
+#endif
+#define RET_ERRNO(e) (SECCOMP_RET_ERRNO | ((unsigned int)(e) & 0x7fffU))
+#define RET_ALLOW   SECCOMP_RET_ALLOW
+
+/* Trap -> errno rules for syscalls that are safe to fail as "not supported"
+   (callers have an old-kernel fallback) or "not present". */
+struct rule {
+    long nr;
+    int err;
+};
+
+static int install_errno_filter(void) {
+#if defined(__x86_64__)
+    unsigned int arch = AUDIT_ARCH_X86_64;
+#elif defined(__aarch64__)
+    unsigned int arch = AUDIT_ARCH_AARCH64;
+#else
+    return 0; /* unknown ABI: skip filter, rely on default behaviour */
+#endif
+
+    struct rule rules[16];
+    int n = 0;
+    rules[n++] = (struct rule){ (long)__NR_epoll_pwait2, ENOSYS };
+    rules[n++] = (struct rule){ (long)__NR_close_range, ENOSYS };
+#ifdef __NR_preadv2
+    rules[n++] = (struct rule){ (long)__NR_preadv2, ENOSYS };
+#endif
+#ifdef __NR_pwritev2
+    rules[n++] = (struct rule){ (long)__NR_pwritev2, ENOSYS };
+#endif
+    rules[n++] = (struct rule){ (long)__NR_clone3, ENOSYS };
+    rules[n++] = (struct rule){ (long)__NR_faccessat2, ENOSYS };
+    rules[n++] = (struct rule){ (long)__NR_statx, ENOSYS };
+#ifdef __NR_access /* legacy access(2): arm64 has no such syscall */
+    rules[n++] = (struct rule){ (long)__NR_access, ENOENT };
+#endif
+
+    /*
+     * Build:
+     *   0: ld arch (word @4)
+     *   1: jeq arch 1 0        -> wrong arch falls to #2
+     *   2: ret ALLOW           (wrong arch: defer to Android filter)
+     *   3: ld nr   (word @0)
+     *   then, per rule:  jeq nr jt=N  jf=...   -> jump to the rule's RET
+     *   then: ret ALLOW
+     *   then, per rule in emission order: ret ERRNO(err)
+     */
+    struct sock_filter f[64];
+    struct sock_filter *p = f;
+    *p++ = (struct sock_filter)BPF_STMT(BPF_LD | BPF_W | BPF_ABS, 4);
+    *p++ = (struct sock_filter)BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, arch, 1, 0);
+    *p++ = (struct sock_filter)BPF_STMT(BPF_RET | BPF_K, RET_ALLOW);
+    *p++ = (struct sock_filter)BPF_STMT(BPF_LD | BPF_W | BPF_ABS, 0);
+
+    int nr_load_idx = 3;
+    int jeq_start = 4;
+    int default_allow_idx = jeq_start + n;        /* after n jeq insns */
+    int ret0_idx = default_allow_idx + 1;        /* first ERRNO ret */
+    for (int i = 0; i < n; i++) {
+        int ret_idx = ret0_idx + i;
+        /* on match skip (ret_idx - (jeq_start+i) - 1) to land on our RET */
+        unsigned int jt = (unsigned int)(ret_idx - (jeq_start + i) - 1);
+        (void)nr_load_idx;
+        *p++ = (struct sock_filter)BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K,
+                                            rules[i].nr, jt, 1);
+    }
+    *p++ = (struct sock_filter)BPF_STMT(BPF_RET | BPF_K, RET_ALLOW);
+    for (int i = 0; i < n; i++)
+        *p++ = (struct sock_filter)BPF_STMT(BPF_RET | BPF_K, RET_ERRNO(rules[i].err));
+
+    struct sock_fprog prog;
+    prog.len = (unsigned short)(p - f);
+    prog.filter = f;
+
+    if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0) {
+        fprintf(stderr, "[exec-shim] no_new_privs failed: %s\n", strerror(errno));
+        return -1;
+    }
+    if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &prog) < 0) {
+        fprintf(stderr, "[exec-shim] seccomp filter failed: %s\n", strerror(errno));
+        return -1;
+    }
+    return 0;
+}
 
 int main(int argc, char **argv) {
-    /* This wrapper is invoked as:  libexecshim.so <launcher.js> [args...]
-       argv[0] is this binary; the Kotlin supervisor passes the bun target via
-       OPENCODE_BUN_EXEC so we do not have to hard-code the nativeLibraryDir. */
     const char *bun = getenv("OPENCODE_BUN_EXEC");
     if (!bun || !*bun) {
         fprintf(stderr, "[exec-shim] OPENCODE_BUN_EXEC not set\n");
         return 64;
     }
 
-    /* Prepend the seccomp handler library to LD_PRELOAD so it is loaded into
-       bun's address space and its constructor installs the handler before
-       bun's own initialization. */
+    /* (1) seccomp errno filter (survives exec; protects bun + static children) */
+    install_errno_filter();
+
+    /* (2) preload the SIGSYS handler (mkdir emulation etc.) into bun. */
     const char *shim = getenv("OPENCODE_SECCOMP_SHIM");
     if (shim && *shim) {
         const char *old = getenv("LD_PRELOAD");
@@ -80,7 +155,6 @@ int main(int argc, char **argv) {
     newargv[argc] = NULL;
 
     execv(bun, newargv);
-    /* On success never returns. */
     fprintf(stderr, "[exec-shim] execv(%s) failed: ", bun);
     perror("");
     return 127;

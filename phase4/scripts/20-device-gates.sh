@@ -104,10 +104,16 @@ rash "mkdir -p '$WORKDIR/src' '$FILES/mcp' '$FILES/xdg/config/opencode' '$FILES/
 cat <<'EOF' | write_stdin_runas "workspaces/gates/README.md"
 # gates fixture
 
-A tiny project for the Phase 4 production-host gates: a README and a small JS
-file so glob/read tools have something to find. "gates fixture" marker.
+A tiny project for the Phase 4 production-host gates: a README, notes file and
+a small JS file so glob/read/ripgrep tools have something to find.
+G15-E2E-MARKER present for the file content + ripgrep search gates.
+EOF
+cat <<'EOF' | write_stdin_runas "workspaces/gates/notes.txt"
+gates notes
+G15-E2E-MARKER in notes too, so /find (ripgrep) always matches a tracked file.
 EOF
 cat <<'EOF' | write_stdin_runas "workspaces/gates/src/app.js"
+// G15-E2E-MARKER source marker
 export function greet(name) {
   return "hello " + name;
 }

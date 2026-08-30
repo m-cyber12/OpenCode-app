@@ -21,7 +21,13 @@ class DebugControlReceiver : BroadcastReceiver() {
         val manager = RuntimeManager.get(context)
         when (intent.action) {
             "ai.opencode.android.DEBUG_STOP" -> {
-                RuntimeService.stop(context)
+                // Directly stop the supervisor. Routing through
+                // RuntimeService.stop() (which re-launches the service to
+                // deliver a stop action) is unreliable when the app is in the
+                // background: the startForegroundService may be denied so the
+                // action never arrives, leaving the server running (observed
+                // H6: leftover launcher + port 200).
+                RuntimeManager.get(context).stop()
             }
             "ai.opencode.android.DEBUG_RESET" -> {
                 manager.resetAndRestart()
