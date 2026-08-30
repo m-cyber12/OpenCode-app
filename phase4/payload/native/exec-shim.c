@@ -99,9 +99,13 @@ static int install_errno_filter(void) {
     int default_allow_idx = jeq_start + n;        /* after n jeq insns */
     int ret0_idx = default_allow_idx + 1;        /* first ERRNO ret */
     for (int i = 0; i < n; i++) {
-        int ret_idx = ret0_idx + i;
-        /* on match skip (ret_idx - (jeq_start+i) - 1) to land on our RET */
-        unsigned int jt = (unsigned int)(ret_idx - (jeq_start + i) - 1);
+        int cur_idx = jeq_start + i;             /* index of this JEQ insn  */
+        int ret_idx = ret0_idx + i;              /* index of its RET insn   */
+        /* BPF JMP skips are relative to the NEXT instruction (cur_idx+1),
+         * so jt = ret_idx - (cur_idx + 1). A jf of 1 walks to the NEXT jeq
+         * (the last jeq's jf=1 lands on default_allow). Verified against a
+         * host BPF disassembler: rule i's match must reach ret0_idx+i. */
+        unsigned int jt = (unsigned int)(ret_idx - (cur_idx + 1));
         (void)nr_load_idx;
         *p++ = (struct sock_filter)BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K,
                                             rules[i].nr, jt, 1);

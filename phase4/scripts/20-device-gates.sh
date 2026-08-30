@@ -347,7 +347,16 @@ CORR_TARGET=$(rash "ls -1 '$FILES/opencode/dist/node/'*.wasm 2>/dev/null | head 
 [ -n "$CORR_TARGET" ] || CORR_TARGET="$FILES/launcher.js"
 rash "printf '\nCORRUPT_MARKER\n' >> '$CORR_TARGET'"
 log "H5 injected marker into $CORR_TARGET; broadcasting DEBUG_RESET"
+# Bring the app to the foreground first: on API 34 a manifest-registered
+# receiver in a CACHED app is deferred/de-prioritized by the broadcast queue
+# (observed: broadcasts were "Enqueued" but never delivered while the app sat
+# in the background after the G-gates idle window, so reset/stop never ran).
+# A TOP/foreground app receives explicit broadcasts immediately.
+adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
+sleep 2
 adb shell am broadcast -a ai.opencode.android.DEBUG_RESET -n "$PKG/ai.opencode.android.runtime.DebugControlReceiver" >>"$LOG" 2>&1 || true
+# Give the receiver a moment to be delivered + begin reset before health polling.
+sleep 3
 if [ "$(wait_healthy 180)" = "HEALTH_OK" ]; then
   MARK=$(rash "grep -c CORRUPT_MARKER '$CORR_TARGET' 2>/dev/null || echo 1" | tr -d '\r')
   log "H5 corruption marker present after recovery (want 0): $MARK"
@@ -360,7 +369,11 @@ hp "$H5" 5 "corruption-recovery"
 # ---------------------------------------------------------------------------
 log "=== H6 graceful stop: no zombies, port down ==="
 H6=1
+# Foreground the app so the manifest receiver is delivered (see H5 note).
+adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
+sleep 2
 adb shell am broadcast -a ai.opencode.android.DEBUG_STOP -n "$PKG/ai.opencode.android.runtime.DebugControlReceiver" >>"$LOG" 2>&1 || true
+sleep 3
 for _ in $(seq 1 20); do [ "$(count_launchers)" = "0" ] && break; sleep 2; done
 LEFTOVER=$(count_launchers)
 CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 -u "opencode:$PASSWD" http://127.0.0.1:4111/global/health 2>/dev/null)
