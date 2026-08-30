@@ -50,7 +50,7 @@ NDK toolchain candidates:
   /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android34-clang
   /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android35-clang
 NDK clang dir: /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin
-seccomp helpers x86_64 -> libseccompshim.so (7544 B), libexecshim.so (8064 B), libchildshim.so (10216 B)
+seccomp helpers x86_64 -> libseccompshim.so (7544 B), libexecshim.so (8064 B), libchildshim.so (7784 B)
 ELF Header:
   Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00
   Class:                             ELF64
@@ -71,36 +71,6 @@ ELF Header:
   Size of section headers:           64 (bytes)
   Number of section headers:         26
   Section header string table index: 24
-=== [3/6] static git v2.48.1 per ABI (NO_PERL recipe, Phase 3-proven) ===
-git source: f93ff170b93a1782659637824b25923245ac9dd1
---- static git (x86_64, CC=musl-gcc) ---
-    LINK t/unit-tests/bin/t-reftable-merged
-    LINK t/unit-tests/bin/t-reftable-pq
-    LINK t/unit-tests/bin/t-reftable-reader
-    LINK t/unit-tests/bin/t-reftable-readwrite
-    LINK t/unit-tests/bin/t-reftable-record
-    LINK t/unit-tests/bin/t-reftable-stack
-    LINK t/unit-tests/bin/t-reftable-tree
-    LINK t/unit-tests/bin/t-strbuf
-    LINK t/unit-tests/bin/t-strcmp-offset
-    LINK t/unit-tests/bin/t-trailer
-    LINK t/unit-tests/bin/t-urlmatch-normalization
-    GEN t/unit-tests/clar-decls.h
-    GEN t/unit-tests/clar.suite
-    CC t/unit-tests/u-ctype.o
-    CC t/unit-tests/u-strvec.o
-    CC t/unit-tests/clar/clar.o
-    CC t/unit-tests/unit-test.o
-    LINK t/unit-tests/bin/unit-tests
-    GEN gitweb/static/gitweb.js
-    GEN gitweb/gitweb.cgi
-x86_64 git OK: git version 2.48.1
-=== [4/6] ripgrep 15.1.0 per ABI ===
-x86_64 rg (musl-static) OK
-=== [5/6] OpenCode server bundle @ 05ea5073be967c779d326929b2de6228dda4159d (pinned, fail-loud) ===
-upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
-bundle build complete
-=== [6/6] stage payload, compute manifest ===
-payload tarball: 16549863 bytes sha256=f0651f715b8cfa4334fdbeed74bc6922a23df6962d17349d66a9f2fa607a9c5c
-=== engine layout ===
-PAYLOAD_READY
+=== [3/6] Git v2.48.1 per ABI (Android/Bionic, NO_PERL recipe) ===
+--- Android Git (x86_64, CC=/usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang) ---
+FATAL: Android zlib build failed for x86_64
