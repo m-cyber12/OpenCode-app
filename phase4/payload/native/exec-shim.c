@@ -73,13 +73,11 @@ static int install_errno_filter(void) {
     rules[n++] = (struct rule){ (long)__NR_clone3, ENOSYS };
     rules[n++] = (struct rule){ (long)__NR_faccessat2, ENOSYS };
     rules[n++] = (struct rule){ (long)__NR_statx, ENOSYS };
-#ifdef __NR_openat2
-    rules[n++] = (struct rule){ (long)__NR_openat2, ENOSYS };  /* -> openat */
-#endif
-    /* NOTE: rseq and futex_waitv were tried as ENOSYS and broke the bun server
-       boot (process died before SERVER_READY). bionic actively uses rseq and
-       returns its own errors; do NOT intercept either. openat2 alone is safe
-       (glibc falls back to openat on ENOSYS). */
+    /* Only the five new syscalls the Termux/Bun port proves have userspace
+       fallbacks, plus legacy access -> ENOENT. openat2 ENOSYS, rseq ENOSYS and
+       futex_waitv ENOSYS were each tried on-device and PREVENTED the bun
+       server from reaching SERVER_READY (bionic needs the real call), so they
+       are intentionally NOT intercepted. */
 #ifdef __NR_access /* legacy access(2): arm64 has no such syscall */
     rules[n++] = (struct rule){ (long)__NR_access, ENOENT };
 #endif
