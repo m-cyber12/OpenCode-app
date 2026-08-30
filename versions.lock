@@ -53,10 +53,10 @@ native_components:
     note: "no Android binding; upstream's graceful fallback (watcher disabled) exercised in spike"
   - name: ripgrep                     # downloaded ELF at runtime (packages/core/src/ripgrep/binary.ts)
     version: 15.1.0
-    note: "static musl: x86_64-unknown-linux-musl (emulator, TESTED) + aarch64-unknown-linux-musl (product inventory, built/validated statically)"
-  - name: git                         # external, resolved at runtime; bundled static
-    version: v2.48.1                  # PHASE 3: built static-musl on the runner (G9 TESTED on emulator)
-    note: "Phase 2 blocker FIXED (2026-08-29): git's ./configure refuses to run without perl; build the Makefile directly with NO_PERL=YesPlease + static musl toolchain. HTTPS/curl disabled — local repo ops only (init/status/add/commit/diff/branches/log)"
+    note: "real upstream source built for x86_64-linux-android and aarch64-linux-android with Cargo + NDK/Bionic; avoids static desktop binaries that SIGSYS under Android's zygote policy"
+  - name: git                         # external, resolved at runtime; bundled Android executable
+    version: v2.48.1                  # real Git source built with the Android NDK/Bionic toolchain
+    note: "Phase 2 NO_PERL blocker fixed: build the Makefile directly with NO_PERL=YesPlease. HTTPS/curl disabled — local repo ops only (init/status/add/commit/diff/branches/log). Bionic-linked rather than static-musl because Android's app seccomp policy cannot be repaired after a static exec."
   - name: posix-shell                 # sh/bash/zsh/dash/ksh; must be bundled (static)
     version: android-system           # Android's own /system/bin/sh (mksh, MIRBSD KSH R59) — real shell, TESTED
     note: "config shell: /system/bin/sh (Shell.preferred honors config 'shell')"
@@ -137,9 +137,9 @@ android_host:
   # per-ABI JNI executables (Android extracts to nativeLibraryDir, exec-allowed):
   jni_libs:
     - { name: libbun.so,  source: "@oven/bun-linux-{x64|aarch64}-android@1.3.14", bionic: true }
-    - { name: libgit.so,  source: "static git v2.48.1 (NO_PERL=YesPlease, musl/NDK static, NO_CURL/OPENSSL/EXPAT)" }
-    - { name: librg.so,   source: "ripgrep 15.1.0 (x86_64 musl-static official; arm64 NDK/bionic build)" }
-  # compressed JS payload (assets/, extracted to filesDir/runtime, sha256 verified):
+    - { name: libgit.so,  source: "Git v2.48.1 from source (NO_PERL=YesPlease, Android NDK/Bionic, NO_CURL/OPENSSL/EXPAT)" }
+    - { name: librg.so,   source: "ripgrep 15.1.0 from source (x86_64/aarch64 Android targets, Cargo + NDK/Bionic, pcre2 feature)" }
+  # compressed JS payload (assets/, extracted flat into filesDir with sha256 verification; runtime/ holds host metadata):
   payload_assets:
     - runtime-payload.tar.gz   # opencode/dist/node/node.js bundle + *.wasm + node_modules + launcher.js
     - runtime-manifest.json    # versions + per-file sha256/size + payload tarball sha256

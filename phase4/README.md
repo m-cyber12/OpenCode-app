@@ -61,10 +61,13 @@ missing, with instructions to run `10-build-payload.sh`.
 2. **Extraction** — `assets/runtime-payload.tar.gz` unpacks to a staging dir,
    every file's sha256/size is checked against `runtime-manifest.json`, then it
    atomically swaps into `filesDir/runtime/` and writes a versioned marker.
-3. **Executables** — bun/git/rg ship as `lib*.so` (extracted to the
-   exec-allowed `nativeLibraryDir` by Android); `filesDir/bin/{bun,git,rg}` are
-   symlinks to them, so the agent's `which` lookups find the real tools while
-   respecting W^X.
+3. **Executables** — Bun, Git, and ripgrep ship as `lib*.so` (extracted to the
+   exec-allowed `nativeLibraryDir` by Android). Git and ripgrep are built from
+   their real upstream sources for `x86_64-linux-android` and
+   `aarch64-linux-android` with the NDK/Bionic toolchain; desktop static-musl
+   binaries are not used because the zygote seccomp policy can SIGSYS them
+   after exec. `filesDir/bin/{bun,git,rg}` are symlinks to the native files, so
+   the agent's `which` lookups find the bundled tools while respecting W^X.
 4. **Start** — the foreground service starts the supervisor, which launches
    bun from `nativeLibraryDir` and waits for a healthy `/global/health` (Basic
    auth, random per-install password) — not just a live process.
@@ -90,4 +93,4 @@ missing, with instructions to run `10-build-payload.sh`.
   the app sandbox via `bin/` symlinks.
 - Arm64-v8a is the **shipping** target: the payload is built for both ABIs;
   the emulator (x86_64) is the CI-executed target. Arm64 artifacts are
-  produced and statically checked (ELF/interp/sha) — honest labeling applies.
+  produced and checked for the Android ELF/interpreter/ABI — honest labeling applies.

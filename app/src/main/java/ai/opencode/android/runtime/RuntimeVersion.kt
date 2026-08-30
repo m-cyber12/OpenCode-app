@@ -18,10 +18,10 @@ object RuntimeVersion {
     /** Bun-for-Android (bionic-linked official npm @oven/bun-*-android). */
     const val BUN_VERSION = "1.3.14"
 
-    /** Static git built from source (NO_PERL=YesPlease musl/NDK static). */
+    /** Git built from source with the Android NDK/Bionic toolchain. */
     const val GIT_VERSION = "v2.48.1"
 
-    /** ripgrep (x86_64 musl-static from the official release; arm64 NDK-built). */
+    /** ripgrep built from source for each Android ABI with Cargo + NDK. */
     const val RIPGREP_VERSION = "15.1.0"
 
     /**

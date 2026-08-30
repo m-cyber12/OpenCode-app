@@ -119,7 +119,7 @@ val verifyAndStagePayload = tasks.register("verifyAndStagePayload") {
             throw GradleException(
                 "Embedded runtime payload missing: ${mf.path} not found.\n" +
                     "Run:  bash phase4/scripts/10-build-payload.sh   (needs network; see phase4/README.md)\n" +
-                    "It builds Bun-for-Android, static git, ripgrep and the pinned OpenCode bundle " +
+                    "It builds Bun-for-Android, Android/Bionic Git and ripgrep, and the pinned OpenCode bundle " +
                     "into phase4/out/engine/."
             )
         }

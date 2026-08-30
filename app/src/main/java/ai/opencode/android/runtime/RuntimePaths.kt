@@ -9,7 +9,7 @@ import java.io.File
  *
  *   filesDir/
  *     bin/                 symlinks bun/git/rg -> nativeLibraryDir (exec-allowed)
- *     runtime/             extracted JS payload (server bundle, node_modules)
+ *     runtime/             extraction marker and host metadata
  *     runtime/.extracted   extraction marker (payload version + manifest sha)
  *     launcher.js          bun entrypoint that imports the server bundle
  *     workspaces/          user projects (the agent's cwd roots)
@@ -65,13 +65,11 @@ class RuntimePaths private constructor(context: Context) {
 
     /** The actual bun executable in nativeLibraryDir (installed by the package manager). */
     fun bunBinary(): File = File(nativeLibraryDir, "libbun.so")
-    /**
-     * The static-musl child tools are linked via [childShimBinary] (not directly
-     * to libgit.so/librg.so): the shim installs an aggressive ENOSYS seccomp
-     * filter that lets the static tools survive the zygote app-uid policy (they
-     * have no dynamic linker to LD_PRELOAD and are killed SIGSYS on optional new
-     * syscalls). The shim resolves the real lib next to /proc/self/exe.
-     */
+    /** Real Git executable built against the Android NDK/Bionic libc. */
+    fun gitBinary(): File = File(nativeLibraryDir, "libgit.so")
+    /** Real ripgrep executable built for the Android ABI with the NDK linker. */
+    fun rgBinary(): File = File(nativeLibraryDir, "librg.so")
+    /** Retained diagnostic compatibility wrapper; tool lookup does not use it. */
     fun childShimBinary(): File = File(nativeLibraryDir, "libchildshim.so")
     /** PIE wrapper that installs the seccomp SIGSYS handler then execs bun. */
     fun execShimBinary(): File = File(nativeLibraryDir, "libexecshim.so")

@@ -3,8 +3,8 @@
 #
 # Runs on a networked build host (CI ubuntu-latest). Outputs:
 #   phase4/out/engine/jniLibs/<abi>/libbun.so  (Bun-for-Android, bionic)
-#   phase4/out/engine/jniLibs/<abi>/libgit.so  (static git v2.48.1)
-#   phase4/out/engine/jniLibs/<abi>/librg.so   (ripgrep 15.1.0)
+#   phase4/out/engine/jniLibs/<abi>/libgit.so  (Git v2.48.1, Android/Bionic executable)
+#   phase4/out/engine/jniLibs/<abi>/librg.so   (ripgrep 15.1.0, Android/Bionic executable)
 #   phase4/out/engine/assets/runtime-payload.tar.gz  (server bundle, node_modules, launcher)
 #   phase4/out/engine/assets/runtime-manifest.json   (versions + sha256 of every payload file)
 #
@@ -13,9 +13,12 @@
 #
 # Recipes reused from the Phase 3 gate suite (do NOT re-solve):
 #   * bun-for-Android: official @oven/bun-*-android npm tarballs (bionic ELF)
-#   * static git: build the Makefile directly with NO_PERL=YesPlease
-#     (git's ./configure refuses to run without perl), static toolchain,
-#     NO_REGEX=NeedsStartEnd for musl; NO_CURL/OPENSSL/EXPAT -> local git only
+#   * Git: build the Makefile directly with NO_PERL=YesPlease using the Android
+#     NDK/Bionic toolchain. A Bionic-linked executable is intentional: Android's
+#     zygote seccomp policy is designed for Bionic and kills static-musl children
+#     on syscalls that cannot be intercepted from a wrapper after exec.
+#   * ripgrep: build the real upstream source for each Android ABI with Cargo +
+#     the NDK linker (not the glibc/musl desktop release binary).
 #   * OpenCode bundle: bun build of upstream packages/opencode/src/node.ts
 #     at the PINNED commit (fail loudly if the commit can't be checked out)
 #
@@ -139,131 +142,92 @@ for abi in "${ABIS[@]}"; do
   esac
 done
 
-note "=== [3/6] static git $GIT_PIN per ABI (NO_PERL recipe, Phase 3-proven) ==="
-curl -fsSL --retry 3 --max-time 180 -o "$WORK/zlib.tgz" \
-  "https://github.com/madler/zlib/archive/refs/tags/${ZLIB_PIN}.tar.gz"
-rm -rf "$WORK/zlib-src" && mkdir -p "$WORK/zlib-src"
-tar xzf "$WORK/zlib.tgz" -C "$WORK/zlib-src" --strip-components=1
-rm -rf "$WORK/git-src"
-timeout 300 git clone -q --depth 1 --branch "$GIT_PIN" https://github.com/git/git "$WORK/git-src"
-( cd "$WORK/git-src" && git rev-parse HEAD > "$ENGINE/git.upstream.commit.txt" )
-note "git source: $(cat "$ENGINE/git.upstream.commit.txt")"
+note "=== [3/6] Git $GIT_PIN per ABI (Android/Bionic, NO_PERL recipe) ==="
+# A static musl executable cannot install a SIGSYS handler through LD_PRELOAD,
+# and an Android app cannot use ptrace to repair the zygote policy after exec.
+# Build the real Git source against Android Bionic instead. The NDK linker emits
+# a normal /system/bin/linker64 (or linker) executable; Bionic's syscall wrappers
+# stay inside the app policy and no external shell/package is required at run
+# time. Local Git operations remain fully enabled; network/curl helpers remain
+# disabled exactly as in the Phase 3 recipe.
+build_git_android() {  # $1=abi $2=target triple $3=lib dir
+  local abi="$1" triple="$2" outdir="$3"
+  local cc="$NDK_BIN/${triple}29-clang"
+  local ar="$NDK_BIN/llvm-ar" ranlib="$NDK_BIN/llvm-ranlib"
+  local zprefix="$WORK/zlib-$abi-android"
+  note "--- Android Git ($abi, CC=$cc) ---"
 
-# musl.cc cross toolchains (fully static, no NSS/dlopen — ideal for Android)
-ensure_musl_cc() {  # $1=triple
-  local triple="$1"
-  if command -v "$triple-gcc" >/dev/null 2>&1; then return 0; fi
-  note "fetching musl.cc toolchain $triple ..."
-  if curl -fsSL --retry 2 --max-time 300 -o "$WORK/$triple.tgz" "https://musl.cc/$triple-cross.tgz"; then
-    mkdir -p /opt/muslcc && tar xzf "$WORK/$triple.tgz" -C /opt/muslcc
-    export PATH="/opt/muslcc/$triple-cross/bin:$PATH"
-  fi
-  command -v "$triple-gcc" >/dev/null 2>&1
-}
+  ( cd "$WORK/zlib-src"
+    make clean >/dev/null 2>&1 || true
+    CC="$cc" AR="$ar" RANLIB="$ranlib" ./configure --static --prefix="$zprefix" >/dev/null
+    make -j4 >/dev/null
+    make install >/dev/null
+  ) || { note "FATAL: Android zlib build failed for $abi"; return 1; }
 
-build_git_static() {  # $1=label $2=CC $3=AR(optional) $4=zlib-prefix
-  local label="$1" cc="$2" ar="$3" zprefix="$4"
-  note "--- static git ($label, CC=$cc) ---"
-  ( cd "$WORK/zlib-src" && make clean >/dev/null 2>&1 || true
-    CC="$cc" ./configure --static --prefix="$zprefix" >/dev/null 2>&1
-    make -j4 >/dev/null 2>&1 && make install >/dev/null 2>&1 ) \
-    || { note "zlib build FAILED for $label"; return 1; }
-  ( cd "$WORK/git-src" && make clean >/dev/null 2>&1 || true
-    timeout 1200 make -j4 ${ar:+AR="$ar"} \
-      CC="$cc" \
+  ( cd "$WORK/git-src"
+    make clean >/dev/null 2>&1 || true
+    timeout 1200 make -j4 \
+      CC="$cc" AR="$ar" RANLIB="$ranlib" \
       CFLAGS="-O2 -I$zprefix/include" \
-      LDFLAGS="-static -L$zprefix/lib" \
+      LDFLAGS="-L$zprefix/lib -Wl,-z,max-page-size=16384" \
       ZLIB_PATH="$zprefix" \
       NO_REGEX=NeedsStartEnd \
       NO_PERL=YesPlease NO_PYTHON=YesPlease NO_TCLTK=YesPlease NO_GETTEXT=YesPlease \
       NO_ICONV=YesPlease NO_CURL=YesPlease NO_OPENSSL=YesPlease NO_EXPAT=YesPlease \
-      NO_LIBPCRE2=YesPlease NO_INSTALL_HARDLINKS=YesPlease all 2>&1 | tail -20 ) \
-    | tee -a "$STATUS"
-  [ -x "$WORK/git-src/git" ] || { note "git build FAILED for $label"; return 1; }
-  note "$label git OK: $("$WORK/git-src/git" --version 2>&1 | head -1 || echo 'cannot run (cross)')"
+      NO_LIBPCRE2=YesPlease NO_INSTALL_HARDLINKS=YesPlease all
+  ) || { note "FATAL: Android Git build failed for $abi"; return 1; }
+  [ -x "$WORK/git-src/git" ] || { note "FATAL: Android Git binary missing for $abi"; return 1; }
+  cp "$WORK/git-src/git" "$outdir/libgit.so"
+  chmod 755 "$outdir/libgit.so"
+  note "$abi Android Git OK: $("$outdir/libgit.so" --version 2>&1 | head -1 || echo 'cross binary')"
 }
 
-# x86_64: musl static (emulator target, TESTED in Phase 3)
-if printf '%s\n' "${ABIS[@]}" | grep -q x86_64; then
-  sudo apt-get update -qq >/dev/null 2>&1 || true
-  sudo apt-get install -y -qq musl-tools >/dev/null 2>&1 || note "musl-tools apt install failed"
-  if command -v musl-gcc >/dev/null 2>&1; then
-    build_git_static "x86_64" "musl-gcc" "" "$WORK/zlib-x86_64" \
-      && cp "$WORK/git-src/git" "$ENGINE/jniLibs/x86_64/libgit.so" \
-      || { note "FATAL: x86_64 static git (musl) failed"; exit 1; }
-  else
-    note "musl-gcc unavailable; falling back to gcc -static (glibc) for x86_64"
-    build_git_static "x86_64" "gcc" "" "$WORK/zlib-x86_64" \
-      && cp "$WORK/git-src/git" "$ENGINE/jniLibs/x86_64/libgit.so" \
-      || { note "FATAL: x86_64 static git failed"; exit 1; }
-  fi
-  chmod 755 "$ENGINE/jniLibs/x86_64/libgit.so"
-fi
+for abi in "${ABIS[@]}"; do
+  case "$abi" in
+    x86_64)    build_git_android "x86_64" "x86_64-linux-android" "$ENGINE/jniLibs/x86_64" ;;
+    arm64-v8a) build_git_android "arm64-v8a" "aarch64-linux-android" "$ENGINE/jniLibs/arm64-v8a" ;;
+  esac
+done
 
-# arm64: musl.cc aarch64 cross (product target). musl-static is fully static
-# and runs under Android's seccomp/bionic (same class as the tested x86_64).
-if printf '%s\n' "${ABIS[@]}" | grep -q arm64; then
-  GIT_ARM_OK=0
-  if ensure_musl_cc "aarch64-linux-musl"; then
-    if build_git_static "arm64" "aarch64-linux-musl-gcc" "aarch64-linux-musl-ar" \
-         "/opt/muslcc/aarch64-linux-musl-cross/aarch64-linux-musl"; then
-      cp "$WORK/git-src/git" "$ENGINE/jniLibs/arm64-v8a/libgit.so"
-      GIT_ARM_OK=1
-    fi
+note "=== [4/6] ripgrep $RG_PIN per ABI (Android/Bionic source build) ==="
+# The official desktop release artifacts are static musl/glibc binaries. They
+# reproduce the SIGSYS failure when OpenCode spawns them from untrusted_app.
+# Compile the real ripgrep source for Android so Rust's libc layer uses Bionic
+# and the resulting executable uses the NDK's Android dynamic linker.
+build_rg_android() {  # $1=abi $2=rust target $3=ndk triple
+  local abi="$1" target="$2" triple="$3"
+  local outdir="$ENGINE/jniLibs/$abi"
+  local toolchain="$NDK_BIN"
+  local cc="$toolchain/${triple}29-clang"
+  note "--- Android ripgrep ($abi, target=$target) ---"
+  if ! command -v cargo >/dev/null 2>&1 || ! command -v rustup >/dev/null 2>&1; then
+    note "FATAL: cargo/rustup is required for Android ripgrep ($abi)"
+    return 1
   fi
-  if [ "$GIT_ARM_OK" != 1 ]; then
-    note "WARNING: arm64 static git (musl.cc) failed; see git status lines above. arm64 libgit.so NOT produced."
-    note "         x86_64 libgit.so remains validated; arm64 packaging is inventory-checked by Gradle."
-  else
-    chmod 755 "$ENGINE/jniLibs/arm64-v8a/libgit.so"
-  fi
-fi
-
-note "=== [4/6] ripgrep $RG_PIN per ABI ==="
-fetch_rg_musl() {  # $1=rust-triple dir $2=dest-so
-  local triple="$1" dest="$2"
-  local url="https://github.com/BurntSushi/ripgrep/releases/download/${RG_PIN}/ripgrep-${RG_PIN}-${triple}.tar.gz"
-  if curl -fsSL --retry 2 --max-time 240 -o "$WORK/rg.tgz" "$url"; then
-    mkdir -p "$WORK/rg-x" && tar xzf "$WORK/rg.tgz" -C "$WORK/rg-x"
-    local bin
-    bin="$(find "$WORK/rg-x" -name rg -type f | head -1)"
-    [ -n "$bin" ] && cp "$bin" "$dest" && chmod 755 "$dest" && return 0
-  fi
-  return 1
+  rustup target add "$target" >/dev/null
+  rm -rf "$WORK/rg-src"
+  timeout 300 git clone -q --depth 1 --branch "$RG_PIN" https://github.com/BurntSushi/ripgrep "$WORK/rg-src"
+  (
+    cd "$WORK/rg-src"
+    export CARGO_TARGET_$(echo "$target" | tr '[:lower:]-' '[:upper:]_')_LINKER="$cc"
+    export CC_$(echo "$target" | tr '[:upper:]-' '[:lower:]_')="$cc"
+    export AR_$(echo "$target" | tr '[:upper:]-' '[:lower:]_')="$toolchain/llvm-ar"
+    export CARGO_TARGET_$(echo "$target" | tr '[:lower:]-' '[:upper:]_')_RUSTFLAGS="-C link-arg=-Wl,-z,max-page-size=16384"
+    export CFLAGS="-O2 -D__ANDROID_API__=29"
+    export RUSTFLAGS="-C link-arg=-Wl,-z,max-page-size=16384"
+    timeout 1200 cargo build --release --target "$target" --features pcre2
+    cp "target/$target/release/rg" "$outdir/librg.so"
+  ) || { note "FATAL: Android ripgrep build failed for $abi"; return 1; }
+  chmod 755 "$outdir/librg.so"
+  note "$abi Android ripgrep OK: $(file "$outdir/librg.so" | cut -d: -f2-)"
 }
-if printf '%s\n' "${ABIS[@]}" | grep -q x86_64; then
-  if fetch_rg_musl "x86_64-unknown-linux-musl" "$ENGINE/jniLibs/x86_64/librg.so"; then
-    note "x86_64 rg (musl-static) OK"
-  else
-    note "FATAL: x86_64 ripgrep download failed"; exit 1
-  fi
-fi
-# arm64: upstream publishes aarch64-unknown-linux-gnu (glibc, NOT Android-safe).
-# Prefer a real NDK/bionic build when an Android NDK + rust target are present;
-# otherwise record the gap honestly (x86_64 rg is the CI-validated binary).
-if printf '%s\n' "${ABIS[@]}" | grep -q arm64; then
-  RG_ARM_OK=0
-  NDK_HOME_CANDIDATE="${ANDROID_NDK_HOME:-${ANDROID_NDK_ROOT:-}}"
-  if [ -z "$NDK_HOME_CANDIDATE" ]; then
-    NDK_HOME_CANDIDATE="$(ls -d ${ANDROID_HOME:-/usr/local/lib/android/sdk}/ndk/* 2>/dev/null | sort -V | tail -1 || true)"
-  fi
-  if [ -n "$NDK_HOME_CANDIDATE" ] && command -v cargo >/dev/null 2>&1 \
-     && rustup target list --installed 2>/dev/null | grep -q aarch64-linux-android; then
-    note "building ripgrep aarch64 with NDK at $NDK_HOME_CANDIDATE"
-    TOOLCHAIN="$NDK_HOME_CANDIDATE/toolchains/llvm/prebuilt/linux-x86_64"
-    ( rm -rf "$WORK/rg-src"
-      timeout 300 git clone -q --depth 1 --branch "$RG_PIN" https://github.com/BurntSushi/ripgrep "$WORK/rg-src"
-      cd "$WORK/rg-src"
-      export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="$TOOLCHAIN/bin/aarch64-linux-android29-clang"
-      export CC_aarch64_linux_android="$TOOLCHAIN/bin/aarch64-linux-android29-clang"
-      export AR_aarch64_linux_android="$TOOLCHAIN/bin/llvm-ar"
-      cargo build --release --target aarch64-linux-android 2>&1 | tail -15
-      cp "target/aarch64-linux-android/release/rg" "$ENGINE/jniLibs/arm64-v8a/librg.so" ) \
-      && { chmod 755 "$ENGINE/jniLibs/arm64-v8a/librg.so"; RG_ARM_OK=1; note "arm64 rg (NDK bionic) OK"; } \
-      || note "arm64 NDK ripgrep build failed"
-  fi
-  [ "$RG_ARM_OK" = 1 ] || note "WARNING: arm64 librg.so not produced (no NDK/rust aarch64 target on this host)."
-fi
+
+for abi in "${ABIS[@]}"; do
+  case "$abi" in
+    x86_64)    build_rg_android "x86_64" "x86_64-linux-android" "x86_64-linux-android" ;;
+    arm64-v8a) build_rg_android "arm64-v8a" "aarch64-linux-android" "aarch64-linux-android" ;;
+  esac
+done
 
 note "=== [5/6] OpenCode server bundle @ $PINNED_COMMIT (pinned, fail-loud) ==="
 rm -rf "$WORK/opencode"

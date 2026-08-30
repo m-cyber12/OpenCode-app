@@ -255,6 +255,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
 
     /**
      * Create bin/bun, bin/git, bin/rg as symlinks into nativeLibraryDir.
+     * All three are Android/Bionic binaries built for this APK ABI.
      * Symlinks are files in filesDir (noexec) but the KERNEL resolves them to
      * the nativeLibraryDir target, which is exec-allowed — the standard Android
      * packaging trick for shipping extra executables inside the APK.
@@ -262,13 +263,16 @@ class RuntimeManager private constructor(private val appContext: Context) {
     private fun ensureBinSymlinks() {
         paths.binDir.mkdirs()
         data class Link(val link: File, val target: File, val name: String)
-        // git/rg symlink to the child-shim (seccomp wrapper), NOT directly to
-        // libgit.so/librg.so: the static musl tools need the aggressive ENOSYS
-        // filter the shim installs (they die SIGSYS under the zygote app policy).
+        // Git and ripgrep are built for Android/Bionic, not copied desktop
+        // static-musl releases. They must run directly: a child-side ptrace or
+        // seccomp wrapper cannot override the zygote policy's SIGSYS action, and
+        // wrapping them would only move the same failure one exec later.
+        // Bun remains the bionic executable too; exec-shim is used only for its
+        // startup compatibility path and is not part of tool lookup.
         val links = listOf(
             Link(paths.bunLink, paths.bunBinary(), "bun"),
-            Link(paths.gitLink, paths.childShimBinary(), "git"),
-            Link(paths.rgLink, paths.childShimBinary(), "rg"),
+            Link(paths.gitLink, paths.gitBinary(), "git"),
+            Link(paths.rgLink, paths.rgBinary(), "rg"),
         )
         for (l in links) {
             try {
