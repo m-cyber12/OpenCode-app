@@ -1,27 +1,27 @@
 H1: PASS extraction-and-version 
-H2: PASS health-gated-start 
-H3: PASS no-duplicate-process 
+H2: FAIL health-gated-start 
+H3: FAIL no-duplicate-process 
 G01: PASS execution-layer 
 G02: PASS userspace 
 G03: PASS real-shell 
 G04: PASS runtime 
 G05: PASS opencode-start 
-G06: PASS health-endpoint 
-G07: PASS gate-07-shell.js 
+G06: FAIL health-endpoint 
+G07: FAIL gate-07-shell.js 
 G08: FAIL gate-08-files.js 
 G09: FAIL gate-09-opencode-git.js 
-G10: PASS gate-10-mcp.js 
-G11: PASS gate-11-stream.js 
+G10: FAIL gate-10-mcp.js 
+G11: FAIL gate-11-stream.js 
 G12: FAIL gate-12-permission.js 
-G15: PASS gate-15-e2e.js 
-H4: PASS crash-restart-backoff 
+G15: FAIL gate-15-e2e.js 
+H4: FAIL crash-restart-backoff 
 H5: FAIL corruption-recovery 
 H6: PASS graceful-stop-no-zombies 
 G14: FAIL reconnect-sessions-persist 
 H7: PASS logs-and-diagnostics 
 H8: PASS abi-device-gate 
-PHASE4_SUMMARY 2026-08-30T13:06:17Z
-h_total=8 h_pass=7 h_fail=1
-g_total=13 g_pass=10 g_fail=4
+PHASE4_SUMMARY 2026-08-30T13:27:23Z
+h_total=8 h_pass=4 h_fail=4
+g_total=13 g_pass=5 g_fail=9
 model_available=0
 device_abi=x86_64 sdk=34

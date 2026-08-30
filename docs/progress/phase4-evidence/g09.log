@@ -1,8 +1,16 @@
-assert ok: session id present
-shell HTTP 200
-=== messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M19C47VJ2MCFA4G0EYZK38QV","input":"{\"command\":\"git status --short && echo BRANCHES && git branch && echo LOG && git log --oneline -3\"}","output":"\"Bad system call \\n\"","error":null}]}]
---- git via OpenCode output ---
-Bad system call 
+16 | }
+17 | 
+18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
+19 |   const sep = path.includes("?") ? "&" : "?"
+20 |   const url = BASE + path + sep + "directory=" + encodeURIComponent(directory)
+21 |   const r = await fetch(url, {
+                       ^
+error: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+  path: "http://127.0.0.1:4111/session?directory=%2Fdata%2Fdata%2Fai.opencode.android.debug%2Ffiles%2Fworkspaces%2Fgates",
+ errno: 0,
+  code: "ECONNRESET"
 
-G9_OPENCODE_GIT_MISSING_EXPECTED_OUTPUT
+      at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
+      at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
+
+Bun v1.3.14 (Linux x64)

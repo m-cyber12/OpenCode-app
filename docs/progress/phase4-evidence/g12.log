@@ -1,16 +1,16 @@
-assert ok: session id present
-prompt_async accepted (204)
-ASSERT_FAILED: permission request was asked and replied
-=== messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"Run the shell command: echo G12_PERM_OK and tell me what it printed.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"bash","callID":"chatcmpl-tool-b3d20392fd2ea586","input":"{\"command\":\"echo G12_PERM_OK\"}","output":"\"G12_PERM_OK\\n\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"text","text":"It printed `G12_PERM_OK`.","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
---- assistant text ---
+16 | }
+17 | 
+18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
+19 |   const sep = path.includes("?") ? "&" : "?"
+20 |   const url = BASE + path + sep + "directory=" + encodeURIComponent(directory)
+21 |   const r = await fetch(url, {
+                       ^
+error: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+  path: "http://127.0.0.1:4111/session?directory=%2Fdata%2Fdata%2Fai.opencode.android.debug%2Ffiles%2Fworkspaces%2Fgates",
+ errno: 0,
+  code: "ECONNRESET"
 
-It printed `G12_PERM_OK`.
---- bash tool outputs ---
-G12_PERM_OK
+      at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
+      at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
-asks seen: []
-assert ok: agent turn did not fail
-assert ok: command output present after approval
-ASSERT_FAILED: permission.v2.asked event observed
-G12_FAIL
+Bun v1.3.14 (Linux x64)
