@@ -43,25 +43,35 @@
 #include <sys/syscall.h>
 
 /*
- * Syscalls whose SECCOMP_RET_TRAP is safe to translate to -ENOSYS because the
- * caller (Bun/Zig/libc) has a working fallback for "not supported by the
- * kernel". Everything else is NOT safe: e.g. mkdir/mkdirat ENOSYS is fatal
- * because the caller cannot synthesize the created directory. For unknown
- * syscalls we do NOT guess — we log once and still return ENOSYS so the process
- * survives (a SIGSYS kill is worse), and the log makes the real need visible.
+ * A seccomp TRAP must be translated into the errno the call would have
+ * returned on an old/unsupported kernel so the caller takes its normal
+ * fallback. Most "missing new syscall" cases want -ENOSYS, but file-existence
+ * probes (access/faccessat) want -ENOENT: Bun's startup and recursive mkdir
+ * call access(F_OK) to decide whether a path exists; mapping that to ENOSYS
+ * aborts its global-dir setup ("ENOSYS: mkdir <xdg>/data/opencode"), whereas
+ * ENOENT just means "absent" so mkdir proceeds (and recursive mkdir already
+ * tolerates EEXIST on the leaves the host pre-created).
  *
- * Uses __NR_* from <sys/syscall.h>, which the NDK provides per-ABI, so the
- * same switch is correct on both x86_64 (CI emulator) and arm64-v8a (devices).
+ *  - ENOSYS: syscalls with a real userspace fallback when unsupported.
+ *  - ENOENT: path-existence probes that should report "path not present".
+ *
+ * Uses __NR_* from <sys/syscall.h> (per-ABI from the NDK), so the table is
+ * correct on both x86_64 (CI emulator) and arm64-v8a (devices).
  */
-static int is_safe_enosys(long nr) {
-    if (nr == __NR_epoll_pwait2) return 1;   /* -> epoll_pwait */
-    if (nr == __NR_close_range) return 1;     /* -> /proc/self/fd loop */
-    if (nr == __NR_preadv2) return 1;         /* -> preadv */
-    if (nr == __NR_pwritev2) return 1;        /* -> pwritev */
-    if (nr == __NR_clone3) return 1;          /* -> clone */
-    if (nr == __NR_faccessat2) return 1;      /* -> faccessat */
-    if (nr == __NR_statx) return 1;           /* -> fstatat */
-    return 0;
+static int map_errno(long nr) {
+    switch (nr) {
+        case __NR_epoll_pwait2: return ENOSYS;   /* -> epoll_pwait */
+        case __NR_close_range: return ENOSYS;    /* -> /proc/self/fd loop */
+        case __NR_preadv2:     return ENOSYS;   /* -> preadv */
+        case __NR_pwritev2:    return ENOSYS;   /* -> pwritev */
+        case __NR_clone3:      return ENOSYS;   /* -> clone */
+        case __NR_statx:       return ENOSYS;   /* -> fstatat */
+        case __NR_faccessat2:  return ENOSYS;   /* -> faccessat libc wrapper */
+        /* Raw access() (x86_64=21 / arm64 __NR_access): report the probed path
+           as absent so Bun's existence checks/recursive mkdir behave normally. */
+        case __NR_access:      return ENOENT;
+        default:               return ENOSYS;
+    }
 }
 
 static long trap_number(ucontext_t *uc) {
@@ -81,25 +91,23 @@ static void sigsys_handler(int signo, siginfo_t *info, void *uctx) {
     (void)info;
     ucontext_t *uc = (ucontext_t *)uctx;
     long nr = trap_number(uc);
-    int safe = is_safe_enosys(nr);
+    int err = map_errno(nr);
     static int logged_unknown[64];
-    if (!safe && nr >= 0 && nr < 64 && !logged_unknown[nr]) {
+    if (nr != __NR_access && nr != __NR_epoll_pwait2 && nr != __NR_faccessat2
+        && nr >= 0 && nr < 64 && !logged_unknown[nr]) {
         logged_unknown[nr] = 1;
-        dprintf(2, "[seccomp] trapped syscall %ld -> ENOSYS (NOT in known-safe "
-                   "fallback set; mapping anyway so the process survives)\n", nr);
+        dprintf(2, "[seccomp] trapped syscall %ld -> -%d (mapped so the process survives)\n",
+                nr, err);
     }
 #if defined(__aarch64__)
-    /* arm64: the saved PC points AT the trapping `svc #0`, so skip its 4 bytes
-       and set x0 = -ENOSYS (the syscall return register). */
-    uc->uc_mcontext.regs[0] = (unsigned long long)(-ENOSYS);
+    /* arm64: saved PC points AT the trapping `svc #0`; skip its 4 bytes and
+       put -errno in x0 (the syscall return register). */
+    uc->uc_mcontext.regs[0] = (unsigned long long)(-err);
     uc->uc_mcontext.pc += 4;
 #elif defined(__x86_64__)
-    /* x86-64: on a seccomp TRAP the kernel has ALREADY advanced RIP past the
-       2-byte `syscall` instruction (the frame points at the next insn), so we
-       only set RAX = -ENOSYS and must NOT touch RIP. Verified on host with a
-       BPF filter that traps syscall 441 (epoll_pwait2): the call returns
-       -1/errno=ENOSYS while allowed syscalls are unaffected. */
-    uc->uc_mcontext.gregs[REG_RAX] = (greg_t)(-ENOSYS);
+    /* x86-64: the kernel already advanced RIP past the 2-byte `syscall`, so only
+       set RAX = -errno. Verified on host: epoll_pwait2->ENOSYS, access->ENOENT. */
+    uc->uc_mcontext.gregs[REG_RAX] = (greg_t)(-(long)err);
 #else
 #error "seccomp-shim: unsupported ABI (need arm64-v8a or x86_64)"
 #endif
