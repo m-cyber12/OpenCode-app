@@ -150,6 +150,15 @@ note "=== [3/6] Git $GIT_PIN per ABI (Android/Bionic, NO_PERL recipe) ==="
 # stay inside the app policy and no external shell/package is required at run
 # time. Local Git operations remain fully enabled; network/curl helpers remain
 # disabled exactly as in the Phase 3 recipe.
+curl -fsSL --retry 3 --max-time 180 -o "$WORK/zlib.tgz" \
+  "https://github.com/madler/zlib/archive/refs/tags/${ZLIB_PIN}.tar.gz"
+rm -rf "$WORK/zlib-src" && mkdir -p "$WORK/zlib-src"
+tar xzf "$WORK/zlib.tgz" -C "$WORK/zlib-src" --strip-components=1
+rm -rf "$WORK/git-src"
+timeout 300 git clone -q --depth 1 --branch "$GIT_PIN" https://github.com/git/git "$WORK/git-src"
+(cd "$WORK/git-src" && git rev-parse HEAD > "$ENGINE/git.upstream.commit.txt")
+note "git source: $(cat "$ENGINE/git.upstream.commit.txt")"
+
 build_git_android() {  # $1=abi $2=target triple $3=lib dir
   local abi="$1" triple="$2" outdir="$3"
   local cc="$NDK_BIN/${triple}29-clang"
