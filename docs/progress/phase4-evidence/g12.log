@@ -1,16 +1,11 @@
-16 | }
-17 | 
-18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
-19 |   const sep = path.includes("?") ? "&" : "?"
-20 |   const url = BASE + path + sep + "directory=" + encodeURIComponent(directory)
-21 |   const r = await fetch(url, {
-                       ^
-error: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
-  path: "http://127.0.0.1:4111/session?directory=%2Fdata%2Fdata%2Fai.opencode.android.debug%2Ffiles%2Fworkspaces%2Fgates",
- errno: 0,
-  code: "ECONNRESET"
-
-      at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
-      at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
+112 | }
+113 | 
+114 | // Create a session bound to the fixture directory.
+115 | export async function createSession(title) {
+116 |   const r = await post("/session", { title })
+117 |   if (!r.ok) throw new Error("session create failed: " + r.status + " " + r.text.slice(0, 300))
+                             ^
+error: session create failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_4de0cecd"}}
+      at createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:117:24)
 
 Bun v1.3.14 (Linux x64)

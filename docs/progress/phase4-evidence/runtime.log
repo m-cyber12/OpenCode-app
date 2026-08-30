@@ -1,106 +1,85 @@
-2026-08-30T08:31:47.582Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-2026-08-30T08:31:47.599Z [host] state -> EXTRACTING (validating embedded runtime)
-2026-08-30T08:31:47.604Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
-2026-08-30T08:31:47.617Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
-2026-08-30T08:31:48.882Z [host] extraction complete: 30 files validated
-2026-08-30T08:31:48.883Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-2026-08-30T08:31:48.884Z [host] symlink bun -> /data/app/~~8LIHyLyAQ_1KUN3fMd-tqA==/ai.opencode.android.debug-mP5Wv4CwpFXFPhQ766-fgw==/lib/x86_64/libbun.so (exec=true)
-2026-08-30T08:31:48.885Z [host] symlink git -> /data/app/~~8LIHyLyAQ_1KUN3fMd-tqA==/ai.opencode.android.debug-mP5Wv4CwpFXFPhQ766-fgw==/lib/x86_64/libgit.so (exec=true)
-2026-08-30T08:31:48.885Z [host] symlink rg -> /data/app/~~8LIHyLyAQ_1KUN3fMd-tqA==/ai.opencode.android.debug-mP5Wv4CwpFXFPhQ766-fgw==/lib/x86_64/librg.so (exec=true)
-2026-08-30T08:31:48.888Z [host] generated fresh server password (stored 600 at server-password)
-2026-08-30T08:31:48.890Z [host] state -> STARTING (starting OpenCode server (attempt 1))
-2026-08-30T08:31:48.895Z [host] server started: pid=6097 abi=x86_64 port=4111
-2026-08-30T08:31:48.950Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-08-30T08:31:50.414Z [server] [stderr] SERVER_BOOT_FAILED
-2026-08-30T08:31:50.421Z [server] [stderr] Error: EPERM: operation not permitted, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
-2026-08-30T08:31:50.422Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
-2026-08-30T08:31:50.423Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
-2026-08-30T08:31:50.424Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
-2026-08-30T08:31:50.425Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
-2026-08-30T08:32:34.065Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
-2026-08-30T08:32:34.068Z [host] server stopped (graceful=true)
-2026-08-30T08:32:34.068Z [host] restart backoff: 937ms (attempt 1/8)
-2026-08-30T08:32:35.070Z [host] state -> STARTING (starting OpenCode server (attempt 2))
-2026-08-30T08:32:35.104Z [host] server started: pid=6162 abi=x86_64 port=4111
-2026-08-30T08:32:35.146Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-08-30T08:32:36.371Z [server] [stderr] SERVER_BOOT_FAILED
-2026-08-30T08:32:36.372Z [server] [stderr] Error: EPERM: operation not permitted, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
-2026-08-30T08:32:36.373Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
-2026-08-30T08:32:36.374Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
-2026-08-30T08:32:36.375Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
-2026-08-30T08:32:36.375Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
-2026-08-30T08:33:20.231Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
-2026-08-30T08:33:20.234Z [host] server stopped (graceful=true)
-2026-08-30T08:33:20.235Z [host] restart backoff: 2526ms (attempt 2/8)
-2026-08-30T08:33:22.987Z [host] state -> STARTING (starting OpenCode server (attempt 3))
-2026-08-30T08:33:23.000Z [host] server started: pid=6212 abi=x86_64 port=4111
-2026-08-30T08:33:23.030Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-08-30T08:33:24.349Z [server] [stderr] SERVER_BOOT_FAILED
-2026-08-30T08:33:24.350Z [server] [stderr] Error: EPERM: operation not permitted, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
-2026-08-30T08:33:24.351Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
-2026-08-30T08:33:24.352Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
-2026-08-30T08:33:24.352Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
-2026-08-30T08:33:24.353Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
-2026-08-30T08:34:08.134Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
-2026-08-30T08:34:08.137Z [host] server stopped (graceful=true)
-2026-08-30T08:34:08.138Z [host] restart backoff: 5057ms (attempt 3/8)
-2026-08-30T08:34:13.392Z [host] state -> STARTING (starting OpenCode server (attempt 4))
-2026-08-30T08:34:13.398Z [host] server started: pid=6225 abi=x86_64 port=4111
-2026-08-30T08:34:13.444Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-08-30T08:34:14.716Z [server] [stderr] SERVER_BOOT_FAILED
-2026-08-30T08:34:14.717Z [server] [stderr] Error: EPERM: operation not permitted, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
-2026-08-30T08:34:14.718Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
-2026-08-30T08:34:14.719Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
-2026-08-30T08:34:14.720Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
-2026-08-30T08:34:14.721Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
-2026-08-30T08:34:58.529Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
-2026-08-30T08:34:58.532Z [host] server stopped (graceful=true)
-2026-08-30T08:34:58.533Z [host] restart backoff: 4125ms (attempt 4/8)
-2026-08-30T08:35:02.787Z [host] state -> STARTING (starting OpenCode server (attempt 5))
-2026-08-30T08:35:02.803Z [host] server started: pid=6615 abi=x86_64 port=4111
-2026-08-30T08:35:02.843Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-08-30T08:35:04.110Z [server] [stderr] SERVER_BOOT_FAILED
-2026-08-30T08:35:04.111Z [server] [stderr] Error: EPERM: operation not permitted, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
-2026-08-30T08:35:04.112Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
-2026-08-30T08:35:04.113Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
-2026-08-30T08:35:04.114Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
-2026-08-30T08:35:04.115Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
-2026-08-30T08:35:47.940Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
-2026-08-30T08:35:47.944Z [host] server stopped (graceful=true)
-2026-08-30T08:35:47.945Z [host] restart backoff: 10706ms (attempt 5/8)
-2026-08-30T08:35:58.702Z [host] state -> STARTING (starting OpenCode server (attempt 6))
-2026-08-30T08:35:58.707Z [host] server started: pid=6628 abi=x86_64 port=4111
-2026-08-30T08:35:58.749Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-08-30T08:35:59.984Z [server] [stderr] SERVER_BOOT_FAILED
-2026-08-30T08:35:59.985Z [server] [stderr] Error: EPERM: operation not permitted, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
-2026-08-30T08:35:59.986Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
-2026-08-30T08:35:59.987Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
-2026-08-30T08:35:59.988Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
-2026-08-30T08:35:59.989Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
-2026-08-30T08:36:43.847Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
-2026-08-30T08:36:43.850Z [host] server stopped (graceful=true)
-2026-08-30T08:36:43.851Z [host] restart backoff: 30000ms (attempt 6/8)
-2026-08-30T08:37:13.871Z [host] state -> STARTING (starting OpenCode server (attempt 7))
-2026-08-30T08:37:13.880Z [host] server started: pid=6668 abi=x86_64 port=4111
-2026-08-30T08:37:13.904Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-08-30T08:37:15.170Z [server] [stderr] SERVER_BOOT_FAILED
-2026-08-30T08:37:15.171Z [server] [stderr] Error: EPERM: operation not permitted, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
-2026-08-30T08:37:15.172Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
-2026-08-30T08:37:15.173Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
-2026-08-30T08:37:15.174Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
-2026-08-30T08:37:15.175Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
-2026-08-30T08:37:59.026Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
-2026-08-30T08:37:59.029Z [host] server stopped (graceful=true)
-2026-08-30T08:37:59.030Z [host] restart backoff: 22132ms (attempt 7/8)
-2026-08-30T08:38:21.296Z [host] state -> STARTING (starting OpenCode server (attempt 8))
-2026-08-30T08:38:21.301Z [host] server started: pid=6699 abi=x86_64 port=4111
-2026-08-30T08:38:21.345Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-08-30T08:38:22.598Z [server] [stderr] SERVER_BOOT_FAILED
-2026-08-30T08:38:22.599Z [server] [stderr] Error: EPERM: operation not permitted, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
-2026-08-30T08:38:22.600Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
-2026-08-30T08:38:22.601Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
-2026-08-30T08:38:22.602Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
-2026-08-30T08:38:22.603Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
-2026-08-30T08:39:06.441Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
-2026-08-30T08:39:06.444Z [host] server stopped (graceful=true)
-2026-08-30T08:39:06.445Z [host] state -> FATAL (runtime failed 8 start attempts — giving up (see diagnostics))
+2026-08-30T09:02:11.612Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-08-30T09:02:11.821Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-08-30T09:02:11.967Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-08-30T09:02:11.986Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-08-30T09:02:12.849Z [host] extraction complete: 30 files validated
+2026-08-30T09:02:12.850Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-08-30T09:02:12.851Z [host] symlink bun -> /data/app/~~dwg2dWMBZAC7gZxi-16wNw==/ai.opencode.android.debug-HDDNgSGyZCTeHzkp-SnQyQ==/lib/x86_64/libbun.so (exec=true)
+2026-08-30T09:02:12.852Z [host] symlink git -> /data/app/~~dwg2dWMBZAC7gZxi-16wNw==/ai.opencode.android.debug-HDDNgSGyZCTeHzkp-SnQyQ==/lib/x86_64/libgit.so (exec=true)
+2026-08-30T09:02:12.853Z [host] symlink rg -> /data/app/~~dwg2dWMBZAC7gZxi-16wNw==/ai.opencode.android.debug-HDDNgSGyZCTeHzkp-SnQyQ==/lib/x86_64/librg.so (exec=true)
+2026-08-30T09:02:12.856Z [host] generated fresh server password (stored 600 at server-password)
+2026-08-30T09:02:12.857Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-30T09:02:12.910Z [host] server started: pid=6330 abi=x86_64 port=4111
+2026-08-30T09:02:12.984Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T09:02:15.214Z [server] SERVER_READY http://127.0.0.1:4111/
+2026-08-30T09:02:15.278Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
+2026-08-30T09:02:15.279Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-08-30T09:03:25.070Z [crash] server exited unexpectedly code=137
+2026-08-30T09:03:25.072Z [host] state -> CRASHED_RESTARTING (server exited (code=137); restarting)
+2026-08-30T09:03:25.073Z [host] restart backoff: 500ms (attempt 0/8)
+2026-08-30T09:03:25.575Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-30T09:03:25.580Z [host] server started: pid=6803 abi=x86_64 port=4111
+2026-08-30T09:03:25.630Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T09:03:27.795Z [server] SERVER_READY http://127.0.0.1:4111/
+2026-08-30T09:03:32.615Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
+2026-08-30T09:03:32.616Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-08-30T09:03:38.280Z [crash] server exited unexpectedly code=137
+2026-08-30T09:03:38.282Z [host] state -> CRASHED_RESTARTING (server exited (code=137); restarting)
+2026-08-30T09:03:38.283Z [host] restart backoff: 500ms (attempt 0/8)
+2026-08-30T09:03:38.785Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-30T09:03:38.852Z [host] server started: pid=6863 abi=x86_64 port=4111
+2026-08-30T09:03:38.860Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T09:03:40.219Z [server] [stderr] SERVER_BOOT_FAILED
+2026-08-30T09:03:40.220Z [server] [stderr] ReferenceError: CORRUPT_MARKER is not defined
+2026-08-30T09:03:40.221Z [server] [stderr]     at /data/user/0/ai.opencode.android.debug/files/opencode/dist/node/node.js:674836:15
+2026-08-30T09:03:40.222Z [server] [stderr]     at processTicksAndRejections (native:7:39)
+2026-08-30T09:04:23.984Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
+2026-08-30T09:04:23.987Z [host] server stopped (graceful=true)
+2026-08-30T09:04:23.987Z [host] restart backoff: 1248ms (attempt 1/8)
+2026-08-30T09:04:25.239Z [host] state -> STARTING (starting OpenCode server (attempt 2))
+2026-08-30T09:04:25.258Z [host] server started: pid=6903 abi=x86_64 port=4111
+2026-08-30T09:04:25.296Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T09:04:26.682Z [server] [stderr] SERVER_BOOT_FAILED
+2026-08-30T09:04:26.683Z [server] [stderr] ReferenceError: CORRUPT_MARKER is not defined
+2026-08-30T09:04:26.684Z [server] [stderr]     at /data/user/0/ai.opencode.android.debug/files/opencode/dist/node/node.js:674836:15
+2026-08-30T09:04:26.685Z [server] [stderr]     at processTicksAndRejections (native:7:39)
+2026-08-30T09:05:10.396Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
+2026-08-30T09:05:10.399Z [host] server stopped (graceful=true)
+2026-08-30T09:05:10.400Z [host] restart backoff: 2375ms (attempt 2/8)
+2026-08-30T09:05:12.903Z [host] state -> STARTING (starting OpenCode server (attempt 3))
+2026-08-30T09:05:12.921Z [host] server started: pid=6912 abi=x86_64 port=4111
+2026-08-30T09:05:12.955Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T09:05:14.374Z [server] [stderr] SERVER_BOOT_FAILED
+2026-08-30T09:05:14.375Z [server] [stderr] ReferenceError: CORRUPT_MARKER is not defined
+2026-08-30T09:05:14.376Z [server] [stderr]     at /data/user/0/ai.opencode.android.debug/files/opencode/dist/node/node.js:674836:15
+2026-08-30T09:05:14.377Z [server] [stderr]     at processTicksAndRejections (native:7:39)
+2026-08-30T09:05:58.057Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
+2026-08-30T09:05:58.060Z [host] server stopped (graceful=true)
+2026-08-30T09:05:58.061Z [host] restart backoff: 5959ms (attempt 3/8)
+2026-08-30T09:06:04.066Z [host] state -> STARTING (starting OpenCode server (attempt 4))
+2026-08-30T09:06:04.110Z [host] server started: pid=6946 abi=x86_64 port=4111
+2026-08-30T09:06:04.114Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T09:06:05.492Z [server] [stderr] SERVER_BOOT_FAILED
+2026-08-30T09:06:05.493Z [server] [stderr] ReferenceError: CORRUPT_MARKER is not defined
+2026-08-30T09:06:05.494Z [server] [stderr]     at /data/user/0/ai.opencode.android.debug/files/opencode/dist/node/node.js:674836:15
+2026-08-30T09:06:05.495Z [server] [stderr]     at processTicksAndRejections (native:7:39)
+2026-08-30T09:06:49.246Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
+2026-08-30T09:06:49.249Z [host] server stopped (graceful=true)
+2026-08-30T09:06:49.250Z [host] restart backoff: 6593ms (attempt 4/8)
+2026-08-30T09:06:56.006Z [host] state -> STARTING (starting OpenCode server (attempt 5))
+2026-08-30T09:06:56.041Z [host] server started: pid=7604 abi=x86_64 port=4111
+2026-08-30T09:06:56.050Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T09:06:57.430Z [server] [stderr] SERVER_BOOT_FAILED
+2026-08-30T09:06:57.431Z [server] [stderr] ReferenceError: CORRUPT_MARKER is not defined
+2026-08-30T09:06:57.432Z [server] [stderr]     at /data/user/0/ai.opencode.android.debug/files/opencode/dist/node/node.js:674836:15
+2026-08-30T09:06:57.432Z [server] [stderr]     at processTicksAndRejections (native:7:39)
+2026-08-30T09:07:41.179Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
+2026-08-30T09:07:41.182Z [host] server stopped (graceful=true)
+2026-08-30T09:07:41.183Z [host] restart backoff: 21187ms (attempt 5/8)
+2026-08-30T09:08:02.449Z [host] state -> STARTING (starting OpenCode server (attempt 6))
+2026-08-30T09:08:02.454Z [host] server started: pid=7618 abi=x86_64 port=4111
+2026-08-30T09:08:02.503Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T09:08:03.870Z [server] [stderr] SERVER_BOOT_FAILED
+2026-08-30T09:08:03.871Z [server] [stderr] ReferenceError: CORRUPT_MARKER is not defined
+2026-08-30T09:08:03.872Z [server] [stderr]     at /data/user/0/ai.opencode.android.debug/files/opencode/dist/node/node.js:674836:15
+2026-08-30T09:08:03.873Z [server] [stderr]     at processTicksAndRejections (native:7:39)
