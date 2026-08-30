@@ -98,29 +98,74 @@ static long trap_number(ucontext_t *uc) {
  * actually created, and mkdirat (bionic's own mkdir implementation) is permitted.
  */
 #if defined(__x86_64__)
+/* Emulate a legacy (non-*at) syscall via the permitted *at form against
+ * AT_FDCWD. Returns >=0 success, or -errno (negative). Bun/Zig and the Zig
+ * `effect` FileSystem layer occasionally call the legacy forms; bionic
+ * itself implements them via the *at syscalls, which the Android filter
+ * allows. */
 static long emulate(int nr,
                     long a0, long a1, long a2, long a3, long a4) {
     switch (nr) {
-        case 83: { /* mkdir(path, mode) -> mkdirat(AT_FDCWD, path, mode) */
+        /* mkdir(path, mode) */
+        case 83: {
             const char *p = (const char *)a0;
             long r = syscall(__NR_mkdirat, AT_FDCWD, p, a1);
             if (r == 0) return 0;
             int e = errno;
-            /* If the directory already exists (the host pre-creates the
-               OpenCode XDG subtree), treat mkdir as success — Bun's recursive
-               mkdir ignores EEXIST anyway. Re-check with faccessat to be sure. */
-            if (syscall(__NR_faccessat, AT_FDCWD, p, 0 /*F_OK*/, 0) == 0)
-                return 0;
-            static int logged_mkdir = 0;
-            if (!logged_mkdir) {
-                logged_mkdir = 1;
-                dprintf(2, "[seccomp] mkdirat(%s) failed errno=%d\n",
-                        p ? p : "(null)", e);
-            }
+            if (e == EEXIST) return 0; /* recursive mkdir tolerates existing */
+            if (syscall(__NR_faccessat, AT_FDCWD, p, 0, 0) == 0)
+                return 0;              /* target already present -> success */
+            static int l1 = 0;
+            if (!l1) { l1 = 1; dprintf(2, "[seccomp] mkdirat(%s) errno=%d\n", p?p:"(null)", e); }
             return -e;
         }
-        case 21:  /* access(path, mode) -> faccessat(AT_FDCWD, path, mode, 0) */
-            return syscall(__NR_faccessat, AT_FDCWD, (const char *)a0, a1, 0);
+        /* access(path, mode) */
+        case 21: {
+            const char *p = (const char *)a0;
+            long r = syscall(__NR_faccessat, AT_FDCWD, p, a1, 0);
+            if (r == 0) return 0;
+            int e = errno;
+            /* A missing file must report ENOENT (existence probe). */
+            if (e == ENOENT) return -ENOENT;
+            static int l2 = 0;
+            if (!l2) { l2 = 1; dprintf(2, "[seccomp] faccessat(%s,0x%lx) errno=%d\n", p?p:"(null)", a1, e); }
+            return -e;
+        }
+        /* rename(old, new) -> renameat(AT_FDCWD, old, AT_FDCWD, new) */
+        case 82:
+            return syscall(__NR_renameat, AT_FDCWD, (const char *)a0,
+                           AT_FDCWD, (const char *)a1);
+        /* open(path, flags, mode) -> openat(AT_FDCWD, ...) */
+        case 2:
+            return syscall(__NR_openat, AT_FDCWD, (const char *)a0, a1, a2);
+        /* stat(path, st) -> newfstatat(AT_FDCWD, path, st, AT_SYMLINK_NOFOLLOW=0) */
+        case 4:
+            return syscall(__NR_newfstatat, AT_FDCWD, (const char *)a0,
+                           (void *)a1, 0);
+        /* lstat(path, st) -> newfstatat(..., AT_SYMLINK_NOFOLLOW) */
+        case 6:
+            return syscall(__NR_newfstatat, AT_FDCWD, (const char *)a0,
+                           (void *)a1, 0x100 /*AT_SYMLINK_NOFOLLOW*/);
+        /* unlink(path) -> unlinkat(AT_FDCWD, path, 0) */
+        case 87:
+            return syscall(__NR_unlinkat, AT_FDCWD, (const char *)a0, 0);
+        /* rmdir(path) -> unlinkat(AT_FDCWD, path, AT_REMOVEDIR) */
+        case 84:
+            return syscall(__NR_unlinkat, AT_FDCWD, (const char *)a0, 0x200 /*AT_REMOVEDIR*/);
+        /* chmod(path, mode) -> fchmodat(AT_FDCWD, path, mode, 0) */
+        case 90:
+            return syscall(__NR_fchmodat, AT_FDCWD, (const char *)a0, a1, 0);
+        /* chown(path, uid, gid) -> fchownat(AT_FDCWD, path, uid, gid, 0) */
+        case 92:
+            return syscall(__NR_fchownat, AT_FDCWD, (const char *)a0, a1, a2, 0);
+        /* readlink(path, buf, bufsiz) -> readlinkat(AT_FDCWD, path, buf, n) */
+        case 89:
+            return syscall(__NR_readlinkat, AT_FDCWD, (const char *)a0,
+                           (char *)a1, (long)a2);
+        /* symlink(target, link) -> symlinkat(target, AT_FDCWD, link) */
+        case 88:
+            return syscall(__NR_symlinkat, (const char *)a0, AT_FDCWD,
+                           (const char *)a1);
         default:
             return -ENOSYS;
     }
