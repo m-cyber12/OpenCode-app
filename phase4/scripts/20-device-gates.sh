@@ -49,12 +49,14 @@ count_launchers() {
 }
 
 native_lib_dir() {
-  local apk base arch archdir
+  local apk base arch
   apk=$(adb shell pm path "$PKG" | tr -d '\r' | sed 's/^package://' | head -1)
   base=$(dirname "$apk")
   arch=$(adb shell getprop ro.product.cpu.abi | tr -d '\r')
-  case "$arch" in arm64-v8a|x86_64) archdir=lib64;; *) archdir=lib;; esac
-  echo "$base/$archdir"
+  # PackageManager's nativeLibraryDir is the ABI directory below the
+  # installed split/base APK directory (for example .../lib/x86_64).  Do not
+  # guess lib64 here: that is a host convention, not Android's layout.
+  echo "$base/lib/$arch"
 }
 
 push_file_runas() { # $1=local  $2=remote-relative-to-files
@@ -118,7 +120,13 @@ export function greet(name) {
   return "hello " + name;
 }
 EOF
-rash "cd '$WORKDIR' && git init -q && git config user.email gates@opencode.local && git config user.name gates && git add -A && git commit -qm 'gates fixture' && git branch -M main && echo FIXTURE_GIT_OK"
+# The fixture is created before the app starts, so RuntimeManager has not yet
+# made filesDir/bin/git. Invoke the same packaged Android/Bionic executable
+# directly from nativeLibraryDir; this keeps provisioning on the product path
+# and avoids accidentally using a host or user-installed Git.
+GIT_NATIVE="$(native_lib_dir)/libgit.so"
+log "fixture Git: $GIT_NATIVE"
+rash "cd '$WORKDIR' && export GIT_AUTHOR_NAME=gates GIT_AUTHOR_EMAIL=gates@opencode.local GIT_COMMITTER_NAME=gates GIT_COMMITTER_EMAIL=gates@opencode.local && '$GIT_NATIVE' init -q -b main && '$GIT_NATIVE' config user.email gates@opencode.local && '$GIT_NATIVE' config user.name gates && '$GIT_NATIVE' add -A && '$GIT_NATIVE' commit -qm 'gates fixture' && '$GIT_NATIVE' checkout -q -b feature/g9 && printf '\\nG9 feature work\\n' >> notes.txt && '$GIT_NATIVE' add notes.txt && '$GIT_NATIVE' commit -qm 'gates fixture: feature branch commit' && '$GIT_NATIVE' checkout -q main && echo FIXTURE_GIT_OK"
 
 if [ -d "$OUT/mcp/node_modules/@modelcontextprotocol" ]; then
   tar czf "$OUT/mcp.tgz" -C "$OUT/mcp" node_modules mcp-server.js mcp-roundtrip.js
@@ -400,24 +408,27 @@ log "H6 leftover launchers=$LEFTOVER port-code=$CODE"
 [ "$LEFTOVER" = "0" ] && [ "$CODE" = "000" ] && H6=0
 hp "$H6" 6 "graceful-stop-no-zombies"
 
-log "=== G14 reconnect: sessions persist across restart ==="
+log "=== G13/G14 stop-restart + reconnect: sessions persist ==="
+G13=1
 G14=1
 # H6 stopped the runtime (userStopRequested) and the FGS. A plain task-to-front
 # am start (result code 3) can reuse the task without delivering onStart, so do
 # a clean cold launch: force-stop the app then start MainActivity, which
-# onCreate/onStart the runtime via RuntimeService. Sessions persist in the
-# on-disk SQLite DB, so they survive process death.
+# onCreate/onStart the runtime via RuntimeService. This completes the Phase 3
+# G13 stop/restart contract after H6 proved the stop half; the on-disk SQLite
+# DB is then checked for the Phase 3 G14 reconnect contract.
 adb shell am force-stop "$PKG"
 sleep 2
 adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
 sleep 10
 PASSWD=$(rash "cat '$FILES/secrets/server-password' 2>/dev/null" | tr -d '\r\n ')
 if [ "$(wait_healthy 150)" = "HEALTH_OK" ]; then
+  [ "$H6" = "0" ] && G13=0
   NSESS=$(curl -s -u "opencode:$PASSWD" "http://127.0.0.1:4111/session?directory=$WORKDIR" 2>/dev/null | grep -o 'ses_' | wc -l | tr -d ' ')
   log "G14 sessions after restart: $NSESS"
   [ "${NSESS:-0}" -ge 1 ] && G14=0
 fi
-gp "$G14" 14 "reconnect-sessions-persist"
+gp "$G13" 13 "stop-restart"; gp "$G14" 14 "reconnect-sessions-persist"
 
 # ---------------------------------------------------------------------------
 log "=== H7 logs & diagnostics ==="
@@ -449,7 +460,7 @@ rash "ls -la '$FILES/opencode/dist/node' '$FILES/bin' 2>/dev/null" > "$EV/device
 cat >> "$SUMMARY" <<EOF
 PHASE4_SUMMARY $(date -u +%FT%TZ)
 h_total=8 h_pass=$HPASS h_fail=$HFAIL
-g_total=13 g_pass=$GPASS g_fail=$GFAIL
+g_total=$((GPASS + GFAIL)) g_pass=$GPASS g_fail=$GFAIL
 model_available=$MODEL
 device_abi=$DEV_ABI sdk=$SDK
 EOF
