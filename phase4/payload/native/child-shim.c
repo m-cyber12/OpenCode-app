@@ -51,9 +51,15 @@
 
 struct rule { long nr; int err; };
 
-/* Every "new / optional" syscall a static musl git/rg might probe, each mapped
-   to -ENOSYS so the tool takes its old-kernel fallback (or simply skips the
-   optional feature). access() -> ENOENT (path-existence probe). */
+/* New / optional syscalls a static musl git/rg might issue that the Android
+   zygote app policy denies with SIGSYS. Each has an old-kernel fallback or is
+   a pure capability probe, so -ENOSYS is what the caller would get on a kernel
+   without the call. access() -> ENOENT (path-existence probe).
+
+   rseq is deliberately NOT mapped: the kernel supports rseq, and musl treats
+   ENOSYS from a rseq-capable kernel as a hard error (abort/SIGTRAP observed);
+   musl only registers rseq best-effort and is fine if the call SUCCEEDS or is
+   never reached. On the app policy rseq is allowed anyway (bionic uses it). */
 static int build_rules(struct rule *r) {
     int n = 0;
     r[n++] = (struct rule){ (long)__NR_epoll_pwait2, ENOSYS };
@@ -67,39 +73,7 @@ static int build_rules(struct rule *r) {
     r[n++] = (struct rule){ (long)__NR_clone3, ENOSYS };
     r[n++] = (struct rule){ (long)__NR_faccessat2, ENOSYS };
     r[n++] = (struct rule){ (long)__NR_statx, ENOSYS };
-#ifdef __NR_rseq
-    r[n++] = (struct rule){ (long)__NR_rseq, ENOSYS };   /* musl: best-effort */
-#endif
-#ifdef __NR_openat2
-    r[n++] = (struct rule){ (long)__NR_openat2, ENOSYS }; /* musl uses openat */
-#endif
-#ifdef __NR_futex_waitv
-    r[n++] = (struct rule){ (long)__NR_futex_waitv, ENOSYS }; /* -> futex */
-#endif
-#ifdef __NR_process_madvise
-    r[n++] = (struct rule){ (long)__NR_process_madvise, ENOSYS };
-#endif
-#ifdef __NR_cachestat
-    r[n++] = (struct rule){ (long)__NR_cachestat, ENOSYS };
-#endif
-#ifdef __NR_set_mempolicy_home_node
-    r[n++] = (struct rule){ (long)__NR_set_mempolicy_home_node, ENOSYS };
-#endif
-#ifdef __NR_map_shadow_stack
-    r[n++] = (struct rule){ (long)__NR_map_shadow_stack, ENOSYS };
-#endif
-#ifdef __NR_landlock_create_ruleset
-    r[n++] = (struct rule){ (long)__NR_landlock_create_ruleset, ENOSYS };
-#endif
-#ifdef __NR_landlock_add_rule
-    r[n++] = (struct rule){ (long)__NR_landlock_add_rule, ENOSYS };
-#endif
-#ifdef __NR_landlock_restrict_self
-    r[n++] = (struct rule){ (long)__NR_landlock_restrict_self, ENOSYS };
-#endif
-#ifdef __NR_memfd_secret
-    r[n++] = (struct rule){ (long)__NR_memfd_secret, ENOSYS };
-#endif
+    /* rseq intentionally omitted (see block comment). */
 #ifdef __NR_access
     r[n++] = (struct rule){ (long)__NR_access, ENOENT };
 #endif
@@ -152,10 +126,12 @@ static int install_filter(void) {
         fprintf(stderr, "[child-shim] no_new_privs failed: %s\n", strerror(errno));
         return -1;
     }
+    fprintf(stderr, "[child-shim] installing filter (n=%d len=%d)...\n", n, prog.len);
     if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &prog) < 0) {
         fprintf(stderr, "[child-shim] filter NOT installed: %s\n", strerror(errno));
         return -1;
     }
+    fprintf(stderr, "[child-shim] filter installed\n");
     return 0;
 }
 

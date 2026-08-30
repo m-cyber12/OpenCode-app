@@ -202,8 +202,11 @@ log "=== early diagnostics (app uid) ==="
   rash "cd '$WORKDIR' && '$FILES/bin/rg' --version 2>&1; echo child_rg_rc=\$?"
   echo "--- git status THROUGH the child-shim in the gates repo (the G09 path) ---"
   rash "cd '$WORKDIR' && '$FILES/bin/git' status --short 2>&1; echo child_git_status_rc=\$?"
-  echo "--- any seccomp kills logged ---"
-  adb logcat -d 2>/dev/null | grep -aiE 'disallowed|fatal signal 31|SIGSYS|Bad system' | grep -aviE 'avc:' | tail -10 || echo "(no seccomp kills logged)"
+  echo "--- any seccomp/trap kills logged (capture the signal + syscall) ---"
+  adb logcat -c 2>/dev/null || true
+  rash "cd '$WORKDIR' && '$FILES/bin/git' status --short 2>&1; echo trace2_rc=\$?"
+  sleep 1
+  adb logcat -d 2>/dev/null | grep -aiE 'disallowed|fatal signal|SIGSYS|SIGTRAP|signal 5|signal 31|Bad system|Trap|syscall|seccomp|libgit|librg|libchildshim|DEBUG' | grep -aviE 'avc:|denied|OpenCode|exec-shim' | tail -25 || echo "(nothing logged)"
   echo "--- flat payload present ---"
   rash "ls -la '$FILES/launcher.js' '$FILES/opencode/dist/node/node.js' 2>&1; ls -ld '$FILES/node_modules' 2>&1"
   echo "--- live server processes (app uid) ---"
