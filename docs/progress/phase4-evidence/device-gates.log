@@ -1,40 +1,40 @@
-[2026-08-30T07:56:04Z] === device facts ===
-[2026-08-30T07:56:04Z] === host bun (runner) to drive gates over adb forward ===
-[2026-08-30T07:56:05Z] === provision fixture + MCP + config + key (run-as) ===
+[2026-08-30T08:31:43Z] === device facts ===
+[2026-08-30T08:31:43Z] === host bun (runner) to drive gates over adb forward ===
+[2026-08-30T08:31:44Z] === provision fixture + MCP + config + key (run-as) ===
 {
   "$schema": "https://opencode.ai/config.json",
   "shell": "/system/bin/sh",
-[2026-08-30T07:56:08Z] no OPENROUTER_API_KEY — model-driven assertions skipped
-[2026-08-30T07:56:08Z] === launch the app (starts RuntimeService) ===
-[2026-08-30T07:56:13Z] server password: cb6ab3… (48 chars)
-[2026-08-30T07:56:13Z] === early diagnostics (app uid) ===
+[2026-08-30T08:31:46Z] no OPENROUTER_API_KEY — model-driven assertions skipped
+[2026-08-30T08:31:46Z] === launch the app (starts RuntimeService) ===
+[2026-08-30T08:31:51Z] server password: 4e9a71… (48 chars)
+[2026-08-30T08:31:51Z] === early diagnostics (app uid) ===
 --- supervisor log (host) ---
-2026-08-30T07:56:09.436Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-2026-08-30T07:56:09.447Z [host] state -> EXTRACTING (validating embedded runtime)
-2026-08-30T07:56:09.463Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
-2026-08-30T07:56:09.476Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
-2026-08-30T07:56:10.642Z [host] extraction complete: 30 files validated
-2026-08-30T07:56:10.643Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-2026-08-30T07:56:10.644Z [host] symlink bun -> /data/app/~~n6CwboKFXuzW_PvBPRJH9Q==/ai.opencode.android.debug-hmVMBQKenpnvCkKh9BFusQ==/lib/x86_64/libbun.so (exec=true)
-2026-08-30T07:56:10.645Z [host] symlink git -> /data/app/~~n6CwboKFXuzW_PvBPRJH9Q==/ai.opencode.android.debug-hmVMBQKenpnvCkKh9BFusQ==/lib/x86_64/libgit.so (exec=true)
-2026-08-30T07:56:10.646Z [host] symlink rg -> /data/app/~~n6CwboKFXuzW_PvBPRJH9Q==/ai.opencode.android.debug-hmVMBQKenpnvCkKh9BFusQ==/lib/x86_64/librg.so (exec=true)
-2026-08-30T07:56:10.649Z [host] generated fresh server password (stored 600 at server-password)
-2026-08-30T07:56:10.650Z [host] state -> STARTING (starting OpenCode server (attempt 1))
-2026-08-30T07:56:10.655Z [host] server started: pid=6362 abi=x86_64 port=4111
-2026-08-30T07:56:10.765Z [server] [stderr] [seccomp] shim not found at /data/app/~~n6CwboKFXuzW_PvBPRJH9Q==/ai.opencode.android.debug-hmVMBQKenpnvCkKh9BFusQ==/lib/x86_64/libseccompshim.so; server may hit SIGSYS
-2026-08-30T07:56:12.281Z [server] [stderr] SERVER_BOOT_FAILED
-2026-08-30T07:56:12.292Z [server] [stderr] Error: ENOSYS: function not implemented, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
-2026-08-30T07:56:12.293Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
-2026-08-30T07:56:12.294Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
-2026-08-30T07:56:12.294Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
-2026-08-30T07:56:12.295Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
+2026-08-30T08:31:47.582Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-08-30T08:31:47.599Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-08-30T08:31:47.604Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-08-30T08:31:47.617Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-08-30T08:31:48.882Z [host] extraction complete: 30 files validated
+2026-08-30T08:31:48.883Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-08-30T08:31:48.884Z [host] symlink bun -> /data/app/~~8LIHyLyAQ_1KUN3fMd-tqA==/ai.opencode.android.debug-mP5Wv4CwpFXFPhQ766-fgw==/lib/x86_64/libbun.so (exec=true)
+2026-08-30T08:31:48.885Z [host] symlink git -> /data/app/~~8LIHyLyAQ_1KUN3fMd-tqA==/ai.opencode.android.debug-mP5Wv4CwpFXFPhQ766-fgw==/lib/x86_64/libgit.so (exec=true)
+2026-08-30T08:31:48.885Z [host] symlink rg -> /data/app/~~8LIHyLyAQ_1KUN3fMd-tqA==/ai.opencode.android.debug-mP5Wv4CwpFXFPhQ766-fgw==/lib/x86_64/librg.so (exec=true)
+2026-08-30T08:31:48.888Z [host] generated fresh server password (stored 600 at server-password)
+2026-08-30T08:31:48.890Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-30T08:31:48.895Z [host] server started: pid=6097 abi=x86_64 port=4111
+2026-08-30T08:31:48.950Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T08:31:50.414Z [server] [stderr] SERVER_BOOT_FAILED
+2026-08-30T08:31:50.421Z [server] [stderr] Error: EPERM: operation not permitted, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
+2026-08-30T08:31:50.422Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
+2026-08-30T08:31:50.423Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
+2026-08-30T08:31:50.424Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
+2026-08-30T08:31:50.425Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
 --- bin symlinks (filesDir/bin) ---
 total 40
-drwx------  2 u0_a192 u0_a192 4096 2026-08-30 07:56 .
-drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-30 07:56 ..
-lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 07:56 bun -> /data/app/~~n6CwboKFXuzW_PvBPRJH9Q==/ai.opencode.android.debug-hmVMBQKenpnvCkKh9BFusQ==/lib/x86_64/libbun.so
-lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 07:56 git -> /data/app/~~n6CwboKFXuzW_PvBPRJH9Q==/ai.opencode.android.debug-hmVMBQKenpnvCkKh9BFusQ==/lib/x86_64/libgit.so
-lrwxrwxrwx  1 u0_a192 u0_a192  107 2026-08-30 07:56 rg -> /data/app/~~n6CwboKFXuzW_PvBPRJH9Q==/ai.opencode.android.debug-hmVMBQKenpnvCkKh9BFusQ==/lib/x86_64/librg.so
+drwx------  2 u0_a192 u0_a192 4096 2026-08-30 08:31 .
+drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-30 08:31 ..
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 08:31 bun -> /data/app/~~8LIHyLyAQ_1KUN3fMd-tqA==/ai.opencode.android.debug-mP5Wv4CwpFXFPhQ766-fgw==/lib/x86_64/libbun.so
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-30 08:31 git -> /data/app/~~8LIHyLyAQ_1KUN3fMd-tqA==/ai.opencode.android.debug-mP5Wv4CwpFXFPhQ766-fgw==/lib/x86_64/libgit.so
+lrwxrwxrwx  1 u0_a192 u0_a192  107 2026-08-30 08:31 rg -> /data/app/~~8LIHyLyAQ_1KUN3fMd-tqA==/ai.opencode.android.debug-mP5Wv4CwpFXFPhQ766-fgw==/lib/x86_64/librg.so
 --- execs THROUGH symlinks ---
 1.3.14
 bun_rc=0
@@ -49,76 +49,76 @@ simd(runtime):+SSE2,+SSSE3,-AVX2
 PCRE2 10.45 is available (JIT is available)
 rg_rc=0
 --- flat payload present ---
--rw------- 1 u0_a192 u0_a192     4514 2026-08-30 07:56 /data/data/ai.opencode.android.debug/files/launcher.js
--rw------- 1 u0_a192 u0_a192 32845338 2026-08-30 07:56 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
-drwx------ 5 u0_a192 u0_a192 4096 2026-08-30 07:56 /data/data/ai.opencode.android.debug/files/node_modules
+-rw------- 1 u0_a192 u0_a192     4514 2026-08-30 08:31 /data/data/ai.opencode.android.debug/files/launcher.js
+-rw------- 1 u0_a192 u0_a192 32845338 2026-08-30 08:31 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
+drwx------ 5 u0_a192 u0_a192 4096 2026-08-30 08:31 /data/data/ai.opencode.android.debug/files/node_modules
 --- live server processes (app uid) ---
-[2026-08-30T07:56:13Z] === H1 extraction + version validation ===
--rw------- 1 u0_a192 u0_a192     4514 2026-08-30 07:56 /data/data/ai.opencode.android.debug/files/launcher.js
--rw------- 1 u0_a192 u0_a192 32845338 2026-08-30 07:56 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
--rw------- 1 u0_a192 u0_a192      108 2026-08-30 07:56 /data/data/ai.opencode.android.debug/files/runtime/.extracted
-[2026-08-30T07:56:13Z] H1 marker: {"payloadVersion":4,"opencodeCommit":"05ea5073be967c779d326929b2de6228dda4159d","extractedAt":1788076570641}
-[2026-08-30T07:56:13Z] H1 bun via symlink: '1.3.14' exec_ok=1
-[2026-08-30T07:56:14Z] H1 node=0 launcher=0 node_modules=0 marker=0 exec=1
-[2026-08-30T07:56:14Z] H1 flat payload + marker + execs OK
-[2026-08-30T07:56:14Z] === H2 health-gated start ===
-[2026-08-30T07:58:44Z] H2 health timeout; runtime log tail:
-2026-08-30T07:56:10.643Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-2026-08-30T07:56:10.644Z [host] symlink bun -> /data/app/~~n6CwboKFXuzW_PvBPRJH9Q==/ai.opencode.android.debug-hmVMBQKenpnvCkKh9BFusQ==/lib/x86_64/libbun.so (exec=true)
-2026-08-30T07:56:10.645Z [host] symlink git -> /data/app/~~n6CwboKFXuzW_PvBPRJH9Q==/ai.opencode.android.debug-hmVMBQKenpnvCkKh9BFusQ==/lib/x86_64/libgit.so (exec=true)
-2026-08-30T07:56:10.646Z [host] symlink rg -> /data/app/~~n6CwboKFXuzW_PvBPRJH9Q==/ai.opencode.android.debug-hmVMBQKenpnvCkKh9BFusQ==/lib/x86_64/librg.so (exec=true)
-2026-08-30T07:56:10.649Z [host] generated fresh server password (stored 600 at server-password)
-2026-08-30T07:56:10.650Z [host] state -> STARTING (starting OpenCode server (attempt 1))
-2026-08-30T07:56:10.655Z [host] server started: pid=6362 abi=x86_64 port=4111
-2026-08-30T07:56:10.765Z [server] [stderr] [seccomp] shim not found at /data/app/~~n6CwboKFXuzW_PvBPRJH9Q==/ai.opencode.android.debug-hmVMBQKenpnvCkKh9BFusQ==/lib/x86_64/libseccompshim.so; server may hit SIGSYS
-2026-08-30T07:56:12.281Z [server] [stderr] SERVER_BOOT_FAILED
-2026-08-30T07:56:12.292Z [server] [stderr] Error: ENOSYS: function not implemented, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
-2026-08-30T07:56:12.293Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
-2026-08-30T07:56:12.294Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
-2026-08-30T07:56:12.294Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
-2026-08-30T07:56:12.295Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
-2026-08-30T07:56:55.842Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
-2026-08-30T07:56:55.845Z [host] server stopped (graceful=true)
-2026-08-30T07:56:55.846Z [host] restart backoff: 608ms (attempt 1/8)
-2026-08-30T07:56:56.598Z [host] state -> STARTING (starting OpenCode server (attempt 2))
-2026-08-30T07:56:56.604Z [host] server started: pid=6439 abi=x86_64 port=4111
-2026-08-30T07:56:56.655Z [server] [stderr] [seccomp] shim not found at /data/app/~~n6CwboKFXuzW_PvBPRJH9Q==/ai.opencode.android.debug-hmVMBQKenpnvCkKh9BFusQ==/lib/x86_64/libseccompshim.so; server may hit SIGSYS
-2026-08-30T07:56:57.927Z [server] [stderr] SERVER_BOOT_FAILED
-2026-08-30T07:56:57.928Z [server] [stderr] Error: ENOSYS: function not implemented, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
-2026-08-30T07:56:57.929Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
-2026-08-30T07:56:57.929Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
-2026-08-30T07:56:57.930Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
-2026-08-30T07:56:57.931Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
-2026-08-30T07:57:41.737Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
-2026-08-30T07:57:41.740Z [host] server stopped (graceful=true)
-2026-08-30T07:57:41.740Z [host] restart backoff: 2313ms (attempt 2/8)
-2026-08-30T07:57:44.243Z [host] state -> STARTING (starting OpenCode server (attempt 3))
-2026-08-30T07:57:44.272Z [host] server started: pid=6494 abi=x86_64 port=4111
-2026-08-30T07:57:44.290Z [server] [stderr] [seccomp] shim not found at /data/app/~~n6CwboKFXuzW_PvBPRJH9Q==/ai.opencode.android.debug-hmVMBQKenpnvCkKh9BFusQ==/lib/x86_64/libseccompshim.so; server may hit SIGSYS
-2026-08-30T07:57:45.598Z [server] [stderr] SERVER_BOOT_FAILED
-2026-08-30T07:57:45.599Z [server] [stderr] Error: ENOSYS: function not implemented, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
-2026-08-30T07:57:45.600Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
-2026-08-30T07:57:45.601Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
-2026-08-30T07:57:45.601Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
-2026-08-30T07:57:45.602Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
-2026-08-30T07:58:29.416Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
-2026-08-30T07:58:29.419Z [host] server stopped (graceful=true)
-2026-08-30T07:58:29.419Z [host] restart backoff: 2145ms (attempt 3/8)
-2026-08-30T07:58:31.672Z [host] state -> STARTING (starting OpenCode server (attempt 4))
-2026-08-30T07:58:31.697Z [host] server started: pid=6527 abi=x86_64 port=4111
-2026-08-30T07:58:31.734Z [server] [stderr] [seccomp] shim not found at /data/app/~~n6CwboKFXuzW_PvBPRJH9Q==/ai.opencode.android.debug-hmVMBQKenpnvCkKh9BFusQ==/lib/x86_64/libseccompshim.so; server may hit SIGSYS
-2026-08-30T07:58:32.986Z [server] [stderr] SERVER_BOOT_FAILED
-2026-08-30T07:58:32.988Z [server] [stderr] Error: ENOSYS: function not implemented, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
-2026-08-30T07:58:32.989Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
-2026-08-30T07:58:32.989Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
-2026-08-30T07:58:32.990Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
-2026-08-30T07:58:32.991Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
-[2026-08-30T07:58:44Z] === H3 duplicate-process prevention ===
-[2026-08-30T07:58:53Z] H3 live launcher.js processes after repeated starts: 0
-[2026-08-30T07:58:53Z] === G1..G4 in-sandbox exec/userspace/shell/runtime (bin symlinks -> nativeLibraryDir) ===
-[2026-08-30T07:58:53Z] === G5/G6 server start + health ===
-[2026-08-30T07:58:53Z] === G7..G12, G15 real agent gates over the app server ===
-[2026-08-30T07:58:53Z] --- G07 (gate-07-shell.js) model=0 ---
+[2026-08-30T08:31:52Z] === H1 extraction + version validation ===
+-rw------- 1 u0_a192 u0_a192     4514 2026-08-30 08:31 /data/data/ai.opencode.android.debug/files/launcher.js
+-rw------- 1 u0_a192 u0_a192 32845338 2026-08-30 08:31 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
+-rw------- 1 u0_a192 u0_a192      108 2026-08-30 08:31 /data/data/ai.opencode.android.debug/files/runtime/.extracted
+[2026-08-30T08:31:52Z] H1 marker: {"payloadVersion":4,"opencodeCommit":"05ea5073be967c779d326929b2de6228dda4159d","extractedAt":1788078708881}
+[2026-08-30T08:31:52Z] H1 bun via symlink: '1.3.14' exec_ok=1
+[2026-08-30T08:31:52Z] H1 node=0 launcher=0 node_modules=0 marker=0 exec=1
+[2026-08-30T08:31:52Z] H1 flat payload + marker + execs OK
+[2026-08-30T08:31:52Z] === H2 health-gated start ===
+[2026-08-30T08:34:23Z] H2 health timeout; runtime log tail:
+2026-08-30T08:31:48.883Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-08-30T08:31:48.884Z [host] symlink bun -> /data/app/~~8LIHyLyAQ_1KUN3fMd-tqA==/ai.opencode.android.debug-mP5Wv4CwpFXFPhQ766-fgw==/lib/x86_64/libbun.so (exec=true)
+2026-08-30T08:31:48.885Z [host] symlink git -> /data/app/~~8LIHyLyAQ_1KUN3fMd-tqA==/ai.opencode.android.debug-mP5Wv4CwpFXFPhQ766-fgw==/lib/x86_64/libgit.so (exec=true)
+2026-08-30T08:31:48.885Z [host] symlink rg -> /data/app/~~8LIHyLyAQ_1KUN3fMd-tqA==/ai.opencode.android.debug-mP5Wv4CwpFXFPhQ766-fgw==/lib/x86_64/librg.so (exec=true)
+2026-08-30T08:31:48.888Z [host] generated fresh server password (stored 600 at server-password)
+2026-08-30T08:31:48.890Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-30T08:31:48.895Z [host] server started: pid=6097 abi=x86_64 port=4111
+2026-08-30T08:31:48.950Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T08:31:50.414Z [server] [stderr] SERVER_BOOT_FAILED
+2026-08-30T08:31:50.421Z [server] [stderr] Error: EPERM: operation not permitted, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
+2026-08-30T08:31:50.422Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
+2026-08-30T08:31:50.423Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
+2026-08-30T08:31:50.424Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
+2026-08-30T08:31:50.425Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
+2026-08-30T08:32:34.065Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
+2026-08-30T08:32:34.068Z [host] server stopped (graceful=true)
+2026-08-30T08:32:34.068Z [host] restart backoff: 937ms (attempt 1/8)
+2026-08-30T08:32:35.070Z [host] state -> STARTING (starting OpenCode server (attempt 2))
+2026-08-30T08:32:35.104Z [host] server started: pid=6162 abi=x86_64 port=4111
+2026-08-30T08:32:35.146Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T08:32:36.371Z [server] [stderr] SERVER_BOOT_FAILED
+2026-08-30T08:32:36.372Z [server] [stderr] Error: EPERM: operation not permitted, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
+2026-08-30T08:32:36.373Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
+2026-08-30T08:32:36.374Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
+2026-08-30T08:32:36.375Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
+2026-08-30T08:32:36.375Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
+2026-08-30T08:33:20.231Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
+2026-08-30T08:33:20.234Z [host] server stopped (graceful=true)
+2026-08-30T08:33:20.235Z [host] restart backoff: 2526ms (attempt 2/8)
+2026-08-30T08:33:22.987Z [host] state -> STARTING (starting OpenCode server (attempt 3))
+2026-08-30T08:33:23.000Z [host] server started: pid=6212 abi=x86_64 port=4111
+2026-08-30T08:33:23.030Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T08:33:24.349Z [server] [stderr] SERVER_BOOT_FAILED
+2026-08-30T08:33:24.350Z [server] [stderr] Error: EPERM: operation not permitted, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
+2026-08-30T08:33:24.351Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
+2026-08-30T08:33:24.352Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
+2026-08-30T08:33:24.352Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
+2026-08-30T08:33:24.353Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
+2026-08-30T08:34:08.134Z [crash] server did not become healthy: healthy=false http=-1 body=Failed to connect to /127.0.0.1:4111
+2026-08-30T08:34:08.137Z [host] server stopped (graceful=true)
+2026-08-30T08:34:08.138Z [host] restart backoff: 5057ms (attempt 3/8)
+2026-08-30T08:34:13.392Z [host] state -> STARTING (starting OpenCode server (attempt 4))
+2026-08-30T08:34:13.398Z [host] server started: pid=6225 abi=x86_64 port=4111
+2026-08-30T08:34:13.444Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-30T08:34:14.716Z [server] [stderr] SERVER_BOOT_FAILED
+2026-08-30T08:34:14.717Z [server] [stderr] Error: EPERM: operation not permitted, mkdir '/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode'
+2026-08-30T08:34:14.718Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/core/src/global.ts:35:15)
+2026-08-30T08:34:14.719Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/handlers/instance.ts:10)
+2026-08-30T08:34:14.720Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/routes/instance/httpapi/server.ts:117)
+2026-08-30T08:34:14.721Z [server] [stderr]     at async <anonymous> (/data/user/0/ai.opencode.android.debug/files/opencode/src/server/server.ts:12)
+[2026-08-30T08:34:23Z] === H3 duplicate-process prevention ===
+[2026-08-30T08:34:31Z] H3 live launcher.js processes after repeated starts: 0
+[2026-08-30T08:34:31Z] === G1..G4 in-sandbox exec/userspace/shell/runtime (bin symlinks -> nativeLibraryDir) ===
+[2026-08-30T08:34:31Z] === G5/G6 server start + health ===
+[2026-08-30T08:34:31Z] === G7..G12, G15 real agent gates over the app server ===
+[2026-08-30T08:34:31Z] --- G07 (gate-07-shell.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -135,7 +135,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-30T07:58:53Z] --- G08 (gate-08-files.js) model=0 ---
+[2026-08-30T08:34:31Z] --- G08 (gate-08-files.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -151,7 +151,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-30T07:58:53Z] --- G09 (gate-09-opencode-git.js) model=0 ---
+[2026-08-30T08:34:31Z] --- G09 (gate-09-opencode-git.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -168,7 +168,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-30T07:58:53Z] --- G10 (gate-10-mcp.js) model=0 ---
+[2026-08-30T08:34:31Z] --- G10 (gate-10-mcp.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -184,7 +184,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-30T07:58:53Z] --- G11 (gate-11-stream.js) model=0 ---
+[2026-08-30T08:34:31Z] --- G11 (gate-11-stream.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -201,7 +201,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-30T07:58:53Z] --- G12 (gate-12-permission.js) model=0 ---
+[2026-08-30T08:34:31Z] --- G12 (gate-12-permission.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -218,7 +218,7 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-30T07:58:53Z] --- G15 (gate-15-e2e.js) model=0 ---
+[2026-08-30T08:34:31Z] --- G15 (gate-15-e2e.js) model=0 ---
 16 | }
 17 | 
 18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
@@ -235,20 +235,20 @@ error: The socket connection was closed unexpectedly. For more information, pass
       at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
 
 Bun v1.3.14 (Linux x64)
-[2026-08-30T07:58:53Z] === H4 crash detection + restart with backoff ===
-[2026-08-30T07:58:53Z] H4 server pid: 6527
-[2026-08-30T07:58:53Z] H4 SIGKILL sent; waiting for supervisor restart...
-[2026-08-30T08:00:34Z] === H5 corruption recovery (debug reset + live corruption) ===
+[2026-08-30T08:34:31Z] === H4 crash detection + restart with backoff ===
+[2026-08-30T08:34:32Z] H4 server pid: 6225
+[2026-08-30T08:34:32Z] H4 SIGKILL sent; waiting for supervisor restart...
+[2026-08-30T08:36:12Z] === H5 corruption recovery (debug reset + live corruption) ===
 Broadcasting: Intent { act=ai.opencode.android.DEBUG_RESET flg=0x400000 cmp=ai.opencode.android.debug/ai.opencode.android.runtime.DebugControlReceiver }
 Broadcast completed: result=0
-[2026-08-30T08:03:05Z] === H6 graceful stop: no zombies, port down ===
+[2026-08-30T08:38:43Z] === H6 graceful stop: no zombies, port down ===
 Broadcasting: Intent { act=ai.opencode.android.DEBUG_STOP flg=0x400000 cmp=ai.opencode.android.debug/ai.opencode.android.runtime.DebugControlReceiver }
 Broadcast completed: result=0
-[2026-08-30T08:03:05Z] H6 leftover launchers=0 port-code=000
-[2026-08-30T08:03:05Z] === G14 reconnect: sessions persist across restart ===
-[2026-08-30T08:05:36Z] === H7 logs & diagnostics ===
-[2026-08-30T08:05:36Z] === H8 ABI/device gate ===
-[2026-08-30T08:05:36Z] H8 abi=x86_64 sdk=34 -> supported
-[2026-08-30T08:05:36Z] === pull logs into evidence ===
-[2026-08-30T08:05:36Z] === SUMMARY ===
-[2026-08-30T08:05:36Z] G failures present (9); core gate failures fail CI (model-gate skips without a key are expected).
+[2026-08-30T08:38:43Z] H6 leftover launchers=0 port-code=000
+[2026-08-30T08:38:43Z] === G14 reconnect: sessions persist across restart ===
+[2026-08-30T08:41:14Z] === H7 logs & diagnostics ===
+[2026-08-30T08:41:14Z] === H8 ABI/device gate ===
+[2026-08-30T08:41:14Z] H8 abi=x86_64 sdk=34 -> supported
+[2026-08-30T08:41:14Z] === pull logs into evidence ===
+[2026-08-30T08:41:14Z] === SUMMARY ===
+[2026-08-30T08:41:14Z] G failures present (9); core gate failures fail CI (model-gate skips without a key are expected).
