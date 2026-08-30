@@ -79,9 +79,13 @@ function installSeccompShim() {
 }
 
 async function main() {
+  console.error("[launcher] main entered platform=" + process.platform + " arch=" + process.arch);
   installSeccompShim();
+  console.error("[launcher] importing OpenCode bundle");
   const mod = await import(bundlePath);
+  console.error("[launcher] OpenCode bundle imported");
   const Server = mod.Server;
+  console.error("[launcher] binding " + hostname + ":" + port);
   const listener = await Server.listen({ port, hostname, cors: [] });
   console.log("SERVER_READY " + listener.url);
 }

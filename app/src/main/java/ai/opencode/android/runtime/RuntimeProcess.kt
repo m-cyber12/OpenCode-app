@@ -60,6 +60,11 @@ class RuntimeProcess(
         // ENOSYS handler before bun's native init) and then execv()s bun. Direct
         // exec of bun dies with SIGSYS during its own startup (syscall 21
         // access / 441 epoll_pwait2), before any JS or bun:ffi hook can run.
+        // On arm64 Android 15 the wrapper deliberately skips its second BPF
+        // filter: the inherited app filter can kill PR_SET_SECCOMP itself, and
+        // newer arm64 devices may legitimately allow syscalls that the x86_64
+        // compatibility filter must force to ENOSYS. The inherited LD_PRELOAD
+        // handler is the arm64 compatibility path.
         val exec = paths.execShimBinary()
         if (!exec.canExecute()) {
             // Fallback: direct bun (older payloads without the shim).
@@ -147,6 +152,8 @@ class RuntimeProcess(
                 p.waitFor(3000, java.util.concurrent.TimeUnit.MILLISECONDS)
             }
         }
+        val exitCode = p?.let { runCatching { it.exitValue() }.getOrNull() }
+        if (exitCode != null) logger.host("server process exit code=$exitCode during stop")
         killStaleServer()
         process = null
         runCatching { paths.pidFile.delete() }
@@ -158,7 +165,9 @@ class RuntimeProcess(
     fun waitForExit(): Int {
         val p = process ?: return -1
         val code = p.waitFor()
+        logger.host("server process exited code=$code")
         process = null
+        runCatching { paths.pidFile.delete() }
         return code
     }
 

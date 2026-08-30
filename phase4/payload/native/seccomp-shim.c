@@ -106,6 +106,8 @@ static long trap_number(ucontext_t *uc) {
  * allows. */
 static long emulate(int nr,
                     long a0, long a1, long a2, long a3, long a4) {
+    (void)a3;
+    (void)a4;
     switch (nr) {
         /* mkdir(path, mode) */
         case 83: {
@@ -238,5 +240,6 @@ __attribute__((visibility("default"))) int opencode_seccomp_init(void) {
    fires; the bun:ffi path in launcher.js is a redundant backstop. */
 __attribute__((constructor))
 static void opencode_seccomp_auto_init(void) {
-    opencode_seccomp_init();
+    int rc = opencode_seccomp_init();
+    dprintf(2, "[seccomp] preload handler %s (rc=%d)\n", rc == 0 ? "installed" : "FAILED", rc);
 }

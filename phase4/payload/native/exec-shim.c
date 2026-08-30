@@ -68,10 +68,24 @@ struct rule {
 };
 
 static int install_errno_filter(void) {
-#if defined(__x86_64__)
+#if defined(__aarch64__)
+    /*
+     * Android 15 arm64 devices can deliver the app's inherited seccomp TRAP
+     * for the PR_SET_SECCOMP/PR_SET_NO_NEW_PRIVS setup itself.  That kills
+     * this tiny wrapper before it can exec Bun (only the first "starting"
+     * line is then visible).  Arm64 uses the LD_PRELOAD constructor below as
+     * its compatibility layer; unlike this wrapper setup, it runs after the
+     * dynamic linker has installed the shared library and does not require a
+     * second process filter.  Git/rg are Android/Bionic dynamic executables,
+     * so they inherit that same preload too.
+     *
+     * Keep the x86_64 filter unchanged: the CI emulator requires the
+     * exec-surviving filter for its app-uid policy and has validated it.
+     */
+    fprintf(stderr, "[exec-shim] arm64: skipping child BPF filter; using LD_PRELOAD seccomp handler\n");
+    return 0;
+#elif defined(__x86_64__)
     unsigned int arch = AUDIT_ARCH_X86_64;
-#elif defined(__aarch64__)
-    unsigned int arch = AUDIT_ARCH_AARCH64;
 #else
     return 0; /* unknown ABI: skip filter, rely on default behaviour */
 #endif
