@@ -176,7 +176,7 @@ build_git_android() {  # $1=abi $2=target triple $3=lib dir
   ( cd "$WORK/git-src"
     make clean >/dev/null 2>&1 || true
     timeout 1200 make -j4 \
-      CC="$cc" AR="$ar" RANLIB="$ranlib" \
+      CC="$cc" AR="$ar" RANLIB="$ranlib" NEEDS_LIBRT= \
       CFLAGS="-O2 -I$zprefix/include" \
       LDFLAGS="-L$zprefix/lib -Wl,-z,max-page-size=16384" \
       ZLIB_PATH="$zprefix" \
