@@ -1,18 +1,22 @@
 assert ok: session id present
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1A03PRKS3YPN8Q9J02HXM0C","input":"{\"command\":\"command -v git; ls -l \\\"$(command -v git)\\\"; git --version; echo G9_GIT_DIAG_DONE\"}","output":"\"/data/user/0/ai.opencode.android.debug/files/bin/git\\nlrwxrwxrwx 1 u0_a192 u0_a192 108 2026-08-30 18:49 /data/user/0/ai.opencode.android.debug/files/bin/git -> /data/app/~~y2aabsMJB4otlzRajieygA==/ai","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1A0STVDMQS7RDEEWMCBK5ZQ","input":"{\"command\":\"command -v git; ls -l \\\"$(command -v git)\\\"; git --version; echo G9_GIT_DIAG_DONE\"}","output":"\"/data/user/0/ai.opencode.android.debug/files/bin/git\\nlrwxrwxrwx 1 u0_a192 u0_a192 108 2026-08-30 19:01 /data/user/0/ai.opencode.android.debug/files/bin/git -> /data/app/~~dy1XWlxZN-bu_mIOVvzs7w==/ai","error":null}]}]
 --- Android Git diagnostic (server context) ---
 /data/user/0/ai.opencode.android.debug/files/bin/git
-lrwxrwxrwx 1 u0_a192 u0_a192 108 2026-08-30 18:49 /data/user/0/ai.opencode.android.debug/files/bin/git -> /data/app/~~y2aabsMJB4otlzRajieygA==/ai.opencode.android.debug-QdxyCAGXvZLw-7tv6yOv3Q==/lib/x86_64/libgit.so
+lrwxrwxrwx 1 u0_a192 u0_a192 108 2026-08-30 19:01 /data/user/0/ai.opencode.android.debug/files/bin/git -> /data/app/~~dy1XWlxZN-bu_mIOVvzs7w==/ai.opencode.android.debug-TiV7fai0PG_xbHKOfESvpw==/lib/x86_64/libgit.so
 git version 2.48.1
 G9_GIT_DIAG_DONE
 
 assert ok: session id present
 shell HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1A03WQTKXDWQTZNMJAMFZTH","input":"{\"command\":\"git status --short && echo BRANCHES && git branch && echo LOG && git log --oneline -3\"}","output":"\"fatal: not a git repository (or any parent up to mount point /data/data)\\nStopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).\\n\"","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1A0T0SV6M10YDVJ1GP7XG89","input":"{\"command\":\"git status --short && echo BRANCHES && git branch && echo LOG && git log --oneline -3\"}","output":"\"?? g8-write.txt\\nBRANCHES\\n  feature/g9\\n* main\\nLOG\\naa4655a gates fixture\\n\"","error":null}]}]
 --- git via OpenCode output ---
-fatal: not a git repository (or any parent up to mount point /data/data)
-Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+?? g8-write.txt
+BRANCHES
+  feature/g9
+* main
+LOG
+aa4655a gates fixture
 
-G9_OPENCODE_GIT_MISSING_EXPECTED_OUTPUT
+G9_OPENCODE_GIT_OK

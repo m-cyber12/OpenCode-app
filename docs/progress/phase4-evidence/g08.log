@@ -1,6 +1,6 @@
 list HTTP 200
 assert ok: file list ok
-files: src, README.md, notes.txt
+files: .git, src, README.md, notes.txt
 assert ok: README.md listed
 assert ok: notes.txt listed
 G8_READ_OK
@@ -14,7 +14,7 @@ assert ok: ripgrep found the marker
 assert ok: session id present
 shell write HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1A03GRAHBF1TYBRWHP59NTY","input":"{\"command\":\"printf 'G8_WRITE_OK\\\\n' > g8-write.txt && printf 'second line\\\\n' >> g8-write.txt\"}","output":"\"\"","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1A0SMWH63TV9KJ5ZYB0VH2V","input":"{\"command\":\"printf 'G8_WRITE_OK\\\\n' > g8-write.txt && printf 'second line\\\\n' >> g8-write.txt\"}","output":"\"\"","error":null}]}]
 assert ok: written file readable
 g8-write.txt: G8_WRITE_OK | second line
 assert ok: file content written through OpenCode shell exec
