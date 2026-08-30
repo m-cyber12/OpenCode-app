@@ -50,6 +50,7 @@ class RuntimeProcess(
     /** Current server pid (from /proc), or -1. */
     val pid: Int get() = findServerPid()
 
+    @Synchronized
     fun start(env: Map<String, String>) {
         val bun = paths.bunBinary()
         require(bun.canExecute()) { "bun binary not executable: $bun" }
@@ -122,6 +123,7 @@ class RuntimeProcess(
      * SIGTERM first (server closes HTTP + DB cleanly), then SIGKILL, then a
      * /proc sweep for leftover children.
      */
+    @Synchronized
     fun stop(graceWindowMs: Long = 8000): Boolean {
         val p = process
         var exitedGracefully = false
@@ -166,8 +168,12 @@ class RuntimeProcess(
         val p = process ?: return -1
         val code = p.waitFor()
         logger.host("server process exited code=$code")
-        process = null
-        runCatching { paths.pidFile.delete() }
+        // A newer generation may already own the process slot. Do not clear
+        // that process or delete its pidfile when an older waiter returns.
+        if (process === p) {
+            process = null
+            runCatching { paths.pidFile.delete() }
+        }
         return code
     }
 

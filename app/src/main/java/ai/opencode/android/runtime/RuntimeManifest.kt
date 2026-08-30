@@ -51,9 +51,11 @@ data class RuntimeManifest(
             val o = JSONObject(text)
             val files = o.getJSONObject("files")
             val entries = files.keys().asSequence().map { k ->
+                require(isSafeRelativePath(k)) { "unsafe manifest path: $k" }
                 val e = files.getJSONObject(k)
                 ManifestEntry(k, e.getString("sha256"), e.getLong("size"))
             }.toList()
+            require(entries.isNotEmpty()) { "runtime manifest contains no payload files" }
             return RuntimeManifest(
                 payloadVersion = o.getInt("payloadVersion"),
                 opencodeCommit = o.getString("opencodeCommit"),
@@ -67,5 +69,12 @@ data class RuntimeManifest(
         }
 
         fun fromFile(f: File): RuntimeManifest = fromJson(f.readText())
+
+        /** Manifest paths are relative to filesDir and must never address a parent or root. */
+        fun isSafeRelativePath(path: String): Boolean {
+            if (path.isEmpty() || path.startsWith('/') || path.startsWith('\\') || path.contains('\u0000')) return false
+            val normalizedSeparators = path.replace('\\', '/')
+            return normalizedSeparators.split('/').none { it.isEmpty() || it == "." || it == ".." }
+        }
     }
 }

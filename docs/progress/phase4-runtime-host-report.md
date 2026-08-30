@@ -41,6 +41,7 @@ Relevant committed evidence is under `docs/progress/phase4-evidence/`, especiall
 - The marker includes `payloadVersion`; it must match `RuntimeVersion.PAYLOAD_VERSION` (`4`). A missing, stale, incomplete, or corrupt extraction is re-extracted from the APK rather than silently accepted.
 - The OpenCode payload is flat in app-private storage (`filesDir/launcher.js`, `filesDir/node_modules`, and `filesDir/opencode/...`) so Bun's normal module resolution is preserved. Host metadata remains under `filesDir/runtime/`.
 - H1 on the API-34 emulator validated first-run extraction, the marker, the flat payload, executable access, and pinned versions.
+- The app now rejects an APK manifest whose payload, OpenCode, Bun, Git, or ripgrep versions/commit differ from the pinned `RuntimeVersion`/`versions.lock` contract; it fails clearly instead of re-extracting an incompatible payload forever.
 
 ### 2.2 Real lifecycle: start, health, stop, crash, restart, duplicate prevention — IMPLEMENTED; x86_64 TESTED
 
@@ -49,6 +50,7 @@ Relevant committed evidence is under `docs/progress/phase4-evidence/`, especiall
 - `RuntimeProcess.kt` launches the real `libbun.so` from Android `nativeLibraryDir`, drains stdout/stderr, records the PID, sends SIGTERM for graceful shutdown, escalates to SIGKILL after the bounded wait, and sweeps launcher processes to prevent zombies.
 - Start is generation/idempotence guarded; stale launcher processes are removed before a new start and the server's single port is also a final duplicate guard.
 - Unexpected death is recorded and restarted with bounded exponential backoff. H2, H3, H4, H6, and the explicit G13 result all passed on the emulator.
+- Supervisor generations are checked after launch, health, backoff, and process exit; the process wrapper serializes start/stop and does not let an old waiter clear a newer generation's PID slot. A stop request also sweeps stale processes when the supervisor flag is already false.
 - `RuntimeService.kt` is a `specialUse` foreground service. The service is needed because an on-device agent may have long-running server, shell, Git, MCP, or model work that must survive app backgrounding/doze. The manifest contains the service property and rationale; stopping it tears down the process cleanly.
 
 ### 2.3 Corruption detection and recovery — IMPLEMENTED; x86_64 TESTED

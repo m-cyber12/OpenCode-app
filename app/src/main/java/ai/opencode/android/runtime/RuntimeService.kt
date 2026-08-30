@@ -32,6 +32,7 @@ import ai.opencode.android.R
 class RuntimeService : Service() {
 
     private lateinit var manager: RuntimeManager
+    private var explicitStopRequested = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -44,6 +45,7 @@ class RuntimeService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startInForeground()
         if (intent?.action == ACTION_STOP) {
+            explicitStopRequested = true
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 stopForeground(STOP_FOREGROUND_REMOVE)
             } else {
@@ -54,14 +56,17 @@ class RuntimeService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
+        explicitStopRequested = false
         manager.start()
         return START_NOT_STICKY
     }
 
     override fun onDestroy() {
-        // The ACTION_STOP path has already asked the manager to shut the
-        // runtime down gracefully; nothing else to do (START_NOT_STICKY: the
-        // runtime restarts only when the app next starts the service).
+        // onDestroy can also follow a system/service teardown rather than the
+        // explicit ACTION_STOP path. Always request cleanup in that case so a
+        // child process cannot outlive the service unnoticed; RuntimeProcess
+        // uses a synchronized start/stop boundary to cover an in-flight launch.
+        if (::manager.isInitialized && !explicitStopRequested) manager.stop()
         super.onDestroy()
     }
 

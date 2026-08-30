@@ -83,13 +83,14 @@ class RuntimeManager private constructor(private val appContext: Context) {
             generation++
         }
         if (!wasRunning) {
-            logger.host("stop() ignored: not running")
-            return
+            // Still sweep: the supervisor flag can be false after a crash or
+            // service recreation while a child survives the host process.
+            logger.host("stop() requested while supervisor is not running; sweeping stale server")
         }
         Thread({
             try {
                 process.stop()
-                publish(RuntimeStatus.STOPPED, "stopped by user")
+                if (wasRunning) publish(RuntimeStatus.STOPPED, "stopped by user")
             } catch (t: Throwable) {
                 logger.host("stop error: ${t.message}")
             }
@@ -193,14 +194,20 @@ class RuntimeManager private constructor(private val appContext: Context) {
                 publish(RuntimeStatus.STARTING, "starting OpenCode server (attempt $attempts)", attempts - 1)
                 try {
                     process.start(env)
+                    // A stop or a newer start can race with the short launch
+                    // window. Do not let an invalidated supervisor pump or
+                    // health-check a process owned by a newer generation.
+                    if (!running || gen != generation) break
                     process.pumpStdio()
                 } catch (t: Throwable) {
                     logger.crash("failed to launch server process: ${t.message}")
-                    if (!backoffOrGiveUp(attempts)) break
+                    if (!backoffOrGiveUp(attempts, gen)) break
                     continue
                 }
 
+                if (!running || gen != generation) break
                 val h = health.waitHealthy(password, timeoutMs = 45_000)
+                if (!running || gen != generation) break
                 if (h != null && h.healthy) {
                     logger.host("health check OK: $h")
                     publish(RuntimeStatus.HEALTHY, "healthy on 127.0.0.1:${RuntimeEnv.SERVER_PORT}", attempts - 1)
@@ -209,14 +216,14 @@ class RuntimeManager private constructor(private val appContext: Context) {
                     logger.crash("server did not become healthy: $h")
                     // Process may still be (sickly) alive — kill it before retry.
                     process.stop(graceWindowMs = 2000)
-                    if (!backoffOrGiveUp(attempts)) break
+                    if (!backoffOrGiveUp(attempts, gen)) break
                     continue
                 }
 
                 // Watch until exit (blocking wait). Exit while `running` is a crash.
                 val code = process.waitForExit()
-                if (!running) {
-                    publish(RuntimeStatus.STOPPED, "stopped")
+                if (!running || gen != generation) {
+                    if (!running) publish(RuntimeStatus.STOPPED, "stopped")
                     break
                 }
                 logger.crash("server exited unexpectedly code=$code")
@@ -226,7 +233,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
                     process.killStaleServer()
                 }
                 publish(RuntimeStatus.CRASHED_RESTARTING, "server exited (code=$code); restarting", attempts)
-                if (!backoffOrGiveUp(attempts)) break
+                if (!backoffOrGiveUp(attempts, gen)) break
             }
         } catch (t: Throwable) {
             logger.host("supervisor fatal error: ${t.message}\n${t.stackTraceToString().take(2000)}")
@@ -236,7 +243,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
     }
 
     /** Exponential backoff between restarts. Returns false to give up. */
-    private fun backoffOrGiveUp(attempts: Int): Boolean {
+    private fun backoffOrGiveUp(attempts: Int, gen: Int): Boolean {
         val maxAttempts = 8
         if (attempts >= maxAttempts) {
             publish(RuntimeStatus.FATAL, "runtime failed $attempts start attempts — giving up (see diagnostics)")
@@ -249,8 +256,8 @@ class RuntimeManager private constructor(private val appContext: Context) {
         val sleep = (exp * (0.5 + Random.nextDouble())).toLong().coerceIn(500, cap)
         logger.host("restart backoff: ${sleep}ms (attempt $attempts/$maxAttempts)")
         val deadline = System.currentTimeMillis() + sleep
-        while (running && System.currentTimeMillis() < deadline) Thread.sleep(250)
-        return running
+        while (running && gen == generation && System.currentTimeMillis() < deadline) Thread.sleep(250)
+        return running && gen == generation
     }
 
     /**

@@ -29,4 +29,34 @@ object RuntimeVersion {
      * extraction marker; a mismatch forces re-extraction.
      */
     const val PAYLOAD_VERSION = 4
+
+    /**
+     * The manifest is generated from the same lockfile as this app. A payload
+     * with a different runtime pin is not safe to execute: re-extracting it
+     * would only install the incompatible artifact again. Return a reason so
+     * the host can fail clearly instead of accepting an unpinned runtime.
+     */
+    fun validateManifest(manifest: RuntimeManifest): String? {
+        val mismatches = buildList {
+            if (manifest.payloadVersion != PAYLOAD_VERSION) {
+                add("payloadVersion=${manifest.payloadVersion} expected=$PAYLOAD_VERSION")
+            }
+            if (manifest.opencodeCommit != OPENCODE_COMMIT) {
+                add("opencodeCommit=${manifest.opencodeCommit} expected=$OPENCODE_COMMIT")
+            }
+            if (manifest.opencodeVersion != OPENCODE_VERSION) {
+                add("opencodeVersion=${manifest.opencodeVersion} expected=$OPENCODE_VERSION")
+            }
+            if (manifest.bunVersion != BUN_VERSION) {
+                add("bunVersion=${manifest.bunVersion} expected=$BUN_VERSION")
+            }
+            if (manifest.gitVersion != GIT_VERSION) {
+                add("gitVersion=${manifest.gitVersion} expected=$GIT_VERSION")
+            }
+            if (manifest.rgVersion != RIPGREP_VERSION) {
+                add("rgVersion=${manifest.rgVersion} expected=$RIPGREP_VERSION")
+            }
+        }
+        return mismatches.takeIf { it.isNotEmpty() }?.joinToString("; ")
+    }
 }

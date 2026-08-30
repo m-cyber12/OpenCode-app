@@ -48,8 +48,10 @@ class PayloadExtractor(
         val manifest = manifestFromAssets()
             ?: return Result.Failed("runtime-manifest.json missing or unreadable inside the APK")
 
-        if (manifest.payloadVersion != RuntimeVersion.PAYLOAD_VERSION) {
-            logger.host("payload version mismatch: apk=${manifest.payloadVersion} app expects=${RuntimeVersion.PAYLOAD_VERSION} -> re-extract")
+        val versionProblem = RuntimeVersion.validateManifest(manifest)
+        if (versionProblem != null) {
+            logger.host("payload manifest incompatible with app/versions.lock: $versionProblem")
+            return Result.Failed("payload manifest version mismatch: $versionProblem")
         }
 
         val verify = verifyExtraction(
@@ -117,6 +119,7 @@ class PayloadExtractor(
 
             // Verify every extracted entry BEFORE promoting (flat, filesDir-relative).
             for (e in manifest.entries) {
+                if (!RuntimeManifest.isSafeRelativePath(e.path)) throw SecurityException("unsafe manifest path: ${e.path}")
                 val f = File(staging, e.path)
                 if (!f.isFile) return Result.Failed("extraction incomplete: ${e.path} missing")
                 if (f.length() != e.size) return Result.Failed("extraction size mismatch on ${e.path}")
@@ -189,6 +192,7 @@ class PayloadExtractor(
             if (!launcher.isFile) return "launcher missing: $launcher"
 
             for (e in manifest.entries) {
+                if (!RuntimeManifest.isSafeRelativePath(e.path)) return "unsafe manifest path: ${e.path}"
                 val f = File(root, e.path)
                 if (!f.isFile) return "missing ${e.path}"
                 if (f.length() != e.size) return "size mismatch on ${e.path}: ${f.length()} != ${e.size}"

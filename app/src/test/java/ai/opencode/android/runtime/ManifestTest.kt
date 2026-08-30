@@ -32,6 +32,7 @@ class ManifestTest {
         val node = m.entries.first { it.path.endsWith("node.js") }
         assertEquals(12345L, node.size)
         assertEquals("aaa", node.sha256)
+        assertEquals(null, RuntimeVersion.validateManifest(m))
         // round-trip via toJson
         val m2 = RuntimeManifest.fromJson(m.toJson().toString())
         assertEquals(m.entries.size, m2.entries.size)
@@ -45,5 +46,20 @@ class ManifestTest {
         val m = RuntimeManifest.fromJson(withExtra)
         assertEquals("15.1.0", m.rgVersion)
         assertTrue(m.entries.isNotEmpty())
+    }
+
+    @Test
+    fun rejectsManifestVersionDriftFromLock() {
+        val m = RuntimeManifest.fromJson(json)
+        val problem = RuntimeVersion.validateManifest(m.copy(bunVersion = "9.9.9"))
+        assertTrue(problem!!.contains("bunVersion"))
+    }
+
+    @Test
+    fun rejectsUnsafeManifestPaths() {
+        assertTrue(RuntimeManifest.isSafeRelativePath("opencode/dist/node/node.js"))
+        assertTrue(!RuntimeManifest.isSafeRelativePath("../outside"))
+        assertTrue(!RuntimeManifest.isSafeRelativePath("/absolute"))
+        assertTrue(!RuntimeManifest.isSafeRelativePath("opencode/../outside"))
     }
 }

@@ -5,6 +5,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 /**
  * Single lifecycle log for the runtime host. Everything the supervisor,
@@ -16,7 +17,9 @@ import java.util.Locale
  */
 class RuntimeLogger(private val file: File) {
 
-    private val ts = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+    private val ts = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+        timeZone = TimeZone.getTimeZone("UTC")
+    }
     private val maxBytes = 2L * 1024 * 1024   // rotate at 2 MiB, keep one .prev
 
     @Synchronized
@@ -58,7 +61,9 @@ class RuntimeLogger(private val file: File) {
     }
 
     fun crash(message: String) {
-        val name = "crash-" + SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date()) + ".log"
+        val name = "crash-" + SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }.format(Date()) + ".log"
         try {
             File(file.parentFile, "crashes").mkdirs()
             File(File(file.parentFile, "crashes"), name).writeText(

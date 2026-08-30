@@ -6,6 +6,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 /**
  * Collects everything needed to troubleshoot the embedded runtime into a
@@ -25,7 +26,9 @@ data class Diagnostics(
 
             val sb = StringBuilder()
             sb.appendLine("# OpenCode Android — runtime diagnostics")
-            sb.appendLine("collected_at=${SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(Date())}")
+            sb.appendLine("collected_at=${SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }.format(Date())}")
             sb.appendLine()
             sb.appendLine("## Device")
             sb.appendLine("manufacturer=${Build.MANUFACTURER} model=${Build.MODEL}")
