@@ -275,8 +275,13 @@ gp 0 05 "opencode-start"; gp "$G6" 06 "health-endpoint"
   echo "--- xdg state/data opencode ---"
   rash "ls -laR '$FILES/xdg/state/opencode' '$FILES/xdg/data/opencode' 2>&1 | head -40"
   echo "--- OpenCode server log (has the 500 stack) ---"
-  rash "for f in '$FILES/xdg/data/opencode/log/'*.log; do echo '### '\\$f; tail -80 \\$f 2>/dev/null; done; \
-        for f in '$FILES/xdg/state/opencode/log/'*.log; do echo '### '\\$f; tail -80 \\$f 2>/dev/null; done"
+  rash 'for d in "'"$FILES"'/xdg/data/opencode/log" "'"$FILES"'/xdg/state/opencode/log"; do
+          for f in "$d"/*.log; do
+            [ -e "$f" ] || continue
+            echo "### $f"
+            tail -100 "$f" 2>/dev/null
+          done
+        done'
 } > "$EV/storage-diag.txt" 2>&1
 cat "$EV/storage-diag.txt" >> "$LOG"
 
@@ -388,7 +393,12 @@ hp "$H8" 8 "abi-device-gate"
 # ---------------------------------------------------------------------------
 log "=== pull logs into evidence ==="
 rash "tail -300 '$FILES/log/runtime.log'" > "$EV/runtime.log" 2>/dev/null || true
-rash "for f in '$FILES/xdg/data/opencode/log/'*.log '$FILES/xdg/state/opencode/log/'*.log; do echo '###' \$f; tail -120 \$f 2>/dev/null; done" > "$EV/opencode-server.log" 2>/dev/null || true
+rash 'for d in "'"$FILES"'/xdg/data/opencode/log" "'"$FILES"'/xdg/state/opencode/log"; do
+        for f in "$d"/*.log; do
+          [ -e "$f" ] || continue
+          echo "### $f"; tail -150 "$f" 2>/dev/null
+        done
+      done' > "$EV/opencode-server.log" 2>/dev/null || true
 rash "ls -la '$FILES/opencode/dist/node' '$FILES/bin' 2>/dev/null" > "$EV/device-layout.txt" 2>&1 || true
 
 cat >> "$SUMMARY" <<EOF
