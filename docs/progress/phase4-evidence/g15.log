@@ -2,20 +2,25 @@ assert ok: session id present
 --- prompting the real agent ---
 prompt_async accepted (204)
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"Inspect this project and explain what it does.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"chatcmpl-tool-a6ef46ba0fdd7a24","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates</path>\\n<type>directory</type>\\n<entries>\\n.git/\\nREADME.md\\ng8-write.txt\\nnotes.txt\\nsrc/\\n\\n(5 entries)\\n</entries>\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"chatcmpl-tool-8a7fed81fe1d6c2f","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md</path>\\n<type>file</type>\\n<content>\\n1: # gates fixture\\n2: \\n3: A tiny project for the Phase 4 production-host gates: a R","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"chatcmpl-tool-9213f54c5e28c3b9","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt</path>\\n<type>file</type>\\n<content>\\n1: gates notes\\n2: G15-E2E-MARKER in notes too, so /find (ripgrep) always matches a t","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"chatcmpl-tool-84321bc7a09d528f","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/g8-write.txt\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/g8-write.txt</path>\\n<type>file</type>\\n<content>\\n1: G8_WRITE_OK\\n2: second line\\n\\n(End of file - total 2 lines)\\n</content>\"","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"chatcmpl-tool-a28f4c750c25037e","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/src\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/src</path>\\n<type>directory</type>\\n<entries>\\napp.js\\n\\n(1 entries)\\n</entries>\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"chatcmpl-tool-b642c1731e0d106e","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js</path>\\n<
---- assistant reply (692 chars) ---
+[{"role":"user","parts":[{"type":"text","text":"Inspect this project and explain what it does.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"text","text":"I'll inspect the project structure to understand what it does.\n\n","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"chatcmpl-tool-a064713766614762","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates</path>\\n<type>directory</type>\\n<entries>\\n.git/\\nREADME.md\\ng8-write.txt\\nnotes.txt\\nsrc/\\n\\n(5 entries)\\n</entries>\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"chatcmpl-tool-b69739beaf0b8344","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md</path>\\n<type>file</type>\\n<content>\\n1: # gates fixture\\n2: \\n3: A tiny project for the Phase 4 production-host gates: a R","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"chatcmpl-tool-943e0dbd05d9d046","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/src\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/src</path>\\n<type>directory</type>\\n<entries>\\napp.js\\n\\n(1 entries)\\n</entries>\"","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"chatcmpl-tool-8cafdab315af6985","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt</path>\\n<type>file</type>\\n<content>\\n1: gates notes\\n2: G15-E2E-MARKER in notes too, so /find (ripgrep) always matches a t","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"chatcmpl-tool-8bd8c1f81e5915f4","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/files/workspaces/gates/g8-write.txt\"}","output":"\"<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/g8-write.txt</path>\\n<type>file</type>\\n<content>\\n1: G8_WRITE_OK\\n2: second line\\n\\n(End of file - total 2 lines)\\n</content>\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"read","callID":"chatcmpl-tool-9929ebccfb11c0a5","input":"{\"filePath\":\"/data/data/ai.opencode.android.debug/f
+--- assistant reply (1029 chars) ---
+I'll inspect the project structure to understand what it does.
 
 
 
-This is a minimal **test fixture** for validating opencode's production-host "gates" (testing harness). It contains:
 
-- `README.md` — declares it's a "Phase 4 production-host gates" fixture with a `G15-E2E-MARKER`.
-- `notes.txt` — repeats the same marker so ripgrep `/find` always matches a tracked file.
-- `g8-write.txt` — contains `G8_WRITE_OK`, a marker for a file-write gate.
-- `src/app.js` — a trivial `greet()` function carrying the `G15-E2E-MARKER` source marker.
+This is a small **test fixture project** used for "Phase 4 production-host gates" — i.e., it's scaffolding to exercise/verify the file tools (glob, read, ripgrep) and git workflows in the `opencode` agent harness, not a real application.
 
-In short: it has no real functionality. Its files exist purely so that the tools (glob, read, ripgrep, write) have well-known markers (`G15-E2E-MARKER`, `G8_WRITE_OK`, etc.) to assert against in end-to-end gate tests.
---- tools used: ["read","read","read","read","read","read"] ---
+**Contents:**
+- `README.md` — describes the project as a "gates fixture" for testing file-content and ripgrep search gates (contains marker `G15-E2E-MARKER`)
+- `notes.txt` — same marker, ensuring `/find` (ripgrep) always matches a tracked file
+- `src/app.js` — a tiny ES module exporting a `greet(name)` function, also with the `G15-E2E-MARKER`
+- `g8-write.txt` — new/untracked file containing `G8_WRITE_OK` (marker for a write-file gate)
+
+**Git:** one commit (`f96bc26 gates fixture`) on `main`, plus an empty branch `feature/g9`; `g8-write.txt` is untracked.
+
+In short: it's marker-bearing dummy content designed to validate that the agent's read/search/write tools and git operations behave correctly across gate phases.
+--- tools used: ["read","read","read","read","read","read","bash"] ---
 --- tool outputs ---
 <path>/data/data/ai.opencode.android.debug/files/workspaces/gates</path>
 <type>directory</type>
@@ -41,6 +46,14 @@ src/
 (End of file - total 5 lines)
 </content>
 ---
+<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/src</path>
+<type>directory</type>
+<entries>
+app.js
+
+(1 entries)
+</entries>
+---
 <path>/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt</path>
 <type>file</type>
 <content>
@@ -59,14 +72,6 @@ src/
 (End of file - total 2 lines)
 </content>
 ---
-<path>/data/data/ai.opencode.android.debug/files/workspaces/gates/src</path>
-<type>directory</type>
-<entries>
-app.js
-
-(1 entries)
-</entries>
----
 <path>/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js</path>
 <type>file</type>
 <content>
@@ -77,13 +82,29 @@ app.js
 
 (End of file - total 4 lines)
 </content>
---- events seen (177): {"server.connected":1,"session.status":10,"message.updated":34,"session.updated":10,"session.diff":5,"message.part.updated":56,"message.part.delta":59,"session.idle":1,"server.heartbeat":1}
---- tools streamed as events: [{"tool":"read","status":"completed","callID":"chatcmpl-tool-a6ef46ba0fdd7a24","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"read","status":"completed","callID":"chatcmpl-tool-8a7fed81fe1d6c2f","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md"}},{"tool":"read","status":"completed","callID":"chatcmpl-tool-9213f54c5e28c3b9","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt"}},{"tool":"read","status":"completed","callID":"chatcmpl-tool-84321bc7a09d528f","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/g8-write.txt"}},{"tool":"read","status":"completed","callID":"chatcmpl-tool-a28f4c750c25037e","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src"}},{"tool":"read","status":"completed","callID":"chatcmpl-tool-b642c1731e0d106e","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js"}}]
+---
+[seccomp] preload handler installed (rc=0)
+[seccomp] preload handler installed (rc=0)
+f96bc26 gates fixture
+---BRANCH---
+[seccomp] preload handler installed (rc=0)
+  feature/g9
+* main
+---STATUS---
+[seccomp] preload handler installed (rc=0)
+On branch main
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	g8-write.txt
+
+nothing added to commit but untracked files pres
+--- events seen (227): {"server.connected":1,"session.updated":10,"session.diff":5,"message.updated":32,"session.status":9,"message.part.updated":80,"message.part.delta":88,"session.idle":1,"server.heartbeat":1}
+--- tools streamed as events: [{"tool":"read","status":"completed","callID":"chatcmpl-tool-a064713766614762","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"read","status":"completed","callID":"chatcmpl-tool-b69739beaf0b8344","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md"}},{"tool":"read","status":"completed","callID":"chatcmpl-tool-943e0dbd05d9d046","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src"}},{"tool":"read","status":"completed","callID":"chatcmpl-tool-8cafdab315af6985","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt"}},{"tool":"read","status":"completed","callID":"chatcmpl-tool-8bd8c1f81e5915f4","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/g8-write.txt"}},{"tool":"read","status":"completed","callID":"chatcmpl-tool-9929ebccfb11c0a5","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js"}},{"tool":"bash","status":"completed","callID":"chatcmpl-tool-a1904ab297545829","input":{"command":"git log --oneline -20 && echo \"---BRANCH---\" && git branch -a && echo \"---STATUS---\" && git status"}}]
 --- permissions allowed: []
 assert ok: agent turn did not fail
-assert ok: explanation is substantive (692 chars)
+assert ok: explanation is substantive (1029 chars)
 assert ok: explanation reflects the actual project
-assert ok: real tools executed: ["read","read","read","read","read","read"]
+assert ok: real tools executed: ["read","read","read","read","read","read","bash"]
 assert ok: tool parts streamed over SSE
 assert ok: session.status events streamed
 assert ok: message events streamed
