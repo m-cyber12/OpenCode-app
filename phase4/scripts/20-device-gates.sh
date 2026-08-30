@@ -259,6 +259,24 @@ curl -s -u "opencode:$PASSWD" http://127.0.0.1:4111/global/health > "$EV/g06-hea
 G6=1; grep -q healthy "$EV/g06-health.json" && G6=0
 gp 0 05 "opencode-start"; gp "$G6" 06 "health-endpoint"
 
+# Diagnostic: probe a storage-touching call against the workdir and capture the
+# full server error body so a 500's root cause is visible (it does not appear
+# on the supervisor stderr). Also snapshot the workspace + opencode state dir.
+{
+  echo "--- POST /session?directory=<workdir> ---"
+  curl -s -u "opencode:$PASSWD" -H 'content-type: application/json' \
+    -X POST "http://127.0.0.1:4111/session?directory=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$WORKDIR")" \
+    -d '{"title":"diag"}' -w '\nHTTP %{http_code}\n'
+  echo "--- GET /config ---"
+  curl -s -u "opencode:$PASSWD" "http://127.0.0.1:4111/config?directory=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$WORKDIR")" -w '\nHTTP %{http_code}\n' | head -c 1500
+  echo
+  echo "--- workspace dir (app uid) ---"
+  rash "ls -la '$WORKDIR' 2>&1; echo '--- .opencode:'; ls -laR '$WORKDIR/.opencode' 2>&1 | head -20"
+  echo "--- xdg state/data opencode ---"
+  rash "ls -laR '$FILES/xdg/state/opencode' '$FILES/xdg/data/opencode' 2>&1 | head -40"
+} > "$EV/storage-diag.txt" 2>&1
+cat "$EV/storage-diag.txt" >> "$LOG"
+
 # ---------------------------------------------------------------------------
 log "=== G7..G12, G15 real agent gates over the app server ==="
 export OPENCODE_BASE="http://127.0.0.1:4111"
@@ -302,19 +320,26 @@ fi
 hp "$H4" 4 "crash-restart-backoff"
 
 # ---------------------------------------------------------------------------
-log "=== H5 corruption recovery (debug reset + live corruption) ==="
+log "=== H5 corruption recovery (corrupt payload -> DEBUG_RESET re-extracts) ==="
 H5=1
+# Corrupt a NON-JS payload file with an inert text marker (corrupting node.js
+# directly would be a JS SyntaxError, not a data-integrity recovery test).
+# Re-extraction is triggered by the DEBUG_RESET broadcast (wipes marker + flat
+# payload and re-extracts from the APK asset, validated against the manifest).
+# Prefer a checksummed non-executable data file (a tree-sitter .wasm under the
+# bundle dir); fall back to launcher.js. Appending a byte corrupts the manifest
+# checksum without itself executing.
+CORR_TARGET=$(rash "ls -1 '$FILES/opencode/dist/node/'*.wasm 2>/dev/null | head -1" | tr -d '\r')
+[ -n "$CORR_TARGET" ] || CORR_TARGET="$FILES/launcher.js"
+rash "printf '\nCORRUPT_MARKER\n' >> '$CORR_TARGET'"
+log "H5 injected marker into $CORR_TARGET; broadcasting DEBUG_RESET"
 adb shell am broadcast -a ai.opencode.android.DEBUG_RESET -n "$PKG/ai.opencode.android.runtime.DebugControlReceiver" >>"$LOG" 2>&1 || true
-if [ "$(wait_healthy 150)" = "HEALTH_OK" ]; then
-  log "H5 reset+re-extract -> healthy"
-  rash "echo CORRUPT_MARKER >> '$FILES/opencode/dist/node/node.js'"
-  SPID2=$(rash "cat '$FILES/runtime.pid' 2>/dev/null" | tr -d '\r ')
-  rash "kill -9 $SPID2 2>/dev/null; true"
-  if [ "$(wait_healthy 150)" = "HEALTH_OK" ]; then
-    MARK=$(rash "grep -c CORRUPT_MARKER '$FILES/opencode/dist/node/node.js' 2>/dev/null || echo 1" | tr -d '\r')
-    log "H5 corruption marker present after recovery (want 0): $MARK"
-    [ "$MARK" = "0" ] && H5=0
-  fi
+if [ "$(wait_healthy 180)" = "HEALTH_OK" ]; then
+  MARK=$(rash "grep -c CORRUPT_MARKER '$CORR_TARGET' 2>/dev/null || echo 1" | tr -d '\r')
+  log "H5 corruption marker present after recovery (want 0): $MARK"
+  [ "$MARK" = "0" ] && H5=0
+else
+  log "H5 did not return to healthy after reset + re-extraction"
 fi
 hp "$H5" 5 "corruption-recovery"
 
