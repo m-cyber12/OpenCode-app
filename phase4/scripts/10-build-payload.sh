@@ -183,7 +183,7 @@ build_git_android() {  # $1=abi $2=target triple $3=lib dir
       NO_REGEX=NeedsStartEnd \
       NO_PERL=YesPlease NO_PYTHON=YesPlease NO_TCLTK=YesPlease NO_GETTEXT=YesPlease \
       NO_ICONV=YesPlease NO_CURL=YesPlease NO_OPENSSL=YesPlease NO_EXPAT=YesPlease \
-      NO_LIBPCRE2=YesPlease NO_PTHREADS=YesPlease NO_INSTALL_HARDLINKS=YesPlease all
+      NO_LIBPCRE2=YesPlease NO_PTHREADS=YesPlease NO_INSTALL_HARDLINKS=YesPlease git
   ) || { note "FATAL: Android Git build failed for $abi"; return 1; }
   [ -x "$WORK/git-src/git" ] || { note "FATAL: Android Git binary missing for $abi"; return 1; }
   cp "$WORK/git-src/git" "$outdir/libgit.so"
