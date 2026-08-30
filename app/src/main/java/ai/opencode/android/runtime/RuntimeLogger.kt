@@ -60,8 +60,9 @@ class RuntimeLogger(private val file: File) {
         }
     }
 
+    @Synchronized
     fun crash(message: String) {
-        val name = "crash-" + SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).apply {
+        val name = "crash-" + SimpleDateFormat("yyyyMMdd-HHmmss-SSS", Locale.US).apply {
             timeZone = TimeZone.getTimeZone("UTC")
         }.format(Date()) + ".log"
         try {

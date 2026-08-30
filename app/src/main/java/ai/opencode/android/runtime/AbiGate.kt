@@ -37,7 +37,8 @@ object AbiGate {
 
     fun evaluate(): Result {
         val abis = Build.SUPPORTED_ABIS?.toList()?.filter { it.isNotBlank() }
-            ?: listOf(Build.CPU_ABI ?: "unknown")
+            ?.takeIf { it.isNotEmpty() }
+            ?: listOf(Build.CPU_ABI?.takeIf { it.isNotBlank() } ?: "unknown")
         val device = DeviceInfo(
             primaryAbi = abis.first(),
             allAbis = abis,
