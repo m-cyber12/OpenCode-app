@@ -40,7 +40,9 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
 #include <sys/syscall.h>
+#include <unistd.h>
 
 /*
  * A seccomp TRAP must be translated into the errno the call would have
@@ -67,8 +69,9 @@ static int map_errno(long nr) {
         case __NR_clone3:      return ENOSYS;   /* -> clone */
         case __NR_statx:       return ENOSYS;   /* -> fstatat */
         case __NR_faccessat2:  return ENOSYS;   /* -> faccessat libc wrapper */
-        /* Raw access() (x86_64=21 / arm64 __NR_access): report the probed path
-           as absent so Bun's existence checks/recursive mkdir behave normally. */
+        /* Raw access() (legacy): on arm64 it can only reach here as a true trap
+           so report the probed path absent; on x86_64 access is EMULATED with
+           faccessat in the handler and never reaches this mapping. */
         case __NR_access:      return ENOENT;
         default:               return ENOSYS;
     }
@@ -86,28 +89,66 @@ static long trap_number(ucontext_t *uc) {
 #endif
 }
 
+/*
+ * Emulate an x86-64 legacy (non-*at) syscall that Android's filter blocks, using
+ * the allowed "*at" variant against AT_FDCWD. Returns a result (>=0 success, or a
+ * negative -errno) to place in the syscall return register.
+ *
+ * This is why mapping mkdir -> ENOSYS was wrong: the caller needs the directory
+ * actually created, and mkdirat (bionic's own mkdir implementation) is permitted.
+ */
+#if defined(__x86_64__)
+static long emulate(int nr,
+                    long a0, long a1, long a2, long a3, long a4) {
+    switch (nr) {
+        case 83:  /* mkdir(path, mode) -> mkdirat(AT_FDCWD, path, mode) */
+            return syscall(__NR_mkdirat, AT_FDCWD, a0, a1);
+        case 21:  /* access(path, mode) -> faccessat(AT_FDCWD, path, mode, 0) */
+            return syscall(__NR_faccessat, AT_FDCWD, (const char *)a0, a1, 0);
+        default:
+            return -ENOSYS;
+    }
+}
+#endif
+
 static void sigsys_handler(int signo, siginfo_t *info, void *uctx) {
     (void)signo;
     (void)info;
     ucontext_t *uc = (ucontext_t *)uctx;
     long nr = trap_number(uc);
-    int err = map_errno(nr);
+
+    long ret;
+#if defined(__x86_64__)
+    /* Arg registers on trap entry: rdi=a0, rsi=a1, rdx=a2, r10=a3, r8=a4. */
+    long a0 = (long)uc->uc_mcontext.gregs[REG_RDI];
+    long a1 = (long)uc->uc_mcontext.gregs[REG_RSI];
+    long a2 = (long)uc->uc_mcontext.gregs[REG_RDX];
+    long a3 = (long)uc->uc_mcontext.gregs[REG_R10];
+    long a4 = (long)uc->uc_mcontext.gregs[REG_R8];
+    /* Legacy syscalls bionic implements via an *at wrapper emulate cleanly. */
+    ret = emulate(nr, a0, a1, a2, a3, a4);
+    if (ret == -ENOSYS && nr != __NR_access) ret = -(long)map_errno(nr);
+#else
+    /* arm64 has no mkdir(2)/access(2) legacy syscalls (only the *at forms,
+       which the filter allows), so every trap is an ENOSYS-style new call. */
+    ret = -(long)map_errno(nr);
+#endif
+
     static int logged_unknown[64];
-    if (nr != __NR_access && nr != __NR_epoll_pwait2 && nr != __NR_faccessat2
-        && nr >= 0 && nr < 64 && !logged_unknown[nr]) {
+    if (ret == -ENOSYS && nr >= 0 && nr < 64 && !logged_unknown[nr]) {
         logged_unknown[nr] = 1;
-        dprintf(2, "[seccomp] trapped syscall %ld -> -%d (mapped so the process survives)\n",
-                nr, err);
+        dprintf(2, "[seccomp] trapped syscall %ld -> ENOSYS (no *at emulation)\n", nr);
     }
+
 #if defined(__aarch64__)
-    /* arm64: saved PC points AT the trapping `svc #0`; skip its 4 bytes and
-       put -errno in x0 (the syscall return register). */
-    uc->uc_mcontext.regs[0] = (unsigned long long)(-err);
+    /* arm64: saved PC points AT the trapping `svc #0`; skip its 4 bytes and put
+       the result in x0 (the syscall return register). */
+    uc->uc_mcontext.regs[0] = (unsigned long long)ret;
     uc->uc_mcontext.pc += 4;
 #elif defined(__x86_64__)
-    /* x86-64: the kernel already advanced RIP past the 2-byte `syscall`, so only
-       set RAX = -errno. Verified on host: epoll_pwait2->ENOSYS, access->ENOENT. */
-    uc->uc_mcontext.gregs[REG_RAX] = (greg_t)(-(long)err);
+    /* x86-64: the kernel already advanced RIP past the 2-byte `syscall`; place
+       the result in RAX (negative errno on failure, >=0 on success). */
+    uc->uc_mcontext.gregs[REG_RAX] = (greg_t)ret;
 #else
 #error "seccomp-shim: unsupported ABI (need arm64-v8a or x86_64)"
 #endif
