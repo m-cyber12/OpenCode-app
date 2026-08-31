@@ -83,7 +83,10 @@ collect_evidence() {
   for f in "$ROOT"/app/build/test-results/testDebugUnitTest/*.xml; do
     if [ -e "$f" ]; then cp "$f" "$EV/jvm-unit-tests/" 2>/dev/null || true; fi
   done
-  adb logcat -d 2>/dev/null | grep -aE "OpenCode|AndroidRuntime|FATAL|bun" > "$EV/logcat.txt" 2>&1 || true
+  # Every command here is timeout-bounded: this runs on the failure path, and one
+  # blocking command (an adb call waiting on a device, a server it starts) would
+  # bury the very log we are trying to publish.
+  timeout 60 adb logcat -d 2>/dev/null | grep -aE "OpenCode|AndroidRuntime|FATAL|bun" > "$EV/logcat.txt" 2>&1 || true
   cat > "$EV/README.txt" <<'EOF'
 Phase 5 evidence: the Android app driving the on-device OpenCode server as a
 real client (loopback-only binding, OpenCode's own API/events/permissions/MCP,
@@ -115,13 +118,19 @@ push_evidence() { # $1=exit-code-to-report
   DEST="${GITHUB_REF_NAME:-$(git -C "$ROOT" rev-parse --abbrev-ref HEAD)}"
   mkdir -p "$ROOT/docs/progress/phase5-evidence"
   cp -r "$EV/." "$ROOT/docs/progress/phase5-evidence/" 2>/dev/null || true
-  git -C "$ROOT" fetch origin "$DEST" >/dev/null 2>&1 || true
+  export GIT_TERMINAL_PROMPT=0
+  timeout 180 git -C "$ROOT" fetch origin "$DEST" >/dev/null 2>&1 || true
   git -C "$ROOT" add -A docs/progress/phase5-evidence/ 2>/dev/null || true
   if ! git -C "$ROOT" diff --cached --quiet; then
     git -C "$ROOT" -c user.name="arena-ai-coding-agent[bot]" -c user.email="arena-ai-coding-agent[bot]@users.noreply.github.com" \
       commit -m "phase5: client-integration evidence (auto)" >/dev/null 2>&1 || true
-    git -C "$ROOT" pull --rebase origin "$DEST" >/dev/null 2>&1 || true
-    git -C "$ROOT" push origin "HEAD:$DEST" 2>&1 | tail -3 || echo "PUSH_FAILED dest=$DEST"
+    timeout 180 git -C "$ROOT" pull --rebase origin "$DEST" >/dev/null 2>&1 || true
+    # No pipe after push either (see run_c): a push that prints to a pager-less
+    # stdout is fine, but keeping it a plain redirect means nothing can hold it open.
+    timeout 240 git -C "$ROOT" push origin "HEAD:$DEST" > "$OUT/push.out" 2>&1
+    prec=$?
+    tail -3 "$OUT/push.out" 2>/dev/null
+    [ "$prec" = 0 ] || echo "PUSH_FAILED rc=$prec dest=$DEST"
   else
     echo "no evidence changes to commit"
   fi
@@ -153,7 +162,11 @@ heartbeat_once() {
   [ -n "${GITHUB_REF_NAME:-}" ] || return 0
   [ -e /home/runner ] || return 0
   mkdir -p "$(dirname "$ROOT/$HB_FILE_REL")" 2>/dev/null || return 0
-  { echo "### $(date -u +%FT%TZ)  run=${GITHUB_RUN_ID:-?}  step: $HB_STEP"
+  # HB_STEP is read from the log, not from the variable: the heartbeat loop is a
+  # forked subshell, so it would otherwise report the step that was current when it
+  # started ("startup") for the rest of the run.
+  local cur; cur=$(grep -a '^##########' "$MAINLOG" 2>/dev/null | tail -1 | sed 's/^#* *//; s/ *#*$//')
+  { echo "### $(date -u +%FT%TZ)  run=${GITHUB_RUN_ID:-?}  step: ${cur:-$HB_STEP}"
     echo "    head=$(git -C "$ROOT" rev-parse --short HEAD) branch=${GITHUB_REF_NAME} log_lines=$(wc -l < "$MAINLOG" 2>/dev/null || echo 0)"
     echo "    --- last 40 log lines ---"
     tail -40 "$MAINLOG" 2>/dev/null | sed 's/^/    /'
@@ -163,8 +176,8 @@ heartbeat_once() {
   git -C "$ROOT" diff --cached --quiet && return 0
   git -C "$ROOT" -c user.name="arena-ai-coding-agent[bot]" \
       -c user.email="arena-ai-coding-agent[bot]@users.noreply.github.com" \
-      commit -q -m "phase5: CI heartbeat ($HB_STEP)" >/dev/null 2>&1 || return 0
-  git -C "$ROOT" push -q origin "HEAD:refs/heads/$GITHUB_REF_NAME" >/dev/null 2>&1 \
+      commit -q -m "phase5: CI heartbeat (${cur:-$HB_STEP})" >/dev/null 2>&1 || return 0
+  GIT_TERMINAL_PROMPT=0 timeout 180 git -C "$ROOT" push -q origin "HEAD:refs/heads/$GITHUB_REF_NAME" >/dev/null 2>&1 \
     || echo "heartbeat push skipped (branch moved or push refused)" >> "$MAINLOG"
   return 0
 }
