@@ -33,7 +33,7 @@ class OpenCodeApi(
         val body: String,
         message: String,
         cause: Throwable? = null,
-    ) : Exception(message ?: cause?.message ?: "OpenCode API call failed ($status)", cause)
+    ) : Exception(message.ifEmpty { cause?.message ?: "OpenCode API call failed ($status)" }, cause)
 
     data class Response(val status: Int, val body: String) {
         val ok: Boolean get() = status in 200..299

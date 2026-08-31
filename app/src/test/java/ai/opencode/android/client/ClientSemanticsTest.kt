@@ -39,10 +39,10 @@ class EventFrameTest {
     @Test
     fun sessionIDFoundInNestedShapes() {
         val direct = JSONObject("""{"sessionID":"ses_a"}""")
-        assertEquals("ses_a", EventFrame.sessionIDOf("session.idle", direct))
+        assertEquals("ses_a", EventFrame.sessionIDOf(direct))
         val nested = JSONObject("""{"part":{"sessionID":"ses_b"}}""")
-        assertEquals("ses_b", EventFrame.sessionIDOf("message.part.updated", nested))
-        assertEquals("", EventFrame.sessionIDOf("x", JSONObject()))
+        assertEquals("ses_b", EventFrame.sessionIDOf(nested))
+        assertEquals("", EventFrame.sessionIDOf(JSONObject()))
     }
 
     @Test

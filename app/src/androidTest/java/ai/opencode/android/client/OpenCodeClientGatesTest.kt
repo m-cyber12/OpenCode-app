@@ -349,14 +349,17 @@ class OpenCodeClientGatesTest {
 
         // Kernel table view when /proc permits it (Android 10+ may deny apps the
         // file; then it is inconclusive, never a silent pass).
+        // Same row shape the in-app audit parses: "sl: local_address rem_address st ...".
+        // IPv4 addresses are one little-endian word (00000000 = 0.0.0.0), IPv6 four.
         val wildcard = runCatching {
             val hex = "%04X".format(port)
             (File("/proc/net/tcp").readLines() + File("/proc/net/tcp6").readLines())
-                .map { it.trim() }
-                .filter { it.startsWith(Regex("\\d+:")) && it.split(Regex("\\s+")).getOrNull(3) == "0A" }
-                .filter { it.split(Regex("\\s+")).getOrNull(1)?.endsWith(":" + hex) == true }
+                .map { it.trim().split(Regex("\\s+")) }
+                .filter { it.size >= 8 && it[0].endsWith(":") }
+                .filter { it[3] == "0A" }
+                .filter { it[1].substringAfterLast(':').equals(hex, ignoreCase = true) }
                 .count { row ->
-                    val local = row.split(Regex("\\s+"))[1].substringBefore(':').uppercase()
+                    val local = row[1].substringBefore(':').uppercase()
                     local == "00000000" || local == "00000000000000000000000000000000"
                 }
         }.getOrDefault(-1)

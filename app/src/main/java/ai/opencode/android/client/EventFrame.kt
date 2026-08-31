@@ -37,7 +37,7 @@ object EventFrame {
     fun directoryOf(frame: JSONObject): String = frame.optString("directory")
 
     /** `payload.sessionID` for the handful of events that carry one directly. */
-    fun sessionIDOf(type: String, properties: JSONObject): String {
+    fun sessionIDOf(properties: JSONObject): String {
         properties.optString("sessionID").takeIf { it.isNotEmpty() }?.let { return it }
         properties.optJSONObject("info")?.optString("sessionID")?.takeIf { it.isNotEmpty() }?.let { return it }
         properties.optJSONObject("part")?.optString("sessionID")?.takeIf { it.isNotEmpty() }?.let { return it }
