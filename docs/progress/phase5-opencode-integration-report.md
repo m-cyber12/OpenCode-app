@@ -14,6 +14,7 @@
 > | Kotlin client (`OpenCodeApi`/`OpenCodeEventStream`/`Transcript`/`OpenCodeRepository`), Keystore `SecretStore`, `LoopbackGuard`, `LoopbackAudit`, `RuntimeIntegration`, UI tabs | **IMPLEMENTED, NOT TESTED** (not compiled, not run) |
 > | Phase 5 gate suite (`phase5/scripts/20-integration-gates.sh`, `gate-16-mcp-remote.js`) + orchestrators | **IMPLEMENTED** (bash/JS syntax checked; provisioning + audit logic rehearsed against a fake-`adb` harness; never run against a device) |
 > | Host-side remote-MCP fixture (`phase5/mcp/remote-mcp-server.mjs`) | **TESTED on this host** — real `@modelcontextprotocol/sdk` 1.29.0 clients connected over **StreamableHTTP and legacy HTTP+SSE**, `tools/list` + `tools/call` round-trips green (see §2) |
+> | Gate `P5-G16` *driver* (`phase5/scripts/device/gate-16-mcp-remote.js`) | **TESTED on this host against a harness** — `phase5/scripts/rehearsal/run-host-rehearsal.sh` runs the driver, the fixture, and a fake OpenCode MCP surface whose status transitions come from genuine SDK client negotiations → `G16_PASS`. **Host wiring proof only: no device, no app, no on-device OpenCode involved.** |
 > | G6/G7/G10/G11/G12 re-run on a device, loopback audit on a device, credential at-rest proof on a device | **NOT TESTED** — pending the CI run recorded in §6 |
 > | `.github/workflows/phase5-integration.yml` installation, and the real arm64 device run | **BLOCKED on the user** (see §5/§6) |
 >
@@ -80,6 +81,16 @@ HEALTH {"healthy":true,"marker":"P5_REMOTE_MCP","mcp":1,"sse":0}
 ```
 
 That is **TESTED** (host-side): it proves the *peer* is a genuine MCP server on both transports, so a device-side failure would mean our client/config path, not the fixture. One defect was found and fixed this way: wiring `server.onclose → transport.close()` recursed (stack overflow on client disconnect); the fix relies on the HTTP `close` event alone.
+
+The gate driver itself was then rehearsed the same way (`run-host-rehearsal.sh`, output above is committed to nothing — it is a dev-run script under `phase5/scripts/rehearsal/`, and its own header says "NOT device evidence"). That rehearsal caught two more real bugs before CI: `gate-16` imported `./gates-lib.js`, which only exists in `phase4/scripts/device/` (now imported in place, unmodified, so both phases share one helper contract), and a stale `p5-remote-*` entry from an earlier run made the "no remote tools before" assertion fail — the driver now disconnects its own names first, so each run measures its own pre-state. Verdict of that rehearsal:
+
+```
+GATE16 remote MCP transports OK — streamable_http=connected http_sse=connected
+  tools_registered=4 lifecycle=disconnect+connect unreachable=failed stdio=connected
+G16_PASS
+```
+
+The `failed` entry it produced for the unreachable server carried the real client error (`connect ECONNREFUSED 127.0.0.1:4599`), which is the shape `P5-G16` expects from upstream and does not synthesise.
 
 ---
 
@@ -166,6 +177,7 @@ Machine-readable verdict lines (`P5_<NAME> PASS|FAIL :: detail`) are emitted to 
 
 ## 6. CI run log (append each run here; empty = nothing has been claimed yet)
 
+| Host rehearsal (this session) | n/a | `REHEARSAL_PASS` | fixture + `P5-G16` driver green on one host against a fake-OpenCode MCP surface (§2). Not device evidence; does not close any gate. |
 | Run | Ref | Result | Notes |
 | --- | --- | --- | --- |
 | _pending_ | `arena/01a05713-opencode-app` | — | First run of the Phase 5 suite (staged after Phase 4 on the x86_64 emulator). Expected first failures to triage: Kotlin compile errors (never compiled), `P5-G16` status-string assumptions, `P5-G17` app-uid `/proc/net/tcp` availability (the audit is designed to report *inconclusive*, and the gate then leans on the behavioural socket probe). |

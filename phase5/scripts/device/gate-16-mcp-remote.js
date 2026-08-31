@@ -15,7 +15,10 @@
 //
 // The device reaches the CI host through the emulator NAT gateway (10.0.2.2),
 // which is what P5_MCP_URL is set to. No cloud endpoint is involved.
-import { get, post, log, gateResult, assert } from "./gates-lib.js"
+// Shared helpers are phase 4's, imported in place (not copied, not edited): the
+// auth/dir plumbing and the assert/gateResult contract must stay identical
+// across phases so results are comparable.
+import { get, post, log, gateResult, assert } from "../../../phase4/scripts/device/gates-lib.js"
 
 const MCP_URL = process.env.P5_MCP_URL || "http://10.0.2.2:4551"
 const DEAD_URL = process.env.P5_MCP_DEAD_URL || "http://10.0.2.2:4599/mcp"
@@ -74,6 +77,14 @@ async function remove(name) {
 let ok = true
 const notes = []
 try {
+  // Idempotent start: tear down our own entries if a previous run left them
+  // configured, so "no remote tools before the servers were added" measures the
+  // pre-state of THIS run rather than whatever a stale session left behind.
+  for (const n of [HTTP_NAME, SSE_NAME, DEAD_NAME]) {
+    const r = await post(`/mcp/${n}/disconnect`)
+    if (r.ok) log(`pre-cleanup: disconnected ${n} from an earlier run`)
+  }
+
   const before = await mcpStatus()
   log("mcp status before: " + JSON.stringify(before))
   const idsBefore = await toolIds()
@@ -101,15 +112,11 @@ try {
   const idsAfter = await toolIds()
   const added = idsAfter.filter((id) => !idsBefore.includes(id))
   log(`tool ids added by the remote servers (${added.length}): ${added.join(", ")}`)
+  // Two ids per tool are expected: one per connected remote server (the http one
+  // and the sse one), named <sanitized-server>_<tool> by upstream.
   for (const want of ["remote_echo", "remote_marker"]) {
-    assert(
-      added.some((id) => id.includes(want)),
-      `tool list now contains a ${want} tool from the remote server`,
-    )
-    assert(
-      added.filter((id) => id.includes(want)).length >= 1,
-      `${want} reachable through BOTH remote transports (>=1 id)`,
-    )
+    const hits = added.filter((id) => id.includes(want))
+    assert(hits.length >= 2, `${want} present for BOTH remote servers (got ${hits.join(",") || "none"})`)
   }
   notes.push("tools_registered=" + added.length)
 
