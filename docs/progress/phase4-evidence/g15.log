@@ -2,45 +2,47 @@ assert ok: session id present
 --- prompting the real agent ---
 prompt_async accepted (204)
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"Inspect this project and explain what it does.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"Let me explore the project structure to understand what it does.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"task","callID":"call_8255a02032af4afb8646427b","input":"{\"description\":\"Explore project structure\",\"prompt\":\"Explore the project at /data/data/ai.opencode.android.debug/files/workspaces/gates thoroughly. I need to understand:\\n\\n1. The overall project stru","output":"\"<task id=\\\"ses_fa923b549ffefFtWfK0cX7zCmC\\\" state=\\\"completed\\\">\\n<task_result>\\nI now have a complete picture of the project. Here is my comprehensive summary.\\n\\n## Project Summary: `gates` fixture","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The exploration agent gave me a comprehensive summary. Let me relay the key findings concisely.","input":"null","output":"null","error":null},{"type":"text","text":"This is a **test fixture**, not a real application. It's a deliberately tiny project used to verify OpenCode's \"Phase 4 ","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
---- assistant reply (1159 chars) ---
+[{"role":"user","parts":[{"type":"text","text":"Inspect this project and explain what it does.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to understand what this project does. Let me explore the codebase structure first.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"task","callID":"call_f01bc8c83c7b4db99ac15337","input":"{\"description\":\"Explore project structure\",\"prompt\":\"Thoroughly explore the project at /data/data/ai.opencode.android.debug/files/workspaces/gates. I need to understand:\\n1. What the project is (frame","output":"\"<task id=\\\"ses_fa91536c0ffeNf2BznKzmSWVPq\\\" state=\\\"completed\\\">\\n<task_result>\\nHere is a comprehensive summary of the project.\\n\\n---\\n\\n## Project Overview\\n\\n**Repository:** `gates`\\n**Location:*","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The exploration is complete. Let me provide a concise summary.","input":"null","output":"null","error":null},{"type":"text","text":"This is a **minimal test fixture project**, not a real application. Its purpose is to validate file-operation tooling (g","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
+--- assistant reply (777 chars) ---
 
-This is a **test fixture**, not a real application. It's a deliberately tiny project used to verify OpenCode's "Phase 4 production-host gates" — giving file-search tools (glob, read, ripgrep) and git operations something small and predictable to exercise against.
+This is a **minimal test fixture project**, not a real application. Its purpose is to validate file-operation tooling (glob, read, grep, write) in an end-to-end test environment.
 
-### Structure
+**Contents:**
 
-```
-gates/
-├── README.md          # Project description, contains G15-E2E-MARKER
-├── g8-write.txt       # Untracked file with G8_WRITE_OK (write-gate test)
-├── notes.txt          # Contains G15-E2E-MARKER (ripgrep target)
-└── src/
-    └── app.js         # Single ES module exporting greet(name)
-```
+| File | Purpose |
+|---|---|
+| `README.md` | Project metadata |
+| `g8-write.txt` | Write-gate marker (`G8_WRITE_OK`) |
+| `notes.txt` | Ripgrep search marker (`G15-E2E-MARKER`) |
+| `src/app.js` | Trivial ES module exporting a `greet(name)` function |
 
-### Key details
+**What it does:** Nothing functional. It's structured so automated tests can verify that glob finds files, read retrieves content, grep searches content, and write creates files. The sentinel strings (`G15-E2E-MARKER`, `G8_WRITE_OK`) act as assertion anchors for test validation.
 
-- **4 tracked files, 1 untracked** (`g8-write.txt`)
-- **Marker strings** (`G15-E2E-MARKER`, `G8_WRITE_OK`) are embedded so gates can verify search/find/write operations produce expected results
-- **Git state**: one commit on `main`, plus a `feature/g9` branch with a diff — exists so git/grep gates can test branch and cross-branch operations
-- **No dependencies, no build system, no tests** — the `greet()` function is never actually run
-
-It exists purely so the OpenCode toolchain has known inputs with expected outputs to validate against during gate checks.
+Single commit, zero dependencies, no build steps.
 --- tools used: ["task"] ---
 --- tool outputs ---
-<task id="ses_fa923b549ffefFtWfK0cX7zCmC" state="completed">
+<task id="ses_fa91536c0ffeNf2BznKzmSWVPq" state="completed">
 <task_result>
-I now have a complete picture of the project. Here is my comprehensive summary.
+Here is a comprehensive summary of the project.
 
-## Project Summary: `gates` fixture
+---
 
-### 1. What It Is
-This is **not** an application or a real product codebase. Based on its README, it is a **test fixture**: a deliberately tiny project created to exercise the "Phase 4 production-host gates"
---- events seen (873): {"server.connected":1,"session.updated":24,"session.diff":10,"message.updated":68,"session.status":19,"message.part.updated":238,"message.part.delta":502,"session.created":2,"server.heartbeat":7,"session.idle":2}
---- tools streamed as events: [{"tool":"task","status":"completed","callID":"call_8255a02032af4afb8646427b","input":{"description":"Explore project structure","prompt":"Explore the project at /data/data/ai.opencode.android.debug/files/workspaces/gates thoroughly. I need to understand:\n\n1. The overall project structure (key directories and files)\n2. What the project does (read README, package.json, main config files)\n3. The tech stack and key dependencies\n4. How it's organized (entry points, main modules)\n\nRead the top-level files like README.md, package.json, Cargo.toml, or any config files that explain the project. Also look at the directory structure.\n\nReturn a comprehensive summary of what this project is, what it does, and how it's structured.","subagent_type":"explore"}},{"tool":"read","status":"completed","callID":"call_8daed8f5b8604c84af644fa9","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"glob","status":"completed","callID":"call_ac6042a35bf34617ae17a461","input":{"pattern":"*","path":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"glob","status":"completed","callID":"call_25aac35338c2458c911968e9","input":{"pattern":"**/*.md","path":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"read","status":"completed","callID":"call_e929a4c879af452ca68c38e6","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md"}},{"tool":"read","status":"completed","callID":"call_847603bdd0eb4a72984eaeb7","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js"}},{"tool":"read","status":"completed","callID":"call_462face484f34fad8c2a8b38","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt"}},{"tool":"read","status":"completed","callID":"call_4d4bbb42955b4a6db608b02e","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/g8-write.txt"}},{"tool":"bash","status":"completed","callID":"call_af4608fdacd5425483779a4e","input":{"command":"ls -la && echo \"---\" && ls -la src/","workdir":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"glob","status":"completed","callID":"call_a962e8b740d246a5bed9a751","input":{"path":"/data/data/ai.opencode.android.debug/files/workspaces/gates","pattern":"**/*"}},{"tool":"bash","status":"completed","callID":"call_2e934c6bbdaa4080b9aed69f","input":{"command":"git log --oneline -20 && echo \"---STATUS---\" && git status && echo \"---BRANCH---\" && git branch -a","workdir":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"bash","status":"completed","callID":"call_81aa139e7fa8485581519427","input":{"command":"git show --stat HEAD && echo \"---G9---\" && git log feature/g9 --oneline -20 && echo \"---DIFF---\" && git diff main feature/g9 --stat && echo \"---ALL-COMMITS---\" && git log --all --oneline","workdir":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"bash","status":"completed","callID":"call_47a33de8867243d5a471ef94","input":{"command":"git ls-files && echo \"---REMOTE---\" && git remote -v","workdir":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"bash","status":"completed","callID":"call_9694fdc94f8040e88a4630e4","input":{"command":"git show feature/g9 && echo \"---NOTES-ON-G9---\" && git show feature/g9:notes.txt","workdir":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}}]
+## Project Overview
+
+**Repository:** `gates`
+**Location:** `/data/data/ai.opencode.android.debug/files/workspaces/gates`
+
+### What It Is
+
+This is a **minimal test fixture project** -- not a real application. It was created specifically as a **test harness** for validatin
+--- events seen (674): {"server.connected":1,"session.status":15,"session.updated":20,"session.diff":8,"message.updated":52,"message.part.updated":140,"message.part.delta":427,"session.created":2,"server.heartbeat":7,"session.idle":2}
+--- tools streamed as events: [{"tool":"task","status":"completed","callID":"call_f01bc8c83c7b4db99ac15337","input":{"description":"Explore project structure","prompt":"Thoroughly explore the project at /data/data/ai.opencode.android.debug/files/workspaces/gates. I need to understand:\n1. What the project is (framework, language, etc.)\n2. The directory structure\n3. Key configuration files (package.json, Cargo.toml, go.mod, etc.)\n4. Main entry points and core source files\n5. What the project does based on code and documentation\n\nRead the top-level directory, any README files, configuration files, and key source files. Provide a comprehensive summary of what this project does, its architecture, and key components.","subagent_type":"explore"}},{"tool":"read","status":"completed","callID":"call_be5aadb86b3e47aeb7868381","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"glob","status":"completed","callID":"call_1403b2ea5f4d4e87b249726c","input":{"pattern":"README*","path":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"glob","status":"completed","callID":"call_42b45bc2bef0444781fedcd6","input":{"pattern":"*.toml","path":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"glob","status":"completed","callID":"call_4d984bcbfbb546b5a3b6356d","input":{"pattern":"*.json","path":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"glob","status":"completed","callID":"call_db51facac6eb4d66b697d955","input":{"pattern":"*.lock","path":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}},{"tool":"read","status":"completed","callID":"call_81a3731780c54c5aa4bf365c","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md"}},{"tool":"read","status":"completed","callID":"call_7981f0196bec409f91912143","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/g8-write.txt"}},{"tool":"read","status":"completed","callID":"call_6aae850290f84422a4501c94","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt"}},{"tool":"read","status":"completed","callID":"call_f3bc507a97e1451182beb0ae","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src"}},{"tool":"read","status":"completed","callID":"call_e7322f7740794bf6a29d507a","input":{"filePath":"/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js"}},{"tool":"bash","status":"completed","callID":"call_a9c8b0bec1754f05817a0cf7","input":{"command":"git log --oneline -20","workdir":"/data/data/ai.opencode.android.debug/files/workspaces/gates"}}]
 --- permissions allowed: []
 assert ok: agent turn did not fail
-assert ok: explanation is substantive (1159 chars)
+assert ok: explanation is substantive (777 chars)
 assert ok: explanation reflects the actual project
-ASSERT_FAILED: real tools executed: []
-G15_FAIL
+assert ok: real tools executed: ["read","glob","glob","glob","glob","read","read","read","read","read","bash"]
+assert ok: tool parts streamed over SSE
+assert ok: session.status events streamed
+assert ok: message events streamed
+G15_PASS
