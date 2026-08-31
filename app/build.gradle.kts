@@ -29,11 +29,15 @@ android {
         applicationId = "ai.opencode.android"
         minSdk = 29          // W^X: exec only from nativeLibraryDir; ABI gating enforces arm64/x64
         targetSdk = 34
-        versionCode = 4      // phase 4
-        versionName = "1.18.23-phase4"   // tracks the pinned OpenCode version (versions.lock)
+        versionCode = 5      // phase 5
+        versionName = "1.18.23-phase5"   // tracks the pinned OpenCode version (versions.lock)
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")   // arm64 ships; x86_64 for CI/emulator
         }
+        // On-device integration tests run inside the app's own process: they use
+        // the SAME client classes (OpenCodeApi/OpenCodeEventStream/SecretStore)
+        // as the UI, against the SAME server the supervisor started.
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -95,6 +99,11 @@ dependencies {
     implementation("androidx.compose.material3:material3")
 
     testImplementation("junit:junit:4.13.2")
+    // Instrumentation only: the runner + junit3 extension. No production dep is
+    // added for tests (Phase 5 keeps the app's dependency list unchanged).
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.1")
+    androidTestImplementation("androidx.test:core:1.6.1")
     // Real org.json on the JVM so manifest parsing/markers are testable locally.
     testImplementation("org.json:json:20240303")
 }

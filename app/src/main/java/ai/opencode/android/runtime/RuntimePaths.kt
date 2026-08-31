@@ -55,8 +55,26 @@ class RuntimePaths private constructor(context: Context) {
     val diagnosticsDir: File = File(filesDir, "diagnostics")
 
     val secretsDir: File = File(filesDir, "secrets")
+    /**
+     * Only ever read to migrate a pre-Phase-5 plaintext password into the
+     * Keystore (see [Secrets.serverPassword]); the app no longer writes it.
+     */
     val serverPasswordFile: File = File(secretsDir, "server-password")
-    val apiKeyFile: File = File(secretsDir, "openrouter-api-key")
+    /** Keystore-encrypted secret blobs (one per secret name). */
+    val secretBlobs: File = File(secretsDir, ".")
+
+    /**
+     * Test-harness scratch dir. Production code never writes a secret here; the
+     * instrumentation APK exports the loopback password into it (only when a
+     * `harness/enabled` marker exists) so the host-side JS gate drivers can talk
+     * to the app's server with the same credentials the app uses.
+     */
+    val harnessDir: File = File(filesDir, "harness")
+    val harnessMarker: File = File(harnessDir, "enabled")
+    val harnessPasswordFile: File = File(harnessDir, "server-password")
+
+    /** Evidence written by the runtime itself (loopback bind audit). */
+    val loopbackAuditFile: File = File(logDir, "loopback-audit.txt")
     val pidFile: File = File(filesDir, "runtime.pid")
 
     val bunLink: File = File(binDir, "bun")

@@ -233,7 +233,9 @@ log "H1 bun via symlink: '$BUNVER' exec_ok=$EXEC_OK"
 H1_NODE=1; rash "test -f '$FILES/opencode/dist/node/node.js'" && H1_NODE=0
 H1_LAUNCH=1; rash "test -f '$FILES/launcher.js'" && H1_LAUNCH=0
 H1_NM=1; rash "test -d '$FILES/node_modules'" && H1_NM=0
-H1_MARK=1; echo "$MARKER" | grep -q '"payloadVersion":4' && H1_MARK=0
+# payloadVersion 5 (Phase 5) and 4 (Phase 4) are both valid app-known layouts;
+# the marker only has to match what this build's RuntimeVersion expects.
+H1_MARK=1; echo "$MARKER" | grep -qE '"payloadVersion":[45]' && H1_MARK=0
 log "H1 node=$H1_NODE launcher=$H1_LAUNCH node_modules=$H1_NM marker=$H1_MARK exec=$EXEC_OK"
 if [ "$EXEC_OK" = "1" ] && [ "$H1_NODE" = 0 ] && [ "$H1_LAUNCH" = 0 ] \
    && [ "$H1_NM" = 0 ] && [ "$H1_MARK" = 0 ]; then

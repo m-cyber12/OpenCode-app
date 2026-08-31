@@ -39,9 +39,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Phase 4 host UI: shows runtime status (the supervisor StateFlow) and
- * diagnostics, with start/stop controls. The chat/project UX is Phase 5 — this
- * screen exists so the app "owns" the runtime and troubleshooting is visible.
+ * The app's screen. Phase 4 added the runtime host (status + diagnostics);
+ * Phase 5 makes the app an actual OpenCode client: sessions, streaming,
+ * tool parts, permission approvals, MCP and Keystore-backed credentials, all
+ * driven through the upstream HTTP API and event stream (see ui/OpenCodeScreen
+ * and client/). Polishing this UI is Phase 6.
  */
 class MainActivity : ComponentActivity() {
 
@@ -58,13 +60,7 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             MaterialTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    RuntimeScreen(
-                        onStart = { RuntimeService.start(this) },
-                        onStop = { RuntimeService.stop(this) },
-                        onShare = { shareDiagnostics() },
-                    )
-                }
+                ai.opencode.android.ui.OpenCodeRoot(onShare = { shareDiagnostics() })
             }
         }
         // The runtime is part of opening the app: start on launch.
@@ -97,69 +93,5 @@ class MainActivity : ComponentActivity() {
             }
             startActivity(Intent.createChooser(send, "Share OpenCode diagnostics"))
         }.start()
-    }
-}
-
-@Composable
-private fun RuntimeScreen(
-    onStart: () -> Unit,
-    onStop: () -> Unit,
-    onShare: () -> Unit,
-) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val manager = remember { RuntimeManager.get(context) }
-    val state by manager.state.collectAsState()
-    val scope = rememberCoroutineScope()
-    var diagText by remember { mutableStateOf("(press Collect diagnostics)") }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text("OpenCode runtime host", style = MaterialTheme.typography.headlineSmall)
-
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Status: ${state.status}", style = MaterialTheme.typography.titleMedium)
-                Text(state.detail, style = MaterialTheme.typography.bodyMedium)
-                Text("ABI: ${state.abi ?: "—"}   restarts: ${state.restartCount}")
-                Text(
-                    "OpenCode ${state.manifest?.opencodeVersion ?: "…"} @ ${
-                        state.manifest?.opencodeCommit?.take(7) ?: "…"
-                    }  •  bun ${state.manifest?.bunVersion ?: "…"}",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onStart, enabled = state.status != RuntimeStatus.HEALTHY
-                && state.status != RuntimeStatus.STARTING && state.status != RuntimeStatus.EXTRACTING) {
-                Text("Start")
-            }
-            Button(onClick = onStop, enabled = state.status == RuntimeStatus.HEALTHY
-                || state.status == RuntimeStatus.STARTING || state.status == RuntimeStatus.CRASHED_RESTARTING) {
-                Text("Stop")
-            }
-            Button(onClick = {
-                scope.launch {
-                    diagText = withContext(Dispatchers.IO) {
-                        manager.diagnostics().text
-                    }
-                }
-            }) { Text("Collect diagnostics") }
-            Button(onClick = onShare) { Text("Share") }
-        }
-
-        Card(Modifier.fillMaxWidth()) {
-            Text(
-                diagText,
-                modifier = Modifier.padding(12.dp),
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
     }
 }

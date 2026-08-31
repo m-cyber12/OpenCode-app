@@ -47,7 +47,7 @@ GIT_PIN="v2.48.1"
 ZLIB_PIN="v1.3.1"
 BUN_PIN="1.3.14"
 RG_PIN="15.1.0"
-PAYLOAD_VERSION=4
+PAYLOAD_VERSION=5   # Phase 5: launcher loopback audit + Keystore secret layout
 STATUS="$ENGINE/build.status"
 : > "$STATUS"
 note() { echo "$*" | tee -a "$STATUS"; }
@@ -361,7 +361,7 @@ for dirpath, _, names in os.walk(stage):
         data = open(p, "rb").read()
         files[rel] = {"sha256": hashlib.sha256(data).hexdigest(), "size": len(data)}
 manifest = {
-    "payloadVersion": int(os.environ.get("PAYLOAD_VERSION", "4")),
+    "payloadVersion": int(os.environ.get("PAYLOAD_VERSION", "5")),
     "opencodeCommit": commit,
     "opencodeVersion": "1.18.23",
     "bunVersion": "1.3.14",

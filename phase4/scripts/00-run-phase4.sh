@@ -128,4 +128,23 @@ cp "$DIR/out/engine/build.status" "$EV/payload-build.status" 2>/dev/null || true
 
 echo "=== PHASE 4 END $(date -u +%FT%TZ) gates_rc=$GATE_RC ===" | tee -a "$MAINLOG"
 cat "$EV/GATES_SUMMARY.txt" 2>/dev/null | tee -a "$MAINLOG"
-exit "$GATE_RC"
+
+# ---------------------------------------------------------------------------
+# PHASE 5 tail stage. The emulator, payload and APK this script just produced are
+# exactly what the Phase 5 client-integration gates need, so they run here rather
+# than booting a second device. Phase 4 verdicts are untouched: this stage adds
+# its own summary (phase5/out/evidence/GATES_SUMMARY.txt) and its own log.
+# The job fails if EITHER phase fails — a green run must mean both did.
+step "10/10 phase 5 client-integration gates (staged on this device)"
+P5_RC=0
+if [ "$GATE_RC" = "0" ]; then
+  bash "$REPO/phase5/scripts/00-run-phase5.sh" --stage-after-phase4 2>&1 | tee -a "$MAINLOG"
+  P5_RC=${PIPESTATUS[0]}
+else
+  echo "phase4 gates failed (rc=$GATE_RC); skipping the phase5 tail stage"
+  P5_RC=1
+fi
+echo "=== PHASE 5 (staged) END rc=$P5_RC ===" | tee -a "$MAINLOG"
+cat "$REPO/phase5/out/evidence/GATES_SUMMARY.txt" 2>/dev/null | tee -a "$MAINLOG"
+if [ "$GATE_RC" != "0" ]; then exit "$GATE_RC"; fi
+exit "$P5_RC"

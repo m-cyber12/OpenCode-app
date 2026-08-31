@@ -82,6 +82,11 @@ wasm_components:                      # portable; ship assets with the server bu
 key_js_dependencies:
   - name: "@modelcontextprotocol/sdk"   # MCP stdio/HTTP/SSE
     version: 1.29.0
+    # PHASE 5: the same pin is used by the host-side REMOTE MCP fixture
+    # (phase5/mcp/remote-mcp-server.mjs: StreamableHTTPServerTransport +
+    # SSEServerTransport) that gate P5-G16 points the on-device OpenCode client
+    # at. Reused from phase4/out/mcp/node_modules when present so both fixtures
+    # are provably the same version; no fixture code ships in the APK.
     note: "PHASE 3: used as the REAL MCP stdio server+client on-device (G10). npm deps: zod ^3.25||^4, zod-to-json-schema, hono, express, eventsource, jose, ajv, cors, cross-spawn, pkce-challenge, raw-body, content-type"
   - name: effect                        # core framework
     version: 4.0.0-beta.83
@@ -133,7 +138,7 @@ android_host:
   agp: 8.5.2
   gradle: 8.9
   compose_bom: 2024.06.00
-  payload_version: 4     # bumped on payload/layout change; drives re-extraction
+  payload_version: 5     # bumped on payload/layout change; drives re-extraction (5 = Phase 5)
   # per-ABI JNI executables (Android extracts to nativeLibraryDir, exec-allowed):
   jni_libs:
     - { name: libbun.so,  source: "@oven/bun-linux-{x64|aarch64}-android@1.3.14", bionic: true }
@@ -150,7 +155,7 @@ android_host:
     xdg:       "files/xdg/{data,config,state,cache,tmp} (HOME=files/home)"
     workspaces: "files/workspaces/<project>"
     logs:      "files/log/runtime.log + files/log/crashes/ + xdg/state/opencode/log/"
-    secrets:   "files/secrets/server-password (random, 600), openrouter-api-key (optional)"
+    secrets:   "files/secrets/<name>.enc — AES-256-GCM blobs under a non-exportable AndroidKeyStore key (Phase 5); the pre-Phase-5 plaintext server-password file is migrated and deleted"
   abi_support:
     shipping: [arm64-v8a]
     emulator_ci: [x86_64]
