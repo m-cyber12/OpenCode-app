@@ -205,13 +205,40 @@ Machine-readable verdict lines (`P5_<NAME> PASS|FAIL :: detail`) are emitted to 
 
 ## 6. CI run log (append each run here; empty = nothing has been claimed yet)
 
-| Host rehearsal (this session) | n/a | `REHEARSAL_PASS` | fixture + `P5-G16` driver green on one host against a fake-OpenCode MCP surface (§2). Not device evidence; does not close any gate. |
 | Run | Ref | Result | Notes |
 | --- | --- | --- | --- |
-| _pending_ | `arena/01a05713-opencode-app` | — | First run of the Phase 5 suite (staged after Phase 4 on the x86_64 emulator). Expected first failures to triage: Kotlin compile errors (never compiled), `P5-G16` status-string assumptions, `P5-G17` app-uid `/proc/net/tcp` availability (the audit is designed to report *inconclusive*, and the gate then leans on the behavioural socket probe). |
+| host rehearsal (this session) | local | `REHEARSAL_PASS` | MCP fixture + `P5-G16` driver green on one host against a fake-OpenCode MCP surface (§2). Not device evidence; does not close any gate. |
+| 65 (`33385975679`) | `arena/01a05713-opencode-app` | **FAILED, no gate verdicts** | Dispatched manually by the user at 11:13Z against the Phase 4 workflow; died at step 5/10 ("Run the Phase 4 suite") after ~9 min, i.e. inside the Phase 4 Gradle stage, *before* the Phase 5 tail stage or the emulator gates ran. Steps 1-4 (KVM, JDK) were green and step 6/7 (evidence copy, artifacts) still ran. Nothing is claimed from this run. |
 
-Planned evidence paths after a run: `docs/progress/phase5-evidence/GATES_SUMMARY.txt`, `p5-k-instrument.log`, `p5-k-gates.log`, `rerun-gate-*.log`, `p5-16-mcp-remote.log`, `p5-16-fixture-host.log`, `p5-17-loopback.txt`, `p5-17-external-connect.txt`, `p5-18-credentials.txt`, `p5-19-secret-scan.txt`.
+### Reading CI output from this sandbox (why run 65 has no log here)
 
-## 7. What changes when the run lands
+The Actions console is not reachable from the sandbox this work is driven from: `api.github.com`
+works, but every log/artifact body is served through `results-receiver.actions.githubusercontent.com`
+and `productionresultssa*.blob.core.windows.net`, and both time out here. Verified on run 65 with
+`gh run view --log-failed`, `gh api actions/jobs/<id>/logs` and `gh api actions/artifacts/9755821552/zip`
+(all three failed to fetch the blob; the artifact itself, 111 MB, exists and is downloadable from a
+browser). The check-run annotations API answers only `Process completed with exit code 1`.
 
-Only §1–§4 **status lines** and §5's labels change on evidence; the design text above already reflects the code in the tree. If `P5-G17`'s table read is inconclusive on the emulator, the honest outcome is "behavioural refusal proven, kernel table audit unavailable" — recorded as such rather than upgraded to a pass. If `P5-G16` shows `connected` for the *dead* server or the tool list never grows, that is a real integration defect and this phase stays open.
+So the repo is the log channel (commit `a132418`):
+
+- `phase4/scripts/00-run-phase4.sh` now publishes a failure digest - the error-grep plus a 500-line log
+  tail - as `docs/progress/ci-failure-digest/` on the branch under test, on any failing step, only inside
+  Actions and only on failure.
+- `phase5/scripts/00-run-phase5.sh` already committed its evidence on every exit path, including a failed
+  build; `phase5/CI_GRADLE_ONLY` = `1` additionally selects a fast standalone mode (compile the app +
+  androidTest APK, run the JVM unit tests, no payload build / emulator / gates) so a compiler error comes
+  back in ~10 min per push instead of a full run. **This marker is a bring-up knob, not a verdict: a run
+  in that mode produces no device evidence and says so in its summary.** It must be `0` for any Phase 5
+  gate claim in this report to have evidence behind it.
+
+Pending user-side step (unchanged, see §5): the workflow file the user created landed at
+`.github/workflows/phase5-integration.yml/Create phase5-integration.yml` - the GitHub "new file" form put
+the whole path in the Name field, so `phase5-integration.yml` became a directory. It is therefore not
+registered (`GET /actions/workflows` lists only phase 2/3/4) and pushes to this branch will never trigger
+it. Fixing that means: delete that stray file, then create `.github/workflows/phase5-integration.yml`
+(Add file inside the `workflows` directory) with the content of `phase5/workflow/phase5-integration.yml`.
+I cannot do it from here: any git push that adds, renames or deletes anything under `.github/workflows/**`
+is rejected by the remote (`refusing to allow a GitHub App to create or update workflow ... without
+'workflows' permission`) - I attempted it and reset the local commit so the branch stays identical to
+origin.
+
