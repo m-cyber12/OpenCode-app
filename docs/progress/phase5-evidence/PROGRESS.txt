@@ -318,3 +318,49 @@
     STEP_FAILED rc=1: SKIP_PAYLOAD=1 '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
     FATAL: gradle compile/unit tests failed (compiler output in 00-run-phase5.log)
 
+### 2026-08-31T14:25:40Z  run=33402271190  step: gradle-only mode: compile + JVM unit tests (no emulator, no device gates)
+    head=8dfc883 branch=arena/01a05713-opencode-app log_lines=191
+    --- error digest (why a stalled push cannot hide this) ---
+    BUILD SUCCESSFUL in 1m 47s
+    --- last 40 log lines ---
+    AbiGateTest > armeabiV7aOnlyIsRejected PASSED
+    
+    LoopbackAuditTest > distinguishesWildcardListenRow PASSED
+    
+    LoopbackAuditTest > formatsIpv6LoopbackAndWildcard PASSED
+    
+    LoopbackAuditTest > parsesLoopbackListenRow PASSED
+    
+    LoopbackAuditTest > udpRowsCarryPortForMdnsDetection PASSED
+    
+    LoopbackAuditTest > skipsHeaderAndJunk PASSED
+    
+    LoopbackAuditTest > formatsIpv4LittleEndianWord PASSED
+    
+    ManifestTest > roundTripsVersionsAndEntries PASSED
+    
+    ManifestTest > unknownFieldsTolerated PASSED
+    
+    ManifestTest > rejectsManifestVersionDriftFromLock PASSED
+    
+    ManifestTest > rejectsUnsafeManifestPaths PASSED
+    
+    PayloadExtractorTest > verifyDetectsCorruptedContent PASSED
+    
+    PayloadExtractorTest > unpackTarExtractsFilesAndNestedDirs PASSED
+    
+    PayloadExtractorTest > verifyDetectsMissingMarker PASSED
+    
+    PayloadExtractorTest > unpackTarRejectsPathEscape PASSED
+    
+    SecretNamesTest > rejectsPathTraversalAndJunk PASSED
+    
+    SecretNamesTest > blobFileNameIsContained PASSED
+    
+    SecretNamesTest > acceptsProviderStyleNames PASSED
+    
+    SecretNamesTest > providerIdRoundTrip PASSED
+    
+    BUILD SUCCESSFUL in 1m 47s
+    35 actionable tasks: 33 executed, 2 from cache
+
