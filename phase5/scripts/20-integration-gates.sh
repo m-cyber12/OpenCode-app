@@ -329,7 +329,7 @@ log "=== P5-G17 loopback-only binding evidence ==="
   rash "cat '$FILES/log/loopback-audit.txt' 2>&1"
   echo
   echo "=== launcher bind evidence (runtime.log) ==="
-  rash "grep -aE 'SERVER_BOUND|BIND_AUDIT|SERVER_BIND|mDNS|mdns' '$FILES/log/runtime.log' 2>&1 | tail -20"
+  rash "grep -aE 'SERVER_BOUND|BIND_AUDIT|SERVER_BIND_POLICY|SERVER_BIND_REJECTED|SERVER_MDNS_REFUSED|mDNS|mdns' '$FILES/log/runtime.log' 2>&1 | tail -25"
   echo
   echo "=== OpenCode server log: mDNS publish lines (want none) ==="
   rash 'for d in "'"$FILES"'/xdg/data/opencode/log" "'"$FILES"'/xdg/state/opencode/log"; do for f in "$d"/*.log; do [ -e "$f" ] || continue; grep -aiE "mDNS|publish" "$f" 2>/dev/null | tail -10; done; done'
