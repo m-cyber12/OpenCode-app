@@ -335,6 +335,18 @@ evidence commit on this branch. Sequence and findings:
      after the Phase 5 bump to 5, so it failed on the *correct* mismatch; fixture now
      says 5 (the mismatch case remains covered in `PayloadExtractorTest`).
 
+- **#10** (`6f977b8`): 54 of 55 green; the one survivor (`toolPartLifecycleKeepsLatest
+  Status`) was diagnosed against the pinned upstream rather than by tweaking the
+  assertion - `session/processor.ts:171-180` rebuilds the tool state on completion and
+  **carries `input` forward**, so the reducer's replace-the-part behaviour is the
+  faithful mirror and my *fixture* was the thing that lied. Fixture corrected (and the
+  test now also asserts the command survives completion, which is the UI-visible
+  consequence); reducer untouched. (The sandbox reset also deleted the pinned upstream
+  checkout under `~/upstream`; it is re-obtainable in seconds with
+  `git fetch --depth 1 --filter=blob:none origin 05ea5073… ` + sparse-checkout of
+  `packages/opencode/src/{session,bus,permission}`, and that is what these
+  verifications are read from.)
+
   A finding worth keeping in its own words: **`PATCH /global/config` cannot be tested
   on the JVM at all** - `java.net.HttpURLConnection` throws
   `ProtocolException: Invalid HTTP method: PATCH`, while Android's OkHttp-backed

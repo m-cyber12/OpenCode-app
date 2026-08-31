@@ -125,21 +125,41 @@ class TranscriptTest {
         assertEquals(" world", msgs[0].parts[1].text)
     }
 
+    /**
+     * A tool part's lifecycle frames mirror upstream's `updatePart` calls, which
+     * spread the whole part and rebuild `state` on completion - carrying `input`
+     * forward (`session/processor.ts:171-180` at the pinned commit:
+     * `state: { status: "completed", input: match.part.state.input, output, ... }`).
+     * So the client's replace-the-part behaviour is faithful, and this test pins the
+     * consequence the UI depends on: after completion the command is still displayed.
+     * An earlier version of this fixture omitted `input` from the completed frame,
+     * which upstream never does, and it read as a reducer bug for exactly that reason.
+     */
     @Test
     fun toolPartLifecycleKeepsLatestStatus() {
         val t = Transcript()
         t.apply(
             "message.part.updated",
-            partUpdated("s1", "m1", """{"id":"pt","type":"tool","tool":"bash","callID":"c1","state":{"status":"running","input":{"command":"ls"}}}"""),
+            partUpdated(
+                "s1", "m1",
+                """{"id":"pt","type":"tool","tool":"bash","callID":"c1","state":""" +
+                    """{"status":"running","input":{"command":"ls"},"time":{"start":1}}}""",
+            ),
         )
         t.apply(
             "message.part.updated",
-            partUpdated("s1", "m1", """{"id":"pt","type":"tool","tool":"bash","callID":"c1","state":{"status":"completed","output":"a\nb"}}"""),
+            partUpdated(
+                "s1", "m1",
+                """{"id":"pt","type":"tool","tool":"bash","callID":"c1","state":""" +
+                    """{"status":"completed","input":{"command":"ls"},"output":"a\nb",""" +
+                    """"title":"ls","time":{"start":1,"end":2}}}""",
+            ),
         )
         val part = t.snapshot().sessions[0].messages[0].parts.single()
         assertEquals("completed", part.status)
         assertEquals("a\nb", part.output)
         assertEquals("ls", JSONObject(part.input).getString("command"))
+        assertEquals("ls", part.title)
         assertEquals(1, t.snapshot().sessions[0].messages.size)
     }
 
