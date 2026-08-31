@@ -244,6 +244,16 @@ fi
 if [ "$STAGED" = "0" ]; then
   step "1/6 environment + emulator (standalone mode)"
   if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm 2>/dev/null || true; echo "KVM: $(ls -la /dev/kvm 2>&1)"; else echo "KVM_MISSING"; fi
+  # The runner's preinstalled SDK has the tools but no system image, and no emulator
+  # package on some images. Phase 4 solved this with a dedicated installer; the first
+  # standalone Phase 5 run (run #12) died on "no usable x86_64 system image" precisely
+  # because this phase's script only *searched* for one. Reuse phase 4's script rather
+  # than paraphrasing it, so the two phases can never drift to different images.
+  if [ ! -x "$SDK/emulator/emulator" ] || [ ! -d "$SDK/system-images" ]; then
+    echo "installing emulator + system image via phase4/scripts/50-install-sdk.sh" | tee -a "$MAINLOG"
+    run_c 1500 "bash '$ROOT/phase4/scripts/50-install-sdk.sh'" \
+      || echo "warn: SDK installer reported failure; the probe below decides" | tee -a "$MAINLOG"
+  fi
   IMAGE_DIR=""; BEST=""
   for d in $(find "$SDK/system-images" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort -r); do
     rel="${d#"$SDK/system-images/"}"
@@ -254,7 +264,7 @@ if [ "$STAGED" = "0" ]; then
     key="$api-$s"
     if [ -z "$BEST" ] || [ "$key" \> "$BEST" ]; then BEST="$key"; IMAGE_DIR="$rel"; fi
   done
-  [ -z "$IMAGE_DIR" ] && record_fatal "no usable x86_64 system image under $SDK/system-images"
+  [ -z "$IMAGE_DIR" ] && record_fatal "no usable x86_64 system image under $SDK/system-images (see phase4/out/50-install-sdk.log if the installer ran)"
   API="${IMAGE_DIR%%/*}"; REST="${IMAGE_DIR#*/}"; TAG="${REST%%/*}"; ABI="${REST#*/}"
   export ANDROID_AVD_HOME="$SDK/avd"; mkdir -p "$ANDROID_AVD_HOME"
   AVDM="$(find "$SDK" -name avdmanager -type f | head -1)"
