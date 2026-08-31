@@ -592,3 +592,49 @@
     MCP_READY: 26M
     ########## 3/6 APKs + JVM unit tests ##########
 
+### 2026-08-31T16:20:03Z  run=33412366636  step: 5/6 phase 5 integration gates
+    head=281ab18 branch=arena/01a05713-opencode-app log_lines=1401
+    --- error digest (why a stalled push cannot hide this) ---
+    BUILD SUCCESSFUL in 3m
+    --- last 40 log lines ---
+    
+    PayloadExtractorTest > verifyDetectsMissingMarker PASSED
+    
+    PayloadExtractorTest > unpackTarRejectsPathEscape PASSED
+    
+    SecretNamesTest > rejectsPathTraversalAndJunk PASSED
+    
+    SecretNamesTest > blobFileNameIsContained PASSED
+    
+    SecretNamesTest > acceptsProviderStyleNames PASSED
+    
+    SecretNamesTest > providerIdRoundTrip PASSED
+    
+    BUILD SUCCESSFUL in 3m
+    74 actionable tasks: 68 executed, 6 from cache
+    Performing Streamed Install
+    Success
+    Performing Streamed Install
+    Success
+    ########## 4/6 host-side remote MCP fixture (pinned MCP SDK) ##########
+    P5_REMOTE_MCP_DEPS reused from phase4/out/mcp/node_modules
+    P5_REMOTE_MCP_SMOKE up=1 (log: /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp/smoke.log)
+    P5_REMOTE_MCP_BUILT /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp (sdk 1.29.0)
+    ########## 5/6 phase 5 integration gates ##########
+    [2026-08-31T16:16:59Z] P5-00 app uid resolved: '10192'
+    [2026-08-31T16:16:59Z] === P5-01 device / app / payload prerequisites ===
+    [2026-08-31T16:17:04Z] P5-01 versionName=1.18.23-phase5 pid=6091 uid=10192 marker=present
+    P5-01: PASS phase5-apk-installed-and-app-running
+    P5-02: PASS payload-v5-manifest-marker
+    [2026-08-31T16:17:04Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
+    wrote_rc=0
+    wrote_rc=0
+    wrote_rc=0
+    warning: templates not found in /home/runner/share/git-core/templates
+    error: cannot run maintenance: No such file or directory
+    FIXTURE_GIT_OK
+    [2026-08-31T16:17:08Z] P5-03 config_present=yes harness_rc=0
+    P5-03: PASS fixture-config-and-harness-marker
+    [2026-08-31T16:17:16Z] === P5-04 server password via Keystore + test-only harness export ===
+    [2026-08-31T16:19:18Z] P5-04 password: a79b… (48 chars)
+
