@@ -195,7 +195,8 @@ Machine-readable verdict lines (`P5_<NAME> PASS|FAIL :: detail`) are emitted to 
 ## 5. Honesty labels, losses, and what is blocked
 
 - **IMPLEMENTED** (code paths written, self-reviewed, no execution): the loopback policy stack, `LoopbackAudit` + fail-closed stop, `SecretStore`/`Secrets`, the whole `client/` package, `RuntimeIntegration` credential re-push, the four UI tabs (Chat / Approvals / MCP / Credentials / Runtime), `payload_version` 5, and the Phase 5 CI wiring (`phase5/scripts/00-run-phase5.sh`, `11-build-remote-mcp.sh`, `20-integration-gates.sh`, `device/gate-16-mcp-remote.js`, `phase5/workflow/phase5-integration.yml`, plus the Phase 4 tail hook that stages Phase 5 on the same emulator).
-- **TESTED** (executed with evidence, on *this host*): the MCP fixture's two network transports against real SDK clients (§2). JVM/Robolectric-free unit tests were **written but not executed** — no JVM in the sandbox — so they are **NOT TESTED** too, and even when green they are not runtime evidence.
+- **TESTED** (executed with evidence, on *this host*): the MCP fixture's two network transports against real SDK clients (§2).
+- **EXECUTED IN CI (JVM; supporting evidence only, never runtime evidence)**: the 55 unit tests across `client/`, `runtime/`, `security/` — `:app:compileDebugKotlin`, `:app:compileDebugAndroidTestKotlin`, `:app:compileDebugUnitTestKotlin` and `:app:testDebugUnitTest` all **green** in run #11 (`8dfc883`, verdict committed as `050374e`, "BUILD SUCCESSFUL in 1m 47s"). This proves the code compiles for app + instrumentation + tests and that the frame-semantics/reducer/audit/ABI/manifest/secret-name logic behaves as specified on a JVM. It proves **nothing** about the device: no Keystore, no init-ABI gate against real payload bytes, no server, no `/proc`, no permissions round-trip. Twelve of these tests failed on their first execution and the fixes (see §6) are what makes this line worth having.
 - **NOT TESTED:** every device-visible claim in §1–§4 (compile included), the remote-MCP gate on-device, and the full-suite execution on real arm64 hardware — carried forward from Phase 4 and still open. A quick manual real-device pass (install the Phase 5 debug APK, open the Credentials tab, add a key, send one prompt, approve one permission) is worth doing before Phase 8; if CI stays the only full-suite host, that gap moves to Phase 8 explicitly.
 - **BLOCKED (needs the user, not me):** (1) *triggering* CI. Re-probed on 2026-08-31 with the reconnected session token: `PUT .github/workflows/phase5-integration.yml` → **403 Resource not accessible by integration**, and `POST .../actions/workflows/<id>/dispatches` → **403** too. So the restriction is not only "cannot write workflow files" but also "cannot start a run"; `git push` itself works, and the branch is published (`8305d47`). Two user-side unblocks, either is enough: click **Run workflow** on `phase4-runtime-host` selecting `arena/01a05713-opencode-app` (its tail stage then runs the Phase 5 suite on the same emulator, ~15 min of Phase 4 work first), or create `.github/workflows/phase5-integration.yml` in the browser from the content of `phase5/workflow/phase5-integration.yml` — after that commit, any push to this branch triggers Phase 5 on its own. (2) running the suite on the Realme RMX3830 (needs adb from the user's machine). (3) repo secrets: none is needed for this phase, `gh secret list` is 403 for this token, and the suite is written so that no gate depends on one. A user-supplied PAT was offered mid-session and deliberately **not** used: this sandbox pins `GH_TOKEN` to the session identity (an inline override returned the identical 403 for `gh api user`), so no external credential can be exercised here — and since it was pasted into chat it should be revoked.
 - **Losses introduced by *this* phase: none in OpenCode functionality.** Two behavioural notes: (i) the pre-Phase-5 plaintext key-file bootstrap in `launcher.js` is no longer fed by app code (`Secrets.readApiKey`, `RuntimeEnv`'s `OPENCODE_API_KEY_FILE`, and the `apiKey` env parameter were deleted) — the launcher still honours an operator-provided `OPENROUTER_API_KEY`/`files/secrets/openrouter-api-key` purely as a CI convenience, and Phase 5 asserts that file is absent during a Phase 5 run; (ii) an app-side "export credentials" affordance does not exist, deliberately: exporting Keystore material is the one thing this design must not do. All Phase 1–4 losses (PTY stubs, no `@parcel/watcher`, `NO_CURL`/`NO_OPENSSL` Git, no `bun:ffi` dlopen, degraded mDNS, no 32-bit ABIs) are unchanged and documented in the Phase 4 report.
@@ -359,8 +360,19 @@ evidence commit on this branch. Sequence and findings:
   (`patchMethodIsAndroidOnly`) so the gap stays visible in code rather than as a test
   that silently proves nothing.
 
-None of this is a device verdict: run #9 never reached an emulator, so §1-§4 remain
-NOT TESTED until a full run (marker `phase5/CI_GRADLE_ONLY` = 0) completes.
+- **#11** (`8dfc883`): **BUILD SUCCESSFUL in 1m 47s** - all three compile tasks green
+  and `:app:testDebugUnitTest` passed 55/55. First executed evidence for any Phase 5
+  code (JVM only; supporting, not runtime). Commit `050374e` carries the log, the
+  summary and all 10 JUnit XML reports.
+- The marker `phase5/CI_GRADLE_ONLY` is now `0`, so the next push runs the **full
+  standalone suite**: payload build -> both APKs -> emulator boot + install ->
+  `20-integration-gates.sh` (P5-01..04 prerequisites, K1..K9 in-app gates, G16 remote
+  MCP, G17 loopback/no-mDNS, G18 credentials at rest, G19 secret scan, and the Phase 3
+  re-runs G6/G7/G10/G11/G12 through the phase-4 drivers verbatim). Heartbeats make
+  that ~40-minute run observable per step.
+
+None of this is a device verdict yet: §1-§4 stay NOT TESTED until the full run above
+publishes its `GATES_SUMMARY.txt`.
 
 ### Reading CI output from this sandbox (why run 65 has no log here)
 
