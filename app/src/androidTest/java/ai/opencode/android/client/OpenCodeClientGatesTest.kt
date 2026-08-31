@@ -443,10 +443,20 @@ class OpenCodeClientGatesTest {
         out.parentFile?.mkdirs()
         out.writeText(pw)
         runCatching { android.system.Os.chmod(out.absolutePath, 384) }
-        val health = runCatching { OpenCodeApi(base, RuntimeEnv.SERVER_USER, pw).health() }.getOrNull()
+        // The gate script restarts the runtime right before this runs (so the
+        // config fixture is picked up), which means the server may still be
+        // starting. Wait for it rather than racing it: the exported file is
+        // already on disk, so this loop only decides the verdict line.
+        var health: org.json.JSONObject? = null
+        var waited = 0
+        while (waited < 120) {
+            val h = runCatching { OpenCodeApi(base, RuntimeEnv.SERVER_USER, pw).health() }.getOrNull()
+            if (h?.optBoolean("healthy") == true) { health = h; break }
+            Thread.sleep(2000); waited += 2
+        }
         val ok = health?.optBoolean("healthy") == true
-        println("P5_HARNESS_EXPORT ${if (ok) "PASS" else "FAIL"} :: bytes=${out.length()} health=$health")
-        assertTrue("exported credential did not authenticate the live server", ok)
+        println("P5_HARNESS_EXPORT ${if (ok) "PASS" else "FAIL"} :: bytes=${out.length()} waited=${waited}s health=$health")
+        assertTrue("exported credential did not authenticate the live server within 120s", ok)
     }
 
     @Test
