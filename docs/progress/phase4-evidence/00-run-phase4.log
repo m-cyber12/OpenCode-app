@@ -1,4 +1,4 @@
-=== PHASE 4 START 2026-08-30T23:37:30Z ===
+=== PHASE 4 START 2026-08-31T07:57:32Z ===
 ########## 1/9 environment probe ##########
 Linux runnervmgx7h7 6.17.0-1022-azure #22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
 4
@@ -17,7 +17,7 @@ packages-list.txt
 platform-tools
 platforms
 --- downloading cmdline-tools
--rw-r--r-- 1 runner runner 153607504 Aug 30 23:37 cmdtools.zip
+-rw-r--r-- 1 runner runner 153607504 Aug 31 07:57 cmdtools.zip
 /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
 /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
 --- sdkmanager licenses
@@ -41,7 +41,7 @@ accel:
 KVM (version 12) is installed and usable.
 accel
 --- starting emulator (headless)
-emulator pid=2417
+emulator pid=2316
 * daemon not running; starting now at tcp:5037
 * daemon started successfully
 BOOT_COMPLETED after ~42s
@@ -132,18 +132,10 @@ git source: f93ff170b93a1782659637824b25923245ac9dd1
 --- Android Git (arm64-v8a, CC=/usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang) ---
 GIT_VERSION=2.48.1
     * new build flags
-    * new prefix flags
-    * new link flags
-    CC builtin/add.o
-    CC builtin/am.o
-    CC builtin/annotate.o
-    CC builtin/apply.o
-    CC builtin/archive.o
-    CC builtin/bisect.o
-    CC builtin/blame.o
-    CC builtin/branch.o
     GEN hook-list.h
     CC builtin/bundle.o
+    * new prefix flags
+    * new link flags
     CC builtin/cat-file.o
     CC builtin/check-attr.o
     CC builtin/check-ignore.o
@@ -206,8 +198,8 @@ GIT_VERSION=2.48.1
     CC builtin/mktree.o
     CC builtin/multi-pack-index.o
     CC builtin/mv.o
-    CC builtin/notes.o
     CC builtin/name-rev.o
+    CC builtin/notes.o
     CC builtin/pack-objects.o
     CC builtin/pack-redundant.o
     CC builtin/pack-refs.o
@@ -368,8 +360,8 @@ GIT_VERSION=2.48.1
     CC merge-ort.o
     CC merge-ort-wrappers.o
     CC merge-recursive.o
-    CC midx.o
     CC merge.o
+    CC midx.o
     CC midx-write.o
     CC name-hash.o
     CC negotiator/default.o
@@ -535,6 +527,14 @@ GIT_VERSION=2.48.1
     CC reftable/tree.o
     CC reftable/writer.o
     CC git.o
+    CC builtin/add.o
+    CC builtin/am.o
+    CC builtin/annotate.o
+    CC builtin/apply.o
+    CC builtin/archive.o
+    CC builtin/bisect.o
+    CC builtin/blame.o
+    CC builtin/branch.o
     CC builtin/bugreport.o
     CC builtin/help.o
     CC help.o
@@ -548,11 +548,60 @@ arm64-v8a Android Git built (cross-ABI host execution skipped)
 --- Android Git (x86_64, CC=/usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang) ---
 GIT_VERSION=2.48.1
     * new build flags
+    CC builtin/add.o
     * new prefix flags
-    GEN hook-list.h
-    CC builtin/hook.o
-    GEN config-list.h
+    CC builtin/am.o
     * new link flags
+    CC builtin/apply.o
+    CC builtin/annotate.o
+    CC builtin/archive.o
+    CC builtin/bisect.o
+    CC builtin/blame.o
+    CC builtin/branch.o
+    GEN hook-list.h
+    CC builtin/bundle.o
+    CC builtin/cat-file.o
+    CC builtin/check-attr.o
+    CC builtin/check-ignore.o
+    CC builtin/check-mailmap.o
+    CC builtin/check-ref-format.o
+    CC builtin/checkout--worker.o
+    CC builtin/checkout-index.o
+    CC builtin/checkout.o
+    CC builtin/clean.o
+    CC builtin/clone.o
+    CC builtin/column.o
+    CC builtin/commit-graph.o
+    CC builtin/commit-tree.o
+    CC builtin/commit.o
+    CC builtin/config.o
+    CC builtin/count-objects.o
+    CC builtin/credential-cache--daemon.o
+    CC builtin/credential-cache.o
+    CC builtin/credential-store.o
+    CC builtin/credential.o
+    CC builtin/describe.o
+    CC builtin/diagnose.o
+    CC builtin/diff-files.o
+    CC builtin/diff-index.o
+    CC builtin/diff-tree.o
+    CC builtin/diff.o
+    CC builtin/difftool.o
+    CC builtin/fast-export.o
+    CC builtin/fast-import.o
+    CC builtin/fetch-pack.o
+    CC builtin/fetch.o
+    CC builtin/fmt-merge-msg.o
+    CC builtin/for-each-ref.o
+    CC builtin/for-each-repo.o
+    CC builtin/fsck.o
+    CC builtin/fsmonitor--daemon.o
+    CC builtin/gc.o
+    CC builtin/get-tar-commit-id.o
+    CC builtin/grep.o
+    CC builtin/hash-object.o
+    GEN config-list.h
+    CC builtin/hook.o
     CC builtin/index-pack.o
     CC builtin/init-db.o
     CC builtin/interpret-trailers.o
@@ -634,8 +683,8 @@ GIT_VERSION=2.48.1
     CC alloc.o
     CC apply.o
     CC archive-tar.o
-    CC archive-zip.o
     CC archive.o
+    CC archive-zip.o
     CC attr.o
     CC base85.o
     CC bisect.o
@@ -670,8 +719,8 @@ GIT_VERSION=2.48.1
     CC csum-file.o
     CC ctype.o
     CC date.o
-    CC decorate.o
     CC delta-islands.o
+    CC decorate.o
     CC diagnose.o
     CC diff-delta.o
     CC diff-merges.o
@@ -835,8 +884,8 @@ GIT_VERSION=2.48.1
     CC tmp-objdir.o
     CC trace.o
     CC trace2.o
-    CC trace2/tr2_cfg.o
     CC trace2/tr2_cmd_name.o
+    CC trace2/tr2_cfg.o
     CC trace2/tr2_ctr.o
     CC trace2/tr2_dst.o
     CC trace2/tr2_sid.o
@@ -865,8 +914,8 @@ GIT_VERSION=2.48.1
     CC walker.o
     CC wildmatch.o
     CC worktree.o
-    CC wrapper.o
     CC write-or-die.o
+    CC wrapper.o
     CC ws.o
     CC wt-status.o
     CC xdiff-interface.o
@@ -902,56 +951,7 @@ GIT_VERSION=2.48.1
     CC reftable/tree.o
     CC reftable/writer.o
     CC git.o
-    CC builtin/add.o
-    CC builtin/am.o
-    CC builtin/annotate.o
-    CC builtin/apply.o
-    CC builtin/archive.o
-    CC builtin/bisect.o
-    CC builtin/blame.o
-    CC builtin/branch.o
     CC builtin/bugreport.o
-    CC builtin/bundle.o
-    CC builtin/cat-file.o
-    CC builtin/check-attr.o
-    CC builtin/check-ignore.o
-    CC builtin/check-mailmap.o
-    CC builtin/check-ref-format.o
-    CC builtin/checkout--worker.o
-    CC builtin/checkout-index.o
-    CC builtin/checkout.o
-    CC builtin/clean.o
-    CC builtin/clone.o
-    CC builtin/column.o
-    CC builtin/commit-graph.o
-    CC builtin/commit-tree.o
-    CC builtin/commit.o
-    CC builtin/config.o
-    CC builtin/count-objects.o
-    CC builtin/credential-cache--daemon.o
-    CC builtin/credential-cache.o
-    CC builtin/credential-store.o
-    CC builtin/credential.o
-    CC builtin/describe.o
-    CC builtin/diagnose.o
-    CC builtin/diff-files.o
-    CC builtin/diff-index.o
-    CC builtin/diff-tree.o
-    CC builtin/diff.o
-    CC builtin/fast-export.o
-    CC builtin/difftool.o
-    CC builtin/fast-import.o
-    CC builtin/fetch-pack.o
-    CC builtin/fetch.o
-    CC builtin/fmt-merge-msg.o
-    CC builtin/for-each-ref.o
-    CC builtin/for-each-repo.o
-    CC builtin/fsck.o
-    CC builtin/fsmonitor--daemon.o
-    CC builtin/gc.o
-    CC builtin/get-tar-commit-id.o
-    CC builtin/grep.o
-    CC builtin/hash-object.o
     CC builtin/help.o
     CC help.o
     GEN version-def.h
@@ -985,32 +985,32 @@ Turn off this advice by setting config variable advice.detachedHead to false
     Updating crates.io index
  Downloading crates ...
   Downloaded cfg-if v1.0.4
+  Downloaded anyhow v1.0.100
   Downloaded cc v1.2.41
-  Downloaded same-file v1.0.6
+  Downloaded crossbeam-deque v0.8.6
   Downloaded itoa v1.0.15
+  Downloaded same-file v1.0.6
   Downloaded find-msvc-tools v0.1.4
+  Downloaded aho-corasick v1.1.3
+  Downloaded encoding_rs_io v0.1.7
+  Downloaded jobserver v0.1.34
+  Downloaded pcre2 v0.2.11
+  Downloaded pkg-config v0.3.32
+  Downloaded ryu v1.0.20
+  Downloaded walkdir v2.5.0
   Downloaded shlex v1.3.0
   Downloaded termcolor v1.4.1
-  Downloaded walkdir v2.5.0
-  Downloaded encoding_rs_io v0.1.7
-  Downloaded crossbeam-deque v0.8.6
-  Downloaded lexopt v0.3.1
-  Downloaded jobserver v0.1.34
-  Downloaded pkg-config v0.3.32
-  Downloaded crossbeam-epoch v0.9.18
   Downloaded memmap2 v0.9.9
-  Downloaded pcre2 v0.2.11
-  Downloaded ryu v1.0.20
-  Downloaded anyhow v1.0.100
-  Downloaded log v0.4.28
   Downloaded serde_core v1.0.228
-  Downloaded textwrap v0.16.2
+  Downloaded bstr v1.12.0
+  Downloaded crossbeam-epoch v0.9.18
   Downloaded crossbeam-utils v0.8.21
+  Downloaded lexopt v0.3.1
+  Downloaded log v0.4.28
+  Downloaded textwrap v0.16.2
   Downloaded serde v1.0.228
   Downloaded memchr v2.7.6
-  Downloaded aho-corasick v1.1.3
   Downloaded serde_json v1.0.145
-  Downloaded bstr v1.12.0
   Downloaded regex-syntax v0.8.8
   Downloaded regex-automata v0.4.13
   Downloaded pcre2-sys v0.2.10
@@ -1021,44 +1021,44 @@ Turn off this advice by setting config variable advice.detachedHead to false
    Compiling regex-syntax v0.8.8
    Compiling log v0.4.28
    Compiling aho-corasick v1.1.3
-   Compiling shlex v1.3.0
-   Compiling find-msvc-tools v0.1.4
    Compiling regex-automata v0.4.13
-   Compiling bstr v1.12.0
    Compiling jobserver v0.1.34
+   Compiling find-msvc-tools v0.1.4
+   Compiling shlex v1.3.0
    Compiling cc v1.2.41
+   Compiling bstr v1.12.0
    Compiling pkg-config v0.3.32
    Compiling serde_core v1.0.228
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.trRXLdds7L/rg-src/crates/matcher)
-   Compiling cfg-if v1.0.4
-   Compiling crossbeam-utils v0.8.21
-   Compiling encoding_rs v0.8.35
    Compiling pcre2-sys v0.2.10
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/matcher)
+   Compiling crossbeam-utils v0.8.21
+   Compiling cfg-if v1.0.4
+   Compiling encoding_rs v0.8.35
    Compiling serde_json v1.0.145
    Compiling serde v1.0.228
    Compiling encoding_rs_io v0.1.7
-   Compiling globset v0.4.18 (/tmp/tmp.trRXLdds7L/rg-src/crates/globset)
+   Compiling globset v0.4.18 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/globset)
    Compiling memmap2 v0.9.9
-   Compiling ryu v1.0.20
    Compiling itoa v1.0.15
    Compiling termcolor v1.4.1
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.trRXLdds7L/rg-src/crates/searcher)
+   Compiling ryu v1.0.20
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
-   Compiling same-file v1.0.6
    Compiling anyhow v1.0.100
+   Compiling same-file v1.0.6
    Compiling walkdir v2.5.0
-   Compiling grep-printer v0.3.1 (/tmp/tmp.trRXLdds7L/rg-src/crates/printer)
+   Compiling grep-printer v0.3.1 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-cli v0.1.12 (/tmp/tmp.trRXLdds7L/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.trRXLdds7L/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.trRXLdds7L/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.trRXLdds7L/rg-src/crates/ignore)
-   Compiling pcre2 v0.2.11
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.trRXLdds7L/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.trRXLdds7L/rg-src/crates/grep)
+   Compiling grep-cli v0.1.12 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.dJnlvGJC4F/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/ignore)
    Compiling textwrap v0.16.2
    Compiling lexopt v0.3.1
-    Finished `release` profile [optimized + debuginfo] target(s) in 45.51s
+   Compiling pcre2 v0.2.11
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/grep)
+    Finished `release` profile [optimized + debuginfo] target(s) in 36.23s
 arm64-v8a Android ripgrep OK:  ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 --- Android ripgrep (x86_64, target=x86_64-linux-android) ---
 info: downloading component rust-std
@@ -1084,64 +1084,64 @@ Turn off this advice by setting config variable advice.detachedHead to false
    Compiling memchr v2.7.6
    Compiling log v0.4.28
    Compiling regex-syntax v0.8.8
+   Compiling find-msvc-tools v0.1.4
    Compiling aho-corasick v1.1.3
    Compiling jobserver v0.1.34
-   Compiling find-msvc-tools v0.1.4
    Compiling shlex v1.3.0
    Compiling cc v1.2.41
    Compiling pkg-config v0.3.32
    Compiling regex-automata v0.4.13
    Compiling serde_core v1.0.228
    Compiling pcre2-sys v0.2.10
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.trRXLdds7L/rg-src/crates/matcher)
-   Compiling cfg-if v1.0.4
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/matcher)
    Compiling crossbeam-utils v0.8.21
+   Compiling cfg-if v1.0.4
    Compiling encoding_rs v0.8.35
    Compiling bstr v1.12.0
-   Compiling serde_json v1.0.145
    Compiling serde v1.0.228
-   Compiling globset v0.4.18 (/tmp/tmp.trRXLdds7L/rg-src/crates/globset)
+   Compiling serde_json v1.0.145
+   Compiling globset v0.4.18 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/globset)
    Compiling encoding_rs_io v0.1.7
    Compiling memmap2 v0.9.9
-   Compiling termcolor v1.4.1
    Compiling itoa v1.0.15
+   Compiling termcolor v1.4.1
    Compiling ryu v1.0.20
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.trRXLdds7L/rg-src/crates/searcher)
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
-   Compiling anyhow v1.0.100
    Compiling same-file v1.0.6
+   Compiling anyhow v1.0.100
    Compiling walkdir v2.5.0
-   Compiling grep-printer v0.3.1 (/tmp/tmp.trRXLdds7L/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-cli v0.1.12 (/tmp/tmp.trRXLdds7L/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.trRXLdds7L/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.trRXLdds7L/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.trRXLdds7L/rg-src/crates/ignore)
-   Compiling lexopt v0.3.1
+   Compiling grep-printer v0.3.1 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/printer)
+   Compiling grep-cli v0.1.12 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.dJnlvGJC4F/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/ignore)
    Compiling textwrap v0.16.2
+   Compiling lexopt v0.3.1
    Compiling pcre2 v0.2.11
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.trRXLdds7L/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.trRXLdds7L/rg-src/crates/grep)
-    Finished `release` profile [optimized + debuginfo] target(s) in 36.57s
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.dJnlvGJC4F/rg-src/crates/grep)
+    Finished `release` profile [optimized + debuginfo] target(s) in 35.47s
 x86_64 Android ripgrep OK:  ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 === [5/6] OpenCode server bundle @ 05ea5073be967c779d326929b2de6228dda4159d (pinned, fail-loud) ===
 upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
 bundle build complete
 === [6/6] stage payload, compute manifest ===
-payload tarball: 16549905 bytes sha256=6779e549b2d594728da6c2ef31f19cd28117a6a3f95bc7b18f442e5937ad0c9a
+payload tarball: 16549921 bytes sha256=751e587cbcca1c122d1e2f17226a443b256f08e69ed5f5637e15a4a247417283
 manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/assets/runtime-manifest.json
 === engine layout ===
 9385 ./build.status
-16549905 ./assets/runtime-payload.tar.gz
+16549921 ./assets/runtime-payload.tar.gz
 5171 ./assets/runtime-manifest.json
 4139512 ./jniLibs/x86_64/libgit.so
-36359776 ./jniLibs/x86_64/librg.so
+36359712 ./jniLibs/x86_64/librg.so
 7640 ./jniLibs/x86_64/libseccompshim.so
 91788816 ./jniLibs/x86_64/libbun.so
 7784 ./jniLibs/x86_64/libchildshim.so
 8064 ./jniLibs/x86_64/libexecshim.so
 4003408 ./jniLibs/arm64-v8a/libgit.so
-34646672 ./jniLibs/arm64-v8a/librg.so
+34646600 ./jniLibs/arm64-v8a/librg.so
 6816 ./jniLibs/arm64-v8a/libseccompshim.so
 89796776 ./jniLibs/arm64-v8a/libbun.so
 8328 ./jniLibs/arm64-v8a/libchildshim.so
@@ -1150,25 +1150,25 @@ manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/eng
 PAYLOAD_READY
 + zod-to-json-schema@3.25.2
 
-92 packages installed [326.00ms]
+92 packages installed [289.00ms]
 MCP_READY: 26M
 /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/assets:
 total 16180
-drwxr-xr-x 2 runner runner     4096 Aug 30 23:43 .
-drwxr-xr-x 4 runner runner     4096 Aug 30 23:40 ..
--rw-r--r-- 1 runner runner     5171 Aug 30 23:43 runtime-manifest.json
--rw-r--r-- 1 runner runner 16549905 Aug 30 23:43 runtime-payload.tar.gz
+drwxr-xr-x 2 runner runner     4096 Aug 31 08:02 .
+drwxr-xr-x 4 runner runner     4096 Aug 31 07:59 ..
+-rw-r--r-- 1 runner runner     5171 Aug 31 08:02 runtime-manifest.json
+-rw-r--r-- 1 runner runner 16549921 Aug 31 08:02 runtime-payload.tar.gz
 
 /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/jniLibs/x86_64:
 total 129224
-drwxr-xr-x 2 runner runner     4096 Aug 30 23:42 .
-drwxr-xr-x 4 runner runner     4096 Aug 30 23:39 ..
--rwxr-xr-x 1 runner runner 91788816 Aug 30 23:39 libbun.so
--rwxr-xr-x 1 runner runner     7784 Aug 30 23:40 libchildshim.so
--rwxr-xr-x 1 runner runner     8064 Aug 30 23:40 libexecshim.so
--rwxr-xr-x 1 runner runner  4139512 Aug 30 23:41 libgit.so
--rwxr-xr-x 1 runner runner 36359776 Aug 30 23:42 librg.so
--rwxr-xr-x 1 runner runner     7640 Aug 30 23:40 libseccompshim.so
+drwxr-xr-x 2 runner runner     4096 Aug 31 08:01 .
+drwxr-xr-x 4 runner runner     4096 Aug 31 07:59 ..
+-rwxr-xr-x 1 runner runner 91788816 Aug 31 07:59 libbun.so
+-rwxr-xr-x 1 runner runner     7784 Aug 31 07:59 libchildshim.so
+-rwxr-xr-x 1 runner runner     8064 Aug 31 07:59 libexecshim.so
+-rwxr-xr-x 1 runner runner  4139512 Aug 31 08:00 libgit.so
+-rwxr-xr-x 1 runner runner 36359712 Aug 31 08:01 librg.so
+-rwxr-xr-x 1 runner runner     7640 Aug 31 07:59 libseccompshim.so
 ########## 6/9 build the APK + run JVM unit tests ##########
 Downloading https://services.gradle.org/distributions/gradle-8.9-bin.zip
 ............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
@@ -1214,37 +1214,37 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:compileDebugShaders NO-SOURCE
 > Task :app:generateDebugAssets UP-TO-DATE
 > Task :app:mergeDebugAssets
-> Task :app:processDebugManifestForPackage
 > Task :app:desugarDebugFileDependencies
-> Task :app:processDebugResources
-> Task :app:compressDebugAssets
+> Task :app:processDebugManifestForPackage
 > Task :app:checkDebugDuplicateClasses
 > Task :app:mergeDebugStartupProfile
-
-> Task :app:compileDebugKotlin
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
-
+> Task :app:processDebugResources
+> Task :app:compressDebugAssets
 > Task :app:mergeExtDexDebug
-> Task :app:compileDebugJavaWithJavac
-> Task :app:dexBuilderDebug
-> Task :app:mergeDebugGlobalSynthetics
-> Task :app:processDebugJavaRes
 > Task :app:mergeLibDexDebug
-> Task :app:mergeProjectDexDebug
-> Task :app:mergeDebugJavaResource
 > Task :app:mergeDebugJniLibFolders
 > Task :app:mergeDebugNativeLibs
 > Task :app:validateSigningDebug
 > Task :app:writeDebugAppMetadata
 > Task :app:writeDebugSigningConfigVersions
 > Task :app:preDebugUnitTestBuild
-> Task :app:bundleDebugClassesToRuntimeJar
-> Task :app:bundleDebugClassesToCompileJar
 > Task :app:javaPreCompileDebugUnitTest FROM-CACHE
 
 > Task :app:stripDebugDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libbun.so, libchildshim.so, libexecshim.so, libgit.so, librg.so, libseccompshim.so.
+
+> Task :app:compileDebugKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
+
+> Task :app:compileDebugJavaWithJavac
+> Task :app:dexBuilderDebug
+> Task :app:mergeDebugGlobalSynthetics
+> Task :app:processDebugJavaRes
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:mergeProjectDexDebug
+> Task :app:mergeDebugJavaResource
 
 > Task :app:compileDebugUnitTestKotlin
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractorTest.kt:103:37 Unsafe use of a nullable receiver of type File?
@@ -1286,9 +1286,9 @@ PayloadExtractorTest > unpackTarRejectsPathEscape PASSED
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 2m 19s
+BUILD SUCCESSFUL in 2m 2s
 46 actionable tasks: 45 executed, 1 from cache
-APK: /home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk (143839851 bytes)
+APK: /home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk (143838971 bytes)
 ########## 7/9 verify APK contents, install the real app + launch ##########
 Performing Streamed Install
 Success
@@ -1297,18 +1297,18 @@ Performing Streamed Install
 Success
 package:ai.opencode.android.debug
 ########## 8/9 run Phase 4 gates (host lifecycle + G1..G12/G14/G15) ##########
-[2026-08-30T23:45:59Z] === device facts ===
+[2026-08-31T08:04:43Z] === device facts ===
 release=14
 sdk=34
 abi=x86_64
-[2026-08-30T23:45:59Z] === host bun (runner) to drive gates over adb forward ===
+[2026-08-31T08:04:43Z] === host bun (runner) to drive gates over adb forward ===
 1.3.14
-[2026-08-30T23:46:00Z] === provision fixture + MCP + config + key (run-as) ===
+[2026-08-31T08:04:44Z] === provision fixture + MCP + config + key (run-as) ===
 provision_dirs_rc=0
 wrote_workspaces/gates/README.md_rc=0
 wrote_workspaces/gates/notes.txt_rc=0
 wrote_workspaces/gates/src/app.js_rc=0
-[2026-08-30T23:46:00Z] fixture Git: /data/app/~~FxD2u1fy9AcxWa-Vg0t78g==/ai.opencode.android.debug-oSsPbWPIDppj6O9y8_8J9g==/lib/x86_64/libgit.so
+[2026-08-31T08:04:44Z] fixture Git: /data/app/~~SH59x3K9VQhbATIKJhUo4A==/ai.opencode.android.debug-AmSWTu1s8hT2J_RyI_WuVg==/lib/x86_64/libgit.so
 warning: templates not found in /home/runner/share/git-core/templates
 error: cannot run maintenance: No such file or directory
 error: cannot run maintenance: No such file or directory
@@ -1329,118 +1329,116 @@ tar: had errors
 {
   "$schema": "https://opencode.ai/config.json",
   "shell": "/system/bin/sh",
-[2026-08-30T23:46:04Z] no OPENROUTER_API_KEY — model-driven assertions skipped
-[2026-08-30T23:46:04Z] === launch the app (starts RuntimeService) ===
-[2026-08-30T23:46:10Z] server password: 296ef8… (48 chars)
-[2026-08-30T23:46:10Z] === early diagnostics (app uid) ===
-[2026-08-30T23:46:11Z] === H1 extraction + version validation ===
-[2026-08-30T23:46:11Z] H1 marker: {"payloadVersion":4,"opencodeCommit":"05ea5073be967c779d326929b2de6228dda4159d","extractedAt":1788133567180}
-[2026-08-30T23:46:11Z] H1 bun via symlink: '1.3.14' exec_ok=1
-[2026-08-30T23:46:11Z] H1 node=0 launcher=0 node_modules=0 marker=0 exec=1
-[2026-08-30T23:46:11Z] H1 flat payload + marker + execs OK
+[2026-08-31T08:04:47Z] no OPENROUTER_API_KEY — model-driven assertions skipped
+[2026-08-31T08:04:47Z] === launch the app (starts RuntimeService) ===
+[2026-08-31T08:04:52Z] server password: 33e7e7… (48 chars)
+[2026-08-31T08:04:52Z] === early diagnostics (app uid) ===
+[2026-08-31T08:04:53Z] === H1 extraction + version validation ===
+[2026-08-31T08:04:53Z] H1 marker: {"payloadVersion":4,"opencodeCommit":"05ea5073be967c779d326929b2de6228dda4159d","extractedAt":1788163489654}
+[2026-08-31T08:04:53Z] H1 bun via symlink: '1.3.14' exec_ok=1
+[2026-08-31T08:04:53Z] H1 node=0 launcher=0 node_modules=0 marker=0 exec=1
+[2026-08-31T08:04:53Z] H1 flat payload + marker + execs OK
 H1: PASS extraction-and-version 
-[2026-08-30T23:46:11Z] === H2 health-gated start ===
-[2026-08-30T23:46:11Z] H2 health: {"healthy":true,"version":"1.18.23-android"}
+[2026-08-31T08:04:53Z] === H2 health-gated start ===
+[2026-08-31T08:04:54Z] H2 health: {"healthy":true,"version":"1.18.23-android"}
 H2: PASS health-gated-start 
-[2026-08-30T23:46:11Z] === H3 duplicate-process prevention ===
+[2026-08-31T08:04:54Z] === H3 duplicate-process prevention ===
 sh: <stdin>[1]: can't open /proc/1/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/10/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/100/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1006/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/1007/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/103/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1030/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1031/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/101/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/102/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1020/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1036/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1037/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/105/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/107/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1076/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/108/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1082/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1089/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/109/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1099/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/11/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/110/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/116/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/117/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/111/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/112/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/118/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/119/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/12/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/120/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/121/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1256/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/126/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/128/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/127/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/129/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1296/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/13/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/130/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/131/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/132/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/133/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1338/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/134/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/135/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/137/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/136/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/138/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/14/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/142/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1452/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/148/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1443/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/146/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1477/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1485/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1486/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/149/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/15/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1509/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/151/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1511/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1519/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1542/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1551/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1556/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/156/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/157/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/158/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1581/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/159/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1587/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/1598/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/16/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1603/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/162/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/160/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/1621/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1624/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1639/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1687/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1693/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1697/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1656/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1676/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1678/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/168/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1695/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/17/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1704/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1708/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1713/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1727/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1731/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1719/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/18/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/180/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1825/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/187/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/188/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/189/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1805/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/182/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1836/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/184/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1842/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/19/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1901/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/194/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1953/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/190/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/191/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1925/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1942/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/196/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1973/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/1980/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1986/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/2/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/20/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/2083/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/21/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/2196/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/22/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2272/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2277/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/2242/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/23/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2316/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2358/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/237/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/238/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2380/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/2302/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/2327/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/239/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/240/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/241/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/242/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/243/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/244/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/245/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/246/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/247/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/2477/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/248/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/249/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/25/cmdline: Permission denied
@@ -1449,6 +1447,7 @@ sh: <stdin>[1]: can't open /proc/251/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/252/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/253/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/254/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/2544/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/255/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/256/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/257/cmdline: Permission denied
@@ -1457,11 +1456,10 @@ sh: <stdin>[1]: can't open /proc/259/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/26/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/260/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/261/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/2611/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/262/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2627/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/263/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/264/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2641/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/265/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/266/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/267/cmdline: Permission denied
@@ -1470,7 +1468,7 @@ sh: <stdin>[1]: can't open /proc/269/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/27/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/270/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/271/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2713/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/2718/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/272/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/273/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/274/cmdline: Permission denied
@@ -1483,8 +1481,8 @@ sh: <stdin>[1]: can't open /proc/28/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/280/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/281/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/282/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/2827/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/283/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2830/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/284/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/285/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/286/cmdline: Permission denied
@@ -1493,63 +1491,64 @@ sh: <stdin>[1]: can't open /proc/288/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/289/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/29/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/290/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2907/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/291/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2918/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/292/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/293/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/294/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/295/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/296/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/297/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/298/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/3/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/30/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3011/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3087/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/31/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3108/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/319/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/32/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3205/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/322/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3233/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/33/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3306/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3330/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/334/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/335/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3343/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/336/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/337/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/338/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/34/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/340/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3400/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/341/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3419/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/342/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/343/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/344/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3456/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/345/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/346/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3460/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/347/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3477/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/348/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/349/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/35/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/350/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/351/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3523/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/354/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3550/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3592/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/352/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/353/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/355/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/356/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3579/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3580/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3599/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/36/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3669/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/367/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/368/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3695/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/360/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/362/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/37/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3706/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/371/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/372/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/373/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/374/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3715/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3717/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3749/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/375/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/378/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/379/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/38/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/380/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/382/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/383/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/384/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3851/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/386/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/387/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/388/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/389/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/39/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/390/cmdline: Permission denied
@@ -1558,163 +1557,168 @@ sh: <stdin>[1]: can't open /proc/392/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/393/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/394/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/395/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/396/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/397/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/398/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/399/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/4/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/40/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/400/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/401/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4031/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/41/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4131/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/415/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4152/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4155/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4156/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/416/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/42/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/423/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/424/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/43/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/430/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/431/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4323/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/434/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/439/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/435/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/44/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/440/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4433/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4472/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/45/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4522/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/454/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/455/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4508/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/457/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/458/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/46/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/460/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4651/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/466/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/462/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/463/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4636/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/467/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/47/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/472/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/470/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/471/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/473/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/474/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/475/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/476/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4773/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/48/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/480/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4800/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/481/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4851/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/484/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4888/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/49/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4949/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/5/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/50/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/51/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/520/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/519/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/53/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/54/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/55/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/5567/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/5597/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/56/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/5668/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/57/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/5794/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/59/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/5715/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/5716/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/5718/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/5720/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/5726/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/5736/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/5742/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/58/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/60/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/61/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6190/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6197/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6198/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6199/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/62/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6200/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6251/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6262/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6267/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6203/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6211/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6212/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6235/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6292/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/63/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/64/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6448/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/65/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/66/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/67/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/68/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/69/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/7/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/70/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/71/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/72/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/73/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/78/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/782/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/79/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/74/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/75/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/781/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/8/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/80/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/803/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/816/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/818/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/804/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/81/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/819/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/82/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/83/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/821/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/84/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/85/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/86/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/87/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/88/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/89/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/9/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/90/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/91/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/92/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/93/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/94/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/95/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/955/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/969/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/953/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/96/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/97/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/981/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/973/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/980/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/99/cmdline: Permission denied
-[2026-08-30T23:46:20Z] H3 live launcher.js processes after repeated starts: 1
+[2026-08-31T08:05:02Z] H3 live launcher.js processes after repeated starts: 1
 H3: PASS no-duplicate-process 
-[2026-08-30T23:46:20Z] === G1..G4 in-sandbox exec/userspace/shell/runtime (bin symlinks -> nativeLibraryDir) ===
+[2026-08-31T08:05:02Z] === G1..G4 in-sandbox exec/userspace/shell/runtime (bin symlinks -> nativeLibraryDir) ===
 G01: PASS execution-layer 
 G02: PASS userspace 
 G03: PASS real-shell 
 G04: PASS runtime 
-[2026-08-30T23:46:20Z] === G5/G6 server start + health ===
+[2026-08-31T08:05:02Z] === G5/G6 server start + health ===
 G05: PASS opencode-start 
 G06: PASS health-endpoint 
-[2026-08-30T23:46:20Z] === G7..G12, G15 real agent gates over the app server ===
-[2026-08-30T23:46:20Z] --- G07 (gate-07-shell.js) model=0 ---
+[2026-08-31T08:05:03Z] === G7..G12, G15 real agent gates over the app server ===
+[2026-08-31T08:05:03Z] --- G07 (gate-07-shell.js) model=0 ---
 G07: PASS gate-07-shell.js 
-[2026-08-30T23:46:30Z] --- G08 (gate-08-files.js) model=0 ---
+[2026-08-31T08:05:12Z] --- G08 (gate-08-files.js) model=0 ---
 G08: PASS gate-08-files.js 
-[2026-08-30T23:46:37Z] --- G09 (gate-09-opencode-git.js) model=0 ---
+[2026-08-31T08:05:19Z] --- G09 (gate-09-opencode-git.js) model=0 ---
 G09: PASS gate-09-opencode-git.js 
-[2026-08-30T23:46:49Z] --- G10 (gate-10-mcp.js) model=0 ---
+[2026-08-31T08:05:31Z] --- G10 (gate-10-mcp.js) model=0 ---
 G10: PASS gate-10-mcp.js 
-[2026-08-30T23:46:50Z] --- G11 (gate-11-stream.js) model=0 ---
+[2026-08-31T08:05:32Z] --- G11 (gate-11-stream.js) model=0 ---
 G11: PASS gate-11-stream.js 
-[2026-08-30T23:46:58Z] --- G12 (gate-12-permission.js) model=0 ---
+[2026-08-31T08:05:40Z] --- G12 (gate-12-permission.js) model=0 ---
 G12: PASS gate-12-permission.js 
-[2026-08-30T23:49:04Z] --- G15 (gate-15-e2e.js) model=0 ---
-G15: PASS gate-15-e2e.js 
-[2026-08-30T23:49:16Z] === H4 crash detection + restart with backoff ===
-[2026-08-30T23:49:16Z] H4 server pid: 6474
-[2026-08-30T23:49:16Z] H4 SIGKILL sent; waiting for supervisor restart...
-[2026-08-30T23:49:29Z] H4 crash lines=1 backoff lines=1
+[2026-08-31T08:07:46Z] --- G15 (gate-15-e2e.js) model=0 ---
+G15: FAIL gate-15-e2e.js 
+[2026-08-31T08:08:58Z] === H4 crash detection + restart with backoff ===
+[2026-08-31T08:08:58Z] H4 server pid: 6500
+[2026-08-31T08:08:58Z] H4 SIGKILL sent; waiting for supervisor restart...
+[2026-08-31T08:09:12Z] H4 crash lines=1 backoff lines=1
 H4: PASS crash-restart-backoff 
-[2026-08-30T23:49:29Z] === H5 corruption recovery (corrupt payload -> DEBUG_RESET re-extracts) ===
-[2026-08-30T23:49:29Z] H5 injected marker into /data/data/ai.opencode.android.debug/files/opencode/dist/node/photon_rs_bg-bq08arze.wasm; broadcasting DEBUG_RESET
-[2026-08-30T23:49:45Z] H5 corruption marker present after recovery (want 0): 0
+[2026-08-31T08:09:12Z] === H5 corruption recovery (corrupt payload -> DEBUG_RESET re-extracts) ===
+[2026-08-31T08:09:12Z] H5 injected marker into /data/data/ai.opencode.android.debug/files/opencode/dist/node/photon_rs_bg-bq08arze.wasm; broadcasting DEBUG_RESET
+[2026-08-31T08:09:22Z] H5 corruption marker present after recovery (want 0): 0
 H5: PASS corruption-recovery 
-[2026-08-30T23:49:45Z] === H6 graceful stop: no zombies, port down ===
+[2026-08-31T08:09:22Z] === H6 graceful stop: no zombies, port down ===
 sh: <stdin>[1]: can't open /proc/1/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/10/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/100/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1006/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/1007/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/103/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1030/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/101/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/102/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1020/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1036/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/105/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/107/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1076/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/108/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1089/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/109/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/11/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/110/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/116/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/117/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/111/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/112/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/118/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/119/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/12/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/120/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/121/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/126/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/128/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/127/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/129/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/13/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/130/cmdline: Permission denied
@@ -1723,49 +1727,48 @@ sh: <stdin>[1]: can't open /proc/132/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/133/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/134/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/135/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/137/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/136/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/138/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/14/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/142/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/148/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/146/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1477/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1485/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/149/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/15/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1509/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/151/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1511/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1519/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1551/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1556/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/156/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/157/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/158/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1581/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/159/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1587/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/1598/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/16/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1603/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/162/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/160/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/1621/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1687/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1656/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/168/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1695/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/17/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1708/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1727/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1719/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/18/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/180/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1825/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/187/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/188/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/189/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/182/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/184/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/19/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/194/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/190/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/191/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/196/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1973/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/2/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/20/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/21/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/22/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/23/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/237/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/238/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/239/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/240/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/241/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/242/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/243/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/244/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/245/cmdline: Permission denied
@@ -1779,6 +1782,7 @@ sh: <stdin>[1]: can't open /proc/251/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/252/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/253/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/254/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/2544/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/255/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/256/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/257/cmdline: Permission denied
@@ -1788,7 +1792,6 @@ sh: <stdin>[1]: can't open /proc/26/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/260/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/261/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/262/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2627/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/263/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/264/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/265/cmdline: Permission denied
@@ -1812,7 +1815,6 @@ sh: <stdin>[1]: can't open /proc/280/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/281/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/282/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/283/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2830/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/284/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/285/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/286/cmdline: Permission denied
@@ -1822,52 +1824,53 @@ sh: <stdin>[1]: can't open /proc/289/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/29/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/290/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/291/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2918/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/292/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/293/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/294/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/295/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/296/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/297/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/298/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/3/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/30/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3011/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/31/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/319/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/32/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/322/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3233/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/33/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/334/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/335/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/336/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/337/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/338/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/34/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/340/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/341/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/342/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/343/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/344/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/345/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/346/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/347/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/348/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/349/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/35/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/350/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/351/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/354/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3592/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/352/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/353/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/355/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/356/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/36/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3669/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/367/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/368/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/360/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/362/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/37/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3706/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/371/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/372/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/373/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/374/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3749/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/375/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/378/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/379/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/38/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/380/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/382/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/383/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/384/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3851/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/386/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/387/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/388/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/389/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/39/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/390/cmdline: Permission denied
@@ -1876,124 +1879,128 @@ sh: <stdin>[1]: can't open /proc/392/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/393/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/394/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/395/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/396/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/397/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/398/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/399/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/4/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/40/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/400/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/401/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4031/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/41/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/415/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4152/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/416/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/42/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/423/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/424/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/43/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/430/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/431/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4323/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/434/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/439/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/435/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/44/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/440/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4472/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/45/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4522/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/454/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/455/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4508/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/457/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/458/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/46/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/460/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4651/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/466/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/462/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/463/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4636/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/467/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/47/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/472/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/470/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/471/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/473/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/474/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/475/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/476/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4773/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/48/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/480/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/481/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4851/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/484/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4888/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/49/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4949/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/5/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/50/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/51/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/520/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/519/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/53/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/54/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/55/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/5567/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/5597/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/56/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/5668/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/57/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/5794/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/59/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/5736/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/58/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/60/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/61/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6190/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6197/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6198/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6199/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/62/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6200/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6251/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6262/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6267/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6203/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6211/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6212/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6235/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6292/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/63/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/64/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6448/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/65/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/66/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/67/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/68/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/69/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/7/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/70/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/71/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/72/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/73/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/78/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/782/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/79/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/7345/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/7346/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/7349/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/74/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/75/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/781/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/8/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/80/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/803/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/816/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/818/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/804/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/81/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/819/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/82/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/83/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/821/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/84/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/85/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/86/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/87/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/88/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/89/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/9/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/90/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/91/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/92/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/93/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/94/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/95/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/955/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/969/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/953/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/96/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/97/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/981/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/973/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/980/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/99/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/1/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/10/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/100/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1006/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/1007/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/103/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1030/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/101/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/102/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1020/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1036/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/105/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/107/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1076/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/108/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1089/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/109/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/11/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/110/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/116/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/117/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/111/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/112/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/118/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/119/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/12/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/120/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/121/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/126/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/128/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/127/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/129/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/13/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/130/cmdline: Permission denied
@@ -2002,49 +2009,48 @@ sh: <stdin>[1]: can't open /proc/132/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/133/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/134/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/135/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/137/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/136/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/138/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/14/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/142/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/148/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/146/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1477/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1485/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/149/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/15/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1509/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/151/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1511/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1519/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1551/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1556/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/156/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/157/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/158/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1581/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/159/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1587/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/1598/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/16/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1603/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/162/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/160/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/1621/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1687/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1656/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/168/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1695/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/17/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1708/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1727/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1719/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/18/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/180/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/1825/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/187/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/188/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/189/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/182/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/184/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/19/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/194/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/190/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/191/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/196/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/1973/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/2/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/20/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/21/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/22/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/23/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/237/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/238/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/239/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/240/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/241/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/242/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/243/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/244/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/245/cmdline: Permission denied
@@ -2058,6 +2064,7 @@ sh: <stdin>[1]: can't open /proc/251/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/252/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/253/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/254/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/2544/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/255/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/256/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/257/cmdline: Permission denied
@@ -2067,7 +2074,6 @@ sh: <stdin>[1]: can't open /proc/26/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/260/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/261/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/262/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2627/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/263/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/264/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/265/cmdline: Permission denied
@@ -2091,7 +2097,6 @@ sh: <stdin>[1]: can't open /proc/280/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/281/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/282/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/283/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2830/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/284/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/285/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/286/cmdline: Permission denied
@@ -2101,52 +2106,53 @@ sh: <stdin>[1]: can't open /proc/289/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/29/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/290/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/291/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/2918/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/292/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/293/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/294/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/295/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/296/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/297/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/298/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/3/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/30/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3011/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/31/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/319/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/32/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/322/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3233/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/33/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/334/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/335/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/336/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/337/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/338/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/34/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/340/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/341/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/342/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/343/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/344/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/345/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/346/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/347/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/348/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/349/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/35/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/350/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/351/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/354/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3592/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/352/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/353/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/355/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/356/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/36/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3669/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/367/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/368/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/360/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/362/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/37/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/3706/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/371/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/372/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/373/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/374/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3749/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/375/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/378/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/379/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/38/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/380/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/382/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/383/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/384/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/3851/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/386/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/387/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/388/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/389/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/39/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/390/cmdline: Permission denied
@@ -2155,116 +2161,120 @@ sh: <stdin>[1]: can't open /proc/392/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/393/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/394/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/395/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/396/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/397/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/398/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/399/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/4/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/40/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/400/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/401/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4031/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/41/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/415/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4152/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/416/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/42/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/423/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/424/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/43/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/430/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/431/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4323/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/434/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/439/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/435/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/44/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/440/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4472/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/45/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4522/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/454/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/455/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4508/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/457/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/458/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/46/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/460/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4651/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/466/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/462/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/463/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4636/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/467/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/47/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/472/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/470/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/471/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/473/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/474/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/475/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/476/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4773/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/48/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/480/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/481/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/4851/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/484/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4888/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/49/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/4949/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/5/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/50/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/51/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/520/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/519/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/53/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/54/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/55/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/5567/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/5597/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/56/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/5668/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/57/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/5794/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/59/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/5736/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/58/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/60/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/61/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6190/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6197/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6198/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6199/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/62/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6200/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6251/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6262/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/6267/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6203/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6211/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6212/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6235/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6292/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/63/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/64/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/6448/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/65/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/66/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/67/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/68/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/69/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/7/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/70/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/71/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/72/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/73/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/78/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/782/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/79/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/7345/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/7346/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/7349/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/74/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/75/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/781/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/8/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/80/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/803/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/816/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/818/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/804/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/81/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/819/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/82/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/83/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/821/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/84/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/85/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/86/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/87/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/88/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/89/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/9/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/90/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/91/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/92/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/93/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/94/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/95/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/955/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/969/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/953/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/96/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/97/cmdline: Permission denied
-sh: <stdin>[1]: can't open /proc/981/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/973/cmdline: Permission denied
+sh: <stdin>[1]: can't open /proc/980/cmdline: Permission denied
 sh: <stdin>[1]: can't open /proc/99/cmdline: Permission denied
-[2026-08-30T23:49:49Z] H6 leftover launchers=0 port-code=000
+[2026-08-31T08:09:25Z] H6 leftover launchers=0 port-code=000
 H6: PASS graceful-stop-no-zombies 
-[2026-08-30T23:49:49Z] === G13/G14 stop-restart + reconnect: sessions persist ===
-[2026-08-30T23:50:01Z] G14 sessions after restart: 8
+[2026-08-31T08:09:25Z] === G13/G14 stop-restart + reconnect: sessions persist ===
+[2026-08-31T08:09:38Z] G14 sessions after restart: 10
 G13: PASS stop-restart 
 G14: PASS reconnect-sessions-persist 
-[2026-08-30T23:50:01Z] === H7 logs & diagnostics ===
+[2026-08-31T08:09:38Z] === H7 logs & diagnostics ===
 H7: PASS logs-and-diagnostics 
-[2026-08-30T23:50:01Z] === H8 ABI/device gate ===
-[2026-08-30T23:50:01Z] H8 abi=x86_64 sdk=34 -> supported
+[2026-08-31T08:09:38Z] === H8 ABI/device gate ===
+[2026-08-31T08:09:38Z] H8 abi=x86_64 sdk=34 -> supported
 H8: PASS abi-device-gate 
-[2026-08-30T23:50:01Z] === pull logs into evidence ===
-[2026-08-30T23:50:02Z] === SUMMARY ===
+[2026-08-31T08:09:38Z] === pull logs into evidence ===
+[2026-08-31T08:09:38Z] === SUMMARY ===
 H1: PASS extraction-and-version 
 H2: PASS health-gated-start 
 H3: PASS no-duplicate-process 
@@ -2280,7 +2290,7 @@ G09: PASS gate-09-opencode-git.js
 G10: PASS gate-10-mcp.js 
 G11: PASS gate-11-stream.js 
 G12: PASS gate-12-permission.js 
-G15: PASS gate-15-e2e.js 
+G15: FAIL gate-15-e2e.js 
 H4: PASS crash-restart-backoff 
 H5: PASS corruption-recovery 
 H6: PASS graceful-stop-no-zombies 
@@ -2288,15 +2298,16 @@ G13: PASS stop-restart
 G14: PASS reconnect-sessions-persist 
 H7: PASS logs-and-diagnostics 
 H8: PASS abi-device-gate 
-PHASE4_SUMMARY 2026-08-30T23:50:02Z
+PHASE4_SUMMARY 2026-08-31T08:09:38Z
 h_total=8 h_pass=8 h_fail=0
-g_total=15 g_pass=15 g_fail=0
+g_total=15 g_pass=14 g_fail=1
 model_available=0
 device_abi=x86_64 sdk=34
-device gates rc=0
-logcat captured: 221 lines
+[2026-08-31T08:09:38Z] G failures present (1); core gate failures fail CI (model-gate skips without a key are expected).
+device gates rc=1
+logcat captured: 250 lines
 ########## 9/9 collect evidence ##########
-=== PHASE 4 END 2026-08-30T23:50:09Z gates_rc=0 ===
+=== PHASE 4 END 2026-08-31T08:09:46Z gates_rc=1 ===
 H1: PASS extraction-and-version 
 H2: PASS health-gated-start 
 H3: PASS no-duplicate-process 
@@ -2312,7 +2323,7 @@ G09: PASS gate-09-opencode-git.js
 G10: PASS gate-10-mcp.js 
 G11: PASS gate-11-stream.js 
 G12: PASS gate-12-permission.js 
-G15: PASS gate-15-e2e.js 
+G15: FAIL gate-15-e2e.js 
 H4: PASS crash-restart-backoff 
 H5: PASS corruption-recovery 
 H6: PASS graceful-stop-no-zombies 
@@ -2320,8 +2331,8 @@ G13: PASS stop-restart
 G14: PASS reconnect-sessions-persist 
 H7: PASS logs-and-diagnostics 
 H8: PASS abi-device-gate 
-PHASE4_SUMMARY 2026-08-30T23:50:02Z
+PHASE4_SUMMARY 2026-08-31T08:09:38Z
 h_total=8 h_pass=8 h_fail=0
-g_total=15 g_pass=15 g_fail=0
+g_total=15 g_pass=14 g_fail=1
 model_available=0
 device_abi=x86_64 sdk=34
