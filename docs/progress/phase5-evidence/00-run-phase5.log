@@ -1,5 +1,5 @@
-=== PHASE 5 START 2026-08-31T14:07:33Z staged=0 ===
-heartbeat enabled (pid 2041, every 240s -> docs/progress/phase5-evidence/PROGRESS.txt)
+=== PHASE 5 START 2026-08-31T14:17:58Z staged=0 ===
+heartbeat enabled (pid 2270, every 240s -> docs/progress/phase5-evidence/PROGRESS.txt)
 ########## gradle-only mode: compile + JVM unit tests (no emulator, no device gates) ##########
 Downloading https://services.gradle.org/distributions/gradle-8.9-bin.zip
 ............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
@@ -47,10 +47,10 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:checkDebugAndroidTestAarMetadata
 > Task :app:generateDebugAndroidTestResValues FROM-CACHE
 > Task :app:mapDebugAndroidTestSourceSetPaths
-> Task :app:processDebugManifestForPackage
 > Task :app:generateDebugAndroidTestResources
 > Task :app:preDebugUnitTestBuild
 > Task :app:javaPreCompileDebugUnitTest FROM-CACHE
+> Task :app:processDebugManifestForPackage
 > Task :app:mergeDebugAndroidTestResources
 > Task :app:processDebugAndroidTestResources
 > Task :app:processDebugResources
@@ -62,14 +62,14 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 
 > Task :app:compileDebugJavaWithJavac
 > Task :app:bundleDebugClassesToCompileJar
-> Task :app:bundleDebugClassesToRuntimeJar
 > Task :app:processDebugJavaRes
+> Task :app:bundleDebugClassesToRuntimeJar
 
 > Task :app:compileDebugAndroidTestKotlin
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/client/OpenCodeClientGatesTest.kt:336:39 Type mismatch: inferred type is String? but String was expected
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/client/OpenCodeClientGatesTest.kt:337:39 Type mismatch: inferred type is String? but String was expected
 
 > Task :app:compileDebugUnitTestKotlin
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/client/OpenCodeApiHttpTest.kt:58:27 Parameter 'rec' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/client/OpenCodeApiHttpTest.kt:56:27 Parameter 'rec' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractorTest.kt:103:37 Unsafe use of a nullable receiver of type File?
 
 > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
@@ -97,9 +97,7 @@ LoopbackGuardTest > isLoopbackLiteral_coversThe127Block PASSED
 
 LoopbackGuardTest > bindHostname_acceptsLoopbackForms PASSED
 
-OpenCodeApiHttpTest > mcpAddPostsNameAndConfig FAILED
-    ai.opencode.android.client.OpenCodeApi$ApiException at OpenCodeApiHttpTest.kt:155
-        Caused by: java.net.SocketTimeoutException at OpenCodeApiHttpTest.kt:155
+OpenCodeApiHttpTest > mcpAddPostsNameAndConfig PASSED
 
 OpenCodeApiHttpTest > permissionReplyUsesTheUpstreamRoute PASSED
 
@@ -107,20 +105,13 @@ OpenCodeApiHttpTest > non2xxBecomesTypedError PASSED
 
 OpenCodeApiHttpTest > healthIsGlobalAndCarriesBasicAuth PASSED
 
-OpenCodeApiHttpTest > promptAsyncSendsUpstreamPartShape FAILED
-    ai.opencode.android.client.OpenCodeApi$ApiException at OpenCodeApiHttpTest.kt:117
-        Caused by: java.net.SocketTimeoutException at OpenCodeApiHttpTest.kt:117
+OpenCodeApiHttpTest > promptAsyncSendsUpstreamPartShape PASSED
 
-OpenCodeApiHttpTest > authProvisioningUsesProviderIdRoute FAILED
-    ai.opencode.android.client.OpenCodeApi$ApiException at OpenCodeApiHttpTest.kt:144
-        Caused by: java.net.SocketTimeoutException at OpenCodeApiHttpTest.kt:144
+OpenCodeApiHttpTest > authProvisioningUsesProviderIdRoute PASSED
 
-OpenCodeApiHttpTest > globalConfigPatchIsTheDurablePath FAILED
-    java.net.ProtocolException at OpenCodeApiHttpTest.kt:164
+OpenCodeApiHttpTest > patchMethodIsAndroidOnly PASSED
 
-OpenCodeApiHttpTest > sessionCreateIsDirectoryScopedAndPassesTitle FAILED
-    ai.opencode.android.client.OpenCodeApi$ApiException at OpenCodeApiHttpTest.kt:103
-        Caused by: java.net.SocketTimeoutException at OpenCodeApiHttpTest.kt:103
+OpenCodeApiHttpTest > sessionCreateIsDirectoryScopedAndPassesTitle PASSED
 
 OpenCodeApiHttpTest > bodylessRequestsDeclareZeroLength PASSED
 
@@ -135,24 +126,19 @@ SseAccumulatorTest > ignoresCommentsAndKeepsFrameBoundaries PASSED
 SseAccumulatorTest > finishFlushesUnterminatedFrame PASSED
 
 TranscriptTest > toolPartLifecycleKeepsLatestStatus FAILED
-    java.lang.IndexOutOfBoundsException at ClientSemanticsTest.kt:130
+    org.json.JSONException at ClientSemanticsTest.kt:142
 
 TranscriptTest > sessionDeletedDropsEverything PASSED
 
-TranscriptTest > ignoresForeignAndMalformedFrames FAILED
-    java.lang.IndexOutOfBoundsException at ClientSemanticsTest.kt:168
+TranscriptTest > ignoresForeignAndMalformedFrames PASSED
 
-TranscriptTest > partRemovedDropsThePart FAILED
-    java.lang.IndexOutOfBoundsException at ClientSemanticsTest.kt:180
+TranscriptTest > partRemovedDropsThePart PASSED
 
-TranscriptTest > mergesTextPartUpdatesIntoOneMessage FAILED
-    java.lang.AssertionError at ClientSemanticsTest.kt:111
+TranscriptTest > mergesTextPartUpdatesIntoOneMessage PASSED
 
-TranscriptTest > busyFollowsSessionStatusAndIdle FAILED
-    java.lang.IndexOutOfBoundsException at ClientSemanticsTest.kt:141
+TranscriptTest > busyFollowsSessionStatusAndIdle PASSED
 
-TranscriptTest > permissionAskThenReplyClears FAILED
-    java.lang.IndexOutOfBoundsException at ClientSemanticsTest.kt:153
+TranscriptTest > permissionAskThenReplyClears PASSED
 
 AbiGateTest > apiBelow29IsRejectedEvenWithArm64 PASSED
 
@@ -178,8 +164,7 @@ LoopbackAuditTest > skipsHeaderAndJunk PASSED
 
 LoopbackAuditTest > formatsIpv4LittleEndianWord PASSED
 
-ManifestTest > roundTripsVersionsAndEntries FAILED
-    java.lang.AssertionError at ManifestTest.kt:35
+ManifestTest > roundTripsVersionsAndEntries PASSED
 
 ManifestTest > unknownFieldsTolerated PASSED
 
@@ -203,7 +188,7 @@ SecretNamesTest > acceptsProviderStyleNames PASSED
 
 SecretNamesTest > providerIdRoundTrip PASSED
 
-55 tests completed, 12 failed
+55 tests completed, 1 failed
 
 > Task :app:testDebugUnitTest FAILED
 
@@ -247,6 +232,35 @@ org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:tes
 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+	at org.gradle.execution.plan.DefaultPlanExecutor.process(DefaultPlanExecutor.java:111)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.executeWithServices(DefaultTaskExecutionGraph.java:138)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.execute(DefaultTaskExecutionGraph.java:123)
+	at org.gradle.execution.SelectedTaskExecutionAction.execute(SelectedTaskExecutionAction.java:35)
+	at org.gradle.execution.DryRunBuildExecutionAction.execute(DryRunBuildExecutionAction.java:51)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:54)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:43)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor.execute(BuildOperationFiringBuildWorkerExecutor.java:40)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$executeTasks$10(DefaultBuildLifecycleController.java:313)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.lambda$tryTransition$8(StateTransitionController.java:177)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
+	at org.gradle.internal.model.StateTransitionController.tryTransition(StateTransitionController.java:177)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.executeTasks(DefaultBuildLifecycleController.java:304)
+	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.runWork(DefaultBuildWorkGraphController.java:220)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:267)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:131)
+	at org.gradle.composite.internal.DefaultBuildController.doRun(DefaultBuildController.java:181)
+	at org.gradle.composite.internal.DefaultBuildController.access$000(DefaultBuildController.java:50)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.lambda$run$0(DefaultBuildController.java:198)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:198)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
 Caused by: org.gradle.api.internal.exceptions.MarkedVerificationException: There were failing tests. See the report at: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build/reports/tests/testDebugUnitTest/index.html
@@ -378,13 +392,40 @@ Caused by: org.gradle.api.internal.exceptions.MarkedVerificationException: There
 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+	at org.gradle.execution.plan.DefaultPlanExecutor.process(DefaultPlanExecutor.java:111)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.executeWithServices(DefaultTaskExecutionGraph.java:138)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.execute(DefaultTaskExecutionGraph.java:123)
+	at org.gradle.execution.SelectedTaskExecutionAction.execute(SelectedTaskExecutionAction.java:35)
+	at org.gradle.execution.DryRunBuildExecutionAction.execute(DryRunBuildExecutionAction.java:51)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:54)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:43)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor.execute(BuildOperationFiringBuildWorkerExecutor.java:40)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$executeTasks$10(DefaultBuildLifecycleController.java:313)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.lambda$tryTransition$8(StateTransitionController.java:177)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
+	at org.gradle.internal.model.StateTransitionController.tryTransition(StateTransitionController.java:177)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.executeTasks(DefaultBuildLifecycleController.java:304)
+	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.runWork(DefaultBuildWorkGraphController.java:220)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:267)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:131)
+	at org.gradle.composite.internal.DefaultBuildController.doRun(DefaultBuildController.java:181)
+	at org.gradle.composite.internal.DefaultBuildController.access$000(DefaultBuildController.java:50)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.lambda$run$0(DefaultBuildController.java:198)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:198)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
 
 
-BUILD FAILED in 4m 41s
+BUILD FAILED in 2m 3s
 35 actionable tasks: 33 executed, 2 from cache
 STEP_FAILED rc=1: SKIP_PAYLOAD=1 '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
 FATAL: gradle compile/unit tests failed (compiler output in 00-run-phase5.log)
-########## evidence push ##########
-=== PHASE 5 END 2026-08-31T14:13:21Z FATAL: gradle compile/unit tests failed (compiler output in 00-run-phase5.log) ===
