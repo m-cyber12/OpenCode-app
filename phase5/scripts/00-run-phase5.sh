@@ -27,6 +27,18 @@ for a in "$@"; do
     *) echo "ignoring unknown argument: $a" ;;
   esac
 done
+# Fast-iteration mode. The Actions console is the normal way to read a build
+# failure, but it is not reachable from the sandbox this work is driven from, so
+# verdicts and logs are published back through git instead. While the client code
+# is being brought up, a tracked marker file (phase5/CI_GRADLE_ONLY containing
+# "1") makes a standalone run compile + unit-test only: no payload build, no
+# emulator, no gates. Delete/zero the marker for a full device run.
+GRADLE_ONLY=0
+[ "${P5_GRADLE_ONLY:-0}" = 1 ] && GRADLE_ONLY=1
+if [ "$GRADLE_ONLY" = 0 ] && grep -qs '^1' "$DIR/CI_GRADLE_ONLY" 2>/dev/null; then
+  GRADLE_ONLY=1
+fi
+if [ "$STAGED" = 1 ]; then GRADLE_ONLY=0; fi
 mkdir -p "$OUT" "$EV"
 MAINLOG="$OUT/00-run-phase5.log"
 : > "$MAINLOG"
@@ -105,6 +117,20 @@ record_fatal() { # $1=reason
   echo "=== PHASE 5 END $(date -u +%FT%TZ) FATAL: $1 ===" | tee -a "$MAINLOG"
   exit 1
 }
+
+if [ "$GRADLE_ONLY" = "1" ]; then
+  step "gradle-only mode: compile + JVM unit tests (no emulator, no device gates)"
+  run_c 3000 "'$ROOT/gradlew' -p '$ROOT' :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest --no-daemon --stacktrace" \
+    || record_fatal "gradle build/tests failed (compiler output in 00-run-phase5.log)"
+  { echo "P5 MODE gradle-only (compile + unit tests; no device verdicts in this run)"
+    echo "P5_BUILD pass: :app:assembleDebug + :app:assembleDebugAndroidTest + :app:testDebugUnitTest"
+    echo "P5_SUMMARY gates not run"
+  } > "$EV/GATES_SUMMARY.txt"
+  collect_evidence
+  push_evidence 0
+  echo "=== PHASE 5 END $(date -u +%FT%TZ) gradle-only ok ===" | tee -a "$MAINLOG"
+  exit 0
+fi
 
 if [ "$STAGED" = "0" ]; then
   step "1/6 environment + emulator (standalone mode)"

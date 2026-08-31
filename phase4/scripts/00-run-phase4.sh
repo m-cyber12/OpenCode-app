@@ -19,7 +19,37 @@ mkdir -p "$OUT" "$EV"
 MAINLOG="$OUT/00-run-phase4.log"
 : > "$MAINLOG"
 step() { echo; echo "########## $1 ##########"; echo "########## $1 ##########" >> "$MAINLOG"; }
-run_c() { timeout "$1" bash -c "${*:2}" 2>&1 | tee -a "$MAINLOG"; local rc=${PIPESTATUS[0]}; [ "$rc" = 0 ] || { echo "STEP_FAILED rc=$rc: ${*:2}" | tee -a "$MAINLOG"; exit 1; }; }
+# GitHub Actions logs are not downloadable from the development sandbox this work
+# is driven from, so a failed step would otherwise be invisible. On any failure we
+# publish a small digest (error-grep + log tail) straight back to the running branch
+# through git. Only inside Actions, only on failures, never on a branch we do not own.
+FAILURE_PUBLISHED=0
+report_failure() {
+  [ "${SELF_PUSH:-0}" = 1 ] || return 0
+  [ -n "${GITHUB_REF_NAME:-}" ] || return 0
+  [ -e /home/runner ] || return 0
+  [ "$FAILURE_PUBLISHED" = 1 ] && return 0
+  FAILURE_PUBLISHED=1
+  local FD="$REPO/docs/progress/ci-failure-digest"
+  mkdir -p "$FD"
+  { echo "phase4 stage failed: rc=$2"
+    echo "commit=$(git -C "$REPO" rev-parse HEAD 2>/dev/null)"
+    echo "ref=${GITHUB_REF_NAME}"
+    echo "step: $1"
+  } > "$FD/CI_FAILURE.txt"
+  grep -aE '^(e: file:|FAILURE:|BUILD FAILED|> Task .*FAILED|FATAL|.*: error:|.*: UNRESOLVED |.*Caused by:)' "$MAINLOG" 2>/dev/null | tail -150 > "$FD/errors.txt" || true
+  tail -500 "$MAINLOG" > "$FD/log-tail.txt" 2>/dev/null || true
+  git -C "$REPO" add "$FD" >/dev/null 2>&1 || true
+  git -C "$REPO" -c user.name="arena-ai-coding-agent[bot]" -c user.email="arena-ai-coding-agent[bot]@users.noreply.github.com" \
+    commit -q -m "ci: phase4 failure digest (auto)" >/dev/null 2>&1 || true
+  git -C "$REPO" fetch -q origin "$GITHUB_REF_NAME" >/dev/null 2>&1 && \
+    git -C "$REPO" rebase -q "FETCH_HEAD" >/dev/null 2>&1 || true
+  git -C "$REPO" push -q origin "HEAD:refs/heads/$GITHUB_REF_NAME" >/dev/null 2>&1 \
+    && echo "CI_FAILURE_PUBLISHED=docs/progress/ci-failure-digest (commit $(git -C "$REPO" rev-parse --short HEAD))" | tee -a "$MAINLOG"
+  return 0
+}
+
+run_c() { timeout "$1" bash -c "${*:2}" 2>&1 | tee -a "$MAINLOG"; local rc=${PIPESTATUS[0]}; [ "$rc" = 0 ] || { echo "STEP_FAILED rc=$rc: ${*:2}" | tee -a "$MAINLOG"; report_failure "${*:2}" "$rc"; exit 1; }; }
 run() { "$@" 2>&1 | tee -a "$MAINLOG"; }
 
 echo "=== PHASE 4 START $(date -u +%FT%TZ) ===" | tee -a "$MAINLOG"

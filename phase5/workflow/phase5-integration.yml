@@ -16,6 +16,12 @@
 #      phase5/scripts/00-run-phase5.sh --stage-after-phase4 on the SAME emulator
 #      (faster, and it means a green phase4 job also covers phase 5).
 #
+# Iteration knob: while the client code is being brought up, the tracked marker
+# file phase5/CI_GRADLE_ONLY (containing "1") makes a standalone run compile the
+# app + androidTest APK and run the JVM unit tests only - no payload build, no
+# emulator, no device gates - so a compiler error comes back in about ten minutes
+# instead of a full run. Set it to 0 for a real gate run.
+#
 # No repo secret is required: the pinned build resolves a key-free default model
 # (opencode/big-pickle). OPENROUTER_API_KEY is read only if it exists, exactly as
 # in phase 4, to enable the optional live-model halves of the phase-4 drivers.
