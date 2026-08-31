@@ -108,55 +108,63 @@ push_evidence() { # $1=exit-code-to-report
 }
 
 # ---------------------------------------------------------------------------
-# Live progress. A CI step that takes tens of minutes is invisible from the
-# development sandbox until the job ends (its log/artifact bodies are served from
-# hosts the sandbox cannot reach), and a hung step is indistinguishable from a slow
-# one. So every few minutes we commit a small PROGRESS.txt - the log tail - into the
-# evidence directory and push it. That directory is in the workflow's paths-ignore,
-# so these commits cannot re-trigger the workflow, and the push happens from a
-# linked worktree so it never touches the tree Gradle is building.
-HB_WT="/tmp/phase5-heartbeat-wt"
-HB_LAST=""
+# Live progress. A CI step that runs for tens of minutes is invisible from the
+# development sandbox until the job ends (log/artifact bodies come from hosts the
+# sandbox cannot reach), so a hung step and a merely slow one look identical. Every
+# few minutes we append a snapshot to docs/progress/phase5-evidence/PROGRESS.txt -
+# the current phase boundary, head sha, log length and the last log lines - commit
+# it and push. Notes that matter:
+#   * that path is in the workflow's on.push.paths-ignore, so heartbeats cannot
+#     re-trigger this workflow;
+#   * a run whose HEAD commit *is* a heartbeat also disables heartbeats, so even a
+#     mispathed push can cascade at most one extra run;
+#   * nothing here rewrites tracked files (no worktree, no pull/rebase in the
+#     background), so it can never disturb the tree Gradle is compiling - if the
+#     push is rejected because the branch moved, that tick is simply lost;
+#   * outside Actions it is a no-op, and the file keeps growing so the final
+#     evidence bundle holds the whole step timeline even if every push failed.
+HB_FILE_REL="docs/progress/phase5-evidence/PROGRESS.txt"
+HB_PID=""
+HB_STEP="startup"
+HB_DISABLED=0
+
 heartbeat_once() {
+  [ "$HB_DISABLED" = 1 ] && return 0
   [ -n "${GITHUB_REF_NAME:-}" ] || return 0
   [ -e /home/runner ] || return 0
-  { echo "phase5 CI heartbeat  $(date -u +%FT%TZ)  (run ${GITHUB_RUN_ID:-?}, step: ${HB_STEP:-?})"
-    echo "branch=${GITHUB_REF_NAME}  head=$(git -C "$ROOT" rev-parse --short HEAD)"
-    echo "log lines so far=$(wc -l < "$MAINLOG" 2>/dev/null || echo 0)"
+  mkdir -p "$(dirname "$ROOT/$HB_FILE_REL")" 2>/dev/null || return 0
+  { echo "### $(date -u +%FT%TZ)  run=${GITHUB_RUN_ID:-?}  step: $HB_STEP"
+    echo "    head=$(git -C "$ROOT" rev-parse --short HEAD) branch=${GITHUB_REF_NAME} log_lines=$(wc -l < "$MAINLOG" 2>/dev/null || echo 0)"
+    echo "    --- last 40 log lines ---"
+    tail -40 "$MAINLOG" 2>/dev/null | sed 's/^/    /'
     echo
-    echo "--- last 45 lines of the orchestrator log ---"
-    tail -45 "$MAINLOG" 2>/dev/null
-  } > "$HB_WT/PROGRESS.txt" 2>/dev/null || return 0
-  local h; h=$(md5sum "$HB_WT/PROGRESS.txt" 2>/dev/null | cut -c1-12) || return 0
-  [ "$h" = "$HB_LAST" ] && return 0
-  HB_LAST="$h"
-  git -C "$HB_WT" add PROGRESS.txt >/dev/null 2>&1 || return 0
-  git -C "$HB_WT" -c user.name="arena-ai-coding-agent[bot]" \
+  } >> "$ROOT/$HB_FILE_REL" 2>/dev/null || return 0
+  git -C "$ROOT" add "$HB_FILE_REL" >/dev/null 2>&1 || return 0
+  git -C "$ROOT" diff --cached --quiet && return 0
+  git -C "$ROOT" -c user.name="arena-ai-coding-agent[bot]" \
       -c user.email="arena-ai-coding-agent[bot]@users.noreply.github.com" \
       commit -q -m "phase5: CI heartbeat ($HB_STEP)" >/dev/null 2>&1 || return 0
-  git -C "$HB_WT" fetch -q origin "$GITHUB_REF_NAME" >/dev/null 2>&1 && \
-    git -C "$HB_WT" rebase -q "FETCH_HEAD" >/dev/null 2>&1 || true
-  git -C "$HB_WT" push -q origin "HEAD:refs/heads/$GITHUB_REF_NAME" >/dev/null 2>&1 || true
+  git -C "$ROOT" push -q origin "HEAD:refs/heads/$GITHUB_REF_NAME" >/dev/null 2>&1 \
+    || echo "heartbeat push skipped (branch moved or push refused)" >> "$MAINLOG"
   return 0
 }
+
 start_heartbeat() {
-  [ -n "${GITHUB_REF_NAME:-}" ] || return 0
-  [ -e /home/runner ] || return 0
-  rm -rf "$HB_WT" 2>/dev/null
-  git -C "$ROOT" worktree add --detach "$HB_WT" HEAD >/dev/null 2>&1 || { echo "heartbeat: no worktree"; return 0; }
+  if git -C "$ROOT" log -1 --format=%s 2>/dev/null | grep -q '^phase5: CI heartbeat'; then
+    HB_DISABLED=1
+    echo "heartbeat disabled: this run was itself triggered by a heartbeat commit" | tee -a "$MAINLOG"
+    return 0
+  fi
   ( while :; do sleep 240; heartbeat_once; done ) >/dev/null 2>&1 &
   HB_PID=$!
-  echo "heartbeat enabled (pid $HB_PID, every 240s -> docs/progress/phase5-evidence/PROGRESS.txt)"
-}
-stop_heartbeat() {
-  if [ -n "${HB_PID:-}" ]; then kill "$HB_PID" 2>/dev/null || true; HB_PID=""; fi
-  heartbeat_once   # one last snapshot at each phase boundary
-  git -C "$ROOT" worktree remove --force "$HB_WT" >/dev/null 2>&1 || true
-  git -C "$ROOT" worktree prune >/dev/null 2>&1 || true
+  echo "heartbeat enabled (pid $HB_PID, every 240s -> $HB_FILE_REL)" | tee -a "$MAINLOG"
 }
 
-# A fatal pre-gate failure still records + publishes, so a red run is readable
-# from the repo and not only from the Actions console.
+stop_heartbeat() {
+  [ -n "$HB_PID" ] && { kill "$HB_PID" 2>/dev/null || true; HB_PID=""; }
+  heartbeat_once
+}
+
 record_fatal() { # $1=reason
   echo "FATAL: $1" | tee -a "$MAINLOG"
   { echo "P5-BUILD FAIL $1"; echo "phase5 stopped before the gates ran; see 00-run-phase5.log"; } > "$EV/GATES_SUMMARY.txt"
@@ -171,10 +179,12 @@ start_heartbeat
 
 if [ "$GRADLE_ONLY" = "1" ]; then
   step "gradle-only mode: compile + JVM unit tests (no emulator, no device gates)"
-  run_c 3000 "'$ROOT/gradlew' -p '$ROOT' :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest --no-daemon --stacktrace" \
-    || record_fatal "gradle build/tests failed (compiler output in 00-run-phase5.log)"
+  # Compile + unit tests only - no assemble*/package*, so the missing embedded
+  # payload is irrelevant (see the -PskipPayload note in app/build.gradle.kts).
+  run_c 3000 "'$ROOT/gradlew' -p '$ROOT' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace" \
+    || record_fatal "gradle compile/unit tests failed (compiler output in 00-run-phase5.log)"
   { echo "P5 MODE gradle-only (compile + unit tests; no device verdicts in this run)"
-    echo "P5_BUILD pass: :app:assembleDebug + :app:assembleDebugAndroidTest + :app:testDebugUnitTest"
+    echo "P5_BUILD pass: :app:compileDebugKotlin + :app:compileDebugAndroidTestKotlin + :app:testDebugUnitTest"
     echo "P5_SUMMARY gates not run"
   } > "$EV/GATES_SUMMARY.txt"
   collect_evidence

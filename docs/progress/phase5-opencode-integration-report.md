@@ -240,6 +240,32 @@ artifacts from the payload, and AGP has no matching NDK strip tool for them. The
 packaged unstripped (they already are, by build design); the APK size cost is known
 and already reflected in the phase-4 numbers.
 
+### What runs 1-3 of `phase5-integration` showed (and one flaw they exposed)
+
+Installing the workflow made the loop work as designed - a push to this branch now
+starts a run by itself (run #1 `b4ccc93`, #2 `fb46557`, #3 `53221c6`, all
+auto-triggered) - and it also showed that **my "fast" mode could not have worked as
+first written**: `preBuild` `dependsOn(verifyAndStagePayload)`, so *every* Gradle
+task in this app - including a pure compile - fails on a missing
+`phase4/out/engine/assets/runtime-manifest.json`, and the fast mode deliberately
+skipped the payload build. Runs #1/#2 therefore sat far longer than a compile should
+and produced no evidence commit that this side could see. Two changes, both local
+until the connection is back:
+
+- `app/build.gradle.kts`: `verifyAndStagePayload` honours an opt-in `-PskipPayload`
+  that skips staging with a loud warning, documented as compile/test-only (never
+  passed with `assemble*`/`package*`), because the packaging path must keep failing
+  closed on a missing payload.
+- the fast mode now runs `:app:compileDebugKotlin`,
+  `:app:compileDebugAndroidTestKotlin`, `:app:testDebugUnitTest` with that flag - a
+  real compile check that needs no runtime, no APK, no emulator. It is labelled as
+  such in its own summary line and in the report; it closes no gate.
+- `00-run-phase5.sh` publishes a `PROGRESS.txt` heartbeat into
+  `docs/progress/phase5-evidence/` every four minutes (ignored path, so it cannot
+  re-trigger the workflow; a run started from a heartbeat commit disables its own
+  heartbeats, bounding any cascade to one), which is how a long or hung step becomes
+  observable from the branch instead of the unreachable console.
+
 ### Reading CI output from this sandbox (why run 65 has no log here)
 
 The Actions console is not reachable from the sandbox this work is driven from: `api.github.com`

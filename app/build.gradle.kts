@@ -120,6 +120,17 @@ val verifyAndStagePayload = tasks.register("verifyAndStagePayload") {
     group = "opencode"
     description = "Verifies and stages phase4/out/engine into generated asset/jniLibs dirs."
     doLast {
+        // CI-only escape hatch for *compile-only* runs (no packaging): Gradle's
+        // "fast feedback" job has to be able to type-check ~2,600 new Kotlin lines
+        // without first spending 10-15 minutes building the embedded runtime. It is
+        // opt-in (-PskipPayload) and only ever passed together with compile*/test
+        // tasks, never assemble*/package*; an APK could not have been produced by a
+        // build that skipped this, and one that somehow was would not start (the
+        // extractor fails closed on the missing asset).
+        if (project.findProperty("skipPayload") == "true") {
+            println("PAYLOAD STAGING SKIPPED (-PskipPayload): compile/test only, no APK was produced.")
+            return@doLast
+        }
         val root = engineRoot()
         val srcAssets = File(root, "assets")
         val srcJni = File(root, "jniLibs")
