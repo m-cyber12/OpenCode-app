@@ -62,7 +62,10 @@ CI run `33341713633` (evidence commit `b3c2b04`) completed successfully with
 both ABI native helpers compiled and packaged after the version/lifecycle
 hardening changes. On the API-34 x86_64 emulator: H1–H8 PASS, G01–G15 PASS,
 and device-gates exit code 0. Run `33342304137` also completed successfully
-after the report update. Both runs had no `OPENROUTER_API_KEY`, so
+after the report update. After a nondeterministic G15 false negative where the
+real agent delegated through `task`, run `33371704423` (evidence commit
+`9bf818a`) passed after G15 was corrected to count completed child-session
+real-tool parts streamed over SSE. All runs had no `OPENROUTER_API_KEY`, so
 model-dependent assertions were skipped and no real external-model round trip
 is claimed. User-provided RMX3830 diagnostics separately prove arm64 startup
 and authenticated health.

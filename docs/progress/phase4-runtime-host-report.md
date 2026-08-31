@@ -21,7 +21,7 @@ The decisive completed Android run was GitHub Actions **33330083624**, whose CI 
 - Payload build: `PAYLOAD_READY`, 2 complete ABIs; Git 2.48.1, ripgrep 15.1.0, Bun 1.3.14, and the pinned OpenCode bundle.
 - No `OPENROUTER_API_KEY` was supplied (`model_available=0`). Model-dependent content assertions are therefore not claimed as a real external-model round trip; see §4.
 
-A preceding both-ABI attempt (**33329943774**) exposed an arm64 portability defect: `seccomp-shim.c` referenced x86_64-only `__NR_access`. Commit `424162f` added the architecture guard. The follow-up **33330083624** built both ABIs, packaged both into the APK, and passed the complete x86_64 Android suite. The arm64 BPF-skip patch initially exposed a compile-scope error in **33335804059**; `b744714` corrected that, and CI runs **33335963268**, **33336625302**, and **33341713633** completed successfully. The latter produced committed post-patch evidence (`b3c2b04`) with both ABI helpers packaged, strict-version/lifecycle changes built, and H1–H8/G01–G15 green on x86_64. Arm64 binary packaging is **TESTED** in CI, and the arm64 startup/health path is now **TESTED** on the RMX3830 using user-provided on-device diagnostics evidence.
+A preceding both-ABI attempt (**33329943774**) exposed an arm64 portability defect: `seccomp-shim.c` referenced x86_64-only `__NR_access`. Commit `424162f` added the architecture guard. The follow-up **33330083624** built both ABIs, packaged both into the APK, and passed the complete x86_64 Android suite. The arm64 BPF-skip patch initially exposed a compile-scope error in **33335804059**; `b744714` corrected that, and CI runs **33335963268**, **33336625302**, and **33341713633** completed successfully. The latter produced committed post-patch evidence (`b3c2b04`) with both ABI helpers packaged, strict-version/lifecycle changes built, and H1–H8/G01–G15 green on x86_64. A later run (**33371704423**, evidence `9bf818a`) remained green after fixing G15 to count completed child-session tool parts when the real agent delegates with `task`. Arm64 binary packaging is **TESTED** in CI, and the arm64 startup/health path is now **TESTED** on the RMX3830 using user-provided on-device diagnostics evidence.
 
 Relevant committed evidence is under `docs/progress/phase4-evidence/`, especially:
 
@@ -169,6 +169,7 @@ These are explicit capability losses; the app does not silently fall back to Ter
 | 33335963268 | **SUCCESS** | Re-run after the compile-scope correction in `b744714`; the Android build/package and existing x86_64 gates completed successfully. This still does not replace the real RMX3830 retest |
 | 33336625302 / evidence 14cdaeb | **SUCCESS** | Post-patch APK build/package and x86_64 emulator H/G suite; arm64 helper compilation/package passed, but this is not arm64 device execution |
 | 33341713633 / evidence b3c2b04 | **SUCCESS** | Version/lifecycle hardening plus clean payload rebuild; both ABI helpers packaged and x86_64 H1–H8/G01–G15 remained green |
+| 33371704423 / evidence 9bf818a | **SUCCESS** | G15 delegated-agent tool accounting was corrected; H1–H8 and G01–G15 are green again on the API-34 x86_64 emulator with `model_available=0` |
 
 The Phase 4 implementation, required x86_64 Android validation, and the arm64 startup/health acceptance requirement are complete. The arm64-v8a artifacts are included in the final APK and pass build/package evidence. The full G1–G14/H suite remains x86_64-tested only; that limitation is recorded explicitly and is separate from the now-proven arm64 startup fix.
 
@@ -204,4 +205,4 @@ Validation received:
 - `node --check phase4/payload/launcher.js` passed.
 - Host GCC syntax checks passed for both native shim sources; this sandbox has no Android arm64 cross compiler, Android SDK/JDK/KVM, or direct adb connection, so the RMX3830 result is recorded from the user's supplied device diagnostics.
 - `git diff --check` passed for the changes.
-- CI runs 33341713633/33342304137 supplied the post-patch Gradle/JVM test, both-ABI APK, and x86_64 Android emulator evidence; the user's RMX3830 diagnostics supply the arm64 startup/health evidence.
+- CI runs 33341713633/33342304137/33371704423 supplied the post-patch Gradle/JVM test, both-ABI APK, and x86_64 Android emulator evidence; the user's RMX3830 diagnostics supply the arm64 startup/health evidence.
