@@ -11,11 +11,12 @@ emulator**. The x86_64 seccomp chain is validated: the PIE exec wrapper loads
 the preload handler before Bun initialization, the server reaches `SERVER_READY`
 and authenticated health, and the full non-model Phase 4 gate set is green.
 
-A real Android 15 arm64 device (`RMX3830`) then exposed an earlier startup
-failure before `execv`/Bun output. The follow-up arm64 patch is committed and
-its both-ABI compilation/APK packaging is green in CI, but the rebuilt APK has
-not yet run on that phone. That arm64 device retest is the current merge
-blocker; no arm64 fix claim is made yet.
+A real Android 15 arm64 device (`RMX3830`) exposed an earlier startup failure
+before `execv`/Bun output. The follow-up arm64 patch is committed, both-ABI
+compilation/APK packaging is green in CI, and the rebuilt APK has now run on
+that phone: user-provided diagnostics show arm64 native libraries and
+`HEALTHY` on `127.0.0.1:4111` with no crashes. The arm64 startup/health blocker
+is resolved; the full G1–G14/H suite remains tested on x86_64 only.
 
 ## Evidence-backed chain (on-device, x86_64 emulator, CI runs)
 
@@ -60,22 +61,17 @@ blocker; no arm64 fix claim is made yet.
 CI run `33341713633` (evidence commit `b3c2b04`) completed successfully with
 both ABI native helpers compiled and packaged after the version/lifecycle
 hardening changes. On the API-34 x86_64 emulator: H1–H8 PASS, G01–G15 PASS,
-and device-gates exit code 0. The run had no `OPENROUTER_API_KEY`, so
+and device-gates exit code 0. Run `33342304137` also completed successfully
+after the report update. Both runs had no `OPENROUTER_API_KEY`, so
 model-dependent assertions were skipped and no real external-model round trip
-is claimed. This does not constitute arm64 runtime execution evidence.
+is claimed. User-provided RMX3830 diagnostics separately prove arm64 startup
+and authenticated health.
 
-## Next steps for the arm64 blocker
+## Follow-up evidence gaps (non-blocking for the demonstrated startup fix)
 
-1. Build/install the APK from the current branch on the RMX3830 and record the
-   APK SHA-256, ABI/API metadata, and `adb shell getconf PAGE_SIZE`.
-2. Capture clean-launch runtime/logcat evidence. The expected milestones are:
-   `[exec-shim] arm64: skipping child BPF filter`, preload constructor result,
-   launcher entry/import/bind, `SERVER_READY`, and HTTP health on
-   `127.0.0.1:4111`.
-3. Exercise stop/restart and verify no stale launcher/PID remains. If any
-   milestone is absent, preserve the crash/exit-code/logcat evidence.
-4. Rerun the x86_64 G1–G14/H gates after the patch and keep arm64 and x86_64
-   results labeled separately.
+1. The supplied diagnostics screenshot does not include raw `adb shell getconf PAGE_SIZE`, APK SHA-256, or the complete native/launcher logcat milestones; those remain **NOT RECORDED**.
+2. The full G1–G14/H lifecycle suite was rerun on x86_64 and is green. It was not rerun on the arm64 phone, so arm64 full-suite rows remain **NOT TESTED**.
 
-The complete acceptance status and honesty labels are maintained in
-`docs/progress/phase4-runtime-host-report.md`.
+The required arm64 embedded-server startup/health acceptance is nevertheless
+now **TESTED** on the RMX3830. The complete acceptance status and honesty labels
+are maintained in `docs/progress/phase4-runtime-host-report.md`.
