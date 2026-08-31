@@ -1,20 +1,22 @@
 assert ok: session id present
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1BEGWWAPN3CQ54CQXSC6V2F","input":"{\"command\":\"command -v git; ls -l \\\"$(command -v git)\\\"; git --version; echo G9_GIT_DIAG_DONE\"}","output":"\"[seccomp] preload handler installed (rc=0)\\n/data/user/0/ai.opencode.android.debug/files/bin/git\\n[seccomp] preload handler installed (rc=0)\\nlrwxrwxrwx 1 u0_a192 u0_a192 108 2026-08-31 08:20 /data/u","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1BFCTJZGZP0F307NWGJ3S06","input":"{\"command\":\"command -v git; ls -l \\\"$(command -v git)\\\"; git --version; echo G9_GIT_DIAG_DONE\"}","output":"\"[seccomp] preload handler installed (rc=0)\\n/data/user/0/ai.opencode.android.debug/files/bin/git\\n[seccomp] preload handler installed (rc=0)\\n[seccomp] preload handler installed (rc=0)\\nlrwxrwxrwx 1 ","error":null}]}]
 --- Android Git diagnostic (server context) ---
 [seccomp] preload handler installed (rc=0)
 /data/user/0/ai.opencode.android.debug/files/bin/git
 [seccomp] preload handler installed (rc=0)
-lrwxrwxrwx 1 u0_a192 u0_a192 108 2026-08-31 08:20 /data/user/0/ai.opencode.android.debug/files/bin/git -> /data/app/~~m6aSVl0feA2bcH-i0dQ4yg==/ai.opencode.android.debug-1bvz2wPLl4bKKQ-7-SoVdA==/lib/x86_64/libgit.so
 [seccomp] preload handler installed (rc=0)
+lrwxrwxrwx 1 u0_a192 u0_a192 108 2026-08-31 08:35 /data/user/0/ai.opencode.android.debug/files/bin/git -> /data/app/~~Th3JL5SsLODhYuOtlarXoQ==/ai.opencode.android.debug-P3-bCbD77ShAaR4Kk2-NbQ==/lib/x86_64/libgit.so
 git version 2.48.1
 G9_GIT_DIAG_DONE
 
 assert ok: session id present
 shell HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1BEH2TT616JBC5AEXPS4X8D","input":"{\"command\":\"git status --short && echo BRANCHES && git branch && echo LOG && git log --oneline -3\"}","output":"\"[seccomp] preload handler installed (rc=0)\\n[seccomp] preload handler installed (rc=0)\\n?? g8-write.txt\\nBRANCHES\\n  feature/g9\\n* main\\nLOG\\nfdf6b9b gates fixture\\n[seccomp] preload handler installe","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1BFD0H8C1AKAXPBWZ7HC9KR","input":"{\"command\":\"git status --short && echo BRANCHES && git branch && echo LOG && git log --oneline -3\"}","output":"\"[seccomp] preload handler installed (rc=0)\\n[seccomp] preload handler installed (rc=0)\\n[seccomp] preload handler installed (rc=0)\\n[seccomp] preload handler installed (rc=0)\\n?? g8-write.txt\\nBRANCH","error":null}]}]
 --- git via OpenCode output ---
+[seccomp] preload handler installed (rc=0)
+[seccomp] preload handler installed (rc=0)
 [seccomp] preload handler installed (rc=0)
 [seccomp] preload handler installed (rc=0)
 ?? g8-write.txt
@@ -22,8 +24,6 @@ BRANCHES
   feature/g9
 * main
 LOG
-fdf6b9b gates fixture
-[seccomp] preload handler installed (rc=0)
-[seccomp] preload handler installed (rc=0)
+7dbacd7 gates fixture
 
 G9_OPENCODE_GIT_OK

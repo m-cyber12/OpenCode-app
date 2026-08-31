@@ -1,35 +1,35 @@
 --- supervisor log (host) ---
-2026-08-31T08:20:38.131Z [host] start() ignored: supervisor already running
-2026-08-31T08:20:38.170Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-2026-08-31T08:20:38.174Z [host] state -> EXTRACTING (validating embedded runtime)
-2026-08-31T08:20:38.249Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
-2026-08-31T08:20:38.389Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
-2026-08-31T08:20:39.435Z [host] extraction complete: 30 files validated
-2026-08-31T08:20:39.436Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-2026-08-31T08:20:39.437Z [host] symlink bun -> /data/app/~~m6aSVl0feA2bcH-i0dQ4yg==/ai.opencode.android.debug-1bvz2wPLl4bKKQ-7-SoVdA==/lib/x86_64/libbun.so (exec=true)
-2026-08-31T08:20:39.438Z [host] symlink git -> /data/app/~~m6aSVl0feA2bcH-i0dQ4yg==/ai.opencode.android.debug-1bvz2wPLl4bKKQ-7-SoVdA==/lib/x86_64/libgit.so (exec=true)
-2026-08-31T08:20:39.438Z [host] symlink rg -> /data/app/~~m6aSVl0feA2bcH-i0dQ4yg==/ai.opencode.android.debug-1bvz2wPLl4bKKQ-7-SoVdA==/lib/x86_64/librg.so (exec=true)
-2026-08-31T08:20:39.441Z [host] generated fresh server password (stored 600 at server-password)
-2026-08-31T08:20:39.443Z [host] state -> STARTING (starting OpenCode server (attempt 1))
-2026-08-31T08:20:39.448Z [host] server started: pid=6840 abi=x86_64 port=4111
-2026-08-31T08:20:39.488Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~m6aSVl0feA2bcH-i0dQ4yg==/ai.opencode.android.debug-1bvz2wPLl4bKKQ-7-SoVdA==/lib/x86_64/libbun.so
-2026-08-31T08:20:39.489Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
-2026-08-31T08:20:39.491Z [server] [stderr] [seccomp] preload handler installed (rc=0)
-2026-08-31T08:20:39.588Z [server] [stderr] [launcher] main entered platform=android arch=x64
-2026-08-31T08:20:39.592Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-08-31T08:20:39.593Z [server] [stderr] [launcher] importing OpenCode bundle
-2026-08-31T08:20:41.227Z [server] [stderr] [launcher] OpenCode bundle imported
-2026-08-31T08:20:41.229Z [server] [stderr] [launcher] binding 127.0.0.1:4111
-2026-08-31T08:20:41.761Z [server] SERVER_READY http://127.0.0.1:4111/
-2026-08-31T08:20:41.770Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
-2026-08-31T08:20:41.778Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-08-31T08:35:53.274Z [host] start() ignored: supervisor already running
+2026-08-31T08:35:53.338Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-08-31T08:35:53.351Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-08-31T08:35:53.363Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-08-31T08:35:53.371Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-08-31T08:35:54.558Z [host] extraction complete: 30 files validated
+2026-08-31T08:35:54.559Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-08-31T08:35:54.561Z [host] symlink bun -> /data/app/~~Th3JL5SsLODhYuOtlarXoQ==/ai.opencode.android.debug-P3-bCbD77ShAaR4Kk2-NbQ==/lib/x86_64/libbun.so (exec=true)
+2026-08-31T08:35:54.562Z [host] symlink git -> /data/app/~~Th3JL5SsLODhYuOtlarXoQ==/ai.opencode.android.debug-P3-bCbD77ShAaR4Kk2-NbQ==/lib/x86_64/libgit.so (exec=true)
+2026-08-31T08:35:54.563Z [host] symlink rg -> /data/app/~~Th3JL5SsLODhYuOtlarXoQ==/ai.opencode.android.debug-P3-bCbD77ShAaR4Kk2-NbQ==/lib/x86_64/librg.so (exec=true)
+2026-08-31T08:35:54.566Z [host] generated fresh server password (stored 600 at server-password)
+2026-08-31T08:35:54.568Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-31T08:35:54.576Z [host] server started: pid=6417 abi=x86_64 port=4111
+2026-08-31T08:35:54.606Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~Th3JL5SsLODhYuOtlarXoQ==/ai.opencode.android.debug-P3-bCbD77ShAaR4Kk2-NbQ==/lib/x86_64/libbun.so
+2026-08-31T08:35:54.611Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-08-31T08:35:54.623Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-08-31T08:35:54.709Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-08-31T08:35:54.711Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-31T08:35:54.714Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-08-31T08:35:56.404Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-08-31T08:35:56.406Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-08-31T08:35:56.828Z [server] SERVER_READY http://127.0.0.1:4111/
+2026-08-31T08:35:56.840Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
+2026-08-31T08:35:56.843Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
 --- bin symlinks (filesDir/bin) ---
 total 40
-drwx------  2 u0_a192 u0_a192 4096 2026-08-31 08:20 .
-drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-31 08:20 ..
-lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-31 08:20 bun -> /data/app/~~m6aSVl0feA2bcH-i0dQ4yg==/ai.opencode.android.debug-1bvz2wPLl4bKKQ-7-SoVdA==/lib/x86_64/libbun.so
-lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-31 08:20 git -> /data/app/~~m6aSVl0feA2bcH-i0dQ4yg==/ai.opencode.android.debug-1bvz2wPLl4bKKQ-7-SoVdA==/lib/x86_64/libgit.so
-lrwxrwxrwx  1 u0_a192 u0_a192  107 2026-08-31 08:20 rg -> /data/app/~~m6aSVl0feA2bcH-i0dQ4yg==/ai.opencode.android.debug-1bvz2wPLl4bKKQ-7-SoVdA==/lib/x86_64/librg.so
+drwx------  2 u0_a192 u0_a192 4096 2026-08-31 08:35 .
+drwxrwxrwx 13 u0_a192 u0_a192 4096 2026-08-31 08:35 ..
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-31 08:35 bun -> /data/app/~~Th3JL5SsLODhYuOtlarXoQ==/ai.opencode.android.debug-P3-bCbD77ShAaR4Kk2-NbQ==/lib/x86_64/libbun.so
+lrwxrwxrwx  1 u0_a192 u0_a192  108 2026-08-31 08:35 git -> /data/app/~~Th3JL5SsLODhYuOtlarXoQ==/ai.opencode.android.debug-P3-bCbD77ShAaR4Kk2-NbQ==/lib/x86_64/libgit.so
+lrwxrwxrwx  1 u0_a192 u0_a192  107 2026-08-31 08:35 rg -> /data/app/~~Th3JL5SsLODhYuOtlarXoQ==/ai.opencode.android.debug-P3-bCbD77ShAaR4Kk2-NbQ==/lib/x86_64/librg.so
 --- execs THROUGH symlinks ---
 1.3.14
 bun_rc=0
@@ -44,8 +44,8 @@ simd(runtime):+SSE2,+SSSE3,-AVX2
 PCRE2 10.45 is available (JIT is available)
 rg_rc=0
 --- bin/git and bin/rg symlink targets (Android/Bionic executables) ---
-lrwxrwxrwx 1 u0_a192 u0_a192 108 2026-08-31 08:20 /data/data/ai.opencode.android.debug/files/bin/git -> /data/app/~~m6aSVl0feA2bcH-i0dQ4yg==/ai.opencode.android.debug-1bvz2wPLl4bKKQ-7-SoVdA==/lib/x86_64/libgit.so
-lrwxrwxrwx 1 u0_a192 u0_a192 107 2026-08-31 08:20 /data/data/ai.opencode.android.debug/files/bin/rg -> /data/app/~~m6aSVl0feA2bcH-i0dQ4yg==/ai.opencode.android.debug-1bvz2wPLl4bKKQ-7-SoVdA==/lib/x86_64/librg.so
+lrwxrwxrwx 1 u0_a192 u0_a192 108 2026-08-31 08:35 /data/data/ai.opencode.android.debug/files/bin/git -> /data/app/~~Th3JL5SsLODhYuOtlarXoQ==/ai.opencode.android.debug-P3-bCbD77ShAaR4Kk2-NbQ==/lib/x86_64/libgit.so
+lrwxrwxrwx 1 u0_a192 u0_a192 107 2026-08-31 08:35 /data/data/ai.opencode.android.debug/files/bin/rg -> /data/app/~~Th3JL5SsLODhYuOtlarXoQ==/ai.opencode.android.debug-P3-bCbD77ShAaR4Kk2-NbQ==/lib/x86_64/librg.so
 --- direct Git/ripgrep version checks from app uid ---
 git version 2.48.1
 git_status_exec_rc=0
@@ -63,8 +63,8 @@ git_status_rc=0
 tool_diag_rc=0
 (nothing logged)
 --- flat payload present ---
--rw------- 1 u0_a192 u0_a192     4847 2026-08-31 08:20 /data/data/ai.opencode.android.debug/files/launcher.js
--rw------- 1 u0_a192 u0_a192 32848913 2026-08-31 08:20 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
-drwx------ 5 u0_a192 u0_a192 4096 2026-08-31 08:20 /data/data/ai.opencode.android.debug/files/node_modules
+-rw------- 1 u0_a192 u0_a192     4847 2026-08-31 08:35 /data/data/ai.opencode.android.debug/files/launcher.js
+-rw------- 1 u0_a192 u0_a192 32848913 2026-08-31 08:35 /data/data/ai.opencode.android.debug/files/opencode/dist/node/node.js
+drwx------ 5 u0_a192 u0_a192 4096 2026-08-31 08:35 /data/data/ai.opencode.android.debug/files/node_modules
 --- live server processes (app uid) ---
-/proc/6840/cmdline /data/app/~~m6aSVl0feA2bcH-i0dQ4yg==/ai.opencode.android.debug-1bvz2wPLl4bKKQ-7-SoVdA==/lib/x86_64/libbun.so /data/user/0/ai.opencode.android.debug/files/launcher.js 
+/proc/6417/cmdline /data/app/~~Th3JL5SsLODhYuOtlarXoQ==/ai.opencode.android.debug-P3-bCbD77ShAaR4Kk2-NbQ==/lib/x86_64/libbun.so /data/user/0/ai.opencode.android.debug/files/launcher.js 
