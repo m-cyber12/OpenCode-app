@@ -1497,3 +1497,25 @@ app_uid=10192 device_abi=x86_64
 live_launcher_processes=0
 phase5 gates rc=1
 ########## 6/6 evidence ##########
+=== PHASE 5 END 2026-08-31T16:24:28Z gates_rc=1 ===
+P5-01: PASS phase5-apk-installed-and-app-running
+P5-02: PASS payload-v5-manifest-marker
+P5-03: PASS fixture-config-and-harness-marker
+P5-04: FAIL keystore-password-and-healthy-server
+P5-K: FAIL kotlin-client-gates-on-device (K1..K9, pass=1 fail=1 skip=8)
+P5-R-06: FAIL phase4-driver-gate-06-health.js-unmodified
+P5-R-07: FAIL phase4-driver-gate-07-shell.js-unmodified
+P5-R-10: FAIL phase4-driver-gate-10-mcp.js-unmodified
+P5-R-11: FAIL phase4-driver-gate-11-stream.js-unmodified
+P5-R-12: FAIL phase4-driver-gate-12-permission.js-unmodified
+P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative
+P5-G17: FAIL loopback-only-binding-and-no-mdns
+P5-G18: PASS credentials-keystore-only-at-rest
+P5-G19: PASS no-hardcoded-or-bundled-secrets
+P5_SUMMARY 2026-08-31T16:24:27Z
+gates_pass=5 gates_fail=9 gates_skip=0
+kotlin_gate_pass=1 kotlin_gate_fail=1 kotlin_gate_skipped=8
+model_available=0 model_probe=skipped: server not healthy (P5-04 failed)
+app_uid=10192 device_abi=x86_64
+live_launcher_processes=0
+########## evidence push ##########
