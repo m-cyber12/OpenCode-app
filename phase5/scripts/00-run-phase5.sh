@@ -225,8 +225,10 @@ start_heartbeat
 if [ "$GRADLE_ONLY" = "1" ]; then
   step "gradle-only mode: compile + JVM unit tests (no emulator, no device gates)"
   # Compile + unit tests only - no assemble*/package*, so the missing embedded
-  # payload is irrelevant (see the -PskipPayload note in app/build.gradle.kts).
-  run_c 3000 "'$ROOT/gradlew' -p '$ROOT' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace" \
+  # payload is irrelevant. SKIP_PAYLOAD=1 (plus the -P property) is what tells
+  # verifyAndStagePayload to stand down; both are passed because the property alone
+  # silently failed to reach the task once already.
+  run_c 3000 "SKIP_PAYLOAD=1 '$ROOT/gradlew' -p '$ROOT' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace" \
     || record_fatal "gradle compile/unit tests failed (compiler output in 00-run-phase5.log)"
   { echo "P5 MODE gradle-only (compile + unit tests; no device verdicts in this run)"
     echo "P5_BUILD pass: :app:compileDebugKotlin + :app:compileDebugAndroidTestKotlin + :app:testDebugUnitTest"

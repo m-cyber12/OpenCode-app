@@ -127,8 +127,16 @@ val verifyAndStagePayload = tasks.register("verifyAndStagePayload") {
         // tasks, never assemble*/package*; an APK could not have been produced by a
         // build that skipped this, and one that somehow was would not start (the
         // extractor fails closed on the missing asset).
-        if (project.findProperty("skipPayload") == "true") {
-            println("PAYLOAD STAGING SKIPPED (-PskipPayload): compile/test only, no APK was produced.")
+        // Read the switch from the environment as well as the property, and print
+        // what was seen: an earlier version relied on `-PskipPayload` alone, the
+        // CI run then failed on the missing payload with no explanation, and the
+        // mismatch was only visible by reading the whole log. A diagnostic makes the
+        // next such confusion self-evident instead of costing a run.
+        val skipProp = project.findProperty("skipPayload")?.toString()
+        val skipEnv = System.getenv("SKIP_PAYLOAD")
+        println("PAYLOAD STAGING: -PskipPayload=$skipProp SKIP_PAYLOAD=$skipEnv")
+        if (skipProp in setOf("true", "1", "") || skipEnv in setOf("1", "true", "yes")) {
+            println("PAYLOAD STAGING SKIPPED: compile/test-only run, no APK was produced.")
             return@doLast
         }
         val root = engineRoot()
