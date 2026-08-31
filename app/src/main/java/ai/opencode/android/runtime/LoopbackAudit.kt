@@ -66,8 +66,8 @@ object LoopbackAudit {
     }
 
     /**
-     * /proc/net/* prints IPv4 as one little-endian 32-bit word (8 hex chars) and
-     * IPv6 as four little-endian 32-bit words (32 hex chars).
+     * The proc-net tables print IPv4 as one little-endian 32-bit word (8 hex
+     * chars) and IPv6 as four little-endian 32-bit words (32 hex chars).
      */
     fun formatAddress(hex: String, v6: Boolean): String {
         if (!v6) {

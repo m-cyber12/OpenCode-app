@@ -6,7 +6,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The kernel's /proc/net/* encoding is byte order specific, so the parser that
+ * The kernel's proc-net table encoding is byte order specific, so the parser that
  * turns it into a verdict is tested against real-shaped rows here (the on-device
  * gate proves the rows exist; this proves we read them correctly).
  */

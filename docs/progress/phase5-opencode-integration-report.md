@@ -210,6 +210,36 @@ Machine-readable verdict lines (`P5_<NAME> PASS|FAIL :: detail`) are emitted to 
 | host rehearsal (this session) | local | `REHEARSAL_PASS` | MCP fixture + `P5-G16` driver green on one host against a fake-OpenCode MCP surface (§2). Not device evidence; does not close any gate. |
 | 65 (`33385975679`) | `arena/01a05713-opencode-app` | **FAILED, no gate verdicts** | Dispatched manually by the user at 11:13Z against the Phase 4 workflow; died at step 5/10 ("Run the Phase 4 suite") after ~9 min, *before* the Phase 5 tail stage could run (no Phase 5 evidence commit exists, and Phase 5 publishes on every exit path including a failed build). Steps 1-4 (checkout, KVM, JDK) were green; steps 6/7 (evidence copy, artifacts) ran because they are `if: always()`. **Which Phase 4 sub-step failed is an inference from the timing, not a fact:** step 5 covers the payload build, the Gradle compile, the emulator boot and the device gates; ~9 min with no boot log activity points at the Gradle compile of the ~2,600 new Kotlin lines, but the log is unreachable from here (§next) so it is unconfirmed. Nothing is claimed from this run. |
 
+### Run 65 diagnosis and fix (resolved, first compile attempt)
+
+Root cause of all nine errors, in one character of prose: **Kotlin block comments
+nest** (unlike Java's), and a KDoc line in `LoopbackAudit.kt` said
+`/proc/net/* prints IPv4 as…`. That `/*` opened a second comment, so the outer one
+closed on the wrong `*/` and the rest of the file - `formatAddress`, `audit`,
+`rawFor`, and the object's closing brace - was silently commented out. Every
+`Unresolved reference` in `RuntimeIntegration.kt` (`audit`, `ok`, `listeners`,
+`detail`, `mdnsSockets`, `rawFor`) was that one swallowed object, plus two real
+syntax errors (`Missing '}'`, `Unclosed comment`). No API mismatch, no behavioural
+design problem: the fix is prose (`proc-net tables`), applied to `LoopbackAudit.kt`
+and to the same pattern in `LoopbackAuditTest.kt`.
+
+Because the compiler reports every error in a module, the log also told us something
+good: the remaining ~2,590 new Kotlin lines in `:app:compileDebugKotlin` were clean
+(`:app:testDebugUnitTest`, the androidTest APK and the device gates were never
+reached, so they stay unverified).
+
+To keep this class of failure off the CI queue, `phase5/scripts/check-kotlin-comments.py`
+now lexes every Kotlin file in the repo for unbalanced/nested block comments (it
+catches the trap in both source sets; run it before pushing). Brace/paren/bracket
+balance after comment-and-string stripping is checked the same way by hand.
+
+Also from that log: `Unable to strip the following libraries, packaging them as
+they are: libbun.so, libchildshim.so, libexecshim.so, libgit.so, librg.so,
+libseccompshim.so` is a **warning**, not a failure - these are prebuilt musl/static
+artifacts from the payload, and AGP has no matching NDK strip tool for them. They are
+packaged unstripped (they already are, by build design); the APK size cost is known
+and already reflected in the phase-4 numbers.
+
 ### Reading CI output from this sandbox (why run 65 has no log here)
 
 The Actions console is not reachable from the sandbox this work is driven from: `api.github.com`
