@@ -1,0 +1,21 @@
+=== listeners owned by uid  (host-visible /proc/net/tcp) ===
+-- IPv4/IPv6 LISTEN(0A) rows for the app uid --
+-- any row for the app uid that is NOT a loopback local address --
+-- UDP: app-uid sockets on mDNS 5353 (0x14F9) --
+-- count of LISTEN rows on port 4111 by the app uid --
+  listen_on_4111=0
+-- count of LISTEN rows on port 4111 by ANY uid --
+  any_listen_on_4111=0
+-- wildcard LISTEN rows for the app uid (00000000 or all-zero IPv6) --
+
+=== the app's own audit (written by runtime/LoopbackAudit) ===
+cat: /data/data/ai.opencode.android.debug/files/log/loopback-audit.txt: No such file or directory
+
+=== launcher bind evidence (runtime.log) ===
+
+=== OpenCode server log: mDNS publish lines (want none) ===
+(end of mDNS grep)
+
+=== host-side forward (adb forward binds host loopback only) ===
+emulator-5554 tcp:4111 tcp:4111
+
