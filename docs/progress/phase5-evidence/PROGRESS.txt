@@ -86,8 +86,20 @@
     STEP_FAILED rc=1: '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
     FATAL: gradle compile/unit tests failed (compiler output in 00-run-phase5.log)
 
+<<<<<<< HEAD
 ### 2026-08-31T13:59:19Z  run=33399793082  step: gradle-only mode: compile + JVM unit tests (no emulator, no device gates)
     head=20e5042 branch=arena/01a05713-opencode-app log_lines=192
+=======
+### 2026-08-31T14:00:05Z  run=33399874325  step: gradle-only mode: compile + JVM unit tests (no emulator, no device gates)
+    head=246484f branch=arena/01a05713-opencode-app log_lines=192
+    --- error digest (why a stalled push cannot hide this) ---
+    > Task :app:verifyAndStagePayload FAILED
+    FAILURE: Build failed with an exception.
+    * What went wrong:
+    BUILD FAILED in 1m 1s
+    STEP_FAILED rc=1: '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
+    FATAL: gradle compile/unit tests failed (compiler output in 00-run-phase5.log)
+>>>>>>> 3e2ea96 (phase5: CI heartbeat (gradle-only mode: compile + JVM unit tests (no emulator, no device gates)))
     --- last 40 log lines ---
     	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
     	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
@@ -125,7 +137,11 @@
     	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
     
     
+<<<<<<< HEAD
     BUILD FAILED in 1m 8s
+=======
+    BUILD FAILED in 1m 1s
+>>>>>>> 3e2ea96 (phase5: CI heartbeat (gradle-only mode: compile + JVM unit tests (no emulator, no device gates)))
     2 actionable tasks: 2 executed
     STEP_FAILED rc=1: '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
     FATAL: gradle compile/unit tests failed (compiler output in 00-run-phase5.log)

@@ -1,5 +1,5 @@
-=== PHASE 5 START 2026-08-31T13:57:09Z staged=0 ===
-heartbeat enabled (pid 2173, every 240s -> docs/progress/phase5-evidence/PROGRESS.txt)
+=== PHASE 5 START 2026-08-31T13:58:01Z staged=0 ===
+heartbeat enabled (pid 2056, every 240s -> docs/progress/phase5-evidence/PROGRESS.txt)
 ########## gradle-only mode: compile + JVM unit tests (no emulator, no device gates) ##########
 Downloading https://services.gradle.org/distributions/gradle-8.9-bin.zip
 ............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
@@ -186,10 +186,10 @@ It builds Bun-for-Android, Android/Bionic Git and ripgrep, and the pinned OpenCo
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
 
 
-BUILD FAILED in 1m 8s
+BUILD FAILED in 1m 1s
 2 actionable tasks: 2 executed
 STEP_FAILED rc=1: '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
 FATAL: gradle compile/unit tests failed (compiler output in 00-run-phase5.log)
 heartbeat push skipped (branch moved or push refused)
 ########## evidence push ##########
-=== PHASE 5 END 2026-08-31T13:59:21Z FATAL: gradle compile/unit tests failed (compiler output in 00-run-phase5.log) ===
+=== PHASE 5 END 2026-08-31T14:00:07Z FATAL: gradle compile/unit tests failed (compiler output in 00-run-phase5.log) ===
