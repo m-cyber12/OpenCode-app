@@ -208,7 +208,7 @@ Machine-readable verdict lines (`P5_<NAME> PASS|FAIL :: detail`) are emitted to 
 | Run | Ref | Result | Notes |
 | --- | --- | --- | --- |
 | host rehearsal (this session) | local | `REHEARSAL_PASS` | MCP fixture + `P5-G16` driver green on one host against a fake-OpenCode MCP surface (§2). Not device evidence; does not close any gate. |
-| 65 (`33385975679`) | `arena/01a05713-opencode-app` | **FAILED, no gate verdicts** | Dispatched manually by the user at 11:13Z against the Phase 4 workflow; died at step 5/10 ("Run the Phase 4 suite") after ~9 min, i.e. inside the Phase 4 Gradle stage, *before* the Phase 5 tail stage or the emulator gates ran. Steps 1-4 (KVM, JDK) were green and step 6/7 (evidence copy, artifacts) still ran. Nothing is claimed from this run. |
+| 65 (`33385975679`) | `arena/01a05713-opencode-app` | **FAILED, no gate verdicts** | Dispatched manually by the user at 11:13Z against the Phase 4 workflow; died at step 5/10 ("Run the Phase 4 suite") after ~9 min, *before* the Phase 5 tail stage could run (no Phase 5 evidence commit exists, and Phase 5 publishes on every exit path including a failed build). Steps 1-4 (checkout, KVM, JDK) were green; steps 6/7 (evidence copy, artifacts) ran because they are `if: always()`. **Which Phase 4 sub-step failed is an inference from the timing, not a fact:** step 5 covers the payload build, the Gradle compile, the emulator boot and the device gates; ~9 min with no boot log activity points at the Gradle compile of the ~2,600 new Kotlin lines, but the log is unreachable from here (§next) so it is unconfirmed. Nothing is claimed from this run. |
 
 ### Reading CI output from this sandbox (why run 65 has no log here)
 
