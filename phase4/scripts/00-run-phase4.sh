@@ -49,7 +49,23 @@ report_failure() {
   return 0
 }
 
-run_c() { timeout "$1" bash -c "${*:2}" 2>&1 | tee -a "$MAINLOG"; local rc=${PIPESTATUS[0]}; [ "$rc" = 0 ] || { echo "STEP_FAILED rc=$rc: ${*:2}" | tee -a "$MAINLOG"; report_failure "${*:2}" "$rc"; exit 1; }; }
+# See the phase5 orchestrator for why this writes to a file instead of piping to
+# tee (a killed build's surviving JVM holds the pipe open and the step never ends)
+# and why -k is passed (SIGTERM-ignoring children).
+run_c() {
+  local t="$1"; shift
+  local logf="$OUT/step.$$.out"
+  timeout -k 30 "$t" bash -c "${*}" > "$logf" 2>&1
+  local rc=$?
+  cat "$logf" 2>/dev/null
+  cat "$logf" >> "$MAINLOG" 2>/dev/null
+  rm -f "$logf" 2>/dev/null
+  if [ "$rc" = 124 ] || [ "$rc" = 137 ]; then
+    echo "STEP_TIMEOUT rc=$rc after ${t}s (killed): ${*}" | tee -a "$MAINLOG"
+  fi
+  [ "$rc" = 0 ] || { echo "STEP_FAILED rc=$rc: ${*}" | tee -a "$MAINLOG"; report_failure "${*}" "$rc"; exit 1; }
+  return 0
+}
 run() { "$@" 2>&1 | tee -a "$MAINLOG"; }
 
 echo "=== PHASE 4 START $(date -u +%FT%TZ) ===" | tee -a "$MAINLOG"

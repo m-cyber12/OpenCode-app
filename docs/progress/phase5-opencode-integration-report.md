@@ -266,6 +266,35 @@ until the connection is back:
   heartbeats, bounding any cascade to one), which is how a long or hung step becomes
   observable from the branch instead of the unreachable console.
 
+### Why runs #1-#3 produced nothing: a hang in my own CI step wrapper (reproduced locally, fixed)
+
+Runs #1 (`b4ccc93`), #2 (`fb46557`) and #3 (`53221c6`) of `phase5-integration` were
+still `in_progress` after ~2 hours with `updated_at == created_at` and no evidence
+commit. Cause: both orchestrators wrapped every step as
+`timeout N bash -c "..." 2>&1 | tee -a "$MAINLOG"`. When `timeout` kills the build,
+the build's surviving JVM (Kotlin compile daemon / Gradle worker, which inherits the
+pipe and ignores SIGTERM) keeps the pipe's write end open, so `tee` never sees EOF -
+the step stops *forever* instead of failing, `record_fatal`/`push_evidence` never
+run, and the run burns its whole 150-minute allowance without publishing anything.
+
+Reproduced in this sandbox, old vs new, with a TERM-ignoring grandchild:
+
+    NEW (redirect to file, `timeout -k 30`):  FILE_DONE elapsed=2s  rc=124
+    OLD (`| tee`):                            still blocked at the 30s probe -> exit 124
+
+Fix: both `run_c` helpers now redirect the step to a file and `cat` it (kill is
+decisive), pass `-k 30` (children that ignore SIGTERM get SIGKILL), and label
+`rc=124/137` as `STEP_TIMEOUT rc=… after Ns (killed)` so a timeout is never mistaken
+for a build error. A repo-wide sweep (`grep -En "timeout [0-9]+ .*\|"` over
+phase4/phase5 scripts) finds no other killable-piped step: the remaining 69 `| tee`
+uses are on commands nothing kills.
+
+**What this means for the record:** the silence of runs #1-#3 is *not* evidence about
+Phase 5 - it is a tooling defect of mine, and it also means I could not yet confirm
+which step was timing out (gradle-only mode should have been a few minutes; the
+`verifyAndStagePayload` flaw above is the leading candidate, now fixed). The next run
+either publishes a compile verdict or publishes a `STEP_TIMEOUT` line naming the step.
+
 ### Reading CI output from this sandbox (why run 65 has no log here)
 
 The Actions console is not reachable from the sandbox this work is driven from: `api.github.com`

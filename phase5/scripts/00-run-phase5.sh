@@ -44,7 +44,27 @@ MAINLOG="$OUT/00-run-phase5.log"
 : > "$MAINLOG"
 GATE_RC=0
 step() { HB_STEP="$1"; echo; echo "########## $1 ##########" | tee -a "$MAINLOG"; }
-run_c() { timeout "$1" bash -c "${*:2}" 2>&1 | tee -a "$MAINLOG"; local rc=${PIPESTATUS[0]}; [ "$rc" = 0 ] || { echo "STEP_FAILED rc=$rc: ${*:2}" | tee -a "$MAINLOG"; return 1; }; return 0; }
+# Output goes to a FILE, not through a pipe, on purpose. With `cmd | tee`, killing
+# `cmd` on timeout can leave the build's leftover JVM (the Kotlin compile daemon, or
+# a Gradle worker) holding the pipe's write end open, so `tee` never sees EOF and
+# the step hangs forever - which is exactly what the 2h-long phase5 runs #1-#3 did:
+# `timeout` had nothing to wait on after its child died, but the pipeline did.
+# Redirecting to a file makes the kill decisive; `-k` covers children that ignore
+# SIGTERM. Both were observed as failure modes here, not theoretical.
+run_c() {
+  local t="$1"; shift
+  local logf="$OUT/step.$$.out"
+  timeout -k 30 "$t" bash -c "${*}" > "$logf" 2>&1
+  local rc=$?
+  cat "$logf" 2>/dev/null
+  cat "$logf" >> "$MAINLOG" 2>/dev/null
+  rm -f "$logf" 2>/dev/null
+  if [ "$rc" = 124 ] || [ "$rc" = 137 ]; then
+    echo "STEP_TIMEOUT rc=$rc after ${t}s (killed): ${*}" | tee -a "$MAINLOG"
+  fi
+  [ "$rc" = 0 ] || { echo "STEP_FAILED rc=$rc: ${*}" | tee -a "$MAINLOG"; return 1; }
+  return 0
+}
 PKG="ai.opencode.android.debug"
 
 echo "=== PHASE 5 START $(date -u +%FT%TZ) staged=$STAGED ===" | tee -a "$MAINLOG"
