@@ -295,6 +295,61 @@ which step was timing out (gradle-only mode should have been a few minutes; the
 `verifyAndStagePayload` flaw above is the leading candidate, now fixed). The next run
 either publishes a compile verdict or publishes a `STEP_TIMEOUT` line naming the step.
 
+### Runs #7-#9: the fast loop in operation, and what the unit tests found
+
+With the step-hang fixed, a push now yields a verdict in ~6 minutes, published as an
+evidence commit on this branch. Sequence and findings:
+
+- **#7/#8** (`246484f`, `e97b009`): `-PskipPayload` alone did *not* reach the task
+  (Gradle's property handling differed from my assumption), so the compile never
+  started; fixed by also passing `SKIP_PAYLOAD=1` and printing what the task saw.
+  #8 then proved the pipeline works end to end: `:app:compileDebugKotlin`
+  **SUCCEEDED** - the whole Phase 5 client/runtime/UI/security surface type-checks -
+  and both test source sets failed with 9 errors, all listed in the pushed log.
+- **#9** (`c83740c`): after those 9 fixes, **all three compile tasks are green**
+  (`compileDebugKotlin`, `compileDebugAndroidTestKotlin`, `compileDebugUnitTestKotlin`)
+  and `:app:testDebugUnitTest` executed for the first time: **43 of 55 tests pass,
+  12 fail**. The JVM unit tests are supporting evidence, not runtime evidence, but
+  these failures were worth fixing before any device run, and they split into four
+  distinct causes:
+
+  1. *My test fake, not the client* (4 failures): the `ServerSocket` stand-in parsed
+     headers with a `BufferedReader`, which prefetches the request body into the
+     reader's buffer, so the raw stream then blocked until the client's read timeout.
+     Every body-carrying request timed out; GETs and the zero-length-body DELETE (no
+     body to steal) passed - which is how it was diagnosable at all. Now parsed a byte
+     at a time until the blank line.
+  2. *Fixtures that were nicer than reality* (5 failures): `message.part.updated`
+     frames in the tests carried `messageID` only on the envelope, while upstream's
+     `Part` object carries its own `messageID`; the reducer (correctly) requires it and
+     dropped the frames. Fixtures now match the real frame shape, and the reducer
+     gained the same `props` fallback it already used for `sessionID`, so a frame that
+     names the message nowhere still cannot mint a phantom message.
+  3. *Two genuine client bugs* (3 failures + one latent): a `session.status`/
+     `session.idle` frame and a `permission.asked` frame did not create the session row
+     they attach to, so a busy spinner or a pending approval arriving before any part
+     frame was **invisible in the UI** - exactly the kind of thing that would have
+     looked fine on a happy-path device run. `setBusy` and the ask handler now `touch`
+     the session. `message.part.removed` also set `dirty` on a no-op path.
+  4. *A stale expectation*: `ManifestTest`'s fixture still said `payloadVersion: 4`
+     after the Phase 5 bump to 5, so it failed on the *correct* mismatch; fixture now
+     says 5 (the mismatch case remains covered in `PayloadExtractorTest`).
+
+  A finding worth keeping in its own words: **`PATCH /global/config` cannot be tested
+  on the JVM at all** - `java.net.HttpURLConnection` throws
+  `ProtocolException: Invalid HTTP method: PATCH`, while Android's OkHttp-backed
+  implementation accepts it. Production code uses that route to persist MCP entries and
+  permission modes across restarts, so it had zero coverage from unit tests and none
+  from the shell-side gates either. Added instrumented gate **K9
+  (`P5_K9_DURABLE_CONFIG_PATCH`)**: PATCH a *disabled* MCP probe, read the global
+  config back, assert it persisted and that the fixture's `gates-mcp` entry survived the
+  deep-merge. The JVM test was rewritten to pin the JDK limitation itself
+  (`patchMethodIsAndroidOnly`) so the gap stays visible in code rather than as a test
+  that silently proves nothing.
+
+None of this is a device verdict: run #9 never reached an emulator, so §1-§4 remain
+NOT TESTED until a full run (marker `phase5/CI_GRADLE_ONLY` = 0) completes.
+
 ### Reading CI output from this sandbox (why run 65 has no log here)
 
 The Actions console is not reachable from the sandbox this work is driven from: `api.github.com`

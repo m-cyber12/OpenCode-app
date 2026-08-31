@@ -6,9 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.io.BufferedReader
 import java.io.InputStream
-import java.io.InputStreamReader
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -158,13 +156,24 @@ class OpenCodeApiHttpTest {
         assertEquals("gates", JSONObject(lastExchange!!.body).getString("name"))
     }
 
+    /**
+     * The durable-config route is `PATCH /global/config`, and the JVM's
+     * `HttpURLConnection` refuses the method outright
+     * (`ProtocolException: Invalid HTTP method: PATCH`). Android's OkHttp-backed
+     * implementation accepts it, so production is fine - but a JVM harness has *no*
+     * coverage of this path, which is why gate K9 (instrumented, on device) exists.
+     * Asserting the JDK limitation here keeps that gap visible in code instead of
+     * leaving a test that silently passes nothing.
+     */
     @Test
-    fun globalConfigPatchIsTheDurablePath() {
+    fun patchMethodIsAndroidOnly() {
         responseBody = """{"info":{},"changed":true}"""
-        api().patchGlobalConfig(JSONObject("""{"permission":{"bash":"ask"}}"""))
-        assertEquals("PATCH", lastExchange!!.method)
-        assertEquals("/global/config", lastExchange!!.path)
-        assertEquals("", lastExchange!!.query)
+        val err = runCatching { api().patchGlobalConfig(JSONObject("""{"permission":{"bash":"ask"}}""")) }
+            .exceptionOrNull()
+        assertTrue(
+            "expected the JDK's PATCH rejection on the JVM, got: $err",
+            err is java.net.ProtocolException && err.message!!.contains("PATCH"),
+        )
     }
 
     /**
@@ -267,9 +276,13 @@ class OpenCodeApiHttpTest {
             try {
                 sock.use { s ->
                     val input: InputStream = s.getInputStream()
-                    val reader = BufferedReader(InputStreamReader(input, UTF_8))
-                    val requestLine = reader.readLine() ?: return
-                    val bits = requestLine.split(" ")
+                    // Headers are read a byte at a time, deliberately: wrapping the
+                    // stream in a BufferedReader would prefetch the *body* into the
+                    // reader's buffer, and the then-empty raw stream would block until
+                    // the client's read timeout (this hang was the first CI result of
+                    // every body-carrying request here).
+                    val head = readHead(input) ?: return
+                    val bits = head.substringBefore("\r\n").split(" ")
                     val method = bits.getOrElse(0) { "" }
                     val target = bits.getOrElse(1) { "" }
                     val q = target.indexOf('?')
@@ -279,9 +292,7 @@ class OpenCodeApiHttpTest {
                     var clHeader: String? = null
                     var auth = ""
                     var accept = ""
-                    while (true) {
-                        val h = reader.readLine() ?: break
-                        if (h.isEmpty()) break
+                    for (h in head.split("\r\n").drop(1)) {
                         val ci = h.indexOf(':')
                         if (ci <= 0) continue
                         val name = h.substring(0, ci).trim().lowercase()
@@ -335,6 +346,27 @@ class OpenCodeApiHttpTest {
                 // A truncated or aborted request is a test-fixture detail; the
                 // assertions on what was recorded still stand.
             }
+        }
+
+        /** Reads until the blank line that ends the request head; returns it whole. */
+        private fun readHead(input: InputStream): String? {
+            val mark = byteArrayOf(13, 10, 13, 10)
+            val buf = java.io.ByteArrayOutputStream()
+            val one = ByteArray(1)
+            var matched = 0
+            while (true) {
+                val n = try { input.read(one) } catch (_: Throwable) { -1 }
+                if (n < 0) break
+                buf.write(one, 0, 1)
+                matched = when {
+                    one[0] == mark[matched] -> matched + 1
+                    one[0] == mark[0] -> 1
+                    else -> 0
+                }
+                if (matched == 4) break
+            }
+            val text = buf.toString("UTF-8")
+            return if (text.contains("\r\n\r\n")) text else text.ifEmpty { null }
         }
 
         override fun close() {

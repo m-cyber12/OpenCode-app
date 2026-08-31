@@ -98,8 +98,17 @@ class SseAccumulatorTest {
  */
 class TranscriptTest {
 
-    private fun partUpdated(sessionID: String, messageID: String, part: String): JSONObject =
-        JSONObject("""{"sessionID":"$sessionID","messageID":"$messageID","part":$part}""")
+    /**
+     * Shape of an upstream `message.part.updated` frame: the envelope carries
+     * `sessionID`/`messageID`, and the `part` object carries its own (upstream's Part
+     * schema has both fields). Tests must use the real shape - a fixture that omits
+     * fields the server always sends would let the reducer pass while the device
+     * fails.
+     */
+    private fun partUpdated(sessionID: String, messageID: String, part: String): JSONObject {
+        val enriched = part.trim().removeSuffix("}") + ""","sessionID":"$sessionID","messageID":"$messageID"}"""
+        return JSONObject("""{"sessionID":"$sessionID","messageID":"$messageID","part":$enriched}""")
+    }
 
     @Test
     fun mergesTextPartUpdatesIntoOneMessage() {

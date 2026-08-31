@@ -119,6 +119,11 @@ class Transcript {
         if (sid.isEmpty()) return
         if (busy[sid] != value) {
             busy[sid] = value
+            // The session row has to exist for the spinner to render on it: a
+            // session.status/idle frame can legitimately arrive before any part
+            // frame (e.g. right after an app restart mid-turn), and previously the
+            // busy flag had no session to attach to and was invisible.
+            touch(sid)
             dirty = true
         }
     }
@@ -126,7 +131,10 @@ class Transcript {
     private fun onPartUpdated(props: JSONObject) {
         val part = props.optJSONObject("part") ?: return
         val sid = part.optString("sessionID").ifEmpty { props.optString("sessionID") }
-        val mid = part.optString("messageID")
+        // Upstream's Part carries its own messageID; the legacy bus frame also puts
+        // it on the envelope. Accept either, same fallback the sessionID uses, so a
+        // frame that names the message nowhere cannot create a phantom message.
+        val mid = part.optString("messageID").ifEmpty { props.optString("messageID") }
         if (sid.isEmpty() || mid.isEmpty()) return
         touch(sid)
         val p = partOf(sid, mid, part)
@@ -147,7 +155,7 @@ class Transcript {
         val pid = props.optString("partID")
         val m = messages[mid] ?: return
         messages[mid] = m.copy(parts = m.parts.filterNot { it.id == pid })
-        if (sid.isNotEmpty()) dirty = true
+        if (sid.isEmpty() || order[sid]?.contains(mid) == true) dirty = true
     }
 
     private fun onMessageUpdated(props: JSONObject) {
@@ -190,13 +198,19 @@ class Transcript {
         if (id.isEmpty() || !id.startsWith("per_")) return
         val patterns = ArrayList<String>()
         props.optJSONArray("patterns")?.let { for (i in 0 until it.length()) patterns.add(it.optString(i)) }
+        val sid = props.optString("sessionID")
         prompts[id] = Prompt(
             id = id,
-            sessionID = props.optString("sessionID"),
+            sessionID = sid,
             permission = props.optString("permission"),
             patterns = patterns,
             metadata = props.optJSONObject("metadata")?.toString() ?: "",
         )
+        // Same reason as setBusy: an ask must be visible under its session even when
+        // no transcript frame for that session has arrived yet, otherwise the
+        // Approvals tab could never show a permission the server is genuinely waiting
+        // on (and blocking a turn on).
+        if (sid.isNotEmpty()) touch(sid)
         dirty = true
     }
 

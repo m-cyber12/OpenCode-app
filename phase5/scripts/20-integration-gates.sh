@@ -6,7 +6,7 @@
 #   P5-01..P5-04  prerequisites: phase-5 APK + payload v5 on device, fixture
 #                 provisioning, Keystore-held server password reachable through
 #                 the test-only harness export, health 200 over adb forward.
-#   P5-K          the instrumented Kotlin client gates (K1..K8) — these are the
+#   P5-K          the instrumented Kotlin client gates (K1..K9) - these are the
 #                 Phase 5 deliverable: the app's own OpenCodeApi / OpenCodeEventStream
 #                 / SecretStore / LoopbackGuard driving the real server.
 #   G6 G7 G10 G11 G12  the Phase 3/4 gate drivers re-run VERBATIM against this
@@ -217,7 +217,7 @@ fi
 p5 04 "$P504" "keystore-password-and-healthy-server"
 
 # ---------------------------------------------------------------------------
-log "=== P5-K instrumented Kotlin client gates (K1..K8) ==="
+log "=== P5-K instrumented Kotlin client gates (K1..K9) ==="
 adb logcat -c >/dev/null 2>&1 || true
 adb shell am instrument -w -e class "$TEST_CLASS" \
   "$TEST_PKG/androidx.test.runner.AndroidJUnitRunner" > "$EV/p5-k-instrument.log" 2>&1

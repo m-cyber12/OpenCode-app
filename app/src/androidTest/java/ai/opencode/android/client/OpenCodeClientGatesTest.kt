@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit
  *   K6 Keystore-backed secrets   <- credentials requirement
  *   K7 loopback-only bind        <- network requirement
  *   K8 credential provisioning   <- credentials requirement
+ *   K9 durable config PATCH      <- platform-only path a JVM harness cannot reach
  *
  * Every test also prints a machine-readable `P5_*` line (logcat + stdout) that
  * the CI gate script folds into GATES_SUMMARY.txt.
@@ -434,6 +435,51 @@ class OpenCodeClientGatesTest {
      * `files/harness/server-password` (0600). No production code path ever
      * writes it, and the app never reads it.
      */
+    // ---- K9: the durable config path, which only Android can exercise ------
+
+    /**
+     * `PATCH /global/config` is how the app persists MCP entries and permission modes
+     * so they survive a restart (`OpenCodeRepository` calls it after every add and
+     * remove). It cannot be tested on the JVM at all: `java.net.HttpURLConnection`
+     * rejects the PATCH method with `ProtocolException: Invalid HTTP method: PATCH`,
+     * while Android's OkHttp-backed implementation allows it - so this device gate is
+     * the only real coverage that path has, and a green JVM unit-test run says
+     * nothing about it.
+     *
+     * The payload is a *disabled* MCP entry: deep-merge means the fixture's own
+     * `gates-mcp` entry is untouched, and a disabled local server spawns nothing, so
+     * the probe changes no behaviour on the device.
+     */
+    @Test
+    fun k9_durableGlobalConfigPatchRoundTrips() {
+        requireServer()
+        val api = api()
+        val probe = "p5_patch_probe"
+        runCatching {
+            File(paths.workspaces, "gates").mkdirs()
+        }
+        val patch = JSONObject().put(
+            "mcp",
+            JSONObject().put(
+                probe,
+                JSONObject()
+                    .put("type", "local")
+                    .put("command", org.json.JSONArray().put("true"))
+                    .put("enabled", false),
+            ),
+        )
+        val outcome = runCatching { api.patchGlobalConfig(patch) }
+        val readBack = runCatching { api.globalConfig() }
+        val persisted = readBack.getOrNull()?.optJSONObject("mcp")?.has(probe) == true
+        val fixtureIntact = readBack.getOrNull()?.optJSONObject("mcp")?.has("gates-mcp") ?: false
+        gate(
+            "K9_DURABLE_CONFIG_PATCH",
+            outcome.isSuccess && persisted,
+            "patch_ok=${outcome.isSuccess} persisted=$persisted fixture_mcp_intact=$fixtureIntact " +
+                "err=${outcome.exceptionOrNull()?.message?.take(120)}",
+        )
+    }
+
     @Test
     fun harnessExportLoopbackCredentialForHostDrivers() {
         val marker = paths.harnessMarker
