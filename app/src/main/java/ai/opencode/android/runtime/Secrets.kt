@@ -43,10 +43,12 @@ object Secrets {
         val legacy = paths.serverPasswordFile
         if (legacy.isFile) {
             val text = runCatching { legacy.readText().trim() }.getOrDefault("")
-            if (text.length >= MIN_LEN && store.get(SERVER_PASSWORD) == null) {
-                store.put(SERVER_PASSWORD, text)
-                logger.host("migrated legacy plaintext server-password into AndroidKeyStore")
+            val alreadyMigrated = runCatching { store.get(SERVER_PASSWORD) }.getOrNull() != null
+            if (text.length >= MIN_LEN && !alreadyMigrated) {
+                persist(store, text, logger, "migrated legacy plaintext server-password into AndroidKeyStore")
             }
+            // Deleted unconditionally: a Keystore write that failed must not leave
+            // the plaintext copy behind as a "backup".
             legacy.delete()
             migrated = true
         }
@@ -70,17 +72,52 @@ object Secrets {
         val bytes = ByteArray(24)
         SecureRandom().nextBytes(bytes)
         val pw = bytes.joinToString("") { "%02x".format(it) }
-        store.put(SERVER_PASSWORD, pw)
-        logger.host("generated fresh server password in AndroidKeyStore (keystore=${store.isHardwareBacked()})")
+        if (persist(store, pw, logger,
+                "generated fresh server password in AndroidKeyStore (keystore=${store.isHardwareBacked()})")) {
+            return pw
+        }
+        // A Keystore that cannot *write* must not make the agent unstartable: keep an
+        // ephemeral password in RAM for this run. Loopback still requires auth, nothing
+        // plaintext hits disk, and the password simply has to be re-derivable next boot.
+        // The Phase-5 gates (P5-04, P5-KEYSTORE, P5-G18) fail loudly instead, so this
+        // resilience can never be mistaken for a passing credential story.
+        logger.host(
+            "WARN: server password NOT persisted (Keystore unavailable) - running this " +
+                "session with an in-RAM password; provider keys cannot be re-pushed",
+        )
         return pw
+    }
+
+    /** @return true when the value is durably in the Keystore. Never throws. */
+    private fun persist(
+        store: SecretStore,
+        value: String,
+        logger: RuntimeLogger,
+        okMessage: String,
+    ): Boolean = try {
+        store.put(SERVER_PASSWORD, value)
+        logger.host(okMessage)
+        true
+    } catch (t: Throwable) {
+        logger.host("AndroidKeyStore write failed (${t.javaClass.simpleName}: ${t.message})")
+        false
     }
 
     /** Provider ids the app has a Keystore-backed credential for. */
     fun storedProviderIds(context: Context): List<String> =
         SecretStore.get(context).entries().mapNotNull { SecretNames.providerIdOf(it.name) }
 
-    fun providerKey(context: Context, providerId: String): String? =
+    /**
+     * The stored key, or null when there is no entry *or* the entry cannot be
+     * opened (master key cleared, blob copied from another install). A corrupt
+     * blob must not take down the supervisor: the caller treats null as "this
+     * provider has no app-held credential" and the user re-enters it.
+     */
+    fun providerKey(context: Context, providerId: String): String? = try {
         SecretStore.get(context).get(SecretNames.providerSecretName(providerId))
+    } catch (t: SecretStore.StoreException) {
+        null
+    }
 
     fun putProviderKey(context: Context, providerId: String, key: String) {
         SecretStore.get(context).put(SecretNames.providerSecretName(providerId), key)

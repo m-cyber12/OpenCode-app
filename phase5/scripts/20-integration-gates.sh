@@ -79,11 +79,20 @@ push_file_runas() { # $1=local  $2=remote-relative-to-files
   write_stdin_runas "$2" < "$1"
 }
 
+# Counting live launcher processes: walking /proc/*/cmdline as uid 2000 (shell)
+# is refused by Android (run #13's log was a wall of "can't open /proc/<pid>/cmdline:
+# Permission denied"), and the walk also matched nothing. `ps -A` is the shell's
+# supported view of every process, and the launcher's argv carries its path.
 count_launchers() {
-  rash 'n=0; for p in /proc/[0-9]*; do c=$(tr "\000" " " < "$p/cmdline" 2>/dev/null); case "$c" in *launcher.js*) n=$((n+1));; esac; done; echo "$n"' | tr -d '[:space:]'
+  adb shell "ps -A 2>/dev/null | grep -c '[l]auncher.js'" 2>/dev/null | tr -cd '0-9'
 }
 
-APP_UID=$(adb shell dumpsys package "$PKG" 2>/dev/null | tr -d '\r' | sed -n 's/.*userId=\([0-9]*\).*/\1/p' | head -1)
+# The app uid is needed to attribute /proc/net rows in G17. `dumpsys package`
+# parsing came back empty on the CI image (run #13), which turned P5-01 into a
+# false FAIL, so ask the app process itself and keep pm -U as the fallback.
+APP_UID=$(adb shell run-as "$PKG" id -u 2>/dev/null | tr -cd '0-9')
+[ -n "$APP_UID" ] || APP_UID=$(adb shell pm list packages -U "$PKG" 2>/dev/null | tr -d '\r' | sed -n 's/.*uid:\([0-9]*\).*/\1/p' | head -1)
+log "P5-00 app uid resolved: '${APP_UID}'"
 
 wait_healthy() { # $1 timeout-s ; needs PASSWD
   local deadline=$(( $(date +%s) + ${1:-120} )) code
@@ -106,17 +115,28 @@ log "=== P5-01 device / app / payload prerequisites ==="
 } > "$EV/p5-01-device.txt" 2>&1
 cat "$EV/p5-01-device.txt" >> "$LOG"
 VER=$(grep -o 'versionName=[^ ]*' "$EV/p5-01-device.txt" | head -1 | cut -d= -f2)
-MARKER=$(rash "cat '$FILES/runtime/.extracted' 2>/dev/null" | tr -d '\r')
 adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
+PID=""
 for _ in $(seq 1 30); do
-  [ -n "$(adb shell pidof "$PKG" 2>/dev/null | tr -d '\r')" ] && break
+  PID=$(adb shell pidof "$PKG" 2>/dev/null | tr -d '\r' | awk '{print $1}')
+  [ -n "$PID" ] && break
   sleep 2
 done
 sleep 3
 adb forward tcp:$PORT tcp:$PORT >/dev/null 2>&1 || true
+# The extraction marker is written only after the supervisor has validated the
+# payload, seconds after launch. Run #13 read it once *before* starting the app
+# and so recorded a false FAIL for P5-01/P5-02 even though installation was fine;
+# poll for it (60 s) and let the verdict speak for itself afterwards.
+MARKER=""
+for _ in $(seq 1 30); do
+  MARKER=$(rash "cat '$FILES/runtime/.extracted' 2>/dev/null" | tr -d '\r')
+  [ -n "$MARKER" ] && break
+  sleep 2
+done
 P501=1
-case "$VER" in *phase5*) [ -n "$APP_UID" ] && P501=0 ;; esac
-log "P5-01 versionName=$VER uid=$APP_UID extraction_marker=$MARKER"
+case "$VER" in *phase5*) [ -n "$APP_UID" ] && [ -n "$PID" ] && P501=0 ;; esac
+log "P5-01 versionName=$VER pid=${PID:-none} uid=${APP_UID:-unresolved} marker=$([ -n "$MARKER" ] && echo present || echo ABSENT)"
 p5 01 "$P501" "phase5-apk-installed-and-app-running"
 
 # The payload manifest must say payloadVersion 5 (the phase-5 layout: Keystore
@@ -206,6 +226,10 @@ sleep 8
 log "=== P5-04 server password via Keystore + test-only harness export ==="
 adb shell am instrument -w -e class "$TEST_CLASS#harnessExportLoopbackCredentialForHostDrivers" \
   "$TEST_PKG/androidx.test.runner.AndroidJUnitRunner" > "$EV/p5-04-instrument-export.txt" 2>&1
+# The export gate prints its own verdict line; surface it whether or not it worked,
+# because "no file" and "export ran but the server never authenticated" are different
+# faults and only this line tells them apart (run #13 hid it in an unpushed file).
+grep -aoE 'P5_HARNESS_EXPORT [A-Z]+[^\r]*' "$EV/p5-04-instrument-export.txt" 2>/dev/null | head -2 >> "$LOG" || true
 PASSWD=$(rash "cat '$FILES/harness/server-password' 2>/dev/null" | tr -d '\r\n ')
 [ -n "$PASSWD" ] || PASSWD=$(rash "cat '$FILES/secrets/server-password' 2>/dev/null" | tr -d '\r\n ')
 log "P5-04 password: ${PASSWD:0:4}… (${#PASSWD} chars)"
@@ -227,14 +251,26 @@ KRC=$?
 adb logcat -d 2>/dev/null | grep -aE 'OpenCode/gate|P5_[A-Z0-9_]+' > "$EV/p5-k-gates.log" 2>&1 || true
 adb logcat -d -s OpenCode:V 2>/dev/null | tail -60 >> "$EV/p5-k-gates.log" 2>&1 || true
 cat "$EV/p5-k-gates.log" >> "$LOG"
-KP=$(grep -acE 'P5_[A-Z0-9_]+ PASS' "$EV/p5-k-gates.log" 2>/dev/null | tr -d ' ')
-KF=$(grep -acE 'P5_[A-Z0-9_]+ FAIL' "$EV/p5-k-gates.log" 2>/dev/null | tr -d ' ')
+# Count from the union of both channels (the instrumentation stream AND logcat),
+# deduplicated: the test's gate() prints to stdout and logs to logcat, and run #13
+# showed logcat alone is not a reliable carrier. Skips are counted explicitly -
+# every server-dependent gate now emits a P5_<ID> SKIPPED line when the runtime is
+# not answering, so a start-up failure reads as 9 skips, not as silent zero verdicts.
+cat "$EV/p5-k-instrument.log" "$EV/p5-k-gates.log" 2>/dev/null | grep -aoE 'P5_[A-Z0-9_]+ (PASS|FAIL|SKIPPED)[^\r]*' | sed 's/[[:space:]]*$//' | sort -u > "$EV/p5-k-lines.txt" 2>/dev/null || true
+[ -s "$EV/p5-k-lines.txt" ] && { log "--- Kotlin gate verdict lines ---"; cat "$EV/p5-k-lines.txt" >> "$LOG"; }
+KP=$(grep -acE 'P5_[A-Z0-9_]+ PASS' "$EV/p5-k-lines.txt" 2>/dev/null | tr -d ' ')
+KF=$(grep -acE 'P5_[A-Z0-9_]+ FAIL' "$EV/p5-k-lines.txt" 2>/dev/null | tr -d ' ')
+KS=$(grep -acE 'P5_[A-Z0-9_]+ SKIPPED' "$EV/p5-k-lines.txt" 2>/dev/null | tr -d ' ')
 KOK=$(grep -cE '^OK \([0-9]+ tests?\)' "$EV/p5-k-instrument.log" 2>/dev/null | tr -d ' ')
 KFAILTEST=$(grep -cE '^FAILURES!!!|Tests failed|INSTRUMENTATION_FAILED|Process crashed|Error while' "$EV/p5-k-instrument.log" 2>/dev/null | tr -d ' ')
-log "P5-K instrument_rc=$KRC kotlin_gates_pass=$KP kotlin_gates_fail=$KF gradle_ok=$KOK failures_marker=$KFAILTEST"
+KERR=$(grep -acE 'AssertionError|NoClassDefFoundError|Process crashed|RuntimeException' "$EV/p5-k-instrument.log" 2>/dev/null | tr -d ' ')
+log "P5-K instrument_rc=$KRC kotlin_gates_pass=${KP:-0}/9 fail=${KF:-0} skipped=${KS:-0} gradle_ok=$KOK failures_marker=$KFAILTEST junit_exception_lines=$KERR"
+# The device supervisor's own log is what explains a runtime that never came up
+# (run #13's Keystore FATAL was only visible because this tail got printed).
+rash "tail -c 40000 '$FILES/log/runtime.log' 2>&1" > "$EV/runtime.log" 2>&1 || true
 { echo "instrument_rc=$KRC"; echo "gate_pass=$KP gate_fail=$KF"; echo "--- tail of instrument log ---"; tail -40 "$EV/p5-k-instrument.log"; } > "$EV/p5-k-summary.txt" 2>&1
-[ "$KFAILTEST" = "0" ] && [ "${KP:-0}" -ge 6 ] && [ "${KF:-1}" = "0" ] && [ "$KRC" = "0" ]
-p5 K $? "kotlin-client-gates-on-device"
+[ "$KFAILTEST" = "0" ] && [ "${KP:-0}" -ge 9 ] && [ "${KF:-1}" = "0" ] && [ "${KS:-1}" = "0" ] && [ "$KRC" = "0" ]
+p5 K $? "kotlin-client-gates-on-device (K1..K9, pass=${KP:-0} fail=${KF:-0} skip=${KS:-0})"
 
 # ---------------------------------------------------------------------------
 log "=== G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ==="
@@ -244,21 +280,64 @@ export OPENCODE_SERVER_USERNAME="opencode"
 export OPENCODE_DIRECTORY="$WORKDIR"
 export OPENCODE_MCP_DIR="$P4OUT/mcp"
 export OPENCODE_BUN_BIN="$HOST_BUN"
-# Phase 5 needs no provider key: the pinned build ships a key-free default model
-# (opencode/big-pickle). Ask the server whether a default resolves, and hand the
-# drivers model_available=1 only when it really does — the same flag phase 4 used.
+# Phase 5 needs no provider key (the pinned build ships a key-free default model,
+# opencode/big-pickle), so `model_available` has to come from measurement. The old
+# heuristic - "the /provider response mentions a default" - could not mean anything:
+# upstream derives `default` from the models.dev catalog for every provider
+# (Provider.defaultModelIDs, packages/opencode/src/provider/provider.ts:1132), so it
+# is non-empty even when nothing can serve a turn. Probe instead: one tiny prompt
+# through the public API, assistant text or bust (see the header of
+# phase5/scripts/p5-model-probe.py, which also documents `connected`'s meaning).
 MODEL=0
+MODELPROBE="not-run"
 PROV=$(curl -s -u "opencode:$PASSWD" --max-time 10 "http://127.0.0.1:$PORT/provider?directory=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$WORKDIR")" 2>/dev/null || true)
 echo "$PROV" > "$EV/p5-providers.json" 2>&1
-if echo "$PROV" | grep -q '"default"'; then MODEL=1; log "default model resolves from /provider -> drivers may assert streamed model text"
-else log "no resolvable default model (no provider configured) -> model-dependent driver halves stay skipped"; fi
-[ -x "$HOST_BUN" ] || HOST_BUN="$(command -v bun || echo '')"
-[ -n "$HOST_BUN" ] || { log "FATAL: no host bun/node runner for gate drivers"; }
+if [ "$P504" = "0" ]; then
+  PROBE_OUT=$(OPENCODE_BASE="http://127.0.0.1:$PORT" OPENCODE_SERVER_PASSWORD="$PASSWD" \
+    OPENCODE_SERVER_USERNAME=opencode OPENCODE_DIRECTORY="$WORKDIR" P5_MODEL_PROBE_TIMEOUT=150 \
+    python3 "$DIR/scripts/p5-model-probe.py" 2>&1 || true)
+  printf '%s\n' "$PROBE_OUT" >> "$EV/p5-providers.json" 2>&1
+  MODELPROBE=$(printf '%s' "${PROBE_OUT:-no output}" | head -1 | cut -c1-160)
+else
+  MODELPROBE="skipped: server not healthy (P5-04 failed)"
+fi
+case "$MODELPROBE" in "PROBE ok"*) MODEL=1 ;; esac
+log "model pre-flight: $MODELPROBE"
+if [ "$MODEL" = 1 ]; then
+  log "model_available=1 -> drivers and the in-app K2/K5 turns assert real streamed text"
+else
+  log "model_available=0 -> model-dependent driver halves stay skipped, and K2/K5 will FAIL because no agent turn can run: read that as an environment constraint on this CI account, not as proof the client is broken"
+fi
+# The drivers are ESM (top-level await + `import`), which the runner image's node
+# may refuse to load from a .js path, and they are shipped to run under bun. In a
+# staged run phase 4's gate script already fetched a host bun; standalone CI has
+# none, so fetch the SAME pinned one (this exact gap made every R-* gate "not
+# run" in run #13 even though the failure had nothing to do with the drivers).
+if [ ! -x "$HOST_BUN" ]; then
+  if command -v bun >/dev/null 2>&1; then
+    HOST_BUN="$(command -v bun)"
+  else
+    log "fetching host bun 1.3.14 for the gate drivers (same pin as the payload)"
+    curl -fsSL --retry 3 --max-time 180 -o "$OUT/host-bun.tgz" \
+      "https://registry.npmjs.org/@oven/bun-linux-x64/-/bun-linux-x64-1.3.14.tgz" \
+      && mkdir -p "$OUT/hb" && tar xzf "$OUT/host-bun.tgz" -C "$OUT/hb" \
+      && cp "$OUT/hb/package/bin/bun" "$HOST_BUN" && chmod +x "$HOST_BUN" \
+      || log "WARN: host bun fetch failed; falling back to node"
+  fi
+fi
+if [ ! -x "$HOST_BUN" ] && command -v node >/dev/null 2>&1; then
+  HOST_BUN="$(command -v node)"   # drivers then need --experimental-detect-module
+fi
+[ -x "$HOST_BUN" ] || { log "FATAL: no host bun/node runner for gate drivers"; }
+log "gate driver runner: $HOST_BUN ($("$HOST_BUN" --version 2>&1 | head -1 | cut -c1-40))"
 
 run_driver() { # $1=gate-id $2=script
   if [ ! -f "$P4GATES/$2" ]; then p5 "$1" 7 "driver $2 missing"; return; fi
+  if [ ! -x "$HOST_BUN" ]; then p5 "$1" 7 "no host runner (tooling, not a verdict)"; return; fi
+  local runner_extra=()
+  case "$HOST_BUN" in *node) runner_extra=(--experimental-detect-module) ;; esac
   log "--- re-run $2 (as shipped, no edits) ---"
-  if "$HOST_BUN" "$P4GATES/$2" "$MODEL" > "$EV/rerun-$2.log" 2>&1; then
+  if "$HOST_BUN" "${runner_extra[@]}" "$P4GATES/$2" "$MODEL" > "$EV/rerun-$2.log" 2>&1; then
     p5 "R-$1" 0 "phase4-driver-$2-unmodified"
   else
     tail -20 "$EV/rerun-$2.log" >> "$LOG"
@@ -381,12 +460,12 @@ log "=== P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ==="
 {
   echo "--- filesDir/secrets listing ---"
   rash "ls -la '$FILES/secrets' 2>&1"
-  echo "--- blob magic (each .enc must start with the OCS1 ciphertext header) ---"
+  echo "--- blob magic (each .enc must start with the OCS2 ciphertext header) ---"
   CIPHER_SCRIPT='n=0
 for f in @FILES@/secrets/*.enc; do
   [ -e "$f" ] || continue
   n=$((n+1))
-  if head -c 4 "$f" | grep -aq OCS1; then
+  if head -c 4 "$f" | grep -aq OCS2; then
     echo "CIPHER_OK $f size=$(wc -c < "$f")"
   else
     echo "PLAIN_TEXT $f"
@@ -466,15 +545,19 @@ rash "tail -400 '$FILES/log/runtime.log'" > "$EV/runtime.log" 2>&1 || true
 rash 'for d in "'"$FILES"'/xdg/data/opencode/log" "'"$FILES"'/xdg/state/opencode/log"; do for f in "$d"/*.log; do [ -e "$f" ] || continue; echo "### $f"; tail -120 "$f"; done; done' > "$EV/opencode-server.log" 2>&1 || true
 rash "ls -laR '$FILES/harness' '$FILES/secrets' 2>&1 | head -40" > "$EV/device-secret-layout.txt" 2>&1 || true
 rash "grep -aE 'integration|provisioned|loopback' '$FILES/log/runtime.log' | tail -20" > "$EV/integration-lines.txt" 2>&1 || true
-adb logcat -d -s OpenCode:V > "$EV/logcat-OpenCode.txt" 2>&1 || true
+# Both tags: the host's lines are tag "OpenCode", the gate verdicts are "OpenCode/gate",
+# and a `-s OpenCode:V` filter silently drops the latter (which is why the tag-filtered
+# capture never showed a verdict line).
+adb logcat -d -s OpenCode:V OpenCode/gate:V > "$EV/logcat-OpenCode.txt" 2>&1 || true
 [ -n "$FIXTURE_PID" ] && kill "$FIXTURE_PID" 2>/dev/null
 rash "rm -f '$FILES/harness/server-password'" 2>/dev/null || true
 
 cat >> "$SUMMARY" <<EOF
 P5_SUMMARY $(date -u +%FT%TZ)
 gates_pass=$PASS gates_fail=$FAIL gates_skip=$SKIP
-kotlin_gate_pass=$KP kotlin_gate_fail=$KF
-model_available=$MODEL app_uid=$APP_UID device_abi=$(adb shell getprop ro.product.cpu.abi | tr -d '\r')
+kotlin_gate_pass=${KP:-0} kotlin_gate_fail=${KF:-0} kotlin_gate_skipped=${KS:-0}
+model_available=$MODEL model_probe=$MODELPROBE
+app_uid=$APP_UID device_abi=$(adb shell getprop ro.product.cpu.abi | tr -d '\r')
 live_launcher_processes=$(count_launchers)
 EOF
 log "=== SUMMARY ==="; cat "$SUMMARY"

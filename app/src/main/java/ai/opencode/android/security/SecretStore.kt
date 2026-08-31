@@ -5,7 +5,6 @@ import android.system.Os
 import android.util.Base64
 import java.io.File
 import java.security.KeyStore
-import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -28,11 +27,30 @@ import javax.crypto.spec.GCMParameterSpec
  *  * Values never touch disk in plaintext. Each secret is stored as a separate
  *    ciphertext blob in app-private storage (mode 600):
  *
- *        OCS1 | version(1) | ivLen(2) | iv | AES-GCM ciphertext+tag
+ *        OCS2 | version(2) | ivLen(2) | iv | AES-GCM ciphertext+tag
  *
- *    with the *secret name* bound as GCM additional authenticated data, so a
- *    blob cannot be renamed into another slot and cannot be forged by anyone
- *    who can only write files.
+ *    with the plaintext framed as `binding\nvalue` (binding =
+ *    `ai.opencode.android/secret/<name>`), so a blob cannot be renamed into
+ *    another slot, and cannot be forged by anyone who can only write files
+ *    (GCM tag, key held by the Keystore).
+ *
+ * Two Keystore constraints shape this format, and both were learned the hard
+ * way from the first on-device Phase-5 run (the runtime died in FATAL before
+ * the server could start, taking every device gate down with it):
+ *
+ *  * The IV must come *from the provider*. The master key is created with
+ *    `setRandomizedEncryptionRequired(true)`, and AndroidKeyStore rejects any
+ *    caller-supplied IV on encryption with
+ *    `InvalidAlgorithmParameterException: Caller-provided IV not permitted`.
+ *    So encryption inits without a `GCMParameterSpec` and reads the generated
+ *    IV back off the cipher (`cipher.iv`) to store in the header; decryption
+ *    passes that IV explicitly, which is the pattern the platform documents
+ *    (and what androidx security-crypto does).
+ *  * GCM additional authenticated data is not relied on: AAD support for
+ *    Keystore-held keys is not guaranteed across platform versions, and AAD
+ *    would be passed in the same `Cipher.init` call that must stay
+ *    IV-free. The name binding therefore lives inside the ciphertext, which
+ *    achieves the same slot-swap protection.
  *  * There is no plaintext fallback path. If the Keystore is unavailable or the
  *    master key is gone, reads fail loudly (the caller must not silently write
  *    a plaintext copy).
@@ -109,11 +127,13 @@ class SecretStore private constructor(context: Context) {
         val key = masterKey(create = true) ?: throw StoreException(
             "AndroidKeyStore master key unavailable; refusing to store secrets in plaintext",
         )
-        val iv = ByteArray(IV_LEN).also { SecureRandom().nextBytes(it) }
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(TAG_BITS, iv))
-        cipher.updateAAD(aad(name))
-        val ct = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
+        // Deliberately no GCMParameterSpec on this call: with a Keystore-held key
+        // that requires randomized encryption the platform owns the IV, and passing
+        // our own throws "Caller-provided IV not permitted" (class docs).
+        cipher.init(Cipher.ENCRYPT_MODE, key)
+        val iv = cipher.iv ?: throw StoreException("AndroidKeyStore returned no IV for $name")
+        val ct = cipher.doFinal(bound(name, value).toByteArray(Charsets.UTF_8))
         val body = ByteArray(4 + 1 + 2 + iv.size + ct.size)
         var o = 0
         System.arraycopy(MAGIC, 0, body, o, 4); o += 4
@@ -145,8 +165,11 @@ class SecretStore private constructor(context: Context) {
             "AndroidKeyStore master key missing for $name (cleared app data?); no plaintext fallback",
         )
         try {
-            if (body.size < 7 || String(body, 0, 4, Charsets.ISO_8859_1) != MAGIC_STR || body[4].toInt() != VERSION) {
-                throw StoreException("bad secret blob header for $name")
+            if (body.size < 7 || String(body, 0, 4, Charsets.ISO_8859_1) != MAGIC_STR) {
+                throw StoreException("bad secret blob magic for $name (corrupt, or pre-OCS2 format)")
+            }
+            if (body[4].toInt() != VERSION) {
+                throw StoreException("unsupported secret blob version ${body[4].toInt()} for $name")
             }
             val ivLen = (body[5].toInt() and 0xff) shl 8 or (body[6].toInt() and 0xff)
             if (ivLen <= 0 || body.size < 7 + ivLen) throw StoreException("truncated secret blob for $name")
@@ -154,8 +177,15 @@ class SecretStore private constructor(context: Context) {
             val ct = body.copyOfRange(7 + ivLen, body.size)
             val cipher = Cipher.getInstance(TRANSFORMATION)
             cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(TAG_BITS, iv))
-            cipher.updateAAD(aad(name))
-            return String(cipher.doFinal(ct), Charsets.UTF_8)
+            val plain = String(cipher.doFinal(ct), Charsets.UTF_8)
+            // Undo put()'s framing. The binding names the slot this blob may open
+            // in, so a copied/renamed blob authenticates but still refuses to read.
+            val nl = plain.indexOf('\n')
+            if (nl < 0) throw StoreException("secret $name has no binding frame")
+            if (plain.substring(0, nl) != bindingFor(name)) {
+                throw StoreException("secret blob for $name is bound to a different slot")
+            }
+            return plain.substring(nl + 1)
         } catch (e: StoreException) {
             throw e
         } catch (t: Throwable) {
@@ -189,17 +219,21 @@ class SecretStore private constructor(context: Context) {
 
     private fun blobFor(name: String): File = File(dir, SecretNames.fileName(name))
 
-    private fun aad(name: String): ByteArray =
-        (CTX_PREFIX + SecretNames.requireValid(name)).toByteArray(Charsets.UTF_8)
+    /** `binding\nvalue`: the first line names the slot this blob may open in. */
+    private fun bound(name: String, value: String): String = bindingFor(name) + "\n" + value
+
+    private fun bindingFor(name: String): String = CTX_PREFIX + SecretNames.requireValid(name)
 
     companion object {
         private const val ANDROID_KEYSTORE = "AndroidKeyStore"
         private const val MASTER_ALIAS = "opencode-app-secret-master-v1"
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
-        private const val IV_LEN = 12
         private const val TAG_BITS = 128
-        private const val VERSION = 1   // blob format version (byte on disk)
-        private val MAGIC = byteArrayOf('O'.code.toByte(), 'C'.code.toByte(), 'S'.code.toByte(), '1'.code.toByte())
+        private const val VERSION = 2   // blob format version (byte on disk)
+        // OCS2: platform-generated IV + in-ciphertext name binding. Nothing was ever
+        // written in OCS1 (encryption threw before it produced a blob), so there is
+        // no migration to do - an OCS1 blob is simply unreadable.
+        private val MAGIC = byteArrayOf('O'.code.toByte(), 'C'.code.toByte(), 'S'.code.toByte(), '2'.code.toByte())
         private val MAGIC_STR = String(MAGIC, Charsets.ISO_8859_1)
         private const val CTX_PREFIX = "ai.opencode.android/secret/"
 
