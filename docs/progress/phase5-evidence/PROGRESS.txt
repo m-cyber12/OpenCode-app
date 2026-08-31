@@ -684,3 +684,49 @@
     P5-04: FAIL keystore-password-and-healthy-server
     [2026-08-31T16:22:19Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
 
+### 2026-08-31T16:24:27Z  run=33412366636  step: 6/6 evidence
+    head=820cb73 branch=arena/01a05713-opencode-app log_lines=1499
+    --- error digest (why a stalled push cannot hide this) ---
+    BUILD SUCCESSFUL in 3m
+    --- last 40 log lines ---
+    P5-R-11: FAIL phase4-driver-gate-11-stream.js-unmodified
+    [2026-08-31T16:24:21Z] --- re-run gate-12-permission.js (as shipped, no edits) ---
+    P5-R-12: FAIL phase4-driver-gate-12-permission.js-unmodified
+    [2026-08-31T16:24:21Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
+    [2026-08-31T16:24:22Z] fixture host listener up=1 pid=11971
+    P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative
+    [2026-08-31T16:24:22Z] === P5-G17 loopback-only binding evidence ===
+    [2026-08-31T16:24:23Z] P5-G17 wildcard=0 nonloopback_rows=0 listens=0 mdns_sockets=0 bound_lines=2 publish_lines=0
+    [2026-08-31T16:24:23Z] device global ipv4: '10.0.2.16'
+    P5-G17: FAIL loopback-only-binding-and-no-mdns
+    [2026-08-31T16:24:23Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
+    [2026-08-31T16:24:25Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=absent auth_canary_cleared=0 auth_ok=0 leaks_outside_harness=0
+    P5-G18: PASS credentials-keystore-only-at-rest
+    [2026-08-31T16:24:25Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
+    [2026-08-31T16:24:27Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
+    P5-G19: PASS no-hardcoded-or-bundled-secrets
+    [2026-08-31T16:24:27Z] === evidence pull ===
+    [2026-08-31T16:24:27Z] === SUMMARY ===
+    P5-01: PASS phase5-apk-installed-and-app-running
+    P5-02: PASS payload-v5-manifest-marker
+    P5-03: PASS fixture-config-and-harness-marker
+    P5-04: FAIL keystore-password-and-healthy-server
+    P5-K: FAIL kotlin-client-gates-on-device (K1..K9, pass=1 fail=1 skip=8)
+    P5-R-06: FAIL phase4-driver-gate-06-health.js-unmodified
+    P5-R-07: FAIL phase4-driver-gate-07-shell.js-unmodified
+    P5-R-10: FAIL phase4-driver-gate-10-mcp.js-unmodified
+    P5-R-11: FAIL phase4-driver-gate-11-stream.js-unmodified
+    P5-R-12: FAIL phase4-driver-gate-12-permission.js-unmodified
+    P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative
+    P5-G17: FAIL loopback-only-binding-and-no-mdns
+    P5-G18: PASS credentials-keystore-only-at-rest
+    P5-G19: PASS no-hardcoded-or-bundled-secrets
+    P5_SUMMARY 2026-08-31T16:24:27Z
+    gates_pass=5 gates_fail=9 gates_skip=0
+    kotlin_gate_pass=1 kotlin_gate_fail=1 kotlin_gate_skipped=8
+    model_available=0 model_probe=skipped: server not healthy (P5-04 failed)
+    app_uid=10192 device_abi=x86_64
+    live_launcher_processes=0
+    phase5 gates rc=1
+    ########## 6/6 evidence ##########
+
