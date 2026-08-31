@@ -83,10 +83,19 @@ collect_evidence() {
   for f in "$ROOT"/app/build/test-results/testDebugUnitTest/*.xml; do
     if [ -e "$f" ]; then cp "$f" "$EV/jvm-unit-tests/" 2>/dev/null || true; fi
   done
-  # Every command here is timeout-bounded: this runs on the failure path, and one
-  # blocking command (an adb call waiting on a device, a server it starts) would
-  # bury the very log we are trying to publish.
-  timeout 60 adb logcat -d 2>/dev/null | grep -aE "OpenCode|AndroidRuntime|FATAL|bun" > "$EV/logcat.txt" 2>&1 || true
+  # Every command here is timeout-bounded and pipe-free: this runs on the failure
+  # path, and a single blocking command buries the very log we are publishing. The
+  # pipeless form is deliberate - `timeout 60 adb logcat -d | grep > f` still hangs,
+  # because the adb *server* the client forks inherits the pipe and grep then waits
+  # for an EOF that never comes (that is how run #5 stalled: its log stopped growing
+  # at 192 lines right after FATAL, while heartbeats kept reporting the stall).
+  timeout 60 adb logcat -d > "$EV/logcat.raw" 2>&1 || true
+  if [ -s "$EV/logcat.raw" ]; then
+    grep -aE "OpenCode|AndroidRuntime|FATAL|bun" "$EV/logcat.raw" > "$EV/logcat.txt" 2>&1 || true
+  else
+    : > "$EV/logcat.txt"
+  fi
+  rm -f "$EV/logcat.raw" 2>/dev/null || true
   cat > "$EV/README.txt" <<'EOF'
 Phase 5 evidence: the Android app driving the on-device OpenCode server as a
 real client (loopback-only binding, OpenCode's own API/events/permissions/MCP,
@@ -168,6 +177,9 @@ heartbeat_once() {
   local cur; cur=$(grep -a '^##########' "$MAINLOG" 2>/dev/null | tail -1 | sed 's/^#* *//; s/ *#*$//')
   { echo "### $(date -u +%FT%TZ)  run=${GITHUB_RUN_ID:-?}  step: ${cur:-$HB_STEP}"
     echo "    head=$(git -C "$ROOT" rev-parse --short HEAD) branch=${GITHUB_REF_NAME} log_lines=$(wc -l < "$MAINLOG" 2>/dev/null || echo 0)"
+    echo "    --- error digest (why a stalled push cannot hide this) ---"
+    grep -aE '^(e: file:|w: file:.*(unresolved|error)|FAILURE:|BUILD (FAILED|SUCCESSFUL)|FATAL|STEP_(FAILED|TIMEOUT)|> Task .*FAILED|\* What went wrong)' \
+      "$MAINLOG" 2>/dev/null | tail -30 | sed 's/^/    /'
     echo "    --- last 40 log lines ---"
     tail -40 "$MAINLOG" 2>/dev/null | sed 's/^/    /'
     echo
