@@ -1,11 +1,12 @@
-[2026-08-31T15:35:21Z] === P5-01 device / app / payload prerequisites ===
+[2026-08-31T16:16:59Z] P5-00 app uid resolved: '10192'
+[2026-08-31T16:16:59Z] === P5-01 device / app / payload prerequisites ===
 adb devices: emulator-5554	device  
 release=14 sdk=34 abi=x86_64
-app uid: 
-    codePath=/data/app/~~7hm-VfKVH4RfJAD5kF26Bw==/ai.opencode.android.debug-VRxvoh3t4cq0QVEZN9qdpQ==
+app uid: 10192
+    codePath=/data/app/~~VS_-H3B9uB3bbVpY1WsxzA==/ai.opencode.android.debug-wg-g6zDZ7Sds6OX5LeuToA==
     versionName=1.18.23-phase5
-[2026-08-31T15:35:27Z] P5-01 versionName=1.18.23-phase5 uid= extraction_marker=
-[2026-08-31T15:35:27Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
+[2026-08-31T16:17:04Z] P5-01 versionName=1.18.23-phase5 pid=6091 uid=10192 marker=present
+[2026-08-31T16:17:04Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
 dirs_rc=0
 warning: templates not found in /home/runner/share/git-core/templates
 error: cannot run maintenance: No such file or directory
@@ -23,71 +24,168 @@ tar: can't link 'node_modules/negotiator/node_modules/content-type/dist/index.d.
 tar: can't link 'node_modules/negotiator/node_modules/content-type/dist/index.js' -> 'node_modules/type-is/node_modules/content-type/dist/index.js': Permission denied
 tar: can't link 'node_modules/negotiator/node_modules/content-type/dist/index.js.map' -> 'node_modules/type-is/node_modules/content-type/dist/index.js.map': Permission denied
 tar: had errors
-[2026-08-31T15:35:32Z] P5-03 config_present=yes harness_rc=0
+[2026-08-31T16:17:08Z] P5-03 config_present=yes harness_rc=0
 Starting: Intent { cmp=ai.opencode.android.debug/ai.opencode.android.runtime.DebugControlActivity (has extras) }
-[2026-08-31T15:35:40Z] === P5-04 server password via Keystore + test-only harness export ===
-[2026-08-31T15:35:43Z] P5-04 password: … (0 chars)
-[2026-08-31T15:35:43Z] P5-04 not healthy; supervisor log tail:
-	at javax.crypto.Cipher.chooseProvider(Cipher.java:774)
-	at javax.crypto.Cipher.init(Cipher.java:1289)
-	at javax.crypto.Cipher.init(Cipher.java:1224)
-	at ai.opencode.android.security.SecretStore.put(SecretStore.kt:114)
-	at ai.opencode.android.runtime.Secrets.serverPassword(Secrets.kt:73)
-	at ai.opencode.android.runtime.RuntimeManager.supervise(RuntimeManager.kt:195)
-	at ai.opencode.android.runtime.RuntimeManager.start$lambda$1(RuntimeManager.kt:82)
-	at ai.opencode.android.runtime.RuntimeManager.$r8$lambda$TJrWe0h0NuRXkTm9xUcq8qDfAPI(Unknown Source:0)
-	at ai.opencode.android.runtime.RuntimeManager$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
-	at java.lang.Thread.run(Thread.java:1012)
+[2026-08-31T16:17:16Z] === P5-04 server password via Keystore + test-only harness export ===
+[2026-08-31T16:19:18Z] P5-04 password: a79b… (48 chars)
+[2026-08-31T16:22:19Z] P5-04 not healthy; supervisor log tail:
+2026-08-31T16:17:02.418Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-08-31T16:17:02.420Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-31T16:17:02.421Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-08-31T16:17:04.073Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-08-31T16:17:04.075Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-08-31T16:17:04.556Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-08-31T16:17:04.564Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-08-31T16:17:04.599Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
+2026-08-31T16:17:04.607Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-08-31T16:17:08.295Z [host] resetAndRestart: stopping + wiping extracted payload
+2026-08-31T16:17:08.298Z [host] sending SIGTERM to pid=6153
+2026-08-31T16:17:08.300Z [server] SERVER_SHUTDOWN SIGTERM
+2026-08-31T16:17:08.522Z [server] [stderr] [seccomp] mkdirat(/data/user/0/ai.opencode.android.debug/files/home/.npm/_cacache/tmp) errno=2
+2026-08-31T16:17:10.032Z [host] integration: loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
+2026-08-31T16:17:10.832Z [host] server process exited code=0
+2026-08-31T16:17:10.833Z [host] state -> STOPPED (stopped)
+2026-08-31T16:17:10.903Z [host] server process exit code=0 during stop
+2026-08-31T16:17:10.905Z [host] server stopped (graceful=true)
+2026-08-31T16:17:10.914Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-08-31T16:17:10.915Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-08-31T16:17:10.921Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-08-31T16:17:10.923Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-08-31T16:17:11.958Z [host] extraction complete: 30 files validated
+2026-08-31T16:17:11.959Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-08-31T16:17:11.967Z [host] server password loaded from AndroidKeyStore (keystore=false)
+2026-08-31T16:17:11.970Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-31T16:17:12.035Z [host] server started: pid=6248 abi=x86_64 port=4111
+2026-08-31T16:17:12.039Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~VS_-H3B9uB3bbVpY1WsxzA==/ai.opencode.android.debug-wg-g6zDZ7Sds6OX5LeuToA==/lib/x86_64/libbun.so
+2026-08-31T16:17:12.042Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-08-31T16:17:12.044Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-08-31T16:17:12.052Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-08-31T16:17:12.055Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-31T16:17:12.056Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-08-31T16:17:13.417Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-08-31T16:17:13.418Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-08-31T16:17:13.986Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-08-31T16:17:13.988Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-08-31T16:17:14.066Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
+2026-08-31T16:17:14.069Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-08-31T16:17:16.752Z [host] integration: loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
+[2026-08-31T16:22:19Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
+08-31 16:22:19.829  6402  6421 I System.out: P5_K2 SKIPPED :: app-owned OpenCode server not answering /global/health
+08-31 16:22:19.843  6402  6421 I System.out: P5_K3 SKIPPED :: app-owned OpenCode server not answering /global/health
+08-31 16:24:20.054  6402  6421 I System.out: P5_HARNESS_EXPORT FAIL :: bytes=48 waited=120s health=null
+08-31 16:24:20.068  6402  6421 I System.out: P5_K4 SKIPPED :: app-owned OpenCode server not answering /global/health
+08-31 16:24:20.083  6402  6421 I System.out: P5_K9 SKIPPED :: app-owned OpenCode server not answering /global/health
+08-31 16:24:20.095  6402  6421 I System.out: P5_K7 SKIPPED :: app-owned OpenCode server not answering /global/health
+08-31 16:24:20.106  6402  6421 I System.out: P5_K8 SKIPPED :: app-owned OpenCode server not answering /global/health
+08-31 16:24:20.117  6402  6421 I System.out: P5_K5 SKIPPED :: app-owned OpenCode server not answering /global/health
+08-31 16:24:20.130  6402  6421 I System.out: P5_K1 SKIPPED :: app-owned OpenCode server not answering /global/health
+08-31 16:24:20.149  6402  6421 I System.out: P5_DEVICE_FACTS {"abi":"x86_64,arm64-v8a","sdk":34,"model":"Google sdk_gphone64_x86_64","payloadVersion":5,"opencode":"1.18.23@05ea507","keystoreHardwareBacked":false,"secretEntries":["server-password"],"harnessDirPresent":true,"serverHealthy":"false"}
+08-31 16:24:20.167  6402  6421 I OpenCode/gate: P5_KEYSTORE PASS :: hardwareBacked=false blobBytes=115 entries=provider-gatecanary,server-password
+08-31 16:24:20.167  6402  6421 I System.out: P5_KEYSTORE PASS :: hardwareBacked=false blobBytes=115 entries=provider-gatecanary,server-password
+[2026-08-31T16:24:20Z] --- Kotlin gate verdict lines ---
+P5_HARNESS_EXPORT FAIL :: bytes=48 waited=120s health=null
+P5_K1 SKIPPED :: app-owned OpenCode se
+P5_K2 SKIPPED :: app-owned OpenCode se
+P5_K3 SKIPPED :: app-owned OpenCode se
+P5_K4 SKIPPED :: app-owned OpenCode se
+P5_K5 SKIPPED :: app-owned OpenCode se
+P5_K7 SKIPPED :: app-owned OpenCode se
+P5_K8 SKIPPED :: app-owned OpenCode se
+P5_K9 SKIPPED :: app-owned OpenCode se
+P5_KEYSTORE PASS :: ha
+[2026-08-31T16:24:20Z] P5-K instrument_rc=0 kotlin_gates_pass=1/9 fail=1 skipped=8 gradle_ok=0 failures_marker=1 junit_exception_lines=2
+[2026-08-31T16:24:20Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
+[2026-08-31T16:24:20Z] model pre-flight: skipped: server not healthy (P5-04 failed)
+[2026-08-31T16:24:20Z] model_available=0 -> model-dependent driver halves stay skipped, and K2/K5 will FAIL because no agent turn can run: read that as an environment constraint on this CI account, not as proof the client is broken
+[2026-08-31T16:24:20Z] fetching host bun 1.3.14 for the gate drivers (same pin as the payload)
+[2026-08-31T16:24:21Z] gate driver runner: /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/host-bun (1.3.14)
+[2026-08-31T16:24:21Z] --- re-run gate-06-health.js (as shipped, no edits) ---
+16 | }
+17 | 
+18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
+19 |   const sep = path.includes("?") ? "&" : "?"
+20 |   const url = BASE + path + sep + "directory=" + encodeURIComponent(directory)
+21 |   const r = await fetch(url, {
+                       ^
+error: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+  path: "http://127.0.0.1:4111/global/health?directory=%2Fdata%2Fdata%2Fai.opencode.android.debug%2Ffiles%2Fworkspaces%2Fgates",
+ errno: 0,
+  code: "ECONNRESET"
 
-2026-08-31T15:35:24.874Z [host] state -> FATAL (supervisor error: Caller-provided IV not permitted)
-2026-08-31T15:35:32.027Z [host] resetAndRestart: stopping + wiping extracted payload
-2026-08-31T15:35:32.035Z [host] server stopped (graceful=false)
-2026-08-31T15:35:32.058Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-2026-08-31T15:35:32.060Z [host] state -> EXTRACTING (validating embedded runtime)
-2026-08-31T15:35:32.071Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
-2026-08-31T15:35:32.072Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
-2026-08-31T15:35:32.807Z [host] extraction complete: 30 files validated
-2026-08-31T15:35:32.808Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-2026-08-31T15:35:32.814Z [host] supervisor fatal error: Caller-provided IV not permitted
-java.security.InvalidAlgorithmParameterException: Caller-provided IV not permitted
-	at android.security.keystore2.KeyStoreCryptoOperationUtils.getExceptionForCipherInit(KeyStoreCryptoOperationUtils.java:148)
-	at android.security.keystore2.AndroidKeyStoreCipherSpiBase.ensureKeystoreOperationInitialized(AndroidKeyStoreCipherSpiBase.java:354)
-	at android.security.keystore2.AndroidKeyStoreCipherSpiBase.engineInit(AndroidKeyStoreCipherSpiBase.java:248)
-	at javax.crypto.Cipher.tryTransformWithProvider(Cipher.java:2981)
-	at javax.crypto.Cipher.tryCombinations(Cipher.java:2892)
-	at javax.crypto.Cipher$SpiAndProviderUpdater.updateAndGetSpiAndProvider(Cipher.java:2797)
-	at javax.crypto.Cipher.chooseProvider(Cipher.java:774)
-	at javax.crypto.Cipher.init(Cipher.java:1289)
-	at javax.crypto.Cipher.init(Cipher.java:1224)
-	at ai.opencode.android.security.SecretStore.put(SecretStore.kt:114)
-	at ai.opencode.android.runtime.Secrets.serverPassword(Secrets.kt:73)
-	at ai.opencode.android.runtime.RuntimeManager.supervise(RuntimeManager.kt:195)
-	at ai.opencode.android.runtime.RuntimeManager.resetAndRestart$lambda$9(RuntimeManager.kt:142)
-	at ai.opencode.android.runtime.RuntimeManager.$r8$lambda$Wf5o-T9Td4k5uifPiL4LIOLbLLI(Unknown Source:0)
-	at ai.opencode.android.runtime.RuntimeManager$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
-	at java.lang.Thread.run(Thread.java:1012)
+      at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
 
-2026-08-31T15:35:32.816Z [host] state -> FATAL (supervisor error: Caller-provided IV not permitted)
-[2026-08-31T15:35:43Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
-08-31 15:35:43.814  6848  6867 I System.out: P5_DEVICE_FACTS {"abi":"x86_64,arm64-v8a","sdk":34,"model":"Google sdk_gphone64_x86_64","payloadVersion":5,"opencode":"1.18.23@05ea507","keystoreHardwareBacked":false,"secretEntries":[],"harnessDirPresent":true,"serverHealthy":"false"}
-[2026-08-31T15:35:44Z] P5-K instrument_rc=0 kotlin_gates_pass=0 kotlin_gates_fail=0 gradle_ok=0 failures_marker=1
-[2026-08-31T15:35:44Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
-[2026-08-31T15:35:44Z] no resolvable default model (no provider configured) -> model-dependent driver halves stay skipped
-[2026-08-31T15:35:44Z] FATAL: no host bun/node runner for gate drivers
-[2026-08-31T15:35:44Z] --- re-run gate-06-health.js (as shipped, no edits) ---
-/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh: line 261: : command not found
-[2026-08-31T15:35:44Z] --- re-run gate-07-shell.js (as shipped, no edits) ---
-/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh: line 261: : command not found
-[2026-08-31T15:35:44Z] --- re-run gate-10-mcp.js (as shipped, no edits) ---
-/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh: line 261: : command not found
-[2026-08-31T15:35:44Z] --- re-run gate-11-stream.js (as shipped, no edits) ---
-/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh: line 261: : command not found
-[2026-08-31T15:35:44Z] --- re-run gate-12-permission.js (as shipped, no edits) ---
-/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh: line 261: : command not found
-[2026-08-31T15:35:44Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
-[2026-08-31T15:35:45Z] fixture host listener up=1 pid=11065
-[2026-08-31T15:35:45Z] === P5-G17 loopback-only binding evidence ===
-=== listeners owned by uid  (host-visible /proc/net/tcp) ===
+Bun v1.3.14 (Linux x64)
+[2026-08-31T16:24:21Z] --- re-run gate-07-shell.js (as shipped, no edits) ---
+16 | }
+17 | 
+18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
+19 |   const sep = path.includes("?") ? "&" : "?"
+20 |   const url = BASE + path + sep + "directory=" + encodeURIComponent(directory)
+21 |   const r = await fetch(url, {
+                       ^
+error: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+  path: "http://127.0.0.1:4111/session?directory=%2Fdata%2Fdata%2Fai.opencode.android.debug%2Ffiles%2Fworkspaces%2Fgates",
+ errno: 0,
+  code: "ECONNRESET"
+
+      at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
+      at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
+
+Bun v1.3.14 (Linux x64)
+[2026-08-31T16:24:21Z] --- re-run gate-10-mcp.js (as shipped, no edits) ---
+16 | }
+17 | 
+18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
+19 |   const sep = path.includes("?") ? "&" : "?"
+20 |   const url = BASE + path + sep + "directory=" + encodeURIComponent(directory)
+21 |   const r = await fetch(url, {
+                       ^
+error: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+  path: "http://127.0.0.1:4111/mcp?directory=%2Fdata%2Fdata%2Fai.opencode.android.debug%2Ffiles%2Fworkspaces%2Fgates",
+ errno: 0,
+  code: "ECONNRESET"
+
+      at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
+
+Bun v1.3.14 (Linux x64)
+[2026-08-31T16:24:21Z] --- re-run gate-11-stream.js (as shipped, no edits) ---
+16 | }
+17 | 
+18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
+19 |   const sep = path.includes("?") ? "&" : "?"
+20 |   const url = BASE + path + sep + "directory=" + encodeURIComponent(directory)
+21 |   const r = await fetch(url, {
+                       ^
+error: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+  path: "http://127.0.0.1:4111/session?directory=%2Fdata%2Fdata%2Fai.opencode.android.debug%2Ffiles%2Fworkspaces%2Fgates",
+ errno: 0,
+  code: "ECONNRESET"
+
+      at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
+      at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
+
+Bun v1.3.14 (Linux x64)
+[2026-08-31T16:24:21Z] --- re-run gate-12-permission.js (as shipped, no edits) ---
+16 | }
+17 | 
+18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
+19 |   const sep = path.includes("?") ? "&" : "?"
+20 |   const url = BASE + path + sep + "directory=" + encodeURIComponent(directory)
+21 |   const r = await fetch(url, {
+                       ^
+error: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+  path: "http://127.0.0.1:4111/session?directory=%2Fdata%2Fdata%2Fai.opencode.android.debug%2Ffiles%2Fworkspaces%2Fgates",
+ errno: 0,
+  code: "ECONNRESET"
+
+      at async call (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:21:19)
+      at async createSession (/home/runner/work/OpenCode-app/OpenCode-app/phase4/scripts/device/gates-lib.js:116:19)
+
+Bun v1.3.14 (Linux x64)
+[2026-08-31T16:24:21Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
+[2026-08-31T16:24:22Z] fixture host listener up=1 pid=11971
+[2026-08-31T16:24:22Z] === P5-G17 loopback-only binding evidence ===
+=== listeners owned by uid 10192 (host-visible /proc/net/tcp) ===
 -- IPv4/IPv6 LISTEN(0A) rows for the app uid --
 -- any row for the app uid that is NOT a loopback local address --
 -- UDP: app-uid sockets on mDNS 5353 (0x14F9) --
@@ -98,9 +196,36 @@ java.security.InvalidAlgorithmParameterException: Caller-provided IV not permitt
 -- wildcard LISTEN rows for the app uid (00000000 or all-zero IPv6) --
 
 === the app's own audit (written by runtime/LoopbackAudit) ===
-cat: /data/data/ai.opencode.android.debug/files/log/loopback-audit.txt: No such file or directory
+# OpenCode Android loopback/bind audit (written by the app itself)
+at=2026-08-31T16:17:16Z
+uid=10192
+port=4111 expected_bind=127.0.0.1
+table_verdict=NO_ROWS(seen)
+table_detail=port=4111 listeners=0 loopback_only=false mdns_sockets=0 binds=[]
+probe_loopback_connect=OK
+probe_external_address=10.0.2.16
+probe_external_connect=REFUSED(ECONNREFUSED)
+mdns_sockets_owned_by_uid=0 (expected 0; OpenCode publishes mDNS only for a non-loopback bind)
+server_version=1.18.23-android
+keystore_hardware_backed=false
+secret_entries=server-password
+violations=none
+
+## raw socket tables as seen by the app uid
+## tcp (/proc/net/tcp)
+(unreadable)
+## tcp6 (/proc/net/tcp6)
+(unreadable)
+## udp (/proc/net/udp)
+(unreadable)
+## udp6 (/proc/net/udp6)
+(unreadable)
 
 === launcher bind evidence (runtime.log) ===
+2026-08-31T16:17:04.556Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-08-31T16:17:04.564Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-08-31T16:17:13.986Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-08-31T16:17:13.988Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
 
 === OpenCode server log: mDNS publish lines (want none) ===
 (end of mDNS grep)
@@ -108,17 +233,20 @@ cat: /data/data/ai.opencode.android.debug/files/log/loopback-audit.txt: No such 
 === host-side forward (adb forward binds host loopback only) ===
 emulator-5554 tcp:4111 tcp:4111
 
-[2026-08-31T15:35:45Z] device global ipv4: '10.0.2.15'
+[2026-08-31T16:24:23Z] P5-G17 wildcard=0 nonloopback_rows=0 listens=0 mdns_sockets=0 bound_lines=2 publish_lines=0
+[2026-08-31T16:24:23Z] device global ipv4: '10.0.2.16'
 loopback=REFUSED:ECONNREFUSED
-global_10.0.2.15=REFUSED:ECONNREFUSED
+global_10.0.2.16=REFUSED:ECONNREFUSED
 bun_rc=0
-[2026-08-31T15:35:45Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
+[2026-08-31T16:24:23Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
 --- filesDir/secrets listing ---
-total 16
-drwx------  2 u0_a192 u0_a192 4096 2026-08-31 15:35 .
-drwxrwx--x 14 u0_a192 u0_a192 4096 2026-08-31 15:35 ..
---- blob magic (each .enc must start with the OCS1 ciphertext header) ---
-enc_count=0
+total 24
+drwx------  2 u0_a192 u0_a192 4096 2026-08-31 16:24 .
+drwxrwx--x 14 u0_a192 u0_a192 4096 2026-08-31 16:24 ..
+-rw-------  1 u0_a192 u0_a192  126 2026-08-31 16:17 server-password.enc
+--- blob magic (each .enc must start with the OCS2 ciphertext header) ---
+CIPHER_OK /data/data/ai.opencode.android.debug/files/secrets/server-password.enc size=126
+enc_count=1
 --- legacy plaintext password file (must be ABSENT) ---
 ls: /data/data/ai.opencode.android.debug/files/secrets/server-password: No such file or directory
 legacy_rc=1
@@ -129,36 +257,18 @@ keyfile_rc=1
 stat: '/data/data/ai.opencode.android.debug/files/xdg/data/opencode/auth.json': No such file or directory
 authcanary_done
 --- server password readable anywhere outside the test harness dir? ---
-/data/data/ai.opencode.android.debug/files/log/runtime.log
-/data/data/ai.opencode.android.debug/files/log/device-facts.json
-/data/data/ai.opencode.android.debug/files/bin/bun
-/data/data/ai.opencode.android.debug/files/bin/git
-/data/data/ai.opencode.android.debug/files/bin/rg
-/data/data/ai.opencode.android.debug/files/runtime/.extracted
-/data/data/ai.opencode.android.debug/files/xdg/config/opencode/opencode.jsonc
-/data/data/ai.opencode.android.debug/files/workspaces/gates/src/app.js
-/data/data/ai.opencode.android.debug/files/workspaces/gates/README.md
-/data/data/ai.opencode.android.debug/files/workspaces/gates/notes.txt
-/data/data/ai.opencode.android.debug/files/workspaces/gates/.git/refs/heads/main
-/data/data/ai.opencode.android.debug/files/workspaces/gates/.git/config
-/data/data/ai.opencode.android.debug/files/workspaces/gates/.git/objects/df/128ac6e6c91ab0daf75f155b4dc8e7fb265aa6
-/data/data/ai.opencode.android.debug/files/workspaces/gates/.git/objects/3a/6422595a51c9b0e4549fbb31bf4c6181f186a3
-/data/data/ai.opencode.android.debug/files/workspaces/gates/.git/objects/a1/901a3ba97aee0472b96099750ede13928cc477
-/data/data/ai.opencode.android.debug/files/workspaces/gates/.git/objects/a5/66f6f462144805a316876c76385ac808a5af76
-/data/data/ai.opencode.android.debug/files/workspaces/gates/.git/objects/37/10d5e3f724c44b268d7ef44de84c6f85bd16cb
-/data/data/ai.opencode.android.debug/files/workspaces/gates/.git/objects/78/e937a3030314ae7685208fe2d090871ee0c096
-/data/data/ai.opencode.android.debug/files/workspaces/gates/.git/HEAD
-/data/data/ai.opencode.android.debug/files/workspaces/gates/.git/COMMIT_EDITMSG
 leakscan_done
 --- hardware-backed keystore (from the instrumentation run) ---
-[2026-08-31T15:35:45Z] P5-G18 enc_blobs=0 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=absent auth_canary_cleared=0 auth_ok=0 leaks_outside_harness=20
-[2026-08-31T15:35:45Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
---- APK under test: /data/app/~~7hm-VfKVH4RfJAD5kF26Bw==/ai.opencode.android.debug-VRxvoh3t4cq0QVEZN9qdpQ==/base.apk ---
+08-31 16:24:20.167  6402  6421 I OpenCode/gate: P5_KEYSTORE PASS :: hardwareBacked=false blobBytes=115 entries=provider-gatecanary,server-password
+08-31 16:24:20.167  6402  6421 I System.out: P5_KEYSTORE PASS :: hardwareBacked=false blobBytes=115 entries=provider-gatecanary,server-password
+[2026-08-31T16:24:25Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=absent auth_canary_cleared=0 auth_ok=0 leaks_outside_harness=0
+[2026-08-31T16:24:25Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
+--- APK under test: /data/app/~~VS_-H3B9uB3bbVpY1WsxzA==/ai.opencode.android.debug-wg-g6zDZ7Sds6OX5LeuToA==/base.apk ---
       284  1981-01-01 01:01   res/xml/file_paths.xml
       652  1981-01-01 01:01   res/xml/network_security_config.xml
    410176  1981-01-01 01:01   resources.arsc
 ---------                     -------
-373459663                     153 files
+373461087                     153 files
 (dex secret scan done rc=1)
 (asset secret scan done)
 (asset name scan done)
@@ -166,6 +276,6 @@ leakscan_done
 (git grep rc=1)
 --- non-loopback endpoint literals compiled into the client ---
 (url scan done)
-[2026-08-31T15:35:47Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
-[2026-08-31T15:35:47Z] === evidence pull ===
-[2026-08-31T15:35:47Z] === SUMMARY ===
+[2026-08-31T16:24:27Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
+[2026-08-31T16:24:27Z] === evidence pull ===
+[2026-08-31T16:24:27Z] === SUMMARY ===

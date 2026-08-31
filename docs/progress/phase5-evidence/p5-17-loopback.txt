@@ -1,4 +1,4 @@
-=== listeners owned by uid  (host-visible /proc/net/tcp) ===
+=== listeners owned by uid 10192 (host-visible /proc/net/tcp) ===
 -- IPv4/IPv6 LISTEN(0A) rows for the app uid --
 -- any row for the app uid that is NOT a loopback local address --
 -- UDP: app-uid sockets on mDNS 5353 (0x14F9) --
@@ -9,9 +9,36 @@
 -- wildcard LISTEN rows for the app uid (00000000 or all-zero IPv6) --
 
 === the app's own audit (written by runtime/LoopbackAudit) ===
-cat: /data/data/ai.opencode.android.debug/files/log/loopback-audit.txt: No such file or directory
+# OpenCode Android loopback/bind audit (written by the app itself)
+at=2026-08-31T16:17:16Z
+uid=10192
+port=4111 expected_bind=127.0.0.1
+table_verdict=NO_ROWS(seen)
+table_detail=port=4111 listeners=0 loopback_only=false mdns_sockets=0 binds=[]
+probe_loopback_connect=OK
+probe_external_address=10.0.2.16
+probe_external_connect=REFUSED(ECONNREFUSED)
+mdns_sockets_owned_by_uid=0 (expected 0; OpenCode publishes mDNS only for a non-loopback bind)
+server_version=1.18.23-android
+keystore_hardware_backed=false
+secret_entries=server-password
+violations=none
+
+## raw socket tables as seen by the app uid
+## tcp (/proc/net/tcp)
+(unreadable)
+## tcp6 (/proc/net/tcp6)
+(unreadable)
+## udp (/proc/net/udp)
+(unreadable)
+## udp6 (/proc/net/udp6)
+(unreadable)
 
 === launcher bind evidence (runtime.log) ===
+2026-08-31T16:17:04.556Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-08-31T16:17:04.564Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-08-31T16:17:13.986Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-08-31T16:17:13.988Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
 
 === OpenCode server log: mDNS publish lines (want none) ===
 (end of mDNS grep)

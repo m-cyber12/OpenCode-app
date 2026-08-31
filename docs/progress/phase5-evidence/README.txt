@@ -6,6 +6,8 @@ Keystore-held credentials).
   p5-04-instrument-export.txt   Keystore password exported for the host drivers
   p5-k-instrument.log           Kotlin instrumented client gates (K1..K8) output
   p5-k-gates.log                per-gate P5_* PASS/FAIL lines from the app process
+  p5-k-lines.txt                those lines deduplicated across both channels (the count P5-K uses)
+  runtime.log                   the app's own supervisor/runtime log (state machine, bind lines)
   rerun-gate-*.log              phase-4 gate drivers re-run verbatim (G6/G7/G10/G11/G12)
   p5-16-mcp-remote.log          remote MCP transports (StreamableHTTP + SSE + failure case)
   p5-16-fixture-host.log        the host-side MCP server used by that gate

@@ -1,15 +1,19 @@
 
 ai.opencode.android.client.OpenCodeClientGatesTest:
 Error in harnessExportLoopbackCredentialForHostDrivers(ai.opencode.android.client.OpenCodeClientGatesTest):
-java.lang.IllegalStateException: no password in Keystore
-	at ai.opencode.android.client.OpenCodeClientGatesTest.harnessExportLoopbackCredentialForHostDrivers(OpenCodeClientGatesTest.kt:490)
+java.lang.AssertionError: exported credential did not authenticate the live server within 120s
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.client.OpenCodeClientGatesTest.harnessExportLoopbackCredentialForHostDrivers(OpenCodeClientGatesTest.kt:530)
 
 
-Time: 0.015
+Time: 120.269
 There was 1 failure:
 1) harnessExportLoopbackCredentialForHostDrivers(ai.opencode.android.client.OpenCodeClientGatesTest)
-java.lang.IllegalStateException: no password in Keystore
-	at ai.opencode.android.client.OpenCodeClientGatesTest.harnessExportLoopbackCredentialForHostDrivers(OpenCodeClientGatesTest.kt:490)
+java.lang.AssertionError: exported credential did not authenticate the live server within 120s
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.client.OpenCodeClientGatesTest.harnessExportLoopbackCredentialForHostDrivers(OpenCodeClientGatesTest.kt:530)
 
 FAILURES!!!
 Tests run: 1,  Failures: 1

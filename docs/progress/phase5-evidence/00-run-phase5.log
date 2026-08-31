@@ -1,9 +1,9 @@
-=== PHASE 5 START 2026-08-31T15:25:45Z staged=0 ===
-heartbeat enabled (pid 2054, every 240s -> docs/progress/phase5-evidence/PROGRESS.txt)
+=== PHASE 5 START 2026-08-31T16:08:00Z staged=0 ===
+heartbeat enabled (pid 2247, every 240s -> docs/progress/phase5-evidence/PROGRESS.txt)
 ########## 1/6 environment + emulator (standalone mode) ##########
 installing emulator + system image via phase4/scripts/50-install-sdk.sh
 --- downloading cmdline-tools
--rw-r--r-- 1 runner runner 153607504 Aug 31 15:25 cmdtools.zip
+-rw-r--r-- 1 runner runner 153607504 Aug 31 16:08 cmdtools.zip
 /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
 /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
 --- sdkmanager licenses
@@ -21,10 +21,10 @@ accel:
 KVM (version 12) is installed and usable.
 accel
 --- starting emulator (headless)
-emulator pid=2315
+emulator pid=2522
 * daemon not running; starting now at tcp:5037
 * daemon started successfully
-BOOT_COMPLETED after ~42s
+BOOT_COMPLETED after ~48s
 --- boot state
 List of devices attached
 emulator-5554	device
@@ -112,19 +112,11 @@ git source: f93ff170b93a1782659637824b25923245ac9dd1
 --- Android Git (arm64-v8a, CC=/usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang) ---
 GIT_VERSION=2.48.1
     * new build flags
-    CC builtin/add.o
-    CC builtin/am.o
-    * new prefix flags
-    * new link flags
-    CC builtin/annotate.o
-    CC builtin/apply.o
-    CC builtin/archive.o
-    CC builtin/bisect.o
-    CC builtin/blame.o
-    CC builtin/branch.o
     GEN hook-list.h
     CC builtin/bundle.o
+    * new prefix flags
     CC builtin/cat-file.o
+    * new link flags
     CC builtin/check-attr.o
     CC builtin/check-ignore.o
     CC builtin/check-mailmap.o
@@ -323,8 +315,8 @@ GIT_VERSION=2.48.1
     CC hashmap.o
     GEN command-list.h
     CC hex.o
-    CC hex-ll.o
     CC hook.o
+    CC hex-ll.o
     CC ident.o
     CC json-writer.o
     CC kwset.o
@@ -448,16 +440,16 @@ GIT_VERSION=2.48.1
     CC tmp-objdir.o
     CC trace.o
     CC trace2.o
-    CC trace2/tr2_cfg.o
     CC trace2/tr2_cmd_name.o
+    CC trace2/tr2_cfg.o
     CC trace2/tr2_ctr.o
     CC trace2/tr2_dst.o
     CC trace2/tr2_sid.o
     CC trace2/tr2_sysenv.o
     CC trace2/tr2_tbuf.o
     CC trace2/tr2_tgt_event.o
-    CC trace2/tr2_tgt_normal.o
     CC trace2/tr2_tgt_perf.o
+    CC trace2/tr2_tgt_normal.o
     CC trace2/tr2_tls.o
     CC trace2/tr2_tmr.o
     CC trailer.o
@@ -485,8 +477,8 @@ GIT_VERSION=2.48.1
     CC xdiff-interface.o
     CC unix-socket.o
     CC unix-stream-server.o
-    CC sha1dc/sha1.o
     CC sha1dc_git.o
+    CC sha1dc/sha1.o
     CC sha1dc/ubc_check.o
     CC sha256/block/sha256.o
     CC compat/linux/procinfo.o
@@ -515,6 +507,14 @@ GIT_VERSION=2.48.1
     CC reftable/tree.o
     CC reftable/writer.o
     CC git.o
+    CC builtin/add.o
+    CC builtin/am.o
+    CC builtin/annotate.o
+    CC builtin/apply.o
+    CC builtin/archive.o
+    CC builtin/bisect.o
+    CC builtin/blame.o
+    CC builtin/branch.o
     CC builtin/bugreport.o
     CC builtin/help.o
     CC help.o
@@ -528,10 +528,51 @@ arm64-v8a Android Git built (cross-ABI host execution skipped)
 --- Android Git (x86_64, CC=/usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang) ---
 GIT_VERSION=2.48.1
     * new build flags
-    * new prefix flags
     GEN hook-list.h
-    GEN config-list.h
+    CC builtin/bundle.o
+    * new prefix flags
+    CC builtin/cat-file.o
     * new link flags
+    CC builtin/check-attr.o
+    CC builtin/check-ignore.o
+    CC builtin/check-mailmap.o
+    CC builtin/check-ref-format.o
+    CC builtin/checkout--worker.o
+    CC builtin/checkout-index.o
+    CC builtin/checkout.o
+    CC builtin/clean.o
+    CC builtin/clone.o
+    CC builtin/column.o
+    CC builtin/commit-graph.o
+    CC builtin/commit-tree.o
+    CC builtin/commit.o
+    CC builtin/config.o
+    CC builtin/count-objects.o
+    CC builtin/credential-cache--daemon.o
+    CC builtin/credential-cache.o
+    CC builtin/credential-store.o
+    CC builtin/credential.o
+    CC builtin/describe.o
+    CC builtin/diagnose.o
+    CC builtin/diff-files.o
+    CC builtin/diff-index.o
+    CC builtin/diff-tree.o
+    CC builtin/diff.o
+    CC builtin/difftool.o
+    CC builtin/fast-export.o
+    CC builtin/fast-import.o
+    CC builtin/fetch-pack.o
+    CC builtin/fetch.o
+    CC builtin/fmt-merge-msg.o
+    CC builtin/for-each-ref.o
+    CC builtin/for-each-repo.o
+    CC builtin/fsck.o
+    CC builtin/fsmonitor--daemon.o
+    CC builtin/gc.o
+    CC builtin/get-tar-commit-id.o
+    CC builtin/grep.o
+    CC builtin/hash-object.o
+    GEN config-list.h
     CC builtin/hook.o
     CC builtin/index-pack.o
     CC builtin/init-db.o
@@ -851,8 +892,8 @@ GIT_VERSION=2.48.1
     CC wt-status.o
     CC xdiff-interface.o
     CC unix-socket.o
-    CC sha1dc_git.o
     CC unix-stream-server.o
+    CC sha1dc_git.o
     CC sha1dc/sha1.o
     CC sha1dc/ubc_check.o
     CC sha256/block/sha256.o
@@ -891,47 +932,6 @@ GIT_VERSION=2.48.1
     CC builtin/blame.o
     CC builtin/branch.o
     CC builtin/bugreport.o
-    CC builtin/bundle.o
-    CC builtin/cat-file.o
-    CC builtin/check-attr.o
-    CC builtin/check-ignore.o
-    CC builtin/check-mailmap.o
-    CC builtin/check-ref-format.o
-    CC builtin/checkout--worker.o
-    CC builtin/checkout-index.o
-    CC builtin/checkout.o
-    CC builtin/clean.o
-    CC builtin/clone.o
-    CC builtin/column.o
-    CC builtin/commit-graph.o
-    CC builtin/commit-tree.o
-    CC builtin/commit.o
-    CC builtin/config.o
-    CC builtin/count-objects.o
-    CC builtin/credential-cache--daemon.o
-    CC builtin/credential-cache.o
-    CC builtin/credential-store.o
-    CC builtin/credential.o
-    CC builtin/describe.o
-    CC builtin/diagnose.o
-    CC builtin/diff-files.o
-    CC builtin/diff-index.o
-    CC builtin/diff-tree.o
-    CC builtin/diff.o
-    CC builtin/difftool.o
-    CC builtin/fast-export.o
-    CC builtin/fast-import.o
-    CC builtin/fetch-pack.o
-    CC builtin/fetch.o
-    CC builtin/fmt-merge-msg.o
-    CC builtin/for-each-ref.o
-    CC builtin/for-each-repo.o
-    CC builtin/fsck.o
-    CC builtin/fsmonitor--daemon.o
-    CC builtin/gc.o
-    CC builtin/get-tar-commit-id.o
-    CC builtin/grep.o
-    CC builtin/hash-object.o
     CC builtin/help.o
     CC help.o
     GEN version-def.h
@@ -968,27 +968,27 @@ Turn off this advice by setting config variable advice.detachedHead to false
   Downloaded anyhow v1.0.100
   Downloaded same-file v1.0.6
   Downloaded itoa v1.0.15
-  Downloaded lexopt v0.3.1
+  Downloaded jobserver v0.1.34
+  Downloaded aho-corasick v1.1.3
+  Downloaded walkdir v2.5.0
   Downloaded crossbeam-deque v0.8.6
   Downloaded encoding_rs_io v0.1.7
-  Downloaded jobserver v0.1.34
+  Downloaded pcre2 v0.2.11
+  Downloaded lexopt v0.3.1
+  Downloaded shlex v1.3.0
+  Downloaded termcolor v1.4.1
   Downloaded pkg-config v0.3.32
   Downloaded find-msvc-tools v0.1.4
-  Downloaded termcolor v1.4.1
-  Downloaded pcre2 v0.2.11
-  Downloaded walkdir v2.5.0
-  Downloaded shlex v1.3.0
+  Downloaded crossbeam-utils v0.8.21
   Downloaded crossbeam-epoch v0.9.18
   Downloaded memmap2 v0.9.9
-  Downloaded crossbeam-utils v0.8.21
-  Downloaded log v0.4.28
   Downloaded ryu v1.0.20
   Downloaded textwrap v0.16.2
-  Downloaded cc v1.2.41
   Downloaded serde_core v1.0.228
+  Downloaded log v0.4.28
   Downloaded memchr v2.7.6
+  Downloaded cc v1.2.41
   Downloaded serde v1.0.228
-  Downloaded aho-corasick v1.1.3
   Downloaded serde_json v1.0.145
   Downloaded bstr v1.12.0
   Downloaded regex-syntax v0.8.8
@@ -1001,44 +1001,44 @@ Turn off this advice by setting config variable advice.detachedHead to false
    Compiling regex-syntax v0.8.8
    Compiling log v0.4.28
    Compiling aho-corasick v1.1.3
-   Compiling shlex v1.3.0
    Compiling find-msvc-tools v0.1.4
+   Compiling shlex v1.3.0
+   Compiling pkg-config v0.3.32
    Compiling regex-automata v0.4.13
    Compiling jobserver v0.1.34
    Compiling cc v1.2.41
-   Compiling bstr v1.12.0
-   Compiling pkg-config v0.3.32
    Compiling serde_core v1.0.228
    Compiling pcre2-sys v0.2.10
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.RXmCGILbTt/rg-src/crates/matcher)
-   Compiling crossbeam-utils v0.8.21
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/matcher)
    Compiling cfg-if v1.0.4
+   Compiling crossbeam-utils v0.8.21
+   Compiling bstr v1.12.0
    Compiling encoding_rs v0.8.35
-   Compiling serde_json v1.0.145
    Compiling serde v1.0.228
+   Compiling serde_json v1.0.145
    Compiling encoding_rs_io v0.1.7
-   Compiling globset v0.4.18 (/tmp/tmp.RXmCGILbTt/rg-src/crates/globset)
+   Compiling globset v0.4.18 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/globset)
    Compiling memmap2 v0.9.9
    Compiling termcolor v1.4.1
-   Compiling ryu v1.0.20
    Compiling itoa v1.0.15
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.RXmCGILbTt/rg-src/crates/searcher)
+   Compiling ryu v1.0.20
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
-   Compiling anyhow v1.0.100
    Compiling same-file v1.0.6
+   Compiling anyhow v1.0.100
    Compiling walkdir v2.5.0
-   Compiling grep-printer v0.3.1 (/tmp/tmp.RXmCGILbTt/rg-src/crates/printer)
+   Compiling grep-printer v0.3.1 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-cli v0.1.12 (/tmp/tmp.RXmCGILbTt/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.RXmCGILbTt/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.RXmCGILbTt/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.RXmCGILbTt/rg-src/crates/ignore)
-   Compiling pcre2 v0.2.11
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.RXmCGILbTt/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.RXmCGILbTt/rg-src/crates/grep)
-   Compiling textwrap v0.16.2
+   Compiling grep-cli v0.1.12 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.7hkZy9o5Er/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/ignore)
    Compiling lexopt v0.3.1
-    Finished `release` profile [optimized + debuginfo] target(s) in 51.01s
+   Compiling pcre2 v0.2.11
+   Compiling textwrap v0.16.2
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/grep)
+    Finished `release` profile [optimized + debuginfo] target(s) in 59.21s
 arm64-v8a Android ripgrep OK:  ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 --- Android ripgrep (x86_64, target=x86_64-linux-android) ---
 info: downloading component rust-std
@@ -1064,55 +1064,55 @@ Turn off this advice by setting config variable advice.detachedHead to false
    Compiling memchr v2.7.6
    Compiling regex-syntax v0.8.8
    Compiling log v0.4.28
-   Compiling find-msvc-tools v0.1.4
+   Compiling shlex v1.3.0
    Compiling aho-corasick v1.1.3
    Compiling jobserver v0.1.34
-   Compiling shlex v1.3.0
+   Compiling find-msvc-tools v0.1.4
    Compiling pkg-config v0.3.32
    Compiling cc v1.2.41
    Compiling serde_core v1.0.228
    Compiling regex-automata v0.4.13
    Compiling pcre2-sys v0.2.10
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.RXmCGILbTt/rg-src/crates/matcher)
-   Compiling cfg-if v1.0.4
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/matcher)
    Compiling crossbeam-utils v0.8.21
+   Compiling cfg-if v1.0.4
    Compiling encoding_rs v0.8.35
    Compiling bstr v1.12.0
    Compiling serde_json v1.0.145
    Compiling serde v1.0.228
-   Compiling globset v0.4.18 (/tmp/tmp.RXmCGILbTt/rg-src/crates/globset)
+   Compiling globset v0.4.18 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/globset)
    Compiling encoding_rs_io v0.1.7
    Compiling memmap2 v0.9.9
-   Compiling ryu v1.0.20
-   Compiling termcolor v1.4.1
    Compiling itoa v1.0.15
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.RXmCGILbTt/rg-src/crates/searcher)
+   Compiling termcolor v1.4.1
+   Compiling ryu v1.0.20
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
    Compiling anyhow v1.0.100
    Compiling same-file v1.0.6
    Compiling walkdir v2.5.0
-   Compiling grep-printer v0.3.1 (/tmp/tmp.RXmCGILbTt/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-cli v0.1.12 (/tmp/tmp.RXmCGILbTt/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.RXmCGILbTt/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.RXmCGILbTt/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.RXmCGILbTt/rg-src/crates/ignore)
+   Compiling grep-printer v0.3.1 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/printer)
+   Compiling grep-cli v0.1.12 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.7hkZy9o5Er/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/ignore)
    Compiling lexopt v0.3.1
    Compiling textwrap v0.16.2
    Compiling pcre2 v0.2.11
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.RXmCGILbTt/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.RXmCGILbTt/rg-src/crates/grep)
-    Finished `release` profile [optimized + debuginfo] target(s) in 37.75s
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.7hkZy9o5Er/rg-src/crates/grep)
+    Finished `release` profile [optimized + debuginfo] target(s) in 45.38s
 x86_64 Android ripgrep OK:  ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 === [5/6] OpenCode server bundle @ 05ea5073be967c779d326929b2de6228dda4159d (pinned, fail-loud) ===
 upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
 bundle build complete
 === [6/6] stage payload, compute manifest ===
-payload tarball: 16552051 bytes sha256=b6628fb94b25cd40f0b169f5acaed02420926a9fb8c1ca5d14b7af7cc8b6cf52
+payload tarball: 16552046 bytes sha256=884840fd12f68d13d0dff84508ad25a9104a859f600461326ee89ae69155fa57
 manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/assets/runtime-manifest.json
 === engine layout ===
 9385 ./build.status
-16552051 ./assets/runtime-payload.tar.gz
+16552046 ./assets/runtime-payload.tar.gz
 5171 ./assets/runtime-manifest.json
 4139512 ./jniLibs/x86_64/libgit.so
 36359976 ./jniLibs/x86_64/librg.so
@@ -1121,7 +1121,7 @@ manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/eng
 7784 ./jniLibs/x86_64/libchildshim.so
 8064 ./jniLibs/x86_64/libexecshim.so
 4003408 ./jniLibs/arm64-v8a/libgit.so
-34646824 ./jniLibs/arm64-v8a/librg.so
+34646688 ./jniLibs/arm64-v8a/librg.so
 6816 ./jniLibs/arm64-v8a/libseccompshim.so
 89796776 ./jniLibs/arm64-v8a/libbun.so
 8328 ./jniLibs/arm64-v8a/libchildshim.so
@@ -1130,7 +1130,7 @@ manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/eng
 PAYLOAD_READY
 + zod-to-json-schema@3.25.2
 
-92 packages installed [529.00ms]
+92 packages installed [437.00ms]
 MCP_READY: 26M
 ########## 3/6 APKs + JVM unit tests ##########
 Downloading https://services.gradle.org/distributions/gradle-8.9-bin.zip
@@ -1157,8 +1157,8 @@ Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/w
 > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
 > Task :app:checkKotlinGradlePluginConfigurationErrors
 > Task :app:generateDebugBuildConfig
-> Task :app:checkDebugAarMetadata
 > Task :app:generateDebugResValues
+> Task :app:checkDebugAarMetadata
 > Task :app:mapDebugSourceSetPaths
 > Task :app:generateDebugResources
 > Task :app:packageDebugResources
@@ -1178,20 +1178,34 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:compileDebugShaders NO-SOURCE
 > Task :app:generateDebugAssets UP-TO-DATE
 > Task :app:mergeDebugAssets
-> Task :app:desugarDebugFileDependencies
-> Task :app:mergeDebugStartupProfile
-> Task :app:checkDebugDuplicateClasses
-> Task :app:compressDebugAssets
-> Task :app:mergeDebugJniLibFolders
 > Task :app:processDebugManifestForPackage
-> Task :app:mergeExtDexDebug
-> Task :app:mergeLibDexDebug
+> Task :app:desugarDebugFileDependencies
 > Task :app:processDebugResources
+> Task :app:compressDebugAssets
+> Task :app:checkDebugDuplicateClasses
+> Task :app:mergeDebugStartupProfile
+> Task :app:compileDebugKotlin
+> Task :app:mergeExtDexDebug
+
+> Task :app:compileDebugKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/security/SecretStore.kt:119:54 'getter for isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java
+
+> Task :app:compileDebugJavaWithJavac
+> Task :app:dexBuilderDebug
+> Task :app:mergeDebugGlobalSynthetics
+> Task :app:processDebugJavaRes
+> Task :app:mergeLibDexDebug
+> Task :app:mergeProjectDexDebug
+> Task :app:mergeDebugJavaResource
+> Task :app:mergeDebugJniLibFolders
 > Task :app:mergeDebugNativeLibs
 > Task :app:validateSigningDebug
 > Task :app:writeDebugAppMetadata
 > Task :app:writeDebugSigningConfigVersions
 > Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:bundleDebugClassesToCompileJar
 
 > Task :app:stripDebugDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libbun.so, libchildshim.so, libexecshim.so, libgit.so, librg.so, libseccompshim.so.
@@ -1204,57 +1218,47 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:generateDebugAndroidTestResources
 > Task :app:javaPreCompileDebugAndroidTest FROM-CACHE
 > Task :app:mergeDebugAndroidTestShaders
+> Task :app:mergeDebugAndroidTestResources
 > Task :app:compileDebugAndroidTestShaders NO-SOURCE
 > Task :app:generateDebugAndroidTestAssets UP-TO-DATE
-> Task :app:mergeDebugAndroidTestResources
 > Task :app:mergeDebugAndroidTestAssets
 > Task :app:compressDebugAndroidTestAssets
 > Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
 > Task :app:processDebugAndroidTestResources
 > Task :app:checkDebugAndroidTestDuplicateClasses
-> Task :app:mergeDebugAndroidTestJniLibFolders
 > Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
+> Task :app:mergeDebugAndroidTestJniLibFolders
 > Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
 > Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
 > Task :app:validateSigningDebugAndroidTest
 > Task :app:writeDebugAndroidTestSigningConfigVersions
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:mergeExtDexDebugAndroidTest
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
 > Task :app:preDebugUnitTestBuild
 > Task :app:javaPreCompileDebugUnitTest FROM-CACHE
-> Task :app:mergeExtDexDebugAndroidTest
-
-> Task :app:compileDebugKotlin
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/security/SecretStore.kt:101:54 'getter for isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java
-
-> Task :app:compileDebugJavaWithJavac
-> Task :app:dexBuilderDebug
-> Task :app:mergeDebugGlobalSynthetics
-> Task :app:processDebugJavaRes
-> Task :app:bundleDebugClassesToCompileJar
-> Task :app:bundleDebugClassesToRuntimeJar
-> Task :app:mergeProjectDexDebug
-> Task :app:mergeDebugJavaResource
 
 > Task :app:compileDebugAndroidTestKotlin
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/client/OpenCodeClientGatesTest.kt:337:39 Type mismatch: inferred type is String? but String was expected
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/client/OpenCodeClientGatesTest.kt:359:39 Type mismatch: inferred type is String? but String was expected
 
 > Task :app:compileDebugAndroidTestJavaWithJavac
 > Task :app:dexBuilderDebugAndroidTest
 > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
 > Task :app:processDebugAndroidTestJavaRes
+> Task :app:mergeProjectDexDebugAndroidTest
+> Task :app:mergeDebugAndroidTestJavaResource
+> Task :app:packageDebugAndroidTest
+> Task :app:createDebugAndroidTestApkListingFileRedirect
+> Task :app:assembleDebugAndroidTest
 
 > Task :app:compileDebugUnitTestKotlin
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/client/OpenCodeApiHttpTest.kt:56:27 Parameter 'rec' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractorTest.kt:103:37 Unsafe use of a nullable receiver of type File?
 
-> Task :app:packageDebug
-> Task :app:createDebugApkListingFileRedirect
-> Task :app:assembleDebug
 > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
 > Task :app:processDebugUnitTestJavaRes
-> Task :app:mergeProjectDexDebugAndroidTest
-> Task :app:mergeDebugAndroidTestJavaResource
 
 > Task :app:testDebugUnitTest
 
@@ -1368,11 +1372,7 @@ SecretNamesTest > acceptsProviderStyleNames PASSED
 
 SecretNamesTest > providerIdRoundTrip PASSED
 
-> Task :app:packageDebugAndroidTest
-> Task :app:createDebugAndroidTestApkListingFileRedirect
-> Task :app:assembleDebugAndroidTest
-
-BUILD SUCCESSFUL in 2m 37s
+BUILD SUCCESSFUL in 3m
 74 actionable tasks: 68 executed, 6 from cache
 Performing Streamed Install
 Success
@@ -1383,98 +1383,103 @@ P5_REMOTE_MCP_DEPS reused from phase4/out/mcp/node_modules
 P5_REMOTE_MCP_SMOKE up=1 (log: /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp/smoke.log)
 P5_REMOTE_MCP_BUILT /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp (sdk 1.29.0)
 ########## 5/6 phase 5 integration gates ##########
-[2026-08-31T15:35:21Z] === P5-01 device / app / payload prerequisites ===
-[2026-08-31T15:35:27Z] P5-01 versionName=1.18.23-phase5 uid= extraction_marker=
-P5-01: FAIL phase5-apk-installed-and-app-running
-P5-02: FAIL payload-v5-manifest-marker
-[2026-08-31T15:35:27Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
+[2026-08-31T16:16:59Z] P5-00 app uid resolved: '10192'
+[2026-08-31T16:16:59Z] === P5-01 device / app / payload prerequisites ===
+[2026-08-31T16:17:04Z] P5-01 versionName=1.18.23-phase5 pid=6091 uid=10192 marker=present
+P5-01: PASS phase5-apk-installed-and-app-running
+P5-02: PASS payload-v5-manifest-marker
+[2026-08-31T16:17:04Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
 wrote_rc=0
 wrote_rc=0
 wrote_rc=0
 warning: templates not found in /home/runner/share/git-core/templates
 error: cannot run maintenance: No such file or directory
 FIXTURE_GIT_OK
-[2026-08-31T15:35:32Z] P5-03 config_present=yes harness_rc=0
+[2026-08-31T16:17:08Z] P5-03 config_present=yes harness_rc=0
 P5-03: PASS fixture-config-and-harness-marker
-[2026-08-31T15:35:40Z] === P5-04 server password via Keystore + test-only harness export ===
-[2026-08-31T15:35:43Z] P5-04 password: … (0 chars)
-[2026-08-31T15:35:43Z] P5-04 not healthy; supervisor log tail:
-	at javax.crypto.Cipher.chooseProvider(Cipher.java:774)
-	at javax.crypto.Cipher.init(Cipher.java:1289)
-	at javax.crypto.Cipher.init(Cipher.java:1224)
-	at ai.opencode.android.security.SecretStore.put(SecretStore.kt:114)
-	at ai.opencode.android.runtime.Secrets.serverPassword(Secrets.kt:73)
-	at ai.opencode.android.runtime.RuntimeManager.supervise(RuntimeManager.kt:195)
-	at ai.opencode.android.runtime.RuntimeManager.start$lambda$1(RuntimeManager.kt:82)
-	at ai.opencode.android.runtime.RuntimeManager.$r8$lambda$TJrWe0h0NuRXkTm9xUcq8qDfAPI(Unknown Source:0)
-	at ai.opencode.android.runtime.RuntimeManager$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
-	at java.lang.Thread.run(Thread.java:1012)
-
-2026-08-31T15:35:24.874Z [host] state -> FATAL (supervisor error: Caller-provided IV not permitted)
-2026-08-31T15:35:32.027Z [host] resetAndRestart: stopping + wiping extracted payload
-2026-08-31T15:35:32.035Z [host] server stopped (graceful=false)
-2026-08-31T15:35:32.058Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-2026-08-31T15:35:32.060Z [host] state -> EXTRACTING (validating embedded runtime)
-2026-08-31T15:35:32.071Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
-2026-08-31T15:35:32.072Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
-2026-08-31T15:35:32.807Z [host] extraction complete: 30 files validated
-2026-08-31T15:35:32.808Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-2026-08-31T15:35:32.814Z [host] supervisor fatal error: Caller-provided IV not permitted
-java.security.InvalidAlgorithmParameterException: Caller-provided IV not permitted
-	at android.security.keystore2.KeyStoreCryptoOperationUtils.getExceptionForCipherInit(KeyStoreCryptoOperationUtils.java:148)
-	at android.security.keystore2.AndroidKeyStoreCipherSpiBase.ensureKeystoreOperationInitialized(AndroidKeyStoreCipherSpiBase.java:354)
-	at android.security.keystore2.AndroidKeyStoreCipherSpiBase.engineInit(AndroidKeyStoreCipherSpiBase.java:248)
-	at javax.crypto.Cipher.tryTransformWithProvider(Cipher.java:2981)
-	at javax.crypto.Cipher.tryCombinations(Cipher.java:2892)
-	at javax.crypto.Cipher$SpiAndProviderUpdater.updateAndGetSpiAndProvider(Cipher.java:2797)
-	at javax.crypto.Cipher.chooseProvider(Cipher.java:774)
-	at javax.crypto.Cipher.init(Cipher.java:1289)
-	at javax.crypto.Cipher.init(Cipher.java:1224)
-	at ai.opencode.android.security.SecretStore.put(SecretStore.kt:114)
-	at ai.opencode.android.runtime.Secrets.serverPassword(Secrets.kt:73)
-	at ai.opencode.android.runtime.RuntimeManager.supervise(RuntimeManager.kt:195)
-	at ai.opencode.android.runtime.RuntimeManager.resetAndRestart$lambda$9(RuntimeManager.kt:142)
-	at ai.opencode.android.runtime.RuntimeManager.$r8$lambda$Wf5o-T9Td4k5uifPiL4LIOLbLLI(Unknown Source:0)
-	at ai.opencode.android.runtime.RuntimeManager$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
-	at java.lang.Thread.run(Thread.java:1012)
-
-2026-08-31T15:35:32.816Z [host] state -> FATAL (supervisor error: Caller-provided IV not permitted)
+[2026-08-31T16:17:16Z] === P5-04 server password via Keystore + test-only harness export ===
+[2026-08-31T16:19:18Z] P5-04 password: a79b… (48 chars)
+[2026-08-31T16:22:19Z] P5-04 not healthy; supervisor log tail:
+2026-08-31T16:17:02.418Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-08-31T16:17:02.420Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-31T16:17:02.421Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-08-31T16:17:04.073Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-08-31T16:17:04.075Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-08-31T16:17:04.556Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-08-31T16:17:04.564Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-08-31T16:17:04.599Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
+2026-08-31T16:17:04.607Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-08-31T16:17:08.295Z [host] resetAndRestart: stopping + wiping extracted payload
+2026-08-31T16:17:08.298Z [host] sending SIGTERM to pid=6153
+2026-08-31T16:17:08.300Z [server] SERVER_SHUTDOWN SIGTERM
+2026-08-31T16:17:08.522Z [server] [stderr] [seccomp] mkdirat(/data/user/0/ai.opencode.android.debug/files/home/.npm/_cacache/tmp) errno=2
+2026-08-31T16:17:10.032Z [host] integration: loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
+2026-08-31T16:17:10.832Z [host] server process exited code=0
+2026-08-31T16:17:10.833Z [host] state -> STOPPED (stopped)
+2026-08-31T16:17:10.903Z [host] server process exit code=0 during stop
+2026-08-31T16:17:10.905Z [host] server stopped (graceful=true)
+2026-08-31T16:17:10.914Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-08-31T16:17:10.915Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-08-31T16:17:10.921Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-08-31T16:17:10.923Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-08-31T16:17:11.958Z [host] extraction complete: 30 files validated
+2026-08-31T16:17:11.959Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-08-31T16:17:11.967Z [host] server password loaded from AndroidKeyStore (keystore=false)
+2026-08-31T16:17:11.970Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-08-31T16:17:12.035Z [host] server started: pid=6248 abi=x86_64 port=4111
+2026-08-31T16:17:12.039Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~VS_-H3B9uB3bbVpY1WsxzA==/ai.opencode.android.debug-wg-g6zDZ7Sds6OX5LeuToA==/lib/x86_64/libbun.so
+2026-08-31T16:17:12.042Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-08-31T16:17:12.044Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-08-31T16:17:12.052Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-08-31T16:17:12.055Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-08-31T16:17:12.056Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-08-31T16:17:13.417Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-08-31T16:17:13.418Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-08-31T16:17:13.986Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-08-31T16:17:13.988Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-08-31T16:17:14.066Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
+2026-08-31T16:17:14.069Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-08-31T16:17:16.752Z [host] integration: loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
 P5-04: FAIL keystore-password-and-healthy-server
-[2026-08-31T15:35:43Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
-[2026-08-31T15:35:44Z] P5-K instrument_rc=0 kotlin_gates_pass=0 kotlin_gates_fail=0 gradle_ok=0 failures_marker=1
-P5-K: FAIL kotlin-client-gates-on-device
-[2026-08-31T15:35:44Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
-[2026-08-31T15:35:44Z] no resolvable default model (no provider configured) -> model-dependent driver halves stay skipped
-[2026-08-31T15:35:44Z] FATAL: no host bun/node runner for gate drivers
-[2026-08-31T15:35:44Z] --- re-run gate-06-health.js (as shipped, no edits) ---
+[2026-08-31T16:22:19Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
+[2026-08-31T16:24:20Z] --- Kotlin gate verdict lines ---
+[2026-08-31T16:24:20Z] P5-K instrument_rc=0 kotlin_gates_pass=1/9 fail=1 skipped=8 gradle_ok=0 failures_marker=1 junit_exception_lines=2
+P5-K: FAIL kotlin-client-gates-on-device (K1..K9, pass=1 fail=1 skip=8)
+[2026-08-31T16:24:20Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
+[2026-08-31T16:24:20Z] model pre-flight: skipped: server not healthy (P5-04 failed)
+[2026-08-31T16:24:20Z] model_available=0 -> model-dependent driver halves stay skipped, and K2/K5 will FAIL because no agent turn can run: read that as an environment constraint on this CI account, not as proof the client is broken
+[2026-08-31T16:24:20Z] fetching host bun 1.3.14 for the gate drivers (same pin as the payload)
+[2026-08-31T16:24:21Z] gate driver runner: /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/host-bun (1.3.14)
+[2026-08-31T16:24:21Z] --- re-run gate-06-health.js (as shipped, no edits) ---
 P5-R-06: FAIL phase4-driver-gate-06-health.js-unmodified
-[2026-08-31T15:35:44Z] --- re-run gate-07-shell.js (as shipped, no edits) ---
+[2026-08-31T16:24:21Z] --- re-run gate-07-shell.js (as shipped, no edits) ---
 P5-R-07: FAIL phase4-driver-gate-07-shell.js-unmodified
-[2026-08-31T15:35:44Z] --- re-run gate-10-mcp.js (as shipped, no edits) ---
+[2026-08-31T16:24:21Z] --- re-run gate-10-mcp.js (as shipped, no edits) ---
 P5-R-10: FAIL phase4-driver-gate-10-mcp.js-unmodified
-[2026-08-31T15:35:44Z] --- re-run gate-11-stream.js (as shipped, no edits) ---
+[2026-08-31T16:24:21Z] --- re-run gate-11-stream.js (as shipped, no edits) ---
 P5-R-11: FAIL phase4-driver-gate-11-stream.js-unmodified
-[2026-08-31T15:35:44Z] --- re-run gate-12-permission.js (as shipped, no edits) ---
+[2026-08-31T16:24:21Z] --- re-run gate-12-permission.js (as shipped, no edits) ---
 P5-R-12: FAIL phase4-driver-gate-12-permission.js-unmodified
-[2026-08-31T15:35:44Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
-[2026-08-31T15:35:45Z] fixture host listener up=1 pid=11065
+[2026-08-31T16:24:21Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
+[2026-08-31T16:24:22Z] fixture host listener up=1 pid=11971
 P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative
-[2026-08-31T15:35:45Z] === P5-G17 loopback-only binding evidence ===
-[2026-08-31T15:35:45Z] device global ipv4: '10.0.2.15'
+[2026-08-31T16:24:22Z] === P5-G17 loopback-only binding evidence ===
+[2026-08-31T16:24:23Z] P5-G17 wildcard=0 nonloopback_rows=0 listens=0 mdns_sockets=0 bound_lines=2 publish_lines=0
+[2026-08-31T16:24:23Z] device global ipv4: '10.0.2.16'
 P5-G17: FAIL loopback-only-binding-and-no-mdns
-[2026-08-31T15:35:45Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
-[2026-08-31T15:35:45Z] P5-G18 enc_blobs=0 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=absent auth_canary_cleared=0 auth_ok=0 leaks_outside_harness=20
-P5-G18: FAIL credentials-keystore-only-at-rest
-[2026-08-31T15:35:45Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
-[2026-08-31T15:35:47Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
+[2026-08-31T16:24:23Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
+[2026-08-31T16:24:25Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=absent auth_canary_cleared=0 auth_ok=0 leaks_outside_harness=0
+P5-G18: PASS credentials-keystore-only-at-rest
+[2026-08-31T16:24:25Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
+[2026-08-31T16:24:27Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
 P5-G19: PASS no-hardcoded-or-bundled-secrets
-[2026-08-31T15:35:47Z] === evidence pull ===
-[2026-08-31T15:35:47Z] === SUMMARY ===
-P5-01: FAIL phase5-apk-installed-and-app-running
-P5-02: FAIL payload-v5-manifest-marker
+[2026-08-31T16:24:27Z] === evidence pull ===
+[2026-08-31T16:24:27Z] === SUMMARY ===
+P5-01: PASS phase5-apk-installed-and-app-running
+P5-02: PASS payload-v5-manifest-marker
 P5-03: PASS fixture-config-and-harness-marker
 P5-04: FAIL keystore-password-and-healthy-server
-P5-K: FAIL kotlin-client-gates-on-device
+P5-K: FAIL kotlin-client-gates-on-device (K1..K9, pass=1 fail=1 skip=8)
 P5-R-06: FAIL phase4-driver-gate-06-health.js-unmodified
 P5-R-07: FAIL phase4-driver-gate-07-shell.js-unmodified
 P5-R-10: FAIL phase4-driver-gate-10-mcp.js-unmodified
@@ -1482,33 +1487,13 @@ P5-R-11: FAIL phase4-driver-gate-11-stream.js-unmodified
 P5-R-12: FAIL phase4-driver-gate-12-permission.js-unmodified
 P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative
 P5-G17: FAIL loopback-only-binding-and-no-mdns
-P5-G18: FAIL credentials-keystore-only-at-rest
+P5-G18: PASS credentials-keystore-only-at-rest
 P5-G19: PASS no-hardcoded-or-bundled-secrets
-P5_SUMMARY 2026-08-31T15:35:47Z
-gates_pass=2 gates_fail=12 gates_skip=0
-kotlin_gate_pass=0 kotlin_gate_fail=0
-model_available=0 app_uid= device_abi=x86_64
-live_launcher_processes=sh:<stdin>[1]:can'topen/proc/1/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/100/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1016/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1028/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/103/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1043/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1044/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/105/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/107/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/108/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1081/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/109/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/11/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/110/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1110/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/116/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/117/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/118/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/119/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/12/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/124/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/126/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/127/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/128/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/129/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/13/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/130/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/131/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1312/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/132/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/133/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/135/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/14/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/142/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1420/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/145/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1453/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1458/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/146/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1463/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/147/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/149/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/15/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1530/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1546/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/155/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/156/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1567/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/157/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/158/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/16/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/160/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1602/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1604/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/162/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1628/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1647/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1659/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1699/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/17/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1700/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1701/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1703/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1781/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/18/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/180/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/182/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/183/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1855/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/187/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/188/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1889/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/193/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1930/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1980/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/20/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2060/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/21/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2194/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/22/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/23/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2356/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/236/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/237/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/238/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/239/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2397/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/240/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/241/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/242/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/243/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/244/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/245/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/246/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/247/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/248/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/249/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/250/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/251/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/252/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/253/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/254/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/255/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/256/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/257/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/258/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/259/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/26/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/260/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/261/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/262/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/263/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/264/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/265/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2657/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/266/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/267/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2678/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2679/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/268/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/269/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/27/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/270/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/271/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/272/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/273/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2737/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/274/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/275/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/276/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/277/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/278/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/279/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/28/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/280/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/281/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/282/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/283/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/284/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/285/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/286/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/287/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/288/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2886/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/289/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/29/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/290/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/291/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/292/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/293/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/294/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2942/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/295/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2962/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/30/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3044/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3061/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/31/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/32/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/320/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3218/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3219/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3254/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/33/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/333/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/334/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3342/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/335/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3387/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/339/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/34/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/340/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/341/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/342/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/343/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3438/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/344/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/345/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/346/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3467/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/347/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/348/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/35/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/350/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/353/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/354/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/355/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3556/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/36/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3629/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3661/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/37/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/370/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/372/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3733/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3767/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/377/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/378/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/38/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/380/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/381/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3814/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/382/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/383/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/386/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/387/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/388/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/39/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/390/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/391/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/392/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/393/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/394/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/395/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/397/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/398/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/399/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/4/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/41/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/4109/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/4128/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/414/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/42/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/421/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/429/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/43/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/4355/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/436/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/439/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/44/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/4402/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/442/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/445/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/45/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/453/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/459/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/46/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/463/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/464/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/465/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/466/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/47/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/470/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/471/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/473/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/476/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/4771/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/48/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/483/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/4834/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/49/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/5/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/50/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/5079/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/5127/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/519/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/53/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/54/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/56/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/57/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/59/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/5982/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/60/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6012/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6022/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6023/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6027/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6029/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/61/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/62/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/63/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/64/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6412/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/65/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6566/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6574/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6584/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/66/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6640/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6643/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6662/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/67/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6779/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/68/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/69/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/7/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/72/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/73/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/78/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/786/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/79/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/8/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/80/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/808/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/82/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/822/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/823/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/83/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/84/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/85/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/86/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/87/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/88/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/9/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/90/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/91/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/93/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/94/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/95/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/965/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/97/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/979/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/988/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/99/cmdline:Permissiondenied0
+P5_SUMMARY 2026-08-31T16:24:27Z
+gates_pass=5 gates_fail=9 gates_skip=0
+kotlin_gate_pass=1 kotlin_gate_fail=1 kotlin_gate_skipped=8
+model_available=0 model_probe=skipped: server not healthy (P5-04 failed)
+app_uid=10192 device_abi=x86_64
+live_launcher_processes=0
 phase5 gates rc=1
 ########## 6/6 evidence ##########
-=== PHASE 5 END 2026-08-31T15:35:53Z gates_rc=1 ===
-P5-01: FAIL phase5-apk-installed-and-app-running
-P5-02: FAIL payload-v5-manifest-marker
-P5-03: PASS fixture-config-and-harness-marker
-P5-04: FAIL keystore-password-and-healthy-server
-P5-K: FAIL kotlin-client-gates-on-device
-P5-R-06: FAIL phase4-driver-gate-06-health.js-unmodified
-P5-R-07: FAIL phase4-driver-gate-07-shell.js-unmodified
-P5-R-10: FAIL phase4-driver-gate-10-mcp.js-unmodified
-P5-R-11: FAIL phase4-driver-gate-11-stream.js-unmodified
-P5-R-12: FAIL phase4-driver-gate-12-permission.js-unmodified
-P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative
-P5-G17: FAIL loopback-only-binding-and-no-mdns
-P5-G18: FAIL credentials-keystore-only-at-rest
-P5-G19: PASS no-hardcoded-or-bundled-secrets
-P5_SUMMARY 2026-08-31T15:35:47Z
-gates_pass=2 gates_fail=12 gates_skip=0
-kotlin_gate_pass=0 kotlin_gate_fail=0
-model_available=0 app_uid= device_abi=x86_64
-live_launcher_processes=sh:<stdin>[1]:can'topen/proc/1/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/100/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1016/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1028/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/103/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1043/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1044/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/105/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/107/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/108/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1081/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/109/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/11/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/110/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1110/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/116/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/117/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/118/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/119/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/12/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/124/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/126/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/127/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/128/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/129/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/13/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/130/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/131/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1312/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/132/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/133/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/135/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/14/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/142/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1420/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/145/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1453/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1458/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/146/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1463/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/147/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/149/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/15/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1530/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1546/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/155/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/156/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1567/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/157/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/158/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/16/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/160/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1602/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1604/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/162/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1628/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1647/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1659/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1699/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/17/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1700/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1701/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1703/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1781/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/18/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/180/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/182/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/183/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1855/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/187/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/188/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1889/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/193/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1930/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/1980/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/20/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2060/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/21/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2194/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/22/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/23/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2356/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/236/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/237/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/238/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/239/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2397/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/240/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/241/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/242/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/243/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/244/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/245/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/246/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/247/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/248/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/249/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/250/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/251/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/252/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/253/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/254/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/255/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/256/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/257/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/258/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/259/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/26/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/260/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/261/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/262/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/263/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/264/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/265/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2657/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/266/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/267/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2678/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2679/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/268/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/269/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/27/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/270/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/271/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/272/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/273/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2737/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/274/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/275/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/276/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/277/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/278/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/279/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/28/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/280/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/281/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/282/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/283/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/284/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/285/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/286/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/287/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/288/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2886/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/289/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/29/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/290/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/291/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/292/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/293/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/294/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2942/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/295/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/2962/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/30/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3044/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3061/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/31/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/32/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/320/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3218/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3219/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3254/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/33/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/333/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/334/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3342/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/335/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3387/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/339/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/34/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/340/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/341/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/342/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/343/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3438/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/344/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/345/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/346/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3467/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/347/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/348/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/35/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/350/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/353/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/354/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/355/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3556/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/36/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3629/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3661/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/37/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/370/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/372/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3733/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3767/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/377/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/378/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/38/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/380/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/381/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/3814/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/382/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/383/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/386/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/387/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/388/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/39/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/390/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/391/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/392/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/393/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/394/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/395/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/397/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/398/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/399/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/4/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/41/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/4109/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/4128/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/414/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/42/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/421/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/429/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/43/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/4355/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/436/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/439/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/44/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/4402/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/442/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/445/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/45/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/453/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/459/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/46/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/463/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/464/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/465/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/466/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/47/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/470/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/471/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/473/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/476/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/4771/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/48/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/483/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/4834/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/49/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/5/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/50/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/5079/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/5127/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/519/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/53/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/54/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/56/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/57/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/59/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/5982/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/60/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6012/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6022/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6023/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6027/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6029/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/61/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/62/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/63/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/64/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6412/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/65/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6566/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6574/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6584/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/66/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6640/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6643/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6662/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/67/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/6779/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/68/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/69/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/7/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/72/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/73/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/78/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/786/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/79/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/8/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/80/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/808/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/82/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/822/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/823/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/83/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/84/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/85/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/86/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/87/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/88/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/9/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/90/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/91/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/93/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/94/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/95/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/965/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/97/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/979/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/988/cmdline:Permissiondeniedsh:<stdin>[1]:can'topen/proc/99/cmdline:Permissiondenied0
-########## evidence push ##########

@@ -2,61 +2,21 @@
 ai.opencode.android.client.OpenCodeClientGatesTest:
 ai.opencode.android.client.OpenCodeClientGatesTest:
 Error in harnessExportLoopbackCredentialForHostDrivers(ai.opencode.android.client.OpenCodeClientGatesTest):
-java.lang.IllegalStateException: no password in Keystore
-	at ai.opencode.android.client.OpenCodeClientGatesTest.harnessExportLoopbackCredentialForHostDrivers(OpenCodeClientGatesTest.kt:490)
-
-Error in k1_healthEndpointThroughTheAndroidClient(ai.opencode.android.client.OpenCodeClientGatesTest):
-java.lang.AssertionError: no Keystore-held server password (is the app's runtime started?)
+java.lang.AssertionError: exported credential did not authenticate the live server within 120s
 	at org.junit.Assert.fail(Assert.java:89)
 	at org.junit.Assert.assertTrue(Assert.java:42)
-	at org.junit.Assert.assertNotNull(Assert.java:713)
-	at ai.opencode.android.client.OpenCodeClientGatesTest.password(OpenCodeClientGatesTest.kt:61)
-	at ai.opencode.android.client.OpenCodeClientGatesTest.api(OpenCodeClientGatesTest.kt:65)
-	at ai.opencode.android.client.OpenCodeClientGatesTest.k1_healthEndpointThroughTheAndroidClient(OpenCodeClientGatesTest.kt:84)
-.
-Error in k6_secretsAreKeystoreBackedAndNeverPlaintext(ai.opencode.android.client.OpenCodeClientGatesTest):
-java.security.InvalidAlgorithmParameterException: Caller-provided IV not permitted
-	at android.security.keystore2.KeyStoreCryptoOperationUtils.getExceptionForCipherInit(KeyStoreCryptoOperationUtils.java:148)
-	at android.security.keystore2.AndroidKeyStoreCipherSpiBase.ensureKeystoreOperationInitialized(AndroidKeyStoreCipherSpiBase.java:354)
-	at android.security.keystore2.AndroidKeyStoreCipherSpiBase.engineInit(AndroidKeyStoreCipherSpiBase.java:248)
-	at javax.crypto.Cipher.tryTransformWithProvider(Cipher.java:2981)
-	at javax.crypto.Cipher.tryCombinations(Cipher.java:2892)
-	at javax.crypto.Cipher$SpiAndProviderUpdater.updateAndGetSpiAndProvider(Cipher.java:2797)
-	at javax.crypto.Cipher.chooseProvider(Cipher.java:774)
-	at javax.crypto.Cipher.init(Cipher.java:1289)
-	at javax.crypto.Cipher.init(Cipher.java:1224)
-	at ai.opencode.android.security.SecretStore.put(SecretStore.kt:114)
-	at ai.opencode.android.client.OpenCodeClientGatesTest.k6_secretsAreKeystoreBackedAndNeverPlaintext(OpenCodeClientGatesTest.kt:277)
+	at ai.opencode.android.client.OpenCodeClientGatesTest.harnessExportLoopbackCredentialForHostDrivers(OpenCodeClientGatesTest.kt:530)
+..
 
-
-Time: 0.088
-There were 3 failures:
+Time: 120.373
+There was 1 failure:
 1) harnessExportLoopbackCredentialForHostDrivers(ai.opencode.android.client.OpenCodeClientGatesTest)
-java.lang.IllegalStateException: no password in Keystore
-	at ai.opencode.android.client.OpenCodeClientGatesTest.harnessExportLoopbackCredentialForHostDrivers(OpenCodeClientGatesTest.kt:490)
-2) k1_healthEndpointThroughTheAndroidClient(ai.opencode.android.client.OpenCodeClientGatesTest)
-java.lang.AssertionError: no Keystore-held server password (is the app's runtime started?)
+java.lang.AssertionError: exported credential did not authenticate the live server within 120s
 	at org.junit.Assert.fail(Assert.java:89)
 	at org.junit.Assert.assertTrue(Assert.java:42)
-	at org.junit.Assert.assertNotNull(Assert.java:713)
-	at ai.opencode.android.client.OpenCodeClientGatesTest.password(OpenCodeClientGatesTest.kt:61)
-	at ai.opencode.android.client.OpenCodeClientGatesTest.api(OpenCodeClientGatesTest.kt:65)
-	at ai.opencode.android.client.OpenCodeClientGatesTest.k1_healthEndpointThroughTheAndroidClient(OpenCodeClientGatesTest.kt:84)
-3) k6_secretsAreKeystoreBackedAndNeverPlaintext(ai.opencode.android.client.OpenCodeClientGatesTest)
-java.security.InvalidAlgorithmParameterException: Caller-provided IV not permitted
-	at android.security.keystore2.KeyStoreCryptoOperationUtils.getExceptionForCipherInit(KeyStoreCryptoOperationUtils.java:148)
-	at android.security.keystore2.AndroidKeyStoreCipherSpiBase.ensureKeystoreOperationInitialized(AndroidKeyStoreCipherSpiBase.java:354)
-	at android.security.keystore2.AndroidKeyStoreCipherSpiBase.engineInit(AndroidKeyStoreCipherSpiBase.java:248)
-	at javax.crypto.Cipher.tryTransformWithProvider(Cipher.java:2981)
-	at javax.crypto.Cipher.tryCombinations(Cipher.java:2892)
-	at javax.crypto.Cipher$SpiAndProviderUpdater.updateAndGetSpiAndProvider(Cipher.java:2797)
-	at javax.crypto.Cipher.chooseProvider(Cipher.java:774)
-	at javax.crypto.Cipher.init(Cipher.java:1289)
-	at javax.crypto.Cipher.init(Cipher.java:1224)
-	at ai.opencode.android.security.SecretStore.put(SecretStore.kt:114)
-	at ai.opencode.android.client.OpenCodeClientGatesTest.k6_secretsAreKeystoreBackedAndNeverPlaintext(OpenCodeClientGatesTest.kt:277)
+	at ai.opencode.android.client.OpenCodeClientGatesTest.harnessExportLoopbackCredentialForHostDrivers(OpenCodeClientGatesTest.kt:530)
 
 FAILURES!!!
-Tests run: 11,  Failures: 3
+Tests run: 11,  Failures: 1
 
 
