@@ -1,0 +1,10 @@
+mcp status attempt 0: {"status":"connected"}
+assert ok: OpenCode reports gates-mcp connected
+MCP_STATUS_OK {"gates-mcp":{"status":"connected"}}
+[mcp-roundtrip] TOOLS=["echo","write_marker"]
+[mcp-roundtrip] CALL={"content":[{"type":"text","text":"echo:G10_MCP_ROUNDTRIP_OK"}]}
+assert ok: mcp roundtrip child exited 0 (got 0)
+assert ok: SDK client got the echo tool result
+assert ok: tools/list includes echo
+(model mode skipped: no OPENROUTER_API_KEY — agent MCP-tool part not run)
+G10_PASS

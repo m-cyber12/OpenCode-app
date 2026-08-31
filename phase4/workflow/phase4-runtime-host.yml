@@ -1,0 +1,96 @@
+# PHASE 4 - EMBEDDED RUNTIME HOST gates.
+#
+# HOW TO INSTALL (one-time): copy this file to
+#   .github/workflows/phase4-runtime-host.yml
+# on the arena/<this-session>-opencode-app branch, then push. The session bot
+# token cannot write .github/workflows/ (verified in Phases 2 and 3), so this
+# copy must be made with a user credential (or the GitHub UI "Add file").
+# After it lands, every push to the branch runs the full Phase 4 suite and
+# commits evidence to docs/progress/phase4-evidence/.
+#
+# Model credentials: add a repo secret OPENROUTER_API_KEY (Settings -> Secrets
+# and variables -> Actions). Without it, model-driven assertions (parts of
+# G8/G10/G11/G12/G15) are skipped; all host H1-H8 and non-model G gates still
+# run. Model id overridable via OPENROUTER_MODEL.
+name: phase4-runtime-host
+
+on:
+  push:
+    branches: [arena/01a04ca1-opencode-app]
+    paths-ignore:
+      - 'docs/progress/phase4-evidence/**'
+  workflow_dispatch:
+
+jobs:
+  runtime-host-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    permissions:
+      contents: write
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_MODEL: nvidia/nemotron-3-ultra-550b-a55b:free
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Fix /dev/kvm permissions (Phase 2/3 lesson: never assume KVM just works)"
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm || true
+            ls -la /dev/kvm
+          else
+            echo "KVM_MISSING (emulator will be slow/unusable; gates fail loudly)"
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: "Run the Phase 4 suite (payload + APK -> emulator install -> host + OpenCode gates)"
+        run: |
+          bash phase4/scripts/00-run-phase4.sh
+        shell: bash
+
+      - name: Collect and commit evidence
+        if: always()
+        run: |
+          mkdir -p docs/progress/phase4-evidence
+          cp -r phase4/out/evidence/. docs/progress/phase4-evidence/ 2>/dev/null || true
+          cp phase4/out/00-run-phase4.log docs/progress/phase4-evidence/ 2>/dev/null || true
+          cp phase4/out/engine/build.status docs/progress/phase4-evidence/payload-build.status 2>/dev/null || true
+          cp phase4/out/emulator.log docs/progress/phase4-evidence/ 2>/dev/null || true
+          git add -A docs/progress/phase4-evidence/ || true
+          if git diff --cached --quiet; then
+            echo "no evidence changes; skipping commit"
+          else
+            git -c user.name="arena-ai-coding-agent[bot]" \
+                -c user.email="arena-ai-coding-agent[bot]@users.noreply.github.com" \
+                commit -m "phase4: runtime-host evidence (auto)" || true
+            git push origin "HEAD:arena/01a04ca1-opencode-app" || echo "PUSH_FAILED"
+          fi
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4-runtime-host
+          path: |
+            phase4/out/evidence/
+            phase4/out/00-run-phase4.log
+            phase4/out/emulator.log
+            phase4/out/engine/
+            app/build/outputs/apk/
+            docs/progress/phase4-evidence/
+          if-no-files-found: ignore
+
+      - name: Gate summary (readable in the Actions log)
+        if: always()
+        run: |
+          if [ -f phase4/out/evidence/GATES_SUMMARY.txt ]; then
+            cat phase4/out/evidence/GATES_SUMMARY.txt
+          fi

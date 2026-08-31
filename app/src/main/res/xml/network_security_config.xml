@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The embedded OpenCode server listens ONLY on 127.0.0.1 (loopback) inside the
+  app sandbox. Android blocks cleartext HTTP by default on API 28+, which would
+  reject the app's own health check / API calls to that loopback server. Allow
+  cleartext exclusively for loopback addresses; no remote/traffic is exposed.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

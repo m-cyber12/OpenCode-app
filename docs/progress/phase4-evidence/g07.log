@@ -1,0 +1,30 @@
+assert ok: session id present
+G7_SESSION_ID=ses_fa909d6d8ffeOM8T7dosVKW2f8
+G7_SESSION_ID=ses_fa909d6d8ffeOM8T7dosVKW2f8
+shell endpoint HTTP 200
+=== messages dump (turn done, failed=false) ===
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1BFCAX9ZYX20PDBASFJ21CY","input":"{\"command\":\"echo probe\"}","output":"\"[seccomp] preload handler installed (rc=0)\\nprobe\\n\"","error":null}]},{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1BFCAZFHWPGPBQWNB0K5JVQ","input":"{\"command\":\"echo G7_SHELL_OK from=$(pwd) uname=$(uname -m) shell=$0 && ls -1 | head -3\"}","output":"\"[seccomp] preload handler installed (rc=0)\\n[seccomp] preload handler installed (rc=0)\\nG7_SHELL_OK from=/data/data/ai.opencode.android.debug/files/workspaces/gates uname=x86_64 shell=/system/bin/sh\\","error":null}]}]
+tool parts: 2
+  tool="bash" state.status=completed
+  tool="bash" state.status=completed
+--- tool outputs ---
+[seccomp] preload handler installed (rc=0)
+probe
+
+[seccomp] preload handler installed (rc=0)
+[seccomp] preload handler installed (rc=0)
+G7_SHELL_OK from=/data/data/ai.opencode.android.debug/files/workspaces/gates uname=x86_64 shell=/system/bin/sh
+[seccomp] preload handler installed (rc=0)
+[seccomp] preload handler installed (rc=0)
+README.md
+notes.txt
+src
+
+assert ok: shell output contains G7_SHELL_OK
+assert ok: tool part completed
+SSE events seen: ["server.connected","message.updated","message.part.updated","session.status","session.idle"]
+bash tool part lifecycle (streamed): ["running","running","running","running","running","running","running","running","running","running","running","running","running","running","completed","completed"]
+assert ok: SSE message.part.updated events streamed
+assert ok: SSE session.status events streamed
+assert ok: bash tool part streamed running→completed
+G7_PASS
