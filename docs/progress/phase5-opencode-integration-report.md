@@ -137,6 +137,34 @@ Consequences, all deliberate:
 
 **Known test-only exception, stated plainly:** the *instrumentation* APK (not the app) can export the loopback password to `files/harness/server-password` **only** when a `files/harness/enabled` marker exists, which `20-integration-gates.sh` creates with `run-as`. Reason: the Phase 4 host-side gate drivers authenticate with HTTP Basic, and a Keystore-held secret cannot be read by a shell script. It is a debug-build-only, marker-gated path, exercised by no production code, and `P5-G18` additionally asserts nothing else on disk contains that password. The alternative — a permanent plaintext mirror written by the app — was rejected.
 
+### Every request shape the client sends, re-verified against the pinned source
+
+Phase 5 added no new API surface, so each client method was re-checked against
+the pinned commit rather than trusted from memory (this is what "thin client"
+means in practice):
+
+| Client call | Upstream definition (pinned `05ea5073`) |
+| --- | --- |
+| `GET /global/health` | `groups/global.ts:13` — `{healthy: Literal(true), version}` |
+| `POST /global/dispose` | `groups/global.ts:120` — returns `Schema.Boolean` |
+| `GET /global/event` | `groups/global.ts:88` — SSE, frames `{directory, project?, workspace?, payload}` where payload is a legacy `{id,type,properties}`, `InstanceDisposed`, or a durable `{type:"sync", syncEvent:{type:"<t>.N", data}}` — exactly what `EventFrame.deriveType`/`properties` decode |
+| `GET /session?limit=&roots=` | `groups/session.ts:30` `ListQuery` (`limit`/`roots` are real fields; `roots` is a `QueryBoolean`) |
+| `GET /session/:id/message?limit=` | `groups/session.ts:43` `MessagesQuery` (`limit` optional int ≥ 0) |
+| `POST /session/:id/shell` | `ShellInput = {sessionID, messageID?, agent, model?, command}` — the client sends `{agent, command}` only |
+| `POST /session/:id/prompt_async` | `{parts:[{type:"text",text}], model?:{providerID,modelID}, agent?}` |
+| `GET /permission` | `groups/permission.ts:20` → `Array(PermissionV1.Request)`; `Request` = `{id, sessionID, permission, patterns, metadata, always, tool?}` (`packages/schema/src/v1/permission.ts:27`) |
+| `POST /permission/:id/reply` | `groups/permission.ts:33` — `{reply: "once"\|"always"\|"reject", message?}`; `permission.replied` carries `{sessionID, requestID, reply}`, which is why `Transcript.onReplied` reads `requestID` first |
+| `PUT /auth/:providerID` | `groups/control.ts:39`, payload `Auth.Info` = union `Oauth|Api|WellKnown`; the `api` variant is `{type:"api", key, metadata?}` (`packages/opencode/src/auth/index.ts:24`), so the app's `{type:"api","key":…}` body is complete and `metadata` really is optional |
+| `DELETE /auth/:providerID` | `groups/control.ts:51` — returns `Schema.Boolean` (client compares the body to `true`) |
+| `GET/PATCH /global/config` | `groups/global.ts:97/106`; `Config.updateGlobal` (`config/config.ts:637`) deep-merges the submitted partial config into the first existing global config file (`patchJsonc` for `.jsonc`) and then invalidates — so a partial `{"mcp":{name:…}}` patch from the MCP tab adds one server without clobbering the rest |
+| `GET /mcp`, `POST /mcp`, `POST /mcp/:name/{connect,disconnect}` | `groups/mcp.ts` — `{name, config}` payload, name→status map response |
+| `GET /experimental/tool?provider=&model=` | `groups/experimental.ts:95` + `tool/registry.ts:286` (`Permission.visibleTools(mcp.tools(), ruleset)`), which is the model-free proof the MCP gates use |
+
+Two client details were tightened while doing this: bodyless `POST/PUT/DELETE`
+now declare `Content-Length: 0` (the framing a browser `fetch` produces) instead
+of omitting framing, and the query params above were confirmed to be *accepted*
+fields rather than guesses.
+
 **Status: IMPLEMENTED; NOT TESTED on device** (the APK/payload/source scans and at-rest checks run in `P5-G18`/`P5-G19`; the Keystore semantics run in `K6`/`K8`).
 
 ---

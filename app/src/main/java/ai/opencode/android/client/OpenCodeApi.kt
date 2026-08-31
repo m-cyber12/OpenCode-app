@@ -73,6 +73,13 @@ class OpenCodeApi(
             if (bodyJson != null) {
                 doOutput = true
                 setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            } else if (method != "GET") {
+                // Bodyless POST/PUT/DELETE (abort, dispose, mcp disconnect, DELETE
+                // /auth) must still be well-formed HTTP/1.1: declare a zero-length
+                // body instead of omitting framing, which is what a browser
+                // fetch() with no body does.
+                doOutput = true
+                setFixedLengthStreamingMode(0)
             }
         }
         try {
