@@ -42,7 +42,16 @@ try {
     text.includes("G15-E2E-MARKER") || text.includes("Android") || text.toLowerCase().includes("gate") || text.toLowerCase().includes("opencode"),
     "explanation reflects the actual project",
   )
-  const realTools = toolNames.filter((n) => ["bash", "read", "glob", "grep", "write", "edit", "list"].includes(n))
+  // The model may delegate exploration to the real `task` tool. In that case
+  // the child session's bash/read/glob/etc. parts are visible on the same SSE
+  // stream even though they are not top-level message parts. Count those
+  // completed child-tool parts too; requiring a top-level tool would make this
+  // gate reject a valid real-agent execution merely because it delegated.
+  const streamedToolNames = streamedTools.parts
+    .filter((p) => p.status === "completed")
+    .map((p) => (typeof p.tool === "string" ? p.tool : p.tool?.name ?? "?"))
+  const realTools = [...toolNames, ...streamedToolNames]
+    .filter((n) => ["bash", "read", "glob", "grep", "write", "edit", "list"].includes(n))
   assert(realTools.length >= 1, "real tools executed: " + JSON.stringify(realTools))
   assert(streamedTools.parts.length >= 1, "tool parts streamed over SSE")
   assert(seen.includes("session.status"), "session.status events streamed")
