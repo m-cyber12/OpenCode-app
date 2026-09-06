@@ -908,3 +908,50 @@
     P5_REMOTE_MCP_BUILT /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp (sdk 1.29.0)
     ########## 5/6 phase 5 integration gates ##########
 
+### 2026-09-06T14:22:16Z  run=34038066068  step: 6/6 evidence
+    head=4721378 branch=arena/01a05713-opencode-app log_lines=1502
+    --- error digest (why a stalled push cannot hide this) ---
+    BUILD SUCCESSFUL in 2m 45s
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh'
+    --- last 40 log lines ---
+    P5-R-12: PASS phase4-driver-gate-12-permission.js-unmodified(on-device)
+    [2026-09-06T14:22:11Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
+    [2026-09-06T14:22:12Z] fixture host listener up=1 pid=13144
+    P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative
+    [2026-09-06T14:22:12Z] === P5-G17 loopback-only binding evidence ===
+    [2026-09-06T14:22:12Z] P5-G17 table=conclusive wildcard=0 nonloopback_rows=5 listens=1 mdns_sockets=0 bound_lines=5 publish_lines=0 table_ok=0
+    [2026-09-06T14:22:12Z] device global ipv4: '10.0.2.15'
+    P5-G17: FAIL loopback-only-binding-and-no-mdns
+    [2026-09-06T14:22:12Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
+    [2026-09-06T14:22:14Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=600 auth_canary_absent=1 auth_verdict=clean leaks_outside_harness=0
+    P5-G18: PASS credentials-keystore-only-at-rest
+    [2026-09-06T14:22:14Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
+    [2026-09-06T14:22:16Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
+    P5-G19: PASS no-hardcoded-or-bundled-secrets
+    [2026-09-06T14:22:16Z] === evidence pull ===
+    [2026-09-06T14:22:16Z] === SUMMARY ===
+    P5-01: PASS phase5-apk-installed-and-app-running
+    P5-02: PASS payload-v5-manifest-marker
+    P5-03: PASS fixture-config-and-harness-marker
+    P5-04: FAIL keystore-password-and-healthy-server
+    P5-K: FAIL kotlin-client-gates-on-device (K1..K9, pass=9 fail=1 skip=0)
+    P5-05: PASS runtime-healthy-after-instrumentation
+    P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
+    P5-R-07: PASS phase4-driver-gate-07-shell.js-unmodified(on-device)
+    P5-R-10: PASS phase4-driver-gate-10-mcp.js-unmodified(on-device)
+    P5-R-11: PASS phase4-driver-gate-11-stream.js-unmodified(on-device)
+    P5-R-12: PASS phase4-driver-gate-12-permission.js-unmodified(on-device)
+    P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative
+    P5-G17: FAIL loopback-only-binding-and-no-mdns
+    P5-G18: PASS credentials-keystore-only-at-rest
+    P5-G19: PASS no-hardcoded-or-bundled-secrets
+    P5_SUMMARY 2026-09-06T14:22:16Z
+    gates_pass=11 gates_fail=4 gates_skip=0
+    kotlin_gate_pass=9 kotlin_gate_fail=1 kotlin_gate_skipped=0
+    model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f88e89819ffemKk4uv492SAtTX
+    app_uid=10192 device_abi=x86_64
+    live_launcher_processes=0
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh'
+    phase5 gates rc=1
+    ########## 6/6 evidence ##########
+
