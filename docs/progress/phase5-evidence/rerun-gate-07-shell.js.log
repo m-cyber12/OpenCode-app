@@ -1,15 +1,15 @@
 assert ok: session id present
-G7_SESSION_ID=ses_f887c3b0dffe9BE0mykytb3ADG
-G7_SESSION_ID=ses_f887c3b0dffe9BE0mykytb3ADG
+G7_SESSION_ID=ses_f885e06ecffe6BLXtktaehdIMG
+G7_SESSION_ID=ses_f885e06ecffe6BLXtktaehdIMG
 shell endpoint HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1VR7H99T5J1DTJDKWPHAV5J","input":"{\"command\":\"echo probe\"}","output":"\"probe\\n[seccomp] preload handler installed (rc=0)\\n\"","error":null}]},{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1VR7HCGGCE25F8F3CGWGSP5","input":"{\"command\":\"echo G7_SHELL_OK from=$(pwd) uname=$(uname -m) shell=$0 && ls -1 | head -3\"}","output":"\"[seccomp] preload handler installed (rc=0)\\n[seccomp] preload handler installed (rc=0)\\nG7_SHELL_OK from=/data/data/ai.opencode.android.debug/files/workspaces/gates uname=x86_64 shell=/system/bin/sh\\","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1VT3YAX6RZJHXN3C89JMGX1","input":"{\"command\":\"echo probe\"}","output":"\"[seccomp] preload handler installed (rc=0)\\nprobe\\n\"","error":null}]},{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1VT3YEBZBPBTP4YNGM2SJV0","input":"{\"command\":\"echo G7_SHELL_OK from=$(pwd) uname=$(uname -m) shell=$0 && ls -1 | head -3\"}","output":"\"[seccomp] preload handler installed (rc=0)\\n[seccomp] preload handler installed (rc=0)\\nG7_SHELL_OK from=/data/data/ai.opencode.android.debug/files/workspaces/gates uname=x86_64 shell=/system/bin/sh\\","error":null}]}]
 tool parts: 2
   tool="bash" state.status=completed
   tool="bash" state.status=completed
 --- tool outputs ---
-probe
 [seccomp] preload handler installed (rc=0)
+probe
 
 [seccomp] preload handler installed (rc=0)
 [seccomp] preload handler installed (rc=0)
