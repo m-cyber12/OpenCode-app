@@ -1712,3 +1712,48 @@
     EMULATOR_BOOTED
     ########## 2/6 payload (reuse phase 4's build when it is present) ##########
 
+### 2026-09-06T16:16:00Z  run=34044461398  step: 3/6 APKs + JVM unit tests
+    head=47cf6dd branch=arena/01a05713-opencode-app log_lines=1135
+    --- error digest (why a stalled push cannot hide this) ---
+    --- last 40 log lines ---
+       Compiling grep-cli v0.1.12 (/tmp/tmp.t3uE7npCLX/rg-src/crates/cli)
+       Compiling grep-regex v0.1.14 (/tmp/tmp.t3uE7npCLX/rg-src/crates/regex)
+       Compiling ripgrep v15.1.0 (/tmp/tmp.t3uE7npCLX/rg-src)
+       Compiling ignore v0.4.24 (/tmp/tmp.t3uE7npCLX/rg-src/crates/ignore)
+       Compiling lexopt v0.3.1
+       Compiling textwrap v0.16.2
+       Compiling pcre2 v0.2.11
+       Compiling grep-pcre2 v0.1.9 (/tmp/tmp.t3uE7npCLX/rg-src/crates/pcre2)
+       Compiling grep v0.4.1 (/tmp/tmp.t3uE7npCLX/rg-src/crates/grep)
+        Finished `release` profile [optimized + debuginfo] target(s) in 37.64s
+    x86_64 Android ripgrep OK:  ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
+    === [5/6] OpenCode server bundle @ 05ea5073be967c779d326929b2de6228dda4159d (pinned, fail-loud) ===
+    upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
+    bundle build complete
+    === [6/6] stage payload, compute manifest ===
+    payload tarball: 16559633 bytes sha256=32e7846c98cef8ad367c4c3114743d53eec3ad7a1336bfb86d21eed3d200673b
+    manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/assets/runtime-manifest.json
+    === engine layout ===
+    9385 ./build.status
+    41 ./git.upstream.commit.txt
+    5171 ./assets/runtime-manifest.json
+    16559633 ./assets/runtime-payload.tar.gz
+    8328 ./jniLibs/arm64-v8a/libchildshim.so
+    34646816 ./jniLibs/arm64-v8a/librg.so
+    6816 ./jniLibs/arm64-v8a/libseccompshim.so
+    89796776 ./jniLibs/arm64-v8a/libbun.so
+    7744 ./jniLibs/arm64-v8a/libexecshim.so
+    4003408 ./jniLibs/arm64-v8a/libgit.so
+    7784 ./jniLibs/x86_64/libchildshim.so
+    36359824 ./jniLibs/x86_64/librg.so
+    7640 ./jniLibs/x86_64/libseccompshim.so
+    91788816 ./jniLibs/x86_64/libbun.so
+    8064 ./jniLibs/x86_64/libexecshim.so
+    4139512 ./jniLibs/x86_64/libgit.so
+    PAYLOAD_READY
+    + zod-to-json-schema@3.25.2
+    
+    92 packages installed [245.00ms]
+    MCP_READY: 26M
+    ########## 3/6 APKs + JVM unit tests ##########
+
