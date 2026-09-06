@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ai.opencode.android.runtime.RuntimeEnv
+import ai.opencode.android.runtime.RuntimeManager
 import ai.opencode.android.runtime.RuntimePaths
 import ai.opencode.android.runtime.RuntimeVersion
 import ai.opencode.android.runtime.Secrets
@@ -15,6 +16,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
@@ -55,6 +57,37 @@ class OpenCodeClientGatesTest {
     private val paths = RuntimePaths.get(context)
     private val base = "http://${LoopbackGuard.SERVER_BIND_HOSTNAME}:${RuntimeEnv.SERVER_PORT}"
     private val workdir = File(paths.workspaces, "gates").absolutePath
+
+    /**
+     * Bring the runtime up *in this process* before any gate runs.
+     *
+     * This is not a convenience - it is the reason run #14 could not reach a server that
+     * was provably healthy. `am instrument` runs the tests in the app's process, and the
+     * OpenCode server is a **child of that process**: every instrument invocation replaces
+     * it, so the process hosting K1..K9 has no server unless the app's own start path runs
+     * there. `MainActivity` does exactly this on launch, via `RuntimeService.start()`;
+     * going straight to [RuntimeManager.start] skips only the foreground-service wrapper
+     * (whose job is keeping the process alive, and an instrumentation run does that by
+     * definition) - not one line of supervisor logic: extraction, ABI gate, Keystore
+     * password, spawn, health loop, bind audit.
+     */
+    @Before
+    fun startRuntimeInThisProcess() {
+        val mgr = runCatching { RuntimeManager.get(context) }
+        if (mgr.isSuccess) {
+            runCatching { mgr.getOrThrow().start() }
+                .onFailure { println("P5_RUNTIME preflight: start() threw " + it.javaClass.simpleName + ": " + it.message) }
+        }
+        if (serverUp()) return
+        val deadline = System.currentTimeMillis() + 150_000
+        while (System.currentTimeMillis() < deadline && !serverUp()) Thread.sleep(2000)
+        if (!serverUp()) {
+            println(
+                "P5_RUNTIME preflight: no healthy server in this process after 150s " +
+                    "(runtime.log carries the supervisor's own state transitions)",
+            )
+        }
+    }
 
     private fun password(): String {
         val pw = SecretStore.get(context).get(Secrets.SERVER_PASSWORD)
@@ -520,13 +553,19 @@ class OpenCodeClientGatesTest {
         // already on disk, so this loop only decides the verdict line.
         var health: org.json.JSONObject? = null
         var waited = 0
+        var lastErr = "none"
         while (waited < 120) {
-            val h = runCatching { OpenCodeApi(base, RuntimeEnv.SERVER_USER, pw).health() }.getOrNull()
+            val attempt = runCatching { OpenCodeApi(base, RuntimeEnv.SERVER_USER, pw).health() }
+            val h = attempt.getOrNull()
             if (h?.optBoolean("healthy") == true) { health = h; break }
+            // Record *why* the request failed. Run #14's `health=null` could not tell a
+            // refused connection from a 401 from a malformed response, and that cost a
+            // whole diagnosis cycle; the exception class and message are the story.
+            attempt.exceptionOrNull()?.let { lastErr = it.javaClass.simpleName + ": " + it.message }
             Thread.sleep(2000); waited += 2
         }
         val ok = health?.optBoolean("healthy") == true
-        println("P5_HARNESS_EXPORT ${if (ok) "PASS" else "FAIL"} :: bytes=${out.length()} waited=${waited}s health=$health")
+        println("P5_HARNESS_EXPORT ${if (ok) "PASS" else "FAIL"} :: bytes=${out.length()} waited=${waited}s health=$health lastErr=$lastErr")
         assertTrue("exported credential did not authenticate the live server within 120s", ok)
     }
 

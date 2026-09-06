@@ -47,7 +47,6 @@ PORT_HEX=$(printf '%04X' "$PORT")
 MCP_PORT="${P5_MCP_PORT:-4551}"
 DEAD_PORT=$((MCP_PORT + 48))
 WORKDIR="$FILES/workspaces/gates"
-HOST_BUN="$P4OUT/host-bun"
 
 PASS=0; FAIL=0; SKIP=0
 rec() { echo "$1: $2 $3" | tee -a "$SUMMARY"; }
@@ -83,6 +82,44 @@ push_file_runas() { # $1=local  $2=remote-relative-to-files
 # is refused by Android (run #13's log was a wall of "can't open /proc/<pid>/cmdline:
 # Permission denied"), and the walk also matched nothing. `ps -A` is the shell's
 # supported view of every process, and the launcher's argv carries its path.
+# ---------------------------------------------------------------------------
+# Running JS *inside the app's own namespace* (added after run #14).
+#
+# Run #14 is why this exists, and the finding belongs next to the code: the OpenCode
+# server is a child of the app process, `am instrument` replaces that process, and a
+# host-side `adb forward` only reaches adbd's namespace - which is not necessarily the
+# app's. So the supervisor could log
+#     state -> HEALTHY ... health check OK: healthy=true http=200
+# while every host-side request died with ECONNRESET and the in-app gates had no
+# server at all. The drivers therefore execute where the server is: with the payload's
+# own bun, as the app uid - which is also how the Phase 3 gates were originally written
+# to run. Not one byte of the driver files changes.
+DEVJS="$FILES/tmp/p5js"
+HOST_FORWARD_CODE="not-probed"
+
+stage_drivers() { # copy the unmodified drivers + the probe onto the device
+  local stage="$OUT/p5js-stage" b64
+  rm -rf "$stage"; mkdir -p "$stage"
+  cp "$P4GATES/gates-lib.js" "$P4GATES/gate-06-health.js" "$P4GATES/gate-07-shell.js" \
+     "$P4GATES/gate-10-mcp.js" "$P4GATES/gate-11-stream.js" "$P4GATES/gate-12-permission.js" \
+     "$DIR/scripts/device/gate-16-mcp-remote.js" "$DIR/scripts/device/p5-model-probe.js" "$stage"/ 2>/dev/null
+  b64=$(tar cz -C "$stage" . 2>/dev/null | base64 -w0)
+  if [ -z "$b64" ]; then log "FATAL: could not stage the gate drivers onto the device"; return 1; fi
+  rash "mkdir -p '$DEVJS'; echo '$b64' | base64 -d | tar xz -C '$DEVJS' 2>&1; echo staged_rc=\$?; ls '$DEVJS' | tr '\n' ' '" >> "$LOG" 2>&1
+}
+
+# run_js_on_device <script-in-$DEVJS> [argv...]
+# The env block is what the host-side form exported, so a driver cannot tell the
+# difference. `timeout` and `env` are device-side built-ins, and env execs the command,
+# so the timeout kills bun itself rather than a wrapper around it.
+run_js_on_device() {
+  local script="$1"; shift
+  local out rc
+  out=$(rash "cd '$DEVJS' && timeout -k 5 ${P5_DRIVER_TIMEOUT:-300} env OPENCODE_BASE=\"http://127.0.0.1:$PORT\" OPENCODE_SERVER_PASSWORD=\"$PASSWD\" OPENCODE_SERVER_USERNAME=opencode OPENCODE_DIRECTORY=\"$WORKDIR\" OPENCODE_MCP_DIR=\"$FILES/mcp\" OPENCODE_BUN_BIN=\"$FILES/bin/bun\" P5_MCP_URL=\"${P5_MCP_URL:-}\" P5_MCP_DEAD_URL=\"${P5_MCP_DEAD_URL:-}\" P5_MODEL_PROBE_TIMEOUT=150 '$FILES/bin/bun' '$script' $* 2>&1; echo \"DEVJS_RC=\$?\"")
+  rc=$(printf '%s' "$out" | sed -n 's/.*DEVJS_RC=\([0-9]*\).*/\1/p' | tail -1)
+  printf '%s\n' "$out" | grep -v '^DEVJS_RC='
+  return "${rc:-1}"
+}
 count_launchers() {
   adb shell "ps -A 2>/dev/null | grep -c '[l]auncher.js'" 2>/dev/null | tr -cd '0-9'
 }
@@ -94,14 +131,38 @@ APP_UID=$(adb shell run-as "$PKG" id -u 2>/dev/null | tr -cd '0-9')
 [ -n "$APP_UID" ] || APP_UID=$(adb shell pm list packages -U "$PKG" 2>/dev/null | tr -d '\r' | sed -n 's/.*uid:\([0-9]*\).*/\1/p' | head -1)
 log "P5-00 app uid resolved: '${APP_UID}'"
 
-wait_healthy() { # $1 timeout-s ; needs PASSWD
-  local deadline=$(( $(date +%s) + ${1:-120} )) code
+health_code_host() { # HTTP code for /global/health through `adb forward`
+  curl -s -o "$OUT/health.json" -w '%{http_code}' -u "opencode:$PASSWD" --max-time 4 \
+    "http://127.0.0.1:$PORT/global/health" 2>/dev/null || echo 000
+}
+
+# The same GET from inside the app's own namespace, via the payload's bun - the route
+# the app's UI actually uses. Native fetch in the runtime binary, so nothing is proxied
+# and Android's NetworkSecurityPolicy cannot make a refusal look like success.
+health_code_device() {
+  local js="const r=await fetch('http://127.0.0.1:$PORT/global/health',{headers:{authorization:'Basic '+btoa('opencode:$PASSWD')}});const t=await r.text();console.log('CODE'+r.status+' '+t.slice(0,90));"
+  printf '%s' "$js" > "$OUT/tmp-health.js"
+  write_stdin_runas "tmp-health.js" < "$OUT/tmp-health.js" > /dev/null 2>&1
+  rash "'$FILES/bin/bun' '$FILES/tmp-health.js' 2>&1 | head -2; rm -f '$FILES/tmp-health.js'" 2>/dev/null \
+    | grep -o 'CODE[0-9]*' | head -1 | sed 's/CODE//'
+}
+
+HEALTH_TRANSPORT="none"
+wait_healthy() { # $1=timeout-s ; needs PASSWD. Host forward first, then app namespace.
+  local deadline=$(( $(date +%s) + ${1:-120} )) last_host=000 last_dev=none
+  HEALTH_TRANSPORT="none"
   while [ "$(date +%s)" -lt "$deadline" ]; do
-    code=$(curl -s -o "$OUT/health.json" -w '%{http_code}' -u "opencode:$PASSWD" --max-time 4 \
-      "http://127.0.0.1:$PORT/global/health" 2>/dev/null || echo 000)
-    [ "$code" = "200" ] && grep -q healthy "$OUT/health.json" 2>/dev/null && { echo HEALTH_OK; return 0; }
+    last_host=$(health_code_host)
+    if [ "$last_host" = "200" ] && grep -q healthy "$OUT/health.json" 2>/dev/null; then
+      HEALTH_TRANSPORT="host-forward"; echo HEALTH_OK; return 0
+    fi
+    last_dev=$(health_code_device)
+    if [ "${last_dev:0:3}" = "200" ]; then
+      HEALTH_TRANSPORT="on-device"; echo HEALTH_OK; return 0
+    fi
     sleep 2
   done
+  log "wait_healthy timed out (host-forward http=$last_host, on-device http=${last_dev:-none})"
   echo HEALTH_TIMEOUT; return 1
 }
 
@@ -273,29 +334,52 @@ rash "tail -c 40000 '$FILES/log/runtime.log' 2>&1" > "$EV/runtime.log" 2>&1 || t
 p5 K $? "kotlin-client-gates-on-device (K1..K9, pass=${KP:-0} fail=${KF:-0} skip=${KS:-0})"
 
 # ---------------------------------------------------------------------------
+# Every `am instrument` above replaces the app process, and when that
+# instrumentation ends the process - and the OpenCode server that is its child -
+# goes with it. Relaunch through the ordinary entry point and wait, so the stages
+# below judge a production-shaped runtime instead of a corpse. Run #14 skipped
+# this, which is why every R-* driver, the G16 device half and G17's table read
+# came back meaningless even though the supervisor had logged HEALTHY.
+log "=== relaunching the app for the device-side gate stages ==="
+adb shell am force-stop "$PKG" >/dev/null 2>&1 || true
+sleep 2
+stage_drivers || true
+adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
+for _ in $(seq 1 30); do
+  [ -n "$(adb shell pidof "$PKG" 2>/dev/null | tr -d '\r')" ] && break
+  sleep 2
+done
+adb forward tcp:$PORT tcp:$PORT >/dev/null 2>&1 || true
+RREL=1
+[ "$(wait_healthy 180)" = "HEALTH_OK" ] && RREL=0
+log "post-instrument runtime: health=$([ "$RREL" = 0 ] && echo OK || echo DOWN) via $HEALTH_TRANSPORT"
+HOST_FORWARD_CODE=$(health_code_host)
+log "host-forward diagnostic: adb forward tcp:$PORT -> http $HOST_FORWARD_CODE (the drivers do not depend on this path; $([ "$HOST_FORWARD_CODE" = 200 ] && echo 'it works on this image' || echo 'it does not reach the app namespace on this image'))"
+p5 05 "$RREL" "runtime-healthy-after-instrumentation"
+
+# ---------------------------------------------------------------------------
 log "=== G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ==="
 export OPENCODE_BASE="http://127.0.0.1:$PORT"
 export OPENCODE_SERVER_PASSWORD="$PASSWD"
 export OPENCODE_SERVER_USERNAME="opencode"
 export OPENCODE_DIRECTORY="$WORKDIR"
 export OPENCODE_MCP_DIR="$P4OUT/mcp"
-export OPENCODE_BUN_BIN="$HOST_BUN"
+export OPENCODE_BUN_BIN="$FILES/bin/bun"   # gate-10 spawns its stdio MCP child with this
 # Phase 5 needs no provider key (the pinned build ships a key-free default model,
 # opencode/big-pickle), so `model_available` has to come from measurement. The old
 # heuristic - "the /provider response mentions a default" - could not mean anything:
 # upstream derives `default` from the models.dev catalog for every provider
 # (Provider.defaultModelIDs, packages/opencode/src/provider/provider.ts:1132), so it
 # is non-empty even when nothing can serve a turn. Probe instead: one tiny prompt
-# through the public API, assistant text or bust (see the header of
-# phase5/scripts/p5-model-probe.py, which also documents `connected`'s meaning).
+# through the public API, assistant text or bust, executed on-device with the
+# payload's own bun (see the header of phase5/scripts/device/p5-model-probe.js, which
+# also documents what `connected` does and does not mean).
 MODEL=0
 MODELPROBE="not-run"
 PROV=$(curl -s -u "opencode:$PASSWD" --max-time 10 "http://127.0.0.1:$PORT/provider?directory=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$WORKDIR")" 2>/dev/null || true)
 echo "$PROV" > "$EV/p5-providers.json" 2>&1
-if [ "$P504" = "0" ]; then
-  PROBE_OUT=$(OPENCODE_BASE="http://127.0.0.1:$PORT" OPENCODE_SERVER_PASSWORD="$PASSWD" \
-    OPENCODE_SERVER_USERNAME=opencode OPENCODE_DIRECTORY="$WORKDIR" P5_MODEL_PROBE_TIMEOUT=150 \
-    python3 "$DIR/scripts/p5-model-probe.py" 2>&1 || true)
+if [ "$P504" = "0" ] || [ "$RREL" = "0" ]; then
+  PROBE_OUT=$(run_js_on_device p5-model-probe.js 2>&1 || true)
   printf '%s\n' "$PROBE_OUT" >> "$EV/p5-providers.json" 2>&1
   MODELPROBE=$(printf '%s' "${PROBE_OUT:-no output}" | head -1 | cut -c1-160)
 else
@@ -308,40 +392,21 @@ if [ "$MODEL" = 1 ]; then
 else
   log "model_available=0 -> model-dependent driver halves stay skipped, and K2/K5 will FAIL because no agent turn can run: read that as an environment constraint on this CI account, not as proof the client is broken"
 fi
-# The drivers are ESM (top-level await + `import`), which the runner image's node
-# may refuse to load from a .js path, and they are shipped to run under bun. In a
-# staged run phase 4's gate script already fetched a host bun; standalone CI has
-# none, so fetch the SAME pinned one (this exact gap made every R-* gate "not
-# run" in run #13 even though the failure had nothing to do with the drivers).
-if [ ! -x "$HOST_BUN" ]; then
-  if command -v bun >/dev/null 2>&1; then
-    HOST_BUN="$(command -v bun)"
-  else
-    log "fetching host bun 1.3.14 for the gate drivers (same pin as the payload)"
-    curl -fsSL --retry 3 --max-time 180 -o "$OUT/host-bun.tgz" \
-      "https://registry.npmjs.org/@oven/bun-linux-x64/-/bun-linux-x64-1.3.14.tgz" \
-      && mkdir -p "$OUT/hb" && tar xzf "$OUT/host-bun.tgz" -C "$OUT/hb" \
-      && cp "$OUT/hb/package/bin/bun" "$HOST_BUN" && chmod +x "$HOST_BUN" \
-      || log "WARN: host bun fetch failed; falling back to node"
-  fi
-fi
-if [ ! -x "$HOST_BUN" ] && command -v node >/dev/null 2>&1; then
-  HOST_BUN="$(command -v node)"   # drivers then need --experimental-detect-module
-fi
-[ -x "$HOST_BUN" ] || { log "FATAL: no host bun/node runner for gate drivers"; }
-log "gate driver runner: $HOST_BUN ($("$HOST_BUN" --version 2>&1 | head -1 | cut -c1-40))"
+# The drivers execute on-device (see stage_drivers), so the CI host needs no JS
+# runtime for them at all - the payload carries its own. Phase 4 downloaded a host bun
+# for this job; that dependency, and the ~90 MB fetch it cost, is gone. The host
+# runtime is still used for the *remote MCP fixture*, which deliberately listens on
+# the host so the device's OpenCode has to reach something outside itself.
+log "gate driver runner: the payload's own bun at $FILES/bin/bun (on-device, app uid)"
 
 run_driver() { # $1=gate-id $2=script
   if [ ! -f "$P4GATES/$2" ]; then p5 "$1" 7 "driver $2 missing"; return; fi
-  if [ ! -x "$HOST_BUN" ]; then p5 "$1" 7 "no host runner (tooling, not a verdict)"; return; fi
-  local runner_extra=()
-  case "$HOST_BUN" in *node) runner_extra=(--experimental-detect-module) ;; esac
-  log "--- re-run $2 (as shipped, no edits) ---"
-  if "$HOST_BUN" "${runner_extra[@]}" "$P4GATES/$2" "$MODEL" > "$EV/rerun-$2.log" 2>&1; then
-    p5 "R-$1" 0 "phase4-driver-$2-unmodified"
+  log "--- re-run $2 (as shipped, no edits) inside the app namespace ---"
+  if run_js_on_device "$2" "$MODEL" > "$EV/rerun-$2.log" 2>&1; then
+    p5 "R-$1" 0 "phase4-driver-$2-unmodified(on-device)"
   else
     tail -20 "$EV/rerun-$2.log" >> "$LOG"
-    p5 "R-$1" 1 "phase4-driver-$2-unmodified"
+    p5 "R-$1" 1 "phase4-driver-$2-unmodified(on-device)"
   fi
 }
 run_driver 06 gate-06-health.js
@@ -355,9 +420,12 @@ log "=== P5-G16 remote MCP transports (host MCP server + device OpenCode client)
 MCP_DIR="$OUT/mcp"
 FIXTURE_PID=""
 if [ -d "$MCP_DIR/node_modules/@modelcontextprotocol" ] && [ -f "$MCP_DIR/remote-mcp-server.mjs" ]; then
-  NODE_BIN="$(command -v node || echo '')"
-  RUNNER="${NODE_BIN:-$HOST_BUN}"
-  [ -n "$RUNNER" ] || { log "no node/bun to run the remote MCP fixture"; }
+  # The fixture must listen on the HOST (so the device connects to something outside
+  # itself), so it needs a host-side runtime; node is on the runner image. The old
+  # fallback to $HOST_BUN is gone: that path is no longer fetched, and a non-executable
+  # RUNNER would have looked like a fixture failure rather than a missing tool.
+  RUNNER="$(command -v node || echo '')"
+  [ -n "$RUNNER" ] || log "no node on the host to run the remote MCP fixture"
   if [ -n "$RUNNER" ]; then
     ( cd "$MCP_DIR" && P5_MCP_PORT="$MCP_PORT" nohup "$RUNNER" remote-mcp-server.mjs > "$EV/p5-16-fixture-host.log" 2>&1 & echo $! > "$OUT/fixture.pid" )
     FIXTURE_PID=$(cat "$OUT/fixture.pid")
@@ -370,8 +438,8 @@ if [ -d "$MCP_DIR/node_modules/@modelcontextprotocol" ] && [ -f "$MCP_DIR/remote
     if [ "$FIXTURE_UP" = "1" ]; then
       export P5_MCP_URL="http://10.0.2.2:$MCP_PORT"
       export P5_MCP_DEAD_URL="http://10.0.2.2:$DEAD_PORT/mcp"
-      if [ -f "$DIR/scripts/device/gate-16-mcp-remote.js" ] && [ -n "$RUNNER" ]; then
-        "$RUNNER" "$DIR/scripts/device/gate-16-mcp-remote.js" > "$EV/p5-16-mcp-remote.log" 2>&1
+      if [ -f "$DIR/scripts/device/gate-16-mcp-remote.js" ]; then
+        run_js_on_device gate-16-mcp-remote.js > "$EV/p5-16-mcp-remote.log" 2>&1
         p5 G16 $? "remote-mcp-streamable-http-sse-and-negative"
       else
         p5 G16 7 "gate-16 driver or runner unavailable"
@@ -424,12 +492,30 @@ if [ -n "$APP_UID" ]; then
   WILDCARD=$(grep -c 'WILDCARD' "$EV/p5-17-loopback.txt" | tr -d ' ')
   VIOL=$(grep -c 'viol ' "$EV/p5-17-loopback.txt" | tr -d ' ')
   LISTENS=$(sed -n 's/.*listen_on_4111=//p' "$EV/p5-17-loopback.txt" | head -1 | tr -d '[:space:]')
+  ANYLISTEN=$(sed -n 's/.*any_listen_on_4111=//p' "$EV/p5-17-loopback.txt" | head -1 | tr -d '[:space:]')
   MDNS=$(grep -c 'mdns ' "$EV/p5-17-loopback.txt" | tr -d ' ')
   BOUND=$(grep -c 'SERVER_BOUND' "$EV/p5-17-loopback.txt" | tr -d ' ')
   PUB=$(grep -cE 'mDNS published|Publishing.*5353' "$EV/p5-17-loopback.txt" | tr -d ' ')
-  log "P5-G17 wildcard=$WILDCARD nonloopback_rows=$VIOL listens=$LISTENS mdns_sockets=$MDNS bound_lines=$BOUND publish_lines=$PUB"
-  if [ "${WILDCARD:-1}" = "0" ] && [ "${VIOL:-1}" = "0" ] && [ "${LISTENS:-0}" = "1" ] \
-     && [ "${MDNS:-1}" = "0" ] && [ "${BOUND:-0}" -ge 1 ] && [ "${PUB:-1}" = "0" ]; then G17=0; fi
+  # The /proc/net table can only settle the question if the reading process shares a
+  # network namespace with the listener. Run #14 showed the host's view had zero LISTEN
+  # rows on 4111 while the app's own audit proved the server was bound and reachable
+  # (probe_loopback_connect=OK), so `any_listen_on_4111=0` means "cannot see", not
+  # "nothing is listening". When that happens the positive half of the table check is
+  # unassertable, the negative halves are vacuous, and the behavioural probe below
+  # carries the verdict - which is stated in the log rather than quietly assumed.
+  TABLE_VIEW=conclusive
+  [ "${ANYLISTEN:-0}" = "0" ] && TABLE_VIEW="inconclusive(host sees no LISTEN row on $PORT: different network namespace)"
+  OK=1
+  [ "${WILDCARD:-1}" = "0" ] || OK=0
+  [ "${VIOL:-1}" = "0" ] || OK=0
+  [ "${MDNS:-1}" = "0" ] || OK=0
+  [ "${BOUND:-0}" -ge 1 ] || OK=0
+  [ "${PUB:-1}" = "0" ] || OK=0
+  if [ "$TABLE_VIEW" = conclusive ]; then
+    [ "${LISTENS:-0}" = "1" ] || OK=0
+  fi
+  log "P5-G17 table=$TABLE_VIEW wildcard=$WILDCARD nonloopback_rows=$VIOL listens=$LISTENS mdns_sockets=$MDNS bound_lines=$BOUND publish_lines=$PUB table_ok=$OK"
+  [ "$OK" = 1 ] && G17=0
 fi
 # Behavioural half: a socket from the device to its own GLOBAL interface must be
 # refused, while 127.0.0.1 works. Driven by the payload's own bun (a native
@@ -481,7 +567,14 @@ echo "enc_count=$n"'
   rash "stat -c 'auth_json mode=%a size=%s' '$FILES/xdg/data/opencode/auth.json' 2>&1"
   rash "grep -ac 'sk-or' '$FILES/xdg/data/opencode/auth.json' 2>/dev/null; echo authcanary_done"
   echo "--- server password readable anywhere outside the test harness dir? ---"
-  rash "grep -rl '$PASSWD' '$FILES' 2>/dev/null | grep -v '/harness/' | head -20; echo leakscan_done"
+  # Only meaningful with a password to look for: `grep -rl ''` matches every file,
+  # which is why run #13 (no exported password) printed 20 phantom leaks.
+  if [ -n "$PASSWD" ]; then
+    rash "grep -rl '$PASSWD' '$FILES' 2>/dev/null | grep -v '/harness/' | head -20; echo leakscan_done"
+  else
+    echo "leakscan skipped: no exported password (P5-04 did not produce one)"
+    echo "leakscan_done"
+  fi
   echo "--- hardware-backed keystore (from the instrumentation run) ---"
   grep -aE 'P5_KEYSTORE|hardware' "$EV/p5-k-gates.log" 2>/dev/null | head -6
 } > "$EV/p5-18-credentials.txt" 2>&1
@@ -495,19 +588,22 @@ LEAK=$(sed -n '/server password readable anywhere/,/leakscan_done/p' "$EV/p5-18-
 MODE=$(sed -n 's/.*mode=\([0-9]\+\).*/\1/p' "$EV/p5-18-credentials.txt" | head -1 | tr -d '[:space:]')
 # auth.json must not still carry the K8 canary key (proves DELETE /auth cleared
 # the provider credential from OpenCode's durable store too).
-CANARY=$(sed -n '/no live key after revoke/,/authcanary_done/p' "$EV/p5-18-credentials.txt" | grep -cx '0' | tr -d ' ')
+CANARY_ABSENT=$(sed -n '/no live key after revoke/,/authcanary_done/p' "$EV/p5-18-credentials.txt" | grep -cx '0' | tr -d ' ')
 # OpenCode's durable credential store: if it exists it must be 0600 (upstream's
 # own mode) and must not still hold the K8 canary key after DELETE /auth. No file
 # at all also passes: it just means nothing was ever provisioned.
-AUTH_OK=1
+# The flag is named AUTH_BAD on purpose - it is 0 when the store is acceptable.
+# It used to be called AUTH_OK while carrying that inverted polarity, which is a
+# misread waiting to happen in a file where every other check uses 0 = pass.
+AUTH_BAD=1
 if [ -z "$MODE" ]; then
-  AUTH_OK=0
-elif [ "$MODE" = "600" ] && [ "${CANARY:-0}" = "1" ]; then
-  AUTH_OK=0
+  AUTH_BAD=0
+elif [ "$MODE" = "600" ] && [ "${CANARY_ABSENT:-0}" = "1" ]; then
+  AUTH_BAD=0
 fi
-log "P5-G18 enc_blobs=${ENC:-0} plaintext_blobs=${PLAIN:-1} legacy_absent=$LEGACY_GONE keyfile_absent=$KEYFILE_GONE auth_mode=${MODE:-absent} auth_canary_cleared=${CANARY:-0} auth_ok=$AUTH_OK leaks_outside_harness=${LEAK:-1}"
+log "P5-G18 enc_blobs=${ENC:-0} plaintext_blobs=${PLAIN:-1} legacy_absent=$LEGACY_GONE keyfile_absent=$KEYFILE_GONE auth_mode=${MODE:-absent} auth_canary_absent=${CANARY_ABSENT:-0} auth_verdict=$([ "$AUTH_BAD" = 0 ] && echo clean || echo UNCLEAN) leaks_outside_harness=${LEAK:-1}$([ -n "$PASSWD" ] || echo ' (scan skipped)')"
 if [ "${PLAIN:-1}" = "0" ] && [ "${ENC:-0}" -ge 1 ] && [ "${LEGACY_GONE:-0}" -ge 1 ] \
-   && [ "${KEYFILE_GONE:-0}" -ge 1 ] && [ "${LEAK:-1}" = "0" ] && [ "$AUTH_OK" = "0" ]; then G18=0; fi
+   && [ "${KEYFILE_GONE:-0}" -ge 1 ] && [ "${LEAK:-1}" = "0" ] && [ "$AUTH_BAD" = "0" ]; then G18=0; fi
 p5 G18 "$G18" "credentials-keystore-only-at-rest"
 
 log "=== P5-G19 no hardcoded/bundled secret in APK, payload or sources ==="

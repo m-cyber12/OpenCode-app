@@ -53,7 +53,28 @@ No "LAN exposure" toggle exists in the app today. If Phase 6+ wants one, it must
 - `adb forward --list` — the only host-side listener is `127.0.0.1:4111`, created by adb for the gate drivers; the guest port is never published on the host network.
 - Instrumented gate **K7** (`OpenCodeClientGatesTest.kt`) repeats the same connect matrix inside the app process with `java.net.Socket` (bypassing `NetworkSecurityPolicy` deliberately, so a "refused" verdict cannot be an artefact of the cleartext policy).
 
-**Status: IMPLEMENTED, NOT TESTED** (the audit code and the gate exist; the verdict table below is empty until CI runs it).
+**Status: IMPLEMENTED, PARTIALLY TESTED on the CI emulator.** Run #14 delivered the
+behavioural half of this section exactly as designed (`p5-17-loopback.txt`):
+
+```
+probe_loopback_connect=OK
+probe_external_address=10.0.2.16
+probe_external_connect=REFUSED(ECONNREFUSED)
+mdns_sockets_owned_by_uid=0
+server_version=1.18.23-android
+```
+
+with the supervisor's own `runtime.log` carrying
+`SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode`
+and `BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)`.
+
+What did *not* go as planned is the table half, and the reason matters: the host's
+`/proc/net/tcp` view reported `any_listen_on_4111=0` while the app was provably bound and
+reachable, so shell/adbd do not share the app's view of the listener table on this image.
+G17 now records `table=conclusive|inconclusive(...)` and, when inconclusive, lets the
+native-socket probe carry the verdict instead of either passing vacuously on an empty table
+or failing on a read it was never permitted to make. The gate's own verdict is still pending
+(run #15), and *real-device* (arm64) execution of all of this stays NOT TESTED.
 
 ---
 
@@ -233,15 +254,26 @@ Machine-readable verdict lines (`P5_<NAME> PASS|FAIL :: detail`) are emitted to 
 - **IMPLEMENTED** (code paths written, self-reviewed, no execution): the loopback policy stack, `LoopbackAudit` + fail-closed stop, `SecretStore`/`Secrets`, the whole `client/` package, `RuntimeIntegration` credential re-push, the four UI tabs (Chat / Approvals / MCP / Credentials / Runtime), `payload_version` 5, and the Phase 5 CI wiring (`phase5/scripts/00-run-phase5.sh`, `11-build-remote-mcp.sh`, `20-integration-gates.sh`, `device/gate-16-mcp-remote.js`, `phase5/workflow/phase5-integration.yml`, plus the Phase 4 tail hook that stages Phase 5 on the same emulator).
 - **TESTED** (executed with evidence, on *this host*): the MCP fixture's two network transports against real SDK clients (§2).
 - **EXECUTED IN CI (JVM; supporting evidence only, never runtime evidence)**: the 55 unit tests across `client/`, `runtime/`, `security/` — `:app:compileDebugKotlin`, `:app:compileDebugAndroidTestKotlin`, `:app:compileDebugUnitTestKotlin` and `:app:testDebugUnitTest` all **green** in run #11 (`8dfc883`, verdict committed as `050374e`, "BUILD SUCCESSFUL in 1m 47s"). This proves the code compiles for app + instrumentation + tests and that the frame-semantics/reducer/audit/ABI/manifest/secret-name logic behaves as specified on a JVM. It proves **nothing** about the device: no Keystore, no init-ABI gate against real payload bytes, no server, no `/proc`, no permissions round-trip. Twelve of these tests failed on their first execution and the fixes (see §6) are what makes this line worth having.
-- **EXECUTED IN CI (device, full standalone mode, no integration verdict yet)**: run #13
-  (`b6e87a4`, job `33436100302`) reached the device for the first time: SDK install of the
-  emulator + `x86_64;34` image, AVD created, `emulator-5554 device`, payload built, `BUILD
-  SUCCESSFUL in 2m 37s` with both APKs and 55/55 unit tests, app installed and *debuggable*
-  (`P5-03` passed, which requires `run-as`), then the whole gate suite ran. Its verdicts
-  (**2 PASS / 12 FAIL**) are therefore verdicts about *startup*, not about the integration:
-  the on-device runtime never reached `HEALTHY` because of the Keystore defect above. §1–§4
-  stay NOT TESTED; `P5-G19` (no hardcoded/bundled secret, `secret_hits=0
-  bundled_secret_entries=0 external_url_literals=0`) and `P5-03` are the two real passes.
+- **EXECUTED IN CI (device, full standalone mode) — §3's storage claim is now tested, the
+  API-integration claims are not.** Run #13 (`b6e87a4`) reached the device for the first
+  time (2 PASS / 12 FAIL, all twelve cascading off one startup fatal: the Keystore IV defect
+  above). Run #14 (`3792690`, 5 PASS / 9 FAIL) fixed that and went further than any Phase-5
+  run had: `P5-01` PASS with `app_uid=10192` and a live `pidof`, `P5-02` PASS on the
+  `payloadVersion:5` marker, `P5-03` PASS, **`P5-KEYSTORE` (instrumented K6) PASS** — Keystore
+  round trip, `encoded == null` on the master key, ciphertext-only blob with the OCS2 header
+  and a 12-byte provider-generated IV, legacy plaintext file gone, renamed blob refused — and
+  **`P5-G18` PASS** (`plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=absent
+  auth_verdict=clean`), plus `P5-G19` PASS (`secret_hits=0 bundled_secret_entries=0
+  external_url_literals=0`). The runtime reached `state -> HEALTHY` (`healthy=true http=200`,
+  version `1.18.23-android`) and wrote the loopback audit quoted in §1.
+  Two readings must stay narrow: `keystore_hw=false` in the app's own integration line is the
+  **emulator's software keymaster**, so *ciphertext at rest* is TESTED while *residency of the
+  master key in secure hardware* is NOT TESTED (real device only; StrongBox stays
+  device-dependent). And the run established a harness fact worth keeping permanently:
+  `am instrument` replaces the app process, and the OpenCode server is a child of that process
+  — which is why `P5-04`, all five `R-*` drivers, `G16` and `G17` failed together while the
+  supervisor was logging `HEALTHY`. §6 carries the diagnosis and the changes it forced; none
+  of those verdicts is an integration result.
 - **NOT TESTED:** every device-visible claim in §1–§4 (compile included), the remote-MCP gate on-device, and the full-suite execution on real arm64 hardware — carried forward from Phase 4 and still open. A quick manual real-device pass (install the Phase 5 debug APK, open the Credentials tab, add a key, send one prompt, approve one permission) is worth doing before Phase 8; if CI stays the only full-suite host, that gap moves to Phase 8 explicitly.
 - **BLOCKED (needs the user, not me):** (1) *triggering* CI. Re-probed on 2026-08-31 with the reconnected session token: `PUT .github/workflows/phase5-integration.yml` → **403 Resource not accessible by integration**, and `POST .../actions/workflows/<id>/dispatches` → **403** too. So the restriction is not only "cannot write workflow files" but also "cannot start a run"; `git push` itself works, and the branch is published (`8305d47`). Two user-side unblocks, either is enough: click **Run workflow** on `phase4-runtime-host` selecting `arena/01a05713-opencode-app` (its tail stage then runs the Phase 5 suite on the same emulator, ~15 min of Phase 4 work first), or create `.github/workflows/phase5-integration.yml` in the browser from the content of `phase5/workflow/phase5-integration.yml` — after that commit, any push to this branch triggers Phase 5 on its own. (2) running the suite on the Realme RMX3830 (needs adb from the user's machine). (3) repo secrets: none is needed for this phase, `gh secret list` is 403 for this token, and the suite is written so that no gate depends on one. A user-supplied PAT was offered mid-session and deliberately **not** used: this sandbox pins `GH_TOKEN` to the session identity (an inline override returned the identical 403 for `gh api user`), so no external credential can be exercised here — and since it was pasted into chat it should be revoked.
 - **Losses introduced by *this* phase: none in OpenCode functionality.** Two behavioural notes: (i) the pre-Phase-5 plaintext key-file bootstrap in `launcher.js` is no longer fed by app code (`Secrets.readApiKey`, `RuntimeEnv`'s `OPENCODE_API_KEY_FILE`, and the `apiKey` env parameter were deleted) — the launcher still honours an operator-provided `OPENROUTER_API_KEY`/`files/secrets/openrouter-api-key` purely as a CI convenience, and Phase 5 asserts that file is absent during a Phase 5 run; (ii) an app-side "export credentials" affordance does not exist, deliberately: exporting Keystore material is the one thing this design must not do. All Phase 1–4 losses (PTY stubs, no `@parcel/watcher`, `NO_CURL`/`NO_OPENSSL` Git, no `bun:ffi` dlopen, degraded mDNS, no 32-bit ABIs) are unchanged and documented in the Phase 4 report.
@@ -466,9 +498,51 @@ evidence commit on this branch. Sequence and findings:
   and silently excluded every verdict line), P5-04 surfaces the export gate's own line, and
   `P5-K` requires all 9 gates to pass rather than 6.
 
-Until run #14 publishes a `GATES_SUMMARY.txt` with `P5-04` healthy and the Kotlin/device gate
-lines present, §1–§4 stay NOT TESTED. Nothing in this report may be upgraded on the strength
-of #13's build succeeding or of #11's 55/55 unit tests.
+- **#14 → #15 (the run-#14 diagnosis, fixed in the push that triggers #15).** Both halves of
+  the failure were about *how the gates attach*, not about the client:
+
+  1. **`am instrument` replaces the app process, and the OpenCode server is a child of that
+     process.** The instrumented process has no server unless the app's own start path runs
+     inside it (only `MainActivity`/`RuntimeService` call it), and every stage after an
+     instrument run was talking to a process that had already been replaced. Fixed on both
+     sides: the test class gained `@Before startRuntimeInThisProcess()` —
+     `RuntimeManager.get(ctx).start()`, idempotent, the production supervisor path minus the
+     foreground-service wrapper (which exists only to keep the process alive), then a poll
+     for health up to 150 s — and the gate script does `force-stop` → relaunch →
+     `wait_healthy` before the device-side stages, recorded as a new gate **`P5-05
+     runtime-healthy-after-instrumentation`** so a relaunch failure can never be mistaken for
+     a gate failure downstream of it.
+  2. **A host `adb forward` is not a route into the app's namespace.** Every host-side request
+     in run #14 died with `ECONNRESET` (the drivers) or `TypeError: fetch failed` (undici, for
+     G16) while `probe_loopback_connect=OK` inside the app said otherwise, and
+     `any_listen_on_4111=0` in the host's table read matches "different view", not "nothing is
+     listening". The five phase-4 drivers and `gate-16` therefore now execute **on-device with
+     the payload's own bun, as the app uid** — driver files unmodified, same env contract,
+     each wrapped in `timeout 300` — which also removes the ~90 MB host-bun fetch phase 4
+     needed and makes gate-10's MCP stdio child spawn *on the device* (phase 4 spawned it on
+     the host). The host keeps exactly one job: the remote-MCP fixture listener, which has to
+     live outside the device for G16 to mean anything, and node is enough for that.
+     `wait_healthy` tries the forward first, then the in-namespace probe, and prints which
+     path answered (`HEALTH_TRANSPORT=host-forward|on-device`); G17 records the host-forward
+     result as a diagnostic instead of a dependency.
+  3. The model pre-flight moved to `phase5/scripts/device/p5-model-probe.js` for the same
+     reason — it was a host-side HTTP call — and the python version is deleted.
+  4. The export gate no longer swallows its failure: it prints `lastErr=<Class>: <message>`
+     where run #14 had a bare `health=null`, which is what cost this diagnosis cycle.
+  5. The gates step in `00-run-phase5.sh` stopped being a `| tee -a` pipe — the exact shape
+     that hung runs #1–#4 — and goes through `run_c 3600`.
+
+G18's two legibility fixes ride in the same push: the leak scan no longer reports 20 phantom
+matches when no password was exported (an empty `grep -rl ''` pattern matches every file, which
+is exactly what `leaks_outside_harness=20` in run #13 was), and the durable-auth flag is renamed
+`AUTH_BAD` because it carried 0 = clean polarity under a name saying the opposite, against every
+other check in the file — both conditions were already correct, just unreadable.
+
+Until run #15 publishes a `GATES_SUMMARY.txt` in which `P5-04`/`P5-05` are healthy **and**
+the Kotlin and `R-*` gate lines are present, §2 and §4 stay NOT TESTED and §1/§3 stay at the
+narrow device readings recorded in §5. Nothing in this report may be upgraded on the strength
+of #13's or #14's build succeeding, of #11's 55/55 unit tests, or of a `state -> HEALTHY`
+line that no gate has yet asserted anything about.
 
 ### Reading CI output from this sandbox (why run 65 has no log here)
 

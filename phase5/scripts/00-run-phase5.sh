@@ -319,8 +319,12 @@ run_c 900 "bash '$DIR/scripts/11-build-remote-mcp.sh'" || echo "warn: remote MCP
 step "5/6 phase 5 integration gates"
 # Gates run with their own exit code captured here; this script deliberately
 # never enables `set -e` so evidence collection always happens (phase 4 lesson).
-bash "$DIR/scripts/20-integration-gates.sh" 2>&1 | tee -a "$MAINLOG"
-GATE_RC=${PIPESTATUS[0]}
+# This step used to end in `| tee -a "$MAINLOG"` - the same pipe-after-adb shape
+# that made runs #1-#4 hang forever (the adb server the gates fork inherits the
+# write end, so tee never sees EOF). run_c is pipeless, bounds the step, and
+# prints a STEP_TIMEOUT line instead of silently outliving the job.
+GATE_RC=0
+run_c 3600 "bash '$DIR/scripts/20-integration-gates.sh'" || GATE_RC=1
 echo "phase5 gates rc=$GATE_RC" | tee -a "$MAINLOG"
 
 step "6/6 evidence"
