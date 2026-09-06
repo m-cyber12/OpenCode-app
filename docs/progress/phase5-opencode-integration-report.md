@@ -7,18 +7,23 @@
 
 > ## Read this first: validation state of this report
 >
-> Phase 5's code, tests, gate drivers and CI wiring are **written**; the Kotlin has **not been compiled yet** and **no Phase 5 device run exists yet**. There is no JVM/Android toolchain in this sandbox (no `java`, `gradle`, `adb`; `maven`/`dl.google.com` unreachable), so the *first* compile and the *first* device evidence can only come from GitHub Actions. Concretely:
+> Phase 5 is **closed on the CI emulator** (x86_64, API 34) with 14 of its 15 gates green and **nothing skipped**;
+> the fifteenth is documented below as an upstream restriction rather than a pass. The last device run for this
+> phase is #19 (`5f1c6f9`), and `docs/progress/phase5-evidence/GATES_SUMMARY.txt` + the per-gate files in that
+> directory are the authority for every number quoted here.
 >
 > | Item | Label |
 > | --- | --- |
-> | Kotlin client (`OpenCodeApi`/`OpenCodeEventStream`/`Transcript`/`OpenCodeRepository`), Keystore `SecretStore`, `LoopbackGuard`, `LoopbackAudit`, `RuntimeIntegration`, UI tabs | **IMPLEMENTED, NOT TESTED** (not compiled, not run) |
-> | Phase 5 gate suite (`phase5/scripts/20-integration-gates.sh`, `gate-16-mcp-remote.js`) + orchestrators | **IMPLEMENTED** (bash/JS syntax checked; provisioning + audit logic rehearsed against a fake-`adb` harness; never run against a device) |
-> | Host-side remote-MCP fixture (`phase5/mcp/remote-mcp-server.mjs`) | **TESTED on this host** — real `@modelcontextprotocol/sdk` 1.29.0 clients connected over **StreamableHTTP and legacy HTTP+SSE**, `tools/list` + `tools/call` round-trips green (see §2) |
-> | Gate `P5-G16` *driver* (`phase5/scripts/device/gate-16-mcp-remote.js`) | **TESTED on this host against a harness** — `phase5/scripts/rehearsal/run-host-rehearsal.sh` runs the driver, the fixture, and a fake OpenCode MCP surface whose status transitions come from genuine SDK client negotiations → `G16_PASS`. **Host wiring proof only: no device, no app, no on-device OpenCode involved.** |
-> | G6/G7/G10/G11/G12 re-run on a device, loopback audit on a device, credential at-rest proof on a device | **NOT TESTED** — pending the CI run recorded in §6 |
-> | `.github/workflows/phase5-integration.yml` installation, and the real arm64 device run | **BLOCKED on the user** (see §5/§6) |
+> | Kotlin client (`OpenCodeApi`/`OpenCodeEventStream`/`Transcript`/`OpenCodeRepository`), Keystore `SecretStore`, `LoopbackGuard`, `LoopbackAudit`, `RuntimeIntegration` | **TESTED on the CI emulator** — compiled, installed, and executed: all ten instrumented gates green (`P5-K PASS … pass=10 fail=0 skip=0`), plus 55/55 JVM unit tests as supporting (never runtime) evidence |
+> | Loopback-only binding + no mDNS | **TESTED on the CI emulator** — `P5-G17 PASS` on a conclusive table (`wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0`) and in-app `P5_LOOPBACK PASS` (`external_accepted=0`, native-socket probe). NOT TESTED on physical arm64 hardware (§5) |
+> | Credentials: Keystore at rest, nothing hardcoded or bundled | **TESTED on the CI emulator** — `P5_KEYSTORE`, `P5_CREDENTIALS`, `P5-G18`, `P5-G19` all PASS; *secure-hardware key residency* NOT TESTED (emulator software keymaster, `keystore_hw=false`) |
+> | Phase-3 re-runs G6/G7/G10/G11/G12 against the real integration | **TESTED on the CI emulator, both halves** — the five *unmodified* phase-4 drivers on-device (`P5-R-06/07/10/11/12 PASS`, three consecutive runs) with a live keyless model (`model_available=1`), and K1–K5 through the Android client classes |
+> | MCP over stdio (child-process spawn) | **TESTED on device** — `P5_G10_MCP PASS` in-app and `P5-R-10 PASS` from the unmodified driver, against the app's own server |
+> | MCP over Streamable HTTP / SSE (remote) | **DOCUMENTED UPSTREAM RESTRICTION** — §2. OpenCode's remote client completes `initialize` on-device and then fails tool discovery without ever sending `tools/list`; the cause is discarded by `McpCatalog.defs()` upstream, so nothing outside OpenCode can name it. Filed as [anomalyco/opencode#47644](https://github.com/anomalyco/opencode/issues/47644); `P5-G16` stays red-by-design and is re-run (and this label retired) when upstream surfaces the error or ships a fix |
+> | `.github/workflows/phase5-integration.yml` | **LIVE** (id `346561927`), triggered by every push to this branch except evidence-only paths; no manual dispatch needed any more |
 >
-> Nothing below claims device evidence that does not exist yet. When the run lands, §6 gets the run id + verdicts and the labels above get promoted or falsified.
+> No claim in §1–§4 rests on a green Gradle build, on the JVM unit tests, or on a `state -> HEALTHY` log line that no
+> gate asserted; where something is only implemented, only host-tested, or blocked, §5 says so next to it.
 
 ---
 
@@ -94,6 +99,22 @@ execution of all of it stays NOT TESTED.
 ---
 
 ## 2. MCP: which transports work, which do not, and why
+
+> **Disposition of `P5-G16` (remote MCP on device): DOCUMENTED UPSTREAM RESTRICTION — Phase 5 closes with this
+> label on it, not as a pass and not as a skip.** What is verified: the transport works in the pinned upstream code
+> (host-proven, `tools_registered=4`), stdio works on-device, and on the device the *route*, the *runtime* and the
+> *server* are each measured good. What is not, and why it is upstream's to fix: OpenCode's remote client completes
+> `initialize` + `notifications/initialized` against a spec-legal server and then fails tool discovery inside
+> `client.listTools()` without ever writing a `tools/list` request — in ~1 s, identically for both StreamableHTTP
+> response modes — while `McpCatalog.defs()`'s `Effect.catch(() => Effect.void)` destroys the only information that
+> could explain it. Filed upstream with the evidence and a two-line fix proposal:
+> [anomalyco/opencode#47644](https://github.com/anomalyco/opencode/issues/47644) (verbatim copy:
+> `docs/progress/upstream-issue-47644-mcp-swallowed-error.md`). **Removal condition:** when that issue is fixed —
+> or as soon as upstream logs/propagates the underlying error — re-run this branch's CI; `P5-G16` needs no
+> reworking, it will either pass or print an actionable cause, and this box gets replaced by the outcome. Until then
+> the gate stays FAIL-by-design (red, not skipped, not softened): a phase must not turn a known limitation green by
+> lowering its own bar, and a user configuring a remote MCP server on this build should expect it to report
+> `Failed to get tools` — the practical consequence is in §5's losses.
 
 Nothing was crippled globally to make loopback work. OpenCode's own `McpCatalog`/`MCP.connect` paths are used verbatim; the app only *configures* servers through OpenCode's API (`GET /mcp`, `POST /mcp`, `POST /mcp/:name/{connect,disconnect}`), which Phase 4 already proved is upstream-complete.
 
@@ -449,7 +470,12 @@ rather than skipped. `kotlin_gate_skipped=0` in both runs, so nothing was quietl
   this runtime*, not the network, not the payload, not the fixture. #19 excludes a slow timeout (the registration
   returns in 996 ms) and a response-mode asymmetry (JSON mode fails with the identical string), leaving a
   client-side throw inside `client.listTools()` before any request byte is written; closing that needs instrumentation
-  inside upstream's MCP client, which this phase may not do. The experiment that would separate "off-device
+  inside upstream's MCP client, which this phase may not do. **Filed as
+  [anomalyco/opencode#47644](https://github.com/anomalyco/opencode/issues/47644)** (2026-09-06, with the fixture-side
+  request log, the timings and both response modes; the issue asks only that the cause be preserved, which is the
+  minimum that makes the failure reportable by anyone). Until upstream lands it, `P5-G16` is a *documented upstream
+  restriction* (§2), and a user of this build who configures a remote HTTP/SSE MCP server should expect
+  `{"status":"failed","error":"Failed to get tools"}` with stdio MCP unaffected. The experiment that would separate "off-device
   peer" from "any peer at all" is to run the same fixture as a second on-device process and point OpenCode at
   `127.0.0.1`, which needs no app or upstream change and is **not yet built** (it also needs the MCP SDK importable
   from the payload's `node_modules`, which is unverified); it belongs with the other device-side follow-ups in
@@ -459,7 +485,14 @@ rather than skipped. `kotlin_gate_skipped=0` in both runs, so nothing was quietl
   blocked** — any push to this branch starts a full device run, docs included, and there is no `concurrency:` block,
   so no push is dropped. Still blocked for this session's identity: creating/editing `.github/workflows/*` and
   `POST .../dispatches`. Re-probed on 2026-08-31 with the reconnected session token: `PUT .github/workflows/phase5-integration.yml` → **403 Resource not accessible by integration**, and `POST .../actions/workflows/<id>/dispatches` → **403** too. So the restriction is not only "cannot write workflow files" but also "cannot start a run"; `git push` itself works, and the branch is published (`8305d47`). Two user-side unblocks, either is enough: click **Run workflow** on `phase4-runtime-host` selecting `arena/01a05713-opencode-app` (its tail stage then runs the Phase 5 suite on the same emulator, ~15 min of Phase 4 work first), or create `.github/workflows/phase5-integration.yml` in the browser from the content of `phase5/workflow/phase5-integration.yml` — after that commit, any push to this branch triggers Phase 5 on its own. (2) running the suite on the Realme RMX3830 (needs adb from the user's machine). (3) repo secrets: none is needed for this phase, `gh secret list` is 403 for this token, and the suite is written so that no gate depends on one. A user-supplied PAT was offered mid-session and deliberately **not** used: this sandbox pins `GH_TOKEN` to the session identity (an inline override returned the identical 403 for `gh api user`), so no external credential can be exercised here — and since it was pasted into chat it should be revoked.
-- **Losses introduced by *this* phase: none in OpenCode functionality.** Two behavioural notes: (i) the pre-Phase-5 plaintext key-file bootstrap in `launcher.js` is no longer fed by app code (`Secrets.readApiKey`, `RuntimeEnv`'s `OPENCODE_API_KEY_FILE`, and the `apiKey` env parameter were deleted) — the launcher still honours an operator-provided `OPENROUTER_API_KEY`/`files/secrets/openrouter-api-key` purely as a CI convenience, and Phase 5 asserts that file is absent during a Phase 5 run; (ii) an app-side "export credentials" affordance does not exist, deliberately: exporting Keystore material is the one thing this design must not do. All Phase 1–4 losses (PTY stubs, no `@parcel/watcher`, `NO_CURL`/`NO_OPENSSL` Git, no `bun:ffi` dlopen, degraded mDNS, no 32-bit ABIs) are unchanged and documented in the Phase 4 report.
+- **Losses introduced by *this* phase: one, and it is inherited rather than chosen — remote (HTTP/SSE) MCP servers
+  do not work on this runtime**, because OpenCode's own client cannot complete tool discovery there and cannot say
+  why (upstream #47644). It is a *device-platform* loss: the identical code path works when OpenCode runs on Linux,
+  and stdio MCP, loopback HTTP, streaming, permissions and file operations all work on the device. Nothing was
+  disabled, filtered or reimplemented to hide it — `GET /mcp` still reports upstream's status verbatim, and the
+  gate that found it stays red by design. Practical user-facing consequence, to be repeated in the Phase 6 UI:
+  a remote MCP entry shows `failed / Failed to get tools` on Android, with stdio entries unaffected.
+- **Losses introduced by *this* phase, otherwise: none in OpenCode functionality.** Two behavioural notes: (i) the pre-Phase-5 plaintext key-file bootstrap in `launcher.js` is no longer fed by app code (`Secrets.readApiKey`, `RuntimeEnv`'s `OPENCODE_API_KEY_FILE`, and the `apiKey` env parameter were deleted) — the launcher still honours an operator-provided `OPENROUTER_API_KEY`/`files/secrets/openrouter-api-key` purely as a CI convenience, and Phase 5 asserts that file is absent during a Phase 5 run; (ii) an app-side "export credentials" affordance does not exist, deliberately: exporting Keystore material is the one thing this design must not do. All Phase 1–4 losses (PTY stubs, no `@parcel/watcher`, `NO_CURL`/`NO_OPENSSL` Git, no `bun:ffi` dlopen, degraded mDNS, no 32-bit ABIs) are unchanged and documented in the Phase 4 report.
 - **No silent substitutions.** Anything a gate could not verify is recorded as `SKIP` with a reason by `p5()` (e.g. `P5-G16 SKIP` if the fixture could not be built), never as a pass; `GATES_SUMMARY.txt` counts skips separately from passes.
 
 ---
