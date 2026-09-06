@@ -88,11 +88,25 @@ note "=== [2b/6] seccomp compatibility shim per ABI (NDK clang) ==="
 # launcher dlopens it (OPENCODE_SECCOMP_SHIM -> nativeLibraryDir).
 NATIVE_SRC="$DIR/payload/native"
 NDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}/ndk"
-# Find the toolchain bin dir that actually contains a target clang wrapper.
-# Match the <triple>29-clang wrappers (not the NDK's python3/bin, which has
-# no clang). Take the newest NDK if several are installed.
+NDK_PIN="${P4_NDK_VERSION:-28.2.13676358}"
+# Pin the NDK rather than taking "the newest installed", and keep the search for a
+# *usable* clang wrapper as the fallback. Reason, recorded because it bit mid-phase:
+# on 2026-09-06 the CI image gained NDK r29.0.14206865, the newest-wins glob below
+# silently switched compilers with no repo change at all, and r29 links
+# x86_64 child-shim.c as ET_EXEC - which our own PIE assertion (correctly) refuses,
+# because Android cannot exec a fixed-address binary out of nativeLibraryDir. A
+# build script that follows the runner's mood is not a build script; pin, log the
+# pin, and let the assertion print the ELF header if a pinned toolchain ever drifts.
 NDK_BIN=""
+if [ -x "$NDK_ROOT/$NDK_PIN/toolchains/llvm/prebuilt/linux-x86_64/bin/clang" ] \
+   && [ -e "$NDK_ROOT/$NDK_PIN/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang" ]; then
+  NDK_BIN="$NDK_ROOT/$NDK_PIN/toolchains/llvm/prebuilt/linux-x86_64/bin"
+  note "NDK pinned to $NDK_PIN (override with P4_NDK_VERSION)"
+else
+  note "pinned NDK $NDK_PIN not installed; falling back to the newest wrapper found - expect drift"
+fi
 for c in $(find "$NDK_ROOT" -type f -name 'x86_64-linux-android29-clang' 2>/dev/null | sort -r); do
+  [ -n "$NDK_BIN" ] && break
   d="$(dirname "$c")"
   if [ -x "$d/clang" ]; then NDK_BIN="$d"; break; fi
 done
@@ -139,10 +153,15 @@ build_native() {  # $1=abi  $2=target-triple
   # is bundled with the NDK; fall back to the host readelf if absent.
   READELF="$NDK_BIN/llvm-readelf"
   [ -x "$READELF" ] || READELF="$(command -v llvm-readelf readelf | head -1)"
-  "$READELF" -h "$outdir/libexecshim.so" 2>/dev/null | tee -a "$STATUS" | grep -q 'DYN' \
-    || { note "FATAL: libexecshim.so ($abi) is not a PIE/DYN executable"; exit 1; }
-  "$READELF" -h "$outdir/libchildshim.so" 2>/dev/null | grep -q 'DYN' \
-    || { note "FATAL: libchildshim.so ($abi) is not a PIE/DYN executable"; exit 1; }
+  # Keep the ELF header in the log for BOTH files, and name the toolchain that
+  # produced them: run #21 failed this assertion with no way to see whether the
+  # binary was EXEC or readelf had simply misbehaved. Cheap to record, decisive
+  # to read, and the alternative (relaxing the grep) would let a non-executable
+  # shim ship to devices.
+  for so in libexecshim.so libchildshim.so; do
+    "$READELF" -h "$outdir/$so" 2>&1 | tee -a "$STATUS" | grep -q 'DYN' \
+      || { note "FATAL: $so ($abi) is not a PIE/DYN executable (ELF header above) - NDK: $NDK_BIN"; exit 1; }
+  done
 }
 for abi in "${ABIS[@]}"; do
   case "$abi" in

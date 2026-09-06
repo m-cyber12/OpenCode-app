@@ -166,3 +166,13 @@ android_host:
     restart: "crash -> bounded exponential backoff (1s..30s, max 8 attempts) then FATAL"
     stop: "SIGTERM (graceful) -> SIGKILL -> /proc sweep (no zombies/duplicates)"
     duplicate_prevention: "single RuntimeService + pidfile + /proc launcher.js sweep + single port bind"
+
+# CI build toolchain pin (added 2026-09-06, Phase 5 close-out)
+ci_toolchain:
+  android_ndk_for_shims: 28.2.13676358      # phase4/scripts/10-build-payload.sh; override P4_NDK_VERSION
+  # Why: the runner image added r29.0.14206865 on 2026-09-06 and a "newest wins" glob
+  # switched compilers with no repo change; under r29, x86_64 child-shim.c links as
+  # ET_EXEC and the payload build's own PIE assertion refuses it (correctly - Android
+  # cannot exec a fixed-address binary from nativeLibraryDir). Pinning makes the build
+  # reproducible. NOT TESTED: building the shims with r29 and PIE-forcing flags -
+  # revisit before any toolchain bump (Phase 8 payload work).
