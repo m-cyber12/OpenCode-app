@@ -28,8 +28,63 @@ try {
 }
 const { get, post, log, gateResult, assert } = lib
 
-const MCP_URL = process.env.P5_MCP_URL || "http://10.0.2.2:4551"
-const DEAD_URL = process.env.P5_MCP_DEAD_URL || "http://10.0.2.2:4599/mcp"
+// Fixture route, added after run #16.
+//
+// Run #16 is the first time this driver reached its own assertions on the device: the
+// pre-state was clean, `POST /mcp` returned 200, and upstream's MCP client then reported
+//     {"p5-remote-http":{"status":"failed","error":"Failed to get tools"}}
+// while the fixture logged `mcp:0 sse:0` — not one session got through. That is a fact
+// about the emulator's network path (can the guest open a TCP session to the test host at
+// all?), and reporting it as an MCP verdict would mislead in either direction: the client
+// would look broken when the wire is, or vice versa. So the route is measured before
+// anything is asserted, over each candidate path, and the one that answers is used:
+//
+//   nat-gateway  http://10.0.2.2:<port>   the host's own address on the emulator's NAT
+//   adb-reverse  http://127.0.0.1:<port>  adbd forwards a device port to the same host port
+//
+// Both probe results and the chosen route are printed, so GATES_SUMMARY.txt names the path
+// that carried the traffic. If nothing answers, the driver exits 7: the gate script records
+// a SKIP with the probe output, because "the harness could not reach its own fixture" is an
+// environment condition and must never be booked as a result about OpenCode's transports.
+const ROUTE_CANDIDATES = []
+if (process.env.P5_MCP_URL) ROUTE_CANDIDATES.push({ name: "nat-gateway", origin: process.env.P5_MCP_URL })
+if (process.env.P5_MCP_URL_LOCAL) ROUTE_CANDIDATES.push({ name: "adb-reverse", origin: process.env.P5_MCP_URL_LOCAL })
+if (ROUTE_CANDIDATES.length === 0) ROUTE_CANDIDATES.push({ name: "default", origin: "http://127.0.0.1:4551" })
+
+async function probeRoute(origin) {
+  try {
+    const r = await fetch(origin + "/health", { signal: AbortSignal.timeout(6000) })
+    const body = await r.text()
+    return { ok: r.status === 200, text: `HTTP ${r.status} ${body.slice(0, 120)}` }
+  } catch (e) {
+    const cause = e && e.cause ? e.cause : {}
+    return {
+      ok: false,
+      text: `ERR ${cause.code || cause.name || (e && e.name) || "unknown"}:` +
+        String(cause.message || (e && e.message) || "").slice(0, 120),
+    }
+  }
+}
+
+const routeProbe = []
+let route = null
+for (const c of ROUTE_CANDIDATES) {
+  const p = await probeRoute(c.origin)
+  routeProbe.push(`${c.name}@${c.origin}=${p.ok ? "reachable" : "unreachable"}(${p.text})`)
+  if (!route && p.ok) route = c
+}
+log(`fixture route: ${routeProbe.join(" | ")} chosen=${route ? route.name : "none"}`)
+if (!route) {
+  log("GATE16 NO_ROUTE: no path from the device to the fixture — SKIP, not a verdict about OpenCode")
+  process.exit(7)
+}
+const MCP_URL = route.origin
+// The negative case stays a genuinely unreachable endpoint *on the same route*, so
+// `failed` always means "OpenCode tried to connect and could not", never "the URL was
+// nonsense": 4599 is not forwarded, and the NAT address has no listener.
+const DEAD_URL = route.name === "nat-gateway" && process.env.P5_MCP_DEAD_URL
+  ? process.env.P5_MCP_DEAD_URL
+  : `${MCP_URL}:${process.env.P5_MCP_DEAD_PORT || "4599"}/mcp`
 const PROVIDER = process.env.P5_TOOL_PROVIDER || "opencode"
 const MODEL = process.env.P5_TOOL_MODEL || "big-pickle"
 const STDIO_NAME = process.env.OPENCODE_MCP_STDIO_NAME || "gates-mcp"

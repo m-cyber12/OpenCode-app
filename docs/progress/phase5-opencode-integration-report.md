@@ -84,7 +84,12 @@ and prints the outbound rows beside it as the record of what the app talks to. T
 mistake in the in-app gate `K7` (an unreadable `/proc/net/tcp` reported as `wildcard_listeners=-1`
 *while the same line said* `external_accepted=0`) is now treated as inconclusive, with the
 behavioural refusal carrying the verdict — the honest reading the section's rule already states.
-*Real-device* (arm64) execution of all of this stays NOT TESTED.
+Run #16 (`ed0264f`) closed both gate halves on the emulator: `P5-G17 PASS` with
+`table=conclusive wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0 bound_lines=5
+publish_lines=0 table_ok=1` (and `device global ipv4: '10.0.2.15'` recorded beside it), and the
+in-app `P5_LOOPBACK PASS` — so the listener table and the behavioural matrix now agree, and the
+only caveat left in this section is the one that has always applied: *real-device* (arm64)
+execution of all of it stays NOT TESTED.
 
 ---
 
@@ -250,8 +255,10 @@ fields rather than guesses.
 `P5_CREDENTIALS PASS` (K8: `PUT /auth` → provider `connected` → `DELETE` → cleared, with the durable plaintext copy
 `chmod 600`), `P5-G18 PASS` (the exported password authenticated a real `GET /global/health` → 200) and
 `P5-G19 PASS` (nothing credential-shaped in the APK or payload). `keystore_hw=false` on that image, so *secure-hardware
-key residency* stays NOT TESTED (and K6 labels it, without letting it change the verdict). P5-04's own definition was
-corrected in the same run's aftermath — see §6.
+key residency* stays NOT TESTED (and K6 labels it, without letting it change the verdict). Run #16 repeated the whole
+set (`kotlin_gate_pass=10 fail=0`, `P5-G18 PASS` with `enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1
+auth_mode=600 auth_canary_absent=1 auth_verdict=clean leaks_outside_harness=0`, `P5-G19 PASS` with all three counts at
+0). P5-04's definition was corrected twice — see §6.
 
 ---
 
@@ -265,6 +272,8 @@ Per instruction, G6, G7, G10, G11 and G12 are re-run **against this integration*
 `P5-R-11 PASS :: … frames_seen=19 session=ses_f88e849b8ffe…`, `P5-R-12`), **with the model actually available**
 (`model_available=1`, `PROBE ok :: model=big-pickle exact-token reply`) — so the parts phase 4 could only skip were
 asserted here. Each driver's own `GATES_RESULT.md` verdict lines are written back to the evidence bundle.
+Run #16 repeated it with `P5-K: PASS kotlin-client-gates-on-device (K1..K9, pass=10 fail=0 skip=0)` — every
+Kotlin half green, including `P5_LOOPBACK` — alongside the same five `P5-R-*` PASS lines.
 
 **(b) Through the Android client** (`OpenCodeClientGatesTest`, run in the app's own process with the app's own classes — this is the part that actually proves *integration*, not just server health):
 
@@ -281,11 +290,14 @@ Machine-readable verdict lines (`P5_<NAME> PASS|FAIL :: detail`) are emitted to 
 
 **Status: TESTED on the CI emulator (x86_64, API 34) — not on a physical device.** In run #15 both halves executed
 against the app's own on-device server: the five unmodified phase-4 drivers passed (`P5-R-06/07/10/11/12`, listed above),
-and the Kotlin half passed 9 of 10 (`P5_G6_HEALTH`, `P5_G7_SHELL`, `P5_G10_MCP`, `P5_G11_STREAM`, `P5_G12_PERMISSION`,
-`P5_CREDENTIALS`, `P5_KEYSTORE`, `P5_K9_DURABLE_CONFIG_PATCH`, `P5_HARNESS_EXPORT` = PASS; `P5_LOOPBACK` = FAIL, which
-turned out to be the gate rule treating an *unreadable* `/proc/net/tcp` as a violation while the same line reported
-`external_accepted=0` — corrected for #16, and §1's conclusion is unchanged either way). `kotlin_gate_skipped=0`, so no
-assertion was quietly skipped. What that does **not** cover: real arm64 hardware (NOT TESTED, carried from phase 4), and
+and the Kotlin half that run #15 completed at 9 of 10 (`P5_G6_HEALTH`, `P5_G7_SHELL`, `P5_G10_MCP`,
+`P5_G11_STREAM`, `P5_G12_PERMISSION`, `P5_CREDENTIALS`, `P5_KEYSTORE`, `P5_K9_DURABLE_CONFIG_PATCH`,
+`P5_HARNESS_EXPORT` = PASS; the one FAIL, `P5_LOOPBACK`, was my gate rule treating an *unreadable*
+`/proc/net/tcp` as a violation while the same line reported `external_accepted=0`). Run #16 re-ran both halves
+and the Kotlin side came back **all ten green, none skipped** — `P5-K: PASS kotlin-client-gates-on-device
+(K1..K9, pass=10 fail=0 skip=0)`, `P5_LOOPBACK PASS` included — with the same five unmodified drivers passing
+again (`P5-R-06/07/10/11/12`) and `model_available=1` both times, so the model-dependent halves were asserted
+rather than skipped. `kotlin_gate_skipped=0` in both runs, so nothing was quietly skipped. What that does **not** cover: real arm64 hardware (NOT TESTED, carried from phase 4), and
 `GATES_SUMMARY.txt` for the run is the only source of these numbers.
 
 ---
@@ -330,9 +342,20 @@ assertion was quietly skipped. What that does **not** cover: real arm64 hardware
   health answer; each is described with its fix in §6. `P5-04`'s new definition is stricter-in-spirit and
   race-free: the Keystore password must be ≥20 chars *and* the export gate that authenticates the live server with
   it must have passed.
-- **NOT TESTED:** the remote-MCP gate (`P5-G16`) on-device — its two harness defects are fixed but unexecuted until
-  #16; G17/K7's *corrected* rules (the underlying measurements already agree); and the full-suite execution on real
-  arm64 hardware, which is carried forward from Phase 4 and still open. A quick manual real-device pass (install the Phase 5 debug APK, open the Credentials tab, add a key, send one prompt, approve one permission) is worth doing before Phase 8; if CI stays the only full-suite host, that gap moves to Phase 8 explicitly.
+- **EXECUTED IN CI (device, full standalone mode) — run #16 (`ed0264f`): 13 PASS / 2 FAIL, `gates_skip=0`,
+  `kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0`.** This is the run in which the loopback claim, the
+  credential contract and the Phase-3 re-runs all became *gate-green on a device* at the same time: `P5-G17 PASS`
+  (`table=conclusive wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0 table_ok=1`), `P5_LOOPBACK PASS` in-app,
+  `P5_KEYSTORE`/`P5_CREDENTIALS`/`P5-G18`/`P5-G19` PASS, `P5-K PASS` with all of K1–K9, the five unmodified phase-4
+  drivers PASS again, `P5-05` PASS, and the model pre-flight live (`PROBE ok :: model=big-pickle exact-token reply`).
+  Two gates stayed open and both are about the same wire, not about the app: `P5-G16` (device→host TCP route to the
+  remote-MCP fixture, §2) and `P5-04` (the verdict token I read it from does not exist in that capture — the export
+  run's own `OK (1 test)` trailer said it passed, and #17 reads the trailer instead).
+- **NOT TESTED:** whether the emulator can open a TCP session to the CI host at all, which is what stands between
+  run #16 and a *device* verdict on OpenCode's remote MCP transports (the config path, the status surface and the
+  unreachable-server case were all exercised on device and behaved as upstream defines); the remote-MCP gate's
+  route-aware form (`route=nat-gateway|adb-reverse`, SKIP-on-no-route) is written and unit-probed locally but
+  unexecuted until #17; and the full-suite execution on real arm64 hardware, carried forward from Phase 4 and still open. A quick manual real-device pass (install the Phase 5 debug APK, open the Credentials tab, add a key, send one prompt, approve one permission) is worth doing before Phase 8; if CI stays the only full-suite host, that gap moves to Phase 8 explicitly.
 - **BLOCKED (needs the user, not me):** (1) *editing or dispatching* the workflow. `phase5-integration.yml` now
   exists on GitHub (id `346561927`, created by the user from `phase5/workflow/`), so **triggering runs is no longer
   blocked** — any push to this branch starts a full device run, docs included, and there is no `concurrency:` block,
@@ -616,7 +639,22 @@ the useful part of this section:
   answered on the *host's* loopback while the device was told to dial `10.0.2.2`, the emulator's NAT gateway — a
   different interface, so a connect would have been refused and reported as `failed`, which is precisely the shape a
   real defect looks like from outside. The driver now resolves `./gates-lib.js` first and falls back to phase 4's file
-  in place; the fixture defaults to `0.0.0.0`. §2's server-side half stays NOT TESTED until #16 prints it.
+  in place; the fixture now defaults to `0.0.0.0`, because `10.0.2.2` is the emulator's NAT
+*gateway interface* on the host, not its loopback, and a `127.0.0.1` bind is unreachable from the
+guest. Run #16 then produced the first real on-device remote-MCP measurement, and it is precise
+about where the boundary lies: the driver ran, the pre-state was clean, `POST /mcp {type:"remote",
+url:"http://10.0.2.2:4551/mcp"}` was **accepted (200)**, and upstream's MCP client reported
+`{"p5-remote-http":{"status":"failed","error":"Failed to get tools"}}` — while the fixture logged
+`mcp:0 sse:0`, i.e. not one session reached it. The same run also confirmed the *negative* case for
+free: an unreachable remote reports `failed` with a real error string rather than being swallowed,
+which is exactly the evidence that MCP was not crippled to make loopback work. What is therefore
+NOT TESTED is only the wire: whether the guest can open a TCP session to the test host at all. #17
+measures that instead of guessing — the driver probes `GET /health` over both candidate routes
+(NAT gateway, and an `adb reverse` tunnel to the same host port), uses whichever answers, prints
+`chosen=<route>` into the gate label so the verdict names its own path, and exits 7 (SKIP) if
+neither answers, because "the harness could not reach its own fixture" must never be booked as a
+result about OpenCode's transports. The local/stdio half of this section is confirmed on device
+(#15 and #16 both: `P5_G10_MCP PASS` in-app, `P5-R-10 PASS` from the unmodified driver).
 - `P5-G17 FAIL` and `P5_LOOPBACK FAIL` were one mistake in two places: an absence of view treated as a violation.
   G17's row rule counted non-LISTEN sockets (two outbound `:443 provider sessions and three `::ffff:127.0.0.1`
   loopback client rows) while K7's counted an unreadable `/proc/net/tcp` — and both files recorded the thing that
@@ -645,6 +683,44 @@ executed, device-side, skip-free — is the phase's core question: the Android c
 server as a real client, with streaming, permissions, stdio MCP and Keystore credentials, and no upstream change.
 Nothing in this report may be upgraded on the strength of #13's or #14's build succeeding, of #11's 55/55 unit tests,
 or of a `state -> HEALTHY` line that no gate has yet asserted anything about.
+
+**Run #16 (`ed0264f`) — the corrected rules held, and the two open gates say something specific.**
+`gates_pass=13 gates_fail=2 gates_skip=0`, `kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0`,
+`model_available=1`. Concretely: `P5-K PASS` with **all** of K1–K9 green (`K7`'s loopback matrix now reads
+`table=… / external_accepted=0` and passes on what it measures, not on what the app is permitted to see),
+`P5-G17 PASS` with `table=conclusive wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0 bound_lines=5
+publish_lines=0 table_ok=1`, `P5-G18 PASS` with `enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1
+auth_mode=600 auth_canary_absent=1 auth_verdict=clean leaks_outside_harness=0`, `P5-G19 PASS` with every count at
+zero, and the five unmodified phase-4 drivers green a second time. So §1, §3 and §4 rest on executed device
+evidence from here on, on that emulator image.
+
+The two failures are the interesting half, because #16 is the first run whose failures are *about the system under
+test* rather than about my quoting:
+
+- `P5-G16` got past both #15 defects and produced a real measurement: the driver reached its assertions, the
+  pre-state was clean (`gates-mcp=connected`, 12 tool ids, no remote tools — the driver's own "absent before"
+  assertion passed), `POST /mcp` with `{type:"remote", url:"http://10.0.2.2:4551/mcp"}` was **accepted with 200**,
+  and OpenCode's MCP client reported `{"status":"failed","error":"Failed to get tools"}`. The fixture's own log for
+  the same window says `P5_MCP_LISTENING http://0.0.0.0:4551/mcp` and its health endpoint says `mcp:0 sse:0`: it
+  never received a session. The app's config path, status surface and error reporting are therefore *working as
+  upstream defines*, and the unresolved variable is the network path between guest and host — which a gate must
+  not answer by inference. #17 measures it: the driver `GET /health`s each candidate route (`nat-gateway` on
+  `10.0.2.2`, `adb-reverse` through a forwarded device port to the same host port), drives the fixture URLs from
+  whichever answers, prints `chosen=<route>` into the gate's summary label, and exits **7** when neither answers so
+  the run records a SKIP with the probe text instead of a verdict about MCP. Verified locally in both directions
+  (live listener → `chosen=adb-reverse` and it proceeds; both dead → `GATE16 NO_ROUTE`, rc 7).
+- `P5-04` failed while *passing*. Its export run printed `OK (1 test)` after 44 s — the JUnit trailer, which this
+  project treats as the authority — yet my new verdict grep looked for the `P5_HARNESS_EXPORT PASS` token in that
+  capture, where it does not exist: an instrumented test's `println` goes to logcat (which is exactly why the K
+  stage reads logcat too), and the file held only the trailer. `export_verdict=none` then failed the gate. #17
+  reads the trailer and the absence of a failure marker, which is the same claim from a complete source. This is the
+  second time in two runs that P5-04 has been the gate that exposed a harness assumption rather than an app one;
+  §3's credential verdict has never depended on it, since K6/K8/G18 measure the same contract directly.
+
+Nothing in this report may be upgraded on the strength of #13's or #14's build succeeding, of #11's 55/55 unit
+tests, or of a `state -> HEALTHY` line that no gate has yet asserted anything about; and the reverse also holds —
+#16's ten green Kotlin gates are evidence about *that emulator image*, with arm64 hardware, secure-element key
+residency and the remote-MCP wire still explicitly open.
 
 ### Reading CI output from this sandbox (why run 65 has no log here)
 
