@@ -1,7 +1,7 @@
 P5-01: PASS phase5-apk-installed-and-app-running
 P5-02: PASS payload-v5-manifest-marker
 P5-03: PASS fixture-config-and-harness-marker
-P5-04: FAIL keystore-password-authenticated-live-server
+P5-04: PASS keystore-password-authenticated-live-server
 P5-K: PASS kotlin-client-gates-on-device (K1..K9, pass=10 fail=0 skip=0)
 P5-05: PASS runtime-healthy-after-instrumentation
 P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
@@ -9,13 +9,13 @@ P5-R-07: PASS phase4-driver-gate-07-shell.js-unmodified(on-device)
 P5-R-10: PASS phase4-driver-gate-10-mcp.js-unmodified(on-device)
 P5-R-11: PASS phase4-driver-gate-11-stream.js-unmodified(on-device)
 P5-R-12: PASS phase4-driver-gate-12-permission.js-unmodified(on-device)
-P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative
+P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
 P5-G17: PASS loopback-only-binding-and-no-mdns
 P5-G18: PASS credentials-keystore-only-at-rest
 P5-G19: PASS no-hardcoded-or-bundled-secrets
-P5_SUMMARY 2026-09-06T14:51:08Z
-gates_pass=13 gates_fail=2 gates_skip=0
+P5_SUMMARY 2026-09-06T15:11:11Z
+gates_pass=14 gates_fail=1 gates_skip=0
 kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
-model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f88cea481ffepDNLq3MuU6cRM4
+model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f88bca0a5ffe0JpCoFJGbNJm2W
 app_uid=10192 device_abi=x86_64
 live_launcher_processes=0
