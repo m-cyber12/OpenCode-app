@@ -185,7 +185,26 @@ a property of the pinned upstream's error handling, not of this app: the same so
 behaves on this runtime, and it is not reachable from the client side without changing OpenCode — which Phase 5's
 rules put out of scope.
 
-What this does and does not license as a claim: **§2's remote rows are NOT TESTED on device and remain so**, with the
+Run #19 (`5f1c6f9`) then removed the two remaining candidate explanations in one pass, and narrowed the failure
+to a single line of upstream's client:
+
+- the `POST /mcp` that registers the remote server returned in **996 ms**, so nothing is being consumed by
+  `McpCatalog`'s `DEFAULT_TIMEOUT` of 30 s (`catalog.ts:11`) — this is an immediate throw, not a stall;
+- registering the *same* fixture in **JSON-response mode** fails identically
+  (`DIAGNOSTIC json_mode_status=not-connected(status=failed error=Failed to get tools)`), with the fixture logging a
+  third session (`requests=8`, three `streamable session initialized` lines, and still no `tools/list` from either
+  OpenCode session — two requests each) — so the SSE-vs-JSON response framing is not the cause either;
+- the guard at `index.ts:391` must have *passed* (had `getServerCapabilities()?.tools` been falsy, `listed` would be
+  `[]`, `!listed` is false for an empty array, and the status would read `connected` with zero tools rather than this
+  error) — so upstream reached `client.listTools()` and threw inside it, in about a second, before a byte of that
+  request was written to the socket, and the SDK's own error text is destroyed by `defs()`'s
+  `Effect.catch(() => Effect.void)`.
+
+That is the boundary of what can be said from outside OpenCode without changing it: on this runtime the client's
+state between a completed handshake and a tool-list request is inconsistent, deterministically and in both response
+modes; the raw exchange from the same process, same runtime and same route succeeds, which keeps the payload, the
+bind, the route and the fixture out of it. Root-causing further means instrumenting upstream's MCP client, which
+Phase 5's rules exclude, so it is recorded in §5 as the open item it is. What this does and does not license as a claim: **§2's remote rows are NOT TESTED on device and remain so**, with the
 failure bounded to "tool discovery after a successful handshake on-device, with the cause discarded upstream". It
 does *not* mean remote MCP is broken on Android in general — this app's client code path for remote MCP is upstream's
 own, and no app-side MCP layer exists to blame. The one experiment that would separate "off-device peer" from
@@ -427,7 +446,10 @@ rather than skipped. `kotlin_gate_skipped=0` in both runs, so nothing was quietl
   the route works over both candidate paths, the driver's own raw JSON-RPC exchange completes on-device in SSE mode,
   and OpenCode's session completes `initialize` + `initialized` and then never sends `tools/list`, with the cause
   discarded by `McpCatalog.defs()` upstream — so what is unproven is *tool discovery through upstream's client on
-  this runtime*, not the network, not the payload, not the fixture. The experiment that would separate "off-device
+  this runtime*, not the network, not the payload, not the fixture. #19 excludes a slow timeout (the registration
+  returns in 996 ms) and a response-mode asymmetry (JSON mode fails with the identical string), leaving a
+  client-side throw inside `client.listTools()` before any request byte is written; closing that needs instrumentation
+  inside upstream's MCP client, which this phase may not do. The experiment that would separate "off-device
   peer" from "any peer at all" is to run the same fixture as a second on-device process and point OpenCode at
   `127.0.0.1`, which needs no app or upstream change and is **not yet built** (it also needs the MCP SDK importable
   from the payload's `node_modules`, which is unverified); it belongs with the other device-side follow-ups in
@@ -837,6 +859,19 @@ described by two measured facts instead of one swallowed string. The next run ad
 in my own instrumentation was caught before it could reach CI (the fixture handler referenced `url` out of scope and
 answered every MCP request with `{"error":"url is not defined"}` — a green-looking G16 with that bug would have been
 worse than a red one).
+
+**Run #19 (`5f1c6f9`) — 14 PASS / 1 FAIL / 0 SKIP again, with `P5-G16` now fully bounded** (its summary label carries
+the route it used: `route=nat-gateway`). The two diagnostics added for this run closed the last two hypotheses.
+`POST /mcp` for a remote registration returns in **996 ms**, so upstream's 30 s tool-list timeout
+(`catalog.ts:11`) is not being consumed — an immediate throw, not a stall. And the same fixture registered in
+**JSON-response mode** fails with the *identical* `Failed to get tools`
+(`DIAGNOSTIC json_mode_status=not-connected(status=failed error=Failed to get tools)`), with the fixture logging a
+third initialized session (`requests=8`, three `streamable session initialized` lines) and still no `tools/list` from
+either OpenCode session — two requests each. §2 carries what that leaves: upstream throwing inside
+`client.listTools()` after a completed handshake and before writing a byte, with the cause destroyed by `defs()`'s
+`Effect.catch(() => Effect.void)`; and the harness's own instruments are now demonstrated good on the same device,
+same runtime, same route and same fixture. Fourteen of Phase 5's fifteen gates are green on the CI emulator with
+nothing skipped, and the fifteenth is an upstream-client question, filed as such in §5 rather than papered over.
 
 ### Reading CI output from this sandbox (why run 65 has no log here)
 
