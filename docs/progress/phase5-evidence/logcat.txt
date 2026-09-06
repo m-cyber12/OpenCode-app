@@ -1,141 +1,135 @@
-09-06 16:01:27.078  6279  6279 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
-09-06 16:01:27.083  6279  6279 I AndroidRuntime: Using default boot image
-09-06 16:01:27.083  6279  6279 I AndroidRuntime: Leaving lock profiling enabled
-09-06 16:01:27.232  6279  6279 D AndroidRuntime: Calling main entry com.android.commands.am.Am
-09-06 16:01:27.511  6292  6311 I TestRunner: started: k2_shellToolRoundTrip(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:01:27.541  6292  6313 I OpenCode/host: ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-09-06 16:01:27.543  6292  6313 I OpenCode/host: state -> EXTRACTING (validating embedded runtime)
-09-06 16:01:27.934  6292  6313 I OpenCode/host: extraction valid (30 files, 1.18.23 @ 05ea507)
-09-06 16:01:27.935  6292  6313 I OpenCode/host: payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-09-06 16:01:27.941  6292  6313 I OpenCode/host: server password loaded from AndroidKeyStore (keystore=false)
-09-06 16:01:27.943  6292  6313 I OpenCode/host: state -> STARTING (starting OpenCode server (attempt 1))
-09-06 16:01:27.948  6292  6313 I OpenCode/host: server started: pid=6315 abi=x86_64 port=4111
-09-06 16:01:27.959  6292  6318 I OpenCode/server: [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~XpQ3e7HEKElCbzOHQ9GTDQ==/ai.opencode.android.debug-2GgyAsr5teX584HqNdVTYA==/lib/x86_64/libbun.so
-09-06 16:01:27.968  6292  6318 I OpenCode/server: [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
-09-06 16:01:27.968  6315  6315 W libbun.so: type=1400 audit(0.0:178): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:01:27.968  6315  6315 W libbun.so: type=1400 audit(0.0:179): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:01:27.980  6292  6318 I OpenCode/server: [stderr] [seccomp] preload handler installed (rc=0)
-09-06 16:01:27.999  6292  6318 I OpenCode/server: [stderr] [launcher] main entered platform=android arch=x64
-09-06 16:01:28.000  6292  6318 I OpenCode/server: [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-09-06 16:01:28.001  6292  6318 I OpenCode/server: [stderr] [launcher] importing OpenCode bundle
-09-06 16:01:29.408  6292  6318 I OpenCode/server: [stderr] [launcher] OpenCode bundle imported
-09-06 16:01:29.409  6292  6318 I OpenCode/server: [stderr] [launcher] binding 127.0.0.1:4111
-09-06 16:01:29.796  6315  6315 W libbun.so: type=1400 audit(0.0:185): avc:  denied  { read } for  name="tcp" dev="proc" ino=4026532053 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_net_tcp_udp:s0 tclass=file permissive=0 app=ai.opencode.android.debug
-09-06 16:01:29.804  6292  6317 I OpenCode/server: SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-09-06 16:01:29.800  6315  6315 W libbun.so: type=1400 audit(0.0:186): avc:  denied  { read } for  name="tcp6" dev="proc" ino=4026532139 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_net_tcp_udp:s0 tclass=file permissive=0 app=ai.opencode.android.debug
-09-06 16:01:29.806  6292  6317 I OpenCode/server: BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-09-06 16:01:29.970  6292  6313 I OpenCode/host: health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
-09-06 16:01:29.971  6292  6313 I OpenCode/host: state -> HEALTHY (healthy on 127.0.0.1:4111)
-09-06 16:01:33.803  6292  6313 I OpenCode/host: integration: loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
-09-06 16:01:33.803  6292  6313 I OpenCode/integration: integration loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
-09-06 16:02:12.228  6292  6311 I OpenCode/gate: P5_G7_SHELL PASS :: session=ses_f888b4d8dffeA2FfTw59VGNqLS streamEvents=10 toolParts=1 outputHasMarker=true last=[text::, text::, tool:bash:running, tool:bash:running, tool:bash:running, tool:bash:running]
-09-06 16:02:12.229  6292  6311 I TestRunner: finished: k2_shellToolRoundTrip(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:12.231  6292  6311 I TestRunner: started: k3_eventStreamStreamsRealEvents(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:12.234  6292  6311 I OpenCode/host: start() ignored: supervisor already running
-09-06 16:02:12.618  6292  6311 I OpenCode/gate: P5_G11_STREAM PASS :: firstFrame=true shell=200 statusEvents=true streamed=[server.connected, session.created, session.status, message.updated, message.part.updated, session.idle] total=22
-09-06 16:02:12.619  6292  6311 I TestRunner: finished: k3_eventStreamStreamsRealEvents(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:12.620  6292  6311 I TestRunner: started: harnessExportLoopbackCredentialForHostDrivers(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:12.622  6292  6311 I OpenCode/host: start() ignored: supervisor already running
-09-06 16:02:12.634  6292  6311 I TestRunner: finished: harnessExportLoopbackCredentialForHostDrivers(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:12.635  6292  6311 I TestRunner: started: k4_mcpLocalStdioConnected(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:12.637  6292  6311 I OpenCode/host: start() ignored: supervisor already running
-09-06 16:02:12.664  6347  6347 W bun     : type=1400 audit(0.0:231): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:12.664  6347  6347 W bun     : type=1400 audit(0.0:232): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:12.664  6347  6347 W bun     : type=1400 audit(0.0:233): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:12.664  6347  6347 W bun     : type=1400 audit(0.0:234): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:12.668  6347  6347 W bun     : type=1400 audit(0.0:235): avc:  denied  { read } for  name="overcommit_memory" dev="proc" ino=73096 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_overcommit_memory:s0 tclass=file permissive=0 app=ai.opencode.android.debug
-09-06 16:02:12.900  6292  6311 I OpenCode/gate: P5_G10_MCP PASS :: status={gates-mcp=connected} (gates-mcp must be connected via stdio)
-09-06 16:02:12.901  6292  6311 I TestRunner: finished: k4_mcpLocalStdioConnected(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:12.902  6292  6311 I TestRunner: started: k9_durableGlobalConfigPatchRoundTrips(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:12.904  6292  6311 I OpenCode/host: start() ignored: supervisor already running
-09-06 16:02:12.963  6292  6311 I OpenCode/gate: P5_K9_DURABLE_CONFIG_PATCH PASS :: patch_ok=true persisted=true fixture_mcp_intact=true err=null
-09-06 16:02:12.963  6292  6311 I TestRunner: finished: k9_durableGlobalConfigPatchRoundTrips(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:12.964  6292  6311 I TestRunner: started: k7_serverIsReachableOnLoopbackAndRefusedElsewhere(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:12.966  6292  6311 I OpenCode/host: start() ignored: supervisor already running
-09-06 16:02:12.985  6292  6311 I OpenCode/gate: P5_LOOPBACK PASS :: loopback_connect=true nonLoopback=[10.0.2.15, 10.0.2.16] external_accepted=0 table=inconclusive(/proc/net denied to the app uid; refusal on 2 non-loopback address(es) is the evidence)
-09-06 16:02:12.985  6292  6311 I TestRunner: finished: k7_serverIsReachableOnLoopbackAndRefusedElsewhere(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:12.986  6292  6311 I TestRunner: started: k8_credentialProvisioningReachesOpenCodesAuthStore(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:12.988  6292  6311 I OpenCode/host: start() ignored: supervisor already running
-09-06 16:02:16.610  6292  6311 I OpenCode/gate: P5_CREDENTIALS PASS :: keystore=yes opencode_connected=true authJson=auth.json onDisk=true mode=600 blobBytes=109
-09-06 16:02:19.094  6292  6311 I TestRunner: finished: k8_credentialProvisioningReachesOpenCodesAuthStore(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:19.095  6292  6311 I TestRunner: started: k5_permissionAskIsAnsweredByTheApp(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:19.098  6292  6311 I OpenCode/host: start() ignored: supervisor already running
-09-06 16:02:19.218  6292  6318 I OpenCode/server: [stderr] [seccomp] mkdirat(/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode/snapshot/3235cfcd5e0adc57e5b6bfe5e9801ec2e1d9735a/074a03d73b1149d38e931a65edbd51701a566c71) errno=2
-09-06 16:02:23.676  6292  6311 I OpenCode/gate: P5_G12_PERMISSION PASS :: asked permission=bash patterns=["echo P5_K5_PERM_OK"] bashPolicy=ask replied=once markerSeen=true pendingAfter=0
-09-06 16:02:23.810  6292  6311 I TestRunner: finished: k5_permissionAskIsAnsweredByTheApp(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:23.811  6292  6311 I TestRunner: started: k1_healthEndpointThroughTheAndroidClient(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:23.814  6292  6311 I OpenCode/host: start() ignored: supervisor already running
-09-06 16:02:23.835  6292  6311 I OpenCode/gate: P5_G6_HEALTH PASS :: body={"healthy":true,"version":"1.18.23-android"}
-09-06 16:02:23.835  6292  6311 I TestRunner: finished: k1_healthEndpointThroughTheAndroidClient(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:23.836  6292  6311 I TestRunner: started: harnessDescribeDeviceFacts(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:23.838  6292  6311 I OpenCode/host: start() ignored: supervisor already running
-09-06 16:02:23.855  6292  6311 I TestRunner: finished: harnessDescribeDeviceFacts(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:23.856  6292  6311 I TestRunner: started: k6_secretsAreKeystoreBackedAndNeverPlaintext(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:23.859  6292  6311 I OpenCode/host: start() ignored: supervisor already running
-09-06 16:02:23.880  6292  6311 I OpenCode/gate: P5_KEYSTORE PASS :: hardwareBacked=false blobBytes=115 entries=provider-gatecanary,server-password
-09-06 16:02:23.881  6292  6311 I TestRunner: finished: k6_secretsAreKeystoreBackedAndNeverPlaintext(ai.opencode.android.client.OpenCodeClientGatesTest)
-09-06 16:02:23.887  6279  6279 I AndroidRuntime: VM exiting with result code 0.
-09-06 16:02:27.192  6457  6484 I OpenCode/host: ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-09-06 16:02:27.193  6457  6457 I OpenCode/host: start() ignored: supervisor already running
-09-06 16:02:27.205  6457  6484 I OpenCode/host: state -> EXTRACTING (validating embedded runtime)
-09-06 16:02:28.034  6457  6484 I OpenCode/host: extraction valid (30 files, 1.18.23 @ 05ea507)
-09-06 16:02:28.035  6457  6484 I OpenCode/host: payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-09-06 16:02:28.041  6457  6484 I OpenCode/host: server password loaded from AndroidKeyStore (keystore=false)
-09-06 16:02:28.043  6457  6484 I OpenCode/host: state -> STARTING (starting OpenCode server (attempt 1))
-09-06 16:02:28.048  6457  6484 I OpenCode/host: server started: pid=6491 abi=x86_64 port=4111
-09-06 16:02:28.059  6457  6494 I OpenCode/server: [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~XpQ3e7HEKElCbzOHQ9GTDQ==/ai.opencode.android.debug-2GgyAsr5teX584HqNdVTYA==/lib/x86_64/libbun.so
-09-06 16:02:28.061  6457  6494 I OpenCode/server: [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
-09-06 16:02:28.065  6457  6494 I OpenCode/server: [stderr] [seccomp] preload handler installed (rc=0)
-09-06 16:02:28.060  6491  6491 W libbun.so: type=1400 audit(0.0:407): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:28.060  6491  6491 W libbun.so: type=1400 audit(0.0:408): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:28.095  6457  6494 I OpenCode/server: [stderr] [launcher] main entered platform=android arch=x64
-09-06 16:02:28.060  6491  6491 W libbun.so: type=1400 audit(0.0:409): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:28.097  6457  6494 I OpenCode/server: [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-09-06 16:02:28.097  6457  6494 I OpenCode/server: [stderr] [launcher] importing OpenCode bundle
-09-06 16:02:28.060  6491  6491 W libbun.so: type=1400 audit(0.0:410): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:28.064  6491  6491 W libbun.so: type=1400 audit(0.0:411): avc:  denied  { read } for  name="overcommit_memory" dev="proc" ino=73096 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_overcommit_memory:s0 tclass=file permissive=0 app=ai.opencode.android.debug
-09-06 16:02:29.489  6457  6494 I OpenCode/server: [stderr] [launcher] OpenCode bundle imported
-09-06 16:02:29.490  6457  6494 I OpenCode/server: [stderr] [launcher] binding 127.0.0.1:4111
-09-06 16:02:29.891  6457  6493 I OpenCode/server: SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-09-06 16:02:29.893  6457  6493 I OpenCode/server: BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-09-06 16:02:29.888  6491  6491 W libbun.so: type=1400 audit(0.0:421): avc:  denied  { read } for  name="tcp" dev="proc" ino=4026532053 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_net_tcp_udp:s0 tclass=file permissive=0 app=ai.opencode.android.debug
-09-06 16:02:29.888  6491  6491 W libbun.so: type=1400 audit(0.0:422): avc:  denied  { read } for  name="tcp6" dev="proc" ino=4026532139 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_net_tcp_udp:s0 tclass=file permissive=0 app=ai.opencode.android.debug
-09-06 16:02:30.071  6457  6484 I OpenCode/host: health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
-09-06 16:02:30.072  6457  6484 I OpenCode/host: state -> HEALTHY (healthy on 127.0.0.1:4111)
-09-06 16:02:34.819  6457  6484 I OpenCode/host: integration: loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
-09-06 16:02:34.820  6457  6484 I OpenCode/integration: integration loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
-09-06 16:02:35.932  6545  6545 W bun     : type=1400 audit(0.0:493): avc:  denied  { ioctl } for  path="socket:[75960]" dev="sockfs" ino=75960 ioctlcmd=0x5430 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tclass=unix_stream_socket permissive=0 app=ai.opencode.android.debug
-09-06 16:02:41.636  6585  6585 W bun     : type=1400 audit(0.0:582): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:41.640  6585  6585 W bun     : type=1400 audit(0.0:583): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:41.640  6585  6585 W bun     : type=1400 audit(0.0:584): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:41.640  6585  6585 W bun     : type=1400 audit(0.0:585): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:41.644  6585  6585 W bun     : type=1400 audit(0.0:586): avc:  denied  { read } for  name="overcommit_memory" dev="proc" ino=75933 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_overcommit_memory:s0 tclass=file permissive=0 app=ai.opencode.android.debug
-09-06 16:02:51.084  6610  6610 W bun     : type=1400 audit(0.0:596): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:51.088  6610  6610 W bun     : type=1400 audit(0.0:597): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:51.088  6610  6610 W bun     : type=1400 audit(0.0:598): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:51.088  6610  6610 W bun     : type=1400 audit(0.0:599): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:02:51.092  6610  6610 W bun     : type=1400 audit(0.0:600): avc:  denied  { read } for  name="overcommit_memory" dev="proc" ino=75933 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_overcommit_memory:s0 tclass=file permissive=0 app=ai.opencode.android.debug
-09-06 16:03:06.624  6672  6672 W bun     : type=1400 audit(0.0:730): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:03:06.624  6672  6672 W bun     : type=1400 audit(0.0:731): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:03:06.624  6672  6672 W bun     : type=1400 audit(0.0:732): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:03:06.624  6672  6672 W bun     : type=1400 audit(0.0:733): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:03:06.628  6672  6672 W bun     : type=1400 audit(0.0:734): avc:  denied  { read } for  name="overcommit_memory" dev="proc" ino=75933 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_overcommit_memory:s0 tclass=file permissive=0 app=ai.opencode.android.debug
-09-06 16:03:26.852  6699  6699 W bun     : type=1400 audit(0.0:793): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:03:26.852  6699  6699 W bun     : type=1400 audit(0.0:794): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:03:26.852  6699  6699 W bun     : type=1400 audit(0.0:795): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:03:26.852  6699  6699 W bun     : type=1400 audit(0.0:796): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:03:26.860  6699  6699 W bun     : type=1400 audit(0.0:797): avc:  denied  { read } for  name="overcommit_memory" dev="proc" ino=75933 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_overcommit_memory:s0 tclass=file permissive=0 app=ai.opencode.android.debug
-09-06 16:03:39.116  6749  6749 W bun     : type=1400 audit(0.0:948): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:03:39.116  6749  6749 W bun     : type=1400 audit(0.0:949): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:03:39.116  6749  6749 W bun     : type=1400 audit(0.0:950): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:03:39.116  6749  6749 W bun     : type=1400 audit(0.0:951): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:03:39.120  6749  6749 W bun     : type=1400 audit(0.0:952): avc:  denied  { read } for  name="overcommit_memory" dev="proc" ino=75933 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_overcommit_memory:s0 tclass=file permissive=0 app=ai.opencode.android.debug
-09-06 16:05:20.118  6808  6808 D nativeloader: Configuring product-clns-9 for unbundled product apk /product/priv-app/PrebuiltGmsCore/PrebuiltGmsCore.apk. target_sdk_version=33, uses_libraries=, library_path=/product/priv-app/PrebuiltGmsCore/lib/x86_64:/product/priv-app/PrebuiltGmsCore/PrebuiltGmsCore.apk!/lib/x86_64:/product/lib64:/system/product/lib64, permitted_path=/data:/mnt/expand:/data/user/0/com.google.android.gms:/product/lib64:/system/product/lib64
-09-06 16:05:20.120  6808  6808 D nativeloader: InitVndkspLibrariesProduct: android.hardware.common-V2-ndk.so:android.hardware.common.fmq-V1-ndk.so:android.hardware.graphics.allocator-V2-ndk.so:android.hardware.graphics.common-V4-ndk.so:android.hardware.graphics.common@1.0.so:android.hardware.graphics.common@1.1.so:android.hardware.graphics.common@1.2.so:android.hardware.graphics.composer3-V1-ndk.so:android.hardware.graphics.mapper@2.0.so:android.hardware.graphics.mapper@2.1.so:android.hardware.graphics.mapper@3.0.so:android.hardware.graphics.mapper@4.0.so:android.hardware.renderscript@1.0.so:android.hidl.memory.token@1.0.so:android.hidl.memory@1.0-impl.so:android.hidl.memory@1.0.so:android.hidl.safe_union@1.0.so:libRSCpuRef.so:libRSDriver.so:libRS_internal.so:libbase.so:libbcinfo.so:libblas.so:libc++.so:libcompiler_rt.so:libcutils.so:libdmabufheap.so:libgralloctypes.so:libhardware.so:libhidlbase.so:libhidlmemory.so:libion.so:libjsoncpp.so:liblzma.so:libprocessgroup.so:libunwindstack.so:libutils.so:libutilscallstack.so:libz.so
-09-06 16:05:53.056  6895  6895 W bun     : type=1400 audit(0.0:958): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:05:53.056  6895  6895 W bun     : type=1400 audit(0.0:959): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:05:53.056  6895  6895 W bun     : type=1400 audit(0.0:960): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:05:53.056  6895  6895 W bun     : type=1400 audit(0.0:961): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
-09-06 16:05:53.060  6895  6895 W bun     : type=1400 audit(0.0:962): avc:  denied  { read } for  name="overcommit_memory" dev="proc" ino=75933 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_overcommit_memory:s0 tclass=file permissive=0 app=ai.opencode.android.debug
-09-06 16:05:53.060  6895  6895 W bun     : type=1400 audit(0.0:963): avc:  denied  { read } for  name="mmap_min_addr" dev="proc" ino=75936 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_security:s0 tclass=file permissive=0 app=ai.opencode.android.debug
-09-06 16:05:53.064  6895  6895 W bun     : type=1400 audit(0.0:964): avc:  denied  { read } for  name="/" dev="dm-5" ino=2 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:rootfs:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:17:23.708  6397  6397 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+09-06 16:17:23.713  6397  6397 I AndroidRuntime: Using default boot image
+09-06 16:17:23.713  6397  6397 I AndroidRuntime: Leaving lock profiling enabled
+09-06 16:17:23.851  6397  6397 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+09-06 16:17:24.117  6411  6430 I TestRunner: started: k2_shellToolRoundTrip(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:17:24.149  6411  6432 I OpenCode/host: ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+09-06 16:17:24.151  6411  6432 I OpenCode/host: state -> EXTRACTING (validating embedded runtime)
+09-06 16:17:24.530  6411  6432 I OpenCode/host: extraction valid (30 files, 1.18.23 @ 05ea507)
+09-06 16:17:24.530  6411  6432 I OpenCode/host: payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+09-06 16:17:24.536  6411  6432 I OpenCode/host: server password loaded from AndroidKeyStore (keystore=false)
+09-06 16:17:24.538  6411  6432 I OpenCode/host: state -> STARTING (starting OpenCode server (attempt 1))
+09-06 16:17:24.545  6411  6432 I OpenCode/host: server started: pid=6434 abi=x86_64 port=4111
+09-06 16:17:24.562  6411  6437 I OpenCode/server: [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~RDCfj_81AnE0sosvKRl33Q==/ai.opencode.android.debug-FUGXcxnUYgQ3qqUcjTKw-Q==/lib/x86_64/libbun.so
+09-06 16:17:24.567  6411  6437 I OpenCode/server: [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+09-06 16:17:24.554  6434  6434 W libbun.so: type=1400 audit(0.0:182): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:17:24.572  6411  6437 I OpenCode/server: [stderr] [seccomp] preload handler installed (rc=0)
+09-06 16:17:24.554  6434  6434 W libbun.so: type=1400 audit(0.0:183): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:17:24.591  6411  6437 I OpenCode/server: [stderr] [launcher] main entered platform=android arch=x64
+09-06 16:17:24.593  6411  6437 I OpenCode/server: [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+09-06 16:17:24.594  6411  6437 I OpenCode/server: [stderr] [launcher] importing OpenCode bundle
+09-06 16:17:25.985  6411  6437 I OpenCode/server: [stderr] [launcher] OpenCode bundle imported
+09-06 16:17:25.986  6411  6437 I OpenCode/server: [stderr] [launcher] binding 127.0.0.1:4111
+09-06 16:17:26.385  6411  6436 I OpenCode/server: SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+09-06 16:17:26.382  6434  6434 W libbun.so: type=1400 audit(0.0:189): avc:  denied  { read } for  name="tcp" dev="proc" ino=4026532053 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_net_tcp_udp:s0 tclass=file permissive=0 app=ai.opencode.android.debug
+09-06 16:17:26.394  6411  6436 I OpenCode/server: BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+09-06 16:17:26.386  6434  6434 W libbun.so: type=1400 audit(0.0:190): avc:  denied  { read } for  name="tcp6" dev="proc" ino=4026532139 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_net_tcp_udp:s0 tclass=file permissive=0 app=ai.opencode.android.debug
+09-06 16:17:26.563  6411  6432 I OpenCode/host: health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
+09-06 16:17:26.564  6411  6432 I OpenCode/host: state -> HEALTHY (healthy on 127.0.0.1:4111)
+09-06 16:17:30.437  6411  6432 I OpenCode/host: integration: loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
+09-06 16:17:30.437  6411  6432 I OpenCode/integration: integration loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
+09-06 16:18:09.131  6411  6430 I OpenCode/gate: P5_G7_SHELL PASS :: session=ses_f887cb4cfffePs4Ty0W9AhzdjN streamEvents=10 toolParts=1 outputHasMarker=true last=[text::, text::, tool:bash:running, tool:bash:running, tool:bash:running, tool:bash:running]
+09-06 16:18:09.132  6411  6430 I TestRunner: finished: k2_shellToolRoundTrip(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:09.133  6411  6430 I TestRunner: started: k3_eventStreamStreamsRealEvents(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:09.136  6411  6430 I OpenCode/host: start() ignored: supervisor already running
+09-06 16:18:09.243  6411  6430 I OpenCode/gate: P5_G11_STREAM PASS :: firstFrame=true shell=200 statusEvents=true streamed=[server.connected, session.created, session.status, message.updated, message.part.updated] total=16
+09-06 16:18:09.244  6411  6430 I TestRunner: finished: k3_eventStreamStreamsRealEvents(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:09.246  6411  6430 I TestRunner: started: harnessExportLoopbackCredentialForHostDrivers(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:09.248  6411  6430 I OpenCode/host: start() ignored: supervisor already running
+09-06 16:18:09.269  6411  6430 I TestRunner: finished: harnessExportLoopbackCredentialForHostDrivers(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:09.270  6411  6430 I TestRunner: started: k4_mcpLocalStdioConnected(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:09.272  6411  6430 I OpenCode/host: start() ignored: supervisor already running
+09-06 16:18:09.298  6482  6482 W bun     : type=1400 audit(0.0:235): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:18:09.298  6482  6482 W bun     : type=1400 audit(0.0:236): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:18:09.298  6482  6482 W bun     : type=1400 audit(0.0:237): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:18:09.298  6482  6482 W bun     : type=1400 audit(0.0:238): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:18:09.302  6482  6482 W bun     : type=1400 audit(0.0:239): avc:  denied  { read } for  name="overcommit_memory" dev="proc" ino=74391 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_overcommit_memory:s0 tclass=file permissive=0 app=ai.opencode.android.debug
+09-06 16:18:09.545  6411  6430 I OpenCode/gate: P5_G10_MCP PASS :: status={gates-mcp=connected} (gates-mcp must be connected via stdio)
+09-06 16:18:09.546  6411  6430 I TestRunner: finished: k4_mcpLocalStdioConnected(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:09.546  6411  6430 I TestRunner: started: k9_durableGlobalConfigPatchRoundTrips(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:09.552  6411  6430 I OpenCode/host: start() ignored: supervisor already running
+09-06 16:18:09.629  6411  6430 I OpenCode/gate: P5_K9_DURABLE_CONFIG_PATCH PASS :: patch_ok=true persisted=true fixture_mcp_intact=true err=null
+09-06 16:18:09.629  6411  6430 I TestRunner: finished: k9_durableGlobalConfigPatchRoundTrips(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:09.630  6411  6430 I TestRunner: started: k7_serverIsReachableOnLoopbackAndRefusedElsewhere(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:09.633  6411  6430 I OpenCode/host: start() ignored: supervisor already running
+09-06 16:18:09.651  6411  6430 I OpenCode/gate: P5_LOOPBACK PASS :: loopback_connect=true nonLoopback=[10.0.2.15, 10.0.2.16] external_accepted=0 table=inconclusive(/proc/net denied to the app uid; refusal on 2 non-loopback address(es) is the evidence)
+09-06 16:18:09.651  6411  6430 I TestRunner: finished: k7_serverIsReachableOnLoopbackAndRefusedElsewhere(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:09.653  6411  6430 I TestRunner: started: k8_credentialProvisioningReachesOpenCodesAuthStore(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:09.657  6411  6430 I OpenCode/host: start() ignored: supervisor already running
+09-06 16:18:13.290  6411  6430 I OpenCode/gate: P5_CREDENTIALS PASS :: keystore=yes opencode_connected=true authJson=auth.json onDisk=true mode=600 blobBytes=109
+09-06 16:18:15.729  6411  6430 I TestRunner: finished: k8_credentialProvisioningReachesOpenCodesAuthStore(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:15.730  6411  6430 I TestRunner: started: k5_permissionAskIsAnsweredByTheApp(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:15.732  6411  6430 I OpenCode/host: start() ignored: supervisor already running
+09-06 16:18:15.826  6411  6437 I OpenCode/server: [stderr] [seccomp] mkdirat(/data/user/0/ai.opencode.android.debug/files/xdg/data/opencode/snapshot/1f571acc1377714a0605000d703ee546755c0e9c/074a03d73b1149d38e931a65edbd51701a566c71) errno=2
+09-06 16:18:20.982  6411  6430 I OpenCode/gate: P5_G12_PERMISSION PASS :: asked permission=bash patterns=["echo P5_K5_PERM_OK"] bashPolicy=ask replied=once markerSeen=true pendingAfter=0
+09-06 16:18:21.133  6411  6430 I TestRunner: finished: k5_permissionAskIsAnsweredByTheApp(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:21.135  6411  6430 I TestRunner: started: k1_healthEndpointThroughTheAndroidClient(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:21.139  6411  6430 I OpenCode/host: start() ignored: supervisor already running
+09-06 16:18:21.166  6411  6430 I OpenCode/gate: P5_G6_HEALTH PASS :: body={"healthy":true,"version":"1.18.23-android"}
+09-06 16:18:21.166  6411  6430 I TestRunner: finished: k1_healthEndpointThroughTheAndroidClient(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:21.167  6411  6430 I TestRunner: started: harnessDescribeDeviceFacts(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:21.169  6411  6430 I OpenCode/host: start() ignored: supervisor already running
+09-06 16:18:21.184  6411  6430 I TestRunner: finished: harnessDescribeDeviceFacts(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:21.185  6411  6430 I TestRunner: started: k6_secretsAreKeystoreBackedAndNeverPlaintext(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:21.189  6411  6430 I OpenCode/host: start() ignored: supervisor already running
+09-06 16:18:21.206  6411  6430 I OpenCode/gate: P5_KEYSTORE PASS :: hardwareBacked=false blobBytes=115 entries=provider-gatecanary,server-password
+09-06 16:18:21.207  6411  6430 I TestRunner: finished: k6_secretsAreKeystoreBackedAndNeverPlaintext(ai.opencode.android.client.OpenCodeClientGatesTest)
+09-06 16:18:21.213  6397  6397 I AndroidRuntime: VM exiting with result code 0.
+09-06 16:18:24.739  6580  6580 I OpenCode/host: start() ignored: supervisor already running
+09-06 16:18:24.740  6580  6606 I OpenCode/host: ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+09-06 16:18:24.745  6580  6606 I OpenCode/host: state -> EXTRACTING (validating embedded runtime)
+09-06 16:18:25.658  6621  6621 W bun     : type=1400 audit(0.0:407): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:18:25.666  6580  6606 I OpenCode/host: extraction valid (30 files, 1.18.23 @ 05ea507)
+09-06 16:18:25.667  6580  6606 I OpenCode/host: payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+09-06 16:18:25.662  6621  6621 W bun     : type=1400 audit(0.0:408): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:18:25.678  6580  6606 I OpenCode/host: server password loaded from AndroidKeyStore (keystore=false)
+09-06 16:18:25.680  6580  6606 I OpenCode/host: state -> STARTING (starting OpenCode server (attempt 1))
+09-06 16:18:25.666  6621  6621 W bun     : type=1400 audit(0.0:409): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:18:25.666  6621  6621 W bun     : type=1400 audit(0.0:410): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:18:25.690  6580  6606 I OpenCode/host: server started: pid=6624 abi=x86_64 port=4111
+09-06 16:18:25.670  6621  6621 W bun     : type=1400 audit(0.0:411): avc:  denied  { read } for  name="overcommit_memory" dev="proc" ino=74625 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_overcommit_memory:s0 tclass=file permissive=0 app=ai.opencode.android.debug
+09-06 16:18:25.674  6621  6621 W bun     : type=1400 audit(0.0:412): avc:  denied  { read } for  name="mmap_min_addr" dev="proc" ino=75301 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_security:s0 tclass=file permissive=0 app=ai.opencode.android.debug
+09-06 16:18:25.678  6621  6621 W bun     : type=1400 audit(0.0:413): avc:  denied  { read } for  name="/" dev="dm-5" ino=2 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:rootfs:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:18:25.716  6580  6627 I OpenCode/server: [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~RDCfj_81AnE0sosvKRl33Q==/ai.opencode.android.debug-FUGXcxnUYgQ3qqUcjTKw-Q==/lib/x86_64/libbun.so
+09-06 16:18:25.717  6580  6627 I OpenCode/server: [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+09-06 16:18:25.718  6580  6627 I OpenCode/server: [stderr] [seccomp] preload handler installed (rc=0)
+09-06 16:18:25.743  6580  6627 I OpenCode/server: [stderr] [launcher] main entered platform=android arch=x64
+09-06 16:18:25.748  6580  6627 I OpenCode/server: [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+09-06 16:18:25.749  6580  6627 I OpenCode/server: [stderr] [launcher] importing OpenCode bundle
+09-06 16:18:27.178  6580  6627 I OpenCode/server: [stderr] [launcher] OpenCode bundle imported
+09-06 16:18:27.179  6580  6627 I OpenCode/server: [stderr] [launcher] binding 127.0.0.1:4111
+09-06 16:18:27.582  6580  6626 I OpenCode/server: SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+09-06 16:18:27.578  6624  6624 W libbun.so: type=1400 audit(0.0:431): avc:  denied  { read } for  name="tcp" dev="proc" ino=4026532053 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_net_tcp_udp:s0 tclass=file permissive=0 app=ai.opencode.android.debug
+09-06 16:18:27.600  6580  6626 I OpenCode/server: BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+09-06 16:18:27.598  6624  6624 W libbun.so: type=1400 audit(0.0:432): avc:  denied  { read } for  name="tcp6" dev="proc" ino=4026532139 scontext=u:r:untrusted_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_net_tcp_udp:s0 tclass=file permissive=0 app=ai.opencode.android.debug
+09-06 16:18:27.721  6580  6606 I OpenCode/host: health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23-android"}
+09-06 16:18:27.723  6580  6606 I OpenCode/host: state -> HEALTHY (healthy on 127.0.0.1:4111)
+09-06 16:18:32.900  6580  6606 I OpenCode/host: integration: loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
+09-06 16:18:32.900  6580  6606 I OpenCode/integration: integration loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
+09-06 16:18:48.830  6729  6729 W bun     : type=1400 audit(0.0:606): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:18:48.830  6729  6729 W bun     : type=1400 audit(0.0:607): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:18:48.830  6729  6729 W bun     : type=1400 audit(0.0:608): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:18:48.830  6729  6729 W bun     : type=1400 audit(0.0:609): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:18:48.830  6729  6729 W bun     : type=1400 audit(0.0:610): avc:  denied  { read } for  name="overcommit_memory" dev="proc" ino=77887 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_overcommit_memory:s0 tclass=file permissive=0 app=ai.opencode.android.debug
+09-06 16:19:04.326  6785  6785 W bun     : type=1400 audit(0.0:740): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:19:04.326  6785  6785 W bun     : type=1400 audit(0.0:741): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:19:04.326  6785  6785 W bun     : type=1400 audit(0.0:742): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:19:04.326  6785  6785 W bun     : type=1400 audit(0.0:743): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:19:04.330  6785  6785 W bun     : type=1400 audit(0.0:744): avc:  denied  { read } for  name="overcommit_memory" dev="proc" ino=77887 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_overcommit_memory:s0 tclass=file permissive=0 app=ai.opencode.android.debug
+09-06 16:19:21.614  6811  6811 W bun     : type=1400 audit(0.0:803): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:19:21.614  6811  6811 W bun     : type=1400 audit(0.0:804): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:19:21.614  6811  6811 W bun     : type=1400 audit(0.0:805): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:19:21.614  6811  6811 W bun     : type=1400 audit(0.0:806): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:19:21.622  6811  6811 W bun     : type=1400 audit(0.0:807): avc:  denied  { read } for  name="overcommit_memory" dev="proc" ino=77887 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_overcommit_memory:s0 tclass=file permissive=0 app=ai.opencode.android.debug
+09-06 16:19:41.870  6861  6861 W bun     : type=1400 audit(0.0:958): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:19:41.870  6861  6861 W bun     : type=1400 audit(0.0:959): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:19:41.870  6861  6861 W bun     : type=1400 audit(0.0:960): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:19:41.870  6861  6861 W bun     : type=1400 audit(0.0:961): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:19:41.870  6861  6861 W bun     : type=1400 audit(0.0:962): avc:  denied  { read } for  name="overcommit_memory" dev="proc" ino=77887 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_overcommit_memory:s0 tclass=file permissive=0 app=ai.opencode.android.debug
+09-06 16:21:55.630  6955  6955 W bun     : type=1400 audit(0.0:968): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:21:55.630  6955  6955 W bun     : type=1400 audit(0.0:969): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:21:55.630  6955  6955 W bun     : type=1400 audit(0.0:970): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:21:55.630  6955  6955 W bun     : type=1400 audit(0.0:971): avc:  denied  { search } for  name="tests" dev="dm-40" ino=65540 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:shell_test_data_file:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
+09-06 16:21:55.634  6955  6955 W bun     : type=1400 audit(0.0:972): avc:  denied  { read } for  name="overcommit_memory" dev="proc" ino=77887 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_overcommit_memory:s0 tclass=file permissive=0 app=ai.opencode.android.debug
+09-06 16:21:55.634  6955  6955 W bun     : type=1400 audit(0.0:973): avc:  denied  { read } for  name="mmap_min_addr" dev="proc" ino=77890 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:proc_security:s0 tclass=file permissive=0 app=ai.opencode.android.debug
+09-06 16:21:55.634  6955  6955 W bun     : type=1400 audit(0.0:974): avc:  denied  { read } for  name="/" dev="dm-5" ino=2 scontext=u:r:runas_app:s0:c192,c256,c512,c768 tcontext=u:object_r:rootfs:s0 tclass=dir permissive=0 app=ai.opencode.android.debug
