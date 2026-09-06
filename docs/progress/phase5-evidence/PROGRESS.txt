@@ -1757,3 +1757,49 @@
     MCP_READY: 26M
     ########## 3/6 APKs + JVM unit tests ##########
 
+### 2026-09-06T16:20:02Z  run=34044461398  step: 5/6 phase 5 integration gates
+    head=853e4d2 branch=arena/01a05713-opencode-app log_lines=1385
+    --- error digest (why a stalled push cannot hide this) ---
+    BUILD SUCCESSFUL in 2m 37s
+    --- last 40 log lines ---
+    
+    LoopbackAuditTest > skipsHeaderAndJunk PASSED
+    
+    LoopbackAuditTest > formatsIpv4LittleEndianWord PASSED
+    
+    ManifestTest > roundTripsVersionsAndEntries PASSED
+    
+    ManifestTest > unknownFieldsTolerated PASSED
+    
+    ManifestTest > rejectsManifestVersionDriftFromLock PASSED
+    
+    ManifestTest > rejectsUnsafeManifestPaths PASSED
+    
+    PayloadExtractorTest > verifyDetectsCorruptedContent PASSED
+    
+    PayloadExtractorTest > unpackTarExtractsFilesAndNestedDirs PASSED
+    
+    PayloadExtractorTest > verifyDetectsMissingMarker PASSED
+    
+    PayloadExtractorTest > unpackTarRejectsPathEscape PASSED
+    
+    SecretNamesTest > rejectsPathTraversalAndJunk PASSED
+    
+    SecretNamesTest > blobFileNameIsContained PASSED
+    
+    SecretNamesTest > acceptsProviderStyleNames PASSED
+    
+    SecretNamesTest > providerIdRoundTrip PASSED
+    
+    BUILD SUCCESSFUL in 2m 37s
+    74 actionable tasks: 68 executed, 6 from cache
+    Performing Streamed Install
+    Success
+    Performing Streamed Install
+    Success
+    ########## 4/6 host-side remote MCP fixture (pinned MCP SDK) ##########
+    P5_REMOTE_MCP_DEPS reused from phase4/out/mcp/node_modules
+    P5_REMOTE_MCP_SMOKE up=1 (log: /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp/smoke.log)
+    P5_REMOTE_MCP_BUILT /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp (sdk 1.29.0)
+    ########## 5/6 phase 5 integration gates ##########
+
