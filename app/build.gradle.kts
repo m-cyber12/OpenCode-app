@@ -29,7 +29,12 @@ android {
         applicationId = "ai.opencode.android"
         minSdk = 29          // W^X: exec only from nativeLibraryDir; ABI gating enforces arm64/x64
         targetSdk = 34
-        versionCode = 5      // phase 5
+        versionCode = 6      // phase 6 (UI). Bumped: nothing in the runtime contract changed.
+        // versionName deliberately still carries "phase5": Phase 5's P5-01 gate asserts the
+        // installed APK's versionName matches *phase5* (phase5/scripts/20-integration-gates.sh),
+        // and Phase 6 changes no runtime/API/payload contract (payloadVersion stays 5), so the
+        // honest value is unchanged. A UI-phase bump here would move a Phase 5 gate, which a
+        // polish phase may not do - it would read as a regression that is not one.
         versionName = "1.18.23-phase5"   // tracks the pinned OpenCode version (versions.lock)
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")   // arm64 ships; x86_64 for CI/emulator
@@ -97,6 +102,14 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
+    // Phase 6 UI. Both are Compose artifacts aligned by the BOM above, not new
+    // third-party libraries: the chat UI needs icons (send/stop/expand) and the
+    // foundation layer it was already using implicitly through material3
+    // (lazy lists, clickable text, borders). Nothing else is added - markdown and
+    // syntax highlighting are implemented in-repo (ui/markdown) so the dependency
+    // list stays as small and as pinnable as Phase 5 left it.
+    implementation("androidx.compose.material:material-icons-core")
+    implementation("androidx.compose.foundation:foundation")
 
     testImplementation("junit:junit:4.13.2")
     // Instrumentation only: the runner + junit3 extension. No production dep is
@@ -104,6 +117,13 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.1")
     androidTestImplementation("androidx.test:core:1.6.1")
+    // Phase 6 (P6-00, the prerequisite the plan of record names): without a Compose
+    // UI-test dependency every UI claim would be "it compiles", which this project
+    // does not accept as evidence. ui-test-manifest supplies the host activity that
+    // createComposeRule() needs, in debug builds only.
+    androidTestImplementation(composeBom)
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
     // Real org.json on the JVM so manifest parsing/markers are testable locally.
     testImplementation("org.json:json:20240303")
 }

@@ -7,43 +7,25 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import ai.opencode.android.runtime.RuntimeService
-import ai.opencode.android.runtime.RuntimeStatus
 import ai.opencode.android.runtime.RuntimeManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import ai.opencode.android.runtime.RuntimeService
+import ai.opencode.android.ui.AppRoot
 
 /**
- * The app's screen. Phase 4 added the runtime host (status + diagnostics);
- * Phase 5 makes the app an actual OpenCode client: sessions, streaming,
- * tool parts, permission approvals, MCP and Keystore-backed credentials, all
- * driven through the upstream HTTP API and event stream (see ui/OpenCodeScreen
- * and client/). Polishing this UI is Phase 6.
+ * The single activity: it owns the runtime lifecycle and nothing else.
+ *
+ * Phase 4 added the runtime host, Phase 5 made the app a real OpenCode client, and
+ * Phase 6 replaced the developer surface with a product UI (`ui/AppRoot.kt`): the
+ * activity starts the supervisor service, asks for the optional notification
+ * permission, and hands the composition to [AppRoot], which is the only place in
+ * the UI layer allowed to touch process singletons.
+ *
+ * The runtime is started on launch AND on every return to the foreground:
+ * `RuntimeService.start` is idempotent, and after a debug STOP tore the foreground
+ * service down (or the system dropped it in the background) a re-launch can arrive
+ * as onNewIntent/onStart without onCreate.
  */
 class MainActivity : ComponentActivity() {
 
@@ -59,24 +41,21 @@ class MainActivity : ComponentActivity() {
             notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         setContent {
-            MaterialTheme {
-                ai.opencode.android.ui.OpenCodeRoot(onShare = { shareDiagnostics() })
-            }
+            AppRoot(onShareDiagnostics = { shareDiagnostics() })
         }
-        // The runtime is part of opening the app: start on launch.
         RuntimeService.start(this)
     }
 
     override fun onStart() {
         super.onStart()
-        // Re-assert the runtime whenever the activity comes to the foreground.
-        // onCreate only fires on a cold start; after a debug STOP tore the FGS
-        // down (or the system dropped a backgrounded service), re-launching the
-        // activity can arrive as onNewIntent/onStart without onCreate, so the
-        // supervisor/FGS must be (re)started here too. start() is idempotent.
         RuntimeService.start(this)
     }
 
+    /**
+     * Share the diagnostics bundle. Collected on a worker thread, written into the
+     * app's own files dir and handed over through the FileProvider - the same bundle
+     * the Settings screen shows, and it never contains a credential.
+     */
     private fun shareDiagnostics() {
         val mgr = RuntimeManager.get(this)
         Thread {

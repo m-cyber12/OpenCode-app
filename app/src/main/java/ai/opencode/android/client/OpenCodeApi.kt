@@ -143,6 +143,11 @@ class OpenCodeApi(
         request("POST", "/session/$sessionID/abort")
     }
 
+    /** DELETE /session/:id — upstream's `session.remove`; the server deletes. */
+    fun deleteSession(sessionID: String) {
+        request("DELETE", "/session/$sessionID")
+    }
+
     /** GET /session/:id/message?limit= — history with parts. */
     fun messages(sessionID: String, limit: Int = 200): List<MessageInfo> {
         val arr = org.json.JSONArray(
@@ -154,11 +159,28 @@ class OpenCodeApi(
     /**
      * POST /session/:id/prompt_async — queue a user turn and return (204).
      * Progress arrives on the SSE stream; this client never runs the loop.
+     *
+     * [attachments] are upstream's own `FilePartInput` members of the same `parts`
+     * array (`{type:"file", mime, filename?, url}`); the server resolves `file:`
+     * URLs itself (`session/prompt.ts`, `case "file:"`, which reads with
+     * `bypassCwdCheck`). The app never parses or re-encodes the file.
      */
-    fun promptAsync(sessionID: String, text: String, model: ModelRef? = null, agent: String? = null): Int {
-        val parts = org.json.JSONArray().put(
-            org.json.JSONObject().put("type", "text").put("text", text),
-        )
+    fun promptAsync(
+        sessionID: String,
+        text: String,
+        model: ModelRef? = null,
+        agent: String? = null,
+        attachments: List<Attachment> = emptyList(),
+    ): Int {
+        val parts = org.json.JSONArray()
+        if (text.isNotEmpty()) {
+            parts.put(org.json.JSONObject().put("type", "text").put("text", text))
+        }
+        for (a in attachments) {
+            val f = org.json.JSONObject().put("type", "file").put("mime", a.mime).put("url", a.url)
+            if (a.filename.isNotEmpty()) f.put("filename", a.filename)
+            parts.put(f)
+        }
         val body = org.json.JSONObject().put("parts", parts)
         if (model != null) {
             body.put(
@@ -169,6 +191,30 @@ class OpenCodeApi(
         if (agent != null) body.put("agent", agent)
         return request("POST", "/session/$sessionID/prompt_async", body.toString()).status
     }
+
+    /**
+     * POST /session/:id/revert — upstream's own "undo message": stages a revert to
+     * [messageID] (restoring the file snapshots it took). `SessionRevert.RevertInput`
+     * is `{sessionID, messageID, partID?}` and nothing else, so this is exactly the
+     * call the TUI's `session.undo` command makes.
+     */
+    fun revert(sessionID: String, messageID: String, partID: String? = null): org.json.JSONObject {
+        val body = org.json.JSONObject().put("messageID", messageID)
+        if (partID != null) body.put("partID", partID)
+        return org.json.JSONObject(request("POST", "/session/$sessionID/revert", body.toString()).body)
+    }
+
+    /** POST /session/:id/unrevert — upstream's "redo": clears a staged revert. */
+    fun unrevert(sessionID: String): org.json.JSONObject =
+        org.json.JSONObject(request("POST", "/session/$sessionID/unrevert", "{}").body)
+
+    /** PATCH /session/:id — rename a session (upstream owns titles; we only ask). */
+    fun updateSessionTitle(sessionID: String, title: String): SessionInfo =
+        SessionInfo.from(
+            org.json.JSONObject(
+                request("PATCH", "/session/$sessionID", org.json.JSONObject().put("title", title).toString()).body,
+            ),
+        )
 
     /**
      * POST /session/:id/shell — run a shell command *through the server's*
@@ -212,6 +258,79 @@ class OpenCodeApi(
     }
 
     /**
+     * GET /mcp with upstream's own status object kept whole.
+     *
+     * `MCP.Status` (pinned source, `packages/opencode/src/mcp/index.ts`) is a union:
+     * `{status:"connected"}`, `{status:"disabled"}`, `{status:"failed", error}`,
+     * `{status:"needs_auth"}`, `{status:"needs_client_registration", error}`.
+     * [mcpStatus] above flattens that to name -> status and therefore DROPS the
+     * `#error` text - which is precisely the field that explains the documented
+     * remote-MCP restriction to a user. It is kept because Phase 5's instrumented
+     * gate K4 asserts on it; the UI uses this one.
+     */
+    fun mcpEntries(): Map<String, McpEntry> {
+        val obj = org.json.JSONObject(request("GET", "/mcp").body)
+        val out = LinkedHashMap<String, McpEntry>()
+        for (k in obj.keys()) {
+            val o = obj.optJSONObject(k)
+            out[k] = McpEntry(
+                name = k,
+                status = o?.optString("status") ?: obj.optString(k),
+                error = o?.optString("error") ?: "",
+            )
+        }
+        return out
+    }
+
+    /**
+     * GET /session/status — upstream's per-session status map (`{type:"idle"}`,
+     * `{type:"busy"}`, `{type:"retry", attempt, message, next}`). Read after a
+     * process restart so a turn that is already running is visible immediately
+     * instead of only after its next event frame.
+     */
+    fun sessionStatus(): Map<String, SessionStatusInfo> {
+        val obj = org.json.JSONObject(request("GET", "/session/status").body)
+        val out = LinkedHashMap<String, SessionStatusInfo>()
+        for (k in obj.keys()) {
+            val o = obj.optJSONObject(k) ?: continue
+            out[k] = SessionStatusInfo(
+                type = o.optString("type"),
+                attempt = o.optInt("attempt"),
+                message = o.optString("message"),
+                nextMs = o.optLong("next"),
+            )
+        }
+        return out
+    }
+
+    // ---- questions (upstream's question tool blocks a turn like an ask) -----
+
+    /** GET /question — pending question requests (`QuestionV1.Request`). */
+    fun pendingQuestions(): List<QuestionRequest> {
+        val arr = org.json.JSONArray(request("GET", "/question").body)
+        return (0 until arr.length()).map { QuestionRequest.from(arr.getJSONObject(it)) }
+    }
+
+    /**
+     * POST /question/:requestID/reply — `{answers: [[label, ...], ...]}`, one array
+     * of selected labels per question, in order. Upstream's own shape.
+     */
+    fun replyQuestion(requestID: String, answers: List<List<String>>) {
+        val arr = org.json.JSONArray()
+        for (a in answers) {
+            val one = org.json.JSONArray()
+            for (label in a) one.put(label)
+            arr.put(one)
+        }
+        request("POST", "/question/$requestID/reply", org.json.JSONObject().put("answers", arr).toString())
+    }
+
+    /** POST /question/:requestID/reject — decline to answer (the agent continues). */
+    fun rejectQuestion(requestID: String) {
+        request("POST", "/question/$requestID/reject", "{}")
+    }
+
+    /**
      * POST /mcp — connect an MCP server for this instance with an OpenCode MCP
      * config object (verbatim upstream shape: `type: local|remote`).
      * Note: this endpoint is instance state, it does NOT persist across a
@@ -248,7 +367,32 @@ class OpenCodeApi(
         val def = obj.optJSONObject("default")
         val defaults = LinkedHashMap<String, String>()
         if (def != null) for (k in def.keys()) defaults[k] = def.optString(k)
-        return ProviderSnapshot(allIds = ids, connected = con, defaultModel = defaults)
+        // `Provider.Info` also carries `models: Record<modelID, Model>` with the
+        // model's own `name` and `status` ("active" | "alpha" | "beta" |
+        // "deprecated"). Kept whole so the model picker lists what the server
+        // lists and nothing the app invented.
+        val entries = ArrayList<ProviderEntry>(all.length())
+        for (i in 0 until all.length()) {
+            val pr = all.optJSONObject(i) ?: continue
+            val pid = pr.optString("id")
+            if (pid.isEmpty()) continue
+            val modelsRaw = pr.optJSONObject("models")
+            val models = ArrayList<ModelEntry>()
+            if (modelsRaw != null) {
+                for (k in modelsRaw.keys()) {
+                    val m = modelsRaw.optJSONObject(k) ?: continue
+                    models.add(
+                        ModelEntry(
+                            id = m.optString("id").ifEmpty { k },
+                            name = m.optString("name").ifEmpty { k },
+                            status = m.optString("status"),
+                        ),
+                    )
+                }
+            }
+            entries.add(ProviderEntry(id = pid, name = pr.optString("name").ifEmpty { pid }, models = models))
+        }
+        return ProviderSnapshot(allIds = ids, connected = con, defaultModel = defaults, entries = entries)
     }
 
     /**
@@ -297,18 +441,72 @@ class OpenCodeApi(
 
     data class ModelRef(val providerID: String, val modelID: String)
 
-    data class SessionInfo(val id: String, val title: String, val directory: String, val updatedAt: Long) {
+    /**
+     * A file the user attached to a prompt, staged in app-private storage and handed
+     * to the server as an upstream `FilePartInput` (`file:` URL). The app never
+     * re-encodes the content: the server reads the path itself.
+     */
+    data class Attachment(
+        val filename: String,
+        val mime: String,
+        val url: String,
+        val sizeBytes: Long,
+    )
+
+    /** Upstream's `MCP.Status` union, kept whole (see [mcpEntries]). */
+    data class McpEntry(val name: String, val status: String, val error: String) {
+        val connected: Boolean get() = status == "connected"
+        val needsAction: Boolean get() = status == "needs_auth" || status == "needs_client_registration"
+    }
+
+    /** Upstream's `SessionStatus.Info` union flattened (see [sessionStatus]). */
+    data class SessionStatusInfo(
+        val type: String,
+        val attempt: Int = 0,
+        val message: String = "",
+        val nextMs: Long = 0L,
+    ) {
+        val busy: Boolean get() = type == "busy" || type == "retry"
+    }
+
+    data class SessionInfo(
+        val id: String,
+        val title: String,
+        val directory: String,
+        val updatedAt: Long,
+        /** Upstream's staged undo (`session.revert.messageID`); empty when none. */
+        val revertMessageID: String = "",
+        val slug: String = "",
+        val projectID: String = "",
+        val createdMs: Long = 0L,
+        val cost: Double = 0.0,
+    ) {
         companion object {
             fun from(o: org.json.JSONObject) = SessionInfo(
                 id = o.optString("id"),
                 title = o.optString("title"),
                 directory = o.optString("directory"),
                 updatedAt = o.optJSONObject("time")?.optLong("updated") ?: 0L,
+                revertMessageID = o.optJSONObject("revert")?.optString("messageID") ?: "",
+                slug = o.optString("slug"),
+                projectID = o.optString("projectID"),
+                createdMs = o.optJSONObject("time")?.optLong("created") ?: 0L,
+                cost = o.optDouble("cost"),
             )
         }
     }
 
-    data class MessageInfo(val id: String, val role: String, val parts: List<org.json.JSONObject>) {
+    data class MessageInfo(
+        val id: String,
+        val role: String,
+        val parts: List<org.json.JSONObject>,
+        /**
+         * The message's own `info` object, kept because it carries the fields the UI
+         * must show honestly rather than guess: `error` (upstream's AssistantError),
+         * `tokens`, `cost`, `model`, `agent`, `time`.
+         */
+        val info: org.json.JSONObject? = null,
+    ) {
         companion object {
             fun from(o: org.json.JSONObject): MessageInfo {
                 val info = o.optJSONObject("info") ?: o
@@ -319,6 +517,7 @@ class OpenCodeApi(
                     id = info.optString("id"),
                     role = info.optString("role"),
                     parts = list,
+                    info = info,
                 )
             }
         }
@@ -330,28 +529,87 @@ class OpenCodeApi(
         val permission: String,
         val patterns: List<String>,
         val metadata: org.json.JSONObject?,
+        /** Upstream's `always`: what an "always" reply would cover. Shown, not decided here. */
+        val always: List<String> = emptyList(),
+        val toolCallID: String = "",
     ) {
         companion object {
             fun from(o: org.json.JSONObject): PermissionRequest {
                 val arr = o.optJSONArray("patterns") ?: org.json.JSONArray()
                 val p = ArrayList<String>(arr.length())
                 for (i in 0 until arr.length()) p.add(arr.optString(i))
+                val alwaysArr = o.optJSONArray("always") ?: org.json.JSONArray()
+                val always = ArrayList<String>(alwaysArr.length())
+                for (i in 0 until alwaysArr.length()) always.add(alwaysArr.optString(i))
                 return PermissionRequest(
                     id = o.optString("id"),
                     sessionID = o.optString("sessionID"),
                     permission = o.optString("permission"),
                     patterns = p,
                     metadata = o.optJSONObject("metadata"),
+                    always = always,
+                    toolCallID = o.optJSONObject("tool")?.optString("callID") ?: "",
                 )
             }
         }
     }
 
+    /** Upstream's `QuestionV1.Request` (the question tool blocks a turn like an ask). */
+    data class QuestionOption(val label: String, val description: String)
+
+    data class QuestionItem(
+        val header: String,
+        val question: String,
+        val options: List<QuestionOption>,
+        val multiple: Boolean,
+        val custom: Boolean,
+    )
+
+    data class QuestionRequest(val id: String, val sessionID: String, val items: List<QuestionItem>) {
+        companion object {
+            fun from(o: org.json.JSONObject): QuestionRequest {
+                val raw = o.optJSONArray("questions") ?: org.json.JSONArray()
+                val items = ArrayList<QuestionItem>(raw.length())
+                for (i in 0 until raw.length()) {
+                    val q = raw.optJSONObject(i) ?: continue
+                    val optsRaw = q.optJSONArray("options") ?: org.json.JSONArray()
+                    val opts = ArrayList<QuestionOption>(optsRaw.length())
+                    for (j in 0 until optsRaw.length()) {
+                        val opt = optsRaw.optJSONObject(j) ?: continue
+                        opts.add(QuestionOption(opt.optString("label"), opt.optString("description")))
+                    }
+                    items.add(
+                        QuestionItem(
+                            header = q.optString("header"),
+                            question = q.optString("question"),
+                            options = opts,
+                            multiple = q.optBoolean("multiple"),
+                            custom = if (q.has("custom")) q.optBoolean("custom") else true,
+                        ),
+                    )
+                }
+                return QuestionRequest(id = o.optString("id"), sessionID = o.optString("sessionID"), items = items)
+            }
+        }
+    }
+
+    /** One entry of upstream's `Provider.Info.models` record. */
+    data class ModelEntry(val id: String, val name: String, val status: String) {
+        /** Upstream's own `ModelStatus` literals; a blank status is just "listed". */
+        val deprecated: Boolean get() = status == "deprecated"
+    }
+
+    data class ProviderEntry(val id: String, val name: String, val models: List<ModelEntry>)
+
     data class ProviderSnapshot(
         val allIds: List<String>,
         val connected: List<String>,
         val defaultModel: Map<String, String>,
-    )
+        val entries: List<ProviderEntry> = emptyList(),
+    ) {
+        fun modelsOf(providerID: String): List<ModelEntry> =
+            entries.firstOrNull { it.id == providerID }?.models ?: emptyList()
+    }
 
     data class FileEntry(val path: String, val type: String) {
         companion object {
