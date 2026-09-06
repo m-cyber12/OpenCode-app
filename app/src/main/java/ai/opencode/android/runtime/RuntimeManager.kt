@@ -30,6 +30,11 @@ class RuntimeManager private constructor(private val appContext: Context) {
     private val extractor = PayloadExtractor(appContext, paths, logger)
     private val process = RuntimeProcess(paths, logger)
     private val health = HealthChecker()
+    private val integration = ai.opencode.android.integration.RuntimeIntegration(appContext, paths, logger)
+
+    /** Last loopback/credential report (read by the UI and diagnostics). */
+    val integrationReport: ai.opencode.android.integration.RuntimeIntegration.Report?
+        get() = integration.lastReport
 
     private val _state = MutableStateFlow(RuntimeState(RuntimeStatus.STOPPED, "idle"))
     val state: StateFlow<RuntimeState> = _state.asStateFlow()
@@ -53,6 +58,10 @@ class RuntimeManager private constructor(private val appContext: Context) {
             restartCount = restarts ?: cur.restartCount,
             manifest = manifest ?: cur.manifest,
             device = cur.device,
+            // Kept across republishes: it describes the current server run, and
+            // a crash-restart clears it explicitly below.
+            integration = cur.integration,
+            integrationAt = cur.integrationAt,
         )
         logger.host("state -> $status ($detail)")
     }
@@ -183,9 +192,14 @@ class RuntimeManager private constructor(private val appContext: Context) {
             // ---- 3. bin symlinks (exec from nativeLibraryDir) ------------
             ensureBinSymlinks()
 
-            val password = Secrets.ensureServerPassword(paths, logger)
-            val apiKey = Secrets.readApiKey(paths)
-            val env = RuntimeEnv.build(paths, ok.abi, password, apiKey)
+            val password = Secrets.serverPassword(appContext, paths, logger)
+            // Loopback-only bind policy, enforced before the child is launched.
+            val (bindHost, bindRefused) = RuntimeEnv.hostname(System.getenv("OPENCODE_SERVER_HOSTNAME"))
+            if (bindRefused != null) logger.host("SERVER_BIND_POLICY: $bindRefused")
+            // NOTE: no model API key travels through the environment any more —
+            // provider credentials are Keystore-held and pushed over the loopback
+            // API after each healthy start (ai.opencode.android.integration).
+            val env = RuntimeEnv.build(paths, ok.abi, password, bindHost)
 
             // ---- 4. start / health / crash loop --------------------------
             var attempts = 0
@@ -210,8 +224,29 @@ class RuntimeManager private constructor(private val appContext: Context) {
                 if (!running || gen != generation) break
                 if (h != null && h.healthy) {
                     logger.host("health check OK: $h")
-                    publish(RuntimeStatus.HEALTHY, "healthy on 127.0.0.1:${RuntimeEnv.SERVER_PORT}", attempts - 1)
+                    publish(RuntimeStatus.HEALTHY, "healthy on ${bindHost}:${RuntimeEnv.SERVER_PORT}", attempts - 1)
                     attempts = 0  // reset backoff after a confirmed healthy run
+                    // Phase 5: prove the bind is loopback-only and hand the
+                    // Keystore-held provider credentials to OpenCode's auth
+                    // store. A confirmed LAN-exposed bind is a hard failure: the
+                    // server is stopped rather than left running insecurely.
+                    val report = runCatching { integration.runOnce(password) }
+                    val rep = report.getOrNull()
+                    if (rep != null) {
+                        _state.value = _state.value.copy(integration = rep.summary, integrationAt = System.currentTimeMillis())
+                        if (rep.violations.isNotEmpty() && rep.conclusive) {
+                            rep.violations.forEach { logger.crash("loopback policy violation: $it") }
+                            publish(
+                                RuntimeStatus.FATAL,
+                                "loopback-only policy violated; server stopped: " + rep.violations.joinToString("; "),
+                            )
+                            process.stop(graceWindowMs = 2000)
+                            running = false
+                            return
+                        }
+                    } else {
+                        logger.host("integration check failed: ${report.exceptionOrNull()?.message}")
+                    }
                 } else {
                     logger.crash("server did not become healthy: $h")
                     // Process may still be (sickly) alive — kill it before retry.

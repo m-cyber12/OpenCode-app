@@ -1,0 +1,1487 @@
+=== PHASE 5 START 2026-09-06T16:40:48Z staged=0 ===
+heartbeat enabled (pid 2375, every 240s -> docs/progress/phase5-evidence/PROGRESS.txt)
+########## 1/6 environment + emulator (standalone mode) ##########
+installing emulator + system image via phase4/scripts/50-install-sdk.sh
+--- downloading cmdline-tools
+-rw-r--r-- 1 runner runner 153607504 Sep  6 16:40 cmdtools.zip
+/usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
+/usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
+--- sdkmanager licenses
+yes: standard output: Broken pipe
+--- sdkmanager install
+tee: /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/50-install-sdk.log: No such file or directory
+Loading package information...                                                  Loading local repository...                                                     [                                       ] 3% Loading local repository...        [                                       ] 3% Fetch remote repository...         [=                                      ] 3% Fetch remote repository...         [=                                      ] 4% Fetch remote repository...         [=                                      ] 5% Fetch remote repository...         [==                                     ] 5% Fetch remote repository...         [==                                     ] 6% Fetch remote repository...         [==                                     ] 7% Fetch remote repository...         [==                                     ] 7% Computing updates...               [===                                    ] 8% Computing updates...               [===                                    ] 10% Computing updates...              [===                                    ] 10% Installing Android Emulator       [===                                    ] 10% Downloading emulator-linux_x64-159[====                                   ] 10% Downloading emulator-linux_x64-159[====                                   ] 11% Downloading emulator-linux_x64-159[====                                   ] 12% Downloading emulator-linux_x64-159[=====                                  ] 13% Downloading emulator-linux_x64-159[=====                                  ] 14% Downloading emulator-linux_x64-159[=====                                  ] 15% Downloading emulator-linux_x64-159[======                                 ] 15% Downloading emulator-linux_x64-159[======                                 ] 16% Downloading emulator-linux_x64-159[======                                 ] 17% Downloading emulator-linux_x64-159[=======                                ] 18% Downloading emulator-linux_x64-159[=======                                ] 19% Downloading emulator-linux_x64-159[=======                                ] 20% Downloading emulator-linux_x64-159[========                               ] 20% Downloading emulator-linux_x64-159[========                               ] 21% Downloading emulator-linux_x64-159[========                               ] 21% Unzipping...                      [========                               ] 21% Unzipping... emulator/            [========                               ] 21% Unzipping... emulator/resources/  [========                               ] 21% Unzipping... emulator/qsn         [========                               ] 21% Unzipping... emulator/emulator    [========                               ] 21% Unzipping... emulator/netsimd     [========                               ] 22% Unzipping... emulator/netsimd     [========                               ] 22% Unzipping... emulator/bin64/      [========                               ] 22% Unzipping... emulator/qemu/       [========                               ] 22% Unzipping... emulator/NOTICE.txt  [========                               ] 22% Unzipping... emulator/crashpad_han[========                               ] 22% Unzipping... emulator/source.prope[========                               ] 22% Unzipping... emulator/nimble_bridg[========                               ] 22% Unzipping... emulator/LICENSE     [========                               ] 22% Unzipping... emulator/lib/        [========                               ] 22% Unzipping... emulator/qemu-img    [========                               ] 22% Unzipping... emulator/include/    [========                               ] 22% Unzipping... emulator/NOTICE.csv  [========                               ] 22% Unzipping... emulator/lib64/      [========                               ] 22% Unzipping... emulator/emulator-che[========                               ] 22% Unzipping... emulator/crashreport [========                               ] 22% Unzipping... emulator/mksdcard    [========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/sk[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/po[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/sk[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/bin64/e2fsck[========                               ] 22% Unzipping... emulator/bin64/fsck.e[========                               ] 22% Unzipping... emulator/bin64/tune2f[========                               ] 22% Unzipping... emulator/bin64/resize[========                               ] 22% Unzipping... emulator/bin64/mkfs.e[========                               ] 22% Unzipping... emulator/qemu/linux-x[=========                              ] 23% Unzipping... emulator/qemu/linux-x[=========                              ] 24% Unzipping... emulator/qemu/linux-x[=========                              ] 25% Unzipping... emulator/qemu/linux-x[==========                             ] 25% Unzipping... emulator/qemu/linux-x[==========                             ] 25% Unzipping... emulator/lib/emulator[==========                             ] 25% Unzipping... emulator/lib/rtc_serv[==========                             ] 25% Unzipping... emulator/lib/advanced[==========                             ] 25% Unzipping... emulator/lib/cmake/  [==========                             ] 25% Unzipping... emulator/lib/emulator[==========                             ] 25% Unzipping... emulator/lib/control_[==========                             ] 25% Unzipping... emulator/lib/emulated[==========                             ] 25% Unzipping... emulator/lib/rtc_serv[==========                             ] 25% Unzipping... emulator/lib/emu-orig[==========                             ] 25% Unzipping... emulator/lib/hardware[==========                             ] 25% Unzipping... emulator/lib/pkgconfi[==========                             ] 25% Unzipping... emulator/lib/pc-bios/[==========                             ] 25% Unzipping... emulator/lib/snapshot[==========                             ] 25% Unzipping... emulator/lib/adb_serv[==========                             ] 25% Unzipping... emulator/lib/hostapd.[==========                             ] 25% Unzipping... emulator/lib/grpc_end[==========                             ] 25% Unzipping... emulator/lib/ca-bundl[==========                             ] 25% Unzipping... emulator/lib/ui_contr[==========                             ] 25% Unzipping... emulator/lib/snapshot[==========                             ] 25% Unzipping... emulator/lib/ice_conf[==========                             ] 25% Unzipping... emulator/lib/libflatb[==========                             ] 26% Unzipping... emulator/lib/libflatb[==========                             ] 26% Unzipping... emulator/lib/emulator[==========                             ] 26% Unzipping... emulator/lib/waterfal[==========                             ] 26% Unzipping... emulator/lib/emulated[==========                             ] 26% Unzipping... emulator/lib/cmake/fl[==========                             ] 26% Unzipping... emulator/lib/pkgconfi[==========                             ] 26% Unzipping... emulator/lib/pc-bios/[==========                             ] 26% Unzipping... emulator/include/flat[==========                             ] 26% Unzipping... emulator/lib64/libgli[==========                             ] 26% Unzipping... emulator/lib64/libpro[==========                             ] 26% Unzipping... emulator/lib64/qt/   [==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libgfx[==========                             ] 26% Unzipping... emulator/lib64/gles_l[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/vulkan[==========                             ] 26% Unzipping... emulator/lib64/gles_s[==========                             ] 26% Unzipping... emulator/lib64/libemu[==========                             ] 26% Unzipping... emulator/lib64/libpro[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libtcm[==========                             ] 26% Unzipping... emulator/lib64/libima[==========                             ] 26% Unzipping... emulator/lib64/libc++[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libabs[==========                             ] 26% Unzipping... emulator/lib64/gles_a[==========                             ] 26% Unzipping... emulator/lib64/libsha[==========                             ] 26% Unzipping... emulator/lib64/libc++[==========                             ] 26% Unzipping... emulator/lib64/qt/res[==========                             ] 26% Unzipping... emulator/lib64/qt/lib[==========                             ] 26% Unzipping... emulator/lib64/qt/tra[==========                             ] 26% Unzipping... emulator/lib64/qt/plu[==========                             ] 26% Unzipping... emulator/lib64/qt/res[==========                             ] 27% Unzipping... emulator/lib64/qt/res[==========                             ] 27% Unzipping... emulator/lib64/qt/lib[===========                            ] 28% Unzipping... emulator/lib64/qt/lib[===========                            ] 29% Unzipping... emulator/lib64/qt/lib[===========                            ] 30% Unzipping... emulator/lib64/qt/lib[============                           ] 30% Unzipping... emulator/lib64/qt/lib[============                           ] 30% Unzipping... emulator/lib64/qt/tra[============                           ] 31% Unzipping... emulator/lib64/qt/tra[============                           ] 31% Unzipping... emulator/lib64/qt/plu[============                           ] 31% Unzipping... emulator/lib64/gles_l[============                           ] 31% Unzipping... emulator/lib64/vulkan[============                           ] 32% Unzipping... emulator/lib64/vulkan[============                           ] 32% Unzipping... emulator/lib64/gles_s[============                           ] 32% Unzipping... emulator/lib64/gles_a[=============                          ] 33% Unzipping... emulator/lib64/gles_a[=====================                  ] 55% Unzipping... emulator/lib64/gles_a[=====================                  ] 55% Installing Google APIs Intel x86_6[=====================                  ] 55% Downloading x86_64-34_r14.zip... e[======================                 ] 55% Downloading x86_64-34_r14.zip... e[======================                 ] 56% Downloading x86_64-34_r14.zip... e[======================                 ] 57% Downloading x86_64-34_r14.zip... e[=======================                ] 58% Downloading x86_64-34_r14.zip... e[=======================                ] 59% Downloading x86_64-34_r14.zip... e[=======================                ] 60% Downloading x86_64-34_r14.zip... e[========================               ] 60% Downloading x86_64-34_r14.zip... e[========================               ] 61% Downloading x86_64-34_r14.zip... e[========================               ] 62% Downloading x86_64-34_r14.zip... e[=========================              ] 63% Downloading x86_64-34_r14.zip... e[=========================              ] 64% Downloading x86_64-34_r14.zip... e[=========================              ] 65% Downloading x86_64-34_r14.zip... e[==========================             ] 65% Downloading x86_64-34_r14.zip... e[==========================             ] 66% Downloading x86_64-34_r14.zip... e[==========================             ] 66% Unzipping... emulator/lib64/gles_a[==========================             ] 66% Unzipping... x86_64/NOTICE.txt    [==========================             ] 66% Unzipping... x86_64/VerifiedBootPa[==========================             ] 66% Unzipping... x86_64/advancedFeatur[==========================             ] 66% Unzipping... x86_64/build.prop    [==========================             ] 66% Unzipping... x86_64/encryptionkey.[==========================             ] 66% Unzipping... x86_64/kernel-ranchu [==========================             ] 66% Unzipping... x86_64/ramdisk.img   [==========================             ] 66% Unzipping... x86_64/source.propert[==========================             ] 66% Unzipping... x86_64/system.img    [==========================             ] 67% Unzipping... x86_64/system.img    [===========================            ] 68% Unzipping... x86_64/system.img    [===========================            ] 69% Unzipping... x86_64/system.img    [===========================            ] 70% Unzipping... x86_64/system.img    [============================           ] 70% Unzipping... x86_64/system.img    [============================           ] 71% Unzipping... x86_64/system.img    [============================           ] 72% Unzipping... x86_64/system.img    [=============================          ] 73% Unzipping... x86_64/system.img    [=============================          ] 74% Unzipping... x86_64/system.img    [=============================          ] 75% Unzipping... x86_64/system.img    [==============================         ] 75% Unzipping... x86_64/system.img    [==============================         ] 76% Unzipping... x86_64/system.img    [==============================         ] 77% Unzipping... x86_64/system.img    [==============================         ] 77% Unzipping... x86_64/userdata.img  [==============================         ] 77% Unzipping... x86_64/vendor.img    [==============================         ] 77% Unzipping... x86_64/data/local.pro[==============================         ] 77% Unzipping... x86_64/data/misc/Gold[==============================         ] 77% Unzipping... x86_64/data/misc/apns[==============================         ] 77% Unzipping... x86_64/data/misc/emul[==============================         ] 77% Unzipping... x86_64/data/misc/gcec[==============================         ] 77% Unzipping... x86_64/data/misc/mode[==============================         ] 77% Unzipping... x86_64/data/misc/pixe[==============================         ] 78% Unzipping... x86_64/data/misc/pixe[=======================================] 100% Unzipping... x86_64/data/misc/pix
+
+SDK_INSTALL_DONE
+Loading local repository...                                                     [=========                              ] 25% Loading local repository...       [=========                              ] 25% Fetch remote repository...        [=======================================] 100% Fetch remote repository...       
+Auto-selecting single ABI x86_64
+Do you wish to create a custom hardware profile? [no] --- emulator accel-check
+accel:
+0
+KVM (version 12) is installed and usable.
+accel
+--- starting emulator (headless)
+emulator pid=2637
+* daemon not running; starting now at tcp:5037
+* daemon started successfully
+BOOT_COMPLETED after ~48s
+--- boot state
+List of devices attached
+emulator-5554	device
+
+release=14
+sdk=34
+abi=x86_64
+EMULATOR_BOOTED
+########## 2/6 payload (reuse phase 4's build when it is present) ##########
+=== [1/6] bun host (for building the bundle) ===
+1.3.14
+=== [2/6] Bun-for-Android (bionic) per ABI ===
+bun aarch64 -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/jniLibs/arm64-v8a/libbun.so (89796776 bytes)
+bun x64 -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/jniLibs/x86_64/libbun.so (91788816 bytes)
+=== [2b/6] seccomp compatibility shim per ABI (NDK clang) ===
+NDK pinned to 28.2.13676358 (override with P4_NDK_VERSION)
+NDK toolchain candidates:
+  /usr/local/lib/android/sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang
+  /usr/local/lib/android/sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android22-clang
+  /usr/local/lib/android/sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android23-clang
+  /usr/local/lib/android/sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android24-clang
+  /usr/local/lib/android/sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android25-clang
+  /usr/local/lib/android/sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android26-clang
+  /usr/local/lib/android/sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android27-clang
+  /usr/local/lib/android/sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android28-clang
+  /usr/local/lib/android/sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang
+  /usr/local/lib/android/sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android30-clang
+  /usr/local/lib/android/sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android31-clang
+  /usr/local/lib/android/sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android32-clang
+  /usr/local/lib/android/sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android33-clang
+  /usr/local/lib/android/sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android34-clang
+  /usr/local/lib/android/sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android35-clang
+  /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang
+  /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android22-clang
+  /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android23-clang
+  /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android24-clang
+  /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android25-clang
+  /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android26-clang
+  /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android27-clang
+  /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android28-clang
+  /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang
+  /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android30-clang
+  /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android31-clang
+  /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android32-clang
+  /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android33-clang
+  /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android34-clang
+  /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android35-clang
+  /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang
+  /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android22-clang
+  /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android23-clang
+  /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android24-clang
+  /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android25-clang
+  /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android26-clang
+  /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android27-clang
+  /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android28-clang
+  /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang
+  /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android30-clang
+  /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android31-clang
+  /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android32-clang
+  /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android33-clang
+  /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android34-clang
+  /usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android35-clang
+NDK clang dir: /usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin
+seccomp helpers arm64-v8a -> libseccompshim.so (6744 B), libexecshim.so (7592 B), libchildshim.so (8184 B)
+seccomp helpers x86_64 -> libseccompshim.so (7608 B), libexecshim.so (7864 B), libchildshim.so (7584 B)
+=== [3/6] Git v2.48.1 per ABI (Android/Bionic, NO_PERL recipe) ===
+warning: refs/tags/v2.48.1 6768cd3982a5cf8df192224d4da8c3f03d4cb964 is not a commit!
+Note: switching to 'f93ff170b93a1782659637824b25923245ac9dd1'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+git source: f93ff170b93a1782659637824b25923245ac9dd1
+--- Android Git (arm64-v8a, CC=/usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang) ---
+GIT_VERSION=2.48.1
+    * new build flags
+    * new prefix flags
+    GEN hook-list.h
+    * new link flags
+    GEN config-list.h
+    CC builtin/hook.o
+    CC builtin/index-pack.o
+    CC builtin/init-db.o
+    CC builtin/interpret-trailers.o
+    CC builtin/log.o
+    CC builtin/ls-files.o
+    CC builtin/ls-remote.o
+    CC builtin/ls-tree.o
+    CC builtin/mailinfo.o
+    CC builtin/mailsplit.o
+    CC builtin/merge-base.o
+    CC builtin/merge-file.o
+    CC builtin/merge-index.o
+    CC builtin/merge-ours.o
+    CC builtin/merge-recursive.o
+    CC builtin/merge-tree.o
+    CC builtin/merge.o
+    CC builtin/mktag.o
+    CC builtin/mktree.o
+    CC builtin/multi-pack-index.o
+    CC builtin/mv.o
+    CC builtin/name-rev.o
+    CC builtin/notes.o
+    CC builtin/pack-objects.o
+    CC builtin/pack-redundant.o
+    CC builtin/pack-refs.o
+    CC builtin/patch-id.o
+    CC builtin/prune-packed.o
+    CC builtin/prune.o
+    CC builtin/pull.o
+    CC builtin/push.o
+    CC builtin/range-diff.o
+    CC builtin/read-tree.o
+    CC builtin/rebase.o
+    CC builtin/receive-pack.o
+    CC builtin/reflog.o
+    CC builtin/refs.o
+    CC builtin/remote-ext.o
+    CC builtin/remote-fd.o
+    CC builtin/remote.o
+    CC builtin/repack.o
+    CC builtin/replace.o
+    CC builtin/replay.o
+    CC builtin/rerere.o
+    CC builtin/reset.o
+    CC builtin/rev-list.o
+    CC builtin/rev-parse.o
+    CC builtin/revert.o
+    CC builtin/rm.o
+    CC builtin/send-pack.o
+    CC builtin/shortlog.o
+    CC builtin/show-branch.o
+    CC builtin/show-index.o
+    CC builtin/show-ref.o
+    CC builtin/sparse-checkout.o
+    CC builtin/stash.o
+    CC builtin/stripspace.o
+    CC builtin/submodule--helper.o
+    CC builtin/symbolic-ref.o
+    CC builtin/tag.o
+    CC builtin/unpack-file.o
+    CC builtin/unpack-objects.o
+    CC builtin/update-index.o
+    CC builtin/update-ref.o
+    CC builtin/update-server-info.o
+    CC builtin/upload-archive.o
+    CC builtin/upload-pack.o
+    CC builtin/var.o
+    CC builtin/verify-commit.o
+    CC builtin/verify-pack.o
+    CC builtin/verify-tag.o
+    CC builtin/worktree.o
+    CC builtin/write-tree.o
+    CC common-main.o
+    CC abspath.o
+    CC add-interactive.o
+    CC add-patch.o
+    CC advice.o
+    CC alias.o
+    CC alloc.o
+    CC apply.o
+    CC archive-tar.o
+    CC archive-zip.o
+    CC archive.o
+    CC attr.o
+    CC base85.o
+    CC bisect.o
+    CC blame.o
+    CC blob.o
+    CC bloom.o
+    CC branch.o
+    CC bulk-checkin.o
+    CC bundle-uri.o
+    CC bundle.o
+    CC cache-tree.o
+    CC cbtree.o
+    CC chdir-notify.o
+    CC checkout.o
+    CC chunk-format.o
+    CC color.o
+    CC column.o
+    CC combine-diff.o
+    CC commit-graph.o
+    CC commit-reach.o
+    CC commit.o
+    CC compat/nonblock.o
+    CC compat/obstack.o
+    CC compat/terminal.o
+    CC compat/zlib-uncompress2.o
+    CC config.o
+    CC connect.o
+    CC connected.o
+    CC convert.o
+    CC copy.o
+    CC credential.o
+    CC csum-file.o
+    CC ctype.o
+    CC date.o
+    CC decorate.o
+    CC delta-islands.o
+    CC diagnose.o
+    CC diff-delta.o
+    CC diff-merges.o
+    CC diff-lib.o
+    CC diff-no-index.o
+    CC diff.o
+    CC diffcore-break.o
+    CC diffcore-delta.o
+    CC diffcore-order.o
+    CC diffcore-pickaxe.o
+    CC diffcore-rename.o
+    CC diffcore-rotate.o
+    CC dir-iterator.o
+    CC dir.o
+    CC editor.o
+    CC entry.o
+    CC environment.o
+    CC ewah/bitmap.o
+    CC ewah/ewah_bitmap.o
+    CC ewah/ewah_io.o
+    CC ewah/ewah_rlw.o
+    CC exec-cmd.o
+    CC fetch-negotiator.o
+    CC fetch-pack.o
+    CC fmt-merge-msg.o
+    CC fsck.o
+    CC fsmonitor.o
+    CC fsmonitor-ipc.o
+    CC fsmonitor-settings.o
+    CC gettext.o
+    CC git-zlib.o
+    CC gpg-interface.o
+    CC graph.o
+    CC grep.o
+    CC hash-lookup.o
+    CC hashmap.o
+    GEN command-list.h
+    CC hex.o
+    CC hex-ll.o
+    CC hook.o
+    CC ident.o
+    CC json-writer.o
+    CC kwset.o
+    CC levenshtein.o
+    CC line-log.o
+    CC line-range.o
+    CC linear-assignment.o
+    CC list-objects-filter-options.o
+    CC list-objects-filter.o
+    CC list-objects.o
+    CC lockfile.o
+    CC log-tree.o
+    CC loose.o
+    CC ls-refs.o
+    CC mailinfo.o
+    CC mailmap.o
+    CC match-trees.o
+    CC mem-pool.o
+    CC merge-blobs.o
+    CC merge-ll.o
+    CC merge-ort.o
+    CC merge-ort-wrappers.o
+    CC merge-recursive.o
+    CC merge.o
+    CC midx.o
+    CC midx-write.o
+    CC name-hash.o
+    CC negotiator/default.o
+    CC negotiator/noop.o
+    CC negotiator/skipping.o
+    CC notes-cache.o
+    CC notes-merge.o
+    CC notes-utils.o
+    CC notes.o
+    CC object-file-convert.o
+    CC object-file.o
+    CC object-name.o
+    CC object.o
+    CC oid-array.o
+    CC oidmap.o
+    CC oidset.o
+    CC oidtree.o
+    CC pack-bitmap-write.o
+    CC pack-bitmap.o
+    CC pack-check.o
+    CC pack-mtimes.o
+    CC pack-objects.o
+    CC pack-revindex.o
+    CC pack-write.o
+    CC packfile.o
+    CC pager.o
+    CC parallel-checkout.o
+    CC parse.o
+    CC parse-options-cb.o
+    CC parse-options.o
+    CC patch-delta.o
+    CC patch-ids.o
+    CC path.o
+    CC pathspec.o
+    CC pkt-line.o
+    CC preload-index.o
+    CC pretty.o
+    CC prio-queue.o
+    CC progress.o
+    CC promisor-remote.o
+    CC prompt.o
+    CC protocol.o
+    CC protocol-caps.o
+    CC prune-packed.o
+    CC pseudo-merge.o
+    CC quote.o
+    CC range-diff.o
+    CC reachable.o
+    CC read-cache.o
+    CC rebase-interactive.o
+    CC rebase.o
+    CC ref-filter.o
+    CC reflog-walk.o
+    CC reflog.o
+    CC refs.o
+    CC refs/debug.o
+    CC refs/files-backend.o
+    CC refs/reftable-backend.o
+    CC refs/iterator.o
+    CC refs/packed-backend.o
+    CC refs/ref-cache.o
+    CC refspec.o
+    CC remote.o
+    CC replace-object.o
+    CC repo-settings.o
+    CC repository.o
+    CC rerere.o
+    CC reset.o
+    CC resolve-undo.o
+    CC revision.o
+    CC run-command.o
+    CC send-pack.o
+    CC sequencer.o
+    CC serve.o
+    CC server-info.o
+    CC setup.o
+    CC shallow.o
+    CC sideband.o
+    CC sigchain.o
+    CC sparse-index.o
+    CC split-index.o
+    CC stable-qsort.o
+    CC statinfo.o
+    CC strbuf.o
+    CC streaming.o
+    CC string-list.o
+    CC strmap.o
+    CC strvec.o
+    CC sub-process.o
+    CC submodule-config.o
+    CC submodule.o
+    CC symlinks.o
+    CC tag.o
+    CC tempfile.o
+    CC thread-utils.o
+    CC tmp-objdir.o
+    CC trace.o
+    CC trace2.o
+    CC trace2/tr2_cfg.o
+    CC trace2/tr2_cmd_name.o
+    CC trace2/tr2_ctr.o
+    CC trace2/tr2_dst.o
+    CC trace2/tr2_sid.o
+    CC trace2/tr2_sysenv.o
+    CC trace2/tr2_tbuf.o
+    CC trace2/tr2_tgt_event.o
+    CC trace2/tr2_tgt_normal.o
+    CC trace2/tr2_tgt_perf.o
+    CC trace2/tr2_tls.o
+    CC trace2/tr2_tmr.o
+    CC trailer.o
+    CC transport-helper.o
+    CC transport.o
+    CC tree-diff.o
+    CC tree-walk.o
+    CC tree.o
+    CC unpack-trees.o
+    CC upload-pack.o
+    CC url.o
+    CC urlmatch.o
+    CC usage.o
+    CC userdiff.o
+    CC utf8.o
+    CC varint.o
+    CC versioncmp.o
+    CC walker.o
+    CC wildmatch.o
+    CC worktree.o
+    CC wrapper.o
+    CC write-or-die.o
+    CC ws.o
+    CC wt-status.o
+    CC xdiff-interface.o
+    CC unix-socket.o
+    CC unix-stream-server.o
+    CC sha1dc_git.o
+    CC sha1dc/sha1.o
+    CC sha1dc/ubc_check.o
+    CC sha256/block/sha256.o
+    CC compat/linux/procinfo.o
+    CC compat/fopen.o
+    CC compat/strlcpy.o
+    CC compat/qsort_s.o
+    CC compat/regex/regex.o
+    CC xdiff/xdiffi.o
+    CC xdiff/xemit.o
+    CC xdiff/xhistogram.o
+    CC xdiff/xmerge.o
+    CC xdiff/xpatience.o
+    CC xdiff/xprepare.o
+    CC xdiff/xutils.o
+    CC reftable/basics.o
+    CC reftable/error.o
+    CC reftable/block.o
+    CC reftable/blocksource.o
+    CC reftable/iter.o
+    CC reftable/merged.o
+    CC reftable/pq.o
+    CC reftable/reader.o
+    CC reftable/record.o
+    CC reftable/stack.o
+    CC reftable/system.o
+    CC reftable/tree.o
+    CC reftable/writer.o
+    CC git.o
+    CC builtin/add.o
+    CC builtin/am.o
+    CC builtin/annotate.o
+    CC builtin/apply.o
+    CC builtin/archive.o
+    CC builtin/bisect.o
+    CC builtin/blame.o
+    CC builtin/branch.o
+    CC builtin/bugreport.o
+    CC builtin/bundle.o
+    CC builtin/cat-file.o
+    CC builtin/check-attr.o
+    CC builtin/check-ignore.o
+    CC builtin/check-mailmap.o
+    CC builtin/check-ref-format.o
+    CC builtin/checkout--worker.o
+    CC builtin/checkout-index.o
+    CC builtin/checkout.o
+    CC builtin/clean.o
+    CC builtin/clone.o
+    CC builtin/column.o
+    CC builtin/commit-graph.o
+    CC builtin/commit-tree.o
+    CC builtin/commit.o
+    CC builtin/config.o
+    CC builtin/count-objects.o
+    CC builtin/credential-cache--daemon.o
+    CC builtin/credential-cache.o
+    CC builtin/credential-store.o
+    CC builtin/credential.o
+    CC builtin/describe.o
+    CC builtin/diagnose.o
+    CC builtin/diff-files.o
+    CC builtin/diff-index.o
+    CC builtin/diff-tree.o
+    CC builtin/diff.o
+    CC builtin/difftool.o
+    CC builtin/fast-export.o
+    CC builtin/fast-import.o
+    CC builtin/fetch-pack.o
+    CC builtin/fetch.o
+    CC builtin/fmt-merge-msg.o
+    CC builtin/for-each-ref.o
+    CC builtin/for-each-repo.o
+    CC builtin/fsck.o
+    CC builtin/fsmonitor--daemon.o
+    CC builtin/gc.o
+    CC builtin/get-tar-commit-id.o
+    CC builtin/grep.o
+    CC builtin/hash-object.o
+    CC builtin/help.o
+    CC help.o
+    GEN version-def.h
+    AR xdiff/lib.a
+    AR reftable/libreftable.a
+    CC version.o
+    AR libgit.a
+    LINK git
+arm64-v8a Android Git built (cross-ABI host execution skipped)
+--- Android Git (x86_64, CC=/usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang) ---
+GIT_VERSION=2.48.1
+    * new build flags
+    * new prefix flags
+    GEN hook-list.h
+    * new link flags
+    CC builtin/bundle.o
+    CC builtin/cat-file.o
+    CC builtin/check-attr.o
+    CC builtin/check-ignore.o
+    CC builtin/check-mailmap.o
+    CC builtin/check-ref-format.o
+    CC builtin/checkout--worker.o
+    CC builtin/checkout-index.o
+    CC builtin/checkout.o
+    CC builtin/clean.o
+    CC builtin/clone.o
+    CC builtin/column.o
+    CC builtin/commit-graph.o
+    CC builtin/commit-tree.o
+    CC builtin/commit.o
+    CC builtin/config.o
+    CC builtin/count-objects.o
+    CC builtin/credential-cache--daemon.o
+    CC builtin/credential-cache.o
+    CC builtin/credential-store.o
+    CC builtin/credential.o
+    CC builtin/describe.o
+    CC builtin/diagnose.o
+    CC builtin/diff-files.o
+    CC builtin/diff-index.o
+    CC builtin/diff-tree.o
+    CC builtin/diff.o
+    CC builtin/difftool.o
+    CC builtin/fast-export.o
+    CC builtin/fast-import.o
+    CC builtin/fetch-pack.o
+    CC builtin/fetch.o
+    CC builtin/fmt-merge-msg.o
+    CC builtin/for-each-ref.o
+    CC builtin/for-each-repo.o
+    CC builtin/fsck.o
+    CC builtin/fsmonitor--daemon.o
+    CC builtin/gc.o
+    CC builtin/get-tar-commit-id.o
+    CC builtin/grep.o
+    CC builtin/hash-object.o
+    GEN config-list.h
+    CC builtin/hook.o
+    CC builtin/index-pack.o
+    CC builtin/init-db.o
+    CC builtin/interpret-trailers.o
+    CC builtin/log.o
+    CC builtin/ls-files.o
+    CC builtin/ls-remote.o
+    CC builtin/ls-tree.o
+    CC builtin/mailinfo.o
+    CC builtin/mailsplit.o
+    CC builtin/merge-base.o
+    CC builtin/merge-file.o
+    CC builtin/merge-index.o
+    CC builtin/merge-ours.o
+    CC builtin/merge-recursive.o
+    CC builtin/merge-tree.o
+    CC builtin/merge.o
+    CC builtin/mktag.o
+    CC builtin/mktree.o
+    CC builtin/multi-pack-index.o
+    CC builtin/mv.o
+    CC builtin/name-rev.o
+    CC builtin/notes.o
+    CC builtin/pack-objects.o
+    CC builtin/pack-redundant.o
+    CC builtin/pack-refs.o
+    CC builtin/patch-id.o
+    CC builtin/prune-packed.o
+    CC builtin/prune.o
+    CC builtin/pull.o
+    CC builtin/push.o
+    CC builtin/range-diff.o
+    CC builtin/read-tree.o
+    CC builtin/rebase.o
+    CC builtin/receive-pack.o
+    CC builtin/reflog.o
+    CC builtin/refs.o
+    CC builtin/remote-ext.o
+    CC builtin/remote-fd.o
+    CC builtin/remote.o
+    CC builtin/repack.o
+    CC builtin/replace.o
+    CC builtin/replay.o
+    CC builtin/rerere.o
+    CC builtin/reset.o
+    CC builtin/rev-list.o
+    CC builtin/rev-parse.o
+    CC builtin/revert.o
+    CC builtin/rm.o
+    CC builtin/send-pack.o
+    CC builtin/shortlog.o
+    CC builtin/show-branch.o
+    CC builtin/show-index.o
+    CC builtin/show-ref.o
+    CC builtin/sparse-checkout.o
+    CC builtin/stash.o
+    CC builtin/stripspace.o
+    CC builtin/submodule--helper.o
+    CC builtin/symbolic-ref.o
+    CC builtin/tag.o
+    CC builtin/unpack-file.o
+    CC builtin/unpack-objects.o
+    CC builtin/update-index.o
+    CC builtin/update-ref.o
+    CC builtin/update-server-info.o
+    CC builtin/upload-archive.o
+    CC builtin/upload-pack.o
+    CC builtin/var.o
+    CC builtin/verify-commit.o
+    CC builtin/verify-pack.o
+    CC builtin/verify-tag.o
+    CC builtin/worktree.o
+    CC builtin/write-tree.o
+    CC common-main.o
+    CC abspath.o
+    CC add-interactive.o
+    CC add-patch.o
+    CC advice.o
+    CC alias.o
+    CC alloc.o
+    CC apply.o
+    CC archive-tar.o
+    CC archive-zip.o
+    CC archive.o
+    CC attr.o
+    CC base85.o
+    CC bisect.o
+    CC blame.o
+    CC blob.o
+    CC bloom.o
+    CC branch.o
+    CC bulk-checkin.o
+    CC bundle-uri.o
+    CC bundle.o
+    CC cache-tree.o
+    CC cbtree.o
+    CC chdir-notify.o
+    CC chunk-format.o
+    CC checkout.o
+    CC color.o
+    CC column.o
+    CC combine-diff.o
+    CC commit-graph.o
+    CC commit-reach.o
+    CC commit.o
+    CC compat/nonblock.o
+    CC compat/obstack.o
+    CC compat/terminal.o
+    CC compat/zlib-uncompress2.o
+    CC config.o
+    CC connect.o
+    CC connected.o
+    CC convert.o
+    CC copy.o
+    CC credential.o
+    CC csum-file.o
+    CC ctype.o
+    CC date.o
+    CC decorate.o
+    CC delta-islands.o
+    CC diagnose.o
+    CC diff-delta.o
+    CC diff-merges.o
+    CC diff-lib.o
+    CC diff-no-index.o
+    CC diff.o
+    CC diffcore-break.o
+    CC diffcore-delta.o
+    CC diffcore-order.o
+    CC diffcore-pickaxe.o
+    CC diffcore-rename.o
+    CC diffcore-rotate.o
+    CC dir-iterator.o
+    CC dir.o
+    CC editor.o
+    CC entry.o
+    CC environment.o
+    CC ewah/bitmap.o
+    CC ewah/ewah_bitmap.o
+    CC ewah/ewah_io.o
+    CC ewah/ewah_rlw.o
+    CC exec-cmd.o
+    CC fetch-negotiator.o
+    CC fetch-pack.o
+    CC fmt-merge-msg.o
+    CC fsck.o
+    CC fsmonitor.o
+    CC fsmonitor-ipc.o
+    CC fsmonitor-settings.o
+    CC gettext.o
+    CC git-zlib.o
+    CC gpg-interface.o
+    CC graph.o
+    CC grep.o
+    CC hash-lookup.o
+    CC hashmap.o
+    GEN command-list.h
+    CC hex.o
+    CC hex-ll.o
+    CC hook.o
+    CC ident.o
+    CC json-writer.o
+    CC kwset.o
+    CC levenshtein.o
+    CC line-log.o
+    CC line-range.o
+    CC linear-assignment.o
+    CC list-objects-filter-options.o
+    CC list-objects-filter.o
+    CC list-objects.o
+    CC lockfile.o
+    CC log-tree.o
+    CC loose.o
+    CC ls-refs.o
+    CC mailinfo.o
+    CC mailmap.o
+    CC match-trees.o
+    CC mem-pool.o
+    CC merge-blobs.o
+    CC merge-ll.o
+    CC merge-ort.o
+    CC merge-ort-wrappers.o
+    CC merge-recursive.o
+    CC merge.o
+    CC midx.o
+    CC midx-write.o
+    CC name-hash.o
+    CC negotiator/default.o
+    CC negotiator/noop.o
+    CC negotiator/skipping.o
+    CC notes-cache.o
+    CC notes-merge.o
+    CC notes-utils.o
+    CC notes.o
+    CC object-file-convert.o
+    CC object-file.o
+    CC object-name.o
+    CC object.o
+    CC oid-array.o
+    CC oidmap.o
+    CC oidset.o
+    CC oidtree.o
+    CC pack-bitmap-write.o
+    CC pack-bitmap.o
+    CC pack-check.o
+    CC pack-mtimes.o
+    CC pack-objects.o
+    CC pack-revindex.o
+    CC pack-write.o
+    CC packfile.o
+    CC pager.o
+    CC parallel-checkout.o
+    CC parse.o
+    CC parse-options-cb.o
+    CC parse-options.o
+    CC patch-delta.o
+    CC patch-ids.o
+    CC path.o
+    CC pathspec.o
+    CC pkt-line.o
+    CC preload-index.o
+    CC pretty.o
+    CC prio-queue.o
+    CC progress.o
+    CC promisor-remote.o
+    CC prompt.o
+    CC protocol.o
+    CC protocol-caps.o
+    CC prune-packed.o
+    CC pseudo-merge.o
+    CC quote.o
+    CC range-diff.o
+    CC reachable.o
+    CC read-cache.o
+    CC rebase-interactive.o
+    CC rebase.o
+    CC ref-filter.o
+    CC reflog-walk.o
+    CC reflog.o
+    CC refs.o
+    CC refs/debug.o
+    CC refs/files-backend.o
+    CC refs/reftable-backend.o
+    CC refs/iterator.o
+    CC refs/packed-backend.o
+    CC refs/ref-cache.o
+    CC refspec.o
+    CC remote.o
+    CC replace-object.o
+    CC repo-settings.o
+    CC repository.o
+    CC rerere.o
+    CC reset.o
+    CC resolve-undo.o
+    CC revision.o
+    CC run-command.o
+    CC send-pack.o
+    CC sequencer.o
+    CC serve.o
+    CC server-info.o
+    CC setup.o
+    CC shallow.o
+    CC sideband.o
+    CC sigchain.o
+    CC sparse-index.o
+    CC split-index.o
+    CC stable-qsort.o
+    CC statinfo.o
+    CC strbuf.o
+    CC streaming.o
+    CC string-list.o
+    CC strmap.o
+    CC strvec.o
+    CC sub-process.o
+    CC submodule-config.o
+    CC submodule.o
+    CC symlinks.o
+    CC tag.o
+    CC tempfile.o
+    CC thread-utils.o
+    CC tmp-objdir.o
+    CC trace.o
+    CC trace2.o
+    CC trace2/tr2_cfg.o
+    CC trace2/tr2_cmd_name.o
+    CC trace2/tr2_ctr.o
+    CC trace2/tr2_dst.o
+    CC trace2/tr2_sid.o
+    CC trace2/tr2_sysenv.o
+    CC trace2/tr2_tbuf.o
+    CC trace2/tr2_tgt_event.o
+    CC trace2/tr2_tgt_normal.o
+    CC trace2/tr2_tgt_perf.o
+    CC trace2/tr2_tls.o
+    CC trace2/tr2_tmr.o
+    CC trailer.o
+    CC transport-helper.o
+    CC transport.o
+    CC tree-diff.o
+    CC tree-walk.o
+    CC tree.o
+    CC unpack-trees.o
+    CC upload-pack.o
+    CC url.o
+    CC urlmatch.o
+    CC usage.o
+    CC userdiff.o
+    CC utf8.o
+    CC varint.o
+    CC versioncmp.o
+    CC walker.o
+    CC wildmatch.o
+    CC worktree.o
+    CC wrapper.o
+    CC write-or-die.o
+    CC ws.o
+    CC wt-status.o
+    CC xdiff-interface.o
+    CC unix-socket.o
+    CC unix-stream-server.o
+    CC sha1dc_git.o
+    CC sha1dc/sha1.o
+    CC sha1dc/ubc_check.o
+    CC sha256/block/sha256.o
+    CC compat/linux/procinfo.o
+    CC compat/fopen.o
+    CC compat/strlcpy.o
+    CC compat/qsort_s.o
+    CC compat/regex/regex.o
+    CC xdiff/xdiffi.o
+    CC xdiff/xemit.o
+    CC xdiff/xhistogram.o
+    CC xdiff/xmerge.o
+    CC xdiff/xpatience.o
+    CC xdiff/xprepare.o
+    CC xdiff/xutils.o
+    CC reftable/basics.o
+    CC reftable/error.o
+    CC reftable/block.o
+    CC reftable/blocksource.o
+    CC reftable/iter.o
+    CC reftable/merged.o
+    CC reftable/pq.o
+    CC reftable/reader.o
+    CC reftable/record.o
+    CC reftable/stack.o
+    CC reftable/system.o
+    CC reftable/tree.o
+    CC reftable/writer.o
+    CC git.o
+    CC builtin/add.o
+    CC builtin/am.o
+    CC builtin/annotate.o
+    CC builtin/apply.o
+    CC builtin/archive.o
+    CC builtin/bisect.o
+    CC builtin/blame.o
+    CC builtin/branch.o
+    CC builtin/bugreport.o
+    CC builtin/help.o
+    CC help.o
+    GEN version-def.h
+    AR xdiff/lib.a
+    AR reftable/libreftable.a
+    CC version.o
+    AR libgit.a
+    LINK git
+x86_64 Android Git built (cross-ABI host execution skipped)
+=== [4/6] ripgrep 15.1.0 per ABI (Android/Bionic source build) ===
+--- Android ripgrep (arm64-v8a, target=aarch64-linux-android) ---
+info: downloading component rust-std
+warning: refs/tags/15.1.0 dd0b4f5477d2962eea82dd6d2864f987d574934a is not a commit!
+Note: switching to 'af60c2de9d85e7f3d81c78601669468cf02dabab'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+    Updating crates.io index
+ Downloading crates ...
+  Downloaded cfg-if v1.0.4
+  Downloaded walkdir v2.5.0
+  Downloaded termcolor v1.4.1
+  Downloaded crossbeam-utils v0.8.21
+  Downloaded same-file v1.0.6
+  Downloaded find-msvc-tools v0.1.4
+  Downloaded shlex v1.3.0
+  Downloaded anyhow v1.0.100
+  Downloaded itoa v1.0.15
+  Downloaded jobserver v0.1.34
+  Downloaded encoding_rs_io v0.1.7
+  Downloaded lexopt v0.3.1
+  Downloaded pcre2 v0.2.11
+  Downloaded pkg-config v0.3.32
+  Downloaded ryu v1.0.20
+  Downloaded cc v1.2.41
+  Downloaded crossbeam-epoch v0.9.18
+  Downloaded memmap2 v0.9.9
+  Downloaded crossbeam-deque v0.8.6
+  Downloaded log v0.4.28
+  Downloaded serde_core v1.0.228
+  Downloaded aho-corasick v1.1.3
+  Downloaded serde v1.0.228
+  Downloaded textwrap v0.16.2
+  Downloaded memchr v2.7.6
+  Downloaded serde_json v1.0.145
+  Downloaded bstr v1.12.0
+  Downloaded regex-syntax v0.8.8
+  Downloaded regex-automata v0.4.13
+  Downloaded pcre2-sys v0.2.10
+  Downloaded libc v0.2.177
+  Downloaded encoding_rs v0.8.35
+   Compiling libc v0.2.177
+   Compiling memchr v2.7.6
+   Compiling log v0.4.28
+   Compiling regex-syntax v0.8.8
+   Compiling aho-corasick v1.1.3
+   Compiling shlex v1.3.0
+   Compiling find-msvc-tools v0.1.4
+   Compiling pkg-config v0.3.32
+   Compiling regex-automata v0.4.13
+   Compiling jobserver v0.1.34
+   Compiling cc v1.2.41
+   Compiling bstr v1.12.0
+   Compiling serde_core v1.0.228
+   Compiling pcre2-sys v0.2.10
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/matcher)
+   Compiling crossbeam-utils v0.8.21
+   Compiling cfg-if v1.0.4
+   Compiling encoding_rs v0.8.35
+   Compiling serde_json v1.0.145
+   Compiling serde v1.0.228
+   Compiling encoding_rs_io v0.1.7
+   Compiling globset v0.4.18 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/globset)
+   Compiling memmap2 v0.9.9
+   Compiling termcolor v1.4.1
+   Compiling ryu v1.0.20
+   Compiling itoa v1.0.15
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/searcher)
+   Compiling crossbeam-epoch v0.9.18
+   Compiling anyhow v1.0.100
+   Compiling same-file v1.0.6
+   Compiling walkdir v2.5.0
+   Compiling grep-printer v0.3.1 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/printer)
+   Compiling crossbeam-deque v0.8.6
+   Compiling grep-cli v0.1.12 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.OP4IcWmjV2/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/ignore)
+   Compiling pcre2 v0.2.11
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/grep)
+   Compiling textwrap v0.16.2
+   Compiling lexopt v0.3.1
+    Finished `release` profile [optimized + debuginfo] target(s) in 55.66s
+arm64-v8a Android ripgrep OK:  ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
+--- Android ripgrep (x86_64, target=x86_64-linux-android) ---
+info: downloading component rust-std
+warning: refs/tags/15.1.0 dd0b4f5477d2962eea82dd6d2864f987d574934a is not a commit!
+Note: switching to 'af60c2de9d85e7f3d81c78601669468cf02dabab'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+   Compiling libc v0.2.177
+   Compiling memchr v2.7.6
+   Compiling regex-syntax v0.8.8
+   Compiling log v0.4.28
+   Compiling find-msvc-tools v0.1.4
+   Compiling aho-corasick v1.1.3
+   Compiling jobserver v0.1.34
+   Compiling shlex v1.3.0
+   Compiling serde_core v1.0.228
+   Compiling cc v1.2.41
+   Compiling pkg-config v0.3.32
+   Compiling regex-automata v0.4.13
+   Compiling pcre2-sys v0.2.10
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/matcher)
+   Compiling crossbeam-utils v0.8.21
+   Compiling cfg-if v1.0.4
+   Compiling encoding_rs v0.8.35
+   Compiling bstr v1.12.0
+   Compiling serde v1.0.228
+   Compiling serde_json v1.0.145
+   Compiling globset v0.4.18 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/globset)
+   Compiling encoding_rs_io v0.1.7
+   Compiling memmap2 v0.9.9
+   Compiling ryu v1.0.20
+   Compiling termcolor v1.4.1
+   Compiling itoa v1.0.15
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/searcher)
+   Compiling crossbeam-epoch v0.9.18
+   Compiling same-file v1.0.6
+   Compiling anyhow v1.0.100
+   Compiling walkdir v2.5.0
+   Compiling crossbeam-deque v0.8.6
+   Compiling grep-printer v0.3.1 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/printer)
+   Compiling grep-cli v0.1.12 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.OP4IcWmjV2/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/ignore)
+   Compiling textwrap v0.16.2
+   Compiling lexopt v0.3.1
+   Compiling pcre2 v0.2.11
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.OP4IcWmjV2/rg-src/crates/grep)
+    Finished `release` profile [optimized + debuginfo] target(s) in 39.36s
+x86_64 Android ripgrep OK:  ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
+=== [5/6] OpenCode server bundle @ 05ea5073be967c779d326929b2de6228dda4159d (pinned, fail-loud) ===
+upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
+bundle build complete
+=== [6/6] stage payload, compute manifest ===
+payload tarball: 16557786 bytes sha256=e3b6386bcb0f1ebe2ffeedef8a8302b9daa7d9a9c118c2def55d177a1c308435
+manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/assets/runtime-manifest.json
+=== engine layout ===
+11340 ./build.status
+41 ./git.upstream.commit.txt
+5171 ./assets/runtime-manifest.json
+16557786 ./assets/runtime-payload.tar.gz
+8184 ./jniLibs/arm64-v8a/libchildshim.so
+35139840 ./jniLibs/arm64-v8a/librg.so
+6744 ./jniLibs/arm64-v8a/libseccompshim.so
+89796776 ./jniLibs/arm64-v8a/libbun.so
+7592 ./jniLibs/arm64-v8a/libexecshim.so
+4132208 ./jniLibs/arm64-v8a/libgit.so
+7584 ./jniLibs/x86_64/libchildshim.so
+36762200 ./jniLibs/x86_64/librg.so
+7608 ./jniLibs/x86_64/libseccompshim.so
+91788816 ./jniLibs/x86_64/libbun.so
+7864 ./jniLibs/x86_64/libexecshim.so
+4258048 ./jniLibs/x86_64/libgit.so
+PAYLOAD_READY
++ zod-to-json-schema@3.25.2
+
+92 packages installed [246.00ms]
+MCP_READY: 26M
+########## 3/6 APKs + JVM unit tests ##########
+Downloading https://services.gradle.org/distributions/gradle-8.9-bin.zip
+............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
+
+Welcome to Gradle 8.9!
+
+Here are the highlights of this release:
+ - Enhanced Error and Warning Messages
+ - IDE Integration Improvements
+ - Daemon JVM Information
+
+For more details see https://docs.gradle.org/8.9/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Task :app:verifyAndStagePayload
+PAYLOAD STAGING: -PskipPayload=null SKIP_PAYLOAD=null
+Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/assets / /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/jniLibs
+
+> Task :app:preBuild
+> Task :app:preDebugBuild
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResValues
+> Task :app:checkDebugAarMetadata
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:mergeDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:parseDebugLocalResources
+
+> Task :app:processDebugMainManifest
+/home/runner/work/OpenCode-app/OpenCode-app/app/src/main/AndroidManifest.xml:30:9-41 Warning:
+	android:extractNativeLibs should not be specified in this source AndroidManifest.xml file. See https://d.android.com/guide/topics/manifest/application-element#extractNativeLibs for more information.
+The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml file and update the build file accordingly. See https://d.android.com/studio/build/agp-upgrade-assistant for more information.
+
+> Task :app:processDebugManifest
+> Task :app:javaPreCompileDebug
+> Task :app:mergeDebugShaders
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets
+> Task :app:desugarDebugFileDependencies
+> Task :app:mergeDebugStartupProfile
+> Task :app:checkDebugDuplicateClasses
+> Task :app:compressDebugAssets
+> Task :app:mergeDebugJniLibFolders
+> Task :app:processDebugManifestForPackage
+> Task :app:mergeExtDexDebug
+> Task :app:mergeLibDexDebug
+> Task :app:mergeDebugNativeLibs
+> Task :app:processDebugResources
+
+> Task :app:stripDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libbun.so, libchildshim.so, libexecshim.so, libgit.so, librg.so, libseccompshim.so.
+
+> Task :app:validateSigningDebug
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:processDebugAndroidTestManifest
+> Task :app:generateDebugAndroidTestBuildConfig
+> Task :app:checkDebugAndroidTestAarMetadata
+> Task :app:generateDebugAndroidTestResValues FROM-CACHE
+> Task :app:mapDebugAndroidTestSourceSetPaths
+> Task :app:generateDebugAndroidTestResources
+> Task :app:javaPreCompileDebugAndroidTest FROM-CACHE
+> Task :app:mergeDebugAndroidTestShaders
+> Task :app:mergeDebugAndroidTestResources
+> Task :app:compileDebugAndroidTestShaders NO-SOURCE
+> Task :app:generateDebugAndroidTestAssets UP-TO-DATE
+> Task :app:mergeDebugAndroidTestAssets
+> Task :app:compressDebugAndroidTestAssets
+> Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
+> Task :app:checkDebugAndroidTestDuplicateClasses
+> Task :app:mergeDebugAndroidTestJniLibFolders
+> Task :app:processDebugAndroidTestResources
+> Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
+> Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
+> Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
+> Task :app:validateSigningDebugAndroidTest
+> Task :app:writeDebugAndroidTestSigningConfigVersions
+> Task :app:preDebugUnitTestBuild
+> Task :app:javaPreCompileDebugUnitTest FROM-CACHE
+> Task :app:mergeExtDexDebugAndroidTest
+> Task :app:compileDebugKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/security/SecretStore.kt:119:54 'getter for isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java
+
+> Task :app:compileDebugJavaWithJavac
+> Task :app:dexBuilderDebug
+> Task :app:mergeDebugGlobalSynthetics
+> Task :app:processDebugJavaRes
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:mergeProjectDexDebug
+> Task :app:mergeDebugJavaResource
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+
+> Task :app:compileDebugAndroidTestKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/client/OpenCodeClientGatesTest.kt:392:39 Type mismatch: inferred type is String? but String was expected
+
+> Task :app:compileDebugAndroidTestJavaWithJavac
+> Task :app:dexBuilderDebugAndroidTest
+> Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
+> Task :app:processDebugAndroidTestJavaRes
+> Task :app:mergeProjectDexDebugAndroidTest
+> Task :app:mergeDebugAndroidTestJavaResource
+
+> Task :app:compileDebugUnitTestKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/client/OpenCodeApiHttpTest.kt:56:27 Parameter 'rec' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractorTest.kt:103:37 Unsafe use of a nullable receiver of type File?
+
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes
+
+> Task :app:testDebugUnitTest
+
+EventFrameTest > derivesLegacyType PASSED
+
+EventFrameTest > sessionIDFoundInNestedShapes PASSED
+
+EventFrameTest > permissionEventsMatchBothSpellings PASSED
+
+EventFrameTest > nullAndUnknownShapesDoNotThrow PASSED
+
+EventFrameTest > stripsDurableVersionSuffix PASSED
+
+LoopbackGuardTest > bindHostname_defaultsToLoopbackWhenUnset PASSED
+
+LoopbackGuardTest > bindHostname_refusesNonLoopbackAndKeepsLoopback PASSED
+
+LoopbackGuardTest > checked_acceptsLoopbackUrlsOnly PASSED
+
+LoopbackGuardTest > isLoopbackLiteral_coversThe127Block PASSED
+
+LoopbackGuardTest > bindHostname_acceptsLoopbackForms PASSED
+
+OpenCodeApiHttpTest > mcpAddPostsNameAndConfig PASSED
+
+OpenCodeApiHttpTest > permissionReplyUsesTheUpstreamRoute PASSED
+
+OpenCodeApiHttpTest > non2xxBecomesTypedError PASSED
+
+OpenCodeApiHttpTest > healthIsGlobalAndCarriesBasicAuth PASSED
+
+OpenCodeApiHttpTest > promptAsyncSendsUpstreamPartShape PASSED
+
+OpenCodeApiHttpTest > authProvisioningUsesProviderIdRoute PASSED
+
+OpenCodeApiHttpTest > patchMethodIsAndroidOnly PASSED
+
+OpenCodeApiHttpTest > sessionCreateIsDirectoryScopedAndPassesTitle PASSED
+
+OpenCodeApiHttpTest > bodylessRequestsDeclareZeroLength PASSED
+
+OpenCodeApiHttpTest > eventStreamParsesFramesAndReconnects PASSED
+
+SseAccumulatorTest > dispatchesOnBlankLine PASSED
+
+SseAccumulatorTest > joinsMultipleDataLines PASSED
+
+SseAccumulatorTest > ignoresCommentsAndKeepsFrameBoundaries PASSED
+
+SseAccumulatorTest > finishFlushesUnterminatedFrame PASSED
+
+TranscriptTest > toolPartLifecycleKeepsLatestStatus PASSED
+
+TranscriptTest > sessionDeletedDropsEverything PASSED
+
+TranscriptTest > ignoresForeignAndMalformedFrames PASSED
+
+TranscriptTest > partRemovedDropsThePart PASSED
+
+TranscriptTest > mergesTextPartUpdatesIntoOneMessage PASSED
+
+TranscriptTest > busyFollowsSessionStatusAndIdle PASSED
+
+TranscriptTest > permissionAskThenReplyClears PASSED
+
+AbiGateTest > apiBelow29IsRejectedEvenWithArm64 PASSED
+
+AbiGateTest > x86_64IsSupportedForEmulator PASSED
+
+AbiGateTest > arm64IsSupported PASSED
+
+AbiGateTest > x86_32OnlyIsRejected PASSED
+
+AbiGateTest > prefersArm64WhenBothAbisPresent PASSED
+
+AbiGateTest > armeabiV7aOnlyIsRejected PASSED
+
+LoopbackAuditTest > distinguishesWildcardListenRow PASSED
+
+LoopbackAuditTest > formatsIpv6LoopbackAndWildcard PASSED
+
+LoopbackAuditTest > parsesLoopbackListenRow PASSED
+
+LoopbackAuditTest > udpRowsCarryPortForMdnsDetection PASSED
+
+LoopbackAuditTest > skipsHeaderAndJunk PASSED
+
+LoopbackAuditTest > formatsIpv4LittleEndianWord PASSED
+
+ManifestTest > roundTripsVersionsAndEntries PASSED
+
+ManifestTest > unknownFieldsTolerated PASSED
+
+ManifestTest > rejectsManifestVersionDriftFromLock PASSED
+
+ManifestTest > rejectsUnsafeManifestPaths PASSED
+
+PayloadExtractorTest > verifyDetectsCorruptedContent PASSED
+
+PayloadExtractorTest > unpackTarExtractsFilesAndNestedDirs PASSED
+
+PayloadExtractorTest > verifyDetectsMissingMarker PASSED
+
+PayloadExtractorTest > unpackTarRejectsPathEscape PASSED
+
+SecretNamesTest > rejectsPathTraversalAndJunk PASSED
+
+SecretNamesTest > blobFileNameIsContained PASSED
+
+SecretNamesTest > acceptsProviderStyleNames PASSED
+
+SecretNamesTest > providerIdRoundTrip PASSED
+
+> Task :app:packageDebugAndroidTest
+> Task :app:createDebugAndroidTestApkListingFileRedirect
+> Task :app:assembleDebugAndroidTest
+
+BUILD SUCCESSFUL in 2m 48s
+74 actionable tasks: 68 executed, 6 from cache
+Performing Streamed Install
+Success
+Performing Streamed Install
+Success
+########## 4/6 host-side remote MCP fixture (pinned MCP SDK) ##########
+P5_REMOTE_MCP_DEPS reused from phase4/out/mcp/node_modules
+P5_REMOTE_MCP_SMOKE up=1 (log: /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp/smoke.log)
+P5_REMOTE_MCP_BUILT /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp (sdk 1.29.0)
+########## 5/6 phase 5 integration gates ##########
+[2026-09-06T16:49:20Z] P5-00 app uid resolved: '10192'
+[2026-09-06T16:49:20Z] === P5-01 device / app / payload prerequisites ===
+[2026-09-06T16:49:26Z] P5-01 versionName=1.18.23-phase5 pid=5976 uid=10192 marker=present
+P5-01: PASS phase5-apk-installed-and-app-running
+P5-02: PASS payload-v5-manifest-marker
+[2026-09-06T16:49:26Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
+wrote_rc=0
+wrote_rc=0
+wrote_rc=0
+warning: templates not found in /home/runner/share/git-core/templates
+error: cannot run maintenance: No such file or directory
+FIXTURE_GIT_OK
+[2026-09-06T16:49:29Z] P5-03 config_present=yes harness_rc=0
+P5-03: PASS fixture-config-and-harness-marker
+[2026-09-06T16:49:37Z] === P5-04 server password via Keystore + test-only harness export ===
+[2026-09-06T16:50:23Z] P5-04 password: ec1f… (48 chars) export_verdict=PASS
+P5-04: PASS keystore-password-authenticated-live-server
+[2026-09-06T16:50:23Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
+[2026-09-06T16:51:20Z] --- Kotlin gate verdict lines ---
+[2026-09-06T16:51:20Z] P5-K instrument_rc=0 kotlin_gates_pass=10/9 fail=0 skipped=0 gradle_ok=1 failures_marker=0 junit_exception_lines=0
+P5-K: PASS kotlin-client-gates-on-device (K1..K9, pass=10 fail=0 skip=0)
+[2026-09-06T16:51:20Z] === relaunching the app for the device-side gate stages ===
+[2026-09-06T16:51:27Z] post-instrument runtime: health=OK via host-forward
+[2026-09-06T16:51:28Z] host-forward diagnostic: adb forward tcp:4111 -> http 200 (the drivers do not depend on this path; it works on this image)
+P5-05: PASS runtime-healthy-after-instrumentation
+[2026-09-06T16:51:28Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
+[2026-09-06T16:51:38Z] model pre-flight: PROBE ok :: model=big-pickle exact-token reply, session=ses_f885e1f95ffeSn3f1bP0P2nXgW
+[2026-09-06T16:51:38Z] model_available=1 -> drivers and the in-app K2/K5 turns assert real streamed text
+[2026-09-06T16:51:38Z] gate driver runner: the payload's own bun at /data/data/ai.opencode.android.debug/files/bin/bun (on-device, app uid)
+[2026-09-06T16:51:38Z] --- re-run gate-06-health.js (as shipped, no edits) inside the app namespace ---
+P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
+[2026-09-06T16:51:39Z] --- re-run gate-07-shell.js (as shipped, no edits) inside the app namespace ---
+P5-R-07: PASS phase4-driver-gate-07-shell.js-unmodified(on-device)
+[2026-09-06T16:51:48Z] --- re-run gate-10-mcp.js (as shipped, no edits) inside the app namespace ---
+P5-R-10: PASS phase4-driver-gate-10-mcp.js-unmodified(on-device)
+[2026-09-06T16:52:00Z] --- re-run gate-11-stream.js (as shipped, no edits) inside the app namespace ---
+P5-R-11: PASS phase4-driver-gate-11-stream.js-unmodified(on-device)
+[2026-09-06T16:52:18Z] --- re-run gate-12-permission.js (as shipped, no edits) inside the app namespace ---
+P5-R-12: PASS phase4-driver-gate-12-permission.js-unmodified(on-device)
+[2026-09-06T16:52:29Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
+[2026-09-06T16:52:30Z] fixture host listener up=1 pid=11439
+[2026-09-06T16:52:30Z] adb reverse tcp:4551 -> host tcp:4551: 4551
+P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
+[2026-09-06T16:54:44Z] === P5-G17 loopback-only binding evidence ===
+[2026-09-06T16:54:44Z] P5-G17 table=conclusive wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0 bound_lines=5 publish_lines=0 table_ok=1
+[2026-09-06T16:54:44Z] device global ipv4: '10.0.2.15'
+P5-G17: PASS loopback-only-binding-and-no-mdns
+[2026-09-06T16:54:44Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
+[2026-09-06T16:54:46Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=600 auth_canary_absent=1 auth_verdict=clean leaks_outside_harness=0
+P5-G18: PASS credentials-keystore-only-at-rest
+[2026-09-06T16:54:46Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
+[2026-09-06T16:54:48Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
+P5-G19: PASS no-hardcoded-or-bundled-secrets
+[2026-09-06T16:54:48Z] === evidence pull ===
+[2026-09-06T16:54:48Z] === SUMMARY ===
+P5-01: PASS phase5-apk-installed-and-app-running
+P5-02: PASS payload-v5-manifest-marker
+P5-03: PASS fixture-config-and-harness-marker
+P5-04: PASS keystore-password-authenticated-live-server
+P5-K: PASS kotlin-client-gates-on-device (K1..K9, pass=10 fail=0 skip=0)
+P5-05: PASS runtime-healthy-after-instrumentation
+P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
+P5-R-07: PASS phase4-driver-gate-07-shell.js-unmodified(on-device)
+P5-R-10: PASS phase4-driver-gate-10-mcp.js-unmodified(on-device)
+P5-R-11: PASS phase4-driver-gate-11-stream.js-unmodified(on-device)
+P5-R-12: PASS phase4-driver-gate-12-permission.js-unmodified(on-device)
+P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
+P5-G17: PASS loopback-only-binding-and-no-mdns
+P5-G18: PASS credentials-keystore-only-at-rest
+P5-G19: PASS no-hardcoded-or-bundled-secrets
+P5_SUMMARY 2026-09-06T16:54:48Z
+gates_pass=14 gates_fail=1 gates_skip=0
+kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
+model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f885e1f95ffeSn3f1bP0P2nXgW
+app_uid=10192 device_abi=x86_64
+live_launcher_processes=0
+STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh'
+phase5 gates rc=1
+########## 6/6 evidence ##########
+=== PHASE 5 END 2026-09-06T16:54:49Z gates_rc=1 ===
+P5-01: PASS phase5-apk-installed-and-app-running
+P5-02: PASS payload-v5-manifest-marker
+P5-03: PASS fixture-config-and-harness-marker
+P5-04: PASS keystore-password-authenticated-live-server
+P5-K: PASS kotlin-client-gates-on-device (K1..K9, pass=10 fail=0 skip=0)
+P5-05: PASS runtime-healthy-after-instrumentation
+P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
+P5-R-07: PASS phase4-driver-gate-07-shell.js-unmodified(on-device)
+P5-R-10: PASS phase4-driver-gate-10-mcp.js-unmodified(on-device)
+P5-R-11: PASS phase4-driver-gate-11-stream.js-unmodified(on-device)
+P5-R-12: PASS phase4-driver-gate-12-permission.js-unmodified(on-device)
+P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
+P5-G17: PASS loopback-only-binding-and-no-mdns
+P5-G18: PASS credentials-keystore-only-at-rest
+P5-G19: PASS no-hardcoded-or-bundled-secrets
+P5_SUMMARY 2026-09-06T16:54:48Z
+gates_pass=14 gates_fail=1 gates_skip=0
+kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
+model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f885e1f95ffeSn3f1bP0P2nXgW
+app_uid=10192 device_abi=x86_64
+live_launcher_processes=0
+########## evidence push ##########

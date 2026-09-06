@@ -1,6 +1,7 @@
 package ai.opencode.android.runtime
 
 import android.content.Context
+import ai.opencode.android.security.SecretStore
 import android.os.Build
 import java.io.File
 import java.text.SimpleDateFormat
@@ -49,7 +50,22 @@ data class Diagnostics(
             sb.appendLine("## State")
             sb.appendLine("status=${state?.status} detail=${state?.detail}")
             sb.appendLine("restart_count=${state?.restartCount}")
-            sb.appendLine("model_key_present=${!Secrets.readApiKey(paths).isNullOrBlank()}")
+            sb.appendLine("provider_keys_in_keystore=${Secrets.storedProviderIds(context).joinToString(",") { it.ifEmpty { "?" } }}")
+            sb.appendLine()
+            sb.appendLine("## Phase 5 integration (loopback bind + credentials)")
+            sb.appendLine("server_bind_policy=loopback-only allowed_hosts=127.0.0.1,localhost,::1")
+            sb.appendLine("plaintext_password_file_present=${paths.serverPasswordFile.exists()}")
+            sb.appendLine("secret_store_dir=${paths.secretsDir} entries_encrypted=${SecretStore.get(context).entries().size}")
+            SecretStore.get(context).entries().forEach { e ->
+                sb.appendLine("  secret ${e.name}: blob=${e.sizeBytes}B mtime=${e.modifiedMs} (ciphertext only)")
+            }
+            sb.appendLine("keystore_hardware_backed=${runCatching { SecretStore.get(context).isHardwareBacked() }.getOrDefault(false)}")
+            sb.appendLine("provider_credentials=${Secrets.storedProviderIds(context).joinToString(",").ifEmpty { "(none configured)" }}")
+            sb.appendLine("integration=${state?.integration?.ifEmpty { "(not run yet)" } ?: "(not run yet)"}")
+            if (paths.loopbackAuditFile.isFile) {
+                sb.appendLine("--- ${paths.loopbackAuditFile.name} ---")
+                sb.appendLine(paths.loopbackAuditFile.readText().take(6000))
+            }
             sb.appendLine()
 
             sb.appendLine("## Layout")

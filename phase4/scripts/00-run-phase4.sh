@@ -19,7 +19,53 @@ mkdir -p "$OUT" "$EV"
 MAINLOG="$OUT/00-run-phase4.log"
 : > "$MAINLOG"
 step() { echo; echo "########## $1 ##########"; echo "########## $1 ##########" >> "$MAINLOG"; }
-run_c() { timeout "$1" bash -c "${*:2}" 2>&1 | tee -a "$MAINLOG"; local rc=${PIPESTATUS[0]}; [ "$rc" = 0 ] || { echo "STEP_FAILED rc=$rc: ${*:2}" | tee -a "$MAINLOG"; exit 1; }; }
+# GitHub Actions logs are not downloadable from the development sandbox this work
+# is driven from, so a failed step would otherwise be invisible. On any failure we
+# publish a small digest (error-grep + log tail) straight back to the running branch
+# through git. Only inside Actions, only on failures, never on a branch we do not own.
+FAILURE_PUBLISHED=0
+report_failure() {
+  [ "${SELF_PUSH:-0}" = 1 ] || return 0
+  [ -n "${GITHUB_REF_NAME:-}" ] || return 0
+  [ -e /home/runner ] || return 0
+  [ "$FAILURE_PUBLISHED" = 1 ] && return 0
+  FAILURE_PUBLISHED=1
+  local FD="$REPO/docs/progress/ci-failure-digest"
+  mkdir -p "$FD"
+  { echo "phase4 stage failed: rc=$2"
+    echo "commit=$(git -C "$REPO" rev-parse HEAD 2>/dev/null)"
+    echo "ref=${GITHUB_REF_NAME}"
+    echo "step: $1"
+  } > "$FD/CI_FAILURE.txt"
+  grep -aE '^(e: file:|FAILURE:|BUILD FAILED|> Task .*FAILED|FATAL|.*: error:|.*: UNRESOLVED |.*Caused by:)' "$MAINLOG" 2>/dev/null | tail -150 > "$FD/errors.txt" || true
+  tail -500 "$MAINLOG" > "$FD/log-tail.txt" 2>/dev/null || true
+  git -C "$REPO" add "$FD" >/dev/null 2>&1 || true
+  git -C "$REPO" -c user.name="arena-ai-coding-agent[bot]" -c user.email="arena-ai-coding-agent[bot]@users.noreply.github.com" \
+    commit -q -m "ci: phase4 failure digest (auto)" >/dev/null 2>&1 || true
+  git -C "$REPO" fetch -q origin "$GITHUB_REF_NAME" >/dev/null 2>&1 && \
+    git -C "$REPO" rebase -q "FETCH_HEAD" >/dev/null 2>&1 || true
+  git -C "$REPO" push -q origin "HEAD:refs/heads/$GITHUB_REF_NAME" >/dev/null 2>&1 \
+    && echo "CI_FAILURE_PUBLISHED=docs/progress/ci-failure-digest (commit $(git -C "$REPO" rev-parse --short HEAD))" | tee -a "$MAINLOG"
+  return 0
+}
+
+# See the phase5 orchestrator for why this writes to a file instead of piping to
+# tee (a killed build's surviving JVM holds the pipe open and the step never ends)
+# and why -k is passed (SIGTERM-ignoring children).
+run_c() {
+  local t="$1"; shift
+  local logf="$OUT/step.$$.out"
+  timeout -k 30 "$t" bash -c "${*}" > "$logf" 2>&1
+  local rc=$?
+  cat "$logf" 2>/dev/null
+  cat "$logf" >> "$MAINLOG" 2>/dev/null
+  rm -f "$logf" 2>/dev/null
+  if [ "$rc" = 124 ] || [ "$rc" = 137 ]; then
+    echo "STEP_TIMEOUT rc=$rc after ${t}s (killed): ${*}" | tee -a "$MAINLOG"
+  fi
+  [ "$rc" = 0 ] || { echo "STEP_FAILED rc=$rc: ${*}" | tee -a "$MAINLOG"; report_failure "${*}" "$rc"; exit 1; }
+  return 0
+}
 run() { "$@" 2>&1 | tee -a "$MAINLOG"; }
 
 echo "=== PHASE 4 START $(date -u +%FT%TZ) ===" | tee -a "$MAINLOG"
@@ -128,4 +174,23 @@ cp "$DIR/out/engine/build.status" "$EV/payload-build.status" 2>/dev/null || true
 
 echo "=== PHASE 4 END $(date -u +%FT%TZ) gates_rc=$GATE_RC ===" | tee -a "$MAINLOG"
 cat "$EV/GATES_SUMMARY.txt" 2>/dev/null | tee -a "$MAINLOG"
-exit "$GATE_RC"
+
+# ---------------------------------------------------------------------------
+# PHASE 5 tail stage. The emulator, payload and APK this script just produced are
+# exactly what the Phase 5 client-integration gates need, so they run here rather
+# than booting a second device. Phase 4 verdicts are untouched: this stage adds
+# its own summary (phase5/out/evidence/GATES_SUMMARY.txt) and its own log.
+# The job fails if EITHER phase fails — a green run must mean both did.
+step "10/10 phase 5 client-integration gates (staged on this device)"
+P5_RC=0
+if [ "$GATE_RC" = "0" ]; then
+  bash "$REPO/phase5/scripts/00-run-phase5.sh" --stage-after-phase4 2>&1 | tee -a "$MAINLOG"
+  P5_RC=${PIPESTATUS[0]}
+else
+  echo "phase4 gates failed (rc=$GATE_RC); skipping the phase5 tail stage"
+  P5_RC=1
+fi
+echo "=== PHASE 5 (staged) END rc=$P5_RC ===" | tee -a "$MAINLOG"
+cat "$REPO/phase5/out/evidence/GATES_SUMMARY.txt" 2>/dev/null | tee -a "$MAINLOG"
+if [ "$GATE_RC" != "0" ]; then exit "$GATE_RC"; fi
+exit "$P5_RC"

@@ -22,7 +22,29 @@ const bundlePath =
   path.join(filesDir, "opencode", "dist", "node", "node.js");
 
 const port = Number(process.env.OPENCODE_SERVER_PORT || "4111");
-const hostname = process.env.OPENCODE_SERVER_HOSTNAME || "127.0.0.1";
+
+// Phase 5 policy: this launcher exists to serve the Android app over loopback
+// ONLY. A non-loopback bind would expose the agent (and its shell/MCP child
+// processes) to the local network, and there is no product switch for that yet,
+// so it is refused here as well as in the Kotlin host (defense in depth: the env
+// var is the only way in, and both sides check it).
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "ip6-localhost"]);
+const requestedHostname = process.env.OPENCODE_SERVER_HOSTNAME || "127.0.0.1";
+if (!LOOPBACK_HOSTS.has(requestedHostname)) {
+  console.error(
+    "SERVER_BIND_REJECTED hostname=" + requestedHostname +
+      " reason=loopback-only-policy (allowed: " + [...LOOPBACK_HOSTS].join(",") + ")",
+  );
+  process.exit(3);
+}
+const hostname = requestedHostname;
+// mDNS discovery is what would advertise this server on the LAN. Upstream only
+// publishes when `mdns: true` AND the hostname is non-loopback
+// (server.ts setupMdns); we never pass mdns, and the hostname is loopback.
+const mdnsRequested = process.env.OPENCODE_MDNS === "1";
+if (mdnsRequested) {
+  console.error("SERVER_MDNS_REFUSED reason=loopback-only-policy (no LAN discovery while bound to " + hostname + ")");
+}
 process.env.OPENCODE_SERVER_USERNAME ||= "opencode";
 if (!process.env.OPENCODE_SERVER_PASSWORD) {
   // The host always supplies this; hard-fail rather than binding unauthenticated.
@@ -87,9 +109,50 @@ async function main() {
   console.error("[launcher] OpenCode bundle imported");
   const Server = mod.Server;
   console.error("[launcher] binding " + hostname + ":" + port);
+  // `cors: []` => no Access-Control-Allow-Origin at all; mdns is intentionally
+  // not passed (see above), so nothing is advertised on the local network.
   const listener = await Server.listen({ port, hostname, cors: [] });
-  console.log("SERVER_READY " + listener.url);
+  console.log(
+    "SERVER_BOUND url=" + listener.url + " hostname=" + hostname + " port=" + port +
+      " mdns=disabled cors=none auth=basic user=" + process.env.OPENCODE_SERVER_USERNAME,
+  );
+  auditSockets();
 }
+
+// Kernel ground truth for the bind: the local address of every LISTEN socket on
+// our port. A wildcard bind would read 00000000:<port> (v4) / all-zero (v6).
+// Best-effort: Android 10+ may deny /proc/net/* to the app uid, which is exactly
+// why the Kotlin side (RuntimeIntegration) also probes reachability behaviourally.
+function auditSockets() {
+  const hexPort = port.toString(16).toUpperCase().padStart(4, "0");
+  const rows = [];
+  for (const table of ["/proc/net/tcp", "/proc/net/tcp6"]) {
+    let text = "";
+    try {
+      text = fs.readFileSync(table, "utf8");
+    } catch (e) {
+      rows.push("audit " + path.basename(table) + "=unreadable(" + (e.code || e.message) + ")");
+      continue;
+    }
+    const listen = text
+      .split("\n")
+      .slice(1)
+      .filter((l) => l.includes(":" + hexPort) && /\s0A\s/.test(l));
+    rows.push("audit " + path.basename(table) + "_listen=" + (listen.length ? listen.length : 0));
+    for (const l of listen) {
+      const local = (l.trim().split(/\s+/)[1] || "").toUpperCase();
+      const localAddr = local.split(":")[0] || "";
+      const loopbackV4 = localAddr === "0100007F";
+      const loopbackV6 = table.endsWith("tcp6") && localAddr === "00000000000000000000000001000000";
+      rows.push(
+        "audit " + path.basename(table) + " local=" + local +
+          " verdict=" + (loopbackV4 || loopbackV6 ? "LOOPBACK" : "NOT_LOOPBACK"),
+      );
+    }
+  }
+  console.log("BIND_AUDIT " + rows.join(" "));
+}
+
 
 let stopping = false;
 async function shutdown(sig) {

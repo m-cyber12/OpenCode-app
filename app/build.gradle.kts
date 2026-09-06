@@ -29,11 +29,15 @@ android {
         applicationId = "ai.opencode.android"
         minSdk = 29          // W^X: exec only from nativeLibraryDir; ABI gating enforces arm64/x64
         targetSdk = 34
-        versionCode = 4      // phase 4
-        versionName = "1.18.23-phase4"   // tracks the pinned OpenCode version (versions.lock)
+        versionCode = 5      // phase 5
+        versionName = "1.18.23-phase5"   // tracks the pinned OpenCode version (versions.lock)
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")   // arm64 ships; x86_64 for CI/emulator
         }
+        // On-device integration tests run inside the app's own process: they use
+        // the SAME client classes (OpenCodeApi/OpenCodeEventStream/SecretStore)
+        // as the UI, against the SAME server the supervisor started.
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -95,6 +99,11 @@ dependencies {
     implementation("androidx.compose.material3:material3")
 
     testImplementation("junit:junit:4.13.2")
+    // Instrumentation only: the runner + junit3 extension. No production dep is
+    // added for tests (Phase 5 keeps the app's dependency list unchanged).
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.1")
+    androidTestImplementation("androidx.test:core:1.6.1")
     // Real org.json on the JVM so manifest parsing/markers are testable locally.
     testImplementation("org.json:json:20240303")
 }
@@ -111,6 +120,25 @@ val verifyAndStagePayload = tasks.register("verifyAndStagePayload") {
     group = "opencode"
     description = "Verifies and stages phase4/out/engine into generated asset/jniLibs dirs."
     doLast {
+        // CI-only escape hatch for *compile-only* runs (no packaging): Gradle's
+        // "fast feedback" job has to be able to type-check ~2,600 new Kotlin lines
+        // without first spending 10-15 minutes building the embedded runtime. It is
+        // opt-in (-PskipPayload) and only ever passed together with compile*/test
+        // tasks, never assemble*/package*; an APK could not have been produced by a
+        // build that skipped this, and one that somehow was would not start (the
+        // extractor fails closed on the missing asset).
+        // Read the switch from the environment as well as the property, and print
+        // what was seen: an earlier version relied on `-PskipPayload` alone, the
+        // CI run then failed on the missing payload with no explanation, and the
+        // mismatch was only visible by reading the whole log. A diagnostic makes the
+        // next such confusion self-evident instead of costing a run.
+        val skipProp = project.findProperty("skipPayload")?.toString()
+        val skipEnv = System.getenv("SKIP_PAYLOAD")
+        println("PAYLOAD STAGING: -PskipPayload=$skipProp SKIP_PAYLOAD=$skipEnv")
+        if (skipProp in setOf("true", "1", "") || skipEnv in setOf("1", "true", "yes")) {
+            println("PAYLOAD STAGING SKIPPED: compile/test-only run, no APK was produced.")
+            return@doLast
+        }
         val root = engineRoot()
         val srcAssets = File(root, "assets")
         val srcJni = File(root, "jniLibs")

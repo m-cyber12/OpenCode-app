@@ -19,4 +19,7 @@ data class RuntimeState(
     val sinceMs: Long = System.currentTimeMillis(),
     val manifest: RuntimeManifest? = null,
     val device: AbiGate.DeviceInfo? = null,
+    /** Phase 5: loopback/bind audit + credential provisioning verdict (see RuntimeIntegration). */
+    val integration: String = "",
+    val integrationAt: Long = 0L,
 )
