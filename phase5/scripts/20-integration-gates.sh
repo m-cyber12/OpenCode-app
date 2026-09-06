@@ -154,15 +154,19 @@ wait_healthy() { # $1=timeout-s ; needs PASSWD. Host forward first, then app nam
   while [ "$(date +%s)" -lt "$deadline" ]; do
     last_host=$(health_code_host)
     if [ "$last_host" = "200" ] && grep -q healthy "$OUT/health.json" 2>/dev/null; then
-      HEALTH_TRANSPORT="host-forward"; echo HEALTH_OK; return 0
+      HEALTH_TRANSPORT="host-forward"; echo "$HEALTH_TRANSPORT" > "$OUT/health.transport"; echo HEALTH_OK; return 0
     fi
     last_dev=$(health_code_device)
     if [ "${last_dev:0:3}" = "200" ]; then
-      HEALTH_TRANSPORT="on-device"; echo HEALTH_OK; return 0
+      HEALTH_TRANSPORT="on-device"; echo "$HEALTH_TRANSPORT" > "$OUT/health.transport"; echo HEALTH_OK; return 0
     fi
     sleep 2
   done
-  log "wait_healthy timed out (host-forward http=$last_host, on-device http=${last_dev:-none})"
+  # Written to the log file, never to stdout: the caller captures stdout and compares
+  # it to HEALTH_OK, so a diagnostic printed there silently corrupts the verdict token
+  # (that is what run #15 did to P5-04 before it was redefined above).
+  printf '[%s] wait_healthy timed out (host-forward http=%s, on-device http=%s)\n' \
+    "$(date -u +%FT%TZ)" "$last_host" "${last_dev:-none}" >> "$LOG"
   echo HEALTH_TIMEOUT; return 1
 }
 
@@ -293,13 +297,23 @@ adb shell am instrument -w -e class "$TEST_CLASS#harnessExportLoopbackCredential
 grep -aoE 'P5_HARNESS_EXPORT [A-Z]+[^\r]*' "$EV/p5-04-instrument-export.txt" 2>/dev/null | head -2 >> "$LOG" || true
 PASSWD=$(rash "cat '$FILES/harness/server-password' 2>/dev/null" | tr -d '\r\n ')
 [ -n "$PASSWD" ] || PASSWD=$(rash "cat '$FILES/secrets/server-password' 2>/dev/null" | tr -d '\r\n ')
-log "P5-04 password: ${PASSWD:0:4}… (${#PASSWD} chars)"
+# What P5-04 can honestly assert *at this point* is: the password really came out of the
+# Keystore, and the credential authenticated the live server - which is precisely what the
+# export gate measures from inside the process that owns that server (run #15: it printed
+# `P5_HARNESS_EXPORT PASS :: bytes=48 waited=0s health={"healthy":true...}` while P5-04
+# failed, because this gate then ran its own health check from the host against a process
+# that instrumentation had already replaced: the server is a child of the process the tests
+# run in, so it died when the tests ended). A *reachable* health check from outside the app
+# belongs to P5-05, which runs after the relaunch. The strictness is unchanged: a password
+# that does not authenticate a live server still fails this gate, via the export verdict.
+EXPORT_VERDICT=$(grep -aoE 'P5_HARNESS_EXPORT (PASS|FAIL)' "$EV/p5-04-instrument-export.txt" 2>/dev/null | head -1 | awk '{print $2}')
+log "P5-04 password: ${PASSWD:0:4}… (${#PASSWD} chars) export_verdict=${EXPORT_VERDICT:-none}"
 P504=1
-[ "${#PASSWD}" -ge 20 ] && [ "$(wait_healthy 180)" = "HEALTH_OK" ] && P504=0
+[ "${#PASSWD}" -ge 20 ] && [ "$EXPORT_VERDICT" = "PASS" ] && P504=0
 if [ "$P504" != 0 ]; then
-  log "P5-04 not healthy; supervisor log tail:"; rash "tail -40 '$FILES/log/runtime.log'" | tee -a "$LOG"
+  log "P5-04 failing; supervisor log tail:"; rash "tail -40 '$FILES/log/runtime.log'" | tee -a "$LOG"
 fi
-p5 04 "$P504" "keystore-password-and-healthy-server"
+p5 04 "$P504" "keystore-password-authenticated-live-server"
 
 # ---------------------------------------------------------------------------
 log "=== P5-K instrumented Kotlin client gates (K1..K9) ==="
@@ -352,7 +366,7 @@ done
 adb forward tcp:$PORT tcp:$PORT >/dev/null 2>&1 || true
 RREL=1
 [ "$(wait_healthy 180)" = "HEALTH_OK" ] && RREL=0
-log "post-instrument runtime: health=$([ "$RREL" = 0 ] && echo OK || echo DOWN) via $HEALTH_TRANSPORT"
+log "post-instrument runtime: health=$([ "$RREL" = 0 ] && echo OK || echo DOWN) via $(cat "$OUT/health.transport" 2>/dev/null || echo none)"
 HOST_FORWARD_CODE=$(health_code_host)
 log "host-forward diagnostic: adb forward tcp:$PORT -> http $HOST_FORWARD_CODE (the drivers do not depend on this path; $([ "$HOST_FORWARD_CODE" = 200 ] && echo 'it works on this image' || echo 'it does not reach the app namespace on this image'))"
 p5 05 "$RREL" "runtime-healthy-after-instrumentation"
@@ -461,7 +475,16 @@ log "=== P5-G17 loopback-only binding evidence ==="
   echo "-- IPv4/IPv6 LISTEN(0A) rows for the app uid --"
   awk -v uid="$APP_UID" '$4=="0A" && $8==uid {print "  tcp_row local="$2" rem="$3" state="$4" uid="$8}' "$OUT/proc-net-tcp.txt"
   echo "-- any row for the app uid that is NOT a loopback local address --"
-  awk -v uid="$APP_UID" '$8==uid && $2 !~ /^0100007F:/ && $2 !~ /^00000000000000000000000001000000:/ && $2 !~ /^::1:/ {print "  viol "$0}' "$OUT/proc-net-tcp.txt" | head -20
+  # "Loopback-only" is a claim about *inbound binding*, so only LISTEN (0A) rows can
+  # violate it. Run #15 counted five "violations" that were all legitimate: two outbound
+  # ESTABLISHED sessions on :443 (provider traffic, in scope by design) and three
+  # loopback->loopback client sockets written in the IPv4-mapped IPv6 form
+  # ::ffff:127.0.0.1, whose hex is not the `0100007F:` prefix this filter knew. Both are
+  # now excluded, and the outbound rows are listed below as the record they should be -
+  # evidence of what the app talks to, not a violation.
+  awk -v uid="$APP_UID" '$4=="0A" && $8==uid && $2 !~ /^0100007F:/ && $2 !~ /^0000000000000000FFFF00000100007F:/ && $2 !~ /^00000000000000000000000001000000:/ && $2 !~ /^::1:/ {print "  viol "$0}' "$OUT/proc-net-tcp.txt" | head -20
+  echo "-- outbound (non-LISTEN) app-uid rows: expected provider / network-MCP traffic, recorded, not asserted --"
+  awk -v uid="$APP_UID" '$4!="0A" && $8==uid {print "  outbound local=" $2 " peer=" $3 " state=" $4}' "$OUT/proc-net-tcp.txt" | head -12
   echo "-- UDP: app-uid sockets on mDNS 5353 (0x14F9) --"
   shash "cat /proc/net/udp /proc/net/udp6" > "$OUT/proc-net-udp.txt" 2>&1
   awk -v uid="$APP_UID" '$8==uid && ($2 ~ /:14F9$/ || $2 ~ /:000000000000000000000000000014F9$/) {print "  mdns "$0}' "$OUT/proc-net-udp.txt" | head -10

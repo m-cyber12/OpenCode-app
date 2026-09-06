@@ -9,10 +9,15 @@
 //             back to when a server only offers it)
 //   /messages POST target advertised by /sse
 //
-// It binds 127.0.0.1 on the CI host. The emulator reaches host loopback through
-// the NAT gateway address 10.0.2.2, so the on-device OpenCode server connects to
-// http://10.0.2.2:<port>/mcp — outbound HTTP from the device to the test host,
-// no cloud gateway involved.
+// It binds 0.0.0.0 on the CI host, and the on-device OpenCode server connects to
+// http://10.0.2.2:<port>/mcp — 10.0.2.2 is the emulator's NAT *gateway* interface on
+// the host, not the host's loopback, so a 127.0.0.1 bind is unreachable from the
+// guest (run #15 never got this far; the driver died on an import path first).
+// Reachable-from-the-guest is required for the gate to mean anything — the point is
+// that the device connects to a network MCP server living outside itself — and this
+// listener is a purpose-built fixture on an ephemeral runner carrying no credentials.
+// Nothing about it changes the app's own binding policy, which stays loopback-only
+// (that is gate G17/K7's job). Override with P5_MCP_HOST if a runner needs it.
 //
 // Nothing here is OpenCode's code; it is only a peer for OpenCode's own MCP
 // client (MCP.connectRemote -> StreamableHTTPClientTransport, SSE fallback).
@@ -23,7 +28,7 @@ import { z } from "zod"
 import http from "node:http"
 
 const PORT = Number(process.env.P5_MCP_PORT || "4551")
-const HOST = process.env.P5_MCP_HOST || "127.0.0.1"
+const HOST = process.env.P5_MCP_HOST || "0.0.0.0"
 const MARKER = process.env.P5_MCP_MARKER || "P5_REMOTE_MCP"
 
 function makeServer(name) {

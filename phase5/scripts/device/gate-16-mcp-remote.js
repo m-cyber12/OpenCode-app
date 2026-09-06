@@ -18,7 +18,15 @@
 // Shared helpers are phase 4's, imported in place (not copied, not edited): the
 // auth/dir plumbing and the assert/gateResult contract must stay identical
 // across phases so results are comparable.
-import { get, post, log, gateResult, assert } from "../../../phase4/scripts/device/gates-lib.js"
+let lib
+try {
+  // On-device layout: `20-integration-gates.sh` stages the drivers flat, beside lib.
+  lib = await import("./gates-lib.js")
+} catch {
+  // Repo layout (host rehearsals): phase 4's file in place, not copied, not edited.
+  lib = await import("../../../phase4/scripts/device/gates-lib.js")
+}
+const { get, post, log, gateResult, assert } = lib
 
 const MCP_URL = process.env.P5_MCP_URL || "http://10.0.2.2:4551"
 const DEAD_URL = process.env.P5_MCP_DEAD_URL || "http://10.0.2.2:4599/mcp"

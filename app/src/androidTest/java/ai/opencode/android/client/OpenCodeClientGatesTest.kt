@@ -403,30 +403,46 @@ class OpenCodeClientGatesTest {
             if (open) accepted++
         }
 
-        // Kernel table view when /proc permits it (Android 10+ may deny apps the
-        // file; then it is inconclusive, never a silent pass).
-        // Same row shape the in-app audit parses: "sl: local_address rem_address st ...".
+        // Kernel table view, when /proc permits it. Android 10+ may deny an app its own
+        // tcp tables, and the rule that matters is the one the app-side report states:
+        // an unreadable table is INCONCLUSIVE - it must neither pass nor fail the gate by
+        // itself, because the behavioural matrix below is what actually proves the claim.
+        // (Run #15 failed here on exactly this: `wildcard_listeners=-1` was treated as a
+        // violation while `external_accepted=0` said the bind is loopback-only.)
+        // Row shape as the in-app audit parses it: "sl: local_address rem_address st ...";
         // IPv4 addresses are one little-endian word (00000000 = 0.0.0.0), IPv6 four.
-        val wildcard = runCatching {
-            val hex = "%04X".format(port)
-            (File("/proc/net/tcp").readLines() + File("/proc/net/tcp6").readLines())
-                .map { it.trim().split(Regex("\\s+")) }
-                .filter { it.size >= 8 && it[0].endsWith(":") }
-                .filter { it[3] == "0A" }
-                .filter { it[1].substringAfterLast(':').equals(hex, ignoreCase = true) }
-                .count { row ->
-                    val local = row[1].substringBefore(':').uppercase()
-                    local == "00000000" || local == "00000000000000000000000000000000"
-                }
-        }.getOrDefault(-1)
+        val hex = "%04X".format(port)
+        // Read each table on its own, and judge the verdict by whether a read SUCCEEDED.
+        // File.canRead() is not the test: SELinux can grant the unix permission bit and deny
+        // the open, and treating "readable but empty" as conclusive-clean would hand this gate
+        // a pass for free - the exact failure mode in the opposite direction that run #15 hit.
+        val tables = listOf("/proc/net/tcp", "/proc/net/tcp6").map { runCatching { File(it).readLines() } }
+        val readable = tables.count { it.isSuccess }
+        val rows = tables.filter { it.isSuccess }.flatMap { it.getOrDefault(emptyList()) }
+            .map { it.trim().split(Regex("\\s+")) }
+            .filter { it.size >= 8 && it[0].endsWith(":") }
+            .filter { it[3] == "0A" }
+            .filter { it[1].substringAfterLast(':').equals(hex, ignoreCase = true) }
+        val wildcard = if (readable == 0) {
+            -1
+        } else {
+            rows.count { row ->
+                val local = row[1].substringBefore(':').uppercase()
+                local == "00000000" || local == "00000000000000000000000000000000"
+            }
+        }
 
         val haveExternal = addrs.isNotEmpty()
-        val ok = loopbackOk && (!haveExternal || accepted == 0) && wildcard == 0
+        val refusedEverywhere = haveExternal && accepted == 0
+        // Parenthesised deliberately: a bare `if` expression is not a valid operand of `&&`.
+        val ok = loopbackOk && (!haveExternal || accepted == 0) &&
+            (if (wildcard >= 0) wildcard == 0 else refusedEverywhere)
+        val tableState = if (wildcard >= 0) "conclusive(wildcard=$wildcard)" else "inconclusive(/proc/net denied to the app uid; refusal on ${addrs.size} non-loopback address(es) is the evidence)"
         gate(
             "LOOPBACK",
             ok,
             "loopback_connect=$loopbackOk nonLoopback=${addrs.ifEmpty { listOf("(none found)") }} " +
-                "external_accepted=$accepted wildcard_listeners=$wildcard (-1=/proc/net denied to the app uid)",
+                "external_accepted=$accepted table=$tableState",
         )
     }
 
