@@ -57,12 +57,21 @@ function makeServer(name) {
 // ---- StreamableHTTP: stateful, one transport per session --------------------
 const httpSessions = new Map()
 
-async function handleStreamable(req, res) {
+async function handleStreamable(req, res, url) {
   const sessionId = req.headers["mcp-session-id"]
   let transport = sessionId ? httpSessions.get(sessionId) : undefined
 
   if (!transport && req.method === "POST") {
+    // `?mode=json` selects the other half of the StreamableHTTP contract: the transport
+    // answers each POST with a single `application/json` body instead of an SSE-framed
+    // stream. Both are spec-legal for a server, so a client that consumes one and not the
+    // other is a real, nameable interop fact - which is exactly what run #18 needs to
+    // distinguish "this platform cannot read the SSE-mode response" from "upstream's
+    // transport is misconfigured". The gate still asserts the SSE mode; the JSON mode is
+    // reported by the driver as a diagnostic, never as a substitute pass.
+    const jsonMode = url.searchParams.get("mode") === "json"
     const t = new StreamableHTTPServerTransport({
+      ...(jsonMode ? { enableJsonResponse: true } : {}),
       sessionIdGenerator: () => crypto.randomUUID(),
       onsessioninitialized: (id) => {
         stats.inits++
@@ -154,7 +163,7 @@ const nodeServer = http.createServer(async (req, res) => {
     }
     if (url.pathname === "/sse" && req.method === "GET") return handleSseGet(req, res)
     if (url.pathname === "/messages" && req.method === "POST") return handleSsePost(req, res)
-    if (url.pathname === "/mcp") return await handleStreamable(req, res)
+    if (url.pathname === "/mcp") return await handleStreamable(req, res, url)
     res.writeHead(404).end("not found")
   } catch (e) {
     console.error("[p5-mcp] handler error: " + (e && e.stack ? e.stack : e))

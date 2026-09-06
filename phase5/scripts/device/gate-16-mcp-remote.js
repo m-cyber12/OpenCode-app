@@ -157,6 +157,7 @@ const STDIO_NAME = process.env.OPENCODE_MCP_STDIO_NAME || "gates-mcp"
 const HTTP_NAME = "p5-remote-http"
 const SSE_NAME = "p5-remote-sse"
 const DEAD_NAME = "p5-remote-dead"
+const JSON_NAME = "p5-remote-json"
 
 async function mcpStatus() {
   const r = await get("/mcp")
@@ -190,9 +191,39 @@ async function toolIds() {
 }
 
 async function addRemote(name, url) {
+  const t0 = Date.now()
   const r = await post("/mcp", { name, config: { type: "remote", url, enabled: true } })
-  log(`POST /mcp ${name} ${url} -> ${r.status} ${r.text.slice(0, 200)}`)
+  // Elapsed matters: upstream's tool list runs under McpCatalog's DEFAULT_TIMEOUT of
+  // 30_000 ms (catalog.ts:11), and "the client gave up after ~30 s" is a different finding
+  // from "the client failed in 200 ms" even though both surface as `Failed to get tools`.
+  log(`POST /mcp ${name} ${url} -> ${r.status} ${r.text.slice(0, 200)} [${Date.now() - t0}ms]`)
   assert(r.ok, `POST /mcp for ${name} accepted (${r.status} ${r.text.slice(0, 200)})`)
+}
+
+// Diagnostic only, and deliberately NOT an assertion: register the same fixture with the
+// JSON-response mode and report what upstream says. If SSE mode fails here while this
+// connects, §2 can state the limitation precisely ("remote MCP over StreamableHTTP works
+// against servers that answer in JSON-response mode under Bun for Android; the SSE-framed
+// mode is not consumed") without pretending the gate passed, and without any change to
+// OpenCode. The gate verdict is unaffected either way.
+async function jsonModeProbe() {
+  try {
+    await addRemote(JSON_NAME, MCP_URL + "/mcp?mode=json")
+    let final
+    try {
+      await waitFor(JSON_NAME, "connected", 40000)
+      final = "connected"
+    } catch {
+      const st = await mcpStatus().catch(() => ({}))
+      final = `not-connected(status=${st[JSON_NAME] || "?"} error=${String(st[JSON_NAME + "#error"] || "").slice(0, 140)})`
+    }
+    log(`DIAGNOSTIC json_mode_status=${final} — reported, not asserted (SSE mode is what G16 measures)`)
+    await remove(JSON_NAME)
+    return final
+  } catch (e) {
+    log(`DIAGNOSTIC json_mode_status=error:${String((e && e.message) || e).slice(0, 120)}`)
+    return "error"
+  }
 }
 
 async function remove(name) {
@@ -279,6 +310,7 @@ try {
 } catch (e) {
   ok = false
   log("GATE16 ERROR: " + (e && e.stack ? e.stack : e))
+  await jsonModeProbe().catch(() => {})
   try {
     log("final mcp status: " + JSON.stringify(await mcpStatus()))
     // The fixture's own counters after the failed attempt: `mcp:0` here means no session

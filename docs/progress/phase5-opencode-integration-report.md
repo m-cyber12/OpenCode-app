@@ -159,6 +159,43 @@ device it will either reproduce upstream's failure and name it, or show a clean 
 difference to how upstream's transport uses the platform rather than to what the platform can do. Until that run
 publishes, §2's remote rows stay NOT TESTED on device; the `stdio` row stays confirmed by two runs of both halves.
 
+Run #18 (`b67ee5d`) closed the ambiguity, and the answer is neither the network nor the payload. Both ends of the
+exchange were recorded in the same run:
+
+```
+driver  : raw_mcp OK initialize: HTTP 200 ct=text/event-stream session=yes 17ms … tools/list: HTTP 200 …
+fixture : [p5-mcp] streamable session initialized id=f869d6df… (requests=1)
+          [p5-mcp] POST /mcp -> 200 bytes=191 | POST /mcp -> 202 | POST /mcp -> 200 bytes=681 | DELETE -> 200
+          [p5-mcp] streamable session initialized id=11162817… (requests=5)
+          [p5-mcp] POST /mcp -> 200 bytes=191 | POST /mcp -> 202
+fixture : after the attempt -> {"mcp":1,"sse":0,"requests":6,"inits":2}
+```
+
+Read together: the driver's own raw JSON-RPC conversation completed **on the device, under Bun for Android, over the
+SSE-framed response mode** — `initialize`, the `initialized` notification, and a `tools/list` that returned 681
+bytes of tool definitions. So the platform, the route and the wire format are all demonstrably fine. The second
+session in the same log is OpenCode's: its `initialize` arrived and was answered, its `notifications/initialized`
+arrived and was accepted, and **then its client never sent `tools/list`** — `requests` went 5 → 6, and the only
+sixth request is the health snapshot. Upstream therefore fails *between* a completed handshake and the tool-list
+request, at a point where it throws before writing anything to the socket; `McpCatalog.defs()`'s
+`Effect.catch(() => Effect.void)` then discards the error and `mcp/index.ts:393` reports the one string
+`"Failed to get tools"`, which is why no log line, no status field and no `GET /mcp` response can say more. That is
+a property of the pinned upstream's error handling, not of this app: the same source built for Linux registers
+`tools_registered=4` against this very fixture (the host rehearsal), so the difference is in how upstream's client
+behaves on this runtime, and it is not reachable from the client side without changing OpenCode — which Phase 5's
+rules put out of scope.
+
+What this does and does not license as a claim: **§2's remote rows are NOT TESTED on device and remain so**, with the
+failure bounded to "tool discovery after a successful handshake on-device, with the cause discarded upstream". It
+does *not* mean remote MCP is broken on Android in general — this app's client code path for remote MCP is upstream's
+own, and no app-side MCP layer exists to blame. The one experiment that would separate "off-device peer" from
+"any peer at all" is registered in §5 as the next step: run the same fixture as a **second process on the device**
+and point OpenCode at `127.0.0.1`, which needs no app or upstream change and is not yet built. Two diagnostics from
+#18 stay in the harness regardless: the elapsed time printed beside each `POST /mcp` (to distinguish a ~30 s
+`DEFAULT_TIMEOUT` consumption from an immediate throw — `catalog.ts:11`), and a JSON-response-mode registration
+that is *reported, never asserted*, so a response-mode asymmetry would be visible rather than inferred.
+
+
 The gate driver itself was then rehearsed the same way (`run-host-rehearsal.sh`, output above is committed to nothing — it is a dev-run script under `phase5/scripts/rehearsal/`, and its own header says "NOT device evidence"). That rehearsal caught two more real bugs before CI: `gate-16` imported `./gates-lib.js`, which only exists in `phase4/scripts/device/` (now imported in place, unmodified, so both phases share one helper contract), and a stale `p5-remote-*` entry from an earlier run made the "no remote tools before" assertion fail — the driver now disconnects its own names first, so each run measures its own pre-state. Verdict of that rehearsal:
 
 ```
@@ -386,11 +423,15 @@ rather than skipped. `kotlin_gate_skipped=0` in both runs, so nothing was quietl
   tools` #17 then proved is *not* a routing problem — both routes reachable — but an MCP-exchange problem whose cause
   upstream discards, §2) and `P5-04` (the verdict token I read did not exist in that capture; #17 reads the
   `OK (1 test)` trailer and came back **PASS**).
-- **NOT TESTED:** whether the emulator can open a TCP session to the CI host at all, which is what stands between
-  run #16 and a *device* verdict on OpenCode's remote MCP transports (the config path, the status surface and the
-  unreachable-server case were all exercised on device and behaved as upstream defines); the remote-MCP gate's
-  route-aware form (`route=nat-gateway|adb-reverse`, SKIP-on-no-route) is written and unit-probed locally but
-  unexecuted until #17; and the full-suite execution on real arm64 hardware, carried forward from Phase 4 and still open. A quick manual real-device pass (install the Phase 5 debug APK, open the Credentials tab, add a key, send one prompt, approve one permission) is worth doing before Phase 8; if CI stays the only full-suite host, that gap moves to Phase 8 explicitly.
+- **NOT TESTED:** OpenCode's remote MCP transports on device past the handshake. #18 bounded it precisely (§2):
+  the route works over both candidate paths, the driver's own raw JSON-RPC exchange completes on-device in SSE mode,
+  and OpenCode's session completes `initialize` + `initialized` and then never sends `tools/list`, with the cause
+  discarded by `McpCatalog.defs()` upstream — so what is unproven is *tool discovery through upstream's client on
+  this runtime*, not the network, not the payload, not the fixture. The experiment that would separate "off-device
+  peer" from "any peer at all" is to run the same fixture as a second on-device process and point OpenCode at
+  `127.0.0.1`, which needs no app or upstream change and is **not yet built** (it also needs the MCP SDK importable
+  from the payload's `node_modules`, which is unverified); it belongs with the other device-side follow-ups in
+  Phase 8. Also still open: the full-suite execution on real arm64 hardware, carried forward from Phase 4. A quick manual real-device pass (install the Phase 5 debug APK, open the Credentials tab, add a key, send one prompt, approve one permission) is worth doing before Phase 8; if CI stays the only full-suite host, that gap moves to Phase 8 explicitly.
 - **BLOCKED (needs the user, not me):** (1) *editing or dispatching* the workflow. `phase5-integration.yml` now
   exists on GitHub (id `346561927`, created by the user from `phase5/workflow/`), so **triggering runs is no longer
   blocked** — any push to this branch starts a full device run, docs included, and there is no `concurrency:` block,
@@ -781,6 +822,21 @@ response's status, content-type, session presence, timing and first bytes; the f
 and every session it opens or closes. If the device-side probe prints `raw_mcp OK` while OpenCode still reports
 `failed`, the finding is about how upstream's transport drives fetch on this platform, not about the payload, the
 bind, or the fixture — and §2 says exactly that, with the labels to match, whichever way it lands.
+
+
+**Run #18 (`b67ee5d`) — same verdicts, new instruments, and the last unknown became a bounded finding.**
+`gates_pass=14 gates_fail=1 gates_skip=0`, `kotlin_gate_pass=10 fail=0 skipped=0`, `model_available=1`: nothing that
+was green in #17 moved, which is the point — the run added the raw JSON-RPC probe on the driver and the per-request
+log on the fixture, and both produced the evidence §2 now rests on (the device-side probe completing the whole
+`initialize → initialized → tools/list` exchange in SSE mode, OpenCode's own session reaching the same fixture and
+then never sending `tools/list`: `requests 5 → 6`, `inits=2`, `mcp:1`). No gate's definition changed, so #17's
+fourteen green gates still stand as the phase's evidence; #18's contribution is that `P5-G16`'s failure is now
+described by two measured facts instead of one swallowed string. The next run adds the elapsed time beside each
+`POST /mcp` (so a ~30 s `DEFAULT_TIMEOUT` consumption can be told apart from an immediate throw) and a
+*reported-not-asserted* JSON-response-mode registration; both were exercised locally first, which is also how a bug
+in my own instrumentation was caught before it could reach CI (the fixture handler referenced `url` out of scope and
+answered every MCP request with `{"error":"url is not defined"}` — a green-looking G16 with that bug would have been
+worse than a red one).
 
 ### Reading CI output from this sandbox (why run 65 has no log here)
 
