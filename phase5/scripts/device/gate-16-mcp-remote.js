@@ -85,6 +85,71 @@ const MCP_URL = route.origin
 const DEAD_URL = route.name === "nat-gateway" && process.env.P5_MCP_DEAD_URL
   ? process.env.P5_MCP_DEAD_URL
   : `${MCP_URL}:${process.env.P5_MCP_DEAD_PORT || "4599"}/mcp`
+
+// --- fixture-side observability, independent of OpenCode ---------------------
+// Upstream's MCP layer swallows the cause of a failed tool list: mcp/index.ts:390-393
+// turns any `listTools` rejection into `new Error("Failed to get tools")`, and
+// McpCatalog.defs() pipes it through `Effect.catch(() => Effect.void)` — so `GET /mcp`
+// reports the label and nothing else, and no server log line accompanies it (verified in
+// #17's `opencode-server.log`, which contains no `p5-remote-http` entry at all). Rather
+// than touch upstream, the driver performs the *same* exchange itself, in the raw
+// JSON-RPC form, over the same route, so the real HTTP-level outcome is visible in the
+// evidence; and the fixture logs every request it receives. The two together say which
+// of "the request never arrived", "initialize never completed", and "tools/list came
+// back unusable" actually happened, and they do not change what the gate asserts.
+// This is a diagnostic: nothing here passes or fails the gate.
+async function fixtureSnapshot() {
+  try {
+    const r = await fetch(MCP_URL + "/health", { signal: AbortSignal.timeout(6000) })
+    return `HTTP ${r.status} ${(await r.text()).replace(/\s+/g, " ").slice(0, 200)}`
+  } catch (e) {
+    return `ERR ${String((e && e.message) || e)}`
+  }
+}
+
+async function rawProbe() {
+  const base = { "content-type": "application/json", accept: "application/json, text/event-stream" }
+  const seen = []
+  try {
+    const t0 = Date.now()
+    const r = await fetch(MCP_URL + "/mcp", {
+      method: "POST",
+      headers: base,
+      body: JSON.stringify({
+        jsonrpc: "2.0", id: 1, method: "initialize",
+        params: { protocolVersion: "2025-03-26", capabilities: {}, clientInfo: { name: "p5-raw-probe", version: "1" } },
+      }),
+      signal: AbortSignal.timeout(15000),
+    })
+    const sid = r.headers.get("mcp-session-id") || ""
+    const body0 = (await r.text()).replace(/\s+/g, " ")
+    seen.push(`initialize: HTTP ${r.status} ct=${r.headers.get("content-type")} session=${sid ? "yes" : "NO"} ${Date.now() - t0}ms body=${body0.slice(0, 200)}`)
+    if (!sid) throw new Error("no mcp-session-id header on the initialize response")
+    const h = { ...base, "mcp-session-id": sid }
+    const r1 = await fetch(MCP_URL + "/mcp", {
+      method: "POST", headers: h,
+      body: JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }),
+      signal: AbortSignal.timeout(10000),
+    })
+    seen.push(`initialized: HTTP ${r1.status}`)
+    const t1 = Date.now()
+    const r2 = await fetch(MCP_URL + "/mcp", {
+      method: "POST", headers: h,
+      body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} }),
+      signal: AbortSignal.timeout(20000),
+    })
+    const body2 = (await r2.text()).replace(/\s+/g, " ")
+    seen.push(`tools/list: HTTP ${r2.status} ct=${r2.headers.get("content-type")} ${Date.now() - t1}ms body=${body2.slice(0, 200)}`)
+    await fetch(MCP_URL + "/mcp", { method: "DELETE", headers: h, signal: AbortSignal.timeout(5000) }).catch(() => {})
+    log(`raw_mcp OK ${seen.join(" | ")}`)
+  } catch (e) {
+    const cause = e && e.cause ? ` cause=${String(e.cause.code || e.cause.message || e.cause).slice(0, 160)}` : ""
+    log(`raw_mcp FAIL ${seen.join(" | ")} | error=${String((e && e.name) || "ERR")}:${String((e && e.message) || e).slice(0, 200)}${cause}`)
+  }
+}
+
+log(`fixture snapshot before: ${await fixtureSnapshot()}`)
+await rawProbe()
 const PROVIDER = process.env.P5_TOOL_PROVIDER || "opencode"
 const MODEL = process.env.P5_TOOL_MODEL || "big-pickle"
 const STDIO_NAME = process.env.OPENCODE_MCP_STDIO_NAME || "gates-mcp"
@@ -216,6 +281,11 @@ try {
   log("GATE16 ERROR: " + (e && e.stack ? e.stack : e))
   try {
     log("final mcp status: " + JSON.stringify(await mcpStatus()))
+    // The fixture's own counters after the failed attempt: `mcp:0` here means no session
+    // was ever established (so upstream's client never completed `initialize`), while a
+    // non-zero count with a `failed` status means the session existed and `tools/list` is
+    // what upstream could not use. Either way the label alone would have hidden it.
+    log("fixture snapshot after: " + (await fixtureSnapshot()))
   } catch {}
 }
 await gateResult(ok, "G16")

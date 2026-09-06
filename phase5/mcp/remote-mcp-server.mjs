@@ -65,7 +65,9 @@ async function handleStreamable(req, res) {
     const t = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => crypto.randomUUID(),
       onsessioninitialized: (id) => {
+        stats.inits++
         httpSessions.set(id, t)
+        console.log(`[p5-mcp] streamable session initialized id=${id} (requests=${stats.requests})`)
       },
       onsessionclosed: (id) => {
         httpSessions.delete(id)
@@ -119,12 +121,35 @@ function handleSsePost(req, res) {
   transport.handlePostMessage(req, res).catch((e) => console.error("[p5-mcp] sse post failed: " + e.message))
 }
 
+const stats = { requests: 0, inits: 0, byes: 0 }
+
 const nodeServer = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://" + (req.headers.host || "localhost"))
+  // One line per request, with the response's own shape, so "the client never arrived",
+  // "arrived and answered 200" and "answered but the stream was cut" are three different
+  // observable facts instead of one inference. Byte counting wraps write/end rather than
+  // consuming the body, so `transport.handlePostMessage` still sees the raw stream - the
+  // MCP SDK's server side owns request parsing and must not be fed a buffered copy.
+  if (url.pathname !== "/health") stats.requests++
+  let bytes = 0
+  const size = (c) =>
+    typeof c === "string" ? Buffer.byteLength(c)
+      : c && (Buffer.isBuffer(c) || c instanceof Uint8Array) ? c.byteLength
+      : 0
+  const ow = res.write.bind(res), oe = res.end.bind(res)
+  res.write = (c, ...a) => { bytes += size(c); return ow(c, ...a) }
+  res.end = (c, ...a) => { bytes += size(c); return oe(c, ...a) }
+  const t0 = Date.now()
+  res.on("finish", () => {
+    console.log(`[p5-mcp] ${req.method} ${url.pathname} -> ${res.statusCode} ct=${res.getHeader("content-type") || "-"} bytes=${bytes} sessions=${httpSessions.size} +${Date.now() - t0}ms`)
+  })
+  res.on("close", () => {
+    if (!res.writableEnded) console.log(`[p5-mcp] ${req.method} ${url.pathname} CLOSED without ending (${Date.now() - t0}ms, ${bytes} bytes written)`)
+  })
   try {
     if (url.pathname === "/health") {
       res.writeHead(200, { "content-type": "application/json" })
-      res.end(JSON.stringify({ healthy: true, marker: MARKER, mcp: httpSessions.size, sse: sseSessions.size }))
+      res.end(JSON.stringify({ healthy: true, marker: MARKER, mcp: httpSessions.size, sse: sseSessions.size, requests: stats.requests, inits: stats.inits }))
       return
     }
     if (url.pathname === "/sse" && req.method === "GET") return handleSseGet(req, res)

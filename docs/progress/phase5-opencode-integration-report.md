@@ -131,6 +131,34 @@ helper by repo-relative path, which resolves nowhere inside the staged on-device
 fixture now defaults to `0.0.0.0` (ephemeral CI runner, credential-free, purpose-built peer; the app's own
 binding policy is untouched and is what K7/G17 assert). Verdict pending run #16.
 
+Run #17 narrowed the network rows decisively. The driver measured both candidate paths before
+asserting anything, and **both answered**: `nat-gateway@http://10.0.2.2:4551=reachable(HTTP 200
+{"healthy":true,"marker":"P5_REMOTE_MCP","mcp":0,"sse":0,…})` and `adb-reverse@http://127.0.0.1:4551=reachable(…)`,
+with `chosen=nat-gateway` printed into the gate label. The same attempt's `POST /mcp` still produced
+`{"p5-remote-http":{"status":"failed","error":"Failed to get tools"}}`. So: the guest *can* dial the host, plain HTTP
+works, and what fails lives inside the MCP exchange — which the label alone cannot describe, for a reason that
+belongs to pinned upstream rather than to this app. `mcp/index.ts:390-393` converts any failed tool list into
+`new Error("Failed to get tools")`, and `McpCatalog.defs()` (`catalog.ts:38-39`) wraps the call in
+`Effect.catch(() => Effect.void)`, so the cause is dropped before the status is stored and is never logged — #17's
+`opencode-server.log` holds no `p5-remote-http` line at all, which is how I know it is not even logged at WARN
+(only `server unavailable`, which fires on the *other* branch, appears, and for `gates-mcp` at that).
+`catalog.ts:145-160` shows the single automatic escape: the SDK's strict `listTools` runs first and only an
+*output-schema-validation* error is retried with the tolerant schema, so a server whose `tools/list` trips any other
+parse or transport error is reported to the client as exactly this string. I tested the obvious suspect here against
+the pinned SDK 1.29.0 — the fixture's tool objects carry `$schema` inside `inputSchema`, and they parse fine under
+both `ListToolsResultSchema` and `ToolSchema`, so that is not the cause.
+
+No upstream change is proposed. Instead #18 will name the failure from both ends at once, with instruments that are
+already in this branch: the driver replays the same conversation itself in raw JSON-RPC (`initialize` →
+`notifications/initialized` → `tools/list` → `DELETE`, printing status, `content-type`, whether a session id came
+back, elapsed time and the first bytes of each body), and the fixture logs every request it serves
+(`[p5-mcp] POST /mcp -> 200 ct=text/event-stream bytes=652 sessions=1 +5ms`, plus a line when a session initializes
+and when a response is `CLOSED without ending`). Both were exercised on this host against the live fixture, where the
+probe reports `raw_mcp OK … tools/list: HTTP 200 … "tools":[{"name":"remote_echo"…` — so the probe is sound, and on
+device it will either reproduce upstream's failure and name it, or show a clean exchange, which would localise the
+difference to how upstream's transport uses the platform rather than to what the platform can do. Until that run
+publishes, §2's remote rows stay NOT TESTED on device; the `stdio` row stays confirmed by two runs of both halves.
+
 The gate driver itself was then rehearsed the same way (`run-host-rehearsal.sh`, output above is committed to nothing — it is a dev-run script under `phase5/scripts/rehearsal/`, and its own header says "NOT device evidence"). That rehearsal caught two more real bugs before CI: `gate-16` imported `./gates-lib.js`, which only exists in `phase4/scripts/device/` (now imported in place, unmodified, so both phases share one helper contract), and a stale `p5-remote-*` entry from an earlier run made the "no remote tools before" assertion fail — the driver now disconnects its own names first, so each run measures its own pre-state. Verdict of that rehearsal:
 
 ```
@@ -342,15 +370,22 @@ rather than skipped. `kotlin_gate_skipped=0` in both runs, so nothing was quietl
   health answer; each is described with its fix in §6. `P5-04`'s new definition is stricter-in-spirit and
   race-free: the Keystore password must be ≥20 chars *and* the export gate that authenticates the live server with
   it must have passed.
+- **EXECUTED IN CI (device, full standalone mode) — run #17 (`f9c569b`): 14 PASS / 1 FAIL, `gates_skip=0`,
+  `kotlin_gate_pass=10 fail=0 skipped=0`, `model_available=1`.** Every gate in Phase 5's scope is now green on the
+  emulator except `P5-G16`: `P5-01`…`P5-05` PASS (including `P5-04 keystore-password-authenticated-live-server`,
+  which had never passed before), `P5-K PASS` with all of K1–K9, `P5-G17/G18/G19` PASS, and `P5-R-06/07/10/11/12`
+  PASS for a third consecutive run with the live model pre-flight. `G16` remains FAIL with the *cause* narrowed to
+  the MCP exchange (§2), and the instruments that will name it are in place.
 - **EXECUTED IN CI (device, full standalone mode) — run #16 (`ed0264f`): 13 PASS / 2 FAIL, `gates_skip=0`,
   `kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0`.** This is the run in which the loopback claim, the
   credential contract and the Phase-3 re-runs all became *gate-green on a device* at the same time: `P5-G17 PASS`
   (`table=conclusive wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0 table_ok=1`), `P5_LOOPBACK PASS` in-app,
   `P5_KEYSTORE`/`P5_CREDENTIALS`/`P5-G18`/`P5-G19` PASS, `P5-K PASS` with all of K1–K9, the five unmodified phase-4
   drivers PASS again, `P5-05` PASS, and the model pre-flight live (`PROBE ok :: model=big-pickle exact-token reply`).
-  Two gates stayed open and both are about the same wire, not about the app: `P5-G16` (device→host TCP route to the
-  remote-MCP fixture, §2) and `P5-04` (the verdict token I read it from does not exist in that capture — the export
-  run's own `OK (1 test)` trailer said it passed, and #17 reads the trailer instead).
+  Two gates stayed open and both were about my instruments rather than the app: `P5-G16` (whose `Failed to get
+  tools` #17 then proved is *not* a routing problem — both routes reachable — but an MCP-exchange problem whose cause
+  upstream discards, §2) and `P5-04` (the verdict token I read did not exist in that capture; #17 reads the
+  `OK (1 test)` trailer and came back **PASS**).
 - **NOT TESTED:** whether the emulator can open a TCP session to the CI host at all, which is what stands between
   run #16 and a *device* verdict on OpenCode's remote MCP transports (the config path, the status surface and the
   unreachable-server case were all exercised on device and behaved as upstream defines); the remote-MCP gate's
@@ -721,6 +756,31 @@ Nothing in this report may be upgraded on the strength of #13's or #14's build s
 tests, or of a `state -> HEALTHY` line that no gate has yet asserted anything about; and the reverse also holds —
 #16's ten green Kotlin gates are evidence about *that emulator image*, with arm64 hardware, secure-element key
 residency and the remote-MCP wire still explicitly open.
+
+**Run #17 (`f9c569b`) — 14 PASS / 1 FAIL / 0 SKIP: Phase 5's own scope is green on the emulator.**
+`P5-01`…`P5-05` all PASS — `P5-04 keystore-password-authenticated-live-server` among them, for the first time, now
+that the verdict is read from the export run's `OK (1 test)` trailer instead of a stdout token that the instrumented
+runner never writes — `P5-K: PASS kotlin-client-gates-on-device (K1..K9, pass=10 fail=0 skip=0)`, `P5-G17 PASS`,
+`P5-G18 PASS`, `P5-G19 PASS`, and `P5-R-06/07/10/11/12 PASS` for a third consecutive run with `model_available=1`.
+That is the phase's stop condition met on this image: the Android client drives the on-device OpenCode server as a
+real client — sessions, streaming events, a permission round trip, stdio MCP, Keystore-held credentials — with no
+upstream API change and nothing skipped to get there.
+
+`P5-G16` is the single gate still open, and #17 is what turned it from "unexplained" into "narrowly located". The
+route probe I added for this run answered on *both* candidate paths (`nat-gateway@http://10.0.2.2:4551=reachable`,
+`adb-reverse@…=reachable`), so the guest reaches the host over HTTP; `POST /mcp` is accepted with 200; and
+upstream's remote client still reports `{"status":"failed","error":"Failed to get tools"}`. Reading that string in
+the pinned source is what explained the silence: `mcp/index.ts:390-393` invents the label and
+`McpCatalog.defs()`'s `Effect.catch(() => Effect.void)` discards the cause, so `GET /mcp`, the server log and this
+report can only ever see the same three words — `#17`'s `opencode-server.log` contains no `p5-remote-http` line at
+all. I ruled out the first suspect locally (the fixture's `inputSchema` carries `$schema`; SDK 1.29.0's
+`ListToolsResultSchema` and `ToolSchema` both accept it, and upstream's tolerant retry only fires for
+*output-schema* validation errors, `catalog.ts:145-160`). #18 therefore carries two new instruments, both verified
+against the live fixture on this host: the driver replays the exchange itself in raw JSON-RPC and prints each
+response's status, content-type, session presence, timing and first bytes; the fixture logs every request it serves
+and every session it opens or closes. If the device-side probe prints `raw_mcp OK` while OpenCode still reports
+`failed`, the finding is about how upstream's transport drives fetch on this platform, not about the payload, the
+bind, or the fixture — and §2 says exactly that, with the labels to match, whichever way it lands.
 
 ### Reading CI output from this sandbox (why run 65 has no log here)
 
