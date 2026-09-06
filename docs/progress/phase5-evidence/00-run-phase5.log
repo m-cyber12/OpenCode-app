@@ -1,9 +1,9 @@
-=== PHASE 5 START 2026-09-06T14:57:05Z staged=0 ===
-heartbeat enabled (pid 2274, every 240s -> docs/progress/phase5-evidence/PROGRESS.txt)
+=== PHASE 5 START 2026-09-06T15:18:11Z staged=0 ===
+heartbeat enabled (pid 2099, every 240s -> docs/progress/phase5-evidence/PROGRESS.txt)
 ########## 1/6 environment + emulator (standalone mode) ##########
 installing emulator + system image via phase4/scripts/50-install-sdk.sh
 --- downloading cmdline-tools
--rw-r--r-- 1 runner runner 153607504 Sep  6 14:57 cmdtools.zip
+-rw-r--r-- 1 runner runner 153607504 Sep  6 15:18 cmdtools.zip
 /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
 /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
 --- sdkmanager licenses
@@ -21,10 +21,10 @@ accel:
 KVM (version 12) is installed and usable.
 accel
 --- starting emulator (headless)
-emulator pid=2528
+emulator pid=2395
 * daemon not running; starting now at tcp:5037
 * daemon started successfully
-BOOT_COMPLETED after ~48s
+BOOT_COMPLETED after ~42s
 --- boot state
 List of devices attached
 emulator-5554	device
@@ -113,9 +113,214 @@ git source: f93ff170b93a1782659637824b25923245ac9dd1
 GIT_VERSION=2.48.1
     * new build flags
     * new prefix flags
-    GEN hook-list.h
+    CC builtin/add.o
     * new link flags
+    CC builtin/am.o
+    CC builtin/annotate.o
+    CC builtin/apply.o
+    CC builtin/archive.o
+    CC builtin/bisect.o
+    CC builtin/blame.o
+    CC builtin/branch.o
+    GEN hook-list.h
+    CC builtin/bundle.o
+    CC builtin/cat-file.o
+    CC builtin/check-attr.o
+    CC builtin/check-ignore.o
+    CC builtin/check-mailmap.o
+    CC builtin/check-ref-format.o
+    CC builtin/checkout--worker.o
+    CC builtin/checkout-index.o
+    CC builtin/checkout.o
+    CC builtin/clean.o
+    CC builtin/clone.o
+    CC builtin/column.o
+    CC builtin/commit-graph.o
+    CC builtin/commit-tree.o
+    CC builtin/commit.o
+    CC builtin/config.o
+    CC builtin/count-objects.o
+    CC builtin/credential-cache--daemon.o
+    CC builtin/credential-cache.o
+    CC builtin/credential-store.o
+    CC builtin/credential.o
+    CC builtin/describe.o
+    CC builtin/diagnose.o
+    CC builtin/diff-files.o
+    CC builtin/diff-index.o
+    CC builtin/diff-tree.o
+    CC builtin/diff.o
+    CC builtin/difftool.o
+    CC builtin/fast-export.o
+    CC builtin/fast-import.o
+    CC builtin/fetch-pack.o
+    CC builtin/fetch.o
+    CC builtin/fmt-merge-msg.o
+    CC builtin/for-each-ref.o
+    CC builtin/for-each-repo.o
+    CC builtin/fsck.o
+    CC builtin/fsmonitor--daemon.o
+    CC builtin/gc.o
+    CC builtin/get-tar-commit-id.o
+    CC builtin/grep.o
+    CC builtin/hash-object.o
     GEN config-list.h
+    CC builtin/hook.o
+    CC builtin/index-pack.o
+    CC builtin/init-db.o
+    CC builtin/interpret-trailers.o
+    CC builtin/log.o
+    CC builtin/ls-files.o
+    CC builtin/ls-remote.o
+    CC builtin/ls-tree.o
+    CC builtin/mailinfo.o
+    CC builtin/mailsplit.o
+    CC builtin/merge-base.o
+    CC builtin/merge-file.o
+    CC builtin/merge-index.o
+    CC builtin/merge-ours.o
+    CC builtin/merge-recursive.o
+    CC builtin/merge-tree.o
+    CC builtin/merge.o
+    CC builtin/mktag.o
+    CC builtin/mktree.o
+    CC builtin/multi-pack-index.o
+    CC builtin/mv.o
+    CC builtin/name-rev.o
+    CC builtin/notes.o
+    CC builtin/pack-objects.o
+    CC builtin/pack-redundant.o
+    CC builtin/pack-refs.o
+    CC builtin/patch-id.o
+    CC builtin/prune-packed.o
+    CC builtin/prune.o
+    CC builtin/pull.o
+    CC builtin/push.o
+    CC builtin/range-diff.o
+    CC builtin/read-tree.o
+    CC builtin/rebase.o
+    CC builtin/receive-pack.o
+    CC builtin/reflog.o
+    CC builtin/refs.o
+    CC builtin/remote-ext.o
+    CC builtin/remote-fd.o
+    CC builtin/remote.o
+    CC builtin/repack.o
+    CC builtin/replace.o
+    CC builtin/replay.o
+    CC builtin/rerere.o
+    CC builtin/reset.o
+    CC builtin/rev-list.o
+    CC builtin/rev-parse.o
+    CC builtin/revert.o
+    CC builtin/rm.o
+    CC builtin/send-pack.o
+    CC builtin/shortlog.o
+    CC builtin/show-branch.o
+    CC builtin/show-index.o
+    CC builtin/show-ref.o
+    CC builtin/sparse-checkout.o
+    CC builtin/stash.o
+    CC builtin/stripspace.o
+    CC builtin/submodule--helper.o
+    CC builtin/symbolic-ref.o
+    CC builtin/tag.o
+    CC builtin/unpack-file.o
+    CC builtin/unpack-objects.o
+    CC builtin/update-index.o
+    CC builtin/update-ref.o
+    CC builtin/update-server-info.o
+    CC builtin/upload-archive.o
+    CC builtin/upload-pack.o
+    CC builtin/var.o
+    CC builtin/verify-commit.o
+    CC builtin/verify-pack.o
+    CC builtin/verify-tag.o
+    CC builtin/worktree.o
+    CC common-main.o
+    CC builtin/write-tree.o
+    CC abspath.o
+    CC add-interactive.o
+    CC add-patch.o
+    CC advice.o
+    CC alias.o
+    CC alloc.o
+    CC apply.o
+    CC archive-tar.o
+    CC archive-zip.o
+    CC archive.o
+    CC attr.o
+    CC base85.o
+    CC bisect.o
+    CC blame.o
+    CC blob.o
+    CC bloom.o
+    CC branch.o
+    CC bulk-checkin.o
+    CC bundle-uri.o
+    CC bundle.o
+    CC cache-tree.o
+    CC cbtree.o
+    CC chdir-notify.o
+    CC checkout.o
+    CC chunk-format.o
+    CC color.o
+    CC column.o
+    CC combine-diff.o
+    CC commit-graph.o
+    CC commit-reach.o
+    CC commit.o
+    CC compat/nonblock.o
+    CC compat/obstack.o
+    CC compat/terminal.o
+    CC compat/zlib-uncompress2.o
+    CC config.o
+    CC connect.o
+    CC connected.o
+    CC convert.o
+    CC copy.o
+    CC credential.o
+    CC csum-file.o
+    CC ctype.o
+    CC date.o
+    CC decorate.o
+    CC delta-islands.o
+    CC diagnose.o
+    CC diff-delta.o
+    CC diff-merges.o
+    CC diff-lib.o
+    CC diff-no-index.o
+    CC diff.o
+    CC diffcore-break.o
+    CC diffcore-delta.o
+    CC diffcore-order.o
+    CC diffcore-pickaxe.o
+    CC diffcore-rename.o
+    CC diffcore-rotate.o
+    CC dir-iterator.o
+    CC dir.o
+    CC editor.o
+    CC entry.o
+    CC environment.o
+    CC ewah/bitmap.o
+    CC ewah/ewah_bitmap.o
+    CC ewah/ewah_io.o
+    CC ewah/ewah_rlw.o
+    CC exec-cmd.o
+    CC fetch-negotiator.o
+    CC fetch-pack.o
+    CC fmt-merge-msg.o
+    CC fsck.o
+    CC fsmonitor.o
+    CC fsmonitor-ipc.o
+    CC fsmonitor-settings.o
+    CC gettext.o
+    CC git-zlib.o
+    CC gpg-interface.o
+    CC graph.o
+    CC grep.o
+    CC hash-lookup.o
+    CC hashmap.o
     GEN command-list.h
     CC hex.o
     CC hex-ll.o
@@ -131,8 +336,8 @@ GIT_VERSION=2.48.1
     CC list-objects-filter.o
     CC list-objects.o
     CC lockfile.o
-    CC log-tree.o
     CC loose.o
+    CC log-tree.o
     CC ls-refs.o
     CC mailinfo.o
     CC mailmap.o
@@ -150,8 +355,8 @@ GIT_VERSION=2.48.1
     CC negotiator/default.o
     CC negotiator/noop.o
     CC negotiator/skipping.o
-    CC notes-cache.o
     CC notes-merge.o
+    CC notes-cache.o
     CC notes-utils.o
     CC notes.o
     CC object-file-convert.o
@@ -310,213 +515,8 @@ GIT_VERSION=2.48.1
     CC reftable/tree.o
     CC reftable/writer.o
     CC git.o
-    CC builtin/add.o
-    CC builtin/am.o
-    CC builtin/annotate.o
-    CC builtin/apply.o
-    CC builtin/archive.o
-    CC builtin/bisect.o
-    CC builtin/blame.o
-    CC builtin/branch.o
     CC builtin/bugreport.o
-    CC builtin/bundle.o
-    CC builtin/cat-file.o
-    CC builtin/check-attr.o
-    CC builtin/check-ignore.o
-    CC builtin/check-mailmap.o
-    CC builtin/check-ref-format.o
-    CC builtin/checkout--worker.o
-    CC builtin/checkout-index.o
-    CC builtin/checkout.o
-    CC builtin/clean.o
-    CC builtin/clone.o
-    CC builtin/column.o
-    CC builtin/commit-graph.o
-    CC builtin/commit-tree.o
-    CC builtin/commit.o
-    CC builtin/config.o
-    CC builtin/count-objects.o
-    CC builtin/credential-cache--daemon.o
-    CC builtin/credential-cache.o
-    CC builtin/credential-store.o
-    CC builtin/credential.o
-    CC builtin/describe.o
-    CC builtin/diagnose.o
-    CC builtin/diff-files.o
-    CC builtin/diff-index.o
-    CC builtin/diff-tree.o
-    CC builtin/diff.o
-    CC builtin/difftool.o
-    CC builtin/fast-export.o
-    CC builtin/fast-import.o
-    CC builtin/fetch-pack.o
-    CC builtin/fetch.o
-    CC builtin/fmt-merge-msg.o
-    CC builtin/for-each-ref.o
-    CC builtin/for-each-repo.o
-    CC builtin/fsck.o
-    CC builtin/fsmonitor--daemon.o
-    CC builtin/gc.o
-    CC builtin/get-tar-commit-id.o
-    CC builtin/grep.o
-    CC builtin/hash-object.o
     CC builtin/help.o
-    CC builtin/hook.o
-    CC builtin/index-pack.o
-    CC builtin/init-db.o
-    CC builtin/interpret-trailers.o
-    CC builtin/log.o
-    CC builtin/ls-files.o
-    CC builtin/ls-remote.o
-    CC builtin/ls-tree.o
-    CC builtin/mailinfo.o
-    CC builtin/mailsplit.o
-    CC builtin/merge-base.o
-    CC builtin/merge-file.o
-    CC builtin/merge-index.o
-    CC builtin/merge-ours.o
-    CC builtin/merge-recursive.o
-    CC builtin/merge-tree.o
-    CC builtin/merge.o
-    CC builtin/mktag.o
-    CC builtin/mktree.o
-    CC builtin/multi-pack-index.o
-    CC builtin/mv.o
-    CC builtin/name-rev.o
-    CC builtin/notes.o
-    CC builtin/pack-objects.o
-    CC builtin/pack-redundant.o
-    CC builtin/pack-refs.o
-    CC builtin/patch-id.o
-    CC builtin/prune-packed.o
-    CC builtin/prune.o
-    CC builtin/pull.o
-    CC builtin/push.o
-    CC builtin/range-diff.o
-    CC builtin/read-tree.o
-    CC builtin/rebase.o
-    CC builtin/receive-pack.o
-    CC builtin/reflog.o
-    CC builtin/refs.o
-    CC builtin/remote-ext.o
-    CC builtin/remote-fd.o
-    CC builtin/remote.o
-    CC builtin/repack.o
-    CC builtin/replace.o
-    CC builtin/replay.o
-    CC builtin/rerere.o
-    CC builtin/reset.o
-    CC builtin/rev-list.o
-    CC builtin/rev-parse.o
-    CC builtin/revert.o
-    CC builtin/rm.o
-    CC builtin/send-pack.o
-    CC builtin/shortlog.o
-    CC builtin/show-branch.o
-    CC builtin/show-index.o
-    CC builtin/show-ref.o
-    CC builtin/sparse-checkout.o
-    CC builtin/stash.o
-    CC builtin/stripspace.o
-    CC builtin/submodule--helper.o
-    CC builtin/symbolic-ref.o
-    CC builtin/tag.o
-    CC builtin/unpack-file.o
-    CC builtin/unpack-objects.o
-    CC builtin/update-index.o
-    CC builtin/update-ref.o
-    CC builtin/update-server-info.o
-    CC builtin/upload-archive.o
-    CC builtin/upload-pack.o
-    CC builtin/var.o
-    CC builtin/verify-commit.o
-    CC builtin/verify-pack.o
-    CC builtin/verify-tag.o
-    CC builtin/worktree.o
-    CC builtin/write-tree.o
-    CC common-main.o
-    CC abspath.o
-    CC add-interactive.o
-    CC add-patch.o
-    CC advice.o
-    CC alias.o
-    CC alloc.o
-    CC apply.o
-    CC archive-tar.o
-    CC archive-zip.o
-    CC archive.o
-    CC attr.o
-    CC base85.o
-    CC bisect.o
-    CC blame.o
-    CC blob.o
-    CC bloom.o
-    CC branch.o
-    CC bulk-checkin.o
-    CC bundle-uri.o
-    CC bundle.o
-    CC cache-tree.o
-    CC cbtree.o
-    CC chdir-notify.o
-    CC checkout.o
-    CC chunk-format.o
-    CC color.o
-    CC column.o
-    CC combine-diff.o
-    CC commit-graph.o
-    CC commit-reach.o
-    CC commit.o
-    CC compat/nonblock.o
-    CC compat/obstack.o
-    CC compat/terminal.o
-    CC compat/zlib-uncompress2.o
-    CC config.o
-    CC connect.o
-    CC connected.o
-    CC convert.o
-    CC copy.o
-    CC credential.o
-    CC csum-file.o
-    CC ctype.o
-    CC date.o
-    CC decorate.o
-    CC delta-islands.o
-    CC diagnose.o
-    CC diff-delta.o
-    CC diff-merges.o
-    CC diff-lib.o
-    CC diff-no-index.o
-    CC diff.o
-    CC diffcore-break.o
-    CC diffcore-delta.o
-    CC diffcore-order.o
-    CC diffcore-pickaxe.o
-    CC diffcore-rename.o
-    CC diffcore-rotate.o
-    CC dir-iterator.o
-    CC dir.o
-    CC editor.o
-    CC entry.o
-    CC environment.o
-    CC ewah/bitmap.o
-    CC ewah/ewah_bitmap.o
-    CC ewah/ewah_io.o
-    CC ewah/ewah_rlw.o
-    CC exec-cmd.o
-    CC fetch-negotiator.o
-    CC fetch-pack.o
-    CC fmt-merge-msg.o
-    CC fsck.o
-    CC fsmonitor.o
-    CC fsmonitor-ipc.o
-    CC fsmonitor-settings.o
-    CC gettext.o
-    CC git-zlib.o
-    CC gpg-interface.o
-    CC graph.o
-    CC grep.o
-    CC hash-lookup.o
-    CC hashmap.o
     CC help.o
     GEN version-def.h
     AR xdiff/lib.a
@@ -528,10 +528,18 @@ arm64-v8a Android Git built (cross-ABI host execution skipped)
 --- Android Git (x86_64, CC=/usr/local/lib/android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang) ---
 GIT_VERSION=2.48.1
     * new build flags
-    * new prefix flags
-    CC builtin/bundle.o
-    GEN hook-list.h
+    CC builtin/add.o
     * new link flags
+    * new prefix flags
+    CC builtin/am.o
+    CC builtin/annotate.o
+    CC builtin/apply.o
+    CC builtin/archive.o
+    CC builtin/bisect.o
+    CC builtin/blame.o
+    CC builtin/branch.o
+    GEN hook-list.h
+    CC builtin/bundle.o
     CC builtin/cat-file.o
     CC builtin/check-attr.o
     CC builtin/check-ignore.o
@@ -923,14 +931,6 @@ GIT_VERSION=2.48.1
     CC reftable/tree.o
     CC reftable/writer.o
     CC git.o
-    CC builtin/add.o
-    CC builtin/am.o
-    CC builtin/annotate.o
-    CC builtin/apply.o
-    CC builtin/archive.o
-    CC builtin/bisect.o
-    CC builtin/blame.o
-    CC builtin/branch.o
     CC builtin/bugreport.o
     CC builtin/help.o
     CC help.o
@@ -965,29 +965,29 @@ Turn off this advice by setting config variable advice.detachedHead to false
     Updating crates.io index
  Downloading crates ...
   Downloaded cfg-if v1.0.4
-  Downloaded anyhow v1.0.100
-  Downloaded cc v1.2.41
   Downloaded same-file v1.0.6
-  Downloaded walkdir v2.5.0
-  Downloaded encoding_rs_io v0.1.7
-  Downloaded crossbeam-epoch v0.9.18
-  Downloaded termcolor v1.4.1
-  Downloaded serde_core v1.0.228
   Downloaded itoa v1.0.15
-  Downloaded jobserver v0.1.34
-  Downloaded pkg-config v0.3.32
-  Downloaded find-msvc-tools v0.1.4
-  Downloaded pcre2 v0.2.11
-  Downloaded textwrap v0.16.2
-  Downloaded shlex v1.3.0
-  Downloaded memmap2 v0.9.9
-  Downloaded serde v1.0.228
-  Downloaded crossbeam-utils v0.8.21
-  Downloaded lexopt v0.3.1
-  Downloaded log v0.4.28
-  Downloaded crossbeam-deque v0.8.6
-  Downloaded ryu v1.0.20
   Downloaded aho-corasick v1.1.3
+  Downloaded encoding_rs_io v0.1.7
+  Downloaded pkg-config v0.3.32
+  Downloaded walkdir v2.5.0
+  Downloaded crossbeam-deque v0.8.6
+  Downloaded termcolor v1.4.1
+  Downloaded lexopt v0.3.1
+  Downloaded pcre2 v0.2.11
+  Downloaded jobserver v0.1.34
+  Downloaded crossbeam-epoch v0.9.18
+  Downloaded anyhow v1.0.100
+  Downloaded shlex v1.3.0
+  Downloaded find-msvc-tools v0.1.4
+  Downloaded memmap2 v0.9.9
+  Downloaded crossbeam-utils v0.8.21
+  Downloaded serde_core v1.0.228
+  Downloaded log v0.4.28
+  Downloaded ryu v1.0.20
+  Downloaded textwrap v0.16.2
+  Downloaded cc v1.2.41
+  Downloaded serde v1.0.228
   Downloaded memchr v2.7.6
   Downloaded serde_json v1.0.145
   Downloaded bstr v1.12.0
@@ -1001,15 +1001,15 @@ Turn off this advice by setting config variable advice.detachedHead to false
    Compiling log v0.4.28
    Compiling regex-syntax v0.8.8
    Compiling aho-corasick v1.1.3
-   Compiling find-msvc-tools v0.1.4
    Compiling shlex v1.3.0
+   Compiling find-msvc-tools v0.1.4
    Compiling regex-automata v0.4.13
    Compiling jobserver v0.1.34
    Compiling bstr v1.12.0
    Compiling cc v1.2.41
    Compiling serde_core v1.0.228
    Compiling pkg-config v0.3.32
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.y86YCDny8e/rg-src/crates/matcher)
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/matcher)
    Compiling cfg-if v1.0.4
    Compiling crossbeam-utils v0.8.21
    Compiling encoding_rs v0.8.35
@@ -1017,28 +1017,28 @@ Turn off this advice by setting config variable advice.detachedHead to false
    Compiling serde_json v1.0.145
    Compiling serde v1.0.228
    Compiling encoding_rs_io v0.1.7
-   Compiling globset v0.4.18 (/tmp/tmp.y86YCDny8e/rg-src/crates/globset)
+   Compiling globset v0.4.18 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/globset)
    Compiling memmap2 v0.9.9
    Compiling itoa v1.0.15
    Compiling ryu v1.0.20
    Compiling termcolor v1.4.1
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.y86YCDny8e/rg-src/crates/searcher)
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
    Compiling same-file v1.0.6
    Compiling anyhow v1.0.100
-   Compiling grep-printer v0.3.1 (/tmp/tmp.y86YCDny8e/rg-src/crates/printer)
    Compiling walkdir v2.5.0
+   Compiling grep-printer v0.3.1 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-cli v0.1.12 (/tmp/tmp.y86YCDny8e/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.y86YCDny8e/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.y86YCDny8e/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.y86YCDny8e/rg-src/crates/ignore)
-   Compiling lexopt v0.3.1
+   Compiling grep-cli v0.1.12 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.7NLUQb5QwL/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/ignore)
    Compiling pcre2 v0.2.11
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/grep)
    Compiling textwrap v0.16.2
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.y86YCDny8e/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.y86YCDny8e/rg-src/crates/grep)
-    Finished `release` profile [optimized + debuginfo] target(s) in 56.56s
+   Compiling lexopt v0.3.1
+    Finished `release` profile [optimized + debuginfo] target(s) in 40.94s
 arm64-v8a Android ripgrep OK:  ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 --- Android ripgrep (x86_64, target=x86_64-linux-android) ---
 info: downloading component rust-std
@@ -1062,67 +1062,67 @@ Turn off this advice by setting config variable advice.detachedHead to false
 
    Compiling libc v0.2.177
    Compiling memchr v2.7.6
-   Compiling regex-syntax v0.8.8
    Compiling log v0.4.28
+   Compiling regex-syntax v0.8.8
+   Compiling find-msvc-tools v0.1.4
    Compiling aho-corasick v1.1.3
    Compiling jobserver v0.1.34
-   Compiling find-msvc-tools v0.1.4
    Compiling shlex v1.3.0
    Compiling cc v1.2.41
+   Compiling serde_core v1.0.228
    Compiling pkg-config v0.3.32
    Compiling regex-automata v0.4.13
-   Compiling serde_core v1.0.228
    Compiling pcre2-sys v0.2.10
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.y86YCDny8e/rg-src/crates/matcher)
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/matcher)
    Compiling crossbeam-utils v0.8.21
    Compiling cfg-if v1.0.4
    Compiling encoding_rs v0.8.35
    Compiling bstr v1.12.0
    Compiling serde_json v1.0.145
    Compiling serde v1.0.228
-   Compiling globset v0.4.18 (/tmp/tmp.y86YCDny8e/rg-src/crates/globset)
+   Compiling globset v0.4.18 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/globset)
    Compiling encoding_rs_io v0.1.7
    Compiling memmap2 v0.9.9
-   Compiling ryu v1.0.20
    Compiling termcolor v1.4.1
+   Compiling ryu v1.0.20
    Compiling itoa v1.0.15
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.y86YCDny8e/rg-src/crates/searcher)
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
-   Compiling same-file v1.0.6
    Compiling anyhow v1.0.100
+   Compiling same-file v1.0.6
    Compiling walkdir v2.5.0
+   Compiling grep-printer v0.3.1 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-printer v0.3.1 (/tmp/tmp.y86YCDny8e/rg-src/crates/printer)
-   Compiling grep-cli v0.1.12 (/tmp/tmp.y86YCDny8e/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.y86YCDny8e/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.y86YCDny8e/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.y86YCDny8e/rg-src/crates/ignore)
+   Compiling grep-cli v0.1.12 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.7NLUQb5QwL/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/ignore)
    Compiling textwrap v0.16.2
    Compiling lexopt v0.3.1
    Compiling pcre2 v0.2.11
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.y86YCDny8e/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.y86YCDny8e/rg-src/crates/grep)
-    Finished `release` profile [optimized + debuginfo] target(s) in 41.52s
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.7NLUQb5QwL/rg-src/crates/grep)
+    Finished `release` profile [optimized + debuginfo] target(s) in 30.50s
 x86_64 Android ripgrep OK:  ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 === [5/6] OpenCode server bundle @ 05ea5073be967c779d326929b2de6228dda4159d (pinned, fail-loud) ===
 upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
 bundle build complete
 === [6/6] stage payload, compute manifest ===
-payload tarball: 16559644 bytes sha256=43c8667ab773c6582b91cc2744641885c5c82bd2ee23640c619bba106f6b4e96
+payload tarball: 16560211 bytes sha256=9f6d7a3073babac3fe564e61ecc4caa347dfa8f0dcdd011bae90224d3c57afc8
 manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/assets/runtime-manifest.json
 === engine layout ===
 9385 ./build.status
 41 ./git.upstream.commit.txt
 5171 ./assets/runtime-manifest.json
-16559644 ./assets/runtime-payload.tar.gz
+16560211 ./assets/runtime-payload.tar.gz
 8328 ./jniLibs/arm64-v8a/libchildshim.so
-34646776 ./jniLibs/arm64-v8a/librg.so
+34646808 ./jniLibs/arm64-v8a/librg.so
 6816 ./jniLibs/arm64-v8a/libseccompshim.so
 89796776 ./jniLibs/arm64-v8a/libbun.so
 7744 ./jniLibs/arm64-v8a/libexecshim.so
 4003408 ./jniLibs/arm64-v8a/libgit.so
 7784 ./jniLibs/x86_64/libchildshim.so
-36359848 ./jniLibs/x86_64/librg.so
+36359880 ./jniLibs/x86_64/librg.so
 7640 ./jniLibs/x86_64/libseccompshim.so
 91788816 ./jniLibs/x86_64/libbun.so
 8064 ./jniLibs/x86_64/libexecshim.so
@@ -1130,7 +1130,7 @@ manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/eng
 PAYLOAD_READY
 + zod-to-json-schema@3.25.2
 
-92 packages installed [238.00ms]
+92 packages installed [554.00ms]
 MCP_READY: 26M
 ########## 3/6 APKs + JVM unit tests ##########
 Downloading https://services.gradle.org/distributions/gradle-8.9-bin.zip
@@ -1179,14 +1179,14 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:generateDebugAssets UP-TO-DATE
 > Task :app:mergeDebugAssets
 > Task :app:desugarDebugFileDependencies
-> Task :app:mergeDebugStartupProfile
+> Task :app:processDebugManifestForPackage
 > Task :app:checkDebugDuplicateClasses
 > Task :app:compressDebugAssets
-> Task :app:mergeDebugJniLibFolders
-> Task :app:processDebugManifestForPackage
+> Task :app:mergeDebugStartupProfile
+> Task :app:processDebugResources
 > Task :app:mergeExtDexDebug
 > Task :app:mergeLibDexDebug
-> Task :app:processDebugResources
+> Task :app:mergeDebugJniLibFolders
 > Task :app:mergeDebugNativeLibs
 > Task :app:validateSigningDebug
 > Task :app:writeDebugAppMetadata
@@ -1203,8 +1203,8 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:mapDebugAndroidTestSourceSetPaths
 > Task :app:generateDebugAndroidTestResources
 > Task :app:javaPreCompileDebugAndroidTest FROM-CACHE
-> Task :app:mergeDebugAndroidTestResources
 > Task :app:mergeDebugAndroidTestShaders
+> Task :app:mergeDebugAndroidTestResources
 > Task :app:compileDebugAndroidTestShaders NO-SOURCE
 > Task :app:generateDebugAndroidTestAssets UP-TO-DATE
 > Task :app:mergeDebugAndroidTestAssets
@@ -1212,8 +1212,8 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
 > Task :app:processDebugAndroidTestResources
 > Task :app:checkDebugAndroidTestDuplicateClasses
-> Task :app:mergeDebugAndroidTestJniLibFolders
 > Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
+> Task :app:mergeDebugAndroidTestJniLibFolders
 > Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
 > Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
 > Task :app:validateSigningDebugAndroidTest
@@ -1221,6 +1221,7 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:preDebugUnitTestBuild
 > Task :app:javaPreCompileDebugUnitTest FROM-CACHE
 > Task :app:mergeExtDexDebugAndroidTest
+
 > Task :app:compileDebugKotlin
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
@@ -1238,22 +1239,25 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 > Task :app:compileDebugAndroidTestKotlin
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/client/OpenCodeClientGatesTest.kt:392:39 Type mismatch: inferred type is String? but String was expected
 
+> Task :app:compileDebugAndroidTestJavaWithJavac
+> Task :app:dexBuilderDebugAndroidTest
 > Task :app:packageDebug
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
+> Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
+> Task :app:processDebugAndroidTestJavaRes
+> Task :app:mergeDebugAndroidTestJavaResource
+> Task :app:mergeProjectDexDebugAndroidTest
 
 > Task :app:compileDebugUnitTestKotlin
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/client/OpenCodeApiHttpTest.kt:56:27 Parameter 'rec' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractorTest.kt:103:37 Unsafe use of a nullable receiver of type File?
 
-> Task :app:compileDebugAndroidTestJavaWithJavac
-> Task :app:dexBuilderDebugAndroidTest
-> Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
-> Task :app:processDebugAndroidTestJavaRes
+> Task :app:packageDebugAndroidTest
+> Task :app:createDebugAndroidTestApkListingFileRedirect
+> Task :app:assembleDebugAndroidTest
 > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
 > Task :app:processDebugUnitTestJavaRes
-> Task :app:mergeProjectDexDebugAndroidTest
-> Task :app:mergeDebugAndroidTestJavaResource
 
 > Task :app:testDebugUnitTest
 
@@ -1367,11 +1371,7 @@ SecretNamesTest > acceptsProviderStyleNames PASSED
 
 SecretNamesTest > providerIdRoundTrip PASSED
 
-> Task :app:packageDebugAndroidTest
-> Task :app:createDebugAndroidTestApkListingFileRedirect
-> Task :app:assembleDebugAndroidTest
-
-BUILD SUCCESSFUL in 2m 52s
+BUILD SUCCESSFUL in 2m 27s
 74 actionable tasks: 68 executed, 6 from cache
 Performing Streamed Install
 Success
@@ -1382,61 +1382,61 @@ P5_REMOTE_MCP_DEPS reused from phase4/out/mcp/node_modules
 P5_REMOTE_MCP_SMOKE up=1 (log: /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp/smoke.log)
 P5_REMOTE_MCP_BUILT /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp (sdk 1.29.0)
 ########## 5/6 phase 5 integration gates ##########
-[2026-09-06T15:06:45Z] P5-00 app uid resolved: '10192'
-[2026-09-06T15:06:45Z] === P5-01 device / app / payload prerequisites ===
-[2026-09-06T15:06:51Z] P5-01 versionName=1.18.23-phase5 pid=6029 uid=10192 marker=present
+[2026-09-06T15:26:35Z] P5-00 app uid resolved: '10192'
+[2026-09-06T15:26:35Z] === P5-01 device / app / payload prerequisites ===
+[2026-09-06T15:26:40Z] P5-01 versionName=1.18.23-phase5 pid=5596 uid=10192 marker=present
 P5-01: PASS phase5-apk-installed-and-app-running
 P5-02: PASS payload-v5-manifest-marker
-[2026-09-06T15:06:51Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
+[2026-09-06T15:26:40Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
 wrote_rc=0
 wrote_rc=0
 wrote_rc=0
 warning: templates not found in /home/runner/share/git-core/templates
-error: cannot run maintenance: No such file or directory
 FIXTURE_GIT_OK
-[2026-09-06T15:06:54Z] P5-03 config_present=yes harness_rc=0
+error: cannot run maintenance: No such file or directory
+[2026-09-06T15:26:45Z] P5-03 config_present=yes harness_rc=0
 P5-03: PASS fixture-config-and-harness-marker
-[2026-09-06T15:07:02Z] === P5-04 server password via Keystore + test-only harness export ===
-[2026-09-06T15:07:08Z] P5-04 password: c618… (48 chars) export_verdict=PASS
+[2026-09-06T15:26:53Z] === P5-04 server password via Keystore + test-only harness export ===
+[2026-09-06T15:26:57Z] P5-04 password: 4840… (48 chars) export_verdict=PASS
 P5-04: PASS keystore-password-authenticated-live-server
-[2026-09-06T15:07:08Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
-[2026-09-06T15:08:04Z] --- Kotlin gate verdict lines ---
-[2026-09-06T15:08:04Z] P5-K instrument_rc=0 kotlin_gates_pass=10/9 fail=0 skipped=0 gradle_ok=1 failures_marker=0 junit_exception_lines=0
+[2026-09-06T15:26:57Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
+[2026-09-06T15:28:02Z] --- Kotlin gate verdict lines ---
+[2026-09-06T15:28:02Z] P5-K instrument_rc=0 kotlin_gates_pass=10/9 fail=0 skipped=0 gradle_ok=1 failures_marker=0 junit_exception_lines=0
 P5-K: PASS kotlin-client-gates-on-device (K1..K9, pass=10 fail=0 skip=0)
-[2026-09-06T15:08:04Z] === relaunching the app for the device-side gate stages ===
-[2026-09-06T15:08:15Z] post-instrument runtime: health=OK via on-device
-[2026-09-06T15:08:15Z] host-forward diagnostic: adb forward tcp:4111 -> http 200 (the drivers do not depend on this path; it works on this image)
+[2026-09-06T15:28:02Z] === relaunching the app for the device-side gate stages ===
+[2026-09-06T15:28:09Z] post-instrument runtime: health=OK via host-forward
+[2026-09-06T15:28:09Z] host-forward diagnostic: adb forward tcp:4111 -> http 200 (the drivers do not depend on this path; it works on this image)
 P5-05: PASS runtime-healthy-after-instrumentation
-[2026-09-06T15:08:15Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
-[2026-09-06T15:08:29Z] model pre-flight: PROBE ok :: model=big-pickle exact-token reply, session=ses_f88bca0a5ffe0JpCoFJGbNJm2W
-[2026-09-06T15:08:29Z] model_available=1 -> drivers and the in-app K2/K5 turns assert real streamed text
-[2026-09-06T15:08:29Z] gate driver runner: the payload's own bun at /data/data/ai.opencode.android.debug/files/bin/bun (on-device, app uid)
-[2026-09-06T15:08:29Z] --- re-run gate-06-health.js (as shipped, no edits) inside the app namespace ---
+[2026-09-06T15:28:09Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
+[2026-09-06T15:29:07Z] model pre-flight: PROBE ok :: model=big-pickle exact-token reply, session=ses_f88aa6895ffeGKcIGzZZJYsjsn
+[2026-09-06T15:29:07Z] model_available=1 -> drivers and the in-app K2/K5 turns assert real streamed text
+[2026-09-06T15:29:07Z] gate driver runner: the payload's own bun at /data/data/ai.opencode.android.debug/files/bin/bun (on-device, app uid)
+[2026-09-06T15:29:07Z] --- re-run gate-06-health.js (as shipped, no edits) inside the app namespace ---
 P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
-[2026-09-06T15:08:29Z] --- re-run gate-07-shell.js (as shipped, no edits) inside the app namespace ---
+[2026-09-06T15:29:07Z] --- re-run gate-07-shell.js (as shipped, no edits) inside the app namespace ---
 P5-R-07: PASS phase4-driver-gate-07-shell.js-unmodified(on-device)
-[2026-09-06T15:08:38Z] --- re-run gate-10-mcp.js (as shipped, no edits) inside the app namespace ---
+[2026-09-06T15:29:16Z] --- re-run gate-10-mcp.js (as shipped, no edits) inside the app namespace ---
 P5-R-10: PASS phase4-driver-gate-10-mcp.js-unmodified(on-device)
-[2026-09-06T15:08:51Z] --- re-run gate-11-stream.js (as shipped, no edits) inside the app namespace ---
+[2026-09-06T15:30:08Z] --- re-run gate-11-stream.js (as shipped, no edits) inside the app namespace ---
 P5-R-11: PASS phase4-driver-gate-11-stream.js-unmodified(on-device)
-[2026-09-06T15:09:17Z] --- re-run gate-12-permission.js (as shipped, no edits) inside the app namespace ---
+[2026-09-06T15:30:28Z] --- re-run gate-12-permission.js (as shipped, no edits) inside the app namespace ---
 P5-R-12: PASS phase4-driver-gate-12-permission.js-unmodified(on-device)
-[2026-09-06T15:09:33Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
-[2026-09-06T15:09:34Z] fixture host listener up=1 pid=11424
-[2026-09-06T15:09:34Z] adb reverse tcp:4551 -> host tcp:4551: 4551
+[2026-09-06T15:31:53Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
+[2026-09-06T15:31:54Z] fixture host listener up=1 pid=11219
+[2026-09-06T15:31:54Z] adb reverse tcp:4551 -> host tcp:4551: 4551
 P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
-[2026-09-06T15:11:07Z] === P5-G17 loopback-only binding evidence ===
-[2026-09-06T15:11:07Z] P5-G17 table=conclusive wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0 bound_lines=5 publish_lines=0 table_ok=1
-[2026-09-06T15:11:07Z] device global ipv4: '10.0.2.15'
+[2026-09-06T15:33:26Z] === P5-G17 loopback-only binding evidence ===
+[2026-09-06T15:33:26Z] P5-G17 table=conclusive wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0 bound_lines=5 publish_lines=0 table_ok=1
+[2026-09-06T15:33:26Z] device global ipv4: '10.0.2.15'
 P5-G17: PASS loopback-only-binding-and-no-mdns
-[2026-09-06T15:11:07Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
-[2026-09-06T15:11:09Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=600 auth_canary_absent=1 auth_verdict=clean leaks_outside_harness=0
+[2026-09-06T15:33:26Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
+[2026-09-06T15:33:28Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=600 auth_canary_absent=1 auth_verdict=clean leaks_outside_harness=0
 P5-G18: PASS credentials-keystore-only-at-rest
-[2026-09-06T15:11:09Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
-[2026-09-06T15:11:11Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
+[2026-09-06T15:33:28Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
+[2026-09-06T15:33:29Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
 P5-G19: PASS no-hardcoded-or-bundled-secrets
-[2026-09-06T15:11:11Z] === evidence pull ===
-[2026-09-06T15:11:11Z] === SUMMARY ===
+[2026-09-06T15:33:29Z] === evidence pull ===
+[2026-09-06T15:33:29Z] === SUMMARY ===
 P5-01: PASS phase5-apk-installed-and-app-running
 P5-02: PASS payload-v5-manifest-marker
 P5-03: PASS fixture-config-and-harness-marker
@@ -1452,35 +1452,12 @@ P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
 P5-G17: PASS loopback-only-binding-and-no-mdns
 P5-G18: PASS credentials-keystore-only-at-rest
 P5-G19: PASS no-hardcoded-or-bundled-secrets
-P5_SUMMARY 2026-09-06T15:11:11Z
+P5_SUMMARY 2026-09-06T15:33:29Z
 gates_pass=14 gates_fail=1 gates_skip=0
 kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
-model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f88bca0a5ffe0JpCoFJGbNJm2W
+model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f88aa6895ffeGKcIGzZZJYsjsn
 app_uid=10192 device_abi=x86_64
 live_launcher_processes=0
 STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh'
 phase5 gates rc=1
 ########## 6/6 evidence ##########
-=== PHASE 5 END 2026-09-06T15:11:12Z gates_rc=1 ===
-P5-01: PASS phase5-apk-installed-and-app-running
-P5-02: PASS payload-v5-manifest-marker
-P5-03: PASS fixture-config-and-harness-marker
-P5-04: PASS keystore-password-authenticated-live-server
-P5-K: PASS kotlin-client-gates-on-device (K1..K9, pass=10 fail=0 skip=0)
-P5-05: PASS runtime-healthy-after-instrumentation
-P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
-P5-R-07: PASS phase4-driver-gate-07-shell.js-unmodified(on-device)
-P5-R-10: PASS phase4-driver-gate-10-mcp.js-unmodified(on-device)
-P5-R-11: PASS phase4-driver-gate-11-stream.js-unmodified(on-device)
-P5-R-12: PASS phase4-driver-gate-12-permission.js-unmodified(on-device)
-P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
-P5-G17: PASS loopback-only-binding-and-no-mdns
-P5-G18: PASS credentials-keystore-only-at-rest
-P5-G19: PASS no-hardcoded-or-bundled-secrets
-P5_SUMMARY 2026-09-06T15:11:11Z
-gates_pass=14 gates_fail=1 gates_skip=0
-kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
-model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f88bca0a5ffe0JpCoFJGbNJm2W
-app_uid=10192 device_abi=x86_64
-live_launcher_processes=0
-########## evidence push ##########

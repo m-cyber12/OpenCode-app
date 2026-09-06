@@ -1,10 +1,13 @@
-fixture route: nat-gateway@http://10.0.2.2:4551=reachable(HTTP 200 {"healthy":true,"marker":"P5_REMOTE_MCP","mcp":0,"sse":0}) | adb-reverse@http://127.0.0.1:4551=reachable(HTTP 200 {"healthy":true,"marker":"P5_REMOTE_MCP","mcp":0,"sse":0}) chosen=nat-gateway
+fixture route: nat-gateway@http://10.0.2.2:4551=reachable(HTTP 200 {"healthy":true,"marker":"P5_REMOTE_MCP","mcp":0,"sse":0,"requests":0,"inits":0}) | adb-reverse@http://127.0.0.1:4551=reachable(HTTP 200 {"healthy":true,"marker":"P5_REMOTE_MCP","mcp":0,"sse":0,"requests":0,"inits":0}) chosen=nat-gateway
+fixture snapshot before: HTTP 200 {"healthy":true,"marker":"P5_REMOTE_MCP","mcp":0,"sse":0,"requests":0,"inits":0}
+raw_mcp OK initialize: HTTP 200 ct=text/event-stream session=yes 17ms body=event: message data: {"result":{"protocolVersion":"2025-03-26","capabilities":{"tools":{"listChanged":true}},"serverInfo":{"name":"p5-remote-mcp","version":"1.0.0"}},"jsonrpc":"2.0","id":1}  | initialized: HTTP 202 | tools/list: HTTP 200 ct=text/event-stream 6ms body=event: message data: {"result":{"tools":[{"name":"remote_echo","title":"Remote echo","description":"Echo the message with an echo: prefix (Phase 5 remote MCP fixture)","inputSchema":{"type":"object","
 mcp status before: {"gates-mcp":"connected","p5_patch_probe":"disabled"}
 tool ids before (12): invalid, bash, read, glob, grep, edit, write, task, webfetch, todowrite, websearch, skill
 assert ok: remote MCP tool ids absent before the servers were added
 POST /mcp p5-remote-http http://10.0.2.2:4551/mcp -> 200 {"p5_patch_probe":{"status":"disabled"},"gates-mcp":{"status":"connected"},"p5-remote-http":{"status":"failed","error":"Failed to get tools"}}
 assert ok: POST /mcp for p5-remote-http accepted (200 {"p5_patch_probe":{"status":"disabled"},"gates-mcp":{"status":"connected"},"p5-remote-http":{"status":"failed","error":"Failed to get tools"}})
 GATE16 ERROR: Error: timeout waiting for p5-remote-http=connected (last: {"gates-mcp":"connected","p5_patch_probe":"disabled","p5-remote-http":"failed","p5-remote-http#error":"Failed to get tools"})
-    at waitFor (/data/data/ai.opencode.android.debug/files/tmp/p5js/gate-16-mcp-remote.js:116:13)
+    at waitFor (/data/data/ai.opencode.android.debug/files/tmp/p5js/gate-16-mcp-remote.js:181:13)
 final mcp status: {"gates-mcp":"connected","p5_patch_probe":"disabled","p5-remote-http":"failed","p5-remote-http#error":"Failed to get tools"}
+fixture snapshot after: HTTP 200 {"healthy":true,"marker":"P5_REMOTE_MCP","mcp":1,"sse":0,"requests":6,"inits":2}
 G16_FAIL
