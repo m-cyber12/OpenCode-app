@@ -826,7 +826,7 @@ class ChatUiGatesTest {
             "ask=$askShown commandVerbatim=$commandVerbatim alwaysScope=$alwaysScope kind=$kindLine " +
                 "once=$onceOk always=$alwaysOk reject=$rejectOk question=$questionShown " +
                 "questionText=$questionText optionShown=$optionShown optionClicked=$picked " +
-                "answered=$answered skipped=$skipped",
+                "answered=$answered skipped=$skipped answersSeen=$questionAnswers",
         )
     }
 
@@ -1268,10 +1268,14 @@ class ChatUiGatesTest {
         val waitingLabel = onScreenText().contains(context.getString(R.string.sessions_pending))
         // ses_7 has no title: the row must say so in words rather than render blank.
         val untitledLabel = onScreenText().contains(context.getString(R.string.sessions_untitled))
-        val revertedNote = onScreenText().contains("msg_x")
 
         rule.onNodeWithTag("session_list").performScrollToIndex(39)
         rule.waitForIdle()
+        // ses_9 carries the revert note and sits at index 8: with a real lazy list
+        // it is not composed in the first viewport (rowsComposedBefore was 7 in
+        // run #7), so read it only after scrolling it into view - the same class
+        // of bug U2's failed tool card had.
+        val revertedNote = onScreenText().contains("msg_x")
         val lastVisible = exists("session_row_ses_40")
         val firstGone = !exists("session_row_ses_1")
         val composedAfter = countPrefix("session_row_")

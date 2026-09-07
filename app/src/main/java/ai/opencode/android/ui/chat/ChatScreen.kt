@@ -200,6 +200,19 @@ private fun StatusArea(
     availability: AgentAvailability,
     onDismissBanner: () -> Unit,
 ) {
+    // A turn can die server-side while the agent itself stays perfectly healthy:
+    // run 34142798659's live turn failed inside upstream's own prompt_async with
+    // ProviderModelNotFoundError, and the conversation showed nothing at all - no
+    // banner (availability was READY, and the banner below only renders for a
+    // non-READY state) and no card (TurnErrorCard only renders a message-level
+    // error). The session-level error is not an availability state, so it must not
+    // wait for one to become visible: upstream's own name and message, on screen.
+    state.turnError?.let { error ->
+        TurnErrorCard(
+            error = error,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+        )
+    }
     if (availability != AgentAvailability.READY) {
         val raw = state.error.ifBlank { state.turnError?.let { e -> "${e.name}: ${e.message}".trim() } ?: "" }
         // Deliberately no `extra`: the supervisor's own detail line carries the

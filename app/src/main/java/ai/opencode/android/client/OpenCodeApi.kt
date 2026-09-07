@@ -185,7 +185,7 @@ class OpenCodeApi(
         if (model != null) {
             body.put(
                 "model",
-                org.json.JSONObject().put("providerID", model.providerID).put("modelID", model.modelID),
+                org.json.JSONObject().put("providerID", model.providerID).put("modelID", model.bareModelID),
             )
         }
         if (agent != null) body.put("agent", agent)
@@ -439,7 +439,29 @@ class OpenCodeApi(
 
     // ---- models ------------------------------------------------------------
 
-    data class ModelRef(val providerID: String, val modelID: String)
+    data class ModelRef(val providerID: String, val modelID: String) {
+        /**
+         * The id as the prompt body needs it: the two halves, separately.
+         *
+         * Upstream's GET /provider `default` map - and some `Model.id` values -
+         * already carry the provider prefix in the model id, e.g.
+         * "subconscious/tim-qwen3.6-27b". Forwarding that verbatim as `modelID`
+         * next to `providerID` makes the server resolve
+         * "subconscious/subconscious/tim-qwen3.6-27b" and answer
+         * ProviderModelNotFoundError ("Did you mean:
+         * subconscious/tim-qwen3.6-27b?"), which is exactly how run 34142798659
+         * lost both live gates after the default model rotated. Strip only a
+         * leading "<providerID>/"; anything else is forwarded untouched, because
+         * the app never invents or rewrites a model id of its own.
+         */
+        val bareModelID: String
+            get() =
+                if (providerID.isNotEmpty() && modelID.startsWith("$providerID/")) {
+                    modelID.substring(providerID.length + 1)
+                } else {
+                    modelID
+                }
+    }
 
     /**
      * A file the user attached to a prompt, staged in app-private storage and handed

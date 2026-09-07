@@ -64,9 +64,13 @@ echo "$LINE"
 echo "$LINE" >> "$SUMMARY"
 # Keep the machine-readable counters truthful (the summary line is the trailer-is-
 # truth discipline Phase 5 established).
-cur_pass=$(sed -n 's/^ui_gates_pass=\([0-9]*\).*/\1/p' "$SUMMARY" | head -1)
-cur_fail=$(sed -n 's/^ui_gates_fail=\([0-9]*\).*/\1/p' "$SUMMARY" | head -1)
-cur_skip=$(sed -n 's/^ui_gates_skip=\([0-9]*\).*/\1/p' "$SUMMARY" | head -1)
+# Same multi-per-line shape as Phase 5's summary, same fix: run #7's fold read
+# cur_fail/cur_skip as empty (anchored ^key= never matches past the first key on
+# the line) and then wrote the summary back with the two counters BLANKED, so a
+# truthful 8 pass / 4 fail / 2 skip became "pass=9 fail= skip=".
+cur_pass=$(counter ui_gates_pass "$SUMMARY"); cur_pass=${cur_pass:-0}
+cur_fail=$(counter ui_gates_fail "$SUMMARY"); cur_fail=${cur_fail:-0}
+cur_skip=$(counter ui_gates_skip "$SUMMARY"); cur_skip=${cur_skip:-0}
 case "$KEY" in
   pass) cur_pass=$(( ${cur_pass:-0} + 1 )) ;;
   fail) cur_fail=$(( ${cur_fail:-0} + 1 )) ;;
