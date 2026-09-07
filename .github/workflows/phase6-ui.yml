@@ -1,0 +1,120 @@
+# PHASE 6 - PRODUCT UI gates (first-run experience + conversation-first chat UI
+# on a fresh emulator, plus the Phase 5 regression tail).
+#
+# HOW TO INSTALL (one-time, needs a user credential or the GitHub UI):
+#   copy this file to   .github/workflows/phase6-ui.yml
+#   on the branch       arena/01a077b3-opencode-app
+#   and push. The session bot token cannot create or modify files under
+#   .github/workflows/ (verified in Phases 2-5: "403 Resource not accessible by
+#   integration"), and it cannot POST .../dispatches either, so this copy is the
+#   only way a Phase 6 run can start.
+#
+# After it lands, every push to this branch runs:
+#   static UI checks -> payload -> APKs -> FRESH emulator (uninstall first) ->
+#   Compose UI gates (first-run flow, chat/tool-call UI, live streaming turn) ->
+#   screenshots -> Phase 5 client-integration gates (regression) -> evidence.
+# Evidence is committed back to docs/progress/phase6-evidence/ on EVERY exit path
+# (the Actions log bodies are not reachable from the development sandbox, so the
+# branch is the log channel - same discipline as Phase 4/5).
+#
+# Iteration knob: while new Kotlin is being brought up, the tracked marker file
+# phase6/CI_GRADLE_ONLY (containing "1") makes a run compile the app + androidTest
+# APK and run the JVM unit tests only - no payload build, no emulator, no device
+# gates - so a compiler error comes back in about ten minutes instead of an hour.
+# It is a bring-up knob, not a verdict: a gradle-only run publishes no device
+# evidence and says so in GATES_SUMMARY.txt. It MUST be 0 for any Phase 6 TESTED
+# claim to have evidence behind it.
+#
+# No repo secret is required for Phase 6: the pinned build resolves a key-free
+# default model (opencode/big-pickle), which is what the live-streaming UI gate
+# exercises. OPENROUTER_API_KEY is read only if it exists (same as Phase 4/5).
+name: phase6-ui
+
+on:
+  push:
+    branches:
+      - "arena/01a077b3-opencode-app"
+    paths-ignore:
+      - "docs/progress/phase6-evidence/**"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why this run is being dispatched (free text)"
+        required: false
+        default: "manual phase6 UI gate run"
+
+jobs:
+  phase6-ui-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: write
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_MODEL: nvidia/nemotron-3-ultra-550b-a55b:free
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Fix /dev/kvm permissions (Phase 2 lesson: never assume KVM just works)"
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm || true
+            ls -la /dev/kvm
+          else
+            echo "KVM_MISSING (the emulator will be unusable; gates fail loudly)"
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: "Run the Phase 6 suite (static checks -> payload -> APKs -> fresh emulator -> UI gates)"
+        run: bash phase6/scripts/00-run-phase6.sh
+        shell: bash
+
+      - name: "Commit evidence to the branch (docs/progress/phase6-evidence)"
+        if: always()
+        run: |
+          # The orchestrator already copies + pushes; this step is the fallback in
+          # case it stopped before reaching its own evidence stage.
+          mkdir -p docs/progress/phase6-evidence
+          if [ -d phase6/out/evidence ]; then
+            cp -r phase6/out/evidence/. docs/progress/phase6-evidence/ 2>/dev/null || true
+          fi
+          cp phase6/out/00-run-phase6.log docs/progress/phase6-evidence/ 2>/dev/null || true
+          git add -A docs/progress/phase6-evidence/ || true
+          if git diff --cached --quiet; then
+            echo "no evidence changes; skipping commit"
+          else
+            git -c user.name="arena-ai-coding-agent[bot]" \
+                -c user.email="arena-ai-coding-agent[bot]@users.noreply.github.com" \
+                commit -m "phase6: product-UI evidence (auto)" || true
+            git push origin "HEAD:${{ github.ref_name }}" || echo "PUSH_FAILED"
+          fi
+
+      - name: "Upload artifacts"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase6-ui
+          path: |
+            phase6/out/evidence/
+            phase6/out/00-run-phase6.log
+            docs/progress/phase6-evidence/
+            app/build/outputs/apk/
+          if-no-files-found: ignore
+
+      - name: "Gate summary (readable in the Actions log)"
+        if: always()
+        run: |
+          if [ -f phase6/out/evidence/GATES_SUMMARY.txt ]; then
+            cat phase6/out/evidence/GATES_SUMMARY.txt
+          else
+            echo "NO_PHASE6_SUMMARY - the suite did not reach its gate stage"
+            exit 1
+          fi

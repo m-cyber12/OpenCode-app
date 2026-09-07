@@ -1,7 +1,311 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Phase 6: every user-visible string in the app lives here.
+
+  Two rules this file has to respect, both checked in CI
+  (phase6/scripts/check-ui-strings.sh):
+    * no copy is hardcoded in a composable - `Text("...")` in the UI layer fails
+      the build;
+    * a referenced R.string.* that is not defined here fails the build.
+
+  Copy rules of its own, from the Phase 6 brief:
+    * no API jargon in prose (no endpoint names, no ports, no "SSE");
+    * nothing implies a terminal, a URL, Termux, SSH or a remote server;
+    * degraded states are named by what the user can do about them, and the raw
+      upstream text is always available next to the headline;
+    * no other product's branding or wording.
+  Apostrophes are avoided rather than escaped so the file stays readable in diff.
+-->
 <resources>
     <string name="app_name">OpenCode</string>
     <string name="notification_channel">OpenCode runtime</string>
     <string name="notification_title">OpenCode agent runtime</string>
     <string name="notification_text">The embedded OpenCode agent is running on-device.</string>
+
+    <!-- ============================================================ common -->
+    <string name="action_back">Back</string>
+    <string name="action_close">Close</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_copy">Copy</string>
+    <string name="action_copy_code">Copy</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_details">Details</string>
+    <string name="action_hide_details">Hide details</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="code_language_plain">text</string>
+    <string name="state_on">On</string>
+    <string name="state_off">Off</string>
+    <string name="time_just_now">just now</string>
+    <string name="time_minutes_ago">%1$d min ago</string>
+    <string name="time_one_minute_ago">1 min ago</string>
+    <string name="time_hours_ago">%1$d h ago</string>
+    <string name="time_one_hour_ago">1 h ago</string>
+    <string name="time_days_ago">%1$d d ago</string>
+    <string name="time_one_day_ago">yesterday</string>
+
+    <!-- ============================================================ welcome -->
+    <string name="welcome_title">OpenCode</string>
+    <string name="welcome_tagline">A coding agent that runs on this device.</string>
+    <string name="welcome_body">The agent, its shell and its files all live inside this app. There is no account to create, no terminal to open and no server to point at.</string>
+    <string name="welcome_stage_extracting_title">Setting up</string>
+    <string name="welcome_stage_extracting_body">Unpacking the agent. This happens once and usually takes under a minute.</string>
+    <string name="welcome_stage_starting_title">Starting the agent</string>
+    <string name="welcome_stage_starting_body">Almost there. The agent is coming up and will be ready to talk in a few seconds.</string>
+    <string name="welcome_stage_healthy_title">Ready</string>
+    <string name="welcome_stage_healthy_body">The agent is running. Pick a project to start a conversation.</string>
+    <string name="welcome_stage_crashed_title">The agent restarted</string>
+    <string name="welcome_stage_crashed_body">It stopped unexpectedly and is being started again. If this keeps happening, open Settings and share the diagnostics.</string>
+    <string name="welcome_stage_stopped_title">The agent is stopped</string>
+    <string name="welcome_stage_stopped_body">It will start again when you continue.</string>
+    <string name="welcome_stage_fatal_title">The agent could not start</string>
+    <string name="welcome_stage_fatal_body">Open Settings and share the diagnostics so this can be looked at. Nothing you typed was lost.</string>
+    <string name="welcome_stage_unsupported_title">This device is not supported</string>
+    <string name="welcome_stage_unsupported_body">The agent needs a 64-bit ARM or x86_64 processor and Android 10 or newer. The detail below is what the runtime check reported.</string>
+    <string name="welcome_runtime_line">OpenCode %1$s</string>
+    <string name="welcome_restarts">Restarted %1$d times so far</string>
+    <string name="welcome_action_continue">Continue</string>
+    <string name="welcome_action_settings">Settings and diagnostics</string>
+    <string name="welcome_progress">Preparing the agent</string>
+
+    <!-- ============================================================ projects -->
+    <string name="projects_title">Projects</string>
+    <string name="projects_subtitle">A project is a folder the agent works in. Everything it reads and writes stays inside that folder on this device.</string>
+    <string name="projects_empty_title">No projects yet</string>
+    <string name="projects_empty_body">Create one to start. You can add more later.</string>
+    <string name="projects_new">New project</string>
+    <string name="projects_name_label">Project name</string>
+    <string name="projects_name_placeholder">my-app</string>
+    <string name="projects_name_hint">Letters, numbers, dots, underscores and dashes.</string>
+    <string name="projects_create">Create project</string>
+    <string name="projects_open">Open</string>
+    <string name="projects_current">Current project</string>
+    <string name="projects_folder">Folder</string>
+    <string name="projects_created">Created %1$s</string>
+    <string name="projects_last_opened">Last opened %1$s</string>
+    <string name="projects_never_opened">Not opened yet</string>
+    <string name="projects_done">Done</string>
+    <string name="projects_name_taken">A project with that name already exists. A number will be added.</string>
+
+    <!-- ============================================================ availability -->
+    <string name="availability_ready">Ready</string>
+    <string name="availability_runtime_starting">Starting the agent</string>
+    <string name="availability_runtime_unavailable">The agent is not running</string>
+    <string name="availability_server_unreachable">The agent is not responding</string>
+    <string name="availability_server_auth">The app cannot sign in to the agent</string>
+    <string name="availability_request_rejected">The agent refused that request</string>
+    <string name="availability_provider_unreachable">The model service is unreachable</string>
+    <string name="availability_provider_auth">The model key was rejected</string>
+    <string name="availability_provider_other">The model service reported an error</string>
+    <string name="availability_aborted">Stopped</string>
+    <string name="availability_unknown">Something went wrong</string>
+
+    <string name="availability_runtime_starting_body">Sending starts as soon as the agent is up. Everything already on screen stays here.</string>
+    <string name="availability_runtime_unavailable_body">The agent process is not running. The app restarts it on its own; if it keeps failing, open Settings and share the diagnostics.</string>
+    <string name="availability_server_unreachable_body">The agent is running but did not answer. Give it a moment and try again.</string>
+    <string name="availability_server_auth_body">The agent refused this app. Restarting it from Settings usually fixes this.</string>
+    <string name="availability_request_rejected_body">The detail below is the agent reporting why, in its own words.</string>
+    <string name="availability_provider_unreachable_body">The agent itself is fine: the model service or the network to it is not. Nothing was sent twice and your conversation is intact.</string>
+    <string name="availability_provider_auth_body">The model service rejected the stored key. Add or replace it under Settings, Provider keys.</string>
+    <string name="availability_provider_other_body">The model service reported an error for this turn. The agent is still running, so you can retry or reword.</string>
+    <string name="availability_aborted_body">This turn was stopped. You can send again or retry the last turn.</string>
+    <string name="availability_unknown_body">The detail below is what the agent reported.</string>
+    <string name="availability_detail_label">What the agent reported</string>
+    <string name="availability_composer_blocked">Sending is unavailable until the agent is running again.</string>
+    <string name="availability_provider_note">The agent is running; only the model call failed.</string>
+
+    <!-- ============================================================ chat -->
+    <string name="chat_conversations">Conversations</string>
+    <string name="chat_new_conversation">New conversation</string>
+    <string name="chat_open_settings">Settings and diagnostics</string>
+    <string name="chat_open_projects">Projects</string>
+    <string name="chat_untitled">New conversation</string>
+    <string name="chat_empty_title">Start a conversation</string>
+    <string name="chat_empty_body">Ask for a change, a fix or an explanation. The agent works inside this project folder and shows every step it takes, including the commands it runs and the files it edits.</string>
+    <string name="chat_composer_label">Message</string>
+    <string name="chat_composer_placeholder">Message the agent</string>
+    <string name="chat_send">Send</string>
+    <string name="chat_stop">Stop</string>
+    <string name="chat_attach">Attach a file</string>
+    <string name="chat_remove_attachment">Remove attachment %1$s</string>
+    <string name="chat_attachment_size">%1$s</string>
+    <string name="chat_retry_turn">Retry last turn</string>
+    <string name="chat_undo_turn">Undo last turn</string>
+    <string name="chat_redo_turn">Redo</string>
+    <string name="chat_working">The agent is working</string>
+    <string name="chat_retrying">Retrying, attempt %1$d</string>
+    <string name="chat_retrying_detail">Attempt %1$d of the agent retrying on its own: %2$s</string>
+    <string name="chat_new_messages">%1$d new</string>
+    <string name="chat_jump_to_latest">Jump to the latest message</string>
+    <string name="chat_role_you">You</string>
+    <string name="chat_role_agent">Agent</string>
+    <string name="chat_message_model">%1$s</string>
+    <string name="chat_message_tokens">%1$d tokens in, %2$d out</string>
+    <string name="chat_message_cost">Cost %1$s</string>
+    <string name="chat_reasoning_header">Reasoning</string>
+    <string name="chat_show_reasoning">Show reasoning</string>
+    <string name="chat_hide_reasoning">Hide reasoning</string>
+    <string name="chat_file_part">File %1$s</string>
+    <string name="chat_file_part_kind">File %1$s, %2$s</string>
+    <string name="chat_retry_step">The agent retried this step on its own.</string>
+    <string name="chat_compaction">The agent compacted earlier context to make room.</string>
+    <string name="chat_step_divider">Step</string>
+    <string name="chat_turn_failed">This turn failed</string>
+    <string name="chat_message_actions">Message actions</string>
+
+    <!-- tool cards -->
+    <string name="chat_tool_expand">Show what the agent did</string>
+    <string name="chat_tool_collapse">Hide what the agent did</string>
+    <string name="chat_tool_header">%1$s</string>
+    <string name="chat_tool_status_pending">Queued</string>
+    <string name="chat_tool_status_running">Running</string>
+    <string name="chat_tool_status_completed">Done</string>
+    <string name="chat_tool_status_error">Failed</string>
+    <string name="chat_tool_section_input">Requested</string>
+    <string name="chat_tool_section_output">Result</string>
+    <string name="chat_tool_section_diff">Changes</string>
+    <string name="chat_tool_exit_code">Exit code %1$s</string>
+    <string name="chat_tool_truncated">The agent truncated this output.</string>
+    <string name="chat_tool_output_file">The agent saved the full output to %1$s</string>
+    <string name="chat_tool_diff_summary">%1$d added, %2$d removed</string>
+    <string name="chat_tool_diagnostics">%1$d diagnostics reported</string>
+    <string name="chat_tool_no_output">The agent reported no output for this step.</string>
+    <string name="chat_tool_error_detail">Error reported by the agent</string>
+    <string name="chat_tool_kind_shell">Shell command</string>
+    <string name="chat_tool_kind_read">Read a file</string>
+    <string name="chat_tool_kind_write">Wrote a file</string>
+    <string name="chat_tool_kind_edit">Edited a file</string>
+    <string name="chat_tool_kind_grep">Searched files</string>
+    <string name="chat_tool_kind_list">Listed a folder</string>
+    <string name="chat_tool_kind_fetch">Fetched a page</string>
+    <string name="chat_tool_kind_task">Started a subtask</string>
+    <string name="chat_tool_kind_todo">Updated the task list</string>
+    <string name="chat_tool_kind_websearch">Searched the web</string>
+    <string name="chat_tool_kind_patch">Applied a patch</string>
+    <string name="chat_tool_kind_other">Used %1$s</string>
+
+    <!-- permission asks -->
+    <string name="ask_permission_title">The agent needs your permission</string>
+    <string name="ask_permission_body">It wants to use %1$s.</string>
+    <string name="ask_permission_request">Request: %1$s</string>
+    <string name="ask_permission_always_scope">Always would cover: %1$s</string>
+    <string name="ask_permission_metadata">What the agent sent</string>
+    <string name="ask_permission_once">Allow once</string>
+    <string name="ask_permission_always">Always allow</string>
+    <string name="ask_permission_reject">Reject</string>
+    <string name="ask_permission_waiting">%1$d waiting for you</string>
+    <string name="ask_permission_kind_bash">run a shell command</string>
+    <string name="ask_permission_kind_edit">edit files</string>
+    <string name="ask_permission_kind_web">fetch a page</string>
+    <string name="ask_permission_kind_other">use %1$s</string>
+
+    <!-- question asks -->
+    <string name="ask_question_title">The agent has a question</string>
+    <string name="ask_question_submit">Send answer</string>
+    <string name="ask_question_skip">Skip the question</string>
+    <string name="ask_question_pick_one">Pick one</string>
+    <string name="ask_question_pick_many">Pick one or more</string>
+    <string name="ask_question_custom_label">Or write your own answer</string>
+    <string name="ask_question_custom_placeholder">Your answer</string>
+    <string name="ask_question_of">%1$d of %2$d</string>
+
+    <!-- ============================================================ sessions -->
+    <string name="sessions_title">Conversations</string>
+    <string name="sessions_subtitle">Every conversation belongs to the project you opened it in.</string>
+    <string name="sessions_empty_title">No conversations yet</string>
+    <string name="sessions_empty_body">Start one from the chat screen, or send a first message and it is created for you.</string>
+    <string name="sessions_new">New conversation</string>
+    <string name="sessions_delete">Delete conversation %1$s</string>
+    <string name="sessions_rename">Rename conversation %1$s</string>
+    <string name="sessions_busy">Running</string>
+    <string name="sessions_pending">Waiting for you</string>
+    <string name="sessions_untitled">Untitled conversation</string>
+    <string name="sessions_updated">Updated %1$s</string>
+    <string name="sessions_selected">Selected</string>
+    <string name="sessions_count">%1$d conversations</string>
+    <string name="sessions_rename_label">Conversation name</string>
+    <string name="sessions_rename_save">Save name</string>
+    <string name="sessions_reverted">Reverted to %1$s</string>
+    <string name="sessions_undo_available">Undo is available for this conversation</string>
+
+    <!-- ============================================================ settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_runtime">Agent runtime</string>
+    <string name="settings_runtime_status">Status</string>
+    <string name="settings_runtime_status_raw">Supervisor state</string>
+    <string name="settings_runtime_detail">Detail</string>
+    <string name="settings_runtime_restarts">Restarts</string>
+    <string name="settings_runtime_version">OpenCode version</string>
+    <string name="settings_runtime_payload">Runtime payload</string>
+    <string name="settings_runtime_abi">Processor ABI</string>
+    <string name="settings_runtime_device">Device</string>
+    <string name="settings_runtime_android">Android</string>
+    <string name="settings_runtime_audit">Loopback and credential audit</string>
+    <string name="settings_runtime_server">Local server</string>
+    <string name="settings_runtime_server_reachable">Answering</string>
+    <string name="settings_runtime_server_unreachable">Not answering</string>
+    <string name="settings_runtime_stream">Event stream</string>
+    <string name="settings_runtime_restart">Restart the agent</string>
+
+    <string name="settings_section_diagnostics">Diagnostics</string>
+    <string name="settings_diagnostics_body">Collected from the runtime: the host log, the tail of the agent log, versions and device facts. Credentials are never included.</string>
+    <string name="settings_diagnostics_share">Share diagnostics</string>
+    <string name="settings_diagnostics_copy">Copy diagnostics</string>
+    <string name="settings_diagnostics_loading">Collecting diagnostics</string>
+    <string name="settings_diagnostics_lines">%1$d lines collected</string>
+
+    <string name="settings_section_model">Model</string>
+    <string name="settings_model_current">Current model</string>
+    <string name="settings_model_none">No model selected, the agent picks its default</string>
+    <string name="settings_model_default">Server default</string>
+    <string name="settings_model_use">Use %1$s</string>
+    <string name="settings_model_clear">Use the agent default</string>
+    <string name="settings_model_connected">Key stored</string>
+    <string name="settings_model_not_connected">No key stored</string>
+    <string name="settings_model_deprecated">deprecated</string>
+    <string name="settings_model_providers">%1$d providers reported by the agent</string>
+
+    <string name="settings_section_keys">Provider keys</string>
+    <string name="settings_keys_body">A key is stored in the Android Keystore and handed to the agent own credential store. It is never shown again, never exported and never written to a log.</string>
+    <string name="settings_keys_optional">No key is needed for the built-in default model. Add one only if you want to use your own provider account.</string>
+    <string name="settings_keys_provider">Provider</string>
+    <string name="settings_keys_field_label">API key</string>
+    <string name="settings_keys_field_placeholder">Paste the key</string>
+    <string name="settings_keys_save">Save key</string>
+    <string name="settings_keys_revoke">Remove key</string>
+    <string name="settings_keys_stored">Stored in the Keystore: %1$s</string>
+    <string name="settings_keys_stored_label">Stored keys</string>
+    <string name="settings_keys_hardware_label">Hardware-backed</string>
+    <string name="settings_keys_hardware">Hardware-backed Keystore: %1$s</string>
+
+    <string name="settings_section_mcp">MCP servers</string>
+    <string name="settings_mcp_body">These statuses are the agent own. Remote HTTP or SSE servers are not supported by this runtime, which is an upstream restriction rather than an app bug; servers the agent starts as a local process work.</string>
+    <string name="settings_mcp_empty">No MCP servers are configured.</string>
+    <string name="settings_mcp_add">Add a server</string>
+    <string name="settings_mcp_name_label">Name</string>
+    <string name="settings_mcp_name_placeholder">my-server</string>
+    <string name="settings_mcp_config_label">Configuration, JSON</string>
+    <string name="settings_mcp_config_placeholder">type, command and arguments as the agent expects them</string>
+    <string name="settings_mcp_persist">Keep after a restart</string>
+    <string name="settings_mcp_connect">Connect</string>
+    <string name="settings_mcp_disconnect">Disconnect</string>
+    <string name="settings_mcp_refresh">Refresh statuses</string>
+    <string name="settings_mcp_error_label">Reported by the agent</string>
+
+    <string name="settings_section_permissions">Permissions</string>
+    <string name="settings_permissions_body">Policy for shell commands the agent runs. Asking is the default and is what keeps a phone safe from an autonomous command.</string>
+    <string name="settings_permission_ask">Ask every time</string>
+    <string name="settings_permission_allow">Allow</string>
+    <string name="settings_permission_deny">Deny</string>
+
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_theme_label">Theme</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_system">Match the system</string>
+    <string name="settings_theme_dynamic">Material You colours</string>
+
+    <string name="settings_section_about">About</string>
+    <string name="settings_about_body">This app is a client of the OpenCode agent running on this device. Every message, tool call and permission you see comes from the agent own interface, unedited.</string>
+    <string name="settings_about_version">App version</string>
+    <string name="settings_notice_label">Last result</string>
 </resources>

@@ -54,4 +54,17 @@ object EventFrame {
         type == "permission.asked" || type == "permission.v2.asked"
     fun isPermissionReplied(type: String): Boolean =
         type == "permission.replied" || type == "permission.v2.replied"
+
+    // Phase 6: the frames a conversational UI cannot do without. Names come from
+    // the pinned upstream schema (`packages/schema/src/v1/session.ts` and
+    // `.../v1/question.ts`), not from guesswork.
+    /** `message.part.delta` is the ONLY text the server sends while a part streams. */
+    fun isPartDelta(type: String): Boolean = type == "message.part.delta"
+    /** `session.error` carries upstream's AssistantError (ProviderAuthError, APIError, ...). */
+    fun isSessionError(type: String): Boolean = type == "session.error"
+    /** OpenCode's question tool blocks a turn exactly like a permission ask does. */
+    fun isQuestionAsked(type: String): Boolean = type == "question.asked" || type == "question.v2.asked"
+    fun isQuestionAnswered(type: String): Boolean =
+        type == "question.replied" || type == "question.rejected" ||
+            type == "question.v2.replied" || type == "question.v2.rejected"
 }

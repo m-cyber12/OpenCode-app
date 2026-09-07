@@ -1,0 +1,44 @@
+=== Phase 6 static checks 2026-09-07T20:43:54Z ===
+OK   bash -n on 31 phase scripts
+OK   py_compile on every phase python script
+note: pre-existing non-ASCII byte in .github/workflows/phase2-spike.yml at line 22 (not this phase's file)
+note: pre-existing non-ASCII byte in spike/workflow/phase2-spike.yml at line 22 (not this phase's file)
+check-ascii: 6 phase6 files (strict), 9 pre-existing (note only), 0 findings
+OK   yaml parse phase6/workflow/phase6-ui.yml
+OK   phase6/workflow/phase6-ui.yml triggers on the current branch arena/01a077b3-opencode-app
+OK   yaml parse .github/workflows/phase2-spike.yml
+OK   yaml parse .github/workflows/phase3-gates.yml
+OK   yaml parse .github/workflows/phase4-runtime-host.yml
+OK   yaml parse .github/workflows/phase5-integration.yml
+OK   yaml parse .github/workflows/phase6-ui.yml
+check-workflow-yaml: 6 files, pyyaml=True
+
+=== kotlin nested-block-comment scan (phase5 lesson) ===
+checked 68 kotlin files, 0 with block-comment anomalies
+OK   kotlin nested-block-comment scan (phase5 lesson)
+
+=== kotlin bracket/annotation balance ===
+check-kotlin-balance: 68 files, 0 findings
+OK   kotlin bracket/annotation balance
+
+=== ui strings + resources ===
+--- check-ui-strings (hardcoded copy + URL literals)
+check-ui-strings: 49 kotlin files, 0 hardcoded-copy findings, 0 url findings
+--- strings.xml sanity: every referenced R.string.* must exist
+strings.xml: 263 defined, 236 referenced, 0 missing, 27 unused (action_close, action_copy, ask_permission_metadata, ask_permission_request, ask_permission_waiting, availability_detail_label, availability_provider_note, chat_attachment_size)
+check-ui-strings.sh rc=0
+OK   ui strings + resources
+
+=== ui accessibility (contentDescription / labels) ===
+check-ui-a11y: 17 files, 16 icon/image, 40 button, 8 field call sites, 0 findings
+OK   ui accessibility (contentDescription / labels)
+
+=== ui lazy lists (no take(8), no eager forEach) ===
+check-ui-lists: 17 files, 4 using LazyColumn, 0 findings
+OK   ui lazy lists (no take(8), no eager forEach)
+
+=== ui purity (screens are functions of state) ===
+check-ui-purity: 17 ui files scanned, 0 findings
+OK   ui purity (screens are functions of state)
+
+=== static checks summary rc=0 ===

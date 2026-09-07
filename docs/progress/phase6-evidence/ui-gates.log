@@ -1,0 +1,125 @@
+[2026-09-07T20:53:55Z] === stage A: deterministic chat UI gates (no runtime, no model, no key) ===
+[2026-09-07T20:53:55Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the next gate really is a first run
+Performing Streamed Install
+Success
+Performing Streamed Install
+Success
+[2026-09-07T20:54:01Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
+[2026-09-07T20:54:16Z] instrument rc=0 (chat-ui)
+
+ai.opencode.android.ui.ChatUiGatesTest:........
+
+Time: 13.656
+
+OK (8 tests)
+
+
+[2026-09-07T20:54:16Z] chat-ui runner trailer: OK
+[2026-09-07T20:54:16Z] screenshots pulled: 11
+total 372
+drwxr-xr-x 2 runner runner  4096 Sep  7 20:54 .
+drwxr-xr-x 3 runner runner  4096 Sep  7 20:54 ..
+-rw-r--r-- 1 runner runner 35385 Sep  7 20:54 10-chat-long-transcript.png
+-rw-r--r-- 1 runner runner 36794 Sep  7 20:54 11-chat-tool-cards.png
+-rw-r--r-- 1 runner runner 39820 Sep  7 20:54 12-chat-asks.png
+-rw-r--r-- 1 runner runner 32058 Sep  7 20:54 13-chat-runtime-down.png
+-rw-r--r-- 1 runner runner 29187 Sep  7 20:54 14-chat-provider-auth.png
+-rw-r--r-- 1 runner runner 21372 Sep  7 20:54 15-chat-streaming.png
+-rw-r--r-- 1 runner runner 31405 Sep  7 20:54 16-chat-markdown.png
+-rw-r--r-- 1 runner runner 39495 Sep  7 20:54 17-chat-a11y.png
+-rw-r--r-- 1 runner runner 42907 Sep  7 20:54 18-settings-a11y.png
+-rw-r--r-- 1 runner runner 16871 Sep  7 20:54 19-sessions.png
+-rw-r--r-- 1 runner runner 25714 Sep  7 20:54 19b-welcome-states.png
+[2026-09-07T20:54:16Z] P6-U1 PASS :: :: rows=602 composedAtBottom=9 composedAtTop=7 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
+[2026-09-07T20:54:16Z] P6-U2 PASS :: :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true
+[2026-09-07T20:54:16Z] P6-U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
+[2026-09-07T20:54:16Z] P6-U4 PASS :: :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=true,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
+[2026-09-07T20:54:16Z] P6-U5 PASS :: :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true retryBanner=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true 
+[2026-09-07T20:54:16Z] P6-U6 PASS :: :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
+[2026-09-07T20:54:16Z] P6-U7 PASS :: :: interactive={chat=23, sessions=11, projects=4, welcome=2, welcome-unsupported=2, settings=5} total=47 unnamed=0
+[2026-09-07T20:54:16Z] P6-U8 PASS :: :: rowsComposedBefore=7 after=7 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true revertN
+[2026-09-07T20:54:16Z] === stage B: first-run experience on a freshly installed APK ===
+[2026-09-07T20:54:16Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the next gate really is a first run
+Performing Streamed Install
+Success
+Performing Streamed Install
+Success
+[2026-09-07T20:54:23Z] === am instrument ai.opencode.android.ui.FirstRunUiGatesTest ===
+[2026-09-07T20:54:40Z] instrument rc=0 (first-run)
+
+ai.opencode.android.ui.FirstRunUiGatesTest:....
+
+Time: 16.371
+
+OK (4 tests)
+
+
+[2026-09-07T20:54:40Z] first-run runner trailer: OK
+[2026-09-07T20:54:41Z] screenshots pulled: 4
+total 492
+drwxr-xr-x 2 runner runner  4096 Sep  7 20:54 .
+drwxr-xr-x 3 runner runner  4096 Sep  7 20:54 ..
+-rw-r--r-- 1 runner runner 25176 Sep  7 20:54 01-first-run-welcome.png
+-rw-r--r-- 1 runner runner 26171 Sep  7 20:54 02-first-run-ready.png
+-rw-r--r-- 1 runner runner 26171 Sep  7 20:54 03-first-run-projects.png
+-rw-r--r-- 1 runner runner 33278 Sep  7 20:54 04-first-run-chat.png
+-rw-r--r-- 1 runner runner 35385 Sep  7 20:54 10-chat-long-transcript.png
+-rw-r--r-- 1 runner runner 36794 Sep  7 20:54 11-chat-tool-cards.png
+-rw-r--r-- 1 runner runner 39820 Sep  7 20:54 12-chat-asks.png
+-rw-r--r-- 1 runner runner 32058 Sep  7 20:54 13-chat-runtime-down.png
+-rw-r--r-- 1 runner runner 29187 Sep  7 20:54 14-chat-provider-auth.png
+-rw-r--r-- 1 runner runner 21372 Sep  7 20:54 15-chat-streaming.png
+-rw-r--r-- 1 runner runner 31405 Sep  7 20:54 16-chat-markdown.png
+-rw-r--r-- 1 runner runner 39495 Sep  7 20:54 17-chat-a11y.png
+-rw-r--r-- 1 runner runner 42907 Sep  7 20:54 18-settings-a11y.png
+-rw-r--r-- 1 runner runner 16871 Sep  7 20:54 19-sessions.png
+-rw-r--r-- 1 runner runner 25714 Sep  7 20:54 19b-welcome-states.png
+[2026-09-07T20:54:41Z] P6-F1 PASS :: :: firstScreen=welcome stages=[extracting, starting, healthy] welcomeCopy=4/4 sampledLines=19 leakedTokens=[] continueBecameEnabled=false advancedToProjects=true advancedToChat=false supervisor=HEALTHY(restarts=0) screen
+[2026-09-07T20:54:41Z] P6-F2 PASS :: :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=true,chat=false) leakedTokens=[] screenshot=26171
+[2026-09-07T20:54:41Z] P6-F3 PASS :: :: projectsEmptyState=true typedName=true createdThroughUi=true chatScreen=true composerEnabled=true projectNameShown=true leakedTokens=[] screenshots=projects:26171,chat:33278
+[2026-09-07T20:54:41Z] P6-F4 PASS :: :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=25176, 02-first-run-ready.png=26171, 03-first-run-projects.png=26171, 04-first-run-chat.png=33278]
+[2026-09-07T20:54:41Z] === stage C: live turn through the UI (key-free default model) ===
+[2026-09-07T20:54:41Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
+[2026-09-07T21:02:06Z] instrument rc=0 (live-chat)
+
+ai.opencode.android.ui.LiveChatUiGatesTest:.
+
+Time: 444.276
+
+OK (2 tests)
+
+
+[2026-09-07T21:02:06Z] live-chat runner trailer: OK
+[2026-09-07T21:02:06Z] screenshots pulled: 5
+total 516
+drwxr-xr-x 2 runner runner  4096 Sep  7 21:02 .
+drwxr-xr-x 3 runner runner  4096 Sep  7 21:02 ..
+-rw-r--r-- 1 runner runner 25176 Sep  7 21:02 01-first-run-welcome.png
+-rw-r--r-- 1 runner runner 26171 Sep  7 21:02 02-first-run-ready.png
+-rw-r--r-- 1 runner runner 26171 Sep  7 21:02 03-first-run-projects.png
+-rw-r--r-- 1 runner runner 33278 Sep  7 21:02 04-first-run-chat.png
+-rw-r--r-- 1 runner runner 35385 Sep  7 20:54 10-chat-long-transcript.png
+-rw-r--r-- 1 runner runner 36794 Sep  7 20:54 11-chat-tool-cards.png
+-rw-r--r-- 1 runner runner 39820 Sep  7 20:54 12-chat-asks.png
+-rw-r--r-- 1 runner runner 32058 Sep  7 20:54 13-chat-runtime-down.png
+-rw-r--r-- 1 runner runner 29187 Sep  7 20:54 14-chat-provider-auth.png
+-rw-r--r-- 1 runner runner 21372 Sep  7 20:54 15-chat-streaming.png
+-rw-r--r-- 1 runner runner 31405 Sep  7 20:54 16-chat-markdown.png
+-rw-r--r-- 1 runner runner 39495 Sep  7 20:54 17-chat-a11y.png
+-rw-r--r-- 1 runner runner 42907 Sep  7 20:54 18-settings-a11y.png
+-rw-r--r-- 1 runner runner 16871 Sep  7 20:54 19-sessions.png
+-rw-r--r-- 1 runner runner 25714 Sep  7 20:54 19b-welcome-states.png
+-rw-r--r-- 1 runner runner 22930 Sep  7 21:02 30-live-chat-reply.png
+[2026-09-07T21:02:06Z] P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=4 replyShownInUi=true(needle='Blue') newScreenLines=12 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot=2
+[2026-09-07T21:02:06Z] P6-L2 SKIP :: :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=0); screen='
+[2026-09-07T21:02:06Z] === evidence pull ===
+P6_MODEL_AVAILABLE 1 ::
+P6_MODEL_AVAILABLE 1 :: replyChars=4 asksAnswered=0
+[2026-09-07T21:02:07Z] === SUMMARY ===
+P6_SUMMARY 2026-09-07T21:02:07Z
+ui_gates_pass=13 ui_gates_fail=0 ui_gates_skip=1
+chat_ui_instrument_rc=0 first_run_instrument_rc=0 live_chat_instrument_rc=0
+screenshots=17
+model_available=1
+device_abi=x86_64
+android_sdk=34
