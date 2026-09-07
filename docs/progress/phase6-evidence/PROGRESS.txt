@@ -1354,3 +1354,49 @@
     Loading local repository...                                                     [=========                              ] 25% Loading local repository...       [=========                              ] 25% Fetch remote repository...        [=======================================] 100% Fetch remote repository...       
     Auto-selecting single ABI x86_64
     Do you wish to create a custom hardware profile? [no] 
+### 2026-09-07T19:01:46Z  run=34153323754  step: 5/8 APKs (assembleDebug + assembleDebugAndroidTest)
+    head=a0804aa branch=arena/01a077b3-opencode-app log_lines=1591
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 23s
+    --- last 40 log lines ---
+       Compiling anyhow v1.0.100
+       Compiling walkdir v2.5.0
+       Compiling grep-printer v0.3.1 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/printer)
+       Compiling crossbeam-deque v0.8.6
+       Compiling grep-cli v0.1.12 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/cli)
+       Compiling grep-regex v0.1.14 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/regex)
+       Compiling ripgrep v15.1.0 (/tmp/tmp.3XMWpYf6lg/rg-src)
+       Compiling ignore v0.4.24 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/ignore)
+       Compiling lexopt v0.3.1
+       Compiling textwrap v0.16.2
+       Compiling pcre2 v0.2.11
+       Compiling grep-pcre2 v0.1.9 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/pcre2)
+       Compiling grep v0.4.1 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/grep)
+        Finished `release` profile [optimized + debuginfo] target(s) in 50.74s
+    x86_64 Android ripgrep OK:  ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
+    === [5/6] OpenCode server bundle @ 05ea5073be967c779d326929b2de6228dda4159d (pinned, fail-loud) ===
+    upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
+    bundle build complete
+    === [6/6] stage payload, compute manifest ===
+    payload tarball: 16559394 bytes sha256=3e4e2241a779e5693d6ff972fce9e8e524c76185aa83e35e72366f9fbd1970b9
+    manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/assets/runtime-manifest.json
+    === engine layout ===
+    11340 ./build.status
+    41 ./git.upstream.commit.txt
+    5171 ./assets/runtime-manifest.json
+    16559394 ./assets/runtime-payload.tar.gz
+    8184 ./jniLibs/arm64-v8a/libchildshim.so
+    35139776 ./jniLibs/arm64-v8a/librg.so
+    6744 ./jniLibs/arm64-v8a/libseccompshim.so
+    89796776 ./jniLibs/arm64-v8a/libbun.so
+    7592 ./jniLibs/arm64-v8a/libexecshim.so
+    4132208 ./jniLibs/arm64-v8a/libgit.so
+    7584 ./jniLibs/x86_64/libchildshim.so
+    36761984 ./jniLibs/x86_64/librg.so
+    7608 ./jniLibs/x86_64/libseccompshim.so
+    91788816 ./jniLibs/x86_64/libbun.so
+    7864 ./jniLibs/x86_64/libexecshim.so
+    4258048 ./jniLibs/x86_64/libgit.so
+    PAYLOAD_READY
+    ########## 5/8 APKs (assembleDebug + assembleDebugAndroidTest) ##########
+
