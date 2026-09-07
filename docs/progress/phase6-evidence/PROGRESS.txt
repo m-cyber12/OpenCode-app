@@ -537,3 +537,51 @@
     testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
     ########## 6/8 Phase 6 UI gates (fresh install -> first-run flow -> chat UI) ##########
 
+### 2026-09-07T15:03:47Z  run=34134527274  step: 7/8 Phase 5 regression tail (client-integration gates, staged on this device)
+    head=209d621 branch=arena/01a077b3-opencode-app log_lines=1749
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 26s
+    BUILD SUCCESSFUL in 1m 6s
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase6/scripts/20-ui-gates.sh'
+    --- last 40 log lines ---
+    [2026-09-07T14:53:39Z] P6-U6 PASS :: :: heading=t
+    [2026-09-07T14:53:39Z] P6-U7 FAIL
+    [2026-09-07T14:53:39Z] P6-U8 FAIL
+    [2026-09-07T14:53:39Z] === stage B: first-run experience on a freshly installed APK ===
+    [2026-09-07T14:53:39Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the next gate really is a first run
+    Performing Streamed Install
+    Success
+    Performing Streamed Install
+    Success
+    [2026-09-07T14:53:46Z] === am instrument ai.opencode.android.ui.FirstRunUiGatesTest ===
+    [2026-09-07T14:54:00Z] instrument rc=0 (first-run)
+    [2026-09-07T14:54:00Z] first-run runner trailer: OK
+    [2026-09-07T14:54:00Z] screenshots pulled: 4
+    [2026-09-07T14:54:00Z] P6-F1 PASS :: :: fi
+    [2026-09-07T14:54:00Z] P6-F2 PASS :: :: status=HEALTHY
+    [2026-09-07T14:54:00Z] P6-F3 PASS :: :: p
+    [2026-09-07T14:54:00Z] P6-F4 PASS :: :: count=4 usable=4 welcome=t
+    [2026-09-07T14:54:00Z] === stage C: live turn through the UI (key-free default model) ===
+    [2026-09-07T14:54:00Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
+    [2026-09-07T15:01:24Z] instrument rc=0 (live-chat)
+    [2026-09-07T15:01:24Z] live-chat runner trailer: OK
+    [2026-09-07T15:01:24Z] screenshots pulled: 5
+    [2026-09-07T15:01:24Z] P6-L1 PASS :: :: p
+    [2026-09-07T15:01:25Z] P6-L2 SKIP :: :: the model answe
+    [2026-09-07T15:01:25Z] === evidence pull ===
+    [2026-09-07T15:01:25Z] === SUMMARY ===
+    P6_SUMMARY 2026-09-07T15:01:25Z
+    ui_gates_pass=7 ui_gates_fail=6 ui_gates_skip=1
+    chat_ui_instrument_rc=0 first_run_instrument_rc=0 live_chat_instrument_rc=0
+    screenshots=12
+    model_available=1
+    device_abi=x86_64
+    android_sdk=34
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase6/scripts/20-ui-gates.sh'
+    phase6 UI gates rc=1
+    ########## 7/8 Phase 5 regression tail (client-integration gates, staged on this device) ##########
+    + zod-to-json-schema@3.25.2
+    
+    92 packages installed [399.00ms]
+    MCP_READY: 26M
+
