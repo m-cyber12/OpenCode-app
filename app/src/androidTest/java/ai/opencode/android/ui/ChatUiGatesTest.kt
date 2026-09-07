@@ -52,6 +52,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
@@ -809,6 +810,15 @@ class ChatUiGatesTest {
         // record whether the button was actually clickable at tap time, and tap
         // again (as a user would) if the first tap was lost to a race - without
         // ever hiding what happened: both facts land in the gate detail.
+        // Run #10's diagnostics settled it: submitEnabledAtTap=true, three taps,
+        // answersSeen=[] - while the skip button in the SAME row fired, but only
+        // in the second render, the one with no messages. In the first render the
+        // question card's button row sits below the viewport (message + permission
+        // card above it), and performClick does not scroll: it injects the tap at
+        // the node's bounds, which are outside the window. Scroll the row into
+        // view first, exactly as a thumb would.
+        rule.onNodeWithTag(TAG_QUESTION_SUBMIT).performScrollTo()
+        rule.waitForIdle()
         val submitNodes = rule.onAllNodesWithTag(TAG_QUESTION_SUBMIT).fetchSemanticsNodes()
         val submitEnabled = submitNodes.isNotEmpty() &&
             !submitNodes.first().config.contains(SemanticsProperties.Disabled)

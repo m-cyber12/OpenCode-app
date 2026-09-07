@@ -29,7 +29,7 @@ fact is read from `OpenCodeApi`, `OpenCodeEventStream`, `Transcript` or
 | Deterministic chat gates U2, U7 | **TESTED - PASS** | run #7: the failed tool card now scrolls into view (`failedCardOpen=true failedStatus=true`), and the accessible-name audit ran on a device for the first time: `interactive={chat=23, sessions=23, projects=4, welcome=2, welcome-unsupported=2, settings=5} total=59 unnamed=0` |
 | Deterministic chat gates U4, U5 | **NOT TESTED - blocked by product defect 20, fixed, re-run pending** | both failed on exactly one sub-check (`rawKept=false`, `turnErrorKept=false`): a session-level turn error is invisible while the agent is READY. Product fix committed; the screenshot of run #7's dead live turn is the evidence |
 | Deterministic chat gate U8 | **NOT TESTED - defect 22 fixed wrongly once, now fixed properly (defect 24)** | run #8: still `revertNote=false`, because scrolling to index 39 composes the END of the list and scrolls row 8 back out. The gate now scrolls to the row itself (index 8), reads, then continues to the end |
-| Deterministic chat gate U3 | **NOT TESTED - the payload question is now answered: the callback never fired** | run #8 printed `answersSeen=[]`, i.e. `onQuestionSubmit` was never invoked at all, while the screenshot shows the radio selected and "Send answer" enabled. The gate now records whether the button was clickable at tap time and re-taps as a user would (defect 25), with both facts in the detail line |
+| Deterministic chat gate U3 | **NOT TESTED - cause now proven: the submit row was below the viewport** | run #10: `submitEnabledAtTap=true submitClicks=3 answersSeen=[]`. The skip button in the same row only ever fired in the second render (no messages above it). `performClick` injects a tap at the node's bounds and does not scroll, so three taps landed outside the window. The gate now `performScrollTo()`s the row first (defect 27); the product's question card was correct throughout |
 | Screenshots | **17 CAPTURED** | run #7 added `12-chat-asks`, `14-chat-provider-auth`, `18-settings-a11y`, `19-sessions`, `19b-welcome-states`. Two of them are diagnostic evidence in their own right: `12-chat-asks.png` shows a selected radio the gate could not account for, and `30-live-chat-reply.png` shows a conversation in which a server-side turn failure left no trace |
 | Phase 5 regression tail (frozen gates re-run after Phase 6 changes) | **TESTED - steady state held** | run #6: `phase5=14pass kotlin=10pass failed_ids=P5-G16 unexpected_failures=none`. The folded verdict `P6-R5` still printed FAIL because of defect 17 (a counter-parsing bug in the folder), fixed and replayed against run #6's own summary |
 
@@ -402,6 +402,33 @@ live path. The SKIP *reason* was still blank, though, which is defect 26 below.
 | 25 | U3 `answersSeen=[]` - the submit callback never fired, although the screenshot shows the radio selected and the button enabled | still unknown, and now measurable: either the tap raced a recomposition or the button's click action was absent at tap time | the gate records `submitEnabledAtTap` from the semantics `Disabled` key, then taps up to three times as a user would, stopping as soon as the callback records anything; both facts go into the detail line so run #9 names the cause instead of re-reporting `false` |
 | 26 | L1/L2 SKIP reason ended in an empty string while the screen visibly carried the failure | one `fetchSemanticsNodes()` landed mid-recomposition and returned nothing, and the raw server words sit behind a collapsed disclosure | open the failure's Details disclosure first, then read the screen through a 15 s `waitFor { allText().isNotBlank() }` retry, and quote its last three lines in the reason |
 
+### Run 34151978361 (commit `9edfd8e`) - 12 PASS / 1 FAIL / 2 SKIP: one gate left, and its cause is proven
+
+`ui_gates_pass=12 ui_gates_fail=1 ui_gates_skip=2`, all three classes `rc=0`,
+`P6-R5` PASS at the frozen steady state, 17 screenshots. U8 cleared with the
+scroll-to-row fix (`revertNote=true`), so every deterministic gate except U3 is
+now green on device, and U7's audit repeated clean (`unnamed=0`).
+
+U3's run-#8 diagnostics did exactly what they were added to do. Run #10 printed
+`answersSeen=[] submitEnabledAtTap=true submitClicks=3`: the button was enabled,
+was tapped three times, and the callback never ran - while the *skip* button in
+the same row fired, but only in the gate's second render, the one with no
+messages above the card. That asymmetry is the whole explanation: in the first
+render the question card's button row sits below the viewport, and
+`performClick` injects the tap at the node's bounds without scrolling, so the
+taps landed outside the window. Nothing was wrong with the product's question
+card. Defect 27 scrolls the row into view before tapping.
+
+| # | Symptom | Cause | Fix |
+| --- | --- | --- | --- |
+| 27 | U3: three taps on an enabled submit button, callback never invoked; skip in the same row worked only after a render with fewer messages above it | the button row was below the lazy viewport and `performClick` does not auto-scroll | `performScrollTo()` on `TAG_QUESTION_SUBMIT` before the first tap |
+| 28 | L1/L2 SKIP reason quoted the composer chrome ("Attach a file \| Message ... \| Send") instead of the failure | `takeLast(3)` reads the bottom of the screen, and the failure surface sits at the top | quote the turn-error card or the availability banner node itself (`allTextOf` of that node), falling back to the screen's last lines |
+
+The live gates SKIPped for the third time on environment: `model_available=0`
+with the default provider not connected on the runner. Their SKIP reasons now
+carry the failure surface's own words (defect 28), so a reader of
+`GATES_SUMMARY.txt` can see *why* without opening the screenshots.
+
 ### Offline cross-checks done while CI was blocked
 
 These are host-side checks, not device evidence:
@@ -428,24 +455,18 @@ These are host-side checks, not device evidence:
 
 ### Next
 
-1. Run #9 decides the last two chat gates. U8's fix is mechanical (scroll to the
-   row, read, scroll on) and should clear. U3 is the genuinely open question of
-   the phase: run #9's detail will say whether the submit button was clickable at
-   tap time and how many taps it took, which separates a test race from a product
-   defect in the question card.
-2. L1/L2 depend on the runner's key-free default provider being connected; two
-   runs in a row it was not. That is now a documented environment dependency of
-   the live gates (they SKIP, never fake a PASS), and a Phase 7/8 note: the
-   pinned default model is not guaranteed on every runner.
-3. Standing items unchanged: coverage is one x86_64 emulator at API 34 (real
-   arm64, secure-hardware key residency and toybox `tar` on API 29 stay Phase 8);
-   P5-G16 stays red-by-design (anomalyco/opencode#47644) with no client-side
-   workaround; Phase 5 remains frozen and both runs since the freeze confirmed
-   its steady state on device.
-
-Phase 5 stays frozen: `phase5/scripts/20-integration-gates.sh`, the R-* drivers
-and P5-K are byte-identical in this phase, and both `CI_GRADLE_ONLY` markers are
-`0`.
+1. Run #11 is the confirmation run: U3 with the row scrolled into view is
+   expected to close the last deterministic gate, which would put all of U1-U8
+   and F1-F4 at TESTED on one device (x86_64 emulator, API 34).
+2. L1 carries run #6's PASS as its device evidence; L2 has never observed a tool
+   call because no run's model chose to make one (and runs #7-#10 had no
+   connected default provider at all). Both stay honestly SKIPped on
+   environment, and "the key-free default provider is not guaranteed on every
+   runner" is now a standing Phase 7/8 note.
+3. Everything else stands: Phase 5 frozen and re-confirmed at 14 PASS / 1 FAIL
+   (P5-G16 red-by-design, anomalyco/opencode#47644) on every run since the
+   freeze; real arm64 coverage, secure-hardware key residency and toybox `tar`
+   on API 29 remain Phase 8 gaps.
 
 ## 6. OpenCode capabilities not yet exposed in the UI (flags for Phase 7/8)
 

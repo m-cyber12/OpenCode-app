@@ -308,8 +308,17 @@ class LiveChatUiGatesTest {
                 rule.waitForIdle()
             }
             waitFor(15_000) { allText().isNotBlank() }
-            val screenWords = allText().lineSequence().filter { it.isNotBlank() }.toList()
-                .takeLast(3).joinToString(" | ").take(220)
+            // Quote the failure surface itself (turn-error card first, then the
+            // banner), not the last lines on screen - run #10's reason ended up
+            // quoting the composer chrome ("Attach a file | Message ... | Send")
+            // because takeLast picks the bottom of the screen.
+            val errNodes = rule.onAllNodesWithTag(TAG_TURN_ERROR).fetchSemanticsNodes() +
+                rule.onAllNodesWithTag("availability_banner").fetchSemanticsNodes()
+            val screenWords = (
+                errNodes.firstOrNull()?.let { allTextOf(listOf(it)) }
+                    ?: allText().lineSequence().filter { it.isNotBlank() }.toList()
+                        .takeLast(3).joinToString(" | ")
+                ).take(220)
             modelReason = if (sawErrorBanner || exists(TAG_TURN_ERROR)) {
                 "the turn failed and the app said so: $screenWords"
             } else {
