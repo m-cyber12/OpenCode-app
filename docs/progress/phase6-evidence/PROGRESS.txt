@@ -1684,3 +1684,50 @@
     testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
     ########## 6/8 Phase 6 UI gates (fresh install -> first-run flow -> chat UI) ##########
 
+### 2026-09-07T19:37:52Z  run=34155026585  step: 7/8 Phase 5 regression tail (client-integration gates, staged on this device)
+    head=f24d549 branch=arena/01a077b3-opencode-app log_lines=1748
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 11s
+    BUILD SUCCESSFUL in 1m 7s
+    --- last 40 log lines ---
+    [2026-09-07T19:27:15Z] P6-U5 PASS :: :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true retryBanner=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true 
+    [2026-09-07T19:27:15Z] P6-U6 PASS :: :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
+    [2026-09-07T19:27:15Z] P6-U7 PASS :: :: interactive={chat=23, sessions=23, projects=4, welcome=2, welcome-unsupported=2, settings=5} total=59 unnamed=0
+    [2026-09-07T19:27:15Z] P6-U8 PASS :: :: rowsComposedBefore=7 after=7 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true revertN
+    [2026-09-07T19:27:15Z] === stage B: first-run experience on a freshly installed APK ===
+    [2026-09-07T19:27:15Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the next gate really is a first run
+    Performing Streamed Install
+    Success
+    Performing Streamed Install
+    Success
+    [2026-09-07T19:27:22Z] === am instrument ai.opencode.android.ui.FirstRunUiGatesTest ===
+    [2026-09-07T19:27:40Z] instrument rc=0 (first-run)
+    [2026-09-07T19:27:40Z] first-run runner trailer: OK
+    [2026-09-07T19:27:40Z] screenshots pulled: 4
+    [2026-09-07T19:27:40Z] P6-F1 PASS :: :: firstScreen=welcome stages=[starting, healthy] welcomeCopy=4/4 sampledLines=17 leakedTokens=[] continueBecameEnabled=false advancedToProjects=true advancedToChat=false supervisor=HEALTHY(restarts=0) screenshots=welcom
+    [2026-09-07T19:27:40Z] P6-F2 PASS :: :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=true,chat=false) leakedTokens=[] screenshot=26171
+    [2026-09-07T19:27:40Z] P6-F3 PASS :: :: projectsEmptyState=true typedName=true createdThroughUi=true chatScreen=true composerEnabled=true projectNameShown=true leakedTokens=[] screenshots=projects:26171,chat:33278
+    [2026-09-07T19:27:40Z] P6-F4 PASS :: :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=26067, 02-first-run-ready.png=26171, 03-first-run-projects.png=26171, 04-first-run-chat.png=33278]
+    [2026-09-07T19:27:40Z] === stage C: live turn through the UI (key-free default model) ===
+    [2026-09-07T19:27:40Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
+    [2026-09-07T19:35:06Z] instrument rc=0 (live-chat)
+    [2026-09-07T19:35:07Z] live-chat runner trailer: OK
+    [2026-09-07T19:35:07Z] screenshots pulled: 5
+    [2026-09-07T19:35:07Z] P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=12 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot=2
+    [2026-09-07T19:35:07Z] P6-L2 SKIP :: :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=0); screen='
+    [2026-09-07T19:35:07Z] === evidence pull ===
+    [2026-09-07T19:35:07Z] === SUMMARY ===
+    P6_SUMMARY 2026-09-07T19:35:07Z
+    ui_gates_pass=13 ui_gates_fail=0 ui_gates_skip=1
+    chat_ui_instrument_rc=0 first_run_instrument_rc=0 live_chat_instrument_rc=0
+    screenshots=17
+    model_available=1
+    device_abi=x86_64
+    android_sdk=34
+    phase6 UI gates rc=0
+    ########## 7/8 Phase 5 regression tail (client-integration gates, staged on this device) ##########
+    + zod-to-json-schema@3.25.2
+    
+    92 packages installed [264.00ms]
+    MCP_READY: 26M
+
