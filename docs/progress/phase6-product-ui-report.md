@@ -1,9 +1,12 @@
 # Phase 6 - Product UI: end-of-phase report
 
 Branch: `arena/01a077b3-opencode-app` (sources `e1104ee`; workflow installed by
-hand as `f8eca14`; CI evidence `8d3a62b`/`cb7d8fc`/`cbbbc59`)
+hand as `f8eca14`; CI evidence through `744b3c6`)
 Phase plan: `docs/progress/phase6-ui-polish-plan.md`
-Date: 2026-09-06
+Date: 2026-09-07 (run #6 device evidence added)
+Device evidence: CI run **34134527274** on commit `4b358c1` - a fresh
+`-wipe-data -no-snapshot` `sdk_gphone64_x86_64` emulator, Android 14 / API 34 /
+x86_64, with the pinned key-free default model serving a real turn.
 Scope discipline: Phase 6 is **presentation only**. No agent loop, no tool, no
 server API and no OpenCode behaviour was reimplemented in Kotlin; every visible
 fact is read from `OpenCodeApi`, `OpenCodeEventStream`, `Transcript` or
@@ -16,26 +19,34 @@ fact is read from `OpenCodeApi`, `OpenCodeEventStream`, `Transcript` or
 | Item | Label | Evidence |
 | --- | --- | --- |
 | Static checkers (ASCII, bracket/comment balance, UI strings, a11y, lazy lists, UI purity, workflow YAML) | **TESTED (host)** | `bash phase6/scripts/30-static-checks.sh` -> `rc=0`; see section 3 for the exact counts |
-| Product UI sources (17 files, ~5,800 lines) | **IMPLEMENTED** | compiled by CI, not yet by a device run |
-| JVM unit tests (6 new test files) | **IMPLEMENTED, NOT TESTED** | no JDK/Gradle in this sandbox; they run in CI as `:app:testDebugUnitTest` |
-| Instrumented gate harness (3 classes, 14 gates) | **IMPLEMENTED, NOT TESTED** | needs an emulator |
-| Kotlin compile of main + androidTest sources | **FAILED on CI run #1, defects fixed, re-run pending** | `docs/progress/phase6-evidence/compiler-errors.txt` from run 34096781049; see section 5 |
-| First-run flow on a fresh emulator (F1-F4) | **NOT TESTED** | this is the phase's stop condition; the suite never reached the emulator on run #1 |
-| Deterministic chat/tool-card/permission/degraded-state gates (U1-U8) | **NOT TESTED** | same |
-| Live turn through the UI (L1-L2) | **NOT TESTED** | also needs the pinned key-free default model to serve a turn; the class reports `SKIP` (never `PASS`) when no model can answer |
-| Screenshots | **NOT CAPTURED YET** | the harness writes PNGs into the app's own `filesDir/screenshots`; `phase6/scripts/20-ui-gates.sh` pulls them with `run-as` + base64 (adb pull cannot read `/data/data`) |
+| Product UI sources (17 files, ~5,800 lines) | **TESTED on device** | compiled by CI and rendered on an emulator in run #6: 12 screenshots in `docs/progress/phase6-evidence/screenshots/` |
+| JVM unit tests (163) | **TESTED (CI)** | `:app:testDebugUnitTest` green since run #4; XML in `docs/progress/phase6-evidence/jvm-unit-tests/` |
+| Instrumented gate harness (3 classes, 14 gates) | **TESTED on device, 4 harness defects found and fixed** | run #6 executed all three classes; defects 16-19 in section 5 are harness bugs, not product bugs |
+| First-run flow on a fresh emulator (F1-F4) | **TESTED - all 4 PASS** | run #6, after `pm uninstall` of both packages: welcome copy clean of host/port/URL, runtime self-started to `HEALTHY`, a project was created through the UI into an enabled composer, 4 screenshots (`01`-`04`) |
+| Live turn through the UI (L1) | **TESTED - PASS** | run #6: a real prompt produced a real assistant reply, verified server-side and in the UI, in 442 s; screenshot `30-live-chat-reply.png`; `model_available=1`, `model=big-pickle` |
+| Live tool call through the UI (L2) | **SKIP by design, NOT TESTED** | the model answered without calling a tool inside the 420 s budget. The class reports SKIP and never PASS when a tool call cannot be observed; it is not a failure of the UI, and it stays open |
+| Deterministic chat gates U1 (lazy transcript), U6 (markdown + syntax highlighting) | **TESTED - PASS** | run #6: 602-row transcript composed only its viewport and did not yank the reader back; markdown and multi-colour code spans present |
+| Deterministic chat gates U2-U5, U7, U8 | **NOT TESTED - blocked by harness defects 16 and 19, fixes committed, re-run pending** | five died on `IllegalStateException: Cannot call setContent twice per test!`; U2 asserted on a tool card that a lazy list had not composed yet. Product code was correct in the one case that could be checked by reading it (see defect 19) |
+| Screenshots | **12 CAPTURED** | `docs/progress/phase6-evidence/screenshots/`: `01`-`04` first run, `10`-`17` chat surfaces, `30` live reply |
+| Phase 5 regression tail (frozen gates re-run after Phase 6 changes) | **TESTED - steady state held** | run #6: `phase5=14pass kotlin=10pass failed_ids=P5-G16 unexpected_failures=none`. The folded verdict `P6-R5` still printed FAIL because of defect 17 (a counter-parsing bug in the folder), fixed and replayed against run #6's own summary |
 
-**What has actually run:** the GitHub credential this session uses expired
-mid-phase (`gh api` -> `HTTP 401: Bad credentials`) and was reconnected; the
-Phase 6 workflow was then installed by hand as `.github/workflows/phase6-ui.yml`
-(commit `f8eca14`, "Add Phase 6 UI gates workflow") because the session token
-gets `403` on any write under `.github/workflows/`. Run **34096781049** executed
-the static checks (green) and then failed at step 2/8, `:app:compileDebugKotlin`,
-in 1m37s - three real defects, listed with their fixes in section 5. It never
-reached the payload build, the emulator or any gate.
+**What has actually run:** six CI runs. Runs #1-#3 died in the compiler, run #4
+in two JVM tests, run #5 in three harness defects before a single gate executed,
+and run **#6** (34134527274) was the first to produce device verdicts:
+`ui_gates_pass=7 ui_gates_fail=6 ui_gates_skip=1`, `screenshots=12`,
+`model_available=1`, `device_abi=x86_64`, `android_sdk=34`.
 
-Everything labelled IMPLEMENTED is source-complete and static-checked. Nothing is
-claimed to work on Android yet: no device verdict and no screenshot exists.
+So the phase's stop condition is now backed by evidence on one device: the
+first-run flow works end to end on a genuinely fresh install (F1-F4 PASS), and a
+live model turn travels through the real UI (L1 PASS). The deterministic chat
+gates are only partly evidenced: two PASS, and the other six never reached their
+assertions because of two harness defects (16 and 19 below) that are fixed but
+not yet re-run. No claim in this report is broader than the device that produced
+it - a single x86_64 emulator at API 34; real arm64 coverage stays a Phase 8 gap.
+
+The Phase 6 workflow was installed by hand as `.github/workflows/phase6-ui.yml`
+(commit `f8eca14`) because the session token gets `403` on any write under
+`.github/workflows/`; the canonical copy lives at `phase6/workflow/phase6-ui.yml`.
 
 ---
 
@@ -129,10 +140,14 @@ leaked connection tokens** (host, port, URL, `Termux`, `SSH`, `adb`, paths).
 
 ## 4. Gate inventory (14 gates, all in `app/src/androidTest/java/ai/opencode/android/ui/`)
 
-Every gate prints `P6_<id> PASS|FAIL|SKIP :: <detail>` to stdout **and** logcat
-(`Log.i("OpenCode/gate", ...)`); `20-ui-gates.sh` folds the deduplicated union of
-both channels into `GATES_SUMMARY.txt`, so a gate that never ran cannot be
-counted as passed (absent = FAIL).
+Every gate prints `P6_<id> PASS|FAIL|SKIP :: <detail>` through one emitter that
+writes to logcat, to stdout **and** to a verdict file inside the app's own
+storage; `20-ui-gates.sh` folds the deduplicated union of all three into
+`GATES_SUMMARY.txt`, so a gate that never ran cannot be counted as passed (absent
+= FAIL). The file is the primary channel: run #6 showed that `println` from an
+instrumented test never reaches `am instrument`'s result stream and that logcat's
+ring buffer rotates the detail off a verdict while a live runtime is talking
+(defect 18).
 
 | Gate | Class | Asserts |
 | --- | --- | --- |
@@ -150,6 +165,15 @@ counted as passed (absent = FAIL).
 | `F4` | `FirstRunUiGatesTest` | Every stage left a usable screenshot in `filesDir/screenshots` |
 | `L1` | `LiveChatUiGatesTest` | A real prompt typed into the composer produces a real assistant reply **as reported by the server** (the app's own `OpenCodeApi` over loopback is the authority; novelty is decided by message id, not by a clock), and that reply's distinctive word is visible in the UI |
 | `L2` | `LiveChatUiGatesTest` | A shell request produces a real `tool` part server-side and an expandable card tagged with that part's own id, collapsed before the tap, showing the marker the shell command printed |
+
+Run #6 captured **12** of them, and which ones are missing is itself evidence for
+the diagnosis in section 5: `13-chat-runtime-down` and `15-chat-streaming` and
+`17-chat-a11y` exist while `14-chat-provider-auth`, `19b-welcome-states` and
+`18-settings-a11y` do not, because each of those gates took its first screenshot
+after its first `renderChat` and then died on the second one (defect 16).
+`12-chat-asks`, `19-sessions`, `31-live-tool-card-collapsed` and
+`32-live-tool-card-expanded` are missing for the same reason or, for the last two,
+because L2 SKIPped.
 
 Expected screenshots once the suite runs (names are fixed so the report can be
 diffed run-to-run): `01-first-run-welcome`, `02-first-run-ready`,
@@ -233,7 +257,7 @@ No existing `UiErrorTest` expectation changed: the four `PROVIDER_OTHER` names, 
 `NAME_UNKNOWN` + `ECONNREFUSED` hint, the `SomethingNew` + `Invalid API key` hint,
 the `SomethingNew` + hint-less fallback and the empty-error case all still hold.
 
-### Run 34115663777 (commit `8a4cf96`) - WHOLE PIPELINE ran; two harness bugs, no UI verdicts
+### Run 34115663777 (commit `8a4cf96`) - WHOLE PIPELINE ran; three harness bugs, no UI verdicts
 
 This run went all the way through: static checks, compile + **163 JVM unit tests
 green**, fresh emulator (`sdk_gphone64_x86_64`, Android 14 / API 34 / x86_64, AVD
@@ -243,8 +267,8 @@ works on this runner (`model_available=1`, `PROBE ok :: model=big-pickle
 exact-token reply`), so L1/L2 will not have to SKIP for want of a model.
 
 But `p6-ui-lines.txt` came back **empty**: not one P6 verdict exists, because the
-gate runner died before the first `am instrument`. Two harness defects, both mine,
-neither in product code:
+gate runner died before the first `am instrument`. Three harness defects, all
+mine, none in product code:
 
 | # | Symptom | Cause | Fix |
 | --- | --- | --- | --- |
@@ -257,6 +281,51 @@ unknown: F1-F4, U1-U8 and L1-L2 have never executed. Defect 14 means the Phase 5
 tail's verdict in this run cannot be read as a regression signal either; it has to
 be re-run with the fixture present before "Phase 5 still 14 PASS / 1 FAIL" can be
 claimed for Phase 6.
+
+### Run 34134527274 (commit `4b358c1`) - FIRST DEVICE VERDICTS: 7 PASS / 6 FAIL / 1 SKIP, 12 screenshots
+
+All three of run #5's fixes held. The gate runner survived `set -u` and executed
+all three classes; `docs/progress/phase6-evidence/phase5-regression/` came back a
+full bundle (33 files) instead of an empty directory; and building the stdio MCP
+fixture before the tail restored Phase 5's frozen steady state:
+
+```
+phase5=14pass kotlin=10pass failed_ids=P5-G16 unexpected_failures=none
+```
+
+That is the baseline exactly - 14 PASS with only the documented upstream
+restriction P5-G16 red (anomalyco/opencode#47644, remote HTTP/SSE MCP tool
+discovery) and all 10 Kotlin gates green. Run #5's "P5-K / P5-R-10 regression" is
+now proven to have been the missing fixture build, not product code.
+
+Device verdicts (`GATES_SUMMARY.txt`: `ui_gates_pass=7 ui_gates_fail=6
+ui_gates_skip=1`, `screenshots=12`, `model_available=1`, `device_abi=x86_64`,
+`android_sdk=34`):
+
+| Gate | Verdict | What the device showed |
+| --- | --- | --- |
+| F1 | **PASS** | on a genuinely fresh install (both packages `pm uninstall`ed first) the welcome copy carries no host, port, URL, token or path |
+| F2 | **PASS** | the runtime self-started to `HEALTHY` with no terminal, no Termux and no user action |
+| F3 | **PASS** | a project was created through the UI and landed in an enabled composer |
+| F4 | **PASS** | `count=4 usable=4 welcome=t` - four screenshots, all four usable |
+| L1 | **PASS** | a real prompt produced a real assistant reply in 442 s, verified server-side and in the UI (`30-live-chat-reply.png`) |
+| L2 | **SKIP** | the model answered without calling a tool inside the 420 s budget; the class reports SKIP rather than inventing a PASS |
+| U1 | **PASS** | 602 rows: only the viewport composed, scrolling up uncomposed the newest row, and two late messages did not yank the reader back |
+| U6 | **PASS** | markdown structure and multi-colour syntax spans present in the rendered code block |
+| U2 | FAIL | harness defect 19 - the failed tool card was never composed, so the gate judged an absent node |
+| U3, U4, U5, U7, U8 | FAIL | harness defect 16 - `IllegalStateException: Cannot call setContent twice per test!` |
+| P6-R5 | FAIL | harness defect 17 - the folder could not read three of Phase 5's five counters |
+
+Four defects came out of this run. All four are in the Phase 6 harness or its
+gate code; none is in product code, and the one product behaviour they touched
+(defect 19) was checked by reading the source and found correct:
+
+| # | Symptom | Cause | Fix |
+| --- | --- | --- | --- |
+| 16 | five of eight chat gates failed with `java.lang.IllegalStateException: Cannot call setContent twice per test!` | `createComposeRule().setContent` may be called exactly once per test method, and every render helper (`renderChat`, `renderLiveChat`, `renderSessions`, `renderProjects`, `renderWelcome`, `renderSettings`) composed its own screen - so any gate that renders more than one fixture died on its second call. U1 and U6 render once, which is precisely why they are the two that passed | one `setContent` per test, driven by snapshot state: the six surfaces became `@Composable` members reading class-level `mutableStateOf` / `mutableStateListOf` holders, a `Surface` enum says which one is showing, and each render helper now writes its fixture, switches the surface, and calls `Snapshot.sendApplyNotifications()` + `waitForIdle()`. A surface the gate is not looking at leaves the tree exactly as it does when the user navigates away, and growing `liveMessages` still recomposes the transcript the way a streaming turn does |
+| 17 | `P6-R5: FAIL phase5-regression :: phase5=14pass/?fail/?skip kotlin=10pass/?fail ... unexpected_failures=none` - a FAIL that contradicts its own detail line | `40-fold-regression.sh` read Phase 5's counters with line-anchored `sed` (`s/^gates_fail=\([0-9]*\).*/\1/p`), but Phase 5 writes several counters per line: `gates_pass=14 gates_fail=1 gates_skip=0`. Only the first key on each line was ever found, so `p5fail`, `p5skip` and `kotlin_gate_fail` came back empty and the pass condition - which insists the Kotlin gates reported zero failures and nothing was skipped - could never be met | a `counter()` helper (`grep -aoE "(^|[^A-Za-z0-9_])key=[0-9]+"`) with a word boundary so `gates_pass` cannot match inside `kotlin_gate_pass`, then replayed offline against run #6's own `phase5-regression/GATES_SUMMARY.txt`: it now reads `14 / 1 / 0 / 10 / 0`, `failed_ids=P5-G16`, `unexpected=none` -> verdict PASS |
+| 18 | every collected verdict detail was truncated: `P6_F1 PASS :: fi`, `P6_L1 PASS :: p`, `P6_U1 PASS ::` with no detail at all, while the real lines were complete | `println` from an instrumented test is redirected to logcat and never reaches `am instrument`'s result stream, so logcat was the only channel that carried verdicts - and its default ring buffer, shared with a live runtime, its MCP servers and a model turn, rotated the tail off each line before the harness read it back. The per-class instrument logs contain only the JUnit trailer and, for failures, the assertion trace | `UiGateSupport` now emits every verdict, skip and marker line through one `emit()` that appends to a file in the app's own storage (app-specific external dir plus `filesDir`); `20-ui-gates.sh` clears that file per class, reads it back with `run-as` as the **primary** channel, keeps runner stdout and logcat as fallbacks, grows the buffer first (`adb logcat -G 4M`) and stores the device-side file itself as `p6-<class>-verdicts.txt`. `ChatUiGatesTest` had its own local emitter and now calls the shared `printGate` too |
+| 19 | `P6_U2 FAIL :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=false failedStatus=false` - twelve sub-checks green, two red | the gate, not the product. The failed tool call lives in the **last** assistant message, and U1 proves this transcript only composes its viewport, so the card was not composed when U2 asserted on it. The product is right: `ToolCard` starts expanded for failures via `rememberSaveable(part.id) { mutableStateOf(part.status == "error") }`, draws its border in `colorScheme.error`, and labels the pill `chat_tool_status_error` = "Failed" | scroll the card into view before asserting - `performScrollToNode(hasTestTag("tool_header_prt_fail"))`, falling back to `performScrollToIndex(2)` since the fixture holds exactly three messages |
 
 ### Offline cross-checks done while CI was blocked
 
@@ -284,28 +353,28 @@ These are host-side checks, not device evidence:
 
 ### Next
 
-1. Push the fixes; the workflow re-runs on push. Runs so far: #1 three defects in
-   the main sources, #2 five in the test sources, #3 two in my own fix for #2, #4
-   two JVM-test failures (one wrong test expectation, one wrong product
-   behaviour), #5 the whole pipeline with three harness defects (a `set -u`
-   abort in the gate runner, a missing MCP fixture build that failed two Phase 5
-   gates, and an evidence copy that guessed filenames) - fifteen defects found
-   and fixed, all in Phase 6 code or its harness, none in Phase 5 and none in the
-   product's client behaviour. Compilation and all 163 JVM unit tests are green as
-   of run #5; no P6 device verdict exists yet.
-2. If step 2/8 goes green, the same run continues into the payload build, the
-   fresh emulator and gates A/B/C, and commits verdicts + screenshots to
-   `docs/progress/phase6-evidence/`.
-3. Only then can F1-F4, U1-U8 and L1-L2 be labelled TESTED, and only for the
-   device that ran them (x86_64 emulator, API level recorded in
-   `GATES_SUMMARY.txt`). Real arm64 device coverage stays a Phase 8 gap, and
-   P5-G16 stays red-by-design (upstream restriction
-   anomalyco/opencode#47644 for remote HTTP/SSE MCP; no client-side proxy
-   workaround was built).
+1. Re-run with the four fixes above (run #7). The expectation is not "everything
+   green": U3-U5, U7 and U8 have never reached their assertions, so they are the
+   gates most likely to expose a genuine product defect now that they can run -
+   U7 in particular audits every interactive node on six surfaces for a real
+   accessible name, which no device has ever evaluated. A host-side pre-scan of
+   all 17 UI files found no unnamed button, icon or text field (and
+   `check-ui-a11y.py` agrees: 16 icon/image, 40 button, 8 field call sites, 0
+   findings), but that is a static check, not a semantics tree.
+2. L2 stays SKIP until a model actually calls a tool through the UI. That is a
+   model-behaviour dependency, not a UI defect, and it is reported as SKIP rather
+   than passed by proxy.
+3. Only after run #7 can U2-U5, U7 and U8 be labelled TESTED, and only for the
+   device that ran them (x86_64 emulator, API 34). Real arm64 device coverage,
+   secure-hardware key residency and toybox `tar` on a real API 29 device stay
+   Phase 8 gaps. P5-G16 stays red-by-design (upstream restriction
+   anomalyco/opencode#47644); no client-side MCP proxy or workaround was built to
+   make it look green.
 
 Phase 5 stays frozen: `phase5/scripts/20-integration-gates.sh`, the R-* drivers
-and P5-K are untouched in this phase, and both `CI_GRADLE_ONLY` markers are `0`.
-Expected Phase 5 steady state remains 14 PASS / 1 FAIL.
+and P5-K are byte-identical in this phase, and both `CI_GRADLE_ONLY` markers are
+`0`. Expected Phase 5 steady state remains 14 PASS / 1 FAIL, and run #6 confirmed
+it on a device after Phase 6's changes.
 
 ## 6. OpenCode capabilities not yet exposed in the UI (flags for Phase 7/8)
 
@@ -334,8 +403,10 @@ projects/workspace management, memory and permission depth are Phase 7:
 
 | Path | Contents |
 | --- | --- |
-| `docs/progress/phase6-evidence/GATES_SUMMARY.txt` | `P6_SUMMARY`, pass/fail/skip counts, per-class instrument rc, screenshot count, `model_available`, device abi + sdk (written by CI, not present yet) |
-| `docs/progress/phase6-evidence/p6-ui-lines.txt` | every `P6_*` verdict line, deduplicated across stdout + logcat |
+| `docs/progress/phase6-evidence/GATES_SUMMARY.txt` | `P6_SUMMARY`, pass/fail/skip counts, per-class instrument rc, screenshot count, `model_available`, device abi + sdk (written by CI; run #6's is committed) |
+| `docs/progress/phase6-evidence/p6-ui-lines.txt` | every `P6_*` verdict line, deduplicated across the device-side verdict file, runner stdout and logcat |
+| `docs/progress/phase6-evidence/p6-*-verdicts.txt` | the verdict file the gates wrote inside the app's own storage, read back with `run-as` (defect 18's primary channel) |
+| `docs/progress/phase6-evidence/phase5-regression/` | the whole Phase 5 evidence bundle from the regression tail (33 files in run #6), including its own `GATES_SUMMARY.txt` |
 | `docs/progress/phase6-evidence/p6-model-lines.txt` | `P6_MODEL_AVAILABLE 0|1 :: reason` marker lines |
 | `docs/progress/phase6-evidence/screenshots/` | the PNGs listed in section 4 |
 | `docs/progress/phase6-evidence/p6-{chat-ui,first-run,live-chat}-instrument.log` | raw `am instrument` output per class |

@@ -33,7 +33,7 @@ import ai.opencode.android.ui.settings.SettingsScreen
 import ai.opencode.android.ui.theme.OpenCodeTheme
 import ai.opencode.android.ui.welcome.WelcomeScreen
 import android.content.Context
-import android.util.Log
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +45,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -52,6 +53,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.text.font.FontWeight
@@ -93,7 +95,6 @@ class ChatUiGatesTest {
 
     private companion object {
         const val SES = "ses_gate1"
-        const val TAG = "OpenCode/gate"
     }
 
     // ---- recorded callbacks -------------------------------------------------
@@ -253,75 +254,209 @@ class ChatUiGatesTest {
 
     // ---- rendering ----------------------------------------------------------
 
+    /**
+     * Every screen a gate can show, and the state holder that drives it.
+     *
+     * `createComposeRule().setContent` may be called exactly once per test, and
+     * run 34134527274 lost five of the eight chat gates to
+     * `IllegalStateException: Cannot call setContent twice per test!` because each
+     * render helper below composed its own screen. So the helpers no longer
+     * compose: they write the fabricated fixture into snapshot state, say which
+     * surface is showing, and let the single composition installed by
+     * [composeOnce] recompose around it. A surface the gate is not looking at
+     * leaves the tree exactly as it does when the user navigates away, which is
+     * what the assertions expect - and growing [liveMessages] still recomposes the
+     * transcript the way a streaming turn does.
+     */
+    private enum class Surface { CHAT, LIVE_CHAT, SESSIONS, PROJECTS, WELCOME, SETTINGS }
+
+    private val surface = mutableStateOf(Surface.CHAT)
+    private val chatState = mutableStateOf(uiState())
+    private val chatAvailability = mutableStateOf(AgentAvailability.READY)
+    private val chatRuntime = mutableStateOf(healthy)
+    private val liveMessages = mutableStateListOf<Transcript.Message>()
+    private val liveBusy = mutableStateOf(false)
+    private val sessionList = mutableStateListOf<OpenCodeApi.SessionInfo>()
+    private val sessionTranscript = mutableStateOf(Transcript.Snapshot(emptyList()))
+    private val sessionSelected = mutableStateOf("")
+    private val projectList = mutableStateListOf<Project>()
+    private val projectActive = mutableStateOf("")
+    private val welcomeRuntime = mutableStateOf(healthy)
+    private val settingsRuntime = mutableStateOf(healthy)
+    private val settingsState = mutableStateOf(uiState())
+    private val settingsAvailability = mutableStateOf(AgentAvailability.READY)
+    private var composed = false
+
+    /** The one and only `setContent` of a test method. */
+    private fun composeOnce() {
+        if (composed) return
+        composed = true
+        rule.setContent {
+            OpenCodeTheme(darkTheme = true, dynamicColor = false) {
+                when (surface.value) {
+                    Surface.CHAT -> ChatSurface()
+                    Surface.LIVE_CHAT -> LiveChatSurface()
+                    Surface.SESSIONS -> SessionsSurface()
+                    Surface.PROJECTS -> ProjectsSurface()
+                    Surface.WELCOME -> WelcomeSurface()
+                    Surface.SETTINGS -> SettingsSurface()
+                }
+            }
+        }
+    }
+
+    /** Publish the fixture written by a render helper, then let composition catch up. */
+    private fun show() {
+        composeOnce()
+        Snapshot.sendApplyNotifications()
+        rule.waitForIdle()
+    }
+
+    @Composable
+    private fun ChatSurface() {
+        ChatScreen(
+            state = chatState.value,
+            runtime = chatRuntime.value,
+            availability = chatAvailability.value,
+            projectName = "gates",
+            onSend = { sent.add(it) },
+            onDraftChange = { drafts.add(it) },
+            onStop = { stops++ },
+            onRetry = { retries++ },
+            onUndo = { undos++ },
+            onRedo = { redos++ },
+            onNewSession = { newSessions++ },
+            onOpenSessions = { openSessions++ },
+            onOpenProjects = { openProjects++ },
+            onOpenSettings = { openSettings++ },
+            onPermissionReply = { id, response -> replies.add(id to response) },
+            onQuestionSubmit = { id, answers -> questionAnswers.add(id to answers) },
+            onQuestionSkip = { questionSkips.add(it) },
+            onAttach = { attaches++ },
+            onRemoveAttachment = { removedAttachments.add(it) },
+            onDismissBanner = { dismissals++ },
+        )
+    }
+
+    /** Same screen, but the message list is observable so a gate can grow it. */
+    @Composable
+    private fun LiveChatSurface() {
+        ChatScreen(
+            state = uiState(
+                sessionView(messages = liveMessages.toList(), busy = liveBusy.value),
+                busy = liveBusy.value,
+            ),
+            runtime = healthy,
+            availability = AgentAvailability.READY,
+            projectName = "gates",
+            onSend = { sent.add(it) },
+            onDraftChange = { drafts.add(it) },
+            onStop = { stops++ },
+            onRetry = { retries++ },
+            onUndo = { undos++ },
+            onRedo = { redos++ },
+            onNewSession = { newSessions++ },
+            onOpenSessions = { openSessions++ },
+            onOpenProjects = { openProjects++ },
+            onOpenSettings = { openSettings++ },
+            onPermissionReply = { id, response -> replies.add(id to response) },
+            onQuestionSubmit = { id, answers -> questionAnswers.add(id to answers) },
+            onQuestionSkip = { questionSkips.add(it) },
+            onAttach = { attaches++ },
+            onRemoveAttachment = { removedAttachments.add(it) },
+            onDismissBanner = { dismissals++ },
+        )
+    }
+
+    @Composable
+    private fun SessionsSurface() {
+        SessionPanel(
+            sessions = sessionList.toList(),
+            selectedSession = sessionSelected.value,
+            transcript = sessionTranscript.value,
+            onBack = { panelBack++ },
+            onSelect = { selectedSessions.add(it) },
+            onNew = { panelNew++ },
+            onDelete = { deletedSessions.add(it) },
+            onRename = { id, title -> renamedSessions.add(id to title) },
+        )
+    }
+
+    @Composable
+    private fun ProjectsSurface() {
+        ProjectsScreen(
+            projects = projectList.toList(),
+            activeName = projectActive.value,
+            runtimeLine = context.getString(R.string.welcome_stage_healthy_title),
+            onCreate = { createdProjects.add(it) },
+            onOpen = { openedProjectList.add(it) },
+            onBack = { panelBack++ },
+        )
+    }
+
+    @Composable
+    private fun WelcomeSurface() {
+        WelcomeScreen(
+            runtime = welcomeRuntime.value,
+            onContinue = { welcomeContinue++ },
+            onOpenSettings = { welcomeSettings++ },
+        )
+    }
+
+    @Composable
+    private fun SettingsSurface() {
+        SettingsScreen(
+            runtime = settingsRuntime.value,
+            state = settingsState.value,
+            availability = settingsAvailability.value,
+            diagnosticsLines = listOf("HEALTHY", "spawn ok", "bind 127.0.0.1 only"),
+            diagnosticsLoading = false,
+            storedProviderIds = "anthropic",
+            hardwareBacked = "software",
+            appVersion = "1.18.23-phase5 (6)",
+            theme = ThemeChoice.DARK,
+            dynamicColor = false,
+            onThemeChange = { },
+            onDynamicColorChange = { },
+            onSetModel = { _, _ -> },
+            onClearModel = { },
+            onSaveKey = { _, _ -> },
+            onRevokeKey = { },
+            onAddMcp = { _, _, _ -> },
+            onConnectMcp = { },
+            onDisconnectMcp = { },
+            onRefreshMcp = { },
+            onBashPolicy = { },
+            onShareDiagnostics = { shares++ },
+            onCopyDiagnostics = { copies++ },
+            onRefreshDiagnostics = { },
+            onRestartRuntime = { restarts++ },
+            onBack = { settingsBack++ },
+        )
+    }
+
     private fun renderChat(
         state: OpenCodeRepository.UiState,
         availability: AgentAvailability,
         runtime: RuntimeSummary = healthy,
     ) {
-        rule.setContent {
-            OpenCodeTheme(darkTheme = true, dynamicColor = false) {
-                ChatScreen(
-                    state = state,
-                    runtime = runtime,
-                    availability = availability,
-                    projectName = "gates",
-                    onSend = { sent.add(it) },
-                    onDraftChange = { drafts.add(it) },
-                    onStop = { stops++ },
-                    onRetry = { retries++ },
-                    onUndo = { undos++ },
-                    onRedo = { redos++ },
-                    onNewSession = { newSessions++ },
-                    onOpenSessions = { openSessions++ },
-                    onOpenProjects = { openProjects++ },
-                    onOpenSettings = { openSettings++ },
-                    onPermissionReply = { id, response -> replies.add(id to response) },
-                    onQuestionSubmit = { id, answers -> questionAnswers.add(id to answers) },
-                    onQuestionSkip = { questionSkips.add(it) },
-                    onAttach = { attaches++ },
-                    onRemoveAttachment = { removedAttachments.add(it) },
-                    onDismissBanner = { dismissals++ },
-                )
-            }
-        }
-        rule.waitForIdle()
+        chatState.value = state
+        chatAvailability.value = availability
+        chatRuntime.value = runtime
+        surface.value = Surface.CHAT
+        show()
     }
 
-    /** Same screen, but the message list is observable so a gate can grow it. */
     private fun renderLiveChat(
         messages: List<Transcript.Message>,
         busy: Boolean,
     ): Pair<SnapshotStateList<Transcript.Message>, MutableState<Boolean>> {
-        val live = mutableStateListOf<Transcript.Message>().also { it.addAll(messages) }
-        val liveBusy = mutableStateOf(busy)
-        rule.setContent {
-            OpenCodeTheme(darkTheme = true, dynamicColor = false) {
-                ChatScreen(
-                    state = uiState(sessionView(messages = live.toList(), busy = liveBusy.value), busy = liveBusy.value),
-                    runtime = healthy,
-                    availability = AgentAvailability.READY,
-                    projectName = "gates",
-                    onSend = { sent.add(it) },
-                    onDraftChange = { drafts.add(it) },
-                    onStop = { stops++ },
-                    onRetry = { retries++ },
-                    onUndo = { undos++ },
-                    onRedo = { redos++ },
-                    onNewSession = { newSessions++ },
-                    onOpenSessions = { openSessions++ },
-                    onOpenProjects = { openProjects++ },
-                    onOpenSettings = { openSettings++ },
-                    onPermissionReply = { id, response -> replies.add(id to response) },
-                    onQuestionSubmit = { id, answers -> questionAnswers.add(id to answers) },
-                    onQuestionSkip = { questionSkips.add(it) },
-                    onAttach = { attaches++ },
-                    onRemoveAttachment = { removedAttachments.add(it) },
-                    onDismissBanner = { dismissals++ },
-                )
-            }
-        }
-        rule.waitForIdle()
-        return live to liveBusy
+        liveMessages.clear()
+        liveMessages.addAll(messages)
+        liveBusy.value = busy
+        surface.value = Surface.LIVE_CHAT
+        show()
+        return liveMessages to liveBusy
     }
 
     private fun renderSessions(
@@ -329,50 +464,26 @@ class ChatUiGatesTest {
         transcript: Transcript.Snapshot = Transcript.Snapshot(emptyList()),
         selected: String = "",
     ) {
-        rule.setContent {
-            OpenCodeTheme(darkTheme = true, dynamicColor = false) {
-                SessionPanel(
-                    sessions = sessions,
-                    selectedSession = selected,
-                    transcript = transcript,
-                    onBack = { panelBack++ },
-                    onSelect = { selectedSessions.add(it) },
-                    onNew = { panelNew++ },
-                    onDelete = { deletedSessions.add(it) },
-                    onRename = { id, title -> renamedSessions.add(id to title) },
-                )
-            }
-        }
-        rule.waitForIdle()
+        sessionList.clear()
+        sessionList.addAll(sessions)
+        sessionTranscript.value = transcript
+        sessionSelected.value = selected
+        surface.value = Surface.SESSIONS
+        show()
     }
 
     private fun renderProjects(projects: List<Project>, activeName: String = "") {
-        rule.setContent {
-            OpenCodeTheme(darkTheme = true, dynamicColor = false) {
-                ProjectsScreen(
-                    projects = projects,
-                    activeName = activeName,
-                    runtimeLine = context.getString(R.string.welcome_stage_healthy_title),
-                    onCreate = { createdProjects.add(it) },
-                    onOpen = { openedProjectList.add(it) },
-                    onBack = { panelBack++ },
-                )
-            }
-        }
-        rule.waitForIdle()
+        projectList.clear()
+        projectList.addAll(projects)
+        projectActive.value = activeName
+        surface.value = Surface.PROJECTS
+        show()
     }
 
     private fun renderWelcome(runtime: RuntimeSummary) {
-        rule.setContent {
-            OpenCodeTheme(darkTheme = true, dynamicColor = false) {
-                WelcomeScreen(
-                    runtime = runtime,
-                    onContinue = { welcomeContinue++ },
-                    onOpenSettings = { welcomeSettings++ },
-                )
-            }
-        }
-        rule.waitForIdle()
+        welcomeRuntime.value = runtime
+        surface.value = Surface.WELCOME
+        show()
     }
 
     private fun renderSettings(
@@ -380,39 +491,11 @@ class ChatUiGatesTest {
         state: OpenCodeRepository.UiState = uiState(),
         availability: AgentAvailability = AgentAvailability.READY,
     ) {
-        rule.setContent {
-            OpenCodeTheme(darkTheme = true, dynamicColor = false) {
-                SettingsScreen(
-                    runtime = runtime,
-                    state = state,
-                    availability = availability,
-                    diagnosticsLines = listOf("HEALTHY", "spawn ok", "bind 127.0.0.1 only"),
-                    diagnosticsLoading = false,
-                    storedProviderIds = "anthropic",
-                    hardwareBacked = "software",
-                    appVersion = "1.18.23-phase5 (6)",
-                    theme = ThemeChoice.DARK,
-                    dynamicColor = false,
-                    onThemeChange = { },
-                    onDynamicColorChange = { },
-                    onSetModel = { _, _ -> },
-                    onClearModel = { },
-                    onSaveKey = { _, _ -> },
-                    onRevokeKey = { },
-                    onAddMcp = { _, _, _ -> },
-                    onConnectMcp = { },
-                    onDisconnectMcp = { },
-                    onRefreshMcp = { },
-                    onBashPolicy = { },
-                    onShareDiagnostics = { shares++ },
-                    onCopyDiagnostics = { copies++ },
-                    onRefreshDiagnostics = { },
-                    onRestartRuntime = { restarts++ },
-                    onBack = { settingsBack++ },
-                )
-            }
-        }
-        rule.waitForIdle()
+        settingsRuntime.value = runtime
+        settingsState.value = state
+        settingsAvailability.value = availability
+        surface.value = Surface.SETTINGS
+        show()
     }
 
     // ---- semantics helpers --------------------------------------------------
@@ -486,8 +569,9 @@ class ChatUiGatesTest {
 
     private fun gate(id: String, ok: Boolean, detail: String = "") {
         val line = "P6_$id ${if (ok) "PASS" else "FAIL"} :: $detail"
-        Log.i(TAG, line)
-        println(line)
+        // The shared emitter, so the verdict also lands in the on-device file the
+        // harness reads back: logcat alone truncated every detail in run #6.
+        printGate(id, ok, detail)
         assertTrue(line, ok)
     }
 
@@ -619,7 +703,19 @@ class ChatUiGatesTest {
         val diffBody = onScreenText().contains("+new line")
         val diagnostics = onScreenText().contains(context.getString(R.string.chat_tool_diagnostics, 1))
 
-        // A failed tool starts expanded: a failure is never one tap deeper than a success.
+        // A failed tool starts expanded: a failure is never one tap deeper than a
+        // success. It lives in the LAST message, and U1 proves this list only
+        // composes its viewport, so scroll it into view before asserting on it -
+        // run #6 scored failedCardOpen=false purely because the card was not
+        // composed yet, not because the product kept a failure one tap deeper.
+        runCatching {
+            rule.onNodeWithTag(TAG_TRANSCRIPT)
+                .performScrollToNode(hasTestTag("$TAG_TOOL_HEADER" + "_prt_fail"))
+        }.onFailure {
+            // The fixture holds exactly three messages, so the failed card is item 2.
+            rule.onNodeWithTag(TAG_TRANSCRIPT).performScrollToIndex(2)
+        }
+        rule.waitForIdle()
         val failedExpanded = exists("$TAG_TOOL_OUTPUT" + "_prt_fail") || onScreenText().contains("command not found: nope")
         val failedStatus = countText(context.getString(R.string.chat_tool_status_error)) > 0
 

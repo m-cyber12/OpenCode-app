@@ -20,6 +20,17 @@ P5SUM="$P5EV/GATES_SUMMARY.txt"
 RC5="${1:-1}"
 [ -f "$SUMMARY" ] || { echo "no phase6 summary to fold into"; exit 0; }
 
+# Phase 5 writes its counters several to a line ("gates_pass=14 gates_fail=1
+# gates_skip=0"), so an anchored ^key= read finds only the first one. Run
+# 34134527274 folded exactly that: p5pass=14 but p5fail/p5skip/kf all "?" and the
+# pass condition below - which insists the Kotlin gates reported zero failures and
+# nothing was skipped - could never be met, so a steady-state Phase 5 tail was
+# reported as P6-R5: FAIL. Read a counter wherever it sits on the line, with a
+# boundary so gates_pass cannot match inside kotlin_gate_pass.
+counter() {
+  grep -aoE "(^|[^A-Za-z0-9_])$1=[0-9]+" "$2" 2>/dev/null | head -1 | sed 's/.*=//'
+}
+
 verdict=1
 detail=""
 if [ "$RC5" = "7" ]; then
@@ -28,11 +39,11 @@ if [ "$RC5" = "7" ]; then
 elif [ ! -f "$P5SUM" ]; then
   detail="no phase5 summary produced (rc=$RC5)"
 else
-  p5pass=$(sed -n 's/^gates_pass=\([0-9]*\).*/\1/p' "$P5SUM" | head -1)
-  p5fail=$(sed -n 's/^gates_fail=\([0-9]*\).*/\1/p' "$P5SUM" | head -1)
-  p5skip=$(sed -n 's/^gates_skip=\([0-9]*\).*/\1/p' "$P5SUM" | head -1)
-  kp=$(sed -n 's/^kotlin_gate_pass=\([0-9]*\).*/\1/p' "$P5SUM" | head -1)
-  kf=$(sed -n 's/^kotlin_gate_fail=\([0-9]*\).*/\1/p' "$P5SUM" | head -1)
+  p5pass=$(counter gates_pass "$P5SUM")
+  p5fail=$(counter gates_fail "$P5SUM")
+  p5skip=$(counter gates_skip "$P5SUM")
+  kp=$(counter kotlin_gate_pass "$P5SUM")
+  kf=$(counter kotlin_gate_fail "$P5SUM")
   failed_ids=$(grep -aE '^P5-[A-Za-z0-9]+: FAIL' "$P5SUM" 2>/dev/null | sed 's/:.*//' | tr '\n' ',' | sed 's/,$//')
   unexpected=$(grep -aE '^P5-[A-Za-z0-9]+: FAIL' "$P5SUM" 2>/dev/null | grep -av 'P5-G16' | sed 's/ .*//' | tr '\n' ',' | sed 's/,$//')
   detail="phase5=${p5pass:-?}pass/${p5fail:-?}fail/${p5skip:-?}skip kotlin=${kp:-?}pass/${kf:-?}fail failed_ids=${failed_ids:-none}"

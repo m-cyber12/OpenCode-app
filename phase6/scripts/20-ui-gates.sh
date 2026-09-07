@@ -42,6 +42,9 @@ PKG="ai.opencode.android.debug"
 TEST_PKG="ai.opencode.android.debug.test"
 RUNNER="$TEST_PKG/androidx.test.runner.AndroidJUnitRunner"
 FILES="/data/data/$PKG/files"
+# Verdict file the gates write inside the app's own storage (UiGateSupport.emit).
+VERDICT_NAME="p6-verdicts.txt"
+EXT_VERDICT="/storage/emulated/0/Android/data/$PKG/files/$VERDICT_NAME"
 
 APK="$(ls "$ROOT/app/build/outputs/apk/debug/"*.apk 2>/dev/null | head -1)"
 TAPK="$(ls "$ROOT/app/build/outputs/apk/androidTest/debug/"*.apk 2>/dev/null | head -1)"
@@ -63,6 +66,23 @@ p6() { # $1=id $2=rc(0 pass, 7 skip, else fail) $3=detail
 }
 
 rash() { printf '%s\n' "$1" | adb shell run-as "$PKG" sh 2>&1 | tr -d '\r'; }
+
+# Cat the verdict file the gates wrote on the device. This is the PRIMARY verdict
+# channel: `println` from an instrumented test is redirected to logcat and never
+# reaches `am instrument`'s result stream, and logcat is a ring buffer that a live
+# runtime (bun, its MCP servers, a model turn) rotates - run 34134527274 recovered
+# every verdict that way but with the tail cut off, e.g. "P6_F1 PASS :: fi".
+# run-as needs a debuggable build, which androidTest is; the app-specific external
+# copy is the fallback for the case where run-as is refused.
+verdict_file_cat() {
+  rash "cat files/$VERDICT_NAME" 2>/dev/null | grep -aE '^P6_' || true
+  adb shell "cat $EXT_VERDICT" 2>/dev/null | tr -d '\r' | grep -aE '^P6_' || true
+}
+
+verdict_file_clear() {
+  rash "rm -f files/$VERDICT_NAME" >/dev/null 2>&1 || true
+  adb shell "rm -f $EXT_VERDICT" >/dev/null 2>&1 || true
+}
 
 install_fresh() {
   log "uninstalling $PKG / $TEST_PKG so the next gate really is a first run"
@@ -103,17 +123,26 @@ run_class() {
   local name="$1" cls="$2" tmo="$3" rc=0
   local out="$EV/p6-${name}-instrument.log"
   log "=== am instrument $cls ==="
+  verdict_file_clear
+  # Grow logcat before clearing it: a 256 KiB default buffer does not survive one
+  # live-model gate class. Best effort - unsupported devices keep their default.
+  adb logcat -G 4M >/dev/null 2>&1 || true
   adb logcat -c >/dev/null 2>&1 || true
   timeout -k 30 "$tmo" adb shell am instrument -w -e class "$cls" "$RUNNER" > "$out" 2>&1 || rc=$?
   log "instrument rc=$rc ($name)"
-  # Verdicts from BOTH channels, deduplicated: stdout of the runner and logcat.
-  { grep -aoE 'P6_[A-Z0-9_]+ (PASS|FAIL|SKIP)[^\r]*' "$out" 2>/dev/null
+  # Verdicts from all three channels, deduplicated: the file the gates wrote on the
+  # device (primary, never truncated), then runner stdout and logcat as fallbacks.
+  { verdict_file_cat
+    grep -aoE 'P6_[A-Z0-9_]+ (PASS|FAIL|SKIP)[^\r]*' "$out" 2>/dev/null
     timeout 90 adb logcat -d 2>/dev/null | grep -aoE 'P6_[A-Z0-9_]+ (PASS|FAIL|SKIP)[^\r]*'
   } | sed 's/[[:space:]]*$//' | sort -u >> "$EV/p6-ui-lines.txt" 2>/dev/null || true
-  # Same two channels, for the model-availability marker.
-  { grep -aoE 'P6_MODEL_AVAILABLE [01][^\r]*' "$out" 2>/dev/null
+  # Same three channels, for the model-availability marker.
+  { verdict_file_cat
+    grep -aoE 'P6_MODEL_AVAILABLE [01][^\r]*' "$out" 2>/dev/null
     timeout 90 adb logcat -d 2>/dev/null | grep -aoE 'P6_MODEL_AVAILABLE [01][^\r]*'
   } | sed 's/[[:space:]]*$//' | sort -u >> "$EV/p6-model-lines.txt" 2>/dev/null || true
+  # Keep the device-side file itself as evidence.
+  verdict_file_cat > "$EV/p6-${name}-verdicts.txt" 2>/dev/null || true
   tail -40 "$out" >> "$LOG" 2>/dev/null || true
   # The runner's own trailer: "OK (n tests)" or "Tests run: n,  Failures: m".
   if grep -aqE '^OK \([0-9]+ test' "$out" 2>/dev/null; then

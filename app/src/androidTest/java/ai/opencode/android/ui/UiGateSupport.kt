@@ -5,6 +5,7 @@ import ai.opencode.android.client.UiError
 import ai.opencode.android.runtime.RuntimeEnv
 import ai.opencode.android.runtime.RuntimeVersion
 import ai.opencode.android.ui.common.RuntimeSummary
+import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import androidx.compose.ui.graphics.ImageBitmap
@@ -15,6 +16,7 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.test.core.app.ApplicationProvider
 import java.io.File
 
 /**
@@ -32,25 +34,48 @@ import java.io.File
 /** Same logcat tag Phase 5's gates use, so one `logcat -s` filter catches both. */
 internal const val GATE_TAG = "OpenCode/gate"
 
-/** Print one machine-readable verdict line to logcat AND stdout (Phase 5 discipline). */
-internal fun printGate(id: String, ok: Boolean, detail: String) {
-    val line = "P6_$id ${if (ok) "PASS" else "FAIL"} :: $detail"
+/** Verdict file name, written inside the app's own storage (see [emit]). */
+internal const val VERDICT_FILE = "p6-verdicts.txt"
+
+private val verdictSinks: List<File> by lazy {
+    val ctx = ApplicationProvider.getApplicationContext<Context>()
+    listOfNotNull(
+        ctx.getExternalFilesDir(null)?.let { File(it, VERDICT_FILE) },
+        File(ctx.filesDir, VERDICT_FILE),
+    )
+}
+
+/**
+ * Emit one machine-readable verdict line.
+ *
+ * logcat alone is not enough and run #6 proved it: `println` from an instrumented
+ * test is redirected to logcat as well, so it never reaches `am instrument`'s
+ * result stream, and the logcat ring buffer - which a live runtime, its MCP
+ * servers and a model turn all write to - rotated the tail off every verdict line
+ * before the harness could read it back. Each line therefore also lands in a file
+ * inside the app's own storage, which `adb shell run-as` reads deterministically
+ * after the class finishes. Losing a verdict must never be able to look like a
+ * pass, so the file is the primary channel and logcat stays as the fallback.
+ */
+private fun emit(line: String) {
     Log.i(GATE_TAG, line)
     println(line)
+    verdictSinks.forEach { sink -> runCatching { sink.appendText(line + "\n") } }
+}
+
+/** Print one machine-readable verdict line (Phase 5 discipline). */
+internal fun printGate(id: String, ok: Boolean, detail: String) {
+    emit("P6_$id ${if (ok) "PASS" else "FAIL"} :: $detail")
 }
 
 /** A gate that could not run must say SKIP - never silence, never PASS. */
 internal fun printSkip(id: String, reason: String) {
-    val line = "P6_$id SKIP :: $reason"
-    Log.i(GATE_TAG, line)
-    println(line)
+    emit("P6_$id SKIP :: $reason")
 }
 
 /** Non-verdict marker line (e.g. whether a model could serve a turn at all). */
 internal fun printMarker(name: String, value: String) {
-    val line = "P6_$name $value"
-    Log.i(GATE_TAG, line)
-    println(line)
+    emit("P6_$name $value")
 }
 
 /**
