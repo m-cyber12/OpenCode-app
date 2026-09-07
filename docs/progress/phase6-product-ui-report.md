@@ -217,6 +217,22 @@ commit rather than by the product code:
 this run, so the JVM unit-test sources are compiling; the JVM tests themselves
 still have not been executed by a green build.
 
+### Run 34099355825 (commit `bf1ad79`) - compilation GREEN, 2 of 161 JVM unit tests failed
+
+`:app:compileDebugKotlin`, `:app:compileDebugAndroidTestKotlin` and
+`:app:compileDebugUnitTestKotlin` all passed, so the product UI and the whole
+instrumented harness now compile. `:app:testDebugUnitTest` ran **161 tests, 2
+failed** - one wrong expectation in a test, one wrong behaviour in product code:
+
+| # | Failure | Verdict | Fix |
+| --- | --- | --- | --- |
+| 11 | `ToolMetaParserTest > diagnosticsWithoutADiffAreStillCounted` (`AssertionError` at line 126) | **the test was wrong.** Upstream's shape is `Record<filePath, Diagnostic[]>`; the parser sums the arrays (2 in `a.kt` + 1 in `b.kt` = 3) and the UI renders `R.string.chat_tool_diagnostics` = "%1$d diagnostics reported", so the count is diagnostics, not files. The expectation of 2 was a file count | expectation corrected to 3, with the reason written into the test |
+| 12 | `TranscriptPhase6Test > anUnknownErrorShapeIsKeptRatherThanDiscarded` (`AssertionError` at line 153) | **the product was wrong.** An error frame with no `name` and a message carrying no auth/network hint was classified `PROVIDER_OTHER`, which asserts a provider-side cause this client has no evidence for. The message itself was already kept verbatim | `UiError.classifyTurnError` now classifies an unnamed, hint-less error as `UNKNOWN` (which has its own banner copy, `availability_unknown`). Auth/network hints in the same unnamed shape are still honoured, and a *named* error this client has never seen stays `PROVIDER_OTHER` because upstream named it on the model-call path. New JVM case `anUnnamedErrorKeepsItsHintsButNeverInventsACause` pins all four halves of that rule |
+
+No existing `UiErrorTest` expectation changed: the four `PROVIDER_OTHER` names, the
+`NAME_UNKNOWN` + `ECONNREFUSED` hint, the `SomethingNew` + `Invalid API key` hint,
+the `SomethingNew` + hint-less fallback and the empty-error case all still hold.
+
 ### Offline cross-checks done while CI was blocked
 
 These are host-side checks, not device evidence:
@@ -244,8 +260,10 @@ These are host-side checks, not device evidence:
 ### Next
 
 1. Push the fixes; the workflow re-runs on push. Runs so far: #1 three defects in
-   the main sources, #2 five in the test sources, #3 two in my own fix for #2 -
-   ten defects found and fixed, all of them in Phase 6 code, none in Phase 5.
+   the main sources, #2 five in the test sources, #3 two in my own fix for #2, #4
+   two JVM-test failures (one wrong test expectation, one wrong product
+   behaviour) - twelve defects found and fixed, all in Phase 6 code, none in
+   Phase 5. Compilation is green as of run #4.
 2. If step 2/8 goes green, the same run continues into the payload build, the
    fresh emulator and gates A/B/C, and commits verdicts + screenshots to
    `docs/progress/phase6-evidence/`.

@@ -110,15 +110,27 @@ object UiError {
             NAME_CONTEXT_OVERFLOW, NAME_CONTENT_FILTER, NAME_OUTPUT_LENGTH, NAME_STRUCTURED_OUTPUT ->
                 AgentAvailability.PROVIDER_OTHER
             NAME_UNKNOWN -> hints(lower)
-            "" -> if (message.isBlank()) AgentAvailability.UNKNOWN else hints(lower)
+            // No name at all: a shape this client does not recognise. Keep whatever
+            // the message text supports (an auth or network reading is actionable),
+            // but never invent a provider-side cause there is no evidence for.
+            "" -> if (message.isBlank()) {
+                AgentAvailability.UNKNOWN
+            } else {
+                hints(lower, fallback = AgentAvailability.UNKNOWN)
+            }
+            // Upstream named the error, so it came from the model call path even when
+            // the name is new to this client: "another provider failure" is honest.
             else -> hints(lower)
         }
     }
 
-    private fun hints(lower: String): AgentAvailability = when {
+    private fun hints(
+        lower: String,
+        fallback: AgentAvailability = AgentAvailability.PROVIDER_OTHER,
+    ): AgentAvailability = when {
         AUTH_HINTS.any { lower.contains(it) } -> AgentAvailability.PROVIDER_AUTH
         NETWORK_HINTS.any { lower.contains(it) } -> AgentAvailability.PROVIDER_UNREACHABLE
-        else -> AgentAvailability.PROVIDER_OTHER
+        else -> fallback
     }
 
     /**

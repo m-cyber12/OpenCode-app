@@ -104,6 +104,20 @@ class UiErrorTest {
     }
 
     @Test
+    fun anUnnamedErrorKeepsItsHintsButNeverInventsACause() {
+        // No name and no recognisable hint: this client cannot say what failed, so it
+        // says that instead of blaming the provider.
+        assertEquals(AgentAvailability.UNKNOWN, UiError.classifyTurnError("", "something odd"))
+        // The same unnamed shape still yields the actionable readings when the
+        // message text supports them.
+        assertEquals(AgentAvailability.PROVIDER_AUTH, UiError.classifyTurnError("", "invalid api key"))
+        assertEquals(AgentAvailability.PROVIDER_UNREACHABLE, UiError.classifyTurnError("", "fetch failed"))
+        // A NAMED error this client has never seen is still provider-side, because
+        // upstream named it on the model-call path.
+        assertEquals(AgentAvailability.PROVIDER_OTHER, UiError.classifyTurnError("SomethingNew", "something odd"))
+    }
+
+    @Test
     fun serverCallClassificationSeparatesTransportFromRefusal() {
         assertEquals(AgentAvailability.SERVER_UNREACHABLE, UiError.classifyServerCall(-1, "failed to connect"))
         assertEquals(AgentAvailability.SERVER_AUTH, UiError.classifyServerCall(401, "unauthorized"))

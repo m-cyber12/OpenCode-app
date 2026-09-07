@@ -122,8 +122,12 @@ class ToolMetaParserTest {
 
     @Test
     fun diagnosticsWithoutADiffAreStillCounted() {
+        // Upstream's shape is Record<filePath, Diagnostic[]>, and the UI renders
+        // "%1$d diagnostics reported" (R.string.chat_tool_diagnostics), so the count
+        // is DIAGNOSTICS summed across files - 2 in a.kt plus 1 in b.kt - not the
+        // number of files that reported something.
         val meta = ToolMetaParser.parse("""{"diagnostics":{"a.kt":[1,2],"b.kt":[3]}}""")
-        assertEquals(2, meta.diagnosticsCount)
+        assertEquals(3, meta.diagnosticsCount)
         assertTrue(meta.diagnosticsCount > 0)
         assertFalse(meta.hasDiff)
     }
