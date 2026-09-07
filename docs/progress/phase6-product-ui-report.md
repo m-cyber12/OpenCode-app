@@ -467,6 +467,17 @@ Counting the whole phase: 28 harness/gate defects and 2 product defects found
 and fixed, every one documented in this section with its run, its symptom and
 its fix; zero Phase 5 regressions across six device runs of the frozen tail.
 
+### Run 34155026585 (commit `a1a29c2`) - SUCCESS again: the result reproduces
+
+Identical verdicts on a second consecutive run: `ui_gates_pass=14
+ui_gates_fail=0 ui_gates_skip=1`, `model_available=1`, `screenshots=17`,
+`P6-R5: PASS`, all three classes `rc=0`. L1 passed again with the same shape
+(`serverReplyChars=5 replyShownInUi=true(needle='Blue') streamingDots=true`),
+U3 stayed green with the row scrolled into view, U7's audit repeated at
+`unnamed=0`, and L2 SKIPped by design once more. Two green runs in a row is the
+phase's reproducibility evidence: the stop condition does not rest on a single
+lucky emulator boot.
+
 ### Offline cross-checks done while CI was blocked
 
 These are host-side checks, not device evidence:
