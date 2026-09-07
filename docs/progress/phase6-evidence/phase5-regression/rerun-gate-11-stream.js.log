@@ -1,7 +1,7 @@
 assert ok: session id present
 shell HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1YMHENH920AKKZJB5NGK4EC","input":"{\"command\":\"echo G11_STREAM_EVENT_OK\"}","output":"\"[seccomp] preload handler installed (rc=0)\\nG11_STREAM_EVENT_OK\\n\"","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1YP1WEKTNWQ0BRQG1JTXMJ8","input":"{\"command\":\"echo G11_STREAM_EVENT_OK\"}","output":"\"[seccomp] preload handler installed (rc=0)\\nG11_STREAM_EVENT_OK\\n\"","error":null}]}]
 events seen (19): {"server.connected":1,"message.updated":6,"message.part.updated":10,"session.status":1,"session.idle":1}
 assert ok: part update events streamed
 assert ok: message update events streamed
@@ -12,8 +12,8 @@ assert ok: session id present
 prompt_async accepted (204)
 === messages dump (turn done, failed=false) ===
 [{"role":"user","parts":[{"type":"text","text":"Say exactly: G11_STREAM_MODEL_OK","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"text","text":"G11_STREAM_MODEL_OK","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
-model events seen (29): ["server.connected","session.status","session.updated","session.updated","session.diff","message.updated","message.updated","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.part.delta","message.part.delta","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.updated","message.updated","message.updated","message.updated","session.status","session.status","session.idle","session.updated","session.updated","session.diff","message.updated","message.updated"]
-text parts streamed: [{"id":"prt_07d48dd2c001MNd9XZ1S1y9Dye","updates":4,"text":"G11_STREAM_MODEL_OK"}]
+model events seen (29): ["server.connected","session.updated","session.updated","session.diff","message.updated","message.updated","session.status","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.part.delta","message.part.delta","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.updated","message.updated","message.updated","message.updated","session.status","session.status","session.idle","session.updated","session.updated","session.diff","message.updated","message.updated"]
+text parts streamed: [{"id":"prt_07d61142f001ezH9FpXfUyz3d8","updates":4,"text":"G11_STREAM_MODEL_OK"}]
 session.status sequence: ["busy","busy","idle"]
 assert ok: agent turn did not fail
 assert ok: streamed text contains the reply

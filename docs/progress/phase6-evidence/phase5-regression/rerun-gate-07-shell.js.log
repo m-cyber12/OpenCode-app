@@ -1,9 +1,9 @@
 assert ok: session id present
-G7_SESSION_ID=ses_f82b7a908ffepzSbY7jb3jpbB7
-G7_SESSION_ID=ses_f82b7a908ffepzSbY7jb3jpbB7
+G7_SESSION_ID=ses_f829f9ea5ffet86LrTvuIx4vKl
+G7_SESSION_ID=ses_f829f9ea5ffet86LrTvuIx4vKl
 shell endpoint HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1YMGNWCT9F9NK6D2F1C3JYV","input":"{\"command\":\"echo probe\"}","output":"\"[seccomp] preload handler installed (rc=0)\\nprobe\\n\"","error":null}]},{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1YMGP62K6FECASZTDCCW65N","input":"{\"command\":\"echo G7_SHELL_OK from=$(pwd) uname=$(uname -m) shell=$0 && ls -1 | head -3\"}","output":"\"[seccomp] preload handler installed (rc=0)\\n[seccomp] preload handler installed (rc=0)\\nG7_SHELL_OK from=/data/data/ai.opencode.android.debug/files/workspaces/gates uname=x86_64 shell=/system/bin/sh\\","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1YP0RBMS8JAB2SYRNA3K237","input":"{\"command\":\"echo probe\"}","output":"\"[seccomp] preload handler installed (rc=0)\\nprobe\\n\"","error":null}]},{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M1YP0REWCJPJH84K1M67VT27","input":"{\"command\":\"echo G7_SHELL_OK from=$(pwd) uname=$(uname -m) shell=$0 && ls -1 | head -3\"}","output":"\"[seccomp] preload handler installed (rc=0)\\n[seccomp] preload handler installed (rc=0)\\nG7_SHELL_OK from=/data/data/ai.opencode.android.debug/files/workspaces/gates uname=x86_64 shell=/system/bin/sh\\","error":null}]}]
 tool parts: 2
   tool="bash" state.status=completed
   tool="bash" state.status=completed
@@ -22,8 +22,8 @@ src
 
 assert ok: shell output contains G7_SHELL_OK
 assert ok: tool part completed
-SSE events seen: ["server.connected","session.updated","session.diff","message.part.updated","message.updated","session.status","session.idle"]
-bash tool part lifecycle (streamed): ["running","running","running","running","running","running","running","running","completed","completed"]
+SSE events seen: ["server.connected","message.part.updated","message.updated","session.status","session.idle"]
+bash tool part lifecycle (streamed): ["running","running","running","running","running","running","running","running","running","running","running","running","running","running","completed","completed"]
 assert ok: SSE message.part.updated events streamed
 assert ok: SSE session.status events streamed
 assert ok: bash tool part streamed running→completed

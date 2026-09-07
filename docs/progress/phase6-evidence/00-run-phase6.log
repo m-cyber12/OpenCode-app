@@ -1,7 +1,7 @@
-=== PHASE 6 START 2026-09-07T18:51:45Z ===
-heartbeat enabled (pid 2266, every 300s -> docs/progress/phase6-evidence/PROGRESS.txt)
+=== PHASE 6 START 2026-09-07T19:17:46Z ===
+heartbeat enabled (pid 2431, every 300s -> docs/progress/phase6-evidence/PROGRESS.txt)
 ########## 1/8 static UI checks (strings, a11y, lazy lists, ASCII, kotlin comments) ##########
-=== Phase 6 static checks 2026-09-07T18:51:45Z ===
+=== Phase 6 static checks 2026-09-07T19:17:46Z ===
 OK   bash -n on 31 phase scripts
 OK   py_compile on every phase python script
 note: pre-existing non-ASCII byte in .github/workflows/phase2-spike.yml at line 22 (not this phase's file)
@@ -87,8 +87,6 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:processDebugManifest
 > Task :app:preDebugAndroidTestBuild SKIPPED
 > Task :app:javaPreCompileDebug
-> Task :app:processDebugManifestForPackage
-> Task :app:processDebugResources
 > Task :app:processDebugAndroidTestManifest
 > Task :app:generateDebugAndroidTestBuildConfig
 > Task :app:checkDebugAndroidTestAarMetadata
@@ -97,8 +95,10 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:generateDebugAndroidTestResources
 > Task :app:preDebugUnitTestBuild
 > Task :app:javaPreCompileDebugUnitTest FROM-CACHE
+> Task :app:processDebugManifestForPackage
 > Task :app:mergeDebugAndroidTestResources
 > Task :app:processDebugAndroidTestResources
+> Task :app:processDebugResources
 > Task :app:compileDebugKotlin
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
@@ -110,8 +110,8 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 
 > Task :app:compileDebugJavaWithJavac
 > Task :app:processDebugJavaRes
-> Task :app:bundleDebugClassesToRuntimeJar
 > Task :app:bundleDebugClassesToCompileJar
+> Task :app:bundleDebugClassesToRuntimeJar
 
 > Task :app:compileDebugUnitTestKotlin
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/client/OpenCodeApiHttpTest.kt:56:27 Parameter 'rec' is never used
@@ -451,12 +451,12 @@ MarkdownTest > atxHeadingsCarryTheirLevel PASSED
 
 MarkdownTest > unterminatedLinkStaysLiteralWhileStreaming PASSED
 
-BUILD SUCCESSFUL in 2m 23s
+BUILD SUCCESSFUL in 2m 11s
 35 actionable tasks: 33 executed, 2 from cache
 ########## 3/8 environment + FRESH emulator ##########
 installing emulator + system image via phase4/scripts/50-install-sdk.sh
 --- downloading cmdline-tools
--rw-r--r-- 1 runner runner 153607504 Sep  7 18:54 cmdtools.zip
+-rw-r--r-- 1 runner runner 153607504 Sep  7 19:20 cmdtools.zip
 /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
 /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
 --- sdkmanager licenses
@@ -475,10 +475,10 @@ accel:
 KVM (version 12) is installed and usable.
 accel
 --- starting emulator (headless)
-emulator pid=3096
+emulator pid=3252
 * daemon not running; starting now at tcp:5037
 * daemon started successfully
-BOOT_COMPLETED after ~54s
+BOOT_COMPLETED after ~48s
 --- boot state
 List of devices attached
 emulator-5554	device
@@ -572,11 +572,11 @@ git source: f93ff170b93a1782659637824b25923245ac9dd1
 --- Android Git (arm64-v8a, CC=/usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang) ---
 GIT_VERSION=2.48.1
     * new build flags
+    * new prefix flags
     CC builtin/add.o
     CC builtin/am.o
-    * new prefix flags
-    CC builtin/annotate.o
     * new link flags
+    CC builtin/annotate.o
     CC builtin/apply.o
     CC builtin/archive.o
     CC builtin/bisect.o
@@ -680,8 +680,8 @@ GIT_VERSION=2.48.1
     CC builtin/show-index.o
     CC builtin/show-ref.o
     CC builtin/sparse-checkout.o
-    CC builtin/stash.o
     CC builtin/stripspace.o
+    CC builtin/stash.o
     CC builtin/submodule--helper.o
     CC builtin/symbolic-ref.o
     CC builtin/tag.o
@@ -920,8 +920,8 @@ GIT_VERSION=2.48.1
     CC trace2/tr2_tgt_perf.o
     CC trace2/tr2_tls.o
     CC trace2/tr2_tmr.o
-    CC trailer.o
     CC transport-helper.o
+    CC trailer.o
     CC transport.o
     CC tree-diff.o
     CC tree-walk.o
@@ -988,11 +988,11 @@ arm64-v8a Android Git built (cross-ABI host execution skipped)
 --- Android Git (x86_64, CC=/usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang) ---
 GIT_VERSION=2.48.1
     * new build flags
-    CC builtin/add.o
     * new prefix flags
     * new link flags
-    CC builtin/annotate.o
+    CC builtin/add.o
     CC builtin/am.o
+    CC builtin/annotate.o
     CC builtin/apply.o
     CC builtin/archive.o
     CC builtin/bisect.o
@@ -1040,8 +1040,8 @@ GIT_VERSION=2.48.1
     CC builtin/get-tar-commit-id.o
     CC builtin/grep.o
     CC builtin/hash-object.o
-    GEN config-list.h
     CC builtin/hook.o
+    GEN config-list.h
     CC builtin/index-pack.o
     CC builtin/init-db.o
     CC builtin/interpret-trailers.o
@@ -1424,34 +1424,34 @@ Turn off this advice by setting config variable advice.detachedHead to false
 
     Updating crates.io index
  Downloading crates ...
-  Downloaded cfg-if v1.0.4
   Downloaded anyhow v1.0.100
+  Downloaded find-msvc-tools v0.1.4
+  Downloaded cfg-if v1.0.4
   Downloaded crossbeam-deque v0.8.6
+  Downloaded crossbeam-epoch v0.9.18
   Downloaded itoa v1.0.15
+  Downloaded termcolor v1.4.1
+  Downloaded crossbeam-utils v0.8.21
+  Downloaded aho-corasick v1.1.3
   Downloaded same-file v1.0.6
+  Downloaded encoding_rs_io v0.1.7
+  Downloaded pcre2 v0.2.11
   Downloaded pkg-config v0.3.32
   Downloaded shlex v1.3.0
-  Downloaded pcre2 v0.2.11
-  Downloaded encoding_rs_io v0.1.7
-  Downloaded termcolor v1.4.1
   Downloaded lexopt v0.3.1
-  Downloaded jobserver v0.1.34
-  Downloaded memmap2 v0.9.9
   Downloaded walkdir v2.5.0
-  Downloaded crossbeam-epoch v0.9.18
-  Downloaded crossbeam-utils v0.8.21
-  Downloaded find-msvc-tools v0.1.4
   Downloaded ryu v1.0.20
-  Downloaded log v0.4.28
+  Downloaded memmap2 v0.9.9
   Downloaded serde_core v1.0.228
   Downloaded textwrap v0.16.2
-  Downloaded cc v1.2.41
+  Downloaded jobserver v0.1.34
+  Downloaded log v0.4.28
   Downloaded serde v1.0.228
+  Downloaded bstr v1.12.0
+  Downloaded cc v1.2.41
   Downloaded memchr v2.7.6
-  Downloaded aho-corasick v1.1.3
   Downloaded serde_json v1.0.145
   Downloaded regex-syntax v0.8.8
-  Downloaded bstr v1.12.0
   Downloaded regex-automata v0.4.13
   Downloaded pcre2-sys v0.2.10
   Downloaded libc v0.2.177
@@ -1463,42 +1463,42 @@ Turn off this advice by setting config variable advice.detachedHead to false
    Compiling aho-corasick v1.1.3
    Compiling find-msvc-tools v0.1.4
    Compiling shlex v1.3.0
+   Compiling pkg-config v0.3.32
    Compiling regex-automata v0.4.13
    Compiling jobserver v0.1.34
    Compiling cc v1.2.41
    Compiling serde_core v1.0.228
-   Compiling pkg-config v0.3.32
-   Compiling bstr v1.12.0
    Compiling pcre2-sys v0.2.10
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/matcher)
-   Compiling cfg-if v1.0.4
+   Compiling bstr v1.12.0
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/matcher)
    Compiling crossbeam-utils v0.8.21
+   Compiling cfg-if v1.0.4
    Compiling encoding_rs v0.8.35
    Compiling serde_json v1.0.145
    Compiling serde v1.0.228
    Compiling encoding_rs_io v0.1.7
-   Compiling globset v0.4.18 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/globset)
+   Compiling globset v0.4.18 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/globset)
    Compiling memmap2 v0.9.9
-   Compiling termcolor v1.4.1
-   Compiling ryu v1.0.20
    Compiling itoa v1.0.15
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/searcher)
+   Compiling ryu v1.0.20
+   Compiling termcolor v1.4.1
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
    Compiling anyhow v1.0.100
    Compiling same-file v1.0.6
-   Compiling grep-printer v0.3.1 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/printer)
    Compiling walkdir v2.5.0
+   Compiling grep-printer v0.3.1 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-cli v0.1.12 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.3XMWpYf6lg/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/ignore)
+   Compiling grep-cli v0.1.12 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/regex)
    Compiling pcre2 v0.2.11
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/grep)
-   Compiling textwrap v0.16.2
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/pcre2)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.C1JrWHGPpS/rg-src)
+   Compiling grep v0.4.1 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/grep)
+   Compiling ignore v0.4.24 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/ignore)
    Compiling lexopt v0.3.1
-    Finished `release` profile [optimized + debuginfo] target(s) in 55.70s
+   Compiling textwrap v0.16.2
+    Finished `release` profile [optimized + debuginfo] target(s) in 56.54s
 arm64-v8a Android ripgrep OK:  ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 --- Android ripgrep (x86_64, target=x86_64-linux-android) ---
 info: downloading component rust-std
@@ -1522,67 +1522,67 @@ Turn off this advice by setting config variable advice.detachedHead to false
 
    Compiling libc v0.2.177
    Compiling memchr v2.7.6
-   Compiling regex-syntax v0.8.8
    Compiling log v0.4.28
+   Compiling regex-syntax v0.8.8
+   Compiling shlex v1.3.0
    Compiling aho-corasick v1.1.3
    Compiling jobserver v0.1.34
    Compiling find-msvc-tools v0.1.4
-   Compiling shlex v1.3.0
    Compiling cc v1.2.41
    Compiling serde_core v1.0.228
-   Compiling regex-automata v0.4.13
    Compiling pkg-config v0.3.32
+   Compiling regex-automata v0.4.13
    Compiling pcre2-sys v0.2.10
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/matcher)
-   Compiling crossbeam-utils v0.8.21
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/matcher)
    Compiling cfg-if v1.0.4
+   Compiling crossbeam-utils v0.8.21
    Compiling encoding_rs v0.8.35
    Compiling bstr v1.12.0
-   Compiling serde v1.0.228
    Compiling serde_json v1.0.145
-   Compiling globset v0.4.18 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/globset)
+   Compiling serde v1.0.228
+   Compiling globset v0.4.18 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/globset)
    Compiling encoding_rs_io v0.1.7
    Compiling memmap2 v0.9.9
    Compiling termcolor v1.4.1
    Compiling itoa v1.0.15
    Compiling ryu v1.0.20
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/searcher)
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
-   Compiling same-file v1.0.6
    Compiling anyhow v1.0.100
+   Compiling same-file v1.0.6
    Compiling walkdir v2.5.0
-   Compiling grep-printer v0.3.1 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/printer)
+   Compiling grep-printer v0.3.1 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-cli v0.1.12 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.3XMWpYf6lg/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/ignore)
+   Compiling grep-cli v0.1.12 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.C1JrWHGPpS/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/ignore)
    Compiling lexopt v0.3.1
    Compiling textwrap v0.16.2
    Compiling pcre2 v0.2.11
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.3XMWpYf6lg/rg-src/crates/grep)
-    Finished `release` profile [optimized + debuginfo] target(s) in 50.74s
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.C1JrWHGPpS/rg-src/crates/grep)
+    Finished `release` profile [optimized + debuginfo] target(s) in 41.15s
 x86_64 Android ripgrep OK:  ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 === [5/6] OpenCode server bundle @ 05ea5073be967c779d326929b2de6228dda4159d (pinned, fail-loud) ===
 upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
 bundle build complete
 === [6/6] stage payload, compute manifest ===
-payload tarball: 16559394 bytes sha256=3e4e2241a779e5693d6ff972fce9e8e524c76185aa83e35e72366f9fbd1970b9
+payload tarball: 16559047 bytes sha256=879aa6c8505d0bb20fbc04c00e73c1c965021b52acca943721b4dea45761589d
 manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/assets/runtime-manifest.json
 === engine layout ===
 11340 ./build.status
 41 ./git.upstream.commit.txt
 5171 ./assets/runtime-manifest.json
-16559394 ./assets/runtime-payload.tar.gz
+16559047 ./assets/runtime-payload.tar.gz
 8184 ./jniLibs/arm64-v8a/libchildshim.so
-35139776 ./jniLibs/arm64-v8a/librg.so
+35139832 ./jniLibs/arm64-v8a/librg.so
 6744 ./jniLibs/arm64-v8a/libseccompshim.so
 89796776 ./jniLibs/arm64-v8a/libbun.so
 7592 ./jniLibs/arm64-v8a/libexecshim.so
 4132208 ./jniLibs/arm64-v8a/libgit.so
 7584 ./jniLibs/x86_64/libchildshim.so
-36761984 ./jniLibs/x86_64/librg.so
+36761856 ./jniLibs/x86_64/librg.so
 7608 ./jniLibs/x86_64/libseccompshim.so
 91788816 ./jniLibs/x86_64/libbun.so
 7864 ./jniLibs/x86_64/libexecshim.so
@@ -1624,8 +1624,8 @@ Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/w
 > Task :app:desugarDebugFileDependencies
 > Task :app:compressDebugAssets
 > Task :app:dexBuilderDebug
-> Task :app:processDebugJavaRes UP-TO-DATE
 > Task :app:mergeDebugGlobalSynthetics
+> Task :app:processDebugJavaRes UP-TO-DATE
 > Task :app:mergeDebugStartupProfile
 > Task :app:checkDebugDuplicateClasses
 > Task :app:mergeDebugJavaResource
@@ -1674,11 +1674,11 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
 > Task :app:compileDebugUnitTestKotlin UP-TO-DATE
 > Task :app:preDebugUnitTestBuild
+> Task :app:mergeProjectDexDebugAndroidTest
 > Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
 > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
 > Task :app:processDebugUnitTestJavaRes UP-TO-DATE
 > Task :app:testDebugUnitTest UP-TO-DATE
-> Task :app:mergeProjectDexDebugAndroidTest
 > Task :app:mergeExtDexDebugAndroidTest
 > Task :app:packageDebugAndroidTest
 > Task :app:createDebugAndroidTestApkListingFileRedirect
@@ -1687,53 +1687,53 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 1m 2s
+BUILD SUCCESSFUL in 1m 7s
 74 actionable tasks: 37 executed, 4 from cache, 33 up-to-date
 apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk
 testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 ########## 6/8 Phase 6 UI gates (fresh install -> first-run flow -> chat UI) ##########
-[2026-09-07T19:01:52Z] === stage A: deterministic chat UI gates (no runtime, no model, no key) ===
-[2026-09-07T19:01:52Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the next gate really is a first run
+[2026-09-07T19:26:54Z] === stage A: deterministic chat UI gates (no runtime, no model, no key) ===
+[2026-09-07T19:26:54Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the next gate really is a first run
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-09-07T19:01:58Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
-[2026-09-07T19:02:16Z] instrument rc=0 (chat-ui)
-[2026-09-07T19:02:16Z] chat-ui runner trailer: OK
-[2026-09-07T19:02:17Z] screenshots pulled: 11
-[2026-09-07T19:02:17Z] P6-U1 PASS :: :: rows=602 composedAtBottom=9 composedAtTop=7 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
-[2026-09-07T19:02:17Z] P6-U2 PASS :: :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true
-[2026-09-07T19:02:17Z] P6-U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
-[2026-09-07T19:02:17Z] P6-U4 PASS :: :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=true,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
-[2026-09-07T19:02:17Z] P6-U5 PASS :: :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true retryBanner=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true 
-[2026-09-07T19:02:17Z] P6-U6 PASS :: :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
-[2026-09-07T19:02:17Z] P6-U7 PASS :: :: interactive={chat=23, sessions=11, projects=4, welcome=2, welcome-unsupported=2, settings=5} total=47 unnamed=0
-[2026-09-07T19:02:17Z] P6-U8 PASS :: :: rowsComposedBefore=7 after=7 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true revertN
-[2026-09-07T19:02:17Z] === stage B: first-run experience on a freshly installed APK ===
-[2026-09-07T19:02:17Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the next gate really is a first run
+[2026-09-07T19:27:00Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
+[2026-09-07T19:27:15Z] instrument rc=0 (chat-ui)
+[2026-09-07T19:27:15Z] chat-ui runner trailer: OK
+[2026-09-07T19:27:15Z] screenshots pulled: 11
+[2026-09-07T19:27:15Z] P6-U1 PASS :: :: rows=602 composedAtBottom=9 composedAtTop=7 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
+[2026-09-07T19:27:15Z] P6-U2 PASS :: :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true
+[2026-09-07T19:27:15Z] P6-U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
+[2026-09-07T19:27:15Z] P6-U4 PASS :: :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=true,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
+[2026-09-07T19:27:15Z] P6-U5 PASS :: :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true retryBanner=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true 
+[2026-09-07T19:27:15Z] P6-U6 PASS :: :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
+[2026-09-07T19:27:15Z] P6-U7 PASS :: :: interactive={chat=23, sessions=23, projects=4, welcome=2, welcome-unsupported=2, settings=5} total=59 unnamed=0
+[2026-09-07T19:27:15Z] P6-U8 PASS :: :: rowsComposedBefore=7 after=7 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true revertN
+[2026-09-07T19:27:15Z] === stage B: first-run experience on a freshly installed APK ===
+[2026-09-07T19:27:15Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the next gate really is a first run
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-09-07T19:02:24Z] === am instrument ai.opencode.android.ui.FirstRunUiGatesTest ===
-[2026-09-07T19:02:37Z] instrument rc=0 (first-run)
-[2026-09-07T19:02:37Z] first-run runner trailer: OK
-[2026-09-07T19:02:38Z] screenshots pulled: 4
-[2026-09-07T19:02:38Z] P6-F1 PASS :: :: firstScreen=welcome stages=[starting, healthy] welcomeCopy=4/4 sampledLines=17 leakedTokens=[] continueBecameEnabled=false advancedToProjects=true advancedToChat=false supervisor=HEALTHY(restarts=0) screenshots=welcom
-[2026-09-07T19:02:38Z] P6-F2 PASS :: :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=true,chat=false) leakedTokens=[] screenshot=26171
-[2026-09-07T19:02:38Z] P6-F3 PASS :: :: projectsEmptyState=true typedName=true createdThroughUi=true chatScreen=true composerEnabled=true projectNameShown=true leakedTokens=[] screenshots=projects:26171,chat:33278
-[2026-09-07T19:02:38Z] P6-F4 PASS :: :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=26067, 02-first-run-ready.png=26171, 03-first-run-projects.png=26171, 04-first-run-chat.png=33278]
-[2026-09-07T19:02:38Z] === stage C: live turn through the UI (key-free default model) ===
-[2026-09-07T19:02:38Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
-[2026-09-07T19:10:05Z] instrument rc=0 (live-chat)
-[2026-09-07T19:10:06Z] live-chat runner trailer: OK
-[2026-09-07T19:10:06Z] screenshots pulled: 5
-[2026-09-07T19:10:06Z] P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=10 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot=2
-[2026-09-07T19:10:06Z] P6-L2 SKIP :: :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=0); screen='
-[2026-09-07T19:10:06Z] === evidence pull ===
-[2026-09-07T19:10:06Z] === SUMMARY ===
-P6_SUMMARY 2026-09-07T19:10:06Z
+[2026-09-07T19:27:22Z] === am instrument ai.opencode.android.ui.FirstRunUiGatesTest ===
+[2026-09-07T19:27:40Z] instrument rc=0 (first-run)
+[2026-09-07T19:27:40Z] first-run runner trailer: OK
+[2026-09-07T19:27:40Z] screenshots pulled: 4
+[2026-09-07T19:27:40Z] P6-F1 PASS :: :: firstScreen=welcome stages=[starting, healthy] welcomeCopy=4/4 sampledLines=17 leakedTokens=[] continueBecameEnabled=false advancedToProjects=true advancedToChat=false supervisor=HEALTHY(restarts=0) screenshots=welcom
+[2026-09-07T19:27:40Z] P6-F2 PASS :: :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=true,chat=false) leakedTokens=[] screenshot=26171
+[2026-09-07T19:27:40Z] P6-F3 PASS :: :: projectsEmptyState=true typedName=true createdThroughUi=true chatScreen=true composerEnabled=true projectNameShown=true leakedTokens=[] screenshots=projects:26171,chat:33278
+[2026-09-07T19:27:40Z] P6-F4 PASS :: :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=26067, 02-first-run-ready.png=26171, 03-first-run-projects.png=26171, 04-first-run-chat.png=33278]
+[2026-09-07T19:27:40Z] === stage C: live turn through the UI (key-free default model) ===
+[2026-09-07T19:27:40Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
+[2026-09-07T19:35:06Z] instrument rc=0 (live-chat)
+[2026-09-07T19:35:07Z] live-chat runner trailer: OK
+[2026-09-07T19:35:07Z] screenshots pulled: 5
+[2026-09-07T19:35:07Z] P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=12 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot=2
+[2026-09-07T19:35:07Z] P6-L2 SKIP :: :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=0); screen='
+[2026-09-07T19:35:07Z] === evidence pull ===
+[2026-09-07T19:35:07Z] === SUMMARY ===
+P6_SUMMARY 2026-09-07T19:35:07Z
 ui_gates_pass=13 ui_gates_fail=0 ui_gates_skip=1
 chat_ui_instrument_rc=0 first_run_instrument_rc=0 live_chat_instrument_rc=0
 screenshots=17
@@ -1744,10 +1744,10 @@ phase6 UI gates rc=0
 ########## 7/8 Phase 5 regression tail (client-integration gates, staged on this device) ##########
 + zod-to-json-schema@3.25.2
 
-92 packages installed [357.00ms]
+92 packages installed [264.00ms]
 MCP_READY: 26M
-=== PHASE 5 START 2026-09-07T19:10:07Z staged=1 ===
-heartbeat enabled (pid 12307, every 240s -> docs/progress/phase5-evidence/PROGRESS.txt)
+=== PHASE 5 START 2026-09-07T19:35:08Z staged=1 ===
+heartbeat enabled (pid 12306, every 240s -> docs/progress/phase5-evidence/PROGRESS.txt)
 
 ########## 1/6 staged mode: device + payload are phase 4's; build only what Phase 5 needs ##########
 List of devices attached
@@ -1866,61 +1866,61 @@ P5_REMOTE_MCP_SMOKE up=1 (log: /home/runner/work/OpenCode-app/OpenCode-app/phase
 P5_REMOTE_MCP_BUILT /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp (sdk 1.29.0)
 
 ########## 5/6 phase 5 integration gates ##########
-[2026-09-07T19:10:20Z] P5-00 app uid resolved: '10194'
-[2026-09-07T19:10:20Z] === P5-01 device / app / payload prerequisites ===
-[2026-09-07T19:10:25Z] P5-01 versionName=1.18.23-phase5 pid=7204 uid=10194 marker=present
+[2026-09-07T19:35:21Z] P5-00 app uid resolved: '10194'
+[2026-09-07T19:35:21Z] === P5-01 device / app / payload prerequisites ===
+[2026-09-07T19:35:27Z] P5-01 versionName=1.18.23-phase5 pid=7117 uid=10194 marker=present
 P5-01: PASS phase5-apk-installed-and-app-running
 P5-02: PASS payload-v5-manifest-marker
-[2026-09-07T19:10:25Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
+[2026-09-07T19:35:27Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
 wrote_rc=0
 wrote_rc=0
 wrote_rc=0
 warning: templates not found in /home/runner/share/git-core/templates
 error: cannot run maintenance: No such file or directory
 FIXTURE_GIT_OK
-[2026-09-07T19:10:31Z] P5-03 config_present=yes harness_rc=0
+[2026-09-07T19:35:30Z] P5-03 config_present=yes harness_rc=0
 P5-03: PASS fixture-config-and-harness-marker
-[2026-09-07T19:10:39Z] === P5-04 server password via Keystore + test-only harness export ===
-[2026-09-07T19:10:45Z] P5-04 password: 7856… (48 chars) export_verdict=PASS
+[2026-09-07T19:35:38Z] === P5-04 server password via Keystore + test-only harness export ===
+[2026-09-07T19:36:24Z] P5-04 password: 2462… (48 chars) export_verdict=PASS
 P5-04: PASS keystore-password-authenticated-live-server
-[2026-09-07T19:10:45Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
-[2026-09-07T19:11:10Z] --- Kotlin gate verdict lines ---
-[2026-09-07T19:11:10Z] P5-K instrument_rc=0 kotlin_gates_pass=10/9 fail=0 skipped=0 gradle_ok=1 failures_marker=0 junit_exception_lines=0
+[2026-09-07T19:36:24Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
+[2026-09-07T19:37:20Z] --- Kotlin gate verdict lines ---
+[2026-09-07T19:37:20Z] P5-K instrument_rc=0 kotlin_gates_pass=10/9 fail=0 skipped=0 gradle_ok=1 failures_marker=0 junit_exception_lines=0
 P5-K: PASS kotlin-client-gates-on-device (K1..K9, pass=10 fail=0 skip=0)
-[2026-09-07T19:11:10Z] === relaunching the app for the device-side gate stages ===
-[2026-09-07T19:11:16Z] post-instrument runtime: health=OK via host-forward
-[2026-09-07T19:11:16Z] host-forward diagnostic: adb forward tcp:4111 -> http 200 (the drivers do not depend on this path; it works on this image)
+[2026-09-07T19:37:20Z] === relaunching the app for the device-side gate stages ===
+[2026-09-07T19:37:27Z] post-instrument runtime: health=OK via host-forward
+[2026-09-07T19:37:27Z] host-forward diagnostic: adb forward tcp:4111 -> http 200 (the drivers do not depend on this path; it works on this image)
 P5-05: PASS runtime-healthy-after-instrumentation
-[2026-09-07T19:11:16Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
-[2026-09-07T19:11:28Z] model pre-flight: PROBE ok :: model=big-pickle exact-token reply, session=ses_f82b7ce8fffexFBeWwjuHkT0ZL
-[2026-09-07T19:11:28Z] model_available=1 -> drivers and the in-app K2/K5 turns assert real streamed text
-[2026-09-07T19:11:28Z] gate driver runner: the payload's own bun at /data/data/ai.opencode.android.debug/files/bin/bun (on-device, app uid)
-[2026-09-07T19:11:28Z] --- re-run gate-06-health.js (as shipped, no edits) inside the app namespace ---
+[2026-09-07T19:37:27Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
+[2026-09-07T19:37:43Z] model pre-flight: PROBE ok :: model=big-pickle exact-token reply, session=ses_f829fc28cffeg6N5ZZqhypoI44
+[2026-09-07T19:37:43Z] model_available=1 -> drivers and the in-app K2/K5 turns assert real streamed text
+[2026-09-07T19:37:43Z] gate driver runner: the payload's own bun at /data/data/ai.opencode.android.debug/files/bin/bun (on-device, app uid)
+[2026-09-07T19:37:43Z] --- re-run gate-06-health.js (as shipped, no edits) inside the app namespace ---
 P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
-[2026-09-07T19:11:28Z] --- re-run gate-07-shell.js (as shipped, no edits) inside the app namespace ---
+[2026-09-07T19:37:43Z] --- re-run gate-07-shell.js (as shipped, no edits) inside the app namespace ---
 P5-R-07: PASS phase4-driver-gate-07-shell.js-unmodified(on-device)
-[2026-09-07T19:11:38Z] --- re-run gate-10-mcp.js (as shipped, no edits) inside the app namespace ---
+[2026-09-07T19:37:53Z] --- re-run gate-10-mcp.js (as shipped, no edits) inside the app namespace ---
 P5-R-10: PASS phase4-driver-gate-10-mcp.js-unmodified(on-device)
-[2026-09-07T19:11:53Z] --- re-run gate-11-stream.js (as shipped, no edits) inside the app namespace ---
+[2026-09-07T19:38:20Z] --- re-run gate-11-stream.js (as shipped, no edits) inside the app namespace ---
 P5-R-11: PASS phase4-driver-gate-11-stream.js-unmodified(on-device)
-[2026-09-07T19:12:11Z] --- re-run gate-12-permission.js (as shipped, no edits) inside the app namespace ---
+[2026-09-07T19:38:37Z] --- re-run gate-12-permission.js (as shipped, no edits) inside the app namespace ---
 P5-R-12: PASS phase4-driver-gate-12-permission.js-unmodified(on-device)
-[2026-09-07T19:12:27Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
-[2026-09-07T19:12:28Z] fixture host listener up=1 pid=12983
-[2026-09-07T19:12:28Z] adb reverse tcp:4551 -> host tcp:4551: 4551
+[2026-09-07T19:38:51Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
+[2026-09-07T19:38:53Z] fixture host listener up=1 pid=13010
+[2026-09-07T19:38:53Z] adb reverse tcp:4551 -> host tcp:4551: 4551
 P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
-[2026-09-07T19:14:42Z] === P5-G17 loopback-only binding evidence ===
-[2026-09-07T19:14:42Z] P5-G17 table=conclusive wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0 bound_lines=6 publish_lines=0 table_ok=1
-[2026-09-07T19:14:42Z] device global ipv4: '10.0.2.15'
+[2026-09-07T19:41:06Z] === P5-G17 loopback-only binding evidence ===
+[2026-09-07T19:41:06Z] P5-G17 table=conclusive wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0 bound_lines=7 publish_lines=0 table_ok=1
+[2026-09-07T19:41:06Z] device global ipv4: '10.0.2.15'
 P5-G17: PASS loopback-only-binding-and-no-mdns
-[2026-09-07T19:14:42Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
-[2026-09-07T19:14:45Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=600 auth_canary_absent=1 auth_verdict=clean leaks_outside_harness=0
+[2026-09-07T19:41:06Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
+[2026-09-07T19:41:08Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=600 auth_canary_absent=1 auth_verdict=clean leaks_outside_harness=0
 P5-G18: PASS credentials-keystore-only-at-rest
-[2026-09-07T19:14:45Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
-[2026-09-07T19:14:46Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
+[2026-09-07T19:41:08Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
+[2026-09-07T19:41:10Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
 P5-G19: PASS no-hardcoded-or-bundled-secrets
-[2026-09-07T19:14:46Z] === evidence pull ===
-[2026-09-07T19:14:47Z] === SUMMARY ===
+[2026-09-07T19:41:10Z] === evidence pull ===
+[2026-09-07T19:41:10Z] === SUMMARY ===
 P5-01: PASS phase5-apk-installed-and-app-running
 P5-02: PASS payload-v5-manifest-marker
 P5-03: PASS fixture-config-and-harness-marker
@@ -1936,17 +1936,17 @@ P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
 P5-G17: PASS loopback-only-binding-and-no-mdns
 P5-G18: PASS credentials-keystore-only-at-rest
 P5-G19: PASS no-hardcoded-or-bundled-secrets
-P5_SUMMARY 2026-09-07T19:14:47Z
+P5_SUMMARY 2026-09-07T19:41:10Z
 gates_pass=14 gates_fail=1 gates_skip=0
 kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
-model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f82b7ce8fffexFBeWwjuHkT0ZL
+model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f829fc28cffeg6N5ZZqhypoI44
 app_uid=10194 device_abi=x86_64
 live_launcher_processes=0
 STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh'
 phase5 gates rc=1
 
 ########## 6/6 evidence ##########
-=== PHASE 5 END 2026-09-07T19:14:48Z gates_rc=1 ===
+=== PHASE 5 END 2026-09-07T19:41:12Z gates_rc=1 ===
 P5-01: PASS phase5-apk-installed-and-app-running
 P5-02: PASS payload-v5-manifest-marker
 P5-03: PASS fixture-config-and-harness-marker
@@ -1962,26 +1962,13 @@ P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
 P5-G17: PASS loopback-only-binding-and-no-mdns
 P5-G18: PASS credentials-keystore-only-at-rest
 P5-G19: PASS no-hardcoded-or-bundled-secrets
-P5_SUMMARY 2026-09-07T19:14:47Z
+P5_SUMMARY 2026-09-07T19:41:10Z
 gates_pass=14 gates_fail=1 gates_skip=0
 kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
-model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f82b7ce8fffexFBeWwjuHkT0ZL
+model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f829fc28cffeg6N5ZZqhypoI44
 app_uid=10194 device_abi=x86_64
 live_launcher_processes=0
 P5_SKIP_PUSH=1; not committing evidence
 STEP_FAILED rc=1: P5_SKIP_PUSH=1 bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/00-run-phase5.sh' --stage-after-phase4
 phase5 regression rc=1
 ########## 8/8 evidence ##########
-phase5-regression: 32 files copied
-P6-R5: PASS phase5-regression :: phase5=14pass/1fail/0skip kotlin=10pass/0fail failed_ids=P5-G16 (only the documented upstream restriction P5-G16 is red)
-ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=1
-P6_SUMMARY 2026-09-07T19:10:06Z
-ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=1
-chat_ui_instrument_rc=0 first_run_instrument_rc=0 live_chat_instrument_rc=0
-screenshots=17
-model_available=1
-device_abi=x86_64
-android_sdk=34
-P6-R5: PASS phase5-regression :: phase5=14pass/1fail/0skip kotlin=10pass/0fail failed_ids=P5-G16 (only the documented upstream restriction P5-G16 is red)
-=== PHASE 6 END 2026-09-07T19:14:50Z rc=0 (ui_gates=0 phase5_tail_rc=1 fails=0) ===
-########## evidence push ##########
