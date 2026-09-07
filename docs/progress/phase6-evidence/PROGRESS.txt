@@ -298,3 +298,51 @@
     avd=phase6 (created fresh this run, -wipe-data -no-snapshot)
     ########## 4/8 embedded runtime payload (reuse phase 4's build when present) ##########
 
+### 2026-09-07T11:25:17Z  run=34115663777  step: 7/8 Phase 5 regression tail (client-integration gates, staged on this device)
+    head=eb0a0a3 branch=arena/01a077b3-opencode-app log_lines=1704
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 16s
+    BUILD SUCCESSFUL in 1m 2s
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase6/scripts/20-ui-gates.sh'
+    --- last 40 log lines ---
+    > Task :app:processDebugAndroidTestJavaRes
+    > Task :app:checkDebugAndroidTestDuplicateClasses
+    > Task :app:mergeDebugAndroidTestJniLibFolders
+    > Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
+    > Task :app:mergeDebugAndroidTestJavaResource
+    > Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
+    > Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
+    > Task :app:validateSigningDebugAndroidTest
+    > Task :app:writeDebugAndroidTestSigningConfigVersions
+    > Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+    > Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+    > Task :app:preDebugUnitTestBuild
+    > Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+    > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+    > Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+    > Task :app:mergeProjectDexDebugAndroidTest
+    > Task :app:testDebugUnitTest UP-TO-DATE
+    > Task :app:mergeExtDexDebugAndroidTest
+    > Task :app:packageDebugAndroidTest
+    > Task :app:createDebugAndroidTestApkListingFileRedirect
+    > Task :app:assembleDebugAndroidTest
+    > Task :app:packageDebug
+    > Task :app:createDebugApkListingFileRedirect
+    > Task :app:assembleDebug
+    
+    BUILD SUCCESSFUL in 1m 2s
+    74 actionable tasks: 37 executed, 4 from cache, 33 up-to-date
+    apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk
+    testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+    ########## 6/8 Phase 6 UI gates (fresh install -> first-run flow -> chat UI) ##########
+    [2026-09-07T11:24:27Z] === stage A: deterministic chat UI gates (no runtime, no model, no key) ===
+    [2026-09-07T11:24:27Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the next gate really is a first run
+    Performing Streamed Install
+    Success
+    Performing Streamed Install
+    Success
+    /home/runner/work/OpenCode-app/OpenCode-app/phase6/scripts/20-ui-gates.sh: line 97: name: unbound variable
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase6/scripts/20-ui-gates.sh'
+    phase6 UI gates rc=1
+    ########## 7/8 Phase 5 regression tail (client-integration gates, staged on this device) ##########
+
