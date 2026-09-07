@@ -308,7 +308,7 @@ class LiveChatUiGatesTest {
                 rule.waitForIdle()
             }
             waitFor(15_000) { allText().isNotBlank() }
-            val screenWords = allText().lineSequence().filter { it.isNotBlank() }
+            val screenWords = allText().lineSequence().filter { it.isNotBlank() }.toList()
                 .takeLast(3).joinToString(" | ").take(220)
             modelReason = if (sawErrorBanner || exists(TAG_TURN_ERROR)) {
                 "the turn failed and the app said so: $screenWords"
