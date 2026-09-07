@@ -67,7 +67,15 @@ class SafProjectTransfer(
             }
         }
 
-        walk(tree, dest)
+        try {
+            walk(tree, dest)
+        } catch (t: Throwable) {
+            // A failed import must not leave a half-copied workspace behind: it
+            // would be discovered by ProjectStore.projects() and show up in the
+            // list as if the import had succeeded.
+            ProjectIo.deleteTree(dest)
+            throw t
+        }
         return ImportResult(name = name, copiedBytes = bytes, fileCount = count)
     }
 

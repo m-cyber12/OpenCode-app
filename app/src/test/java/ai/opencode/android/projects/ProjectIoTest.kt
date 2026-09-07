@@ -80,6 +80,19 @@ class ProjectIoTest {
     }
 
     @Test
+    fun writeStreamRemovesThePartialFileWhenTheCapIsBreached() {
+        val dst = File(tmp.root, "out.bin")
+        val tooLarge = try {
+            ProjectIo.writeStream("0123456789".byteInputStream(), dst, 5L)
+            false
+        } catch (t: ProjectIo.TooLarge) {
+            true
+        }
+        assertTrue("a write over the cap must throw TooLarge", tooLarge)
+        assertFalse("the partial destination must be removed", dst.exists())
+    }
+
+    @Test
     fun copyTreeSkipsSymlinks() {
         val src = tmp.newFolder("src")
         write(File(src, "real.txt"), "real")
@@ -100,9 +113,8 @@ class ProjectIoTest {
     fun zipTreeRoundTripsFiles() {
         val dir = tmp.newFolder("proj")
         write(File(dir, "src/Main.kt"), "fun main() {}")
-        write(File(dir, "empty").apply { mkdirs() }, "placeholder").delete() // an empty dir
+        File(dir, "empty").mkdirs() // an empty dir must round-trip into the zip
         write(File(dir, "README.md"), "readme")
-        File(dir, "empty").mkdirs()
 
         val zip = File(tmp.root, "out.zip")
         val total = ProjectIo.zipTree(dir, zip)

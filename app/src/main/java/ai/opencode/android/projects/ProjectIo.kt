@@ -55,16 +55,28 @@ object ProjectIo {
      * Recursively copy [src] into [dst] (created if needed), skipping symlinks and
      * enforcing a byte cap so an import cannot fill the device.
      *
+     * When the cap is exceeded the destination tree is removed before [TooLarge]
+     * propagates: a half-copied file or directory must not linger as if the copy
+     * had completed (a failed import would otherwise show up in the project list
+     * as a phantom workspace).
+     *
      * @return the number of bytes copied.
      */
-    fun copyTree(src: File, dst: File, maxBytes: Long): Long {
+    fun copyTree(src: File, dst: File, maxBytes: Long): Long = try {
+        copyRec(src, dst, maxBytes)
+    } catch (t: TooLarge) {
+        deleteTree(dst)
+        throw t
+    }
+
+    private fun copyRec(src: File, dst: File, maxBytes: Long): Long {
         if (!src.exists()) return 0L
         var total = 0L
         if (src.isDirectory) {
             dst.mkdirs()
             src.listFiles()?.forEach { child ->
                 if (isSymlink(child)) return@forEach
-                total += copyTree(child, File(dst, child.name), maxBytes - total)
+                total += copyRec(child, File(dst, child.name), maxBytes - total)
             }
         } else {
             dst.parentFile?.mkdirs()
@@ -121,19 +133,30 @@ object ProjectIo {
         return total
     }
 
-    /** Write an input stream into [dst], byte-capped. Returns bytes written. */
+    /**
+     * Write an input stream into [dst], byte-capped. Returns bytes written.
+     *
+     * Like [copyTree], a cap breach removes the partial destination file before
+     * [TooLarge] propagates, so an import that fails on file N does not leave
+     * file N behind.
+     */
     fun writeStream(input: InputStream, dst: File, maxBytes: Long): Long {
         dst.parentFile?.mkdirs()
         var n = 0L
         val buf = ByteArray(64 * 1024)
-        FileOutputStream(dst).use { out ->
-            while (true) {
-                val read = input.read(buf)
-                if (read < 0) break
-                n += read
-                if (n > maxBytes) throw TooLarge(maxBytes, n)
-                out.write(buf, 0, read)
+        try {
+            FileOutputStream(dst).use { out ->
+                while (true) {
+                    val read = input.read(buf)
+                    if (read < 0) break
+                    n += read
+                    if (n > maxBytes) throw TooLarge(maxBytes, n)
+                    out.write(buf, 0, read)
+                }
             }
+        } catch (t: TooLarge) {
+            dst.delete()
+            throw t
         }
         return n
     }
