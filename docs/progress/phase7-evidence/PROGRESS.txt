@@ -339,3 +339,54 @@
     92 packages installed [463.00ms]
     MCP_READY: 26M
 
+### 2026-09-07T23:42:52Z  run=34169687565  step: 8/8 evidence
+    head=331eff2 branch=arena/01a07dc2-opencode-app log_lines=2010
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 11s
+    BUILD SUCCESSFUL in 1m 10s
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase7/scripts/20-gates.sh'
+    BUILD SUCCESSFUL in 12s
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh'
+    STEP_FAILED rc=1: P5_SKIP_PUSH=1 bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/00-run-phase5.sh' --stage-after-phase4
+    --- last 40 log lines ---
+    P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
+    P5-G17: PASS loopback-only-binding-and-no-mdns
+    P5-G18: PASS credentials-keystore-only-at-rest
+    P5-G19: PASS no-hardcoded-or-bundled-secrets
+    P5_SUMMARY 2026-09-07T23:42:51Z
+    gates_pass=14 gates_fail=1 gates_skip=0
+    kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
+    model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f81c223c5ffefbExqf358VM11t
+    app_uid=10192 device_abi=x86_64
+    live_launcher_processes=0
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh'
+    phase5 gates rc=1
+    
+    ########## 6/6 evidence ##########
+    === PHASE 5 END 2026-09-07T23:42:52Z gates_rc=1 ===
+    P5-01: PASS phase5-apk-installed-and-app-running
+    P5-02: PASS payload-v5-manifest-marker
+    P5-03: PASS fixture-config-and-harness-marker
+    P5-04: PASS keystore-password-authenticated-live-server
+    P5-K: PASS kotlin-client-gates-on-device (K1..K9, pass=10 fail=0 skip=0)
+    P5-05: PASS runtime-healthy-after-instrumentation
+    P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
+    P5-R-07: PASS phase4-driver-gate-07-shell.js-unmodified(on-device)
+    P5-R-10: PASS phase4-driver-gate-10-mcp.js-unmodified(on-device)
+    P5-R-11: PASS phase4-driver-gate-11-stream.js-unmodified(on-device)
+    P5-R-12: PASS phase4-driver-gate-12-permission.js-unmodified(on-device)
+    P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
+    P5-G17: PASS loopback-only-binding-and-no-mdns
+    P5-G18: PASS credentials-keystore-only-at-rest
+    P5-G19: PASS no-hardcoded-or-bundled-secrets
+    P5_SUMMARY 2026-09-07T23:42:51Z
+    gates_pass=14 gates_fail=1 gates_skip=0
+    kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
+    model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f81c223c5ffefbExqf358VM11t
+    app_uid=10192 device_abi=x86_64
+    live_launcher_processes=0
+    P5_SKIP_PUSH=1; not committing evidence
+    STEP_FAILED rc=1: P5_SKIP_PUSH=1 bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/00-run-phase5.sh' --stage-after-phase4
+    phase5 regression rc=1
+    ########## 8/8 evidence ##########
+
