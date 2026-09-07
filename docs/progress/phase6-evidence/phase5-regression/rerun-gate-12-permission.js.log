@@ -1,10 +1,10 @@
 assert ok: session id present
 prompt_async accepted (204)
-ASKED id=per_07d613b44001sUIJnCUCfOHr7s session=ses_f829ecaffffeC2n1j336J9WooM permission=bash patterns=["echo G12_PERM_OK"]
-reply per_07d613b44001sUIJnCUCfOHr7s HTTP 200 true
+ASKED id=per_07db0c0fd001BIN38DsWSZNREs session=ses_f824f4428ffet8ba5daW81lA1H permission=bash patterns=["echo G12_PERM_OK"]
+reply per_07db0c0fd001BIN38DsWSZNREs HTTP 200 true
 permission request observed and approved once
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"Run the shell command: echo G12_PERM_OK and tell me what it printed.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to run a simple shell command and report the output.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"bash","callID":"call_ebcd55db6153459cb3cb37be","input":"{\"command\":\"echo G12_PERM_OK\"}","output":"\"[seccomp] preload handler installed (rc=0)\\nG12_PERM_OK\\n\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The command printed \"G12_PERM_OK\" which is exactly what was echoed.","input":"null","output":"null","error":null},{"type":"text","text":"It printed `G12_PERM_OK`.","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"Run the shell command: echo G12_PERM_OK and tell me what it printed.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"Simple. Run the command, report output.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"bash","callID":"call_98b0d98b410a4bf884774545","input":"{\"command\":\"echo G12_PERM_OK\"}","output":"\"[seccomp] preload handler installed (rc=0)\\nG12_PERM_OK\\n\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"text","text":"It printed `G12_PERM_OK`.","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
 --- assistant text ---
 
 It printed `G12_PERM_OK`.
@@ -12,7 +12,7 @@ It printed `G12_PERM_OK`.
 [seccomp] preload handler installed (rc=0)
 G12_PERM_OK
 
-asks seen: [{"id":"per_07d613b44001sUIJnCUCfOHr7s","permission":"bash"}]
+asks seen: [{"id":"per_07db0c0fd001BIN38DsWSZNREs","permission":"bash"}]
 assert ok: agent turn did not fail
 assert ok: bash command executed through the real tool permission path
 G12_PERM_MODE_ASK (permission.v2.asked observed and approved)
