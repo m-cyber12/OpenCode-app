@@ -203,6 +203,20 @@ the commit that carries this paragraph:
 reached before, so this run is the first that will exercise the JVM unit tests and
 the instrumented harness compilation end to end.
 
+### Run 34098834051 (commit `9d4b731`) - FAILED at compile, 4 errors, both causes mine
+
+Down from 12 errors to 4, and both causes were introduced by the previous fix
+commit rather than by the product code:
+
+| # | Error | Cause | Fix |
+| --- | --- | --- | --- |
+| 9 | `ChatUiGatesTest.kt:39:33` and `294:13 Unresolved reference: SnapshotStateList` | the return type added for defect 6 was imported from `androidx.compose.runtime`; the type actually lives in `androidx.compose.runtime.snapshots` (`mutableStateListOf` returns it) | import corrected to `androidx.compose.runtime.snapshots.SnapshotStateList` |
+| 10 | `ChatUiGatesTest.kt:456:38` and `UiGateSupport.kt:215:5 Operator '!=' cannot be applied to 'Unit?' and 'Boolean'` | the fix for defect 5 assumed `SemanticsProperties.Disabled` is a `Boolean` key. The compiler says it is a `SemanticsPropertyKey<Unit>`: its mere *presence* marks a node disabled, which is what the framework's own `isEnabled()` matcher tests | both call sites now use `!config.contains(SemanticsProperties.Disabled)` |
+
+`:app:compileDebugKotlin` and `:app:compileDebugUnitTestKotlin` both passed in
+this run, so the JVM unit-test sources are compiling; the JVM tests themselves
+still have not been executed by a green build.
+
 ### Offline cross-checks done while CI was blocked
 
 These are host-side checks, not device evidence:
@@ -229,8 +243,9 @@ These are host-side checks, not device evidence:
 
 ### Next
 
-1. Push the fixes; the workflow re-runs on push (runs so far: #1 three defects in
-   main sources, #2 five defects in the test sources, all fixed).
+1. Push the fixes; the workflow re-runs on push. Runs so far: #1 three defects in
+   the main sources, #2 five in the test sources, #3 two in my own fix for #2 -
+   ten defects found and fixed, all of them in Phase 6 code, none in Phase 5.
 2. If step 2/8 goes green, the same run continues into the payload build, the
    fresh emulator and gates A/B/C, and commits verdicts + screenshots to
    `docs/progress/phase6-evidence/`.

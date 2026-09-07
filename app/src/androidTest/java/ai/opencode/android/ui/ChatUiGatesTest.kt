@@ -36,9 +36,9 @@ import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.SnapshotStateList
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -453,7 +453,7 @@ class ChatUiGatesTest {
 
     private fun sendEnabled(): Boolean {
         val nodes = rule.onAllNodesWithTag(TAG_COMPOSER_SEND).fetchSemanticsNodes()
-        return nodes.isNotEmpty() && nodes.first().config.getOrNull(SemanticsProperties.Disabled) != true
+        return nodes.isNotEmpty() && !nodes.first().config.contains(SemanticsProperties.Disabled)
     }
 
     private fun distinctColorsUnder(tag: String): Int {

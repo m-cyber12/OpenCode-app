@@ -207,9 +207,10 @@ internal fun tagPrefixMatcher(prefix: String) = SemanticsMatcher("TestTag starts
 
 /**
  * A node is enabled unless it says otherwise. Compose has no `Enabled` property:
- * a disabled component carries `SemanticsProperties.Disabled = true`, which is
- * exactly what `assertIsEnabled()` / `assertIsNotEnabled()` look at, so this reads
- * the same key the framework's own matchers do.
+ * `SemanticsProperties.Disabled` is a `SemanticsPropertyKey<Unit>` whose mere
+ * presence marks the node disabled, which is what the framework's own
+ * `isEnabled()` matcher tests (`!config.contains(Disabled)`), so this reads the
+ * same key rather than inventing one.
  */
 internal fun isEnabledNode(node: SemanticsNode): Boolean =
-    node.config.getOrNull(SemanticsProperties.Disabled) != true
+    !node.config.contains(SemanticsProperties.Disabled)
