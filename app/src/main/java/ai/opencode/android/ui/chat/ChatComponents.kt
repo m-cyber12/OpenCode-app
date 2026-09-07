@@ -138,7 +138,7 @@ fun MessageRow(
     onUndo: (() -> Unit)? = null,
 ) {
     val chat = ChatTheme.chat
-    val tag = "$TAG_MESSAGE_${message.id}"
+    val tag = "${TAG_MESSAGE}_${message.id}"
     if (message.role == "user") {
         val text = message.parts.filter { it.type == "text" }.joinToString("\n") { it.text }
         val files = message.parts.filter { it.type == "file" }
@@ -298,7 +298,7 @@ private fun ReasoningBlock(part: Transcript.Part) {
                 .heightIn(min = 44.dp)
                 .clickable { open = !open }
                 .semantics {
-                    testTag = "$TAG_REASONING_${part.id}"
+                    testTag = "${TAG_REASONING}_${part.id}"
                     role = Role.Button
                     contentDescription = toggleLabel
                 },
@@ -393,7 +393,7 @@ fun ToolCard(part: Transcript.Part, modifier: Modifier = Modifier) {
     val title = oneLine(part.title.ifBlank { primaryInputValue(part.input) })
 
     Surface(
-        modifier = modifier.fillMaxWidth().semantics { testTag = "$TAG_TOOL_CARD_${part.id}" },
+        modifier = modifier.fillMaxWidth().semantics { testTag = "${TAG_TOOL_CARD}_${part.id}" },
         color = chat.toolContainer,
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(
@@ -409,7 +409,7 @@ fun ToolCard(part: Transcript.Part, modifier: Modifier = Modifier) {
                     .clickable { expanded = !expanded }
                     .padding(horizontal = 12.dp, vertical = 8.dp)
                     .semantics {
-                        testTag = "$TAG_TOOL_HEADER_${part.id}"
+                        testTag = "${TAG_TOOL_HEADER}_${part.id}"
                         role = Role.Button
                         contentDescription = toggleLabel
                     },
@@ -468,7 +468,7 @@ fun ToolCard(part: Transcript.Part, modifier: Modifier = Modifier) {
                         CodeBlock(
                             language = outputLanguage(part.tool, meta),
                             source = output,
-                            modifier = Modifier.semantics { testTag = "$TAG_TOOL_OUTPUT_${part.id}" },
+                            modifier = Modifier.semantics { testTag = "${TAG_TOOL_OUTPUT}_${part.id}" },
                         )
                     } else {
                         Text(
@@ -653,7 +653,7 @@ fun PermissionAsk(
     val bodyText = stringResource(R.string.ask_permission_body, permissionKindLabel(prompt.permission))
     val request = permissionRequestLine(prompt)
     Surface(
-        modifier = modifier.fillMaxWidth().semantics { testTag = "$TAG_PERMISSION_ASK_${prompt.id}" },
+        modifier = modifier.fillMaxWidth().semantics { testTag = "${TAG_PERMISSION_ASK}_${prompt.id}" },
         color = chat.attentionContainer,
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(1.dp, chat.attention),
@@ -729,7 +729,7 @@ fun QuestionAsk(
     val chosen = remember(question.id) { mutableStateOf(List(question.items.size) { emptyList<String>() }) }
     val custom = remember(question.id) { mutableStateOf(List(question.items.size) { "" }) }
     Surface(
-        modifier = modifier.fillMaxWidth().semantics { testTag = "$TAG_QUESTION_ASK_${question.id}" },
+        modifier = modifier.fillMaxWidth().semantics { testTag = "${TAG_QUESTION_ASK}_${question.id}" },
         color = chat.attentionContainer,
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(1.dp, chat.attention),

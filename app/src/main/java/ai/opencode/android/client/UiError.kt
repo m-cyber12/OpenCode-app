@@ -105,7 +105,7 @@ object UiError {
                 statusCode == 408 || statusCode == 429 || statusCode in 500..599 -> AgentAvailability.PROVIDER_UNREACHABLE
                 retryable -> AgentAvailability.PROVIDER_UNREACHABLE
                 statusCode in 400..499 -> AgentAvailability.PROVIDER_OTHER
-                hints(lower)
+                else -> hints(lower)
             }
             NAME_CONTEXT_OVERFLOW, NAME_CONTENT_FILTER, NAME_OUTPUT_LENGTH, NAME_STRUCTURED_OUTPUT ->
                 AgentAvailability.PROVIDER_OTHER
