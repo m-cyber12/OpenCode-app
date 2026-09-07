@@ -119,10 +119,16 @@ class OpenCodeApi(
     // ---- sessions ----------------------------------------------------------
 
     /** GET /session — the real session list (optionally filtered to roots). */
-    fun listSessions(limit: Int = 50, roots: Boolean? = null): List<SessionInfo> {
+    fun listSessions(limit: Int = 50, roots: Boolean? = null, directory: String? = null): List<SessionInfo> {
         val q = LinkedHashMap<String, String>()
         q["limit"] = limit.toString()
         if (roots != null) q["roots"] = roots.toString()
+        // `?directory=` is upstream's session filter (Session.list:
+        // `eq(SessionTable.directory, input.directory)`); the instance directory is
+        // appended automatically by [encodeQuery] when this is omitted, so this
+        // override lets a caller ask about a *different* workspace than the one
+        // currently pinned - used to delete a project's history on project delete.
+        if (directory != null) q["directory"] = directory
         val arr = org.json.JSONArray(request("GET", "/session", query = q).body)
         return (0 until arr.length()).map { SessionInfo.from(arr.getJSONObject(it)) }
     }

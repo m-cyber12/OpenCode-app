@@ -85,6 +85,19 @@
     <string name="projects_never_opened">Not opened yet</string>
     <string name="projects_done">Done</string>
     <string name="projects_name_taken">A project with that name already exists. A number will be added.</string>
+    <string name="projects_import">Import a folder</string>
+    <string name="projects_importing">Copying the folder</string>
+    <string name="projects_import_failed">Import failed: %1$s</string>
+    <string name="projects_export_failed">Export failed: %1$s</string>
+    <string name="projects_menu">Actions for %1$s</string>
+    <string name="projects_rename">Rename</string>
+    <string name="projects_export">Export</string>
+    <string name="projects_delete">Delete</string>
+    <string name="projects_rename_label">New name</string>
+    <string name="projects_rename_save">Save name</string>
+    <string name="projects_delete_title">Delete %1$s?</string>
+    <string name="projects_delete_body">This removes the project folder and its conversations on this device. It cannot be undone.</string>
+    <string name="projects_delete_confirm">Delete project</string>
 
     <!-- ============================================================ availability -->
     <string name="availability_ready">Ready</string>
@@ -196,6 +209,7 @@
     <string name="ask_permission_kind_bash">run a shell command</string>
     <string name="ask_permission_kind_edit">edit files</string>
     <string name="ask_permission_kind_web">fetch a page</string>
+    <string name="ask_permission_kind_external">read or write files outside this project</string>
     <string name="ask_permission_kind_other">use %1$s</string>
 
     <!-- question asks -->
@@ -291,11 +305,29 @@
     <string name="settings_mcp_refresh">Refresh statuses</string>
     <string name="settings_mcp_error_label">Reported by the agent</string>
 
+    <string name="settings_section_provider">Model provider</string>
+    <string name="settings_provider_none_title">No model configured yet</string>
+    <string name="settings_provider_none_body">The agent needs a model to answer. No provider is connected and no key is stored. Add an API key under Provider keys, or check your connection so the built-in default model can be reached.</string>
+    <string name="settings_provider_stored_title">Key stored, provider not connected</string>
+    <string name="settings_provider_stored_body">A key is in the Keystore, but the agent does not report that provider as connected. The provider may be unreachable, or the key was rejected.</string>
+    <string name="settings_provider_connected">Connected</string>
+    <string name="settings_provider_connected_body">The agent reports %1$d connected provider(s). A turn still needs a network connection and a model the provider can serve.</string>
+    <string name="settings_provider_checking">Checking the model provider</string>
+
     <string name="settings_section_permissions">Permissions</string>
-    <string name="settings_permissions_body">Policy for shell commands the agent runs. Asking is the default and is what keeps a phone safe from an autonomous command.</string>
+    <string name="settings_permissions_body">Policy for what the agent may do without asking. Asking is the default and is what keeps a phone safe from an autonomous command.</string>
     <string name="settings_permission_ask">Ask every time</string>
     <string name="settings_permission_allow">Allow</string>
     <string name="settings_permission_deny">Deny</string>
+    <string name="settings_permission_bash">Shell commands</string>
+    <string name="settings_permission_edit">Edit files</string>
+    <string name="settings_permission_read">Read files</string>
+    <string name="settings_permission_webfetch">Fetch pages</string>
+    <string name="settings_permission_external">Work outside the project folder</string>
+    <string name="settings_permission_current">Now: %1$s</string>
+    <string name="settings_permission_value_ask">Ask</string>
+    <string name="settings_permission_value_allow">Allow</string>
+    <string name="settings_permission_value_deny">Deny</string>
 
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_theme_label">Theme</string>
@@ -303,6 +335,18 @@
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_system">Match the system</string>
     <string name="settings_theme_dynamic">Material You colours</string>
+
+    <string name="settings_section_memory">Agent memory</string>
+    <string name="settings_memory_body">OpenCode reads these files into every conversation. They are plain text stored inside this app and only ever used on this device. Edit or delete them at any time.</string>
+    <string name="settings_memory_project">Project instructions</string>
+    <string name="settings_memory_project_hint">Apply to this project only.</string>
+    <string name="settings_memory_project_none">No project is open, so there is nothing to edit here.</string>
+    <string name="settings_memory_global">Global instructions</string>
+    <string name="settings_memory_global_hint">Apply to every project.</string>
+    <string name="settings_memory_empty">No instructions yet.</string>
+    <string name="settings_memory_edit">Edit</string>
+    <string name="settings_memory_save">Save</string>
+    <string name="settings_memory_remove">Remove</string>
 
     <string name="settings_section_about">About</string>
     <string name="settings_about_body">This app is a client of the OpenCode agent running on this device. Every message, tool call and permission you see comes from the agent own interface, unedited.</string>

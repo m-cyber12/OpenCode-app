@@ -976,6 +976,7 @@ private fun permissionKindLabel(permission: String): String = when (permission) 
     "bash" -> stringResource(R.string.ask_permission_kind_bash)
     "edit" -> stringResource(R.string.ask_permission_kind_edit)
     "webfetch" -> stringResource(R.string.ask_permission_kind_web)
+    "external_directory" -> stringResource(R.string.ask_permission_kind_external)
     else -> stringResource(R.string.ask_permission_kind_other, permission)
 }
 

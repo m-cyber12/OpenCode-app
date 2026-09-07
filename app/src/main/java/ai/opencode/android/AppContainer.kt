@@ -2,6 +2,7 @@ package ai.opencode.android
 
 import android.content.Context
 import ai.opencode.android.client.OpenCodeRepository
+import ai.opencode.android.memory.ProjectMemory
 import ai.opencode.android.runtime.RuntimeEnv
 import ai.opencode.android.runtime.RuntimePaths
 import ai.opencode.android.security.SecretStore
@@ -44,9 +45,24 @@ class AppContainer private constructor(private val context: Context) {
 
     fun workspacesRoot(): java.io.File = paths.workspaces
 
+    /**
+     * OpenCode's own persistent-memory files: a per-project `AGENTS.md` at the
+     * workspace root, and the global `AGENTS.md` in OpenCode's global config dir.
+     * The app reads/writes these exact files (upstream `session/instruction.ts`
+     * loads both); it never invents a second memory store.
+     */
+    fun memory(): ProjectMemory = ProjectMemory(
+        workspacesRoot = paths.workspaces,
+        globalRulesDir = paths.xdgConfigOpencode,
+    )
+
     /** Names only — never values (this string ends up on screen and in logs). */
     fun storedProviderIdsLabel(): String =
         ai.opencode.android.runtime.Secrets.storedProviderIds(context).joinToString(", ").ifEmpty { "(none)" }
+
+    /** The provider ids with a Keystore-held key, for the setup classifier. */
+    fun storedProviderIds(): List<String> =
+        ai.opencode.android.runtime.Secrets.storedProviderIds(context)
 
     fun hardwareBackedLabel(): String = runCatching { secrets.isHardwareBacked().toString() }.getOrDefault("unknown")
 

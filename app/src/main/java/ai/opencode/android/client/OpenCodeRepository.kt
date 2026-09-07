@@ -64,6 +64,12 @@ class OpenCodeRepository(
         val draft: String = "",
         /** Upstream's `GET /session/status` map (idle/busy/retry per session). */
         val sessionStatus: Map<String, OpenCodeApi.SessionStatusInfo> = emptyMap(),
+        /**
+         * OpenCode's permission policy as read from the global config
+         * (`permission.<key> = ask|allow|deny`). Kept verbatim; an absent key is
+         * upstream's own "ask" default and is not invented here.
+         */
+        val permissionPolicy: Map<String, String> = emptyMap(),
     ) {
         /** The selected session as the event stream/history reduced it. */
         val selected: Transcript.SessionView? get() = transcript.session(selectedSession)
@@ -186,6 +192,10 @@ class OpenCodeRepository(
                 )
             }.onFailure { errors.add("providers: ${it.message}") }
 
+            runCatching { api.globalConfig() }.onSuccess { cfg ->
+                _state.value = _state.value.copy(permissionPolicy = parsePermissionPolicy(cfg))
+            }.onFailure { errors.add("config: ${it.message}") }
+
             runCatching { api.pendingPermissions() }.onSuccess { list ->
                 transcript.replacePrompts(list.map { it.asPrompt() })
                 publishTranscript("permissions refreshed")
@@ -268,6 +278,25 @@ class OpenCodeRepository(
                 )
                 publishTranscript("session deleted")
             }.onFailure { fail("delete session", it) }
+        }
+    }
+
+    /**
+     * Delete every session the server has for a project's directory. OpenCode's
+     * `GET /session` takes a `directory` filter (the same field the client pins
+     * per instance), so this is the server's own list scoped by workspace; each
+     * id then goes through the normal DELETE endpoint.
+     *
+     * Used when a project is deleted so its history does not linger in the
+     * session panel of another project.
+     */
+    fun deleteSessionsForDirectory(dir: String) {
+        if (dir.isBlank()) return
+        scope.launch {
+            runCatching { api.listSessions(directory = dir) }.onSuccess { list ->
+                list.forEach { s -> runCatching { api.deleteSession(s.id) } }
+                refreshSessions()
+            }.onFailure { fail("delete project sessions", it) }
         }
     }
 
@@ -570,12 +599,23 @@ class OpenCodeRepository(
         _state.value = _state.value.copy(model = null, notice = "model hint cleared (server default)")
     }
 
-    /** Permission policy for the instance, through OpenCode's config patch. */
-    fun setBashPolicy(policy: String) {
+    /**
+     * Set one permission key's policy (`permission.<key> = ask|allow|deny`)
+     * through OpenCode's own config patch, then re-read the config so the
+     * settings table reflects what the server actually stored.
+     */
+    fun setPermissionPolicy(key: String, action: String) {
         scope.launch {
-            val patch = JSONObject().put("permission", JSONObject().put("bash", policy))
+            val patch = JSONObject().put("permission", JSONObject().put(key, action))
             runCatching { api.patchGlobalConfig(patch) }
-                .onSuccess { _state.value = _state.value.copy(notice = "bash permission -> $policy") }
+                .onSuccess {
+                    runCatching { api.globalConfig() }.onSuccess { cfg ->
+                        _state.value = _state.value.copy(
+                            permissionPolicy = parsePermissionPolicy(cfg),
+                            notice = "permission $key -> $action",
+                        )
+                    }
+                }
                 .onFailure { fail("permission policy", it) }
         }
     }
@@ -586,6 +626,22 @@ class OpenCodeRepository(
     }
 
     // ---- internals ---------------------------------------------------------
+
+    /**
+     * Read `permission.<key>` from the global config. Only string-valued keys are
+     * surfaced (the settings table edits flat `ask|allow|deny` policies); the
+     * upstream object form (per-subtool rules) is left untouched and still wins
+     * server-side.
+     */
+    private fun parsePermissionPolicy(cfg: JSONObject): Map<String, String> {
+        val perm = cfg.optJSONObject("permission") ?: return emptyMap()
+        val out = LinkedHashMap<String, String>()
+        for (key in perm.keys()) {
+            val value = perm.opt(key)
+            if (value is String) out[key] = value
+        }
+        return out
+    }
 
     private fun OpenCodeApi.PermissionRequest.asPrompt() = Transcript.Prompt(
         id = id,

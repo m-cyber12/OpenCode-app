@@ -14,9 +14,13 @@ import java.io.File
  * directories exist and which one the user last opened, because the choice has
  * to survive a process restart and the user must never be asked for a path.
  *
- * Phase 6 keeps this deliberately small - list, create, open. Renaming,
- * deleting, importing an existing tree, git init and per-project credentials are
- * workspace management, which the phase plan puts in Phase 7.
+ * Phase 6 kept this to list, create, open. Phase 7 adds the rest of workspace
+ * management - rename, delete, and adopt (register a tree that an import copied
+ * into place). Session scoping is the server's: sessions are keyed by the project
+ * directory, so renaming a project's folder re-points future sessions while the
+ * old sessions stay attached to their recorded path (the same way renaming a
+ * folder on disk behaves for a desktop OpenCode install). Deleting a project also
+ * asks the repository to delete that project's sessions.
  */
 data class Project(
     val name: String,
@@ -27,7 +31,7 @@ data class Project(
     val path: String get() = dir.absolutePath
 }
 
-class ProjectStore private constructor(
+class ProjectStore internal constructor(
     private val root: File,
     private val prefs: SharedPreferences,
 ) {
@@ -102,6 +106,96 @@ class ProjectStore private constructor(
     }
 
     fun exists(name: String): Boolean = File(root, sanitize(name)).isDirectory
+
+    /**
+     * The name [create] would actually use for [rawName]: sanitized, and suffixed
+     * so it never collides with an existing directory. Used by the SAF importer so
+     * an imported folder can be named after what the user picked without clobbering
+     * anything, and exposed as one method so "create" and "import" cannot drift.
+     */
+    fun uniqueName(rawName: String): String {
+        val base = sanitize(rawName).ifEmpty { DEFAULT_NAME }
+        var name = base
+        var n = 2
+        while (File(root, name).exists()) {
+            name = "$base-$n"
+            n += 1
+        }
+        return name
+    }
+
+    /**
+     * Rename a project's directory. The new name goes through the same sanitisation
+     * as creation; a collision gets a numeric suffix. Preference history moves with
+     * it, and the active pointer follows only when it pointed at the renamed project.
+     *
+     * Sessions are deliberately NOT rewritten: OpenCode stores a session's directory
+     * at creation time, and this app does not have an endpoint to move them (and must
+     * not invent one). Future sessions use the new directory.
+     *
+     * @return the renamed project, or null when [name] does not exist / the rename failed.
+     */
+    fun rename(name: String, rawNewName: String): Project? {
+        val srcDir = File(root, name)
+        if (!srcDir.isDirectory) return null
+        val target = sanitize(rawNewName).ifEmpty { return null }
+        if (target == name) return projects().firstOrNull { it.name == name }
+        var finalName = target
+        var n = 2
+        while (File(root, finalName).exists()) {
+            finalName = "$target-$n"
+            n += 1
+        }
+        val dstDir = File(root, finalName)
+        if (!ProjectIo.renameDir(srcDir, dstDir)) return null
+
+        val created = prefs.getLong(createdKey(name), dstDir.lastModified())
+        val opened = prefs.getLong(openedKey(name), 0L)
+        val now = System.currentTimeMillis()
+        prefs.edit()
+            .remove(createdKey(name))
+            .remove(openedKey(name))
+            .apply()
+        prefs.edit()
+            .putLong(createdKey(finalName), created)
+            .putLong(openedKey(finalName), if (opened > 0L) opened else now)
+            .apply()
+        if (prefs.getString(KEY_ACTIVE, "") == name) {
+            prefs.edit().putString(KEY_ACTIVE, finalName).apply()
+        }
+        return Project(name = finalName, dir = dstDir, createdMs = created, lastOpenedMs = if (opened > 0L) opened else now)
+    }
+
+    /** Delete a project directory and its preference history. Returns success. */
+    fun delete(name: String): Boolean {
+        val dir = File(root, name)
+        if (!dir.isDirectory) return false
+        ProjectIo.deleteTree(dir)
+        prefs.edit().remove(createdKey(name)).remove(openedKey(name)).apply()
+        if (prefs.getString(KEY_ACTIVE, "") == name) {
+            prefs.edit().remove(KEY_ACTIVE).apply()
+        }
+        return true
+    }
+
+    /**
+     * Register a directory that already exists under [root] (an import copied it
+     * into place) without re-suffixing its name. Mirrors [create]'s bookkeeping.
+     */
+    fun adopt(name: String): Project {
+        val dir = File(root, name)
+        if (!dir.isDirectory) dir.mkdirs()
+        val now = System.currentTimeMillis()
+        prefs.edit()
+            .putLong(createdKey(name), now)
+            .putLong(openedKey(name), now)
+            .putString(KEY_ACTIVE, name)
+            .apply()
+        return Project(name = name, dir = dir, createdMs = now, lastOpenedMs = now)
+    }
+
+    /** The absolute path of the workspace root (for the repository's session cleanup). */
+    fun rootPath(): String = root.absolutePath
 
     private fun createdKey(name: String) = "created:$name"
     private fun openedKey(name: String) = "opened:$name"

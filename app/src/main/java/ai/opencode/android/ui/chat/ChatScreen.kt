@@ -36,14 +36,17 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -408,9 +411,17 @@ private fun TranscriptPane(
 // ---- blocking asks ---------------------------------------------------------
 
 /**
- * Permissions and questions the agent is waiting on. Pinned above the composer so
- * a blocked turn is never out of sight; scrollable itself when several stack up.
+ * Permissions and questions the agent is waiting on, presented as a bottom
+ * sheet rather than a card buried in the scroll.
+ *
+ * Upstream blocks the turn until one of these is answered, so the sheet is not
+ * dismissible: tapping the scrim or the back button does nothing, and the only
+ * ways out are the answers the agent is waiting for (allow once / always allow /
+ * reject, or submit / skip for a question). This is a restyle of the same
+ * upstream mechanism — the three permission replies and the question reply shape
+ * are unchanged, and OpenCode's permission model is fully preserved.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AskArea(
     asks: List<Transcript.Prompt>,
@@ -420,23 +431,29 @@ private fun AskArea(
     onQuestionSkip: (String) -> Unit,
 ) {
     if (asks.isEmpty() && questions.isEmpty()) return
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(max = 340.dp)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = { /* non-dismissible: the turn is blocked until answered */ },
+        sheetState = sheetState,
     ) {
-        for (ask in asks) {
-            PermissionAsk(prompt = ask, onReply = onPermissionReply)
-        }
-        for (question in questions) {
-            QuestionAsk(
-                question = question,
-                onSubmit = onQuestionSubmit,
-                onReject = onQuestionSkip,
-            )
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            for (ask in asks) {
+                PermissionAsk(prompt = ask, onReply = onPermissionReply)
+            }
+            for (question in questions) {
+                QuestionAsk(
+                    question = question,
+                    onSubmit = onQuestionSubmit,
+                    onReject = onQuestionSkip,
+                )
+            }
         }
     }
 }
