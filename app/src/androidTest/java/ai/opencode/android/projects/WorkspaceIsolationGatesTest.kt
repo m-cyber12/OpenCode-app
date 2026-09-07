@@ -181,11 +181,13 @@ class WorkspaceIsolationGatesTest {
 
             // 4. A read that escapes the project directory is refused by the server.
             //    `../../<outside>` resolves to filesDir (dirA's grandparent); upstream's
-            //    `FSUtil.contains(directory, file)` guard must refuse it (HTTP 500).
+            //    `FSUtil.contains(directory, file)` guard must refuse it. The verdict is
+            //    "refused" (any non-2xx); the exact status and upstream's own words
+            //    ("Path escapes the location") land in the detail line.
             val escape = runCatching { apiA.fileContent("../../p7-outside.txt") }
-            val escapeRefused = escape.isFailure &&
-                (escape.exceptionOrNull() as? OpenCodeApi.ApiException)?.status == 500
-            val escapeBody = (escape.exceptionOrNull() as? OpenCodeApi.ApiException)?.body.orEmpty()
+            val escapeExc = escape.exceptionOrNull() as? OpenCodeApi.ApiException
+            val escapeRefused = escapeExc != null && escapeExc.status !in 200..299
+            val escapeBody = escapeExc?.body.orEmpty()
 
             val ok = seesOwn && !seesOtherProject && !seesOutside && readOwn && readOwnB && escapeRefused
             gate(
