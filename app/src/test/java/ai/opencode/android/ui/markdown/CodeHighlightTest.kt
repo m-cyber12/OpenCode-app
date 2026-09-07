@@ -105,7 +105,7 @@ class CodeHighlightTest {
 
     @Test
     fun shellVariablesAndCommands() {
-        val out = assertLossless("bash", "echo \"$PATH\" | grep x")
+        val out = assertLossless("bash", "echo \"\$PATH\" | grep x")
         assertTrue(out.any { it.token == CodeToken.KEYWORD && it.text == "echo" })
         assertTrue(out.any { it.token == CodeToken.STRING })
     }

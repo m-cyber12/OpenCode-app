@@ -34,12 +34,15 @@ import ai.opencode.android.ui.theme.OpenCodeTheme
 import ai.opencode.android.ui.welcome.WelcomeScreen
 import android.content.Context
 import android.util.Log
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.SnapshotStateList
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasSetTextAction
@@ -285,7 +288,10 @@ class ChatUiGatesTest {
     }
 
     /** Same screen, but the message list is observable so a gate can grow it. */
-    private fun renderLiveChat(messages: List<Transcript.Message>, busy: Boolean) {
+    private fun renderLiveChat(
+        messages: List<Transcript.Message>,
+        busy: Boolean,
+    ): Pair<SnapshotStateList<Transcript.Message>, MutableState<Boolean>> {
         val live = mutableStateListOf<Transcript.Message>().also { it.addAll(messages) }
         val liveBusy = mutableStateOf(busy)
         rule.setContent {
@@ -447,7 +453,7 @@ class ChatUiGatesTest {
 
     private fun sendEnabled(): Boolean {
         val nodes = rule.onAllNodesWithTag(TAG_COMPOSER_SEND).fetchSemanticsNodes()
-        return nodes.isNotEmpty() && nodes.first().config.getOrNull(SemanticsProperties.Enabled) != false
+        return nodes.isNotEmpty() && nodes.first().config.getOrNull(SemanticsProperties.Disabled) != true
     }
 
     private fun distinctColorsUnder(tag: String): Int {
@@ -583,7 +589,10 @@ class ChatUiGatesTest {
         )
         val assistant = message("msg_a1", "assistant", listOf(shell, edit))
         val failedTurn = message("msg_a2", "assistant", listOf(failed), error = null)
-        renderChat(uiState(sessionView(messages = listOf(message("msg_u1", "user", listOf(textPart("p", "msg_u1", "list the project"))), assistant, failedTurn))))
+        renderChat(
+            uiState(sessionView(messages = listOf(message("msg_u1", "user", listOf(textPart("p", "msg_u1", "list the project"))), assistant, failedTurn))),
+            availability = AgentAvailability.READY,
+        )
         rule.waitForIdle()
 
         val shellHeadline = context.getString(R.string.chat_tool_kind_shell) + " \u00b7 bash"

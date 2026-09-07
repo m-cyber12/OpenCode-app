@@ -170,7 +170,7 @@ Environment: `phase6/CI_GRADLE_ONLY` is `0`, so a run does the whole thing
 evidence). Step 2/8 is the fast compile + JVM-unit-test stage, which fails the
 job before the ~30-minute payload build; that is what caught the defects below.
 
-### Run 34096781049 (branch `arena/01a077b3-opencode-app`, commit `f8eca14`) - FAILED at compile
+### Run 34096781049 (commit `f8eca14`) - FAILED at compile, main sources
 
 `P6-BUILD FAIL kotlin compile or JVM unit tests failed`. Three defects, all in
 Phase 6 main sources, all fixed in the commit that follows this report:
@@ -184,6 +184,24 @@ Phase 6 main sources, all fixed in the commit that follows this report:
 Nothing else in the compile stage was reached (`:app:compileDebugAndroidTestKotlin`
 and `:app:testDebugUnitTest` did not run), so the instrumented harness and the JVM
 unit tests are still unproven - they are next in line on the re-run.
+
+### Run 34097714114 (commit `e2f14a2`) - FAILED at compile, main sources now green
+
+`:app:compileDebugKotlin` passed, so the three fixes above are confirmed by the
+compiler. The failures moved to the test sources - five more defects, all fixed in
+the commit that carries this paragraph:
+
+| # | Error | Cause | Fix |
+| --- | --- | --- | --- |
+| 4 | `UiGateSupport.kt` 121-124/155/200/209 and `ChatUiGatesTest.kt` 423/433-436/450/456/466/1018: `Unresolved reference` with only `kotlin.collections.getOrNull` offered as candidates | `SemanticsConfiguration.getOrNull` is **not a member** - the reference page lists it under *Extension functions*, so it needs `import androidx.compose.ui.semantics.getOrNull`. Without the import only the collection extensions were in scope, hence the "receiver type mismatch" candidate list and the cascading `Unresolved reference: it` | import added to both files |
+| 5 | `UiGateSupport.kt:209:47` and `ChatUiGatesTest.kt:450:89`: `Unresolved reference: Enabled` | Compose has **no** `SemanticsProperties.Enabled`. A disabled component carries `SemanticsProperties.Disabled = true` - which is what the framework's own `assertIsEnabled()`/`assertIsNotEnabled()` matchers read | `isEnabledNode` and `sendEnabled` now test `getOrNull(SemanticsProperties.Disabled) != true` |
+| 6 | `ChatUiGatesTest.kt:318:16 Type mismatch: inferred type is Pair<SnapshotStateList<Transcript.Message>, MutableState<Boolean>> but Unit was expected`, plus `498:25 Destructuring declaration initializer of type Unit must have a component1()/component2()` | `renderLiveChat` has a block body with **no declared return type**, so Kotlin fixed it to `Unit` and the `return live to liveBusy` was rejected; the destructuring at the call site was the cascade | return type declared as `Pair<SnapshotStateList<Transcript.Message>, MutableState<Boolean>>` (two `androidx.compose.runtime` imports added) |
+| 7 | `ChatUiGatesTest.kt:586:20 No value passed for parameter 'availability'` | one of the thirteen `renderChat` call sites (U2, the tool-card gate) omitted the required `availability` argument | `availability = AgentAvailability.READY` passed explicitly |
+| 8 | `CodeHighlightTest.kt:108:51 Unresolved reference: PATH` | the shell fixture `"echo \"$PATH\" | grep x"` was read as a Kotlin string template referring to a variable named `PATH` | escaped to `\"\$PATH\"` - the same trap as the `"$TAG_..."` templates in defect 2, in a different disguise |
+
+`:app:compileDebugAndroidTestKotlin` and `:app:testDebugUnitTest` had not been
+reached before, so this run is the first that will exercise the JVM unit tests and
+the instrumented harness compilation end to end.
 
 ### Offline cross-checks done while CI was blocked
 
@@ -211,7 +229,8 @@ These are host-side checks, not device evidence:
 
 ### Next
 
-1. Push the three fixes; the workflow re-runs on push.
+1. Push the fixes; the workflow re-runs on push (runs so far: #1 three defects in
+   main sources, #2 five defects in the test sources, all fixed).
 2. If step 2/8 goes green, the same run continues into the payload build, the
    fresh emulator and gates A/B/C, and commits verdicts + screenshots to
    `docs/progress/phase6-evidence/`.

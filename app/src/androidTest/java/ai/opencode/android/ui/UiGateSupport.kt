@@ -13,6 +13,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import java.io.File
 
@@ -204,6 +205,11 @@ internal fun tagPrefixMatcher(prefix: String) = SemanticsMatcher("TestTag starts
     }
 }
 
-/** A node is enabled unless it explicitly says otherwise. */
+/**
+ * A node is enabled unless it says otherwise. Compose has no `Enabled` property:
+ * a disabled component carries `SemanticsProperties.Disabled = true`, which is
+ * exactly what `assertIsEnabled()` / `assertIsNotEnabled()` look at, so this reads
+ * the same key the framework's own matchers do.
+ */
 internal fun isEnabledNode(node: SemanticsNode): Boolean =
-    node.config.getOrNull(SemanticsProperties.Enabled) != false
+    node.config.getOrNull(SemanticsProperties.Disabled) != true
