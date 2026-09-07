@@ -1,6 +1,159 @@
-[2026-09-07T11:24:27Z] === stage A: deterministic chat UI gates (no runtime, no model, no key) ===
-[2026-09-07T11:24:27Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the next gate really is a first run
+[2026-09-07T14:53:21Z] === stage A: deterministic chat UI gates (no runtime, no model, no key) ===
+[2026-09-07T14:53:21Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the next gate really is a first run
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
+[2026-09-07T14:53:27Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
+[2026-09-07T14:53:39Z] instrument rc=0 (chat-ui)
+	at ai.opencode.android.ui.ChatUiGatesTest.u2_toolCardsReadNaturallyAndExpandToRealOutput(ChatUiGatesTest.kt:631)
+2) u3_permissionAndQuestionAsksTakeAllThreeReplies(ai.opencode.android.ui.ChatUiGatesTest)
+java.lang.IllegalStateException: Cannot call setContent twice per test!
+	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:461)
+	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:340)
+	at ai.opencode.android.ui.ChatUiGatesTest.renderChat(ChatUiGatesTest.kt:261)
+	at ai.opencode.android.ui.ChatUiGatesTest.renderChat$default(ChatUiGatesTest.kt:256)
+	at ai.opencode.android.ui.ChatUiGatesTest.u3_permissionAndQuestionAsksTakeAllThreeReplies(ChatUiGatesTest.kt:716)
+3) u4_offlineAndDegradedStatesAreDistinguishable(ai.opencode.android.ui.ChatUiGatesTest)
+java.lang.IllegalStateException: Cannot call setContent twice per test!
+	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:461)
+	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:340)
+	at ai.opencode.android.ui.ChatUiGatesTest.renderChat(ChatUiGatesTest.kt:261)
+	at ai.opencode.android.ui.ChatUiGatesTest.renderChat$default(ChatUiGatesTest.kt:256)
+	at ai.opencode.android.ui.ChatUiGatesTest.u4_offlineAndDegradedStatesAreDistinguishable(ChatUiGatesTest.kt:757)
+4) u5_streamingStopRetryAndRegenerateAreVisible(ai.opencode.android.ui.ChatUiGatesTest)
+java.lang.IllegalStateException: Cannot call setContent twice per test!
+	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:461)
+	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:340)
+	at ai.opencode.android.ui.ChatUiGatesTest.renderChat(ChatUiGatesTest.kt:261)
+	at ai.opencode.android.ui.ChatUiGatesTest.renderChat$default(ChatUiGatesTest.kt:256)
+	at ai.opencode.android.ui.ChatUiGatesTest.u5_streamingStopRetryAndRegenerateAreVisible(ChatUiGatesTest.kt:880)
+5) u7_everyInteractiveElementHasARealName(ai.opencode.android.ui.ChatUiGatesTest)
+java.lang.IllegalStateException: Cannot call setContent twice per test!
+	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:461)
+	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:340)
+	at ai.opencode.android.ui.ChatUiGatesTest.renderSessions(ChatUiGatesTest.kt:332)
+	at ai.opencode.android.ui.ChatUiGatesTest.u7_everyInteractiveElementHasARealName(ChatUiGatesTest.kt:1098)
+6) u8_sessionListIsLazyAndSwitchingWorks(ai.opencode.android.ui.ChatUiGatesTest)
+java.lang.IllegalStateException: Cannot call setContent twice per test!
+	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:461)
+	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:340)
+	at ai.opencode.android.ui.ChatUiGatesTest.renderSessions(ChatUiGatesTest.kt:332)
+	at ai.opencode.android.ui.ChatUiGatesTest.renderSessions$default(ChatUiGatesTest.kt:327)
+	at ai.opencode.android.ui.ChatUiGatesTest.u8_sessionListIsLazyAndSwitchingWorks(ChatUiGatesTest.kt:1207)
+
+FAILURES!!!
+Tests run: 8,  Failures: 6
+
+
+[2026-09-07T14:53:39Z] chat-ui runner trailer: NOT-OK (rc=0)
+Error in u2_toolCardsReadNaturallyAndExpandToRealOutput(ai.opencode.android.ui.ChatUiGatesTest):
+Error in u3_permissionAndQuestionAsksTakeAllThreeReplies(ai.opencode.android.ui.ChatUiGatesTest):
+java.lang.IllegalStateException: Cannot call setContent twice per test!
+Error in u4_offlineAndDegradedStatesAreDistinguishable(ai.opencode.android.ui.ChatUiGatesTest):
+java.lang.IllegalStateException: Cannot call setContent twice per test!
+Error in u5_streamingStopRetryAndRegenerateAreVisible(ai.opencode.android.ui.ChatUiGatesTest):
+java.lang.IllegalStateException: Cannot call setContent twice per test!
+Error in u7_everyInteractiveElementHasARealName(ai.opencode.android.ui.ChatUiGatesTest):
+java.lang.IllegalStateException: Cannot call setContent twice per test!
+Error in u8_sessionListIsLazyAndSwitchingWorks(ai.opencode.android.ui.ChatUiGatesTest):
+java.lang.IllegalStateException: Cannot call setContent twice per test!
+java.lang.IllegalStateException: Cannot call setContent twice per test!
+java.lang.IllegalStateException: Cannot call setContent twice per test!
+java.lang.IllegalStateException: Cannot call setContent twice per test!
+java.lang.IllegalStateException: Cannot call setContent twice per test!
+java.lang.IllegalStateException: Cannot call setContent twice per test!
+FAILURES!!!
+Tests run: 8,  Failures: 6
+[2026-09-07T14:53:39Z] screenshots pulled: 6
+total 208
+drwxr-xr-x 2 runner runner  4096 Sep  7 14:53 .
+drwxr-xr-x 3 runner runner  4096 Sep  7 14:53 ..
+-rw-r--r-- 1 runner runner 35385 Sep  7 14:53 10-chat-long-transcript.png
+-rw-r--r-- 1 runner runner 35837 Sep  7 14:53 11-chat-tool-cards.png
+-rw-r--r-- 1 runner runner 32058 Sep  7 14:53 13-chat-runtime-down.png
+-rw-r--r-- 1 runner runner 21372 Sep  7 14:53 15-chat-streaming.png
+-rw-r--r-- 1 runner runner 31405 Sep  7 14:53 16-chat-markdown.png
+-rw-r--r-- 1 runner runner 39495 Sep  7 14:53 17-chat-a11y.png
+[2026-09-07T14:53:39Z] P6-U1 PASS :: ::
+[2026-09-07T14:53:39Z] P6-U2 FAIL :: :: collapsedByDefault=t
+[2026-09-07T14:53:39Z] P6-U3 FAIL
+[2026-09-07T14:53:39Z] P6-U4 FAIL
+[2026-09-07T14:53:39Z] P6-U5 FAIL
+[2026-09-07T14:53:39Z] P6-U6 PASS :: :: heading=t
+[2026-09-07T14:53:39Z] P6-U7 FAIL
+[2026-09-07T14:53:39Z] P6-U8 FAIL
+[2026-09-07T14:53:39Z] === stage B: first-run experience on a freshly installed APK ===
+[2026-09-07T14:53:39Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the next gate really is a first run
+Performing Streamed Install
+Success
+Performing Streamed Install
+Success
+[2026-09-07T14:53:46Z] === am instrument ai.opencode.android.ui.FirstRunUiGatesTest ===
+[2026-09-07T14:54:00Z] instrument rc=0 (first-run)
+
+ai.opencode.android.ui.FirstRunUiGatesTest:....
+
+Time: 13.558
+
+OK (4 tests)
+
+
+[2026-09-07T14:54:00Z] first-run runner trailer: OK
+[2026-09-07T14:54:00Z] screenshots pulled: 4
+total 328
+drwxr-xr-x 2 runner runner  4096 Sep  7 14:54 .
+drwxr-xr-x 3 runner runner  4096 Sep  7 14:53 ..
+-rw-r--r-- 1 runner runner 25176 Sep  7 14:54 01-first-run-welcome.png
+-rw-r--r-- 1 runner runner 26171 Sep  7 14:54 02-first-run-ready.png
+-rw-r--r-- 1 runner runner 26171 Sep  7 14:54 03-first-run-projects.png
+-rw-r--r-- 1 runner runner 33278 Sep  7 14:54 04-first-run-chat.png
+-rw-r--r-- 1 runner runner 35385 Sep  7 14:53 10-chat-long-transcript.png
+-rw-r--r-- 1 runner runner 35837 Sep  7 14:53 11-chat-tool-cards.png
+-rw-r--r-- 1 runner runner 32058 Sep  7 14:53 13-chat-runtime-down.png
+-rw-r--r-- 1 runner runner 21372 Sep  7 14:53 15-chat-streaming.png
+-rw-r--r-- 1 runner runner 31405 Sep  7 14:53 16-chat-markdown.png
+-rw-r--r-- 1 runner runner 39495 Sep  7 14:53 17-chat-a11y.png
+[2026-09-07T14:54:00Z] P6-F1 PASS :: :: fi
+[2026-09-07T14:54:00Z] P6-F2 PASS :: :: status=HEALTHY
+[2026-09-07T14:54:00Z] P6-F3 PASS :: :: p
+[2026-09-07T14:54:00Z] P6-F4 PASS :: :: count=4 usable=4 welcome=t
+[2026-09-07T14:54:00Z] === stage C: live turn through the UI (key-free default model) ===
+[2026-09-07T14:54:00Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
+[2026-09-07T15:01:24Z] instrument rc=0 (live-chat)
+
+ai.opencode.android.ui.LiveChatUiGatesTest:.
+
+Time: 442.679
+
+OK (2 tests)
+
+
+[2026-09-07T15:01:24Z] live-chat runner trailer: OK
+[2026-09-07T15:01:24Z] screenshots pulled: 5
+total 352
+drwxr-xr-x 2 runner runner  4096 Sep  7 15:01 .
+drwxr-xr-x 3 runner runner  4096 Sep  7 14:54 ..
+-rw-r--r-- 1 runner runner 25176 Sep  7 15:01 01-first-run-welcome.png
+-rw-r--r-- 1 runner runner 26171 Sep  7 15:01 02-first-run-ready.png
+-rw-r--r-- 1 runner runner 26171 Sep  7 15:01 03-first-run-projects.png
+-rw-r--r-- 1 runner runner 33278 Sep  7 15:01 04-first-run-chat.png
+-rw-r--r-- 1 runner runner 35385 Sep  7 14:53 10-chat-long-transcript.png
+-rw-r--r-- 1 runner runner 35837 Sep  7 14:53 11-chat-tool-cards.png
+-rw-r--r-- 1 runner runner 32058 Sep  7 14:53 13-chat-runtime-down.png
+-rw-r--r-- 1 runner runner 21372 Sep  7 14:53 15-chat-streaming.png
+-rw-r--r-- 1 runner runner 31405 Sep  7 14:53 16-chat-markdown.png
+-rw-r--r-- 1 runner runner 39495 Sep  7 14:53 17-chat-a11y.png
+-rw-r--r-- 1 runner runner 23966 Sep  7 15:01 30-live-chat-reply.png
+[2026-09-07T15:01:24Z] P6-L1 PASS :: :: p
+[2026-09-07T15:01:25Z] P6-L2 SKIP :: :: the model answe
+[2026-09-07T15:01:25Z] === evidence pull ===
+P6_MODEL_AVAILABLE 1 ::
+[2026-09-07T15:01:25Z] === SUMMARY ===
+P6_SUMMARY 2026-09-07T15:01:25Z
+ui_gates_pass=7 ui_gates_fail=6 ui_gates_skip=1
+chat_ui_instrument_rc=0 first_run_instrument_rc=0 live_chat_instrument_rc=0
+screenshots=12
+model_available=1
+device_abi=x86_64
+android_sdk=34
