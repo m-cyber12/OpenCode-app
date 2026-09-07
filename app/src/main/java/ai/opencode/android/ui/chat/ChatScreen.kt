@@ -437,9 +437,15 @@ private fun AskArea(
         onDismissRequest = { /* non-dismissible: the turn is blocked until answered */ },
         sheetState = sheetState,
     ) {
+        // Scrollable on purpose: when a permission ask and a question stack up
+        // (or a question carries a long option list + custom field), every answer
+        // the agent is waiting for must stay reachable by scrolling the sheet.
+        // The sheet provides bounded height, so a verticalScroll column here cannot
+        // hit the unbounded-height crash a lazy list would.
         Column(
             Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
