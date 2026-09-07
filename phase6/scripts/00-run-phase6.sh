@@ -80,10 +80,18 @@ collect_evidence() {
   # ours so one directory answers "did Phase 6 regress Phase 5?".
   if [ -d "$ROOT/phase5/out/evidence" ]; then
     mkdir -p "$EV/phase5-regression"
-    cp "$ROOT/phase5/out/evidence/GATES_SUMMARY.txt" "$EV/phase5-regression/" 2>/dev/null || true
-    cp "$ROOT/phase5/out/evidence/integration-gates.log" "$EV/phase5-regression/" 2>/dev/null || true
-    cp "$ROOT/phase5/out/evidence/p5-k-lines.txt" "$EV/phase5-regression/" 2>/dev/null || true
-    cp "$ROOT/phase5/out/00-run-phase5.log" "$EV/phase5-regression/" 2>/dev/null || true
+    # Copy the WHOLE bundle, never a guessed file list. Run 34115663777 produced an
+    # EMPTY phase5-regression/ because phase 5 writes p5-k-instrument.log,
+    # p5-k-gates.log, p5-k-lines.txt, p5-k-summary.txt, integration-lines.txt and
+    # keeps its own 00-run-phase5.log inside evidence/ - none of the four names this
+    # script used to guess. The Actions log bodies are not reachable from the
+    # development sandbox, so an empty directory here means a P5 FAIL cannot be
+    # diagnosed at all.
+    cp -r "$ROOT/phase5/out/evidence/." "$EV/phase5-regression/" 2>/dev/null || true
+    if [ -f "$ROOT/phase5/out/00-run-phase5.log" ]; then
+      cp "$ROOT/phase5/out/00-run-phase5.log" "$EV/phase5-regression/" 2>/dev/null || true
+    fi
+    echo "phase5-regression: $(ls -1 "$EV/phase5-regression" 2>/dev/null | wc -l) files copied" >> "$MAINLOG" 2>&1 || true
   fi
   cat > "$EV/README.txt" <<'EOF'
 Phase 6 evidence: the product UI (first-run experience + conversation-first chat)
@@ -320,6 +328,18 @@ if [ "${P6_SKIP_PHASE5:-0}" = "1" ]; then
   echo "P6_SKIP_PHASE5=1: skipping the Phase 5 regression tail" | tee -a "$MAINLOG"
   P5_RC=7
 else
+  # Phase 5's STAGED mode does not build the local stdio MCP fixture: in the normal
+  # phase4 -> phase5 flow phase4/out/mcp is already there because
+  # phase4/scripts/00-run-phase4.sh ran 11-build-mcp.sh. Phase 6 reuses phase 4's
+  # payload but never ran that build, so on run 34115663777
+  # phase5/scripts/20-integration-gates.sh found no
+  # phase4/out/mcp/node_modules/@modelcontextprotocol, silently skipped pushing
+  # mcp-server.js to the device, and "gates-mcp" could not spawn: P5-K's G10_MCP
+  # verdict (k4) and P5-R-10 both failed for want of a file on the HOST. Build it
+  # here exactly as phase 4 and standalone phase 5 do; a failure is a warning
+  # because the gate itself reports the consequence.
+  run_c 900 "bash '$ROOT/phase4/scripts/11-build-mcp.sh'" \
+    || echo "warn: phase4 MCP fixture build failed (expect P5-K G10_MCP and P5-R-10 to fail)" | tee -a "$MAINLOG"
   run_c 4500 "P5_SKIP_PUSH=1 bash '$ROOT/phase5/scripts/00-run-phase5.sh' --stage-after-phase4" || P5_RC=1
 fi
 echo "phase5 regression rc=$P5_RC" | tee -a "$MAINLOG"

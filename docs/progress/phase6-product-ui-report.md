@@ -233,6 +233,31 @@ No existing `UiErrorTest` expectation changed: the four `PROVIDER_OTHER` names, 
 `NAME_UNKNOWN` + `ECONNREFUSED` hint, the `SomethingNew` + `Invalid API key` hint,
 the `SomethingNew` + hint-less fallback and the empty-error case all still hold.
 
+### Run 34115663777 (commit `8a4cf96`) - WHOLE PIPELINE ran; two harness bugs, no UI verdicts
+
+This run went all the way through: static checks, compile + **163 JVM unit tests
+green**, fresh emulator (`sdk_gphone64_x86_64`, Android 14 / API 34 / x86_64, AVD
+created with `-wipe-data -no-snapshot`), payload, both APKs, install, the Phase 5
+regression tail and the evidence stage. It also proved the key-free default model
+works on this runner (`model_available=1`, `PROBE ok :: model=big-pickle
+exact-token reply`), so L1/L2 will not have to SKIP for want of a model.
+
+But `p6-ui-lines.txt` came back **empty**: not one P6 verdict exists, because the
+gate runner died before the first `am instrument`. Two harness defects, both mine,
+neither in product code:
+
+| # | Symptom | Cause | Fix |
+| --- | --- | --- | --- |
+| 13 | `20-ui-gates.sh: line 97: name: unbound variable`, straight after both APKs installed (`Success` twice); stages A/B/C never ran | `run_class()` declared `local name="$1" cls="$2" tmo="$3" out="$EV/p6-${name}-instrument.log" rc=0`. bash expands **every** word of a `local` command before performing **any** of its assignments, so `${name}` was read before `name` existed and `set -u` aborted the script | one assignment per line, with the reason recorded next to it. Audited every phase script for the same shape: the only other hit is `phase4/scripts/10-build-payload.sh:127`, which is frozen and proven, so it was left alone |
+| 14 | `P5-K: FAIL (pass=9 fail=1)` and `P5-R-10: FAIL`, against a Phase 5 baseline of `P5-K: PASS (pass=10 fail=0)` and `P5-R-10: PASS` | **not a product regression.** Phase 5's staged mode does not build the local stdio MCP fixture - in the normal phase4 -> phase5 flow `phase4/out/mcp` already exists because `phase4/scripts/00-run-phase4.sh:121` builds it. Phase 6 reuses phase 4's *payload* but never ran `11-build-mcp.sh`, so `20-integration-gates.sh` found no `node_modules/@modelcontextprotocol`, silently skipped pushing `mcp-server.js`, and `gates-mcp` had nothing to spawn. That is exactly the two gates that depend on it: k4 (`G10_MCP`, `mcpStatus()["gates-mcp"] == "connected"`) and the R-10 driver. Corroborated by `MCP_PUSHED` appearing **zero** times in the run log while `FIXTURE_GIT_OK` appears, and by the device being identical to the green baseline (Android 14 / API 34 / x86_64) | `00-run-phase6.sh` now runs `phase4/scripts/11-build-mcp.sh` (900 s, warn-don't-fail, same as phase 4 and standalone phase 5) immediately before the Phase 5 tail, and only when the tail will actually run |
+| 15 | `docs/progress/phase6-evidence/phase5-regression/` was **empty**, so defect 14 could not be diagnosed from the branch | the evidence stage copied four guessed filenames; phase 5 actually writes `p5-k-instrument.log`, `p5-k-gates.log`, `p5-k-lines.txt`, `p5-k-summary.txt`, `integration-lines.txt` and keeps its own `00-run-phase5.log` inside `evidence/`. Every `cp` failed silently (`2>/dev/null || true`), and the Actions log bodies are not reachable from this sandbox | copy the whole bundle with `cp -r .../.` and log how many files landed |
+
+Because of defect 13, the state of the product UI on a device is still completely
+unknown: F1-F4, U1-U8 and L1-L2 have never executed. Defect 14 means the Phase 5
+tail's verdict in this run cannot be read as a regression signal either; it has to
+be re-run with the fixture present before "Phase 5 still 14 PASS / 1 FAIL" can be
+claimed for Phase 6.
+
 ### Offline cross-checks done while CI was blocked
 
 These are host-side checks, not device evidence:
@@ -262,8 +287,12 @@ These are host-side checks, not device evidence:
 1. Push the fixes; the workflow re-runs on push. Runs so far: #1 three defects in
    the main sources, #2 five in the test sources, #3 two in my own fix for #2, #4
    two JVM-test failures (one wrong test expectation, one wrong product
-   behaviour) - twelve defects found and fixed, all in Phase 6 code, none in
-   Phase 5. Compilation is green as of run #4.
+   behaviour), #5 the whole pipeline with three harness defects (a `set -u`
+   abort in the gate runner, a missing MCP fixture build that failed two Phase 5
+   gates, and an evidence copy that guessed filenames) - fifteen defects found
+   and fixed, all in Phase 6 code or its harness, none in Phase 5 and none in the
+   product's client behaviour. Compilation and all 163 JVM unit tests are green as
+   of run #5; no P6 device verdict exists yet.
 2. If step 2/8 goes green, the same run continues into the payload build, the
    fresh emulator and gates A/B/C, and commits verdicts + screenshots to
    `docs/progress/phase6-evidence/`.

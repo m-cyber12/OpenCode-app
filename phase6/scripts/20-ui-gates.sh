@@ -94,7 +94,14 @@ pull_screenshots() {
 # Run one instrumented class and fold its P6_* verdict lines into the summary.
 # $1 = short name (evidence file suffix), $2 = fully qualified class, $3 = timeout
 run_class() {
-  local name="$1" cls="$2" tmo="$3" out="$EV/p6-${name}-instrument.log" rc=0
+  # One assignment per line, deliberately. bash expands EVERY word of a `local`
+  # (or plain multi-assignment) command before performing ANY of the assignments,
+  # so `local name="$1" ... out="$EV/p6-${name}-instrument.log"` read `name`
+  # before it existed and `set -u` aborted the whole gate stage: run 34115663777
+  # installed both APKs, then died here, so p6-ui-lines.txt was empty and not one
+  # P6 verdict existed.
+  local name="$1" cls="$2" tmo="$3" rc=0
+  local out="$EV/p6-${name}-instrument.log"
   log "=== am instrument $cls ==="
   adb logcat -c >/dev/null 2>&1 || true
   timeout -k 30 "$tmo" adb shell am instrument -w -e class "$cls" "$RUNNER" > "$out" 2>&1 || rc=$?
