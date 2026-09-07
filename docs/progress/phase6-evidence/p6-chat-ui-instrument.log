@@ -1,96 +1,62 @@
 
-ai.opencode.android.ui.ChatUiGatesTest:.
-Error in u2_toolCardsReadNaturallyAndExpandToRealOutput(ai.opencode.android.ui.ChatUiGatesTest):
-java.lang.AssertionError: P6_U2 FAIL :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=false failedStatus=false
+ai.opencode.android.ui.ChatUiGatesTest:..
+Error in u3_permissionAndQuestionAsksTakeAllThreeReplies(ai.opencode.android.ui.ChatUiGatesTest):
+java.lang.AssertionError: P6_U3 FAIL :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=false skipped=true
 	at org.junit.Assert.fail(Assert.java:89)
 	at org.junit.Assert.assertTrue(Assert.java:42)
-	at ai.opencode.android.ui.ChatUiGatesTest.gate(ChatUiGatesTest.kt:491)
-	at ai.opencode.android.ui.ChatUiGatesTest.u2_toolCardsReadNaturallyAndExpandToRealOutput(ChatUiGatesTest.kt:631)
-
-Error in u3_permissionAndQuestionAsksTakeAllThreeReplies(ai.opencode.android.ui.ChatUiGatesTest):
-java.lang.IllegalStateException: Cannot call setContent twice per test!
-	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:461)
-	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:340)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderChat(ChatUiGatesTest.kt:261)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderChat$default(ChatUiGatesTest.kt:256)
-	at ai.opencode.android.ui.ChatUiGatesTest.u3_permissionAndQuestionAsksTakeAllThreeReplies(ChatUiGatesTest.kt:716)
+	at ai.opencode.android.ui.ChatUiGatesTest.gate(ChatUiGatesTest.kt:575)
+	at ai.opencode.android.ui.ChatUiGatesTest.u3_permissionAndQuestionAsksTakeAllThreeReplies(ChatUiGatesTest.kt:823)
 
 Error in u4_offlineAndDegradedStatesAreDistinguishable(ai.opencode.android.ui.ChatUiGatesTest):
-java.lang.IllegalStateException: Cannot call setContent twice per test!
-	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:461)
-	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:340)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderChat(ChatUiGatesTest.kt:261)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderChat$default(ChatUiGatesTest.kt:256)
-	at ai.opencode.android.ui.ChatUiGatesTest.u4_offlineAndDegradedStatesAreDistinguishable(ChatUiGatesTest.kt:757)
-
-Error in u5_streamingStopRetryAndRegenerateAreVisible(ai.opencode.android.ui.ChatUiGatesTest):
-java.lang.IllegalStateException: Cannot call setContent twice per test!
-	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:461)
-	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:340)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderChat(ChatUiGatesTest.kt:261)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderChat$default(ChatUiGatesTest.kt:256)
-	at ai.opencode.android.ui.ChatUiGatesTest.u5_streamingStopRetryAndRegenerateAreVisible(ChatUiGatesTest.kt:880)
-.
-Error in u7_everyInteractiveElementHasARealName(ai.opencode.android.ui.ChatUiGatesTest):
-java.lang.IllegalStateException: Cannot call setContent twice per test!
-	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:461)
-	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:340)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderSessions(ChatUiGatesTest.kt:332)
-	at ai.opencode.android.ui.ChatUiGatesTest.u7_everyInteractiveElementHasARealName(ChatUiGatesTest.kt:1098)
-
-Error in u8_sessionListIsLazyAndSwitchingWorks(ai.opencode.android.ui.ChatUiGatesTest):
-java.lang.IllegalStateException: Cannot call setContent twice per test!
-	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:461)
-	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:340)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderSessions(ChatUiGatesTest.kt:332)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderSessions$default(ChatUiGatesTest.kt:327)
-	at ai.opencode.android.ui.ChatUiGatesTest.u8_sessionListIsLazyAndSwitchingWorks(ChatUiGatesTest.kt:1207)
-
-
-Time: 10.908
-There were 6 failures:
-1) u2_toolCardsReadNaturallyAndExpandToRealOutput(ai.opencode.android.ui.ChatUiGatesTest)
-java.lang.AssertionError: P6_U2 FAIL :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=false failedStatus=false
+java.lang.AssertionError: P6_U4 FAIL :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=false,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
 	at org.junit.Assert.fail(Assert.java:89)
 	at org.junit.Assert.assertTrue(Assert.java:42)
-	at ai.opencode.android.ui.ChatUiGatesTest.gate(ChatUiGatesTest.kt:491)
-	at ai.opencode.android.ui.ChatUiGatesTest.u2_toolCardsReadNaturallyAndExpandToRealOutput(ChatUiGatesTest.kt:631)
-2) u3_permissionAndQuestionAsksTakeAllThreeReplies(ai.opencode.android.ui.ChatUiGatesTest)
-java.lang.IllegalStateException: Cannot call setContent twice per test!
-	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:461)
-	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:340)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderChat(ChatUiGatesTest.kt:261)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderChat$default(ChatUiGatesTest.kt:256)
-	at ai.opencode.android.ui.ChatUiGatesTest.u3_permissionAndQuestionAsksTakeAllThreeReplies(ChatUiGatesTest.kt:716)
-3) u4_offlineAndDegradedStatesAreDistinguishable(ai.opencode.android.ui.ChatUiGatesTest)
-java.lang.IllegalStateException: Cannot call setContent twice per test!
-	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:461)
-	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:340)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderChat(ChatUiGatesTest.kt:261)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderChat$default(ChatUiGatesTest.kt:256)
-	at ai.opencode.android.ui.ChatUiGatesTest.u4_offlineAndDegradedStatesAreDistinguishable(ChatUiGatesTest.kt:757)
-4) u5_streamingStopRetryAndRegenerateAreVisible(ai.opencode.android.ui.ChatUiGatesTest)
-java.lang.IllegalStateException: Cannot call setContent twice per test!
-	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:461)
-	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:340)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderChat(ChatUiGatesTest.kt:261)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderChat$default(ChatUiGatesTest.kt:256)
-	at ai.opencode.android.ui.ChatUiGatesTest.u5_streamingStopRetryAndRegenerateAreVisible(ChatUiGatesTest.kt:880)
-5) u7_everyInteractiveElementHasARealName(ai.opencode.android.ui.ChatUiGatesTest)
-java.lang.IllegalStateException: Cannot call setContent twice per test!
-	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:461)
-	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:340)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderSessions(ChatUiGatesTest.kt:332)
-	at ai.opencode.android.ui.ChatUiGatesTest.u7_everyInteractiveElementHasARealName(ChatUiGatesTest.kt:1098)
-6) u8_sessionListIsLazyAndSwitchingWorks(ai.opencode.android.ui.ChatUiGatesTest)
-java.lang.IllegalStateException: Cannot call setContent twice per test!
-	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.setContent(ComposeUiTest.android.kt:461)
-	at androidx.compose.ui.test.junit4.AndroidComposeTestRule.setContent(AndroidComposeTestRule.android.kt:340)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderSessions(ChatUiGatesTest.kt:332)
-	at ai.opencode.android.ui.ChatUiGatesTest.renderSessions$default(ChatUiGatesTest.kt:327)
-	at ai.opencode.android.ui.ChatUiGatesTest.u8_sessionListIsLazyAndSwitchingWorks(ChatUiGatesTest.kt:1207)
+	at ai.opencode.android.ui.ChatUiGatesTest.gate(ChatUiGatesTest.kt:575)
+	at ai.opencode.android.ui.ChatUiGatesTest.u4_offlineAndDegradedStatesAreDistinguishable(ChatUiGatesTest.kt:940)
+
+Error in u5_streamingStopRetryAndRegenerateAreVisible(ai.opencode.android.ui.ChatUiGatesTest):
+java.lang.AssertionError: P6_U5 FAIL :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true retryBanner=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true turnErrorKept=false
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.ui.ChatUiGatesTest.gate(ChatUiGatesTest.kt:575)
+	at ai.opencode.android.ui.ChatUiGatesTest.u5_streamingStopRetryAndRegenerateAreVisible(ChatUiGatesTest.kt:1037)
+..
+Error in u8_sessionListIsLazyAndSwitchingWorks(ai.opencode.android.ui.ChatUiGatesTest):
+java.lang.AssertionError: P6_U8 FAIL :: rowsComposedBefore=7 after=7 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true revertNote=false emptyState=true/true
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.ui.ChatUiGatesTest.gate(ChatUiGatesTest.kt:575)
+	at ai.opencode.android.ui.ChatUiGatesTest.u8_sessionListIsLazyAndSwitchingWorks(ChatUiGatesTest.kt:1312)
+
+
+Time: 13.663
+There were 4 failures:
+1) u3_permissionAndQuestionAsksTakeAllThreeReplies(ai.opencode.android.ui.ChatUiGatesTest)
+java.lang.AssertionError: P6_U3 FAIL :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=false skipped=true
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.ui.ChatUiGatesTest.gate(ChatUiGatesTest.kt:575)
+	at ai.opencode.android.ui.ChatUiGatesTest.u3_permissionAndQuestionAsksTakeAllThreeReplies(ChatUiGatesTest.kt:823)
+2) u4_offlineAndDegradedStatesAreDistinguishable(ai.opencode.android.ui.ChatUiGatesTest)
+java.lang.AssertionError: P6_U4 FAIL :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=false,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.ui.ChatUiGatesTest.gate(ChatUiGatesTest.kt:575)
+	at ai.opencode.android.ui.ChatUiGatesTest.u4_offlineAndDegradedStatesAreDistinguishable(ChatUiGatesTest.kt:940)
+3) u5_streamingStopRetryAndRegenerateAreVisible(ai.opencode.android.ui.ChatUiGatesTest)
+java.lang.AssertionError: P6_U5 FAIL :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true retryBanner=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true turnErrorKept=false
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.ui.ChatUiGatesTest.gate(ChatUiGatesTest.kt:575)
+	at ai.opencode.android.ui.ChatUiGatesTest.u5_streamingStopRetryAndRegenerateAreVisible(ChatUiGatesTest.kt:1037)
+4) u8_sessionListIsLazyAndSwitchingWorks(ai.opencode.android.ui.ChatUiGatesTest)
+java.lang.AssertionError: P6_U8 FAIL :: rowsComposedBefore=7 after=7 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true revertNote=false emptyState=true/true
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.ui.ChatUiGatesTest.gate(ChatUiGatesTest.kt:575)
+	at ai.opencode.android.ui.ChatUiGatesTest.u8_sessionListIsLazyAndSwitchingWorks(ChatUiGatesTest.kt:1312)
 
 FAILURES!!!
-Tests run: 8,  Failures: 6
+Tests run: 8,  Failures: 4
 
 
