@@ -162,7 +162,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit) {
     }
     var exportTarget by remember { mutableStateOf<Project?>(null) }
     val exportPicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
-        val project = exportTarget.value
+        val project = exportTarget
         if (uri != null && project != null) {
             scope.launch {
                 withContext(Dispatchers.IO) {
@@ -381,6 +381,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit) {
                                     projectMemory.writeProject(projectName, text)
                                 } else if (scopeName == "global") {
                                     projectMemory.writeGlobal(text)
+                                } else {
+                                    // Neither a project nor the global scope: nothing to write.
+                                    Unit
                                 }
                             }
                             memory = withContext(Dispatchers.IO) {
@@ -401,6 +404,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit) {
                                     projectMemory.removeProject(projectName)
                                 } else if (scopeName == "global") {
                                     projectMemory.removeGlobal()
+                                } else {
+                                    // Neither a project nor the global scope: nothing to remove.
+                                    Unit
                                 }
                             }
                             memory = withContext(Dispatchers.IO) {

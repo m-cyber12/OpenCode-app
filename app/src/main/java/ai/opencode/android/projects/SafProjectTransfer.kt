@@ -59,7 +59,7 @@ class SafProjectTransfer(
                     sub.mkdirs()
                     walk(child, sub)
                 } else {
-                    child.openInputStream(context)?.use { input ->
+                    context.contentResolver.openInputStream(child.uri)?.use { input ->
                         bytes += ProjectIo.writeStream(input, File(into, childName), maxImportBytes - bytes)
                         count++
                     }
