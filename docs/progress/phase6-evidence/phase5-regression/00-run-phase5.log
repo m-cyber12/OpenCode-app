@@ -1,5 +1,5 @@
-=== PHASE 5 START 2026-09-07T17:15:58Z staged=1 ===
-heartbeat enabled (pid 12097, every 240s -> docs/progress/phase5-evidence/PROGRESS.txt)
+=== PHASE 5 START 2026-09-07T18:45:14Z staged=1 ===
+heartbeat enabled (pid 11930, every 240s -> docs/progress/phase5-evidence/PROGRESS.txt)
 ########## 1/6 staged mode: device + payload are phase 4's; build only what Phase 5 needs ##########
 List of devices attached
 emulator-5554	device
@@ -104,7 +104,7 @@ Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/w
 > Task :app:processDebugUnitTestJavaRes UP-TO-DATE
 > Task :app:testDebugUnitTest UP-TO-DATE
 
-BUILD SUCCESSFUL in 8s
+BUILD SUCCESSFUL in 10s
 74 actionable tasks: 2 executed, 72 up-to-date
 Performing Streamed Install
 Success
@@ -113,61 +113,61 @@ P5_REMOTE_MCP_DEPS reused from phase4/out/mcp/node_modules
 P5_REMOTE_MCP_SMOKE up=1 (log: /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp/smoke.log)
 P5_REMOTE_MCP_BUILT /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp (sdk 1.29.0)
 ########## 5/6 phase 5 integration gates ##########
-[2026-09-07T17:16:09Z] P5-00 app uid resolved: '10194'
-[2026-09-07T17:16:09Z] === P5-01 device / app / payload prerequisites ===
-[2026-09-07T17:16:14Z] P5-01 versionName=1.18.23-phase5 pid=7174 uid=10194 marker=present
+[2026-09-07T18:45:26Z] P5-00 app uid resolved: '10194'
+[2026-09-07T18:45:26Z] === P5-01 device / app / payload prerequisites ===
+[2026-09-07T18:45:31Z] P5-01 versionName=1.18.23-phase5 pid=7154 uid=10194 marker=present
 P5-01: PASS phase5-apk-installed-and-app-running
 P5-02: PASS payload-v5-manifest-marker
-[2026-09-07T17:16:14Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
+[2026-09-07T18:45:31Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
 wrote_rc=0
 wrote_rc=0
 wrote_rc=0
 warning: templates not found in /home/runner/share/git-core/templates
-FIXTURE_GIT_OK
 error: cannot run maintenance: No such file or directory
-[2026-09-07T17:16:17Z] P5-03 config_present=yes harness_rc=0
+FIXTURE_GIT_OK
+[2026-09-07T18:45:34Z] P5-03 config_present=yes harness_rc=0
 P5-03: PASS fixture-config-and-harness-marker
-[2026-09-07T17:16:25Z] === P5-04 server password via Keystore + test-only harness export ===
-[2026-09-07T17:16:30Z] P5-04 password: 9cfe… (48 chars) export_verdict=PASS
+[2026-09-07T18:45:42Z] === P5-04 server password via Keystore + test-only harness export ===
+[2026-09-07T18:45:45Z] P5-04 password: 8cc1… (48 chars) export_verdict=PASS
 P5-04: PASS keystore-password-authenticated-live-server
-[2026-09-07T17:16:30Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
-[2026-09-07T17:16:45Z] --- Kotlin gate verdict lines ---
-[2026-09-07T17:16:45Z] P5-K instrument_rc=0 kotlin_gates_pass=10/9 fail=0 skipped=0 gradle_ok=1 failures_marker=0 junit_exception_lines=0
+[2026-09-07T18:45:45Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
+[2026-09-07T18:46:05Z] --- Kotlin gate verdict lines ---
+[2026-09-07T18:46:05Z] P5-K instrument_rc=0 kotlin_gates_pass=10/9 fail=0 skipped=0 gradle_ok=1 failures_marker=0 junit_exception_lines=0
 P5-K: PASS kotlin-client-gates-on-device (K1..K9, pass=10 fail=0 skip=0)
-[2026-09-07T17:16:45Z] === relaunching the app for the device-side gate stages ===
-[2026-09-07T17:16:51Z] post-instrument runtime: health=OK via host-forward
-[2026-09-07T17:16:51Z] host-forward diagnostic: adb forward tcp:4111 -> http 200 (the drivers do not depend on this path; it works on this image)
+[2026-09-07T18:46:05Z] === relaunching the app for the device-side gate stages ===
+[2026-09-07T18:46:12Z] post-instrument runtime: health=OK via host-forward
+[2026-09-07T18:46:13Z] host-forward diagnostic: adb forward tcp:4111 -> http 200 (the drivers do not depend on this path; it works on this image)
 P5-05: PASS runtime-healthy-after-instrumentation
-[2026-09-07T17:16:51Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
-[2026-09-07T17:17:02Z] model pre-flight: PROBE ok :: model=big-pickle exact-token reply, session=ses_f83208549ffen8CPIak0ucn2Ma
-[2026-09-07T17:17:02Z] model_available=1 -> drivers and the in-app K2/K5 turns assert real streamed text
-[2026-09-07T17:17:02Z] gate driver runner: the payload's own bun at /data/data/ai.opencode.android.debug/files/bin/bun (on-device, app uid)
-[2026-09-07T17:17:02Z] --- re-run gate-06-health.js (as shipped, no edits) inside the app namespace ---
+[2026-09-07T18:46:13Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
+[2026-09-07T18:46:20Z] model pre-flight: PROBE ok :: model=big-pickle exact-token reply, session=ses_f82ceb5cbffeygVqAf508TJLC1
+[2026-09-07T18:46:20Z] model_available=1 -> drivers and the in-app K2/K5 turns assert real streamed text
+[2026-09-07T18:46:20Z] gate driver runner: the payload's own bun at /data/data/ai.opencode.android.debug/files/bin/bun (on-device, app uid)
+[2026-09-07T18:46:20Z] --- re-run gate-06-health.js (as shipped, no edits) inside the app namespace ---
 P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
-[2026-09-07T17:17:02Z] --- re-run gate-07-shell.js (as shipped, no edits) inside the app namespace ---
+[2026-09-07T18:46:20Z] --- re-run gate-07-shell.js (as shipped, no edits) inside the app namespace ---
 P5-R-07: PASS phase4-driver-gate-07-shell.js-unmodified(on-device)
-[2026-09-07T17:17:11Z] --- re-run gate-10-mcp.js (as shipped, no edits) inside the app namespace ---
+[2026-09-07T18:46:30Z] --- re-run gate-10-mcp.js (as shipped, no edits) inside the app namespace ---
 P5-R-10: PASS phase4-driver-gate-10-mcp.js-unmodified(on-device)
-[2026-09-07T17:17:26Z] --- re-run gate-11-stream.js (as shipped, no edits) inside the app namespace ---
+[2026-09-07T18:46:45Z] --- re-run gate-11-stream.js (as shipped, no edits) inside the app namespace ---
 P5-R-11: PASS phase4-driver-gate-11-stream.js-unmodified(on-device)
-[2026-09-07T17:17:44Z] --- re-run gate-12-permission.js (as shipped, no edits) inside the app namespace ---
+[2026-09-07T18:47:02Z] --- re-run gate-12-permission.js (as shipped, no edits) inside the app namespace ---
 P5-R-12: PASS phase4-driver-gate-12-permission.js-unmodified(on-device)
-[2026-09-07T17:18:02Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
-[2026-09-07T17:18:03Z] fixture host listener up=1 pid=12829
-[2026-09-07T17:18:03Z] adb reverse tcp:4551 -> host tcp:4551: 4551
+[2026-09-07T18:47:14Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
+[2026-09-07T18:47:15Z] fixture host listener up=1 pid=12673
+[2026-09-07T18:47:15Z] adb reverse tcp:4551 -> host tcp:4551: 4551
 P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
-[2026-09-07T17:20:16Z] === P5-G17 loopback-only binding evidence ===
-[2026-09-07T17:20:16Z] P5-G17 table=conclusive wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0 bound_lines=7 publish_lines=0 table_ok=1
-[2026-09-07T17:20:16Z] device global ipv4: '10.0.2.15'
+[2026-09-07T18:49:28Z] === P5-G17 loopback-only binding evidence ===
+[2026-09-07T18:49:28Z] P5-G17 table=conclusive wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0 bound_lines=7 publish_lines=0 table_ok=1
+[2026-09-07T18:49:28Z] device global ipv4: '10.0.2.15'
 P5-G17: PASS loopback-only-binding-and-no-mdns
-[2026-09-07T17:20:16Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
-[2026-09-07T17:20:17Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=600 auth_canary_absent=1 auth_verdict=clean leaks_outside_harness=0
+[2026-09-07T18:49:28Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
+[2026-09-07T18:49:29Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=600 auth_canary_absent=1 auth_verdict=clean leaks_outside_harness=0
 P5-G18: PASS credentials-keystore-only-at-rest
-[2026-09-07T17:20:17Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
-[2026-09-07T17:20:19Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
+[2026-09-07T18:49:29Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
+[2026-09-07T18:49:31Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
 P5-G19: PASS no-hardcoded-or-bundled-secrets
-[2026-09-07T17:20:19Z] === evidence pull ===
-[2026-09-07T17:20:19Z] === SUMMARY ===
+[2026-09-07T18:49:31Z] === evidence pull ===
+[2026-09-07T18:49:31Z] === SUMMARY ===
 P5-01: PASS phase5-apk-installed-and-app-running
 P5-02: PASS payload-v5-manifest-marker
 P5-03: PASS fixture-config-and-harness-marker
@@ -183,16 +183,16 @@ P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
 P5-G17: PASS loopback-only-binding-and-no-mdns
 P5-G18: PASS credentials-keystore-only-at-rest
 P5-G19: PASS no-hardcoded-or-bundled-secrets
-P5_SUMMARY 2026-09-07T17:20:19Z
+P5_SUMMARY 2026-09-07T18:49:31Z
 gates_pass=14 gates_fail=1 gates_skip=0
 kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
-model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f83208549ffen8CPIak0ucn2Ma
+model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f82ceb5cbffeygVqAf508TJLC1
 app_uid=10194 device_abi=x86_64
 live_launcher_processes=0
 STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh'
 phase5 gates rc=1
 ########## 6/6 evidence ##########
-=== PHASE 5 END 2026-09-07T17:20:21Z gates_rc=1 ===
+=== PHASE 5 END 2026-09-07T18:49:32Z gates_rc=1 ===
 P5-01: PASS phase5-apk-installed-and-app-running
 P5-02: PASS payload-v5-manifest-marker
 P5-03: PASS fixture-config-and-harness-marker
@@ -208,9 +208,9 @@ P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
 P5-G17: PASS loopback-only-binding-and-no-mdns
 P5-G18: PASS credentials-keystore-only-at-rest
 P5-G19: PASS no-hardcoded-or-bundled-secrets
-P5_SUMMARY 2026-09-07T17:20:19Z
+P5_SUMMARY 2026-09-07T18:49:31Z
 gates_pass=14 gates_fail=1 gates_skip=0
 kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
-model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f83208549ffen8CPIak0ucn2Ma
+model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f82ceb5cbffeygVqAf508TJLC1
 app_uid=10194 device_abi=x86_64
 live_launcher_processes=0
