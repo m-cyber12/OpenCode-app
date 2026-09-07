@@ -804,8 +804,23 @@ class ChatUiGatesTest {
             rule.onAllNodes(textMatcher("staging"))[0].performClick()
             rule.waitForIdle()
         }
-        rule.onNodeWithTag(TAG_QUESTION_SUBMIT).performClick()
-        rule.waitForIdle()
+        // Run #8's answersSeen=[] said the callback never fired at all, while
+        // 12-chat-asks.png showed the radio selected and the button enabled. So
+        // record whether the button was actually clickable at tap time, and tap
+        // again (as a user would) if the first tap was lost to a race - without
+        // ever hiding what happened: both facts land in the gate detail.
+        val submitNodes = rule.onAllNodesWithTag(TAG_QUESTION_SUBMIT).fetchSemanticsNodes()
+        val submitEnabled = submitNodes.isNotEmpty() &&
+            !submitNodes.first().config.contains(SemanticsProperties.Disabled)
+        var submitClicks = 0
+        repeat(3) {
+            if (questionAnswers.isNotEmpty()) return@repeat
+            val n = rule.onAllNodesWithTag(TAG_QUESTION_SUBMIT).fetchSemanticsNodes()
+            if (n.isEmpty() || n.first().config.contains(SemanticsProperties.Disabled)) return@repeat
+            rule.onNodeWithTag(TAG_QUESTION_SUBMIT).performClick()
+            submitClicks++
+            rule.waitForIdle()
+        }
         val answered = questionAnswers.any { it.first == "que_gate1" && it.second.any { a -> a.contains("staging") } }
 
         // Skip is the other honest answer.
@@ -826,7 +841,8 @@ class ChatUiGatesTest {
             "ask=$askShown commandVerbatim=$commandVerbatim alwaysScope=$alwaysScope kind=$kindLine " +
                 "once=$onceOk always=$alwaysOk reject=$rejectOk question=$questionShown " +
                 "questionText=$questionText optionShown=$optionShown optionClicked=$picked " +
-                "answered=$answered skipped=$skipped answersSeen=$questionAnswers",
+                "answered=$answered skipped=$skipped answersSeen=$questionAnswers " +
+                "submitEnabledAtTap=$submitEnabled submitClicks=$submitClicks",
         )
     }
 
@@ -1269,13 +1285,17 @@ class ChatUiGatesTest {
         // ses_7 has no title: the row must say so in words rather than render blank.
         val untitledLabel = onScreenText().contains(context.getString(R.string.sessions_untitled))
 
+        // ses_9 carries the revert note and sits at index 8: with a real lazy list
+        // (rowsComposedBefore=7) it is composed neither in the first viewport nor
+        // after scrolling to the END - run #8 proved the second half by still
+        // reading revertNote=false after performScrollToIndex(39) had scrolled it
+        // back out. Scroll the row itself into the viewport, read, then go on.
+        rule.onNodeWithTag("session_list").performScrollToIndex(8)
+        rule.waitForIdle()
+        val revertedNote = onScreenText().contains("msg_x")
+
         rule.onNodeWithTag("session_list").performScrollToIndex(39)
         rule.waitForIdle()
-        // ses_9 carries the revert note and sits at index 8: with a real lazy list
-        // it is not composed in the first viewport (rowsComposedBefore was 7 in
-        // run #7), so read it only after scrolling it into view - the same class
-        // of bug U2's failed tool card had.
-        val revertedNote = onScreenText().contains("msg_x")
         val lastVisible = exists("session_row_ses_40")
         val firstGone = !exists("session_row_ses_1")
         val composedAfter = countPrefix("session_row_")

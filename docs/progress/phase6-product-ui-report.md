@@ -23,13 +23,13 @@ fact is read from `OpenCodeApi`, `OpenCodeEventStream`, `Transcript` or
 | JVM unit tests (163) | **TESTED (CI)** | `:app:testDebugUnitTest` green since run #4; XML in `docs/progress/phase6-evidence/jvm-unit-tests/` |
 | Instrumented gate harness (3 classes, 14 gates) | **TESTED on device, 4 harness defects found and fixed** | run #6 executed all three classes; defects 16-19 in section 5 are harness bugs, not product bugs |
 | First-run flow on a fresh emulator (F1-F4) | **TESTED - all 4 PASS** | run #6, after `pm uninstall` of both packages: welcome copy clean of host/port/URL, runtime self-started to `HEALTHY`, a project was created through the UI into an enabled composer, 4 screenshots (`01`-`04`) |
-| Live turn through the UI (L1) | **TESTED on run #6 - PASS; run #7 SKIPped and exposed product defect 21** | run #6: a real prompt produced a real assistant reply in 442 s (`model=big-pickle`). Run #7's default model rotated to one whose id upstream reports already prefixed, the client forwarded it verbatim, the server resolved `subconscious/subconscious/tim-qwen3.6-27b` and killed the turn - fixed by `ModelRef.bareModelID`, re-run pending |
+| Live turn through the UI (L1) | **TESTED on run #6 - PASS; runs #7-8 SKIP, each for a different honest reason** | run #6: a real reply in 442 s (`model=big-pickle`). Run #7: the client double-prefixed the model id (product defect 21, fixed). Run #8: the wire carried exactly what upstream suggested (`subconscious/tim-qwen3.6-27b`, proving `bareModelID`) and upstream still answered "Model not found ... Did you mean: <the same id>?" because that provider was not connected on the runner - an environment state, SKIPped by design. The failure was visible to a user this time: `30-live-chat-reply.png` shows the banner plus its Details disclosure |
 | Live tool call through the UI (L2) | **SKIP by design, NOT TESTED** | the model answered without calling a tool inside the 420 s budget. The class reports SKIP and never PASS when a tool call cannot be observed; it is not a failure of the UI, and it stays open |
 | Deterministic chat gates U1 (lazy transcript), U6 (markdown + syntax highlighting) | **TESTED - PASS** | run #6: 602-row transcript composed only its viewport and did not yank the reader back; markdown and multi-colour code spans present |
 | Deterministic chat gates U2, U7 | **TESTED - PASS** | run #7: the failed tool card now scrolls into view (`failedCardOpen=true failedStatus=true`), and the accessible-name audit ran on a device for the first time: `interactive={chat=23, sessions=23, projects=4, welcome=2, welcome-unsupported=2, settings=5} total=59 unnamed=0` |
 | Deterministic chat gates U4, U5 | **NOT TESTED - blocked by product defect 20, fixed, re-run pending** | both failed on exactly one sub-check (`rawKept=false`, `turnErrorKept=false`): a session-level turn error is invisible while the agent is READY. Product fix committed; the screenshot of run #7's dead live turn is the evidence |
-| Deterministic chat gate U8 | **NOT TESTED - blocked by gate defect 22, fixed, re-run pending** | every sub-check green except `revertNote=false`: the reverted session sits at index 8 of a list that composes 7 rows, so it was never composed. Read after the scroll now |
-| Deterministic chat gate U3 | **NOT TESTED - one open question, now self-diagnosing** | twelve of thirteen sub-checks green; `answered=false` although `12-chat-asks.png` shows the "staging" radio selected and the submit button enabled. The gate now prints the callback payload it received (`answersSeen=`) so run #8 settles whether the click, the state write or the expectation is wrong |
+| Deterministic chat gate U8 | **NOT TESTED - defect 22 fixed wrongly once, now fixed properly (defect 24)** | run #8: still `revertNote=false`, because scrolling to index 39 composes the END of the list and scrolls row 8 back out. The gate now scrolls to the row itself (index 8), reads, then continues to the end |
+| Deterministic chat gate U3 | **NOT TESTED - the payload question is now answered: the callback never fired** | run #8 printed `answersSeen=[]`, i.e. `onQuestionSubmit` was never invoked at all, while the screenshot shows the radio selected and "Send answer" enabled. The gate now records whether the button was clickable at tap time and re-taps as a user would (defect 25), with both facts in the detail line |
 | Screenshots | **17 CAPTURED** | run #7 added `12-chat-asks`, `14-chat-provider-auth`, `18-settings-a11y`, `19-sessions`, `19b-welcome-states`. Two of them are diagnostic evidence in their own right: `12-chat-asks.png` shows a selected radio the gate could not account for, and `30-live-chat-reply.png` shows a conversation in which a server-side turn failure left no trace |
 | Phase 5 regression tail (frozen gates re-run after Phase 6 changes) | **TESTED - steady state held** | run #6: `phase5=14pass kotlin=10pass failed_ids=P5-G16 unexpected_failures=none`. The folded verdict `P6-R5` still printed FAIL because of defect 17 (a counter-parsing bug in the folder), fixed and replayed against run #6's own summary |
 
@@ -369,6 +369,39 @@ detail line. Run #8 will therefore name the culprit - the click target, the
 state write, or the expectation - instead of re-reporting a bare `false`. U3
 stays **NOT TESTED**.
 
+### Run 34145765499 (commit `9f6bf95`) - 11 PASS / 2 FAIL / 2 SKIP: both product fixes verified on device, two gate bugs left
+
+The counters folded correctly for the first time (`ui_gates_pass=11
+ui_gates_fail=2 ui_gates_skip=2`, defect 23), `P6-R5` stayed PASS at Phase 5's
+frozen steady state, all three classes completed (`rc=0`), 17 screenshots.
+
+Newly green, and what each proves:
+
+* **U4 PASS** with `rawKept=true` and **U5 PASS** with `turnErrorKept=true` -
+  product defect 20 is fixed on device: a session-level turn error now shows
+  upstream's own name and message even while the agent is READY.
+* **U7 PASS** again: `interactive={chat=23, sessions=11, projects=11, welcome=2,
+  welcome-unsupported=2, settings=5} total=54 unnamed=0`.
+* U1, U2, U6 and F1-F4 unchanged PASS.
+
+The live class SKIPped honestly, and its evidence is worth reading closely. The
+server log shows the client sent `subconscious/tim-qwen3.6-27b` - exactly the id
+upstream's own error had suggested in run #7 - so `bareModelID` works on the
+wire; upstream then answered `Model not found: subconscious/tim-qwen3.6-27b. Did
+you mean: subconscious/tim-qwen3.6-27b?` because that provider was not connected
+on this runner (`opencode_connected=opencode`, `providers_pushed=0`). That is an
+environment state, not a client defect, and SKIP is the designed verdict for it.
+Crucially, the conversation was no longer silent about it: the run's
+`30-live-chat-reply.png` shows the amber banner ("The agent is still running, so
+you can retry or reword.") with its Details disclosure - defect 20's fix on the
+live path. The SKIP *reason* was still blank, though, which is defect 26 below.
+
+| # | Symptom | Cause | Fix |
+| --- | --- | --- | --- |
+| 24 | U8 still `revertNote=false` after defect 22's fix | scrolling to index 39 composes the END of the lazy list, which scrolls row 8 (the reverted session) back out of the viewport; the note was read there | scroll to the row itself (`performScrollToIndex(8)`), read `revertedNote`, then scroll to the end for the remaining assertions |
+| 25 | U3 `answersSeen=[]` - the submit callback never fired, although the screenshot shows the radio selected and the button enabled | still unknown, and now measurable: either the tap raced a recomposition or the button's click action was absent at tap time | the gate records `submitEnabledAtTap` from the semantics `Disabled` key, then taps up to three times as a user would, stopping as soon as the callback records anything; both facts go into the detail line so run #9 names the cause instead of re-reporting `false` |
+| 26 | L1/L2 SKIP reason ended in an empty string while the screen visibly carried the failure | one `fetchSemanticsNodes()` landed mid-recomposition and returned nothing, and the raw server words sit behind a collapsed disclosure | open the failure's Details disclosure first, then read the screen through a 15 s `waitFor { allText().isNotBlank() }` retry, and quote its last three lines in the reason |
+
 ### Offline cross-checks done while CI was blocked
 
 These are host-side checks, not device evidence:
@@ -395,27 +428,24 @@ These are host-side checks, not device evidence:
 
 ### Next
 
-1. Run #8, with two product fixes (20: turn errors visible at READY; 21:
-   `bareModelID`) and two gate fixes (22: U8's revert note after the scroll; 23:
-   unanchored counters) in flight. Expectations, stated in advance so the run can
-   be read honestly: U4, U5 and U8 should clear their single red sub-check; L1
-   should serve a turn again **if** the pinned default model is reachable, and if
-   it is not, its SKIP reason must now carry upstream's own error words from the
-   turn-error card rather than an empty string; U3 is the one gate whose verdict
-   run #8 is meant to *explain*, not merely re-report, via `answersSeen=`.
-2. U7's device result (59 interactive nodes, 0 unnamed) closes the largest open
-   question of the phase; the host-side a11y checker and the 17-file scan agree
-   with it.
-3. Everything else stands: L2 stays SKIP until a model calls a tool through the
-   UI; U3 stays NOT TESTED until its payload is seen; coverage remains one x86_64
-   emulator at API 34, with real arm64, secure-hardware key residency and toybox
-   `tar` on API 29 left to Phase 8; P5-G16 stays red-by-design
-   (anomalyco/opencode#47644) with no client-side workaround.
+1. Run #9 decides the last two chat gates. U8's fix is mechanical (scroll to the
+   row, read, scroll on) and should clear. U3 is the genuinely open question of
+   the phase: run #9's detail will say whether the submit button was clickable at
+   tap time and how many taps it took, which separates a test race from a product
+   defect in the question card.
+2. L1/L2 depend on the runner's key-free default provider being connected; two
+   runs in a row it was not. That is now a documented environment dependency of
+   the live gates (they SKIP, never fake a PASS), and a Phase 7/8 note: the
+   pinned default model is not guaranteed on every runner.
+3. Standing items unchanged: coverage is one x86_64 emulator at API 34 (real
+   arm64, secure-hardware key residency and toybox `tar` on API 29 stay Phase 8);
+   P5-G16 stays red-by-design (anomalyco/opencode#47644) with no client-side
+   workaround; Phase 5 remains frozen and both runs since the freeze confirmed
+   its steady state on device.
 
 Phase 5 stays frozen: `phase5/scripts/20-integration-gates.sh`, the R-* drivers
 and P5-K are byte-identical in this phase, and both `CI_GRADLE_ONLY` markers are
-`0`. Runs #6 and #7 both confirmed the frozen steady state on a device after
-Phase 6's changes: 14 PASS / 1 FAIL with only P5-G16 red.
+`0`.
 
 ## 6. OpenCode capabilities not yet exposed in the UI (flags for Phase 7/8)
 

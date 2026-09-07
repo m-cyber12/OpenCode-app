@@ -12,10 +12,12 @@ import ai.opencode.android.ui.chat.TAG_COMPOSER_INPUT
 import ai.opencode.android.ui.chat.TAG_COMPOSER_SEND
 import ai.opencode.android.ui.chat.TAG_PERMISSION_ONCE
 import ai.opencode.android.ui.chat.TAG_QUESTION_SKIP
+import ai.opencode.android.ui.chat.TAG_TURN_ERROR
 import android.content.Context
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -294,8 +296,22 @@ class LiveChatUiGatesTest {
         val bytes = shot("30-live-chat-reply.png")
 
         if (!answered || reply.isEmpty()) {
-            modelReason = if (sawErrorBanner) {
-                "the turn failed and the app said so: ${allText().take(160)}"
+            // Open the failure's own disclosure first, so the reason carries the
+            // server's verbatim words and not just our headline; then read the
+            // screen with a short retry, because run #8's reason came out blank:
+            // one semantics fetch landed mid-recomposition while the banner and
+            // its Details disclosure were plainly on screen (see the run's
+            // 30-live-chat-reply.png).
+            val detailButtons = rule.onAllNodesWithText(context.getString(R.string.action_details))
+            if (detailButtons.fetchSemanticsNodes().isNotEmpty()) {
+                detailButtons[0].performClick()
+                rule.waitForIdle()
+            }
+            waitFor(15_000) { allText().isNotBlank() }
+            val screenWords = allText().lineSequence().filter { it.isNotBlank() }
+                .takeLast(3).joinToString(" | ").take(220)
+            modelReason = if (sawErrorBanner || exists(TAG_TURN_ERROR)) {
+                "the turn failed and the app said so: $screenWords"
             } else {
                 "no assistant text from the server within 300s (busySeen=$sawBusy, asksAnswered=$asksAnswered)"
             }
