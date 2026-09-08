@@ -197,12 +197,27 @@ class StressRecoveryGatesTest {
             ai.opencode.android.security.SecretStore.get(context).isHardwareBacked()
         }.getOrDefault(false)
         val abi = android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: "?"
+        val isEmulator = android.os.Build.FINGERPRINT.contains("generic", ignoreCase = true) ||
+            android.os.Build.MODEL.contains("sdk_gphone", ignoreCase = true) ||
+            android.os.Build.MODEL.contains("emulator", ignoreCase = true) ||
+            android.os.Build.MANUFACTURER.contains("genymotion", ignoreCase = true)
         val detail = "masterKey=present insideSecureHardware=$insideSecureHardware strongBoxBacked=$strongBox " +
             "secretStoreIsHardwareBacked=$hardwareBacked abi=$abi device=${android.os.Build.MODEL} " +
             "api=${android.os.Build.VERSION.SDK_INT} :: " +
             if (insideSecureHardware) "key material is held by secure hardware (TEE/StrongBox) on this device"
             else "key material is in the SOFTWARE keystore on this device - the ciphertext-at-rest guarantee holds, key-extraction resistance does not (expected on emulators; a real-device run is the evidence for the hardware claim)"
-        gate("KEYRESIDENCY", keyInfo != null, detail)
+        if (isEmulator || !abi.startsWith("arm")) {
+            // The verdict on this device is a MEASUREMENT, not a pass/fail: an
+            // x86_64 emulator has no secure hardware at all, so "software
+            // keystore" is the physically expected result - a FAIL would
+            // imply a product defect where there is none. The hardware
+            // residency question is answered by the real-device run
+            // (phase8/scripts/90-real-device-suite.sh), which runs this very
+            // test on the arm64 device and applies the strict branch below.
+            skip("KEYRESIDENCY", detail)
+        } else {
+            gate("KEYRESIDENCY", keyInfo != null && (insideSecureHardware || hardwareBacked), detail)
+        }
     }
 
     // ---- 01: a rejected key is an auth failure, never a network failure ------
@@ -232,6 +247,16 @@ class StressRecoveryGatesTest {
         // uses (the same call the Settings model picker makes).
         val dir = ProjectStore.get(context).active()?.path
         AppContainer.get(context).repositoryFor(dir).setModel("openrouter", probe.provisionedModel)
+
+        // A FRESH session (the product's own "new chat" call): an earlier
+        // stage can leave a turn in flight on the shared session, and the
+        // server serializes turns per session - the first full run's prompt
+        // queued behind such a stuck turn and produced nothing for 240s.
+        AppContainer.get(context).repositoryFor(dir).newSession(null)
+        if (!waitFor(60_000) { enabled(TAG_COMPOSER_INPUT) }) {
+            gate("PROVAUTH", false, "the composer never became usable after the fresh session")
+            return
+        }
 
         val known = probe.knownMessageIds()
         val sent = sendPrompt("Say exactly: P8AUTHCHECK and nothing else.")

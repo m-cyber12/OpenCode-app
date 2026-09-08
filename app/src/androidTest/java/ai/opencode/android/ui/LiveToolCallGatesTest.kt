@@ -221,22 +221,61 @@ class LiveToolCallGatesTest {
             return
         }
 
-        val deadline = System.currentTimeMillis() + 240_000
-        var reply = ""
-        var err = ""
-        while (System.currentTimeMillis() < deadline && reply.isEmpty()) {
-            for (m in api.messages(session.id, 20)) {
-                for (p in m.parts) {
-                    if (p.optString("type") == "text" && p.optString("text").contains(token)) {
-                        reply = p.optString("text")
+        // Only ASSISTANT messages count as the reply. The user's own prompt
+        // contains the token, so scanning every message "sees" the answer in
+        // the echo of the question - the first full run's PASS was exactly
+        // that false positive (reply == the prompt text, model never answered).
+        fun probeReply(sessionID: String, deadlineMs: Long): Pair<String, String> {
+            var reply = ""
+            var err = ""
+            while (System.currentTimeMillis() < deadlineMs && reply.isEmpty()) {
+                for (m in api.messages(sessionID, 20)) {
+                    if (m.role != "assistant") continue
+                    for (p in m.parts) {
+                        if (p.optString("type") == "text" && p.optString("text").contains(token)) {
+                            reply = p.optString("text")
+                        }
+                    }
+                    val errObj = m.info?.optJSONObject("error")
+                    if (err.isEmpty() && errObj != null) {
+                        err = "${errObj.optString("name")}: ${errObj.optString("message").take(160)} (status=${errObj.optInt("statusCode", 0)})"
                     }
                 }
-                val errObj = m.info?.optJSONObject("error")
-                if (err.isEmpty() && errObj != null) {
-                    err = "${errObj.optString("name")}: ${errObj.optString("message").take(160)} (status=${errObj.optInt("statusCode", 0)})"
+                Thread.sleep(3000)
+            }
+            return reply to err
+        }
+
+        // One retry in a fresh session: a transient provider stall must not
+        // end the key question with a single sample. The first full run saw
+        // exactly that - an in-flight turn silent for 480s with no error
+        // (no turn timeout exists upstream; see the report).
+        var reply = ""
+        var err = ""
+        var probeSession = session
+        for (attempt in 1..2) {
+            val deadline = System.currentTimeMillis() + if (attempt == 1) 240_000 else 180_000
+            val (r, e) = probeReply(probeSession.id, deadline)
+            reply = r
+            err = e
+            if (reply.isNotEmpty()) break
+            if (attempt == 1) {
+                val retry = runCatching { api.createSession(title = "p8 key probe retry") }.getOrNull()
+                val sent2 = if (retry != null) {
+                    runCatching {
+                        api.promptAsync(
+                            retry.id,
+                            "Reply with exactly this token and nothing else: $token",
+                            model = OpenCodeApi.ModelRef("openrouter", model),
+                        )
+                    }.getOrDefault(0)
+                } else 0
+                if (retry != null && (sent2 == 204 || sent2 == 200)) {
+                    probeSession = retry
+                    continue
                 }
             }
-            Thread.sleep(3000)
+            break
         }
 
         if (reply.isNotEmpty()) {
@@ -279,6 +318,15 @@ class LiveToolCallGatesTest {
         // makes) so the turn the composer sends goes to the provisioned model.
         val dir = ProjectStore.get(context).active()?.path
         AppContainer.get(context).repositoryFor(dir).setModel("openrouter", probe.provisionedModel)
+
+        // A FRESH session (the product's own "new chat" call): the server
+        // serializes turns per session, so a stuck in-flight turn from an
+        // earlier stage would queue this one behind it indefinitely.
+        AppContainer.get(context).repositoryFor(dir).newSession(null)
+        if (!waitFor(60_000) { enabled(TAG_COMPOSER_INPUT) }) {
+            skip("TOOL", "the composer never became usable after the fresh session")
+            return
+        }
 
         val marker = BADGE + (System.currentTimeMillis() % 1_000_000)
         val known = probe.knownMessageIds()

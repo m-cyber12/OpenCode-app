@@ -278,8 +278,17 @@ class RuntimeManager private constructor(private val appContext: Context) {
                     logger.host("found $servers leftover server process(es) after exit — sweeping")
                     process.killStaleServer()
                 }
-                publish(RuntimeStatus.CRASHED_RESTARTING, "server exited (code=$code); restarting", attempts)
-                if (!backoffOrGiveUp(attempts, gen)) break
+                // The confirmed-healthy branch above reset `attempts` to 0, so
+                // the restart about to be scheduled is counted as attempt
+                // attempts+1 by the loop head; use that same 1-based count for
+                // the publish and the backoff (delayMs requires attempts >= 1).
+                val restartAttempt = attempts + 1
+                publish(
+                    RuntimeStatus.CRASHED_RESTARTING,
+                    "server exited (code=$code); restarting (attempt $restartAttempt)",
+                    restartAttempt,
+                )
+                if (!backoffOrGiveUp(restartAttempt, gen)) break
             }
         } catch (t: Throwable) {
             logger.host("supervisor fatal error: ${t.message}\n${t.stackTraceToString().take(2000)}")

@@ -86,7 +86,7 @@ stage_drivers() { # phase4 lib + phase8 drivers onto the device
 run_js_on_device() { # $1=script-in-$DEVJS [argv...] ; needs PASSWD
   local script="$1"; shift
   local out rc
-  out=$(rash "cd '$DEVJS' && timeout -k 5 ${P8_DRIVER_TIMEOUT:-900} env OPENCODE_BASE=\"http://127.0.0.1:$PORT\" OPENCODE_SERVER_PASSWORD=\"$PASSWD\" OPENCODE_SERVER_USERNAME=opencode OPENCODE_DIRECTORY=\"$WORKDIR\" OPENCODE_BUN_BIN=\"$FILES/bin/bun\" P8_PERF_MODEL=\"${P8_PERF_MODEL:-}\" P8_PERF_KEY=\"${P8_PERF_KEY:-}\" P8_HIST_TURNS=\"${P8_HIST_TURNS:-40}\" P8_LARGE_FILES=\"${P8_LARGE_FILES:-2000}\" P8_LARGE_FILE_MB=\"${P8_LARGE_FILE_MB:-50}\" '$FILES/bin/bun' '$script' $* 2>&1; echo \"DEVJS_RC=\$?\"")
+  out=$(rash "cd '$DEVJS' && timeout -k 5 ${P8_DRIVER_TIMEOUT:-900} env OPENCODE_BASE=\"http://127.0.0.1:$PORT\" OPENCODE_SERVER_PASSWORD=\"$PASSWD\" OPENCODE_SERVER_USERNAME=opencode OPENCODE_DIRECTORY=\"$WORKDIR\" OPENCODE_BUN_BIN=\"$FILES/bin/bun\" P8_PERF_MODEL=\"${P8_PERF_MODEL:-}\" P8_PERF_KEY=\"${P8_PERF_KEY:-}\" P8_HIST_TURNS=\"${P8_HIST_TURNS:-40}\" P8_HIST_MODEL=\"${P8_HIST_MODEL:-}\" P8_KEY_FILE=\"$FILES/harness/model-key\" P8_LARGE_FILES=\"${P8_LARGE_FILES:-2000}\" P8_LARGE_FILE_MB=\"${P8_LARGE_FILE_MB:-50}\" '$FILES/bin/bun' '$script' $* 2>&1; echo \"DEVJS_RC=\$?\"")
   rc=$(printf '%s' "$out" | sed -n 's/.*DEVJS_RC=\([0-9]*\).*/\1/p' | tail -1)
   printf '%s\n' "$out" | grep -v '^DEVJS_RC='
   return "${rc:-1}"
@@ -317,6 +317,16 @@ log "=== stage D: destructive stress (host-driven, on the relaunch the instrumen
 relaunch_and_export_password
 stage_drivers || true
 [ "$(wait_healthy 240)" = "HEALTH_OK" ] || log "warn: runtime not healthy at the start of stage D"
+# The instrumented CLEANUP gate removed the run's key from the Keystore and
+# the OpenCode auth store (as it must). The host driver gates below still need
+# real model round-trips, so re-push the key into the SERVER's auth store only
+# (p8-keymanage never touches the Keystore); it is revoked again after stage E.
+if [ -n "$MODEL_KEY" ]; then
+  P8_HIST_MODEL="$P8_MODEL"
+  KEYPROV_OUT=$(run_js_on_device p8-keymanage.js provision 2>&1)
+  echo "$KEYPROV_OUT" >> "$LOG"
+  echo "$KEYPROV_OUT" | grep -q "P8KEYPROV ok=1" || log "warn: key re-provision before stage D did not confirm"
+fi
 
 # D1: the toybox staging path the harness itself relies on, on THIS API level.
 # The app's own extraction does not use toybox (Kotlin reads the APK assets);
@@ -342,7 +352,11 @@ else
   adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
   CORR_OK=1
   [ "$(wait_healthy 300)" = "HEALTH_OK" ] && CORR_OK=0
-  REEXTRACT=$(rash "grep -ac 're)extracting\|extraction complete' '$FILES/log/runtime.log' 2>/dev/null" | tr -d '[:space:]')
+  # toybox grep (the device's) does not support GNU BRE alternation '\|' -
+  # two plain single-pattern counts instead of one alternation.
+  REX_R=$(rash "grep -ac '(re)extracting' '$FILES/log/runtime.log' 2>/dev/null" | tr -d '[:space:]')
+  REX_C=$(rash "grep -ac 'extraction complete' '$FILES/log/runtime.log' 2>/dev/null" | tr -d '[:space:]')
+  REEXTRACT=$(( ${REX_R:-0} + ${REX_C:-0} ))
   MARKER_BACK=$(rash "cat '$FILES/runtime/.extracted' 2>/dev/null" | grep -c payloadVersion | tr -d '[:space:]')
   if [ "$CORR_OK" = "0" ] && [ "${MARKER_BACK:-0}" -ge 1 ] && [ "${REEXTRACT:-0}" -ge 1 ]; then
     p8 CORRUPT 0 "truncated launcher + sha-mangled server bundle + wiped marker -> re-extracted and healthy (re-extraction lines=$REEXTRACT, marker restored)"
@@ -427,7 +441,7 @@ BGJS='const { createSession, promptAsync, waitTurnComplete, assistantText } = re
   process.exit(0);
 })().catch((e) => { console.log("P8BGFG ok=0 error=" + String(e.message || e).slice(0, 160)); process.exit(1); });'
 printf '%s' "$BGJS" | write_stdin_runas "bgfg.js" > /dev/null 2>&1
-( rash "cd '$DEVJS' && timeout -k 5 420 env OPENCODE_BASE=\"http://127.0.0.1:$PORT\" OPENCODE_SERVER_PASSWORD=\"$PASSWD\" OPENCODE_SERVER_USERNAME=opencode OPENCODE_DIRECTORY=\"$WORKDIR\" '$FILES/bin/bun' 'bgfg.js' 2>&1; echo DEVJS_RC=\$?" > "$EV/p8-bgfg.log" 2>&1 ) &
+( rash "mkdir -p '$DEVJS' && cd '$DEVJS' && timeout -k 5 420 env OPENCODE_BASE=\"http://127.0.0.1:$PORT\" OPENCODE_SERVER_PASSWORD=\"$PASSWD\" OPENCODE_SERVER_USERNAME=opencode OPENCODE_DIRECTORY=\"$WORKDIR\" '$FILES/bin/bun' 'bgfg.js' 2>&1; echo DEVJS_RC=\$?" > "$EV/p8-bgfg.log" 2>&1 ) &
 BG_PID=$!
 sleep 8
 adb shell input keyevent KEYCODE_HOME >/dev/null 2>&1 || true
@@ -529,10 +543,23 @@ log "cold start (supervisor log): EXTRACTING=$EX_T HEALTHY=$HE_T -> ${COLD_MS}ms
 STOP_T0=$(date +%s)
 adb shell am start -n "$PKG/ai.opencode.android.runtime.DebugControlActivity" --ei mode 1 >> "$LOG" 2>&1 || true
 sleep 5
-adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
+# Relaunch with visibility and retries: the first full run's warm relaunch
+# produced no supervisor log lines at all (the emulator swallowed the launch
+# under load), and a blind 240s wait turned that into an unexplained timeout.
+AM_OUT=""
+APP_UP=0
+for attempt in 1 2 3; do
+  AM_OUT=$(adb shell am start -n "$PKG/ai.opencode.android.MainActivity" 2>&1)
+  echo "warm relaunch attempt $attempt: $AM_OUT" >> "$LOG"
+  sleep 15
+  APP_PID=$(adb shell pidof "$PKG" 2>/dev/null | tr -d '\r' | awk '{print $1}')
+  [ -n "$APP_PID" ] && APP_UP=1
+  [ "$APP_UP" = "1" ] && break
+done
 WARM_OK=1
 [ "$(wait_healthy 240)" = "HEALTH_OK" ] && WARM_OK=0
 WARM_MS=$(( ( $(date +%s) - STOP_T0 ) * 1000 ))
+[ "$WARM_OK" = "0" ] || log "warm relaunch: app_up=$APP_UP am='$AM_OUT' (see gates.log for per-attempt output)"
 # Memory + CPU while healthy and idle, then during a turn.
 MEMINFO=$(adb shell dumpsys meminfo "$PKG" 2>/dev/null | tr -d '\r' | grep -E 'TOTAL|Native Heap|Dalvik Heap|Java Heap' | head -8)
 MEMINFO > "$EV/p8-meminfo-idle.txt"
@@ -555,8 +582,12 @@ rash 'for d in "$FILES/xdg/data/opencode/log" "$FILES/xdg/state/opencode/log"; d
 timeout 90 adb logcat -d -s OpenCode:V OpenCode/gate:V > "$EV/logcat-OpenCode.txt" 2>&1 || true
 timeout 90 adb exec-out screencap -p > "$EV/screenshots/99-final-host-screen.png" 2>/dev/null || true
 [ -s "$EV/screenshots/99-final-host-screen.png" ] || rm -f "$EV/screenshots/99-final-host-screen.png" 2>/dev/null || true
-# The injected key must not survive the run - on the host, on the device, and
-# (the CLEANUP gate proved) in the Keystore / server auth store.
+# The injected key must not survive the run - on the host, on the device, in
+# the Keystore (the CLEANUP gate proved it removed), and in the server auth
+# store (re-provisioned before stage D, so revoked here before the run ends).
+if [ -n "$MODEL_KEY" ]; then
+  run_js_on_device p8-keymanage.js revoke >> "$LOG" 2>&1 || log "warn: final key revoke did not confirm"
+fi
 rm -f "$OUT/model-key.b64" 2>/dev/null || true
 rash "rm -f '$FILES/harness/server-password' '$FILES/harness/model-key' '$FILES/harness/model'" >/dev/null 2>&1 || true
 
