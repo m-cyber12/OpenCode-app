@@ -38,9 +38,12 @@ if (mode === "build") {
 if (mode === "measure") {
   const t = (fn) => { const a = Date.now(); return fn().then((v) => ({ v, ms: Date.now() - a })) }
   const create = await t(() => createSession("p8 large perf"))
+  // The file API resolves `path` inside the REQUEST's directory (project);
+  // an absolute path outside the default directory 500s. Pass the directory
+  // explicitly and use project-relative paths.
   const list = await t(async () => {
-    const r = await get(`/file?path=${encodeURIComponent(DIR + "/src")}`)
-    if (!r.ok) throw new Error("file list http " + r.status)
+    const r = await get(`/file?path=${encodeURIComponent("src")}`, { directory: DIR })
+    if (!r.ok) throw new Error("file list http " + r.status + " " + r.text.slice(0, 200))
     return JSON.parse(r.text)
   })
   const entries = Array.isArray(list.v) ? list.v : (list.v?.children ?? [])
@@ -48,7 +51,7 @@ if (mode === "measure") {
   let contentOk = false
   try {
     const cr = await t(async () => {
-      const r = await get(`/file/content?path=${encodeURIComponent(DIR + "/src/file_0000.js")}`)
+        const r = await get(`/file/content?path=${encodeURIComponent("src/file_0000.js")}`, { directory: DIR })
       if (!r.ok) throw new Error("file content http " + r.status)
       return JSON.parse(r.text)
     })

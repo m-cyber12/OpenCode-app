@@ -49,7 +49,33 @@ async function main() {
     console.log(`P8KEYREVOKED ok=${ok ? 1 : 0} http=${r.status} body='${r.text.trim().slice(0, 40)}'`)
     process.exit(ok ? 0 : 1)
   }
-  log("usage: p8-keymanage.js provision|revoke")
+  if (mode === "probe-net") {
+    // Egress diagnostics for the "model silence" question. In two consecutive
+    // runs, turns on the openrouter key hung with NO server-side error while
+    // the key-free default provider answered in stage A. A 401/402 from the
+    // key would surface as an error; pure silence means the request never
+    // completes - so probe each host directly from the app's own network
+    // namespace: per-host results separate a bad key/account (hosts reachable,
+    // only the model turn hangs) from emulator egress problems (host(s)
+    // unreachable).
+    const hosts = [
+      ["openrouter", "https://openrouter.ai/api/v1/models"],
+      ["opencode", "https://opencode.ai/"],
+      ["control", "https://www.google.com/"],
+    ]
+    for (const [name, url] of hosts) {
+      const t0 = Date.now()
+      try {
+        const r = await fetch(url, { signal: AbortSignal.timeout(15000) })
+        await r.body?.cancel?.()
+        console.log(`P8NETPROBE ${name} http=${r.status} ms=${Date.now() - t0}`)
+      } catch (e) {
+        console.log(`P8NETPROBE ${name} error=${String(e.name || e.message || e).slice(0, 80)} ms=${Date.now() - t0}`)
+      }
+    }
+    process.exit(0)
+  }
+  log("usage: p8-keymanage.js provision|revoke|probe-net")
   process.exit(2)
 }
 

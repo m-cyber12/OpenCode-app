@@ -62,7 +62,7 @@ async function main() {
   let shellOk = false
   try {
     const sh = await timed(async () => {
-      const r = await post(`/session/${create.v.id}/shell`, {
+      const r = await post(`/session/${create.v}/shell`, {
         command: "echo P8SHELLPERF && date +%s%3N",
         agent: "build",
       })
@@ -104,8 +104,8 @@ async function main() {
       if (bare.startsWith("openrouter/")) bare = bare.slice("openrouter/".length)
       body.model = { providerID: "openrouter", modelID: bare }
     }
-    const pr = await post(`/session/${create.v.id}/prompt_async`, body)
-    if (pr !== 204 && pr !== 200) throw new Error("prompt http " + pr)
+    const pr = await post(`/session/${create.v}/prompt_async`, body)
+    if (pr.status !== 204 && pr.status !== 200) throw new Error("prompt http " + pr.status + " " + pr.text.slice(0, 120))
     const { events, timedOut } = await watch.done
     streamTimedOut = timedOut
     turnMs = Date.now() - t0

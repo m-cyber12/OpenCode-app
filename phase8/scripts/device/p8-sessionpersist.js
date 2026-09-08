@@ -16,19 +16,21 @@ const [mode, sessionArg, markerArg] = process.argv.slice(2)
 
 if (mode === "create") {
   const marker = "P8SESS" + (Date.now() % 1000000)
-  const s = await createSession("p8 persistence")
+  // createSession returns the session id STRING (not an object) - the whole
+  // first two runs sent prompts to /session/undefined/prompt_async (500).
+  const sid = await createSession("p8 persistence")
   // The turn may or may not complete (model availability is irrelevant here):
   // the USER message is recorded by the server at queue time, and that is what
   // must survive the restart. A prompt failure must not sink the gate's
   // evidence - report it, keep the session id, let verify decide.
   let promptErr = ""
   try {
-    await promptAsync(s.id, "Remember this marker for later: " + marker + ". Reply ok.")
+    await promptAsync(sid, "Remember this marker for later: " + marker + ". Reply ok.")
   } catch (e) {
     promptErr = String(e.message ?? e).slice(0, 120)
     log("prompt after create failed (continuing, persistence is about the stored user message): " + promptErr)
   }
-  console.log(`P8SESCREATE ${s.id} ${marker} promptErr=${promptErr}`)
+  console.log(`P8SESCREATE ${sid} ${marker} promptErr=${promptErr}`)
   process.exit(0)
 }
 

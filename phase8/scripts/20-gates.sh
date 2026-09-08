@@ -120,6 +120,27 @@ wait_healthy() { # $1=timeout-s ; needs PASSWD
   echo HEALTH_TIMEOUT; return 1
 }
 
+# The CI emulator's network path degrades after heavy use (two full runs both
+# saw model turns answer in stage A, then hang silently - no error, no
+# completion - from stage C onward, ~20-40 min in). A reboot resets the
+# emulator's NAT state, the adb connection, and the app. The app is relaunched
+# afterwards because nothing auto-starts it.
+reboot_and_relaunch() {
+  log "rebooting the emulator (fresh network state; relaunching the app)"
+  adb reboot >/dev/null 2>&1 || true
+  timeout 240 adb wait-for-device >/dev/null 2>&1 || true
+  local i boot=0
+  for i in $(seq 1 60); do
+    boot=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+    [ "$boot" = "1" ] && break
+    sleep 5
+  done
+  [ "$boot" = "1" ] || log "warn: sys.boot_completed not 1 within 300s after reboot"
+  adb forward tcp:$PORT tcp:$PORT >/dev/null 2>&1 || true
+  adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
+  [ "$(wait_healthy 240)" = "HEALTH_OK" ] || log "warn: runtime not healthy after the reboot"
+}
+
 install_fresh() {
   log "uninstalling $PKG / $TEST_PKG for a clean install"
   adb uninstall "$TEST_PKG" >/dev/null 2>&1 || true
@@ -298,6 +319,14 @@ fi
 
 # ---------------------------------------------------------------------------
 log "=== stage C: P8 instrumented gates (stress/recovery + live tool call) ==="
+# Fresh network state for the model-dependent gates (see reboot_and_relaunch).
+reboot_and_relaunch
+stage_drivers || true
+# Egress diagnostics for the model-silence question: per-host reachability
+# from the app's own network namespace (probe-net distinguishes a bad key -
+# hosts reachable, only the model turn hangs - from an egress problem -
+# host(s) unreachable).
+run_js_on_device p8-keymanage.js probe-net >> "$LOG" 2>&1 || true
 STRESS_RC=0
 run_p8_class "stress" "ai.opencode.android.ui.StressRecoveryGatesTest" || STRESS_RC=1
 for g in KEYRESIDENCY PROVAUTH SERVERKILL LIFECYCLELOG; do
@@ -440,8 +469,19 @@ BGJS='const { createSession, promptAsync, waitTurnComplete, assistantText } = re
   console.log("P8BGFG ok=" + (t.includes("P8BGFGDONE") && !done.failed ? 1 : 0) + " replyChars=" + t.length + " failed=" + done.failed);
   process.exit(0);
 })().catch((e) => { console.log("P8BGFG ok=0 error=" + String(e.message || e).slice(0, 160)); process.exit(1); });'
-printf '%s' "$BGJS" | write_stdin_runas "bgfg.js" > /dev/null 2>&1
-( rash "mkdir -p '$DEVJS' && cd '$DEVJS' && timeout -k 5 420 env OPENCODE_BASE=\"http://127.0.0.1:$PORT\" OPENCODE_SERVER_PASSWORD=\"$PASSWD\" OPENCODE_SERVER_USERNAME=opencode OPENCODE_DIRECTORY=\"$WORKDIR\" '$FILES/bin/bun' 'bgfg.js' 2>&1; echo DEVJS_RC=\$?" > "$EV/p8-bgfg.log" 2>&1 ) &
+# Dedicated dir + one retry: two consecutive full runs died with bun's
+# CouldntReadCurrentDirectory on the shared p8js dir (the CI emulator dropped
+# the directory entry); a fresh, exclusive dir plus a retry keeps the gate honest.
+BGDIR="$FILES/tmp/p8bgfg"
+BGJS_B64=$(printf '%s' "$BGJS" | base64 -w0)
+printf '%s' "$BGJS" | write_stdin_runas "tmp/p8bgfg/bgfg.js" > /dev/null 2>&1
+( BG1=$(rash "mkdir -p '$BGDIR' && cd '$BGDIR' && timeout -k 5 420 env OPENCODE_BASE=\"http://127.0.0.1:$PORT\" OPENCODE_SERVER_PASSWORD=\"$PASSWD\" OPENCODE_SERVER_USERNAME=opencode OPENCODE_DIRECTORY=\"$WORKDIR\" '$FILES/bin/bun' 'bgfg.js' 2>&1; echo \"DEVJS_RC=\$?\"")
+  if printf '%s' "$BG1" | grep -q 'CouldntReadCurrentDirectory' && ! printf '%s' "$BG1" | grep -q 'P8BGFG ok='; then
+    log "bgfg: first launch hit CouldntReadCurrentDirectory; rebuilding the dir and retrying"
+    sleep 3
+    BG1=$(rash "rm -rf '$BGDIR' && mkdir -p '$BGDIR' && cd '$BGDIR' && { echo '$BGJS_B64' | base64 -d > bgfg.js; } && timeout -k 5 420 env OPENCODE_BASE=\"http://127.0.0.1:$PORT\" OPENCODE_SERVER_PASSWORD=\"$PASSWD\" OPENCODE_SERVER_USERNAME=opencode OPENCODE_DIRECTORY=\"$WORKDIR\" '$FILES/bin/bun' 'bgfg.js' 2>&1; echo \"DEVJS_RC=\$?\"")
+  fi
+  printf '%s\n' "$BG1" > "$EV/p8-bgfg.log" ) &
 BG_PID=$!
 sleep 8
 adb shell input keyevent KEYCODE_HOME >/dev/null 2>&1 || true
@@ -478,6 +518,10 @@ else
 fi
 
 # D8: large history (N sequential turns in one session, key-free default model).
+# 40 model turns is the heaviest provider load of the run - fresh network
+# state again, so a late degradation cannot sink the history measurement.
+reboot_and_relaunch
+run_js_on_device p8-keymanage.js probe-net >> "$LOG" 2>&1 || true
 HIST_OUT=$(P8_DRIVER_TIMEOUT=5400 run_js_on_device p8-hist.js 2>&1 | tee "$EV/p8-hist.log")
 if echo "$HIST_OUT" | grep -q 'P8HIST ok=1'; then
   p8 HIST 0 "$(echo "$HIST_OUT" | grep P8HIST | head -1)"
@@ -524,6 +568,7 @@ fi
 
 # ---------------------------------------------------------------------------
 log "=== stage E: performance measurement (the report's numbers) ==="
+reboot_and_relaunch
 relaunch_and_export_password
 stage_drivers || true
 [ "$(wait_healthy 240)" = "HEALTH_OK" ] || log "warn: not healthy at stage E"
@@ -543,9 +588,14 @@ log "cold start (supervisor log): EXTRACTING=$EX_T HEALTHY=$HE_T -> ${COLD_MS}ms
 STOP_T0=$(date +%s)
 adb shell am start -n "$PKG/ai.opencode.android.runtime.DebugControlActivity" --ei mode 1 >> "$LOG" 2>&1 || true
 sleep 5
-# Relaunch with visibility and retries: the first full run's warm relaunch
-# produced no supervisor log lines at all (the emulator swallowed the launch
-# under load), and a blind 240s wait turned that into an unexplained timeout.
+# Root cause of the two failed warm relaunches (deterministic, both runs):
+# DebugControlActivity finishes() back onto the still-RESUMED MainActivity,
+# so a subsequent `am start MainActivity` delivers NO lifecycle callbacks at
+# all - no onCreate/onStart, so RuntimeService.start() never runs and the
+# runtime stays stopped for the whole 240s wait. A real "open the app again"
+# goes through the background first, so the gate does exactly that.
+adb shell input keyevent KEYCODE_HOME >/dev/null 2>&1 || true
+sleep 2
 AM_OUT=""
 APP_UP=0
 for attempt in 1 2 3; do
@@ -586,6 +636,15 @@ timeout 90 adb exec-out screencap -p > "$EV/screenshots/99-final-host-screen.png
 # the Keystore (the CLEANUP gate proved it removed), and in the server auth
 # store (re-provisioned before stage D, so revoked here before the run ends).
 if [ -n "$MODEL_KEY" ]; then
+  # Round 7: the PERF warm-stop sequence can leave the server DOWN, and the
+  # revoke needs a live server - bring it up if necessary before revoking.
+  [ "$(wait_healthy 120)" = "HEALTH_OK" ] || {
+    log "final revoke: server not up, relaunching the app first"
+    adb shell am force-stop "$PKG" >/dev/null 2>&1 || true
+    sleep 3
+    adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
+    wait_healthy 240 >/dev/null
+  }
   run_js_on_device p8-keymanage.js revoke >> "$LOG" 2>&1 || log "warn: final key revoke did not confirm"
 fi
 rm -f "$OUT/model-key.b64" 2>/dev/null || true

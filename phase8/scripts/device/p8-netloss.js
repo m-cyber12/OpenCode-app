@@ -61,12 +61,12 @@ async function userMessageCount(sessionID, needle) {
 
 if (mode === "start") {
   const marker = "P8NET" + (Date.now() % 100000)
-  const s = await createSession("p8 netloss")
+  const s = await createSession("p8 netloss") // returns the id STRING
   const prompt = "Write a short, slow explanation that counts from 1 to 30. " +
     `Include the token ${marker} on the first line. Do not stop early.`
-  await promptAsync(s.id, prompt)
+  await promptAsync(s, prompt)
   await new Promise((r) => setTimeout(r, 3000)) // let the turn get in flight
-  console.log(`P8NETSTART ${s.id} ${marker}`)
+  console.log(`P8NETSTART ${s} ${marker}`)
   process.exit(0)
 }
 
@@ -102,7 +102,7 @@ if (mode === "recover") {
     const status = await post(`/session/${sessionID}/prompt_async`, {
       parts: [{ type: "text", text: "Reply with exactly: P8NETRECOVERED and nothing else." }],
     })
-    if (status !== 204 && status !== 200) throw new Error("prompt answered http " + status)
+    if (status.status !== 204 && status.status !== 200) throw new Error("prompt answered http " + status.status + " " + status.text.slice(0, 120))
     const done = await waitTurnComplete(sessionID, { timeoutMs: 180000 })
     const text = assistantText(done.messages)
     const ok = text.includes("P8NETRECOVERED") && !done.failed

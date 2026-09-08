@@ -37,9 +37,9 @@ async function main() {
       const body = { parts: [{ type: "text", text: `Turn ${i} of ${N}: reply with exactly: P8HIST ${i}` }] }
       const mb = modelBody()
       if (mb) Object.assign(body, mb)
-      const pr = await post(`/session/${s.id}/prompt_async`, body)
-      if (pr !== 204 && pr !== 200) throw new Error("prompt_async http " + pr)
-      const done = await waitTurnComplete(s.id, { timeoutMs: PER_TURN_MS, pollMs: 1500, stablePolls: 2 })
+      const pr = await post(`/session/${s}/prompt_async`, body)
+      if (pr.status !== 204 && pr.status !== 200) throw new Error("prompt_async http " + pr.status + " " + pr.text.slice(0, 120))
+      const done = await waitTurnComplete(s, { timeoutMs: PER_TURN_MS, pollMs: 1500, stablePolls: 2 })
       latencies.push(Date.now() - t0)
       if (done.failed) failedTurns++
     } catch (e) {
@@ -51,7 +51,7 @@ async function main() {
   const avg = Math.round(latencies.reduce((a, b) => a + b, 0) / Math.max(1, latencies.length))
   const max = Math.max(0, ...latencies)
   const t1 = Date.now()
-  const r = await get(`/session/${s.id}/message?limit=200`)
+  const r = await get(`/session/${s}/message?limit=200`)
   const tailListMs = Date.now() - t1
   let tailMessages = 0
   if (r.ok) {
