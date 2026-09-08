@@ -105,6 +105,58 @@ tool card tagged with that part's id.
   re-run.**
 - **CI emulator: BLOCKED** — see §3.1.1.
 
+- **Device runs 2 and 3 (round-11 APK, 900 s TOOL budget): still no tool card,
+  and the reason is now measured, not guessed.**
+  - Run 2 added the in-process egress probe and caught
+    `P8NETPROBE_UI openrouter http=403 ms=924` while `opencode http=200` and
+    `control http=200` — **OpenRouter's edge refused the phone's IP even on the
+    public, keyless `/api/v1/models` endpoint.** Every model turn in that window
+    was swallowed into a silent empty completion (§13). The round-9 provider-auth
+    probe fix was verified in the same run
+    (`serverSawError=true serverErrorName=APIError classified=PROVIDER_OTHER`).
+  - Run 3 (user changed IP): `P8NETPROBE_UI openrouter http=200 ms=1648` — the
+    IP block was gone — yet P8-KEYPROBE still failed **silently**
+    (`tokenSeen=false lastError=''`, `P8_MODEL_AVAILABLE 0`) and P8-TOOL SKIPped.
+    Public endpoint reachable + authenticated model calls silently empty is the
+    signature of an **account-level free-tier restriction**, not a product
+    defect: the account has never purchased credits, and OpenRouter caps
+    unfunded accounts at **50 requests/day, 20/min**, serving `:free` endpoints
+    at lowest priority. Run 1's single successful answer, then zero across runs
+    2–3, fits that cap.
+  - Run 3's cold start (326 s wall) is **POLLUTED** (the phone was handled
+    mid-run); the supervisor window from the same run,
+    19:20:10.645 → 19:20:32.415 = **21.8 s**, is the number of record.
+
+#### 3.1.2 Round 13 — the provider is now a run-time choice (Gemini free tier)
+
+The blocker for P8-TOOL is provider quota/throughput, not the app. Round 13
+makes the provider a parameter of the live gates instead of a hard-coded
+`openrouter` string:
+
+- `files/harness/provider` (written by the device suite base64-over-stdin, like
+  the key) selects the OpenCode provider id. It defaults to `openrouter`, so
+  every earlier round keeps its exact meaning.
+- `P8ServerProbe.provisionedProvider` feeds all five call sites:
+  `Secrets.putProviderKey`, `PUT /auth/:providerID`, `ModelRef(provider, model)`,
+  the repository's `setModel`, and the CLEANUP assertions — so a Gemini run also
+  proves the Keystore cleanup path for a non-OpenRouter provider.
+- The device suite prompts for the provider (default **google**), defaults the
+  model to `gemini-2.5-flash`, sanity-checks the key shape (`AIza…` vs `sk-or-…`)
+  before spending 20 minutes on a run, and deletes `harness/provider` with the
+  key at the end.
+- The in-process egress probe also probes
+  `https://generativelanguage.googleapis.com/`, so a Gemini run yields the same
+  reachability evidence line.
+
+Rationale (recorded because it changes the L2 evidence provider): Google AI
+Studio's free tier is **request-limited, not credit-limited** — Flash-class
+models publish roughly 10–15 RPM and hundreds-to-1,500 RPD at 250 K+ TPM, no
+card — whereas the unfunded OpenRouter tier is 50 requests/day at lowest
+priority. A tool-call turn needs at least two inferences; the Gemini free tier
+can serve that repeatedly, the unfunded OpenRouter tier demonstrably could not.
+**Status: IMPLEMENTED, NOT YET TESTED on device** — the next device run with a
+Gemini key is what flips P8-TOOL.
+
 #### 3.1.1 The CI-emulator model silence (isolated, documented, not hidden)
 
 Across CI rounds 6–11 every model call made by the OpenCode **server process**

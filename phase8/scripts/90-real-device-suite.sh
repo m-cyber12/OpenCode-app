@@ -163,14 +163,37 @@ tail -60 "$OUT/stress-verdicts.txt" | tee -a "$LOG"
 summarize_gates "KEYRESIDENCY PROVAUTH SERVERKILL LIFECYCLELOG" "$OUT/stress-verdicts.txt" "instrument rc=$STRESS_RC"
 
 # ---- R5: the live class (the real tool call on the real device) ---------------
-printf 'Type an OpenRouter API key to run the live tool-call gate on the device, [Enter] to skip: '
+# Round 13: the provider is a CHOICE. OpenRouter's UNFUNDED free tier is capped
+# at 50 requests/day, 20/min, and serves :free endpoints at lowest priority -
+# exactly what device runs 1-3 sampled (one answered turn, then silent empty
+# completions). Google's Gemini free tier is request-limited, not credit-
+# limited (Flash-class: ~10-15 RPM, hundreds-to-1500 RPD, 250K+ TPM, no card),
+# so it can serve the TWO inferences a tool-call turn needs.
+# Provider ids are OpenCode's own (models.dev): google | openrouter.
+printf 'Provider for the live gates - 1) google (Gemini, free key: https://aistudio.google.com/apikey) 2) openrouter [1]: '
+read -r PROV_CHOICE
+printf '\n'
+case "${PROV_CHOICE:-1}" in
+  2|openrouter) PROVIDER=openrouter; DEF_MODEL="openai/gpt-4o-mini"; KEY_LABEL="OpenRouter" ;;
+  *)            PROVIDER=google;     DEF_MODEL="gemini-2.5-flash";   KEY_LABEL="Gemini (Google AI Studio)" ;;
+esac
+printf 'Type a %s API key to run the live tool-call gate on the device, [Enter] to skip: ' "$KEY_LABEL"
 read -r MODEL_KEY
 printf '\n'
-printf 'Model id (default openai/gpt-4o-mini), [Enter] for default: '
+printf 'Model id (default %s), [Enter] for default: ' "$DEF_MODEL"
 read -r MODEL
 printf '\n'
 if [ -n "$MODEL_KEY" ]; then
-  MODEL="${MODEL:-openai/gpt-4o-mini}"
+  MODEL="${MODEL:-$DEF_MODEL}"
+  # Cheap shape check so a mis-typed key is caught here, not 20 minutes later
+  # as a silent empty turn. Gemini keys look like AIza...; OpenRouter sk-or-...
+  case "$PROVIDER:$MODEL_KEY" in
+    google:AIza*|openrouter:sk-or-*) : ;;
+    *) log "WARNING: the typed key does not look like a $KEY_LABEL key (provider=$PROVIDER) - continuing anyway" ;;
+  esac
+  log "live gates provider=$PROVIDER model=$MODEL"
+  PB64=$(printf '%s' "$PROVIDER" | base64 -w0)
+  rash "echo '$PB64' | base64 -d > '$FILES/harness/provider'" >> "$LOG" 2>&1
   # The key goes base64-over-stdin: it never appears in a shell command line.
   B64=$(printf '%s' "$MODEL_KEY" | base64 -w0)
   rash "echo '$B64' | base64 -d > '$FILES/harness/model-key'; chmod 600 '$FILES/harness/model-key'; echo keybytes=\$(wc -c < '$FILES/harness/model-key')" >> "$LOG" 2>&1
@@ -192,7 +215,7 @@ LIVE_RC=$?
 tail -60 "$OUT/live-verdicts.txt" | tee -a "$LOG"
 summarize_gates "KEYPROBE TOOL CLEANUP" "$OUT/live-verdicts.txt" "instrument rc=$LIVE_RC"
 # The key must not survive on the phone.
-rash "rm -f '$FILES/harness/model-key' '$FILES/harness/model'" >/dev/null 2>&1 || true
+rash "rm -f '$FILES/harness/model-key' '$FILES/harness/model' '$FILES/harness/provider'" >/dev/null 2>&1 || true
 
 # ---- R6: footprint + verdict bundle -------------------------------------------
 adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true

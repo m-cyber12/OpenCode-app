@@ -67,6 +67,10 @@ class StressRecoveryGatesTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val probe = P8ServerProbe(context)
+
+    /** Provider id for this run: "openrouter" by default, "google" (Gemini)
+     *  when the host provisioned a Gemini key (files/harness/provider). */
+    private val provider: String get() = probe.provisionedProvider
     private val shotDir = File(context.filesDir, "screenshots")
 
     private companion object {
@@ -237,8 +241,8 @@ class StressRecoveryGatesTest {
         // The product's own credential path: Keystore store + OpenCode's own
         // PUT /auth/:providerID. The key is deliberately invalid.
         val badKey = "sk-or-v1-p8provauth-invalid-key-that-the-provider-will-reject"
-        Secrets.putProviderKey(context, "openrouter", badKey)
-        val provisioned = runCatching { api.setProviderAuth("openrouter", badKey) }
+        Secrets.putProviderKey(context, provider, badKey)
+        val provisioned = runCatching { api.setProviderAuth(provider, badKey) }
         if (provisioned.isFailure) {
             gate("PROVAUTH", false, "could not push the credential to the server: ${provisioned.exceptionOrNull()?.message}")
             return
@@ -246,7 +250,7 @@ class StressRecoveryGatesTest {
         // Make the turn actually use OpenRouter, through the repository the UI
         // uses (the same call the Settings model picker makes).
         val dir = ProjectStore.get(context).active()?.path
-        AppContainer.get(context).repositoryFor(dir).setModel("openrouter", probe.provisionedModel)
+        AppContainer.get(context).repositoryFor(dir).setModel(provider, probe.provisionedModel)
 
         // A FRESH session (the product's own "new chat" call): an earlier
         // stage can leave a turn in flight on the shared session, and the
@@ -284,8 +288,8 @@ class StressRecoveryGatesTest {
 
         // Restore: the gate must not leave a rejected key behind.
         AppContainer.get(context).repositoryFor(dir).clearModel()
-        runCatching { api.deleteProviderAuth("openrouter") }
-        runCatching { Secrets.removeProviderKey(context, "openrouter") }
+        runCatching { api.deleteProviderAuth(provider) }
+        runCatching { Secrets.removeProviderKey(context, provider) }
 
         val ok = sawError && classified == AgentAvailability.PROVIDER_AUTH && screenSaysAuth && !screenSaysNetwork
         gate(

@@ -57,6 +57,10 @@ class LiveToolCallGatesTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val probe = P8ServerProbe(context)
+
+    /** Provider id for this run: "openrouter" by default, "google" (Gemini)
+     *  when the host provisioned a Gemini key (files/harness/provider). */
+    private val provider: String get() = probe.provisionedProvider
     private val shotDir = File(context.filesDir, "screenshots")
 
     private companion object {
@@ -181,6 +185,7 @@ class LiveToolCallGatesTest {
         probeFile.writeText(
             """
             for (const [n, u] of [["openrouter", "https://openrouter.ai/api/v1/models"],
+                                 ["gemini", "https://generativelanguage.googleapis.com/"],
                                  ["opencode", "https://opencode.ai/"],
                                  ["control", "https://www.google.com/"]]) {
               const t0 = Date.now()
@@ -248,8 +253,8 @@ class LiveToolCallGatesTest {
         }
 
         // The product's credential path, with the key this run provisions.
-        Secrets.putProviderKey(context, "openrouter", key)
-        val push = runCatching { api.setProviderAuth("openrouter", key) }
+        Secrets.putProviderKey(context, provider, key)
+        val push = runCatching { api.setProviderAuth(provider, key) }
         if (push.isFailure) {
             keyReason = "the server refused the credential push: ${push.exceptionOrNull()?.message}"
             gate("KEYPROBE", false, keyReason)
@@ -270,7 +275,7 @@ class LiveToolCallGatesTest {
             api.promptAsync(
                 session.id,
                 "Reply with exactly this token and nothing else: $token",
-                model = OpenCodeApi.ModelRef("openrouter", model),
+                model = OpenCodeApi.ModelRef(provider, model),
             )
         }.getOrElse { t ->
             keyReason = "prompt_async rejected the turn: ${t.message}"
@@ -331,7 +336,7 @@ class LiveToolCallGatesTest {
                         api.promptAsync(
                             retry.id,
                             "Reply with exactly this token and nothing else: $token",
-                            model = OpenCodeApi.ModelRef("openrouter", model),
+                            model = OpenCodeApi.ModelRef(provider, model),
                         )
                     }.getOrDefault(0)
                 } else 0
@@ -382,7 +387,7 @@ class LiveToolCallGatesTest {
         // The UI's own model selection (the same call the Settings model picker
         // makes) so the turn the composer sends goes to the provisioned model.
         val dir = ProjectStore.get(context).active()?.path
-        AppContainer.get(context).repositoryFor(dir).setModel("openrouter", probe.provisionedModel)
+        AppContainer.get(context).repositoryFor(dir).setModel(provider, probe.provisionedModel)
 
         // A FRESH session (the product's own "new chat" call): the server
         // serializes turns per session, so a stuck in-flight turn from an
@@ -484,11 +489,11 @@ class LiveToolCallGatesTest {
             val dir = ProjectStore.get(context).active()?.path
             AppContainer.get(context).repositoryFor(dir).clearModel()
         }
-        runCatching { api?.deleteProviderAuth("openrouter") }
-        val removed = runCatching { Secrets.removeProviderKey(context, "openrouter") }.getOrDefault(false)
-        val leftover = runCatching { Secrets.providerKey(context, "openrouter") }.getOrNull()
+        runCatching { api?.deleteProviderAuth(provider) }
+        val removed = runCatching { Secrets.removeProviderKey(context, provider) }.getOrDefault(false)
+        val leftover = runCatching { Secrets.providerKey(context, provider) }.getOrNull()
         val providerIds = runCatching { Secrets.storedProviderIds(context) }.getOrDefault(emptyList())
-        val ok = leftover == null && !providerIds.contains("openrouter")
+        val ok = leftover == null && !providerIds.contains(provider)
         gate(
             "CLEANUP",
             ok,

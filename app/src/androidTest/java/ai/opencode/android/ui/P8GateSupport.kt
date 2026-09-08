@@ -92,9 +92,20 @@ internal class P8ServerProbe(private val context: Context) {
      *  cheap, tool-capable OpenRouter default. */
     val provisionedModel: String = runCatching {
         File(context.filesDir, "harness/model").readText().trim()
-    }.getOrDefault("").ifEmpty { "openai/gpt-4o-mini" }
+    }.getOrDefault("").ifEmpty {
+        if (provisionedProvider == "google") "gemini-2.5-flash" else "openai/gpt-4o-mini"
+    }
 
-    /** The OpenRouter key the host wrote into the harness dir, or null. */
+    /** The provider the host provisions for this run (files/harness/provider).
+     *  Defaults to "openrouter" so every earlier round keeps its meaning; the
+     *  device suite writes "google" when the run uses a Gemini API key (that
+     *  free tier is request-limited, not credit-limited, so it can actually
+     *  serve the two inferences a tool-call turn needs). */
+    val provisionedProvider: String = runCatching {
+        File(context.filesDir, "harness/provider").readText().trim()
+    }.getOrDefault("").ifEmpty { "openrouter" }
+
+    /** The provider key the host wrote into the harness dir, or null. */
     val provisionedKey: String? = runCatching {
         File(context.filesDir, "harness/model-key").readText().trim()
     }.getOrNull()?.takeIf { it.isNotEmpty() }
