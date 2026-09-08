@@ -361,7 +361,13 @@ class LiveChatUiGatesTest {
         }
         val marker = "P6LIVE" + (System.currentTimeMillis() % 1_000_000)
         val known = knownMessageIds()
-        val sent = sendPrompt("Use the bash tool to run this exact command, then tell me what it printed: echo $marker")
+        // Phase 7 note: the Phase 6 run never saw a tool call in budget, so this
+        // prompt is strengthened to make the tool use explicit and non-optional -
+        // the command's output is unknown to the model, so it cannot fake it.
+        val sent = sendPrompt(
+            "You must use the bash tool for this task; answering from memory is not allowed. " +
+                "Run this exact shell command, then report ONLY what it printed: echo $marker",
+        )
         if (!sent) {
             skip("L2", "the composer would not accept the tool prompt")
             return

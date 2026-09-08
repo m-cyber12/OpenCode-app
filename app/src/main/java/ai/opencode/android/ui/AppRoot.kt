@@ -4,9 +4,12 @@ import ai.opencode.android.AppContainer
 import ai.opencode.android.R
 import ai.opencode.android.client.AgentAvailability
 import ai.opencode.android.client.OpenCodeRepository
+import ai.opencode.android.client.ProviderSetupClassifier
 import ai.opencode.android.client.UiError
+import ai.opencode.android.memory.MemoryState
 import ai.opencode.android.projects.Project
 import ai.opencode.android.projects.ProjectStore
+import ai.opencode.android.projects.SafProjectTransfer
 import ai.opencode.android.runtime.RuntimeManager
 import ai.opencode.android.ui.chat.ChatScreen
 import ai.opencode.android.ui.chat.SessionPanel
@@ -120,6 +123,56 @@ fun AppRoot(onShareDiagnostics: () -> Unit) {
         }
     }
 
+    // ---- Phase 7: project import/export, memory, provider state -------------
+
+    // The memory files OpenCode itself reads (per-project AGENTS.md + the global
+    // one). Read/written here and handed to Settings as plain values so the
+    // screen stays pure; every write goes through OpenCode's own mechanism.
+    val projectMemory = remember(container) { container.memory() }
+    var memory by remember { mutableStateOf(MemoryState()) }
+    var importing by remember { mutableStateOf(false) }
+    var importError by remember { mutableStateOf("") }
+    var sessionCounts by remember { mutableStateOf(emptyMap<String, Int>()) }
+
+    // SAF pickers: import a document tree, export a project as a zip.
+    val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            importing = true
+            scope.launch {
+                val result = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val display = uri.lastPathSegment?.substringAfterLast('/') ?: ProjectStore.DEFAULT_NAME
+                        val name = store.uniqueName(display)
+                        val imported = SafProjectTransfer(context, container.workspacesRoot()).importTree(uri, name)
+                        store.adopt(imported.name)
+                        imported.name
+                    }
+                }
+                result.onSuccess { name ->
+                    projects = store.projects()
+                    projectName = name
+                    route = ROUTE_CHAT
+                    importError = ""
+                }.onFailure { t ->
+                    importError = (t.message ?: t.javaClass.simpleName)
+                }
+                importing = false
+            }
+        }
+    }
+    var exportTarget by remember { mutableStateOf<Project?>(null) }
+    val exportPicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        val project = exportTarget
+        if (uri != null && project != null) {
+            scope.launch {
+                withContext(Dispatchers.IO) {
+                    runCatching { SafProjectTransfer(context, container.workspacesRoot()).exportZip(project, uri) }
+                }
+            }
+        }
+        exportTarget = null
+    }
+
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
             scope.launch {
@@ -136,8 +189,29 @@ fun AppRoot(onShareDiagnostics: () -> Unit) {
     }
     LaunchedEffect(route, summary.ready) {
         if (summary.ready) repository.refresh()
-        if (route == ROUTE_PROJECTS) projects = withContext(Dispatchers.IO) { store.projects() }
-        if (route == ROUTE_SETTINGS && diagnosticsLines.isEmpty()) loadDiagnostics()
+        if (route == ROUTE_PROJECTS) {
+            projects = withContext(Dispatchers.IO) { store.projects() }
+            // Per-project conversation counts come from the server's own session
+            // list grouped by directory - the same scoping the session panel uses.
+            sessionCounts = withContext(Dispatchers.IO) {
+                runCatching { repository.api.listSessions(limit = 500) }
+                    .getOrDefault(emptyList())
+                    .groupingBy { it.directory }
+                    .eachCount()
+            }
+        }
+        if (route == ROUTE_SETTINGS) {
+            if (diagnosticsLines.isEmpty()) loadDiagnostics()
+            memory = withContext(Dispatchers.IO) {
+                MemoryState(
+                    projectName = projectName,
+                    projectContent = if (projectName.isEmpty()) "" else projectMemory.readProject(projectName),
+                    projectHasRules = projectName.isNotEmpty() && projectMemory.hasProject(projectName),
+                    globalContent = projectMemory.readGlobal(),
+                    globalHasRules = projectMemory.hasGlobal(),
+                )
+            }
+        }
     }
     // First-run advance: leave WELCOME only when the agent is actually up. Where it
     // goes depends on whether a project exists - never on a timer.
@@ -155,13 +229,21 @@ fun AppRoot(onShareDiagnostics: () -> Unit) {
     // Both of these read the Keystore, so they are loaded off the main thread and
     // only for the screen that shows them.
     var storedIds by remember { mutableStateOf("") }
+    var storedIdList by remember { mutableStateOf(emptyList<String>()) }
     var hardwareBacked by remember { mutableStateOf("") }
     LaunchedEffect(route) {
         if (route == ROUTE_SETTINGS) {
             storedIds = withContext(Dispatchers.IO) { container.storedProviderIdsLabel() }
+            storedIdList = withContext(Dispatchers.IO) { container.storedProviderIds() }
             hardwareBacked = withContext(Dispatchers.IO) { container.hardwareBackedLabel() }
         }
     }
+    // "Is a model actually configured" - derived only from server + Keystore facts.
+    val providerSetup = ProviderSetupClassifier.classify(
+        connected = uiState.providers?.connected ?: emptyList(),
+        storedIds = storedIdList,
+        providersKnown = uiState.providers != null,
+    )
     val runtimeLine = stringResource(R.string.welcome_runtime_line, summary.opencodeVersion)
 
     // Availability: the three facts, combined by the pure classifier. The runtime
@@ -218,6 +300,29 @@ fun AppRoot(onShareDiagnostics: () -> Unit) {
                         projects = store.projects()
                         route = ROUTE_CHAT
                     },
+                    onRename = { old, new ->
+                        val renamed = store.rename(old, new)
+                        if (renamed != null) {
+                            if (projectName == old) projectName = renamed.name
+                            projects = store.projects()
+                        }
+                    },
+                    onDelete = { name ->
+                        // Best-effort server-side session cleanup for that directory,
+                        // then the folder itself and its preference history.
+                        repository.deleteSessionsForDirectory(File(container.workspacesRoot(), name).absolutePath)
+                        store.delete(name)
+                        if (projectName == name) projectName = store.activeName()
+                        projects = store.projects()
+                    },
+                    onImport = { importPicker.launch(null) },
+                    onExport = { name ->
+                        exportTarget = store.projects().firstOrNull { it.name == name }
+                        exportPicker.launch("$name.zip")
+                    },
+                    importing = importing,
+                    importError = importError,
+                    sessionCounts = sessionCounts,
                     // With no project open yet there is nothing to go back to except
                     // the welcome screen (where the runtime status lives).
                     onBack = { route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT },
@@ -264,7 +369,57 @@ fun AppRoot(onShareDiagnostics: () -> Unit) {
                     onConnectMcp = { name -> repository.connectMcp(name) },
                     onDisconnectMcp = { name -> repository.disconnectMcp(name) },
                     onRefreshMcp = { repository.refreshMcp() },
-                    onBashPolicy = { policy -> repository.setBashPolicy(policy) },
+                    onBashPolicy = { policy -> repository.setPermissionPolicy("bash", policy) },
+                    providerSetup = providerSetup,
+                    permissionPolicy = uiState.permissionPolicy,
+                    onPermissionPolicy = { key, action -> repository.setPermissionPolicy(key, action) },
+                    memory = memory,
+                    onSaveMemory = { scopeName, text ->
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                if (scopeName == "project" && projectName.isNotEmpty()) {
+                                    projectMemory.writeProject(projectName, text)
+                                } else if (scopeName == "global") {
+                                    projectMemory.writeGlobal(text)
+                                } else {
+                                    // Neither a project nor the global scope: nothing to write.
+                                    Unit
+                                }
+                            }
+                            memory = withContext(Dispatchers.IO) {
+                                MemoryState(
+                                    projectName = projectName,
+                                    projectContent = if (projectName.isEmpty()) "" else projectMemory.readProject(projectName),
+                                    projectHasRules = projectName.isNotEmpty() && projectMemory.hasProject(projectName),
+                                    globalContent = projectMemory.readGlobal(),
+                                    globalHasRules = projectMemory.hasGlobal(),
+                                )
+                            }
+                        }
+                    },
+                    onRemoveMemory = { scopeName ->
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                if (scopeName == "project" && projectName.isNotEmpty()) {
+                                    projectMemory.removeProject(projectName)
+                                } else if (scopeName == "global") {
+                                    projectMemory.removeGlobal()
+                                } else {
+                                    // Neither a project nor the global scope: nothing to remove.
+                                    Unit
+                                }
+                            }
+                            memory = withContext(Dispatchers.IO) {
+                                MemoryState(
+                                    projectName = projectName,
+                                    projectContent = if (projectName.isEmpty()) "" else projectMemory.readProject(projectName),
+                                    projectHasRules = projectName.isNotEmpty() && projectMemory.hasProject(projectName),
+                                    globalContent = projectMemory.readGlobal(),
+                                    globalHasRules = projectMemory.hasGlobal(),
+                                )
+                            }
+                        }
+                    },
                     onShareDiagnostics = {
                         loadDiagnostics()
                         onShareDiagnostics()

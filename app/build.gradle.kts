@@ -110,6 +110,10 @@ dependencies {
     // list stays as small and as pinnable as Phase 5 left it.
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.foundation:foundation")
+    // Phase 7: SAF document-tree traversal for project import/export. This is the
+    // standard AndroidX wrapper over DocumentsContract — importing a folder the user
+    // picked (or exporting a project as a zip) without any storage permission.
+    implementation("androidx.documentfile:documentfile:1.0.1")
 
     testImplementation("junit:junit:4.13.2")
     // Instrumentation only: the runner + junit3 extension. No production dep is

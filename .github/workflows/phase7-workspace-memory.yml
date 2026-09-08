@@ -1,0 +1,124 @@
+# PHASE 7 - WORKSPACE / MEMORY gates (workspace isolation + project management +
+# the OpenCode AGENTS.md memory layer on a fresh emulator, plus the Phase 5
+# regression tail and the Phase 6 UI gates that audit what Phase 7 changed).
+#
+# HOW TO INSTALL (one-time, needs a user credential or the GitHub UI):
+#   copy this file to   .github/workflows/phase7-workspace-memory.yml
+#   on the branch       arena/01a07dc2-opencode-app
+#   and push. The session bot token cannot create or modify files under
+#   .github/workflows/ (verified in Phases 2-5: "403 Resource not accessible by
+#   integration"), and it cannot POST .../dispatches either, so this copy is the
+#   only way a Phase 7 run can start.
+#
+# After it lands, every push to this branch runs:
+#   static checks -> payload -> APKs -> FRESH emulator ->
+#   WorkspaceIsolationGatesTest (W1 project lifecycle, W2 workspace boundary
+#   proven through OpenCode's own file layer, W3 memory inspect/edit/remove) ->
+#   ChatUiGatesTest (U3 permission-ask flow, U7 accessibility) ->
+#   LiveChatUiGatesTest (L1 live turn, L2 real tool call) ->
+#   Phase 5 client-integration gates (regression) -> evidence.
+# Evidence is committed back to docs/progress/phase7-evidence/ on EVERY exit path
+# (the Actions log bodies are not reachable from the development sandbox, so the
+# branch is the log channel - same discipline as Phase 4/5/6).
+#
+# Iteration knob: while new Kotlin is being brought up, the tracked marker file
+# phase7/CI_GRADLE_ONLY (containing "1") makes a run compile the app + androidTest
+# APK and run the JVM unit tests only - no payload build, no emulator, no device
+# gates - so a compiler error comes back in about ten minutes instead of an hour.
+# It is a bring-up knob, not a verdict: a gradle-only run publishes no device
+# evidence and says so in GATES_SUMMARY.txt. It MUST be 0 for any Phase 7 TESTED
+# claim to have evidence behind it.
+#
+# No repo secret is required for Phase 7: the pinned build resolves a key-free
+# default model (opencode/big-pickle), which is what the live gates exercise.
+# OPENROUTER_API_KEY is read only if it exists (same as Phase 4/5/6).
+name: phase7-workspace-memory
+
+on:
+  push:
+    branches:
+      - "arena/01a07dc2-opencode-app"
+    paths-ignore:
+      - "docs/progress/phase7-evidence/**"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why this run is being dispatched (free text)"
+        required: false
+        default: "manual phase7 workspace/memory gate run"
+
+jobs:
+  phase7-workspace-memory-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: write
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_MODEL: nvidia/nemotron-3-ultra-550b-a55b:free
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Fix /dev/kvm permissions (Phase 2 lesson: never assume KVM just works)"
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm || true
+            ls -la /dev/kvm
+          else
+            echo "KVM_MISSING (the emulator will be unusable; gates fail loudly)"
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: "Run the Phase 7 suite (static checks -> payload -> APKs -> fresh emulator -> isolation/memory gates)"
+        run: bash phase7/scripts/00-run-phase7.sh
+        shell: bash
+
+      - name: "Commit evidence to the branch (docs/progress/phase7-evidence)"
+        if: always()
+        run: |
+          # The orchestrator already copies + pushes; this step is the fallback in
+          # case it stopped before reaching its own evidence stage.
+          mkdir -p docs/progress/phase7-evidence
+          if [ -d phase7/out/evidence ]; then
+            cp -r phase7/out/evidence/. docs/progress/phase7-evidence/ 2>/dev/null || true
+          fi
+          cp phase7/out/00-run-phase7.log docs/progress/phase7-evidence/ 2>/dev/null || true
+          git add -A docs/progress/phase7-evidence/ || true
+          if git diff --cached --quiet; then
+            echo "no evidence changes; skipping commit"
+          else
+            git -c user.name="arena-ai-coding-agent[bot]" \
+                -c user.email="arena-ai-coding-agent[bot]@users.noreply.github.com" \
+                commit -m "phase7: workspace/memory evidence (auto)" || true
+            git push origin "HEAD:${{ github.ref_name }}" || echo "PUSH_FAILED"
+          fi
+
+      - name: "Upload artifacts"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase7-workspace-memory
+          path: |
+            phase7/out/evidence/
+            phase7/out/00-run-phase7.log
+            docs/progress/phase7-evidence/
+            app/build/outputs/apk/
+          if-no-files-found: ignore
+
+      - name: "Gate summary (readable in the Actions log)"
+        if: always()
+        run: |
+          if [ -f phase7/out/evidence/GATES_SUMMARY.txt ]; then
+            cat phase7/out/evidence/GATES_SUMMARY.txt
+          else
+            echo "NO_PHASE7_SUMMARY - the suite did not reach its gate stage"
+            exit 1
+          fi

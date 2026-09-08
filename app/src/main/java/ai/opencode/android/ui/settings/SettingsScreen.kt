@@ -4,6 +4,8 @@ import ai.opencode.android.R
 import ai.opencode.android.client.AgentAvailability
 import ai.opencode.android.client.OpenCodeApi
 import ai.opencode.android.client.OpenCodeRepository
+import ai.opencode.android.client.ProviderSetup
+import ai.opencode.android.memory.MemoryState
 import ai.opencode.android.ui.common.DetailDisclosure
 import ai.opencode.android.ui.common.KeyValueRow
 import ai.opencode.android.ui.common.RuntimeSummary
@@ -113,6 +115,12 @@ fun SettingsScreen(
     onDisconnectMcp: (String) -> Unit,
     onRefreshMcp: () -> Unit,
     onBashPolicy: (String) -> Unit,
+    providerSetup: ProviderSetup = ProviderSetup.UNKNOWN,
+    permissionPolicy: Map<String, String> = emptyMap(),
+    onPermissionPolicy: (String, String) -> Unit = { _, _ -> },
+    memory: MemoryState = MemoryState(),
+    onSaveMemory: (String, String) -> Unit = { _, _ -> },
+    onRemoveMemory: (String) -> Unit = {},
     onShareDiagnostics: () -> Unit,
     onCopyDiagnostics: () -> Unit,
     onRefreshDiagnostics: () -> Unit,
@@ -125,15 +133,17 @@ fun SettingsScreen(
     // box rather than the screen nesting a lazy list inside a scrolling column.
     val sections = remember(
         runtime, state, availability, diagnosticsLines, diagnosticsLoading, storedProviderIds,
-        hardwareBacked, appVersion, theme, dynamicColor,
+        hardwareBacked, appVersion, theme, dynamicColor, providerSetup, permissionPolicy, memory,
     ) {
         listOf(
             "runtime",
+            "provider",
             "diagnostics",
             "model",
             "keys",
             "mcp",
             "permissions",
+            "memory",
             "appearance",
             "about",
         )
@@ -157,6 +167,10 @@ fun SettingsScreen(
                         state = state,
                         availability = availability,
                         onRestart = onRestartRuntime,
+                    )
+                    "provider" -> ProviderSection(
+                        providerSetup = providerSetup,
+                        connectedCount = state.providers?.connected?.size ?: 0,
                     )
                     "diagnostics" -> DiagnosticsSection(
                         lines = diagnosticsLines,
@@ -185,7 +199,16 @@ fun SettingsScreen(
                         onDisconnect = onDisconnectMcp,
                         onRefresh = onRefreshMcp,
                     )
-                    "permissions" -> PermissionsSection(onBashPolicy = onBashPolicy)
+                    "permissions" -> PermissionsSection(
+                        policy = permissionPolicy,
+                        onPolicy = onPermissionPolicy,
+                        onBashPolicy = onBashPolicy,
+                    )
+                    "memory" -> MemorySection(
+                        memory = memory,
+                        onSave = onSaveMemory,
+                        onRemove = onRemoveMemory,
+                    )
                     "appearance" -> AppearanceSection(
                         theme = theme,
                         dynamicColor = dynamicColor,
@@ -770,33 +793,168 @@ private fun McpRow(
     }
 }
 
-// ---- permissions / appearance / about --------------------------------------
+// ---- provider setup --------------------------------------------------------
+
+/**
+ * "Is a model actually configured", as a first-class labelled state rather than
+ * an empty field. Derived only from facts the server and the Keystore already
+ * report ([ProviderSetup]); the screen maps it onto copy.
+ */
+@Composable
+private fun ProviderSection(providerSetup: ProviderSetup, connectedCount: Int) {
+    val chat = ChatTheme.chat
+    val (title, body, color) = when (providerSetup) {
+        ProviderSetup.NO_PROVIDER_CONFIGURED -> Triple(
+            stringResource(R.string.settings_provider_none_title),
+            stringResource(R.string.settings_provider_none_body),
+            chat.attention,
+        )
+        ProviderSetup.PROVIDER_CONFIGURED -> Triple(
+            stringResource(R.string.settings_provider_stored_title),
+            stringResource(R.string.settings_provider_stored_body),
+            chat.attention,
+        )
+        ProviderSetup.CONNECTED -> Triple(
+            stringResource(R.string.settings_provider_connected),
+            stringResource(R.string.settings_provider_connected_body, connectedCount),
+            chat.success,
+        )
+        ProviderSetup.UNKNOWN -> Triple(
+            stringResource(R.string.settings_provider_checking),
+            "",
+            chat.muted,
+        )
+    }
+    SectionCard(title = stringResource(R.string.settings_section_provider)) {
+        Surface(
+            color = if (providerSetup == ProviderSetup.CONNECTED) chat.toolContainer else chat.attentionContainer,
+            shape = MaterialTheme.shapes.medium,
+            border = BorderStroke(1.dp, color),
+            modifier = Modifier.fillMaxWidth().semantics { testTag = "provider_setup_${providerSetup.name.lowercase()}" },
+        ) {
+            Column(Modifier.padding(12.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = if (providerSetup == ProviderSetup.CONNECTED) chat.success else chat.onAttentionContainer,
+                )
+                if (body.isNotEmpty()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = body,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = chat.muted,
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ---- permissions -----------------------------------------------------------
+
+/** The permission kinds this screen edits; anything else is left to "ask". */
+private val PERMISSION_KEYS = listOf("bash", "edit", "read", "webfetch", "external_directory")
 
 @Composable
-private fun PermissionsSection(onBashPolicy: (String) -> Unit) {
+private fun PermissionsSection(
+    policy: Map<String, String>,
+    onPolicy: (String, String) -> Unit,
+    onBashPolicy: (String) -> Unit,
+) {
     SectionCard(
         title = stringResource(R.string.settings_section_permissions),
         body = stringResource(R.string.settings_permissions_body),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PolicyButton(
-                label = stringResource(R.string.settings_permission_ask),
-                policy = "ask",
+        // A prompt the agent makes while it works always goes through the bottom
+        // sheet; this table only sets the standing policy, and it is empty by
+        // default, which is exactly OpenCode's own "ask" default.
+        for (key in PERMISSION_KEYS) {
+            val res = permissionLabelRes(key) ?: continue
+            PermissionToolRow(
+                label = stringResource(res),
+                current = policy[key] ?: "ask",
+                onPolicy = onPolicy,
                 onBashPolicy = onBashPolicy,
-                modifier = Modifier.weight(1f),
+                key = key,
             )
-            PolicyButton(
-                label = stringResource(R.string.settings_permission_allow),
-                policy = "allow",
-                onBashPolicy = onBashPolicy,
-                modifier = Modifier.weight(1f),
-            )
-            PolicyButton(
-                label = stringResource(R.string.settings_permission_deny),
-                policy = "deny",
-                onBashPolicy = onBashPolicy,
-                modifier = Modifier.weight(1f),
-            )
+        }
+    }
+}
+
+@Composable
+private fun permissionLabelRes(key: String): Int? = when (key) {
+    "bash" -> R.string.settings_permission_bash
+    "edit" -> R.string.settings_permission_edit
+    "read" -> R.string.settings_permission_read
+    "webfetch" -> R.string.settings_permission_webfetch
+    "external_directory" -> R.string.settings_permission_external
+    else -> null
+}
+
+@Composable
+private fun permissionValueLabel(value: String): String = stringResource(
+    when (value) {
+        "allow" -> R.string.settings_permission_value_allow
+        "deny" -> R.string.settings_permission_value_deny
+        else -> R.string.settings_permission_value_ask
+    },
+)
+
+@Composable
+private fun PermissionToolRow(
+    label: String,
+    current: String,
+    onPolicy: (String, String) -> Unit,
+    onBashPolicy: (String) -> Unit,
+    key: String,
+) {
+    val chat = ChatTheme.chat
+    Surface(
+        color = chat.toolContainer,
+        shape = MaterialTheme.shapes.small,
+        border = BorderStroke(1.dp, chat.toolBorder),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+    ) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.weight(1f),
+                )
+                StatusPill(text = stringResource(R.string.settings_permission_current, permissionValueLabel(current)), color = chat.muted)
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                PolicyButton(
+                    label = stringResource(R.string.settings_permission_value_ask),
+                    selected = current == "ask",
+                    onClick = {
+                        if (key == "bash") onBashPolicy("ask") else onPolicy(key, "ask")
+                    },
+                    tag = "policy_${key}_ask",
+                    modifier = Modifier.weight(1f),
+                )
+                PolicyButton(
+                    label = stringResource(R.string.settings_permission_value_allow),
+                    selected = current == "allow",
+                    onClick = {
+                        if (key == "bash") onBashPolicy("allow") else onPolicy(key, "allow")
+                    },
+                    tag = "policy_${key}_allow",
+                    modifier = Modifier.weight(1f),
+                )
+                PolicyButton(
+                    label = stringResource(R.string.settings_permission_value_deny),
+                    selected = current == "deny",
+                    onClick = {
+                        if (key == "bash") onBashPolicy("deny") else onPolicy(key, "deny")
+                    },
+                    tag = "policy_${key}_deny",
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }
@@ -804,15 +962,147 @@ private fun PermissionsSection(onBashPolicy: (String) -> Unit) {
 @Composable
 private fun PolicyButton(
     label: String,
-    policy: String,
-    onBashPolicy: (String) -> Unit,
+    selected: Boolean,
+    onClick: () -> Unit,
+    tag: String,
     modifier: Modifier = Modifier,
 ) {
     OutlinedButton(
-        onClick = { onBashPolicy(policy) },
-        modifier = modifier.height(46.dp).semantics { testTag = "policy_$policy" },
+        onClick = onClick,
+        modifier = modifier.height(44.dp).semantics { testTag = tag },
     ) {
-        Text(text = label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+// ---- memory ----------------------------------------------------------------
+
+/** OpenCode's own persistent memory files, shown and edited in place. */
+@Composable
+private fun MemorySection(
+    memory: MemoryState,
+    onSave: (String, String) -> Unit,
+    onRemove: (String) -> Unit,
+) {
+    SectionCard(
+        title = stringResource(R.string.settings_section_memory),
+        body = stringResource(R.string.settings_memory_body),
+    ) {
+        MemoryEditorCard(
+            title = stringResource(R.string.settings_memory_project),
+            hint = stringResource(R.string.settings_memory_project_hint),
+            content = memory.projectContent,
+            hasRules = memory.projectHasRules,
+            enabled = memory.projectName.isNotBlank(),
+            disabledNote = if (memory.projectName.isBlank()) stringResource(R.string.settings_memory_project_none) else "",
+            tagPrefix = "memory_project",
+            onSave = { onSave("project", it) },
+            onRemove = { onRemove("project") },
+        )
+        Spacer(Modifier.height(10.dp))
+        MemoryEditorCard(
+            title = stringResource(R.string.settings_memory_global),
+            hint = stringResource(R.string.settings_memory_global_hint),
+            content = memory.globalContent,
+            hasRules = memory.globalHasRules,
+            enabled = true,
+            disabledNote = "",
+            tagPrefix = "memory_global",
+            onSave = { onSave("global", it) },
+            onRemove = { onRemove("global") },
+        )
+    }
+}
+
+@Composable
+private fun MemoryEditorCard(
+    title: String,
+    hint: String,
+    content: String,
+    hasRules: Boolean,
+    enabled: Boolean,
+    disabledNote: String,
+    tagPrefix: String,
+    onSave: (String) -> Unit,
+    onRemove: () -> Unit,
+) {
+    val chat = ChatTheme.chat
+    var editing by rememberSaveable(tagPrefix) { mutableStateOf(false) }
+    var draft by rememberSaveable(tagPrefix) { mutableStateOf("") }
+    Surface(
+        color = chat.toolContainer,
+        shape = MaterialTheme.shapes.small,
+        border = BorderStroke(1.dp, chat.toolBorder),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            Text(text = title, style = MaterialTheme.typography.labelLarge)
+            Text(text = hint, style = MaterialTheme.typography.labelSmall, color = chat.muted)
+            Spacer(Modifier.height(6.dp))
+            if (!enabled) {
+                Text(text = disabledNote, style = MaterialTheme.typography.bodySmall, color = chat.muted)
+                return@Column
+            }
+            if (editing) {
+                OutlinedTextField(
+                    value = draft,
+                    onValueChange = { draft = it },
+                    label = { Text(stringResource(R.string.settings_memory_edit)) },
+                    minLines = 3,
+                    maxLines = 8,
+                    modifier = Modifier.fillMaxWidth().semantics { testTag = "${tagPrefix}_input" },
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = {
+                            onSave(draft)
+                            editing = false
+                        },
+                        modifier = Modifier.height(44.dp).semantics { testTag = "${tagPrefix}_save" },
+                    ) {
+                        Text(stringResource(R.string.settings_memory_save))
+                    }
+                    TextButton(
+                        onClick = { editing = false },
+                        modifier = Modifier.height(44.dp).semantics { testTag = "${tagPrefix}_cancel" },
+                    ) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
+                }
+            } else {
+                if (content.isNotBlank()) {
+                    Text(text = content, style = MaterialTheme.typography.bodySmall, color = chat.muted, maxLines = 6)
+                } else {
+                    Text(text = stringResource(R.string.settings_memory_empty), style = MaterialTheme.typography.bodySmall, color = chat.muted)
+                }
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = {
+                            draft = content
+                            editing = true
+                        },
+                        modifier = Modifier.height(44.dp).semantics { testTag = "${tagPrefix}_edit" },
+                    ) {
+                        Text(stringResource(R.string.settings_memory_edit))
+                    }
+                    if (hasRules) {
+                        TextButton(
+                            onClick = onRemove,
+                            modifier = Modifier.height(44.dp).semantics { testTag = "${tagPrefix}_remove" },
+                        ) {
+                            Text(stringResource(R.string.settings_memory_remove), color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

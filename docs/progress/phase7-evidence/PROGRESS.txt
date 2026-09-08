@@ -1,0 +1,866 @@
+### 2026-09-07T23:02:23Z  run=34168504135  step: 2/8 fast compile + JVM unit tests (fail before the 30-minute payload build)
+    head=809dff1 branch=arena/01a07dc2-opencode-app log_lines=315
+    --- error digest ---
+    > Task :app:compileDebugKotlin FAILED
+    e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/projects/SafProjectTransfer.kt:62:27 Unresolved reference: openInputStream
+    e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/projects/SafProjectTransfer.kt:62:59 Cannot infer a type for this parameter. Please specify it explicitly.
+    e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/AppRoot.kt:165:36 Unresolved reference: value
+    e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/AppRoot.kt:382:40 'if' must have both main and 'else' branches if used as an expression
+    e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/AppRoot.kt:402:40 'if' must have both main and 'else' branches if used as an expression
+    FAILURE: Build failed with an exception.
+    * What went wrong:
+    BUILD FAILED in 1m 24s
+    STEP_FAILED rc=1: SKIP_PAYLOAD=1 '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
+    FATAL: kotlin compile or JVM unit tests failed (compiler output in 00-run-phase7.log and compiler-errors.txt)
+    --- last 40 log lines ---
+    	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+    	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+    	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+    Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
+    	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:20)
+    	at org.jetbrains.kotlin.compilerRunner.GradleKotlinCompilerWork.run(GradleKotlinCompilerWork.kt:141)
+    	at org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction.execute(GradleCompilerRunnerWithWorkers.kt:73)
+    	at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:63)
+    	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:66)
+    	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:62)
+    	at org.gradle.internal.classloader.ClassLoaderUtils.executeInClassloader(ClassLoaderUtils.java:100)
+    	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.lambda$execute$0(NoIsolationWorkerFactory.java:62)
+    	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:44)
+    	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:41)
+    	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+    	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+    	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+    	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+    	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+    	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+    	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+    	at org.gradle.workers.internal.AbstractWorker.executeWrappedInBuildOperation(AbstractWorker.java:41)
+    	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.execute(NoIsolationWorkerFactory.java:59)
+    	at org.gradle.workers.internal.DefaultWorkerExecutor.lambda$submitWork$0(DefaultWorkerExecutor.java:174)
+    	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runExecution(DefaultConditionalExecutionQueue.java:195)
+    	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.access$700(DefaultConditionalExecutionQueue.java:128)
+    	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner$1.run(DefaultConditionalExecutionQueue.java:170)
+    	at org.gradle.internal.Factories$1.create(Factories.java:31)
+    	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:267)
+    	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:131)
+    	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:136)
+    	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:165)
+    	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:134)
+    	... 2 more
+    
+    
+    BUILD FAILED in 1m 24s
+    27 actionable tasks: 25 executed, 2 from cache
+    STEP_FAILED rc=1: SKIP_PAYLOAD=1 '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
+    FATAL: kotlin compile or JVM unit tests failed (compiler output in 00-run-phase7.log and compiler-errors.txt)
+
+### 2026-09-07T23:12:23Z  run=34169005955  step: gradle-only mode: compile + JVM unit tests (no emulator, no device gates)
+    head=7a7b11e branch=arena/01a07dc2-opencode-app log_lines=683
+    --- error digest ---
+    > Task :app:testDebugUnitTest FAILED
+    FAILURE: Build failed with an exception.
+    * What went wrong:
+    BUILD FAILED in 2m 29s
+    STEP_FAILED rc=1: SKIP_PAYLOAD=1 '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
+    FATAL: gradle compile/unit tests failed (compiler output in 00-run-phase7.log)
+    --- last 40 log lines ---
+    	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
+    	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+    	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:48)
+    	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:35)
+    	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:61)
+    	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:127)
+    	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+    	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+    	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+    	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+    	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+    	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+    	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+    	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+    	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+    	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+    	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+    	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+    	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+    	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+    	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+    	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+    	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+    	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+    	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+    	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+    	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+    	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+    	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+    	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+    	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
+    	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+    	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+    	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+    
+    
+    BUILD FAILED in 2m 29s
+    35 actionable tasks: 33 executed, 2 from cache
+    STEP_FAILED rc=1: SKIP_PAYLOAD=1 '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
+    FATAL: gradle compile/unit tests failed (compiler output in 00-run-phase7.log)
+
+### 2026-09-07T23:18:24Z  run=34169371879  step: gradle-only mode: compile + JVM unit tests (no emulator, no device gates)
+    head=8e0dfbc branch=arena/01a07dc2-opencode-app log_lines=502
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 3s
+    --- last 40 log lines ---
+    MarkdownTest > fencedCodeBlockKeepsLanguageAndByteExactSource PASSED
+    
+    MarkdownTest > blockquoteAndRule PASSED
+    
+    MarkdownTest > pipeTableSplitsCells PASSED
+    
+    MarkdownTest > crlfIsNormalised PASSED
+    
+    MarkdownTest > underscoreInsideAWordIsNotEmphasis PASSED
+    
+    MarkdownTest > listsCarryDepthMarkerAndOrdering PASSED
+    
+    MarkdownTest > linksCarryLabelAndUrl PASSED
+    
+    MarkdownTest > unterminatedFenceIsStillCodeBecauseTheRestHasNotArrived PASSED
+    
+    MarkdownTest > indentedContinuationJoinsThePreviousItem PASSED
+    
+    MarkdownTest > backslashEscapesAreLiteral PASSED
+    
+    MarkdownTest > boldItalicStrikeAndInlineCode PASSED
+    
+    MarkdownTest > paragraphIsOneBlockAndKeepsSoftLineBreaks PASSED
+    
+    MarkdownTest > unterminatedEmphasisStaysLiteralWhileStreaming PASSED
+    
+    MarkdownTest > strongUsesDoubleMarkersAndNestsEmphasis PASSED
+    
+    MarkdownTest > languageNormalisationIsLowercaseAndAliasFree PASSED
+    
+    MarkdownTest > blankLineSeparatesParagraphs PASSED
+    
+    MarkdownTest > tildeFenceAndInfoStringAttributes PASSED
+    
+    MarkdownTest > atxHeadingsCarryTheirLevel PASSED
+    
+    MarkdownTest > unterminatedLinkStaysLiteralWhileStreaming PASSED
+    
+    BUILD SUCCESSFUL in 2m 3s
+    35 actionable tasks: 33 executed, 2 from cache
+
+### 2026-09-07T23:25:17Z  run=34169687565  step: 4/8 embedded runtime payload (reuse phase 4's build when present)
+    head=76bb82e branch=arena/01a07dc2-opencode-app log_lines=542
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 11s
+    --- last 40 log lines ---
+    ########## 3/8 environment + FRESH emulator ##########
+    installing emulator + system image via phase4/scripts/50-install-sdk.sh
+    --- downloading cmdline-tools
+    -rw-r--r-- 1 runner runner 153607504 Sep  7 23:22 cmdtools.zip
+    /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
+    /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
+    --- sdkmanager licenses
+    yes: standard output: Broken pipe
+    --- sdkmanager install
+    tee: /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/50-install-sdk.log: No such file or directory
+    Loading package information...                                                  Loading local repository...                                                     [                                       ] 3% Loading local repository...        [                                       ] 3% Fetch remote repository...         [=                                      ] 3% Fetch remote repository...         [=                                      ] 4% Fetch remote repository...         [=                                      ] 5% Fetch remote repository...         [==                                     ] 5% Fetch remote repository...         [==                                     ] 6% Fetch remote repository...         [==                                     ] 7% Fetch remote repository...         [==                                     ] 7% Computing updates...               [===                                    ] 8% Computing updates...               [===                                    ] 10% Computing updates...              [===                                    ] 10% Installing Android Emulator       [===                                    ] 10% Downloading emulator-linux_x64-159[====                                   ] 10% Downloading emulator-linux_x64-159[====                                   ] 11% Downloading emulator-linux_x64-159[====                                   ] 12% Downloading emulator-linux_x64-159[=====                                  ] 13% Downloading emulator-linux_x64-159[=====                                  ] 14% Downloading emulator-linux_x64-159[=====                                  ] 15% Downloading emulator-linux_x64-159[======                                 ] 15% Downloading emulator-linux_x64-159[======                                 ] 16% Downloading emulator-linux_x64-159[======                                 ] 17% Downloading emulator-linux_x64-159[=======                                ] 18% Downloading emulator-linux_x64-159[=======                                ] 19% Downloading emulator-linux_x64-159[=======                                ] 20% Downloading emulator-linux_x64-159[========                               ] 20% Downloading emulator-linux_x64-159[========                               ] 21% Downloading emulator-linux_x64-159[========                               ] 21% Unzipping...                      [========                               ] 21% Unzipping... emulator/            [========                               ] 21% Unzipping... emulator/resources/  [========                               ] 21% Unzipping... emulator/qsn         [========                               ] 21% Unzipping... emulator/emulator    [========                               ] 21% Unzipping... emulator/netsimd     [========                               ] 22% Unzipping... emulator/netsimd     [========                               ] 22% Unzipping... emulator/bin64/      [========                               ] 22% Unzipping... emulator/qemu/       [========                               ] 22% Unzipping... emulator/NOTICE.txt  [========                               ] 22% Unzipping... emulator/crashpad_han[========                               ] 22% Unzipping... emulator/source.prope[========                               ] 22% Unzipping... emulator/nimble_bridg[========                               ] 22% Unzipping... emulator/LICENSE     [========                               ] 22% Unzipping... emulator/lib/        [========                               ] 22% Unzipping... emulator/qemu-img    [========                               ] 22% Unzipping... emulator/include/    [========                               ] 22% Unzipping... emulator/NOTICE.csv  [========                               ] 22% Unzipping... emulator/lib64/      [========                               ] 22% Unzipping... emulator/emulator-che[========                               ] 22% Unzipping... emulator/crashreport [========                               ] 22% Unzipping... emulator/mksdcard    [========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/sk[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/po[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/sk[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/bin64/e2fsck[========                               ] 22% Unzipping... emulator/bin64/fsck.e[========                               ] 22% Unzipping... emulator/bin64/tune2f[========                               ] 22% Unzipping... emulator/bin64/resize[========                               ] 22% Unzipping... emulator/bin64/mkfs.e[========                               ] 22% Unzipping... emulator/qemu/linux-x[=========                              ] 23% Unzipping... emulator/qemu/linux-x[=========                              ] 24% Unzipping... emulator/qemu/linux-x[=========                              ] 25% Unzipping... emulator/qemu/linux-x[==========                             ] 25% Unzipping... emulator/qemu/linux-x[==========                             ] 25% Unzipping... emulator/lib/emulator[==========                             ] 25% Unzipping... emulator/lib/rtc_serv[==========                             ] 25% Unzipping... emulator/lib/advanced[==========                             ] 25% Unzipping... emulator/lib/cmake/  [==========                             ] 25% Unzipping... emulator/lib/emulator[==========                             ] 25% Unzipping... emulator/lib/control_[==========                             ] 25% Unzipping... emulator/lib/emulated[==========                             ] 25% Unzipping... emulator/lib/rtc_serv[==========                             ] 25% Unzipping... emulator/lib/emu-orig[==========                             ] 25% Unzipping... emulator/lib/hardware[==========                             ] 25% Unzipping... emulator/lib/pkgconfi[==========                             ] 25% Unzipping... emulator/lib/pc-bios/[==========                             ] 25% Unzipping... emulator/lib/snapshot[==========                             ] 25% Unzipping... emulator/lib/adb_serv[==========                             ] 25% Unzipping... emulator/lib/hostapd.[==========                             ] 25% Unzipping... emulator/lib/grpc_end[==========                             ] 25% Unzipping... emulator/lib/ca-bundl[==========                             ] 25% Unzipping... emulator/lib/ui_contr[==========                             ] 25% Unzipping... emulator/lib/snapshot[==========                             ] 25% Unzipping... emulator/lib/ice_conf[==========                             ] 25% Unzipping... emulator/lib/libflatb[==========                             ] 26% Unzipping... emulator/lib/libflatb[==========                             ] 26% Unzipping... emulator/lib/emulator[==========                             ] 26% Unzipping... emulator/lib/waterfal[==========                             ] 26% Unzipping... emulator/lib/emulated[==========                             ] 26% Unzipping... emulator/lib/cmake/fl[==========                             ] 26% Unzipping... emulator/lib/pkgconfi[==========                             ] 26% Unzipping... emulator/lib/pc-bios/[==========                             ] 26% Unzipping... emulator/include/flat[==========                             ] 26% Unzipping... emulator/lib64/libgli[==========                             ] 26% Unzipping... emulator/lib64/libpro[==========                             ] 26% Unzipping... emulator/lib64/qt/   [==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libgfx[==========                             ] 26% Unzipping... emulator/lib64/gles_l[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/vulkan[==========                             ] 26% Unzipping... emulator/lib64/gles_s[==========                             ] 26% Unzipping... emulator/lib64/libemu[==========                             ] 26% Unzipping... emulator/lib64/libpro[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libtcm[==========                             ] 26% Unzipping... emulator/lib64/libima[==========                             ] 26% Unzipping... emulator/lib64/libc++[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libabs[==========                             ] 26% Unzipping... emulator/lib64/gles_a[==========                             ] 26% Unzipping... emulator/lib64/libsha[==========                             ] 26% Unzipping... emulator/lib64/libc++[==========                             ] 26% Unzipping... emulator/lib64/qt/res[==========                             ] 26% Unzipping... emulator/lib64/qt/lib[==========                             ] 26% Unzipping... emulator/lib64/qt/tra[==========                             ] 26% Unzipping... emulator/lib64/qt/plu[==========                             ] 26% Unzipping... emulator/lib64/qt/res[==========                             ] 27% Unzipping... emulator/lib64/qt/res[==========                             ] 27% Unzipping... emulator/lib64/qt/lib[===========                            ] 28% Unzipping... emulator/lib64/qt/lib[===========                            ] 29% Unzipping... emulator/lib64/qt/lib[===========                            ] 30% Unzipping... emulator/lib64/qt/lib[============                           ] 30% Unzipping... emulator/lib64/qt/lib[============                           ] 30% Unzipping... emulator/lib64/qt/tra[============                           ] 31% Unzipping... emulator/lib64/qt/tra[============                           ] 31% Unzipping... emulator/lib64/qt/plu[============                           ] 31% Unzipping... emulator/lib64/gles_l[============                           ] 31% Unzipping... emulator/lib64/vulkan[============                           ] 32% Unzipping... emulator/lib64/vulkan[============                           ] 32% Unzipping... emulator/lib64/gles_s[============                           ] 32% Unzipping... emulator/lib64/gles_a[=============                          ] 33% Unzipping... emulator/lib64/gles_a[=====================                  ] 55% Unzipping... emulator/lib64/gles_a[=====================                  ] 55% Installing Google APIs Intel x86_6[=====================                  ] 55% Downloading x86_64-34_r14.zip... e[======================                 ] 55% Downloading x86_64-34_r14.zip... e[======================                 ] 56% Downloading x86_64-34_r14.zip... e[======================                 ] 57% Downloading x86_64-34_r14.zip... e[=======================                ] 58% Downloading x86_64-34_r14.zip... e[=======================                ] 59% Downloading x86_64-34_r14.zip... e[=======================                ] 60% Downloading x86_64-34_r14.zip... e[========================               ] 60% Downloading x86_64-34_r14.zip... e[========================               ] 61% Downloading x86_64-34_r14.zip... e[========================               ] 62% Downloading x86_64-34_r14.zip... e[=========================              ] 63% Downloading x86_64-34_r14.zip... e[=========================              ] 64% Downloading x86_64-34_r14.zip... e[=========================              ] 65% Downloading x86_64-34_r14.zip... e[==========================             ] 65% Downloading x86_64-34_r14.zip... e[==========================             ] 66% Downloading x86_64-34_r14.zip... e[==========================             ] 66% Unzipping... emulator/lib64/gles_a[==========================             ] 66% Unzipping... x86_64/NOTICE.txt    [==========================             ] 66% Unzipping... x86_64/VerifiedBootPa[==========================             ] 66% Unzipping... x86_64/advancedFeatur[==========================             ] 66% Unzipping... x86_64/build.prop    [==========================             ] 66% Unzipping... x86_64/encryptionkey.[==========================             ] 66% Unzipping... x86_64/kernel-ranchu [==========================             ] 66% Unzipping... x86_64/ramdisk.img   [==========================             ] 66% Unzipping... x86_64/source.propert[==========================             ] 66% Unzipping... x86_64/system.img    [==========================             ] 67% Unzipping... x86_64/system.img    [===========================            ] 68% Unzipping... x86_64/system.img    [===========================            ] 69% Unzipping... x86_64/system.img    [===========================            ] 70% Unzipping... x86_64/system.img    [============================           ] 70% Unzipping... x86_64/system.img    [============================           ] 71% Unzipping... x86_64/system.img    [============================           ] 72% Unzipping... x86_64/system.img    [=============================          ] 73% Unzipping... x86_64/system.img    [=============================          ] 74% Unzipping... x86_64/system.img    [=============================          ] 75% Unzipping... x86_64/system.img    [==============================         ] 75% Unzipping... x86_64/system.img    [==============================         ] 76% Unzipping... x86_64/system.img    [==============================         ] 77% Unzipping... x86_64/system.img    [==============================         ] 77% Unzipping... x86_64/userdata.img  [==============================         ] 77% Unzipping... x86_64/vendor.img    [==============================         ] 77% Unzipping... x86_64/data/local.pro[==============================         ] 77% Unzipping... x86_64/data/misc/Gold[==============================         ] 77% Unzipping... x86_64/data/misc/apns[==============================         ] 77% Unzipping... x86_64/data/misc/emul[==============================         ] 77% Unzipping... x86_64/data/misc/gcec[==============================         ] 77% Unzipping... x86_64/data/misc/mode[==============================         ] 77% Unzipping... x86_64/data/misc/pixe[==============================         ] 78% Unzipping... x86_64/data/misc/pixe[=======================================] 100% Unzipping... x86_64/data/misc/pix
+    
+    SDK_INSTALL_DONE
+    system image: android-34/google_apis/x86_64
+    Loading local repository...                                                     [=========                              ] 25% Loading local repository...       [=========                              ] 25% Fetch remote repository...        [=======================================] 100% Fetch remote repository...       
+    Auto-selecting single ABI x86_64
+    Do you wish to create a custom hardware profile? [no] --- emulator accel-check
+    accel:
+    0
+    KVM (version 12) is installed and usable.
+    accel
+    --- starting emulator (headless)
+    emulator pid=3094
+    * daemon not running; starting now at tcp:5037
+    * daemon started successfully
+    BOOT_COMPLETED after ~48s
+    --- boot state
+    List of devices attached
+    emulator-5554	device
+    
+    release=14
+    sdk=34
+    abi=x86_64
+    EMULATOR_BOOTED
+    device: sdk_gphone64_x86_64
+    android_release=14
+    sdk=34
+    abi=x86_64
+    avd=phase7 (created fresh this run, -wipe-data -no-snapshot)
+    ########## 4/8 embedded runtime payload (reuse phase 4's build when present) ##########
+
+### 2026-09-07T23:30:19Z  run=34169687565  step: 6/8 Phase 7 gates (workspace isolation + memory + UI regression + live turn)
+    head=cd092e2 branch=arena/01a07dc2-opencode-app log_lines=1741
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 11s
+    BUILD SUCCESSFUL in 1m 10s
+    --- last 40 log lines ---
+    > Task :app:compileDebugAndroidTestJavaWithJavac
+    > Task :app:mergeDebugAndroidTestShaders
+    > Task :app:compileDebugAndroidTestShaders NO-SOURCE
+    > Task :app:generateDebugAndroidTestAssets UP-TO-DATE
+    > Task :app:mergeDebugAndroidTestAssets
+    > Task :app:compressDebugAndroidTestAssets
+    > Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
+    > Task :app:mergeExtDexDebug
+    > Task :app:dexBuilderDebugAndroidTest
+    > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
+    > Task :app:processDebugAndroidTestJavaRes
+    > Task :app:mergeDebugAndroidTestJavaResource
+    > Task :app:packageDebug
+    > Task :app:createDebugApkListingFileRedirect
+    > Task :app:assembleDebug
+    > Task :app:checkDebugAndroidTestDuplicateClasses
+    > Task :app:mergeDebugAndroidTestJniLibFolders
+    > Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
+    > Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
+    > Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
+    > Task :app:validateSigningDebugAndroidTest
+    > Task :app:writeDebugAndroidTestSigningConfigVersions
+    > Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+    > Task :app:mergeProjectDexDebugAndroidTest
+    > Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+    > Task :app:preDebugUnitTestBuild
+    > Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+    > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+    > Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+    > Task :app:testDebugUnitTest UP-TO-DATE
+    > Task :app:mergeExtDexDebugAndroidTest
+    > Task :app:packageDebugAndroidTest
+    > Task :app:createDebugAndroidTestApkListingFileRedirect
+    > Task :app:assembleDebugAndroidTest
+    
+    BUILD SUCCESSFUL in 1m 10s
+    74 actionable tasks: 37 executed, 4 from cache, 33 up-to-date
+    apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk
+    testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+    ########## 6/8 Phase 7 gates (workspace isolation + memory + UI regression + live turn) ##########
+
+### 2026-09-07T23:35:20Z  run=34169687565  step: 6/8 Phase 7 gates (workspace isolation + memory + UI regression + live turn)
+    head=fe9ff97 branch=arena/01a07dc2-opencode-app log_lines=1741
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 11s
+    BUILD SUCCESSFUL in 1m 10s
+    --- last 40 log lines ---
+    > Task :app:compileDebugAndroidTestJavaWithJavac
+    > Task :app:mergeDebugAndroidTestShaders
+    > Task :app:compileDebugAndroidTestShaders NO-SOURCE
+    > Task :app:generateDebugAndroidTestAssets UP-TO-DATE
+    > Task :app:mergeDebugAndroidTestAssets
+    > Task :app:compressDebugAndroidTestAssets
+    > Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
+    > Task :app:mergeExtDexDebug
+    > Task :app:dexBuilderDebugAndroidTest
+    > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
+    > Task :app:processDebugAndroidTestJavaRes
+    > Task :app:mergeDebugAndroidTestJavaResource
+    > Task :app:packageDebug
+    > Task :app:createDebugApkListingFileRedirect
+    > Task :app:assembleDebug
+    > Task :app:checkDebugAndroidTestDuplicateClasses
+    > Task :app:mergeDebugAndroidTestJniLibFolders
+    > Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
+    > Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
+    > Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
+    > Task :app:validateSigningDebugAndroidTest
+    > Task :app:writeDebugAndroidTestSigningConfigVersions
+    > Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+    > Task :app:mergeProjectDexDebugAndroidTest
+    > Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+    > Task :app:preDebugUnitTestBuild
+    > Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+    > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+    > Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+    > Task :app:testDebugUnitTest UP-TO-DATE
+    > Task :app:mergeExtDexDebugAndroidTest
+    > Task :app:packageDebugAndroidTest
+    > Task :app:createDebugAndroidTestApkListingFileRedirect
+    > Task :app:assembleDebugAndroidTest
+    
+    BUILD SUCCESSFUL in 1m 10s
+    74 actionable tasks: 37 executed, 4 from cache, 33 up-to-date
+    apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk
+    testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+    ########## 6/8 Phase 7 gates (workspace isolation + memory + UI regression + live turn) ##########
+
+### 2026-09-07T23:40:22Z  run=34169687565  step: 7/8 Phase 5 regression tail (client-integration gates, staged on this device)
+    head=d44c614 branch=arena/01a07dc2-opencode-app log_lines=1784
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 11s
+    BUILD SUCCESSFUL in 1m 10s
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase7/scripts/20-gates.sh'
+    --- last 40 log lines ---
+    Success
+    Performing Streamed Install
+    Success
+    [2026-09-07T23:29:24Z] === am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest ===
+    [2026-09-07T23:29:31Z] instrument rc=0 (isolation)
+    [2026-09-07T23:29:32Z] isolation runner trailer: OK
+    [2026-09-07T23:29:32Z] screenshots pulled: 0
+    [2026-09-07T23:29:32Z] P7_W1_PROJECT_LIFECYCLE PASS :: :: created=p7-life-1788823765349 renamed=p7-renamed-1788823765349 adopted=p7-adopted-1788823765349 delete=true
+    [2026-09-07T23:29:32Z] P7_W2_WORKSPACE_ISOLATION PASS :: :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details
+    [2026-09-07T23:29:32Z] P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/data/user/0/ai.opencode.android.debug/files/workspaces/p7-memory-1788823765383/AGENTS.md globalFile=/data/user/0/ai.opencode.android.debug/files/xdg/config/opencode/AGENTS.md
+    [2026-09-07T23:29:32Z] === stage B: deterministic UI regression (bottom sheet + accessibility) ===
+    [2026-09-07T23:29:32Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
+    [2026-09-07T23:29:47Z] instrument rc=0 (chat-ui)
+    [2026-09-07T23:29:47Z] chat-ui runner trailer: NOT-OK (rc=0)
+    [2026-09-07T23:29:48Z] screenshots pulled: 9
+    [2026-09-07T23:29:48Z] P6_U3 FAIL
+    [2026-09-07T23:29:48Z] P6_U7 PASS :: :: interactive={chat=23, sessions=11, projects=6, welcome=2, welcome-unsupported=2, settings=5} total=49 unnamed=0
+    [2026-09-07T23:29:48Z] === stage C: live turn through the UI (key-free default model) ===
+    [2026-09-07T23:29:48Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
+    [2026-09-07T23:37:10Z] instrument rc=0 (live-chat)
+    [2026-09-07T23:37:10Z] live-chat runner trailer: OK
+    [2026-09-07T23:37:10Z] screenshots pulled: 10
+    [2026-09-07T23:37:10Z] P6_L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=11 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot=2
+    [2026-09-07T23:37:10Z] P6_L2 SKIP :: :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=0); screen='
+    [2026-09-07T23:37:10Z] === evidence pull ===
+    [2026-09-07T23:37:11Z] === SUMMARY ===
+    P7_SUMMARY 2026-09-07T23:37:11Z
+    ui_gates_pass=5 ui_gates_fail=1 ui_gates_skip=1
+    isolation_instrument_rc=0 chat_ui_instrument_rc=0 live_chat_instrument_rc=0
+    screenshots=11
+    model_available=1
+    device_abi=x86_64
+    android_sdk=34
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase7/scripts/20-gates.sh'
+    phase7 gates rc=1
+    ########## 7/8 Phase 5 regression tail (client-integration gates, staged on this device) ##########
+    + zod-to-json-schema@3.25.2
+    
+    92 packages installed [463.00ms]
+    MCP_READY: 26M
+
+### 2026-09-07T23:42:52Z  run=34169687565  step: 8/8 evidence
+    head=331eff2 branch=arena/01a07dc2-opencode-app log_lines=2010
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 11s
+    BUILD SUCCESSFUL in 1m 10s
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase7/scripts/20-gates.sh'
+    BUILD SUCCESSFUL in 12s
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh'
+    STEP_FAILED rc=1: P5_SKIP_PUSH=1 bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/00-run-phase5.sh' --stage-after-phase4
+    --- last 40 log lines ---
+    P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
+    P5-G17: PASS loopback-only-binding-and-no-mdns
+    P5-G18: PASS credentials-keystore-only-at-rest
+    P5-G19: PASS no-hardcoded-or-bundled-secrets
+    P5_SUMMARY 2026-09-07T23:42:51Z
+    gates_pass=14 gates_fail=1 gates_skip=0
+    kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
+    model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f81c223c5ffefbExqf358VM11t
+    app_uid=10192 device_abi=x86_64
+    live_launcher_processes=0
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh'
+    phase5 gates rc=1
+    
+    ########## 6/6 evidence ##########
+    === PHASE 5 END 2026-09-07T23:42:52Z gates_rc=1 ===
+    P5-01: PASS phase5-apk-installed-and-app-running
+    P5-02: PASS payload-v5-manifest-marker
+    P5-03: PASS fixture-config-and-harness-marker
+    P5-04: PASS keystore-password-authenticated-live-server
+    P5-K: PASS kotlin-client-gates-on-device (K1..K9, pass=10 fail=0 skip=0)
+    P5-05: PASS runtime-healthy-after-instrumentation
+    P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
+    P5-R-07: PASS phase4-driver-gate-07-shell.js-unmodified(on-device)
+    P5-R-10: PASS phase4-driver-gate-10-mcp.js-unmodified(on-device)
+    P5-R-11: PASS phase4-driver-gate-11-stream.js-unmodified(on-device)
+    P5-R-12: PASS phase4-driver-gate-12-permission.js-unmodified(on-device)
+    P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
+    P5-G17: PASS loopback-only-binding-and-no-mdns
+    P5-G18: PASS credentials-keystore-only-at-rest
+    P5-G19: PASS no-hardcoded-or-bundled-secrets
+    P5_SUMMARY 2026-09-07T23:42:51Z
+    gates_pass=14 gates_fail=1 gates_skip=0
+    kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
+    model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f81c223c5ffefbExqf358VM11t
+    app_uid=10192 device_abi=x86_64
+    live_launcher_processes=0
+    P5_SKIP_PUSH=1; not committing evidence
+    STEP_FAILED rc=1: P5_SKIP_PUSH=1 bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/00-run-phase5.sh' --stage-after-phase4
+    phase5 regression rc=1
+    ########## 8/8 evidence ##########
+
+### 2026-09-07T23:51:19Z  run=34171137692  step: 4/8 embedded runtime payload (reuse phase 4's build when present)
+    head=8cf7a71 branch=arena/01a07dc2-opencode-app log_lines=542
+    --- error digest ---
+    BUILD SUCCESSFUL in 1m 54s
+    --- last 40 log lines ---
+    ########## 3/8 environment + FRESH emulator ##########
+    installing emulator + system image via phase4/scripts/50-install-sdk.sh
+    --- downloading cmdline-tools
+    -rw-r--r-- 1 runner runner 153607504 Sep  7 23:48 cmdtools.zip
+    /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
+    /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
+    --- sdkmanager licenses
+    yes: standard output: Broken pipe
+    --- sdkmanager install
+    tee: /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/50-install-sdk.log: No such file or directory
+    Loading package information...                                                  Loading local repository...                                                     [                                       ] 3% Loading local repository...        [                                       ] 3% Fetch remote repository...         [=                                      ] 3% Fetch remote repository...         [=                                      ] 4% Fetch remote repository...         [=                                      ] 5% Fetch remote repository...         [==                                     ] 5% Fetch remote repository...         [==                                     ] 6% Fetch remote repository...         [==                                     ] 7% Fetch remote repository...         [==                                     ] 7% Computing updates...               [===                                    ] 8% Computing updates...               [===                                    ] 10% Computing updates...              [===                                    ] 10% Installing Android Emulator       [===                                    ] 10% Downloading emulator-linux_x64-159[====                                   ] 10% Downloading emulator-linux_x64-159[====                                   ] 11% Downloading emulator-linux_x64-159[====                                   ] 12% Downloading emulator-linux_x64-159[=====                                  ] 13% Downloading emulator-linux_x64-159[=====                                  ] 14% Downloading emulator-linux_x64-159[=====                                  ] 15% Downloading emulator-linux_x64-159[======                                 ] 15% Downloading emulator-linux_x64-159[======                                 ] 16% Downloading emulator-linux_x64-159[======                                 ] 17% Downloading emulator-linux_x64-159[=======                                ] 18% Downloading emulator-linux_x64-159[=======                                ] 19% Downloading emulator-linux_x64-159[=======                                ] 20% Downloading emulator-linux_x64-159[========                               ] 20% Downloading emulator-linux_x64-159[========                               ] 21% Downloading emulator-linux_x64-159[========                               ] 21% Unzipping...                      [========                               ] 21% Unzipping... emulator/            [========                               ] 21% Unzipping... emulator/resources/  [========                               ] 21% Unzipping... emulator/qsn         [========                               ] 21% Unzipping... emulator/emulator    [========                               ] 21% Unzipping... emulator/netsimd     [========                               ] 22% Unzipping... emulator/netsimd     [========                               ] 22% Unzipping... emulator/bin64/      [========                               ] 22% Unzipping... emulator/qemu/       [========                               ] 22% Unzipping... emulator/NOTICE.txt  [========                               ] 22% Unzipping... emulator/crashpad_han[========                               ] 22% Unzipping... emulator/source.prope[========                               ] 22% Unzipping... emulator/nimble_bridg[========                               ] 22% Unzipping... emulator/LICENSE     [========                               ] 22% Unzipping... emulator/lib/        [========                               ] 22% Unzipping... emulator/qemu-img    [========                               ] 22% Unzipping... emulator/include/    [========                               ] 22% Unzipping... emulator/NOTICE.csv  [========                               ] 22% Unzipping... emulator/lib64/      [========                               ] 22% Unzipping... emulator/emulator-che[========                               ] 22% Unzipping... emulator/crashreport [========                               ] 22% Unzipping... emulator/mksdcard    [========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/sk[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/po[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/sk[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/bin64/e2fsck[========                               ] 22% Unzipping... emulator/bin64/fsck.e[========                               ] 22% Unzipping... emulator/bin64/tune2f[========                               ] 22% Unzipping... emulator/bin64/resize[========                               ] 22% Unzipping... emulator/bin64/mkfs.e[========                               ] 22% Unzipping... emulator/qemu/linux-x[=========                              ] 23% Unzipping... emulator/qemu/linux-x[=========                              ] 24% Unzipping... emulator/qemu/linux-x[=========                              ] 25% Unzipping... emulator/qemu/linux-x[==========                             ] 25% Unzipping... emulator/qemu/linux-x[==========                             ] 25% Unzipping... emulator/lib/emulator[==========                             ] 25% Unzipping... emulator/lib/rtc_serv[==========                             ] 25% Unzipping... emulator/lib/advanced[==========                             ] 25% Unzipping... emulator/lib/cmake/  [==========                             ] 25% Unzipping... emulator/lib/emulator[==========                             ] 25% Unzipping... emulator/lib/control_[==========                             ] 25% Unzipping... emulator/lib/emulated[==========                             ] 25% Unzipping... emulator/lib/rtc_serv[==========                             ] 25% Unzipping... emulator/lib/emu-orig[==========                             ] 25% Unzipping... emulator/lib/hardware[==========                             ] 25% Unzipping... emulator/lib/pkgconfi[==========                             ] 25% Unzipping... emulator/lib/pc-bios/[==========                             ] 25% Unzipping... emulator/lib/snapshot[==========                             ] 25% Unzipping... emulator/lib/adb_serv[==========                             ] 25% Unzipping... emulator/lib/hostapd.[==========                             ] 25% Unzipping... emulator/lib/grpc_end[==========                             ] 25% Unzipping... emulator/lib/ca-bundl[==========                             ] 25% Unzipping... emulator/lib/ui_contr[==========                             ] 25% Unzipping... emulator/lib/snapshot[==========                             ] 25% Unzipping... emulator/lib/ice_conf[==========                             ] 25% Unzipping... emulator/lib/libflatb[==========                             ] 26% Unzipping... emulator/lib/libflatb[==========                             ] 26% Unzipping... emulator/lib/emulator[==========                             ] 26% Unzipping... emulator/lib/waterfal[==========                             ] 26% Unzipping... emulator/lib/emulated[==========                             ] 26% Unzipping... emulator/lib/cmake/fl[==========                             ] 26% Unzipping... emulator/lib/pkgconfi[==========                             ] 26% Unzipping... emulator/lib/pc-bios/[==========                             ] 26% Unzipping... emulator/include/flat[==========                             ] 26% Unzipping... emulator/lib64/libgli[==========                             ] 26% Unzipping... emulator/lib64/libpro[==========                             ] 26% Unzipping... emulator/lib64/qt/   [==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libgfx[==========                             ] 26% Unzipping... emulator/lib64/gles_l[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/vulkan[==========                             ] 26% Unzipping... emulator/lib64/gles_s[==========                             ] 26% Unzipping... emulator/lib64/libemu[==========                             ] 26% Unzipping... emulator/lib64/libpro[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libtcm[==========                             ] 26% Unzipping... emulator/lib64/libima[==========                             ] 26% Unzipping... emulator/lib64/libc++[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libabs[==========                             ] 26% Unzipping... emulator/lib64/gles_a[==========                             ] 26% Unzipping... emulator/lib64/libsha[==========                             ] 26% Unzipping... emulator/lib64/libc++[==========                             ] 26% Unzipping... emulator/lib64/qt/res[==========                             ] 26% Unzipping... emulator/lib64/qt/lib[==========                             ] 26% Unzipping... emulator/lib64/qt/tra[==========                             ] 26% Unzipping... emulator/lib64/qt/plu[==========                             ] 26% Unzipping... emulator/lib64/qt/res[==========                             ] 27% Unzipping... emulator/lib64/qt/res[==========                             ] 27% Unzipping... emulator/lib64/qt/lib[===========                            ] 28% Unzipping... emulator/lib64/qt/lib[===========                            ] 29% Unzipping... emulator/lib64/qt/lib[===========                            ] 30% Unzipping... emulator/lib64/qt/lib[============                           ] 30% Unzipping... emulator/lib64/qt/lib[============                           ] 30% Unzipping... emulator/lib64/qt/tra[============                           ] 31% Unzipping... emulator/lib64/qt/tra[============                           ] 31% Unzipping... emulator/lib64/qt/plu[============                           ] 31% Unzipping... emulator/lib64/gles_l[============                           ] 31% Unzipping... emulator/lib64/vulkan[============                           ] 32% Unzipping... emulator/lib64/vulkan[============                           ] 32% Unzipping... emulator/lib64/gles_s[============                           ] 32% Unzipping... emulator/lib64/gles_a[=============                          ] 33% Unzipping... emulator/lib64/gles_a[=====================                  ] 55% Unzipping... emulator/lib64/gles_a[=====================                  ] 55% Installing Google APIs Intel x86_6[=====================                  ] 55% Downloading x86_64-34_r14.zip... e[======================                 ] 55% Downloading x86_64-34_r14.zip... e[======================                 ] 56% Downloading x86_64-34_r14.zip... e[======================                 ] 57% Downloading x86_64-34_r14.zip... e[=======================                ] 58% Downloading x86_64-34_r14.zip... e[=======================                ] 59% Downloading x86_64-34_r14.zip... e[=======================                ] 60% Downloading x86_64-34_r14.zip... e[========================               ] 60% Downloading x86_64-34_r14.zip... e[========================               ] 61% Downloading x86_64-34_r14.zip... e[========================               ] 62% Downloading x86_64-34_r14.zip... e[=========================              ] 63% Downloading x86_64-34_r14.zip... e[=========================              ] 64% Downloading x86_64-34_r14.zip... e[=========================              ] 65% Downloading x86_64-34_r14.zip... e[==========================             ] 65% Downloading x86_64-34_r14.zip... e[==========================             ] 66% Downloading x86_64-34_r14.zip... e[==========================             ] 66% Unzipping... emulator/lib64/gles_a[==========================             ] 66% Unzipping... x86_64/NOTICE.txt    [==========================             ] 66% Unzipping... x86_64/VerifiedBootPa[==========================             ] 66% Unzipping... x86_64/advancedFeatur[==========================             ] 66% Unzipping... x86_64/build.prop    [==========================             ] 66% Unzipping... x86_64/encryptionkey.[==========================             ] 66% Unzipping... x86_64/kernel-ranchu [==========================             ] 66% Unzipping... x86_64/ramdisk.img   [==========================             ] 66% Unzipping... x86_64/source.propert[==========================             ] 66% Unzipping... x86_64/system.img    [==========================             ] 67% Unzipping... x86_64/system.img    [===========================            ] 68% Unzipping... x86_64/system.img    [===========================            ] 69% Unzipping... x86_64/system.img    [===========================            ] 70% Unzipping... x86_64/system.img    [============================           ] 70% Unzipping... x86_64/system.img    [============================           ] 71% Unzipping... x86_64/system.img    [============================           ] 72% Unzipping... x86_64/system.img    [=============================          ] 73% Unzipping... x86_64/system.img    [=============================          ] 74% Unzipping... x86_64/system.img    [=============================          ] 75% Unzipping... x86_64/system.img    [==============================         ] 75% Unzipping... x86_64/system.img    [==============================         ] 76% Unzipping... x86_64/system.img    [==============================         ] 77% Unzipping... x86_64/system.img    [==============================         ] 77% Unzipping... x86_64/userdata.img  [==============================         ] 77% Unzipping... x86_64/vendor.img    [==============================         ] 77% Unzipping... x86_64/data/local.pro[==============================         ] 77% Unzipping... x86_64/data/misc/Gold[==============================         ] 77% Unzipping... x86_64/data/misc/apns[==============================         ] 77% Unzipping... x86_64/data/misc/emul[==============================         ] 77% Unzipping... x86_64/data/misc/gcec[==============================         ] 77% Unzipping... x86_64/data/misc/mode[==============================         ] 77% Unzipping... x86_64/data/misc/pixe[==============================         ] 78% Unzipping... x86_64/data/misc/pixe[=======================================] 100% Unzipping... x86_64/data/misc/pix
+    
+    SDK_INSTALL_DONE
+    system image: android-34/google_apis/x86_64
+    Loading local repository...                                                     [=========                              ] 25% Loading local repository...       [=========                              ] 25% Fetch remote repository...        [=======================================] 100% Fetch remote repository...       
+    Auto-selecting single ABI x86_64
+    Do you wish to create a custom hardware profile? [no] --- emulator accel-check
+    accel:
+    0
+    KVM (version 12) is installed and usable.
+    accel
+    --- starting emulator (headless)
+    emulator pid=2919
+    * daemon not running; starting now at tcp:5037
+    * daemon started successfully
+    BOOT_COMPLETED after ~42s
+    --- boot state
+    List of devices attached
+    emulator-5554	device
+    
+    release=14
+    sdk=34
+    abi=x86_64
+    EMULATOR_BOOTED
+    device: sdk_gphone64_x86_64
+    android_release=14
+    sdk=34
+    abi=x86_64
+    avd=phase7 (created fresh this run, -wipe-data -no-snapshot)
+    ########## 4/8 embedded runtime payload (reuse phase 4's build when present) ##########
+
+### 2026-09-07T23:56:20Z  run=34171137692  step: 6/8 Phase 7 gates (workspace isolation + memory + UI regression + live turn)
+    head=1a38db5 branch=arena/01a07dc2-opencode-app log_lines=1741
+    --- error digest ---
+    BUILD SUCCESSFUL in 1m 54s
+    BUILD SUCCESSFUL in 55s
+    --- last 40 log lines ---
+    > Task :app:mergeExtDexDebug
+    > Task :app:compileDebugAndroidTestJavaWithJavac
+    > Task :app:mergeDebugAndroidTestShaders
+    > Task :app:compileDebugAndroidTestShaders NO-SOURCE
+    > Task :app:generateDebugAndroidTestAssets UP-TO-DATE
+    > Task :app:mergeDebugAndroidTestAssets
+    > Task :app:compressDebugAndroidTestAssets
+    > Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
+    > Task :app:dexBuilderDebugAndroidTest
+    > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
+    > Task :app:processDebugAndroidTestJavaRes
+    > Task :app:checkDebugAndroidTestDuplicateClasses
+    > Task :app:mergeDebugAndroidTestJniLibFolders
+    > Task :app:mergeDebugAndroidTestJavaResource
+    > Task :app:packageDebug
+    > Task :app:createDebugApkListingFileRedirect
+    > Task :app:assembleDebug
+    > Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
+    > Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
+    > Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
+    > Task :app:validateSigningDebugAndroidTest
+    > Task :app:writeDebugAndroidTestSigningConfigVersions
+    > Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+    > Task :app:mergeProjectDexDebugAndroidTest
+    > Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+    > Task :app:preDebugUnitTestBuild
+    > Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+    > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+    > Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+    > Task :app:testDebugUnitTest UP-TO-DATE
+    > Task :app:mergeExtDexDebugAndroidTest
+    > Task :app:packageDebugAndroidTest
+    > Task :app:createDebugAndroidTestApkListingFileRedirect
+    > Task :app:assembleDebugAndroidTest
+    
+    BUILD SUCCESSFUL in 55s
+    74 actionable tasks: 37 executed, 4 from cache, 33 up-to-date
+    apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk
+    testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+    ########## 6/8 Phase 7 gates (workspace isolation + memory + UI regression + live turn) ##########
+
+### 2026-09-08T00:01:21Z  run=34171137692  step: 6/8 Phase 7 gates (workspace isolation + memory + UI regression + live turn)
+    head=6e817fe branch=arena/01a07dc2-opencode-app log_lines=1741
+    --- error digest ---
+    BUILD SUCCESSFUL in 1m 54s
+    BUILD SUCCESSFUL in 55s
+    --- last 40 log lines ---
+    > Task :app:mergeExtDexDebug
+    > Task :app:compileDebugAndroidTestJavaWithJavac
+    > Task :app:mergeDebugAndroidTestShaders
+    > Task :app:compileDebugAndroidTestShaders NO-SOURCE
+    > Task :app:generateDebugAndroidTestAssets UP-TO-DATE
+    > Task :app:mergeDebugAndroidTestAssets
+    > Task :app:compressDebugAndroidTestAssets
+    > Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
+    > Task :app:dexBuilderDebugAndroidTest
+    > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
+    > Task :app:processDebugAndroidTestJavaRes
+    > Task :app:checkDebugAndroidTestDuplicateClasses
+    > Task :app:mergeDebugAndroidTestJniLibFolders
+    > Task :app:mergeDebugAndroidTestJavaResource
+    > Task :app:packageDebug
+    > Task :app:createDebugApkListingFileRedirect
+    > Task :app:assembleDebug
+    > Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
+    > Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
+    > Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
+    > Task :app:validateSigningDebugAndroidTest
+    > Task :app:writeDebugAndroidTestSigningConfigVersions
+    > Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+    > Task :app:mergeProjectDexDebugAndroidTest
+    > Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+    > Task :app:preDebugUnitTestBuild
+    > Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+    > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+    > Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+    > Task :app:testDebugUnitTest UP-TO-DATE
+    > Task :app:mergeExtDexDebugAndroidTest
+    > Task :app:packageDebugAndroidTest
+    > Task :app:createDebugAndroidTestApkListingFileRedirect
+    > Task :app:assembleDebugAndroidTest
+    
+    BUILD SUCCESSFUL in 55s
+    74 actionable tasks: 37 executed, 4 from cache, 33 up-to-date
+    apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk
+    testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+    ########## 6/8 Phase 7 gates (workspace isolation + memory + UI regression + live turn) ##########
+
+### 2026-09-08T00:06:22Z  run=34171137692  step: 7/8 Phase 5 regression tail (client-integration gates, staged on this device)
+    head=908d43c branch=arena/01a07dc2-opencode-app log_lines=1783
+    --- error digest ---
+    BUILD SUCCESSFUL in 1m 54s
+    BUILD SUCCESSFUL in 55s
+    --- last 40 log lines ---
+    Performing Streamed Install
+    Success
+    Performing Streamed Install
+    Success
+    [2026-09-07T23:55:39Z] === am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest ===
+    [2026-09-07T23:55:45Z] instrument rc=0 (isolation)
+    [2026-09-07T23:55:45Z] isolation runner trailer: OK
+    [2026-09-07T23:55:45Z] screenshots pulled: 0
+    [2026-09-07T23:55:45Z] P7_W1_PROJECT_LIFECYCLE PASS :: :: created=p7-life-1788825340680 renamed=p7-renamed-1788825340680 adopted=p7-adopted-1788825340680 delete=true
+    [2026-09-07T23:55:45Z] P7_W2_WORKSPACE_ISOLATION PASS :: :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details
+    [2026-09-07T23:55:45Z] P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/data/user/0/ai.opencode.android.debug/files/workspaces/p7-memory-1788825340703/AGENTS.md globalFile=/data/user/0/ai.opencode.android.debug/files/xdg/config/opencode/AGENTS.md
+    [2026-09-07T23:55:45Z] === stage B: deterministic UI regression (bottom sheet + accessibility) ===
+    [2026-09-07T23:55:45Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
+    [2026-09-07T23:55:59Z] instrument rc=0 (chat-ui)
+    [2026-09-07T23:55:59Z] chat-ui runner trailer: OK
+    [2026-09-07T23:55:59Z] screenshots pulled: 9
+    [2026-09-07T23:55:59Z] P6_U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
+    [2026-09-07T23:55:59Z] P6_U7 PASS :: :: interactive={chat=23, sessions=11, projects=6, welcome=2, welcome-unsupported=2, settings=5} total=49 unnamed=0
+    [2026-09-07T23:55:59Z] === stage C: live turn through the UI (key-free default model) ===
+    [2026-09-07T23:55:59Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
+    [2026-09-08T00:03:18Z] instrument rc=0 (live-chat)
+    [2026-09-08T00:03:18Z] live-chat runner trailer: OK
+    [2026-09-08T00:03:19Z] screenshots pulled: 10
+    [2026-09-08T00:03:19Z] P6_L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=11 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot=2
+    [2026-09-08T00:03:19Z] P6_L2 SKIP :: :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=0); screen='
+    [2026-09-08T00:03:19Z] === evidence pull ===
+    [2026-09-08T00:03:19Z] === SUMMARY ===
+    P7_SUMMARY 2026-09-08T00:03:19Z
+    ui_gates_pass=6 ui_gates_fail=0 ui_gates_skip=1
+    isolation_instrument_rc=0 chat_ui_instrument_rc=0 live_chat_instrument_rc=0
+    screenshots=11
+    model_available=1
+    device_abi=x86_64
+    android_sdk=34
+    phase7 gates rc=0
+    ########## 7/8 Phase 5 regression tail (client-integration gates, staged on this device) ##########
+    + zod-to-json-schema@3.25.2
+    
+    92 packages installed [202.00ms]
+    MCP_READY: 26M
+
+### 2026-09-08T00:07:37Z  run=34171137692  step: 8/8 evidence
+    head=03466e5 branch=arena/01a07dc2-opencode-app log_lines=2009
+    --- error digest ---
+    BUILD SUCCESSFUL in 1m 54s
+    BUILD SUCCESSFUL in 55s
+    BUILD SUCCESSFUL in 9s
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh'
+    STEP_FAILED rc=1: P5_SKIP_PUSH=1 bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/00-run-phase5.sh' --stage-after-phase4
+    --- last 40 log lines ---
+    P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
+    P5-G17: PASS loopback-only-binding-and-no-mdns
+    P5-G18: PASS credentials-keystore-only-at-rest
+    P5-G19: PASS no-hardcoded-or-bundled-secrets
+    P5_SUMMARY 2026-09-08T00:07:36Z
+    gates_pass=14 gates_fail=1 gates_skip=0
+    kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
+    model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f81ab99f7ffeuaSqCM8C2XN1rN
+    app_uid=10192 device_abi=x86_64
+    live_launcher_processes=0
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh'
+    phase5 gates rc=1
+    
+    ########## 6/6 evidence ##########
+    === PHASE 5 END 2026-09-08T00:07:37Z gates_rc=1 ===
+    P5-01: PASS phase5-apk-installed-and-app-running
+    P5-02: PASS payload-v5-manifest-marker
+    P5-03: PASS fixture-config-and-harness-marker
+    P5-04: PASS keystore-password-authenticated-live-server
+    P5-K: PASS kotlin-client-gates-on-device (K1..K9, pass=10 fail=0 skip=0)
+    P5-05: PASS runtime-healthy-after-instrumentation
+    P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
+    P5-R-07: PASS phase4-driver-gate-07-shell.js-unmodified(on-device)
+    P5-R-10: PASS phase4-driver-gate-10-mcp.js-unmodified(on-device)
+    P5-R-11: PASS phase4-driver-gate-11-stream.js-unmodified(on-device)
+    P5-R-12: PASS phase4-driver-gate-12-permission.js-unmodified(on-device)
+    P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
+    P5-G17: PASS loopback-only-binding-and-no-mdns
+    P5-G18: PASS credentials-keystore-only-at-rest
+    P5-G19: PASS no-hardcoded-or-bundled-secrets
+    P5_SUMMARY 2026-09-08T00:07:36Z
+    gates_pass=14 gates_fail=1 gates_skip=0
+    kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
+    model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f81ab99f7ffeuaSqCM8C2XN1rN
+    app_uid=10192 device_abi=x86_64
+    live_launcher_processes=0
+    P5_SKIP_PUSH=1; not committing evidence
+    STEP_FAILED rc=1: P5_SKIP_PUSH=1 bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/00-run-phase5.sh' --stage-after-phase4
+    phase5 regression rc=1
+    ########## 8/8 evidence ##########
+
+### 2026-09-08T00:16:02Z  run=34172484507  step: 4/8 embedded runtime payload (reuse phase 4's build when present)
+    head=7691ac8 branch=arena/01a07dc2-opencode-app log_lines=542
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 15s
+    --- last 40 log lines ---
+    ########## 3/8 environment + FRESH emulator ##########
+    installing emulator + system image via phase4/scripts/50-install-sdk.sh
+    --- downloading cmdline-tools
+    -rw-r--r-- 1 runner runner 153607504 Sep  8 00:13 cmdtools.zip
+    /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
+    /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
+    --- sdkmanager licenses
+    yes: standard output: Broken pipe
+    --- sdkmanager install
+    tee: /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/50-install-sdk.log: No such file or directory
+    Loading package information...                                                  Loading local repository...                                                     [                                       ] 3% Loading local repository...        [                                       ] 3% Fetch remote repository...         [=                                      ] 3% Fetch remote repository...         [=                                      ] 4% Fetch remote repository...         [=                                      ] 5% Fetch remote repository...         [==                                     ] 5% Fetch remote repository...         [==                                     ] 6% Fetch remote repository...         [==                                     ] 7% Fetch remote repository...         [==                                     ] 7% Computing updates...               [===                                    ] 8% Computing updates...               [===                                    ] 10% Computing updates...              [===                                    ] 10% Installing Android Emulator       [===                                    ] 10% Downloading emulator-linux_x64-159[====                                   ] 10% Downloading emulator-linux_x64-159[====                                   ] 11% Downloading emulator-linux_x64-159[====                                   ] 12% Downloading emulator-linux_x64-159[=====                                  ] 13% Downloading emulator-linux_x64-159[=====                                  ] 14% Downloading emulator-linux_x64-159[=====                                  ] 15% Downloading emulator-linux_x64-159[======                                 ] 15% Downloading emulator-linux_x64-159[======                                 ] 16% Downloading emulator-linux_x64-159[======                                 ] 17% Downloading emulator-linux_x64-159[=======                                ] 18% Downloading emulator-linux_x64-159[=======                                ] 19% Downloading emulator-linux_x64-159[=======                                ] 20% Downloading emulator-linux_x64-159[========                               ] 20% Downloading emulator-linux_x64-159[========                               ] 21% Downloading emulator-linux_x64-159[========                               ] 21% Unzipping...                      [========                               ] 21% Unzipping... emulator/            [========                               ] 21% Unzipping... emulator/resources/  [========                               ] 21% Unzipping... emulator/qsn         [========                               ] 21% Unzipping... emulator/emulator    [========                               ] 21% Unzipping... emulator/netsimd     [========                               ] 22% Unzipping... emulator/netsimd     [========                               ] 22% Unzipping... emulator/bin64/      [========                               ] 22% Unzipping... emulator/qemu/       [========                               ] 22% Unzipping... emulator/NOTICE.txt  [========                               ] 22% Unzipping... emulator/crashpad_han[========                               ] 22% Unzipping... emulator/source.prope[========                               ] 22% Unzipping... emulator/nimble_bridg[========                               ] 22% Unzipping... emulator/LICENSE     [========                               ] 22% Unzipping... emulator/lib/        [========                               ] 22% Unzipping... emulator/qemu-img    [========                               ] 22% Unzipping... emulator/include/    [========                               ] 22% Unzipping... emulator/NOTICE.csv  [========                               ] 22% Unzipping... emulator/lib64/      [========                               ] 22% Unzipping... emulator/emulator-che[========                               ] 22% Unzipping... emulator/crashreport [========                               ] 22% Unzipping... emulator/mksdcard    [========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/sk[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/po[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/sk[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/bin64/e2fsck[========                               ] 22% Unzipping... emulator/bin64/fsck.e[========                               ] 22% Unzipping... emulator/bin64/tune2f[========                               ] 22% Unzipping... emulator/bin64/resize[========                               ] 22% Unzipping... emulator/bin64/mkfs.e[========                               ] 22% Unzipping... emulator/qemu/linux-x[=========                              ] 23% Unzipping... emulator/qemu/linux-x[=========                              ] 24% Unzipping... emulator/qemu/linux-x[=========                              ] 25% Unzipping... emulator/qemu/linux-x[==========                             ] 25% Unzipping... emulator/qemu/linux-x[==========                             ] 25% Unzipping... emulator/lib/emulator[==========                             ] 25% Unzipping... emulator/lib/rtc_serv[==========                             ] 25% Unzipping... emulator/lib/advanced[==========                             ] 25% Unzipping... emulator/lib/cmake/  [==========                             ] 25% Unzipping... emulator/lib/emulator[==========                             ] 25% Unzipping... emulator/lib/control_[==========                             ] 25% Unzipping... emulator/lib/emulated[==========                             ] 25% Unzipping... emulator/lib/rtc_serv[==========                             ] 25% Unzipping... emulator/lib/emu-orig[==========                             ] 25% Unzipping... emulator/lib/hardware[==========                             ] 25% Unzipping... emulator/lib/pkgconfi[==========                             ] 25% Unzipping... emulator/lib/pc-bios/[==========                             ] 25% Unzipping... emulator/lib/snapshot[==========                             ] 25% Unzipping... emulator/lib/adb_serv[==========                             ] 25% Unzipping... emulator/lib/hostapd.[==========                             ] 25% Unzipping... emulator/lib/grpc_end[==========                             ] 25% Unzipping... emulator/lib/ca-bundl[==========                             ] 25% Unzipping... emulator/lib/ui_contr[==========                             ] 25% Unzipping... emulator/lib/snapshot[==========                             ] 25% Unzipping... emulator/lib/ice_conf[==========                             ] 25% Unzipping... emulator/lib/libflatb[==========                             ] 26% Unzipping... emulator/lib/libflatb[==========                             ] 26% Unzipping... emulator/lib/emulator[==========                             ] 26% Unzipping... emulator/lib/waterfal[==========                             ] 26% Unzipping... emulator/lib/emulated[==========                             ] 26% Unzipping... emulator/lib/cmake/fl[==========                             ] 26% Unzipping... emulator/lib/pkgconfi[==========                             ] 26% Unzipping... emulator/lib/pc-bios/[==========                             ] 26% Unzipping... emulator/include/flat[==========                             ] 26% Unzipping... emulator/lib64/libgli[==========                             ] 26% Unzipping... emulator/lib64/libpro[==========                             ] 26% Unzipping... emulator/lib64/qt/   [==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libgfx[==========                             ] 26% Unzipping... emulator/lib64/gles_l[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/vulkan[==========                             ] 26% Unzipping... emulator/lib64/gles_s[==========                             ] 26% Unzipping... emulator/lib64/libemu[==========                             ] 26% Unzipping... emulator/lib64/libpro[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libtcm[==========                             ] 26% Unzipping... emulator/lib64/libima[==========                             ] 26% Unzipping... emulator/lib64/libc++[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libabs[==========                             ] 26% Unzipping... emulator/lib64/gles_a[==========                             ] 26% Unzipping... emulator/lib64/libsha[==========                             ] 26% Unzipping... emulator/lib64/libc++[==========                             ] 26% Unzipping... emulator/lib64/qt/res[==========                             ] 26% Unzipping... emulator/lib64/qt/lib[==========                             ] 26% Unzipping... emulator/lib64/qt/tra[==========                             ] 26% Unzipping... emulator/lib64/qt/plu[==========                             ] 26% Unzipping... emulator/lib64/qt/res[==========                             ] 27% Unzipping... emulator/lib64/qt/res[==========                             ] 27% Unzipping... emulator/lib64/qt/lib[===========                            ] 28% Unzipping... emulator/lib64/qt/lib[===========                            ] 29% Unzipping... emulator/lib64/qt/lib[===========                            ] 30% Unzipping... emulator/lib64/qt/lib[============                           ] 30% Unzipping... emulator/lib64/qt/lib[============                           ] 30% Unzipping... emulator/lib64/qt/tra[============                           ] 31% Unzipping... emulator/lib64/qt/tra[============                           ] 31% Unzipping... emulator/lib64/qt/plu[============                           ] 31% Unzipping... emulator/lib64/gles_l[============                           ] 31% Unzipping... emulator/lib64/vulkan[============                           ] 32% Unzipping... emulator/lib64/vulkan[============                           ] 32% Unzipping... emulator/lib64/gles_s[============                           ] 32% Unzipping... emulator/lib64/gles_a[=============                          ] 33% Unzipping... emulator/lib64/gles_a[=====================                  ] 55% Unzipping... emulator/lib64/gles_a[=====================                  ] 55% Installing Google APIs Intel x86_6[=====================                  ] 55% Downloading x86_64-34_r14.zip... e[======================                 ] 55% Downloading x86_64-34_r14.zip... e[======================                 ] 56% Downloading x86_64-34_r14.zip... e[======================                 ] 57% Downloading x86_64-34_r14.zip... e[=======================                ] 58% Downloading x86_64-34_r14.zip... e[=======================                ] 59% Downloading x86_64-34_r14.zip... e[=======================                ] 60% Downloading x86_64-34_r14.zip... e[========================               ] 60% Downloading x86_64-34_r14.zip... e[========================               ] 61% Downloading x86_64-34_r14.zip... e[========================               ] 62% Downloading x86_64-34_r14.zip... e[=========================              ] 63% Downloading x86_64-34_r14.zip... e[=========================              ] 64% Downloading x86_64-34_r14.zip... e[=========================              ] 65% Downloading x86_64-34_r14.zip... e[==========================             ] 65% Downloading x86_64-34_r14.zip... e[==========================             ] 66% Downloading x86_64-34_r14.zip... e[==========================             ] 66% Unzipping... emulator/lib64/gles_a[==========================             ] 66% Unzipping... x86_64/NOTICE.txt    [==========================             ] 66% Unzipping... x86_64/VerifiedBootPa[==========================             ] 66% Unzipping... x86_64/advancedFeatur[==========================             ] 66% Unzipping... x86_64/build.prop    [==========================             ] 66% Unzipping... x86_64/encryptionkey.[==========================             ] 66% Unzipping... x86_64/kernel-ranchu [==========================             ] 66% Unzipping... x86_64/ramdisk.img   [==========================             ] 66% Unzipping... x86_64/source.propert[==========================             ] 66% Unzipping... x86_64/system.img    [==========================             ] 67% Unzipping... x86_64/system.img    [===========================            ] 68% Unzipping... x86_64/system.img    [===========================            ] 69% Unzipping... x86_64/system.img    [===========================            ] 70% Unzipping... x86_64/system.img    [============================           ] 70% Unzipping... x86_64/system.img    [============================           ] 71% Unzipping... x86_64/system.img    [============================           ] 72% Unzipping... x86_64/system.img    [=============================          ] 73% Unzipping... x86_64/system.img    [=============================          ] 74% Unzipping... x86_64/system.img    [=============================          ] 75% Unzipping... x86_64/system.img    [==============================         ] 75% Unzipping... x86_64/system.img    [==============================         ] 76% Unzipping... x86_64/system.img    [==============================         ] 77% Unzipping... x86_64/system.img    [==============================         ] 77% Unzipping... x86_64/userdata.img  [==============================         ] 77% Unzipping... x86_64/vendor.img    [==============================         ] 77% Unzipping... x86_64/data/local.pro[==============================         ] 77% Unzipping... x86_64/data/misc/Gold[==============================         ] 77% Unzipping... x86_64/data/misc/apns[==============================         ] 77% Unzipping... x86_64/data/misc/emul[==============================         ] 77% Unzipping... x86_64/data/misc/gcec[==============================         ] 77% Unzipping... x86_64/data/misc/mode[==============================         ] 77% Unzipping... x86_64/data/misc/pixe[==============================         ] 78% Unzipping... x86_64/data/misc/pixe[=======================================] 100% Unzipping... x86_64/data/misc/pix
+    
+    SDK_INSTALL_DONE
+    system image: android-34/google_apis/x86_64
+    Loading local repository...                                                     [=========                              ] 25% Loading local repository...       [=========                              ] 25% Fetch remote repository...        [=======================================] 100% Fetch remote repository...       
+    Auto-selecting single ABI x86_64
+    Do you wish to create a custom hardware profile? [no] --- emulator accel-check
+    accel:
+    0
+    KVM (version 12) is installed and usable.
+    accel
+    --- starting emulator (headless)
+    emulator pid=3117
+    * daemon not running; starting now at tcp:5037
+    * daemon started successfully
+    BOOT_COMPLETED after ~48s
+    --- boot state
+    List of devices attached
+    emulator-5554	device
+    
+    release=14
+    sdk=34
+    abi=x86_64
+    EMULATOR_BOOTED
+    device: sdk_gphone64_x86_64
+    android_release=14
+    sdk=34
+    abi=x86_64
+    avd=phase7 (created fresh this run, -wipe-data -no-snapshot)
+    ########## 4/8 embedded runtime payload (reuse phase 4's build when present) ##########
+
+### 2026-09-08T00:21:04Z  run=34172484507  step: 6/8 Phase 7 gates (workspace isolation + memory + UI regression + live turn)
+    head=0c0fbb1 branch=arena/01a07dc2-opencode-app log_lines=1741
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 15s
+    BUILD SUCCESSFUL in 1m 1s
+    --- last 40 log lines ---
+    > Task :app:compileDebugAndroidTestJavaWithJavac
+    > Task :app:mergeDebugAndroidTestShaders
+    > Task :app:compileDebugAndroidTestShaders NO-SOURCE
+    > Task :app:generateDebugAndroidTestAssets UP-TO-DATE
+    > Task :app:mergeDebugAndroidTestAssets
+    > Task :app:compressDebugAndroidTestAssets
+    > Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
+    > Task :app:dexBuilderDebugAndroidTest
+    > Task :app:mergeExtDexDebug
+    > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
+    > Task :app:processDebugAndroidTestJavaRes
+    > Task :app:checkDebugAndroidTestDuplicateClasses
+    > Task :app:mergeDebugAndroidTestJniLibFolders
+    > Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
+    > Task :app:mergeDebugAndroidTestJavaResource
+    > Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
+    > Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
+    > Task :app:validateSigningDebugAndroidTest
+    > Task :app:writeDebugAndroidTestSigningConfigVersions
+    > Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+    > Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+    > Task :app:preDebugUnitTestBuild
+    > Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+    > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+    > Task :app:mergeProjectDexDebugAndroidTest
+    > Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+    > Task :app:testDebugUnitTest UP-TO-DATE
+    > Task :app:mergeExtDexDebugAndroidTest
+    > Task :app:packageDebugAndroidTest
+    > Task :app:createDebugAndroidTestApkListingFileRedirect
+    > Task :app:assembleDebugAndroidTest
+    > Task :app:packageDebug
+    > Task :app:createDebugApkListingFileRedirect
+    > Task :app:assembleDebug
+    
+    BUILD SUCCESSFUL in 1m 1s
+    74 actionable tasks: 37 executed, 4 from cache, 33 up-to-date
+    apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk
+    testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+    ########## 6/8 Phase 7 gates (workspace isolation + memory + UI regression + live turn) ##########
+
+### 2026-09-08T00:26:05Z  run=34172484507  step: 6/8 Phase 7 gates (workspace isolation + memory + UI regression + live turn)
+    head=726490f branch=arena/01a07dc2-opencode-app log_lines=1741
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 15s
+    BUILD SUCCESSFUL in 1m 1s
+    --- last 40 log lines ---
+    > Task :app:compileDebugAndroidTestJavaWithJavac
+    > Task :app:mergeDebugAndroidTestShaders
+    > Task :app:compileDebugAndroidTestShaders NO-SOURCE
+    > Task :app:generateDebugAndroidTestAssets UP-TO-DATE
+    > Task :app:mergeDebugAndroidTestAssets
+    > Task :app:compressDebugAndroidTestAssets
+    > Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
+    > Task :app:dexBuilderDebugAndroidTest
+    > Task :app:mergeExtDexDebug
+    > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
+    > Task :app:processDebugAndroidTestJavaRes
+    > Task :app:checkDebugAndroidTestDuplicateClasses
+    > Task :app:mergeDebugAndroidTestJniLibFolders
+    > Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
+    > Task :app:mergeDebugAndroidTestJavaResource
+    > Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
+    > Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
+    > Task :app:validateSigningDebugAndroidTest
+    > Task :app:writeDebugAndroidTestSigningConfigVersions
+    > Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+    > Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+    > Task :app:preDebugUnitTestBuild
+    > Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+    > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+    > Task :app:mergeProjectDexDebugAndroidTest
+    > Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+    > Task :app:testDebugUnitTest UP-TO-DATE
+    > Task :app:mergeExtDexDebugAndroidTest
+    > Task :app:packageDebugAndroidTest
+    > Task :app:createDebugAndroidTestApkListingFileRedirect
+    > Task :app:assembleDebugAndroidTest
+    > Task :app:packageDebug
+    > Task :app:createDebugApkListingFileRedirect
+    > Task :app:assembleDebug
+    
+    BUILD SUCCESSFUL in 1m 1s
+    74 actionable tasks: 37 executed, 4 from cache, 33 up-to-date
+    apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk
+    testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+    ########## 6/8 Phase 7 gates (workspace isolation + memory + UI regression + live turn) ##########
+
+### 2026-09-08T00:31:07Z  run=34172484507  step: 7/8 Phase 5 regression tail (client-integration gates, staged on this device)
+    head=77e4232 branch=arena/01a07dc2-opencode-app log_lines=1783
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 15s
+    BUILD SUCCESSFUL in 1m 1s
+    --- last 40 log lines ---
+    Performing Streamed Install
+    Success
+    Performing Streamed Install
+    Success
+    [2026-09-08T00:20:09Z] === am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest ===
+    [2026-09-08T00:20:16Z] instrument rc=0 (isolation)
+    [2026-09-08T00:20:16Z] isolation runner trailer: OK
+    [2026-09-08T00:20:16Z] screenshots pulled: 0
+    [2026-09-08T00:20:16Z] P7_W1_PROJECT_LIFECYCLE PASS :: :: created=p7-life-1788826809960 renamed=p7-renamed-1788826809960 adopted=p7-adopted-1788826809960 delete=true
+    [2026-09-08T00:20:16Z] P7_W2_WORKSPACE_ISOLATION PASS :: :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details
+    [2026-09-08T00:20:16Z] P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/data/user/0/ai.opencode.android.debug/files/workspaces/p7-memory-1788826809989/AGENTS.md globalFile=/data/user/0/ai.opencode.android.debug/files/xdg/config/opencode/AGENTS.md
+    [2026-09-08T00:20:16Z] === stage B: deterministic UI regression (bottom sheet + accessibility) ===
+    [2026-09-08T00:20:16Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
+    [2026-09-08T00:20:30Z] instrument rc=0 (chat-ui)
+    [2026-09-08T00:20:31Z] chat-ui runner trailer: OK
+    [2026-09-08T00:20:31Z] screenshots pulled: 9
+    [2026-09-08T00:20:31Z] P6_U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
+    [2026-09-08T00:20:31Z] P6_U7 PASS :: :: interactive={chat=23, sessions=11, projects=6, welcome=2, welcome-unsupported=2, settings=5} total=49 unnamed=0
+    [2026-09-08T00:20:31Z] === stage C: live turn through the UI (key-free default model) ===
+    [2026-09-08T00:20:31Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
+    [2026-09-08T00:27:57Z] instrument rc=0 (live-chat)
+    [2026-09-08T00:27:57Z] live-chat runner trailer: OK
+    [2026-09-08T00:27:57Z] screenshots pulled: 10
+    [2026-09-08T00:27:57Z] P6_L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=11 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot=2
+    [2026-09-08T00:27:57Z] P6_L2 SKIP :: :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=0); screen='
+    [2026-09-08T00:27:57Z] === evidence pull ===
+    [2026-09-08T00:27:58Z] === SUMMARY ===
+    P7_SUMMARY 2026-09-08T00:27:58Z
+    ui_gates_pass=6 ui_gates_fail=0 ui_gates_skip=1
+    isolation_instrument_rc=0 chat_ui_instrument_rc=0 live_chat_instrument_rc=0
+    screenshots=11
+    model_available=1
+    device_abi=x86_64
+    android_sdk=34
+    phase7 gates rc=0
+    ########## 7/8 Phase 5 regression tail (client-integration gates, staged on this device) ##########
+    + zod-to-json-schema@3.25.2
+    
+    92 packages installed [263.00ms]
+    MCP_READY: 26M
+
+### 2026-09-08T00:33:35Z  run=34172484507  step: 8/8 evidence
+    head=2d3edd7 branch=arena/01a07dc2-opencode-app log_lines=2009
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 15s
+    BUILD SUCCESSFUL in 1m 1s
+    BUILD SUCCESSFUL in 11s
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh'
+    STEP_FAILED rc=1: P5_SKIP_PUSH=1 bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/00-run-phase5.sh' --stage-after-phase4
+    --- last 40 log lines ---
+    P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
+    P5-G17: PASS loopback-only-binding-and-no-mdns
+    P5-G18: PASS credentials-keystore-only-at-rest
+    P5-G19: PASS no-hardcoded-or-bundled-secrets
+    P5_SUMMARY 2026-09-08T00:33:33Z
+    gates_pass=14 gates_fail=1 gates_skip=0
+    kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
+    model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f8193ab75ffejr1T3Be3V6GEoi
+    app_uid=10192 device_abi=x86_64
+    live_launcher_processes=0
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/20-integration-gates.sh'
+    phase5 gates rc=1
+    
+    ########## 6/6 evidence ##########
+    === PHASE 5 END 2026-09-08T00:33:35Z gates_rc=1 ===
+    P5-01: PASS phase5-apk-installed-and-app-running
+    P5-02: PASS payload-v5-manifest-marker
+    P5-03: PASS fixture-config-and-harness-marker
+    P5-04: PASS keystore-password-authenticated-live-server
+    P5-K: PASS kotlin-client-gates-on-device (K1..K9, pass=10 fail=0 skip=0)
+    P5-05: PASS runtime-healthy-after-instrumentation
+    P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
+    P5-R-07: PASS phase4-driver-gate-07-shell.js-unmodified(on-device)
+    P5-R-10: PASS phase4-driver-gate-10-mcp.js-unmodified(on-device)
+    P5-R-11: PASS phase4-driver-gate-11-stream.js-unmodified(on-device)
+    P5-R-12: PASS phase4-driver-gate-12-permission.js-unmodified(on-device)
+    P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
+    P5-G17: PASS loopback-only-binding-and-no-mdns
+    P5-G18: PASS credentials-keystore-only-at-rest
+    P5-G19: PASS no-hardcoded-or-bundled-secrets
+    P5_SUMMARY 2026-09-08T00:33:33Z
+    gates_pass=14 gates_fail=1 gates_skip=0
+    kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
+    model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f8193ab75ffejr1T3Be3V6GEoi
+    app_uid=10192 device_abi=x86_64
+    live_launcher_processes=0
+    P5_SKIP_PUSH=1; not committing evidence
+    STEP_FAILED rc=1: P5_SKIP_PUSH=1 bash '/home/runner/work/OpenCode-app/OpenCode-app/phase5/scripts/00-run-phase5.sh' --stage-after-phase4
+    phase5 regression rc=1
+    ########## 8/8 evidence ##########
+
