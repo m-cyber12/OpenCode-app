@@ -1,7 +1,7 @@
-=== PHASE 8 START 2026-09-08T08:05:53Z ===
-heartbeat enabled (pid 2272, every 300s -> docs/progress/phase8-evidence/PROGRESS.txt)
+=== PHASE 8 START 2026-09-08T08:26:48Z ===
+heartbeat enabled (pid 2302, every 300s -> docs/progress/phase8-evidence/PROGRESS.txt)
 ########## 1/7 static checks (strings, a11y, lazy lists, ASCII, kotlin comments) ##########
-=== Phase 8 static checks 2026-09-08T08:05:53Z ===
+=== Phase 8 static checks 2026-09-08T08:26:48Z ===
 OK   bash -n on 39 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8 driver
@@ -105,55 +105,9 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:234:9 Variable 'chat' is never used
 
 > Task :app:compileDebugJavaWithJavac
-> Task :app:bundleDebugClassesToCompileJar
 > Task :app:processDebugJavaRes
 > Task :app:bundleDebugClassesToRuntimeJar
-
-> Task :app:compileDebugAndroidTestKotlin
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:17:33 Unresolved reference: SemanticsNodeInteractionContainer
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:98:34 Unresolved reference: SemanticsNodeInteractionContainer
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:118:32 Unresolved reference: onAllNodes
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:125:44 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onAllNodesWithTag(testTag: String, useUnmergedTree: Boolean = ...): SemanticsNodeInteractionCollection defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:128:26 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onAllNodesWithTag(testTag: String, useUnmergedTree: Boolean = ...): SemanticsNodeInteractionCollection defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:132:74 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onRoot(useUnmergedTree: Boolean = ...): SemanticsNodeInteraction defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:136:14 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onAllNodesWithTag(testTag: String, useUnmergedTree: Boolean = ...): SemanticsNodeInteractionCollection defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:137:18 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onAllNodesWithTag(testTag: String, useUnmergedTree: Boolean = ...): SemanticsNodeInteractionCollection defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:141:14 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onAllNodesWithTag(testTag: String, useUnmergedTree: Boolean = ...): SemanticsNodeInteractionCollection defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:143:39 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onNodeWithTag(testTag: String, useUnmergedTree: Boolean = ...): SemanticsNodeInteraction defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:148:18 Unresolved reference: waitForIdle
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:152:14 Unresolved reference: waitForIdle
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:243:25 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onAllNodesWithTag(testTag: String, useUnmergedTree: Boolean = ...): SemanticsNodeInteractionCollection defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:245:32 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onAllNodesWithTag(testTag: String, useUnmergedTree: Boolean = ...): SemanticsNodeInteractionCollection defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:248:33 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onAllNodesWithTag(testTag: String, useUnmergedTree: Boolean = ...): SemanticsNodeInteractionCollection defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:250:32 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onAllNodesWithTag(testTag: String, useUnmergedTree: Boolean = ...): SemanticsNodeInteractionCollection defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:253:32 Unresolved reference: waitForIdle
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:263:36 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onNodeWithTag(testTag: String, useUnmergedTree: Boolean = ...): SemanticsNodeInteraction defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:266:26 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onNodeWithTag(testTag: String, useUnmergedTree: Boolean = ...): SemanticsNodeInteraction defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:267:26 Unresolved reference: waitForIdle
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:268:26 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onNodeWithTag(testTag: String, useUnmergedTree: Boolean = ...): SemanticsNodeInteraction defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:271:18 Unresolved reference: waitForIdle
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:282:40 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onNodeWithTag(testTag: String, useUnmergedTree: Boolean = ...): SemanticsNodeInteraction defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:284:14 Unresolved reference: waitForIdle
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:286:42 Unresolved reference. None of the following candidates is applicable because of receiver type mismatch: 
-public fun SemanticsNodeInteractionsProvider.onNodeWithTag(testTag: String, useUnmergedTree: Boolean = ...): SemanticsNodeInteraction defined in androidx.compose.ui.test
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/P8GateSupport.kt:288:14 Unresolved reference: waitForIdle
-
-> Task :app:compileDebugAndroidTestKotlin FAILED
+> Task :app:bundleDebugClassesToCompileJar
 
 > Task :app:compileDebugUnitTestKotlin
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/client/OpenCodeApiHttpTest.kt:56:27 Parameter 'rec' is never used
@@ -163,20 +117,586 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/openc
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractionValidationTest.kt:59:9 Unsafe use of a nullable receiver of type File?
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractorTest.kt:103:37 Unsafe use of a nullable receiver of type File?
 
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes
+
+> Task :app:compileDebugAndroidTestKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/client/OpenCodeClientGatesTest.kt:392:39 Type mismatch: inferred type is String? but String was expected
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/FirstRunUiGatesTest.kt:231:32 Variable 'createdThroughUi' initializer is redundant
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/FirstRunUiGatesTest.kt:232:21 Variable 'typed' initializer is redundant
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/StressRecoveryGatesTest.kt:183:45 'getter for isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java
+
+> Task :app:testDebugUnitTest
+
+EventFrameTest > derivesLegacyType PASSED
+
+EventFrameTest > sessionIDFoundInNestedShapes PASSED
+
+EventFrameTest > permissionEventsMatchBothSpellings PASSED
+
+EventFrameTest > nullAndUnknownShapesDoNotThrow PASSED
+
+EventFrameTest > stripsDurableVersionSuffix PASSED
+
+LoopbackGuardTest > bindHostname_defaultsToLoopbackWhenUnset PASSED
+
+LoopbackGuardTest > bindHostname_refusesNonLoopbackAndKeepsLoopback PASSED
+
+LoopbackGuardTest > checked_acceptsLoopbackUrlsOnly PASSED
+
+LoopbackGuardTest > isLoopbackLiteral_coversThe127Block PASSED
+
+LoopbackGuardTest > bindHostname_acceptsLoopbackForms PASSED
+
+OpenCodeApiHttpTest > mcpAddPostsNameAndConfig PASSED
+
+OpenCodeApiHttpTest > permissionReplyUsesTheUpstreamRoute PASSED
+
+OpenCodeApiHttpTest > non2xxBecomesTypedError PASSED
+
+OpenCodeApiHttpTest > healthIsGlobalAndCarriesBasicAuth PASSED
+
+OpenCodeApiHttpTest > promptAsyncSendsUpstreamPartShape PASSED
+
+OpenCodeApiHttpTest > authProvisioningUsesProviderIdRoute PASSED
+
+OpenCodeApiHttpTest > patchMethodIsAndroidOnly PASSED
+
+OpenCodeApiHttpTest > sessionCreateIsDirectoryScopedAndPassesTitle PASSED
+
+OpenCodeApiHttpTest > bodylessRequestsDeclareZeroLength PASSED
+
+OpenCodeApiHttpTest > eventStreamParsesFramesAndReconnects PASSED
+
+ProviderSetupTest > nothingStoredAndNothingConnectedIsTheNamedEmptyState PASSED
+
+ProviderSetupTest > anUnknownProviderListIsUnknownEvenWithStoredKeys PASSED
+
+ProviderSetupTest > aStoredKeyWithoutConnectionIsConfiguredNotConnected PASSED
+
+ProviderSetupTest > connectedWinsOverEverything PASSED
+
+SseAccumulatorTest > dispatchesOnBlankLine PASSED
+
+SseAccumulatorTest > joinsMultipleDataLines PASSED
+
+SseAccumulatorTest > ignoresCommentsAndKeepsFrameBoundaries PASSED
+
+SseAccumulatorTest > finishFlushesUnterminatedFrame PASSED
+
+ToolMetaParserTest > readMetadataTruncationIsReported PASSED
+
+ToolMetaParserTest > aMissingExitStaysNullInsteadOfPretendingSuccess PASSED
+
+ToolMetaParserTest > blankGarbageAndNullsNeverThrow PASSED
+
+ToolMetaParserTest > builtinToolNamesMapOntoFamilies PASSED
+
+ToolMetaParserTest > writeAndEditMetadataCarryTheDiffAndItsCounts PASSED
+
+ToolMetaParserTest > shellMetadataCarriesOutputExitAndTruncation PASSED
+
+ToolMetaParserTest > underscoredNamesFromMcpServersAreMcp PASSED
+
+ToolMetaParserTest > matchingIsCaseInsensitiveAndExactBeforePattern PASSED
+
+ToolMetaParserTest > truncatedShellOutputPointsAtTheFullFile PASSED
+
+ToolMetaParserTest > diagnosticsWithoutADiffAreStillCounted PASSED
+
+ToolMetaParserTest > aDiffOnlyInsideFilediffIsStillADiff PASSED
+
+ToolMetaParserTest > anythingUnrecognisedIsOtherAndStillRendered PASSED
+
+ToolMetaParserTest > numbersOfAnyJsonTypeStillParse PASSED
+
+TranscriptPhase6Test > loadedPartsBecomeRenderablePartsInServerOrder PASSED
+
+TranscriptPhase6Test > startingANewTurnClearsThePreviousTurnsError PASSED
+
+TranscriptPhase6Test > anAssistantMessageErrorIsMirroredOntoTheMessageAndTheSession PASSED
+
+TranscriptPhase6Test > aCanonicalPartFrameAfterDeltasOverwritesRatherThanDoubles PASSED
+
+TranscriptPhase6Test > theServersOwnPendingListReplacesWhatTheStreamGuessed PASSED
+
+TranscriptPhase6Test > anUnknownErrorShapeIsKeptRatherThanDiscarded PASSED
+
+TranscriptPhase6Test > aToolPartMovesFromRunningToCompletedInPlace PASSED
+
+TranscriptPhase6Test > aDeltaForAPartThatHasNotArrivedYetIsDroppedNotSynthesised PASSED
+
+TranscriptPhase6Test > anEmptyDeltaChangesNothing PASSED
+
+TranscriptPhase6Test > anEmptyErrorObjectIsNotATurnError PASSED
+
+TranscriptPhase6Test > removedPartsDisappearFromTheMessage PASSED
+
+TranscriptPhase6Test > sessionErrorBecomesTheTurnsTypedError PASSED
+
+TranscriptPhase6Test > loadMessagesDerivesTheLastErrorFromHistory PASSED
+
+TranscriptPhase6Test > retryStatusCarriesTheAttemptNumber PASSED
+
+TranscriptPhase6Test > aDeltaNamingAnUnknownMessageIsIgnored PASSED
+
+TranscriptPhase6Test > aPermissionAskKeepsTheAlwaysScopeAndItsToolCall PASSED
+
+TranscriptPhase6Test > bookkeepingPartsAreMirroredWholeSoTheUiCanDecideToHideThem PASSED
+
+TranscriptPhase6Test > aToolPartKeepsItsStateMetadataAndTiming PASSED
+
+TranscriptPhase6Test > busySessionsLooksAcrossSessions PASSED
+
+TranscriptPhase6Test > deltaAppendsOntoThePartItNames PASSED
+
+TranscriptPhase6Test > aRejectedQuestionIsAlsoRemoved PASSED
+
+TranscriptPhase6Test > questionsAreTrackedAndClearedWhenRepliedTo PASSED
+
+TranscriptPhase6Test > aToolPartInErrorStateKeepsTheErrorText PASSED
+
+TranscriptPhase6Test > aLaterBusyStatusClearsTheRetryState PASSED
+
+TranscriptPhase6Test > anIdThatIsNotAQuestionIsNotInvented PASSED
+
+TranscriptPhase6Test > aFilePartKeepsMimeNameAndUrl PASSED
+
+TranscriptPhase6Test > severalPartsStreamIndependently PASSED
+
+TranscriptPhase6Test > deletingASessionTakesItsMessagesPromptsAndErrorsWithIt PASSED
+
+TranscriptPhase6Test > customDefaultsToTrueWhenUpstreamOmitsIt PASSED
+
+TranscriptPhase6Test > loadMessagesReplacesTheOlderTranscriptRatherThanAppending PASSED
+
+TranscriptPhase6Test > aDeltaOnAnotherFieldDoesNotTouchTheText PASSED
+
+TranscriptPhase6Test > idleClearsRetryAndBusy PASSED
+
+TranscriptPhase6Test > aPermissionReplyRemovesThePrompt PASSED
+
+TranscriptTest > toolPartLifecycleKeepsLatestStatus PASSED
+
+TranscriptTest > sessionDeletedDropsEverything PASSED
+
+TranscriptTest > ignoresForeignAndMalformedFrames PASSED
+
+TranscriptTest > partRemovedDropsThePart PASSED
+
+TranscriptTest > mergesTextPartUpdatesIntoOneMessage PASSED
+
+TranscriptTest > busyFollowsSessionStatusAndIdle PASSED
+
+TranscriptTest > permissionAskThenReplyClears PASSED
+
+UiErrorOfflineTest > apiError5xxIsAProviderReachabilityFailure PASSED
+
+UiErrorOfflineTest > a429WithAuthSoundingTextIsStillUnreachable PASSED
+
+UiErrorOfflineTest > networkTextIsRecognisedFromTheKnownHintVocabulary PASSED
+
+UiErrorOfflineTest > authHintsInTheTextAreRecognisedWhenThereIsNoStatus PASSED
+
+UiErrorOfflineTest > authHintsTakePrecedenceOverNetworkHints PASSED
+
+UiErrorOfflineTest > apiError401IsAProviderAuthFailure PASSED
+
+UiErrorOfflineTest > onlyLocalFailureStatesDisableSending PASSED
+
+UiErrorOfflineTest > runtimeStateNamesMapOntoTheTwoRuntimeBuckets PASSED
+
+UiErrorOfflineTest > aTransportFailureOfTheAppCallIsServerUnreachable PASSED
+
+UiErrorOfflineTest > aNamedProviderErrorWithNoRecognisableTextIsProviderOther PASSED
+
+UiErrorOfflineTest > aRetryableApiErrorIsProviderReachability PASSED
+
+UiErrorOfflineTest > anAbortIsNeverAServerProblem PASSED
+
+UiErrorOfflineTest > structuralFailuresAreNotNetworkProblems PASSED
+
+UiErrorOfflineTest > theRuntimeStateAlwaysWinsOverEverything PASSED
+
+UiErrorOfflineTest > anUnrecognisedNameWithNoTextIsUnknown PASSED
+
+UiErrorOfflineTest > apiError403IsAProviderAuthFailure PASSED
+
+UiErrorOfflineTest > theAppCallStatusesClassifySeparately PASSED
+
+UiErrorOfflineTest > theUpstreamProviderAuthErrorNameAlwaysWins PASSED
+
+UiErrorTest > apiErrorStatusCodesDecideBetweenAuthNetworkAndOther PASSED
+
+UiErrorTest > modelSideLimitsAreProviderFailures PASSED
+
+UiErrorTest > providerAuthErrorIsProviderAuthWhateverTheMessageSays PASSED
+
+UiErrorTest > theMostLocalFailureWins PASSED
+
+UiErrorTest > sendingIsBlockedOnlyByTheLocalAgent PASSED
+
+UiErrorTest > anUnnamedErrorKeepsItsHintsButNeverInventsACause PASSED
+
+UiErrorTest > serverCallClassificationSeparatesTransportFromRefusal PASSED
+
+UiErrorTest > anEmptyErrorIsUnknownRatherThanSomethingInvented PASSED
+
+UiErrorTest > abortIsItsOwnStateAndIsNotAnError PASSED
+
+UiErrorTest > runtimeStatesMapOntoStartingVersusUnavailable PASSED
+
+UiErrorTest > aProviderFailureNeverMakesTheWholeAppLookBroken PASSED
+
+UiErrorTest > retryableApiErrorIsTreatedAsReachabilityNotAsABug PASSED
+
+UiErrorTest > unknownNamesFallBackToMessageHints PASSED
+
+ProjectMemoryTest > projectAndGlobalFilesLiveInTheirOwnScopes PASSED
+
+ProjectMemoryTest > blankWriteRemovesTheFile PASSED
+
+ProjectMemoryTest > contentIsTrimmedOfSurroundingWhitespace PASSED
+
+ProjectMemoryTest > removeDeletesTheFile PASSED
+
+ProjectMemoryTest > readingAMissingFileIsEmptyNotAnError PASSED
+
+ProjectMemoryTest > writeThenReadRoundTrips PASSED
+
+ProjectIoTest > renameRefusesToClobberAnExistingDirectory PASSED
+
+ProjectIoTest > copyTreeEnforcesTheByteCapAndLeavesNothingPartial PASSED
+
+ProjectIoTest > sizeOfSumsAWholeTree PASSED
+
+ProjectIoTest > renameMovesATreeAndKeepsContents PASSED
+
+ProjectIoTest > deleteTreeRemovesRecursively PASSED
+
+ProjectIoTest > copyTreeSkipsSymlinks PASSED
+
+ProjectIoTest > zipTreeRoundTripsFiles PASSED
+
+ProjectIoTest > writeStreamRemovesThePartialFileWhenTheCapIsBreached PASSED
+
+ProjectStoreLifecycleTest > deleteRemovesTheDirectoryAndClearsActiveWhenItWasCurrent PASSED
+
+ProjectStoreLifecycleTest > adoptRegistersAnExistingDirectoryWithoutRenamingIt PASSED
+
+ProjectStoreLifecycleTest > renameMovesTheDirectoryAndKeepsItOpen PASSED
+
+ProjectStoreLifecycleTest > renameOfAMissingProjectReturnsNull PASSED
+
+ProjectStoreLifecycleTest > uniqueNameNeverCollidesWithExistingDirectories PASSED
+
+ProjectStoreLifecycleTest > createSuffixesCollisions PASSED
+
+ProjectStoreLifecycleTest > renameToACollidingNameGetsASuffix PASSED
+
+ProjectStorePersistenceTest > theActiveProjectSurvivesARestart FAILED
+    java.lang.IllegalStateException at ProjectStorePersistenceTest.kt:34
+
+ProjectStorePersistenceTest > theProjectListSurvivesARestart FAILED
+    java.lang.IllegalStateException at ProjectStorePersistenceTest.kt:34
+
+ProjectStorePersistenceTest > filesystemDiscoveredProjectsWithoutPreferencesStillAppear FAILED
+    java.lang.IllegalStateException at ProjectStorePersistenceTest.kt:34
+
+ProjectStorePersistenceTest > timestampsSurviveARestart FAILED
+    java.lang.IllegalStateException at ProjectStorePersistenceTest.kt:34
+
+ProjectStorePersistenceTest > aStaleActivePointerWithNoProjectsLeftIsNull FAILED
+    java.lang.IllegalStateException at ProjectStorePersistenceTest.kt:34
+
+ProjectStorePersistenceTest > theMostRecentlyOpenedProjectSortsFirst FAILED
+    java.lang.IllegalStateException at ProjectStorePersistenceTest.kt:34
+
+ProjectStorePersistenceTest > aStaleActivePointerFallsBackToTheMostRecentlyOpenedProject FAILED
+    java.lang.IllegalStateException at ProjectStorePersistenceTest.kt:34
+
+ProjectStoreSanitizeTest > ordinaryNamesAreUnchanged PASSED
+
+ProjectStoreSanitizeTest > aLeadingOrTrailingDotIsDropped PASSED
+
+ProjectStoreSanitizeTest > theResultIsAlwaysAUsableSinglePathComponent PASSED
+
+ProjectStoreSanitizeTest > separatorsBecomeDashesAndRunsCollapse PASSED
+
+ProjectStoreSanitizeTest > nonAsciiLettersAreKeptBecauseTheyAreLegalDirectoryNames PASSED
+
+ProjectStoreSanitizeTest > aCappedNameNeverEndsInADashOrDot PASSED
+
+ProjectStoreSanitizeTest > pathTraversalCannotSurvive PASSED
+
+ProjectStoreSanitizeTest > theDefaultProjectNameIsAlreadySanitized PASSED
+
+ProjectStoreSanitizeTest > lengthIsCapped PASSED
+
+ProjectStoreSanitizeTest > surroundingWhitespaceIsTrimmed PASSED
+
+AbiGateTest > apiBelow29IsRejectedEvenWithArm64 PASSED
+
+AbiGateTest > x86_64IsSupportedForEmulator PASSED
+
+AbiGateTest > arm64IsSupported PASSED
+
+AbiGateTest > x86_32OnlyIsRejected PASSED
+
+AbiGateTest > prefersArm64WhenBothAbisPresent PASSED
+
+AbiGateTest > armeabiV7aOnlyIsRejected PASSED
+
+HealthCheckerTest > aRefusedSocketIsUnhealthyNotAnException PASSED
+
+HealthCheckerTest > waitHealthyTimesOutCleanlyWhenNothingAnswers PASSED
+
+HealthCheckerTest > waitHealthyReturnsOnTheFirstHealthyProbe PASSED
+
+HealthCheckerTest > aTwoHundredThatDoesNotReportHealthyIsNotHealthy PASSED
+
+HealthCheckerTest > aWrongPasswordIsUnhealthyWithTheServersStatus PASSED
+
+HealthCheckerTest > waitHealthyIsBoundedAndReturnsTheLastObservation PASSED
+
+HealthCheckerTest > aHealthyTwoHundredIsReportedHealthy PASSED
+
+LoopbackAuditTest > distinguishesWildcardListenRow PASSED
+
+LoopbackAuditTest > formatsIpv6LoopbackAndWildcard PASSED
+
+LoopbackAuditTest > parsesLoopbackListenRow PASSED
+
+LoopbackAuditTest > udpRowsCarryPortForMdnsDetection PASSED
+
+LoopbackAuditTest > skipsHeaderAndJunk PASSED
+
+LoopbackAuditTest > formatsIpv4LittleEndianWord PASSED
+
+ManifestTest > roundTripsVersionsAndEntries PASSED
+
+ManifestTest > unknownFieldsTolerated PASSED
+
+ManifestTest > rejectsManifestVersionDriftFromLock PASSED
+
+ManifestTest > rejectsUnsafeManifestPaths PASSED
+
+PayloadExtractionValidationTest > aTarEntryThatEscapesTheRootIsRejected FAILED
+    java.io.FileNotFoundException at PayloadExtractionValidationTest.kt:262
+
+PayloadExtractionValidationTest > aStaleMarkerVersionIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > aShaMismatchIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > aCompleteValidExtractionReturnsNull PASSED
+
+PayloadExtractionValidationTest > aMissingEntryFileIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > aMissingServerBundleIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > sha256MatchesTheJdkDigest PASSED
+
+PayloadExtractionValidationTest > unpackRestoresFilesAndDirectories FAILED
+    java.io.FileNotFoundException at PayloadExtractionValidationTest.kt:251
+
+PayloadExtractionValidationTest > aMissingMarkerMeansFirstRunOrWipe PASSED
+
+PayloadExtractionValidationTest > aSizeMismatchIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > anUnsafeManifestEntryIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > anUnreadableMarkerIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > aMissingLauncherIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > aTruncatedTarEntryIsRejected FAILED
+    java.io.FileNotFoundException at PayloadExtractionValidationTest.kt:277
+
+PayloadExtractorTest > verifyDetectsCorruptedContent PASSED
+
+PayloadExtractorTest > unpackTarExtractsFilesAndNestedDirs PASSED
+
+PayloadExtractorTest > verifyDetectsMissingMarker PASSED
+
+PayloadExtractorTest > unpackTarRejectsPathEscape PASSED
+
+RestartBackoffTest > delayIsNeverBelowTheFloorNorAboveTheCap PASSED
+
+RestartBackoffTest > totalWorstCaseBackoffBudgetIsBounded PASSED
+
+RestartBackoffTest > delayGrowsExponentiallyUntilTheCap PASSED
+
+RestartBackoffTest > firstRetryLandsBetweenHalfAndOneAndAHalfSeconds PASSED
+
+RestartBackoffTest > supervisorGivesUpAfterEightAttempts PASSED
+
+RestartBackoffTest > attemptsAreOneBasedAndInvalidInputIsRejected PASSED
+
+RestartBackoffTest > jitterBandIsHalfToOneAndAHalfOfTheExponentialStep PASSED
+
+RuntimeEnvTest > buildCarriesTheServerAuthAndIdentity PASSED
+
+RuntimeEnvTest > buildPointsEveryWritablePathAtAppPrivateStorage PASSED
+
+RuntimeEnvTest > portAndUserAreFixedAndValid PASSED
+
+RuntimeEnvTest > buildHonoursALoopbackHostnameOverrideButNothingElse PASSED
+
+RuntimeEnvTest > buildPutstheBundledToolsFirstOnThePath PASSED
+
+RuntimeEnvTest > hostnameAcceptsTheFullLoopbackSet PASSED
+
+RuntimeEnvTest > hostnameIsFailClosedForEveryNonLoopbackRequest PASSED
+
+RuntimeStateMachineTest > coldStartPathIsLegal PASSED
+
+RuntimeStateMachineTest > everyStatusKnowsItsLegalTargets PASSED
+
+RuntimeStateMachineTest > noStateSkipsExtractionOnReentry PASSED
+
+RuntimeStateMachineTest > aCrashCanOnlyReachHealthyThroughStarting PASSED
+
+RuntimeStateMachineTest > userStopIsLegalFromEveryActiveState PASSED
+
+RuntimeStateMachineTest > reEntryFromDeadEndsGoesThroughExtraction PASSED
+
+RuntimeStateMachineTest > impossibleTransitionsAreRejected PASSED
+
+RuntimeStateMachineTest > crashRestartCycleIsLegal PASSED
+
+RuntimeStateMachineTest > theWholeTableIsClosedAndSelfConsistent PASSED
+
+RuntimeStateMachineTest > giveUpIsLegalFromEveryActiveState PASSED
+
+RuntimeStateMachineTest > retryWithinOneStartAttemptIsLegal PASSED
+
+RuntimeVersionTest > aWrongOpencodeVersionIsRejected PASSED
+
+RuntimeVersionTest > thePinsMatchTheLockfileContract PASSED
+
+RuntimeVersionTest > aWrongRipgrepVersionIsRejected PASSED
+
+RuntimeVersionTest > everyMismatchIsReportedTogether PASSED
+
+RuntimeVersionTest > safeRelativePathsAreAccepted PASSED
+
+RuntimeVersionTest > aWrongBunVersionIsRejected PASSED
+
+RuntimeVersionTest > aWrongOpencodeCommitIsRejected PASSED
+
+RuntimeVersionTest > aManifestWithoutFilesIsRefusedOnParse PASSED
+
+RuntimeVersionTest > aWrongPayloadVersionIsRejected PASSED
+
+RuntimeVersionTest > aMatchingManifestIsValid PASSED
+
+RuntimeVersionTest > unsafePathsAreRejected PASSED
+
+RuntimeVersionTest > aManifestWithAnUnsafePathIsRefusedOnParse PASSED
+
+RuntimeVersionTest > manifestJsonRoundTrips PASSED
+
+RuntimeVersionTest > aWrongGitVersionIsRejected PASSED
+
+SecretNamesTest > rejectsPathTraversalAndJunk PASSED
+
+SecretNamesTest > blobFileNameIsContained PASSED
+
+SecretNamesTest > acceptsProviderStyleNames PASSED
+
+SecretNamesTest > providerIdRoundTrip PASSED
+
+CodeHighlightTest > emptyAndWhitespaceInputsAreLossless PASSED
+
+CodeHighlightTest > shellVariablesAndCommands PASSED
+
+CodeHighlightTest > capitalisedIdentifiersAreTypes PASSED
+
+CodeHighlightTest > javascriptTemplateLiteralIsAString PASSED
+
+CodeHighlightTest > kotlinKeywordsNumbersAndCalls PASSED
+
+CodeHighlightTest > realFixturesStayByteExact PASSED
+
+CodeHighlightTest > unknownLanguageStillTokenisesStringsAndNumbers PASSED
+
+CodeHighlightTest > supportedLanguagesAreReportedHonestly PASSED
+
+CodeHighlightTest > jsonKeysAreTypesAndLiteralsAreKeywords PASSED
+
+CodeHighlightTest > lineAndBlockComments PASSED
+
+CodeHighlightTest > punctuationRunsMerge PASSED
+
+CodeHighlightTest > stringsKeepTheirEscapes PASSED
+
+CodeHighlightTest > unterminatedStringStopsAtTheNewline PASSED
+
+CodeHighlightTest > pythonTripleQuotedStringIsOneSpan PASSED
+
+CodeHighlightTest > commentDoesNotSwallowTheNextLine PASSED
+
+CodeHighlightTest > diffLinesAreColouredBySign PASSED
+
+CodeHighlightTest > languageAliasesResolve PASSED
+
+MarkdownTest > inlineSpanTextAlwaysConcatenatesBackToTheVisibleText PASSED
+
+MarkdownTest > emptyInputProducesNoBlocks PASSED
+
+MarkdownTest > fencedCodeBlockKeepsLanguageAndByteExactSource PASSED
+
+MarkdownTest > blockquoteAndRule PASSED
+
+MarkdownTest > pipeTableSplitsCells PASSED
+
+MarkdownTest > crlfIsNormalised PASSED
+
+MarkdownTest > underscoreInsideAWordIsNotEmphasis PASSED
+
+MarkdownTest > listsCarryDepthMarkerAndOrdering PASSED
+
+MarkdownTest > linksCarryLabelAndUrl PASSED
+
+MarkdownTest > unterminatedFenceIsStillCodeBecauseTheRestHasNotArrived PASSED
+
+MarkdownTest > indentedContinuationJoinsThePreviousItem PASSED
+
+MarkdownTest > backslashEscapesAreLiteral PASSED
+
+MarkdownTest > boldItalicStrikeAndInlineCode PASSED
+
+MarkdownTest > paragraphIsOneBlockAndKeepsSoftLineBreaks PASSED
+
+MarkdownTest > unterminatedEmphasisStaysLiteralWhileStreaming PASSED
+
+MarkdownTest > strongUsesDoubleMarkersAndNestsEmphasis PASSED
+
+MarkdownTest > languageNormalisationIsLowercaseAndAliasFree PASSED
+
+MarkdownTest > blankLineSeparatesParagraphs PASSED
+
+MarkdownTest > tildeFenceAndInfoStringAttributes PASSED
+
+MarkdownTest > atxHeadingsCarryTheirLevel PASSED
+
+MarkdownTest > unterminatedLinkStaysLiteralWhileStreaming PASSED
+
+272 tests completed, 10 failed
+
+> Task :app:testDebugUnitTest FAILED
+
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':app:compileDebugAndroidTestKotlin'.
-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
-   > Compilation error. See log for more details
+Execution failed for task ':app:testDebugUnitTest'.
+> There were failing tests. See the report at: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build/reports/tests/testDebugUnitTest/index.html
 
 * Try:
-> Run with --info or --debug option to get more log output.
 > Run with --scan to get full insights.
-> Get more help at https://help.gradle.org.
 
 * Exception is:
-org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugAndroidTestKotlin'.
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:testDebugUnitTest'.
 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:130)
 	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:293)
 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:128)
@@ -208,18 +728,20 @@ org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:com
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
-Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
-	at org.gradle.workers.internal.DefaultWorkerExecutor$WorkItemExecution.waitForCompletion(DefaultWorkerExecutor.java:287)
-	at org.gradle.internal.work.DefaultAsyncWorkTracker.lambda$waitForItemsAndGatherFailures$2(DefaultAsyncWorkTracker.java:130)
-	at org.gradle.internal.Factories$1.create(Factories.java:31)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLocks(DefaultWorkerLeaseService.java:339)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLocks(DefaultWorkerLeaseService.java:322)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLock(DefaultWorkerLeaseService.java:327)
-	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForItemsAndGatherFailures(DefaultAsyncWorkTracker.java:126)
-	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForItemsAndGatherFailures(DefaultAsyncWorkTracker.java:92)
-	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForAll(DefaultAsyncWorkTracker.java:78)
-	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForCompletion(DefaultAsyncWorkTracker.java:66)
-	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:252)
+Caused by: org.gradle.api.internal.exceptions.MarkedVerificationException: There were failing tests. See the report at: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build/reports/tests/testDebugUnitTest/index.html
+	at org.gradle.api.tasks.testing.AbstractTestTask.handleTestFailures(AbstractTestTask.java:705)
+	at org.gradle.api.tasks.testing.AbstractTestTask.handleCollectedResults(AbstractTestTask.java:539)
+	at org.gradle.api.tasks.testing.AbstractTestTask.executeTests(AbstractTestTask.java:534)
+	at org.gradle.api.tasks.testing.Test.executeTests(Test.java:715)
+	at com.android.build.gradle.tasks.factory.AndroidUnitTest.executeTests(AndroidUnitTest.java:163)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at org.gradle.internal.reflect.JavaMethod.invoke(JavaMethod.java:125)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.doExecute(StandardTaskAction.java:58)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:51)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:29)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:244)
 	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
 	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
@@ -337,42 +859,9 @@ Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionExcept
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
-Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
-	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:20)
-	at org.jetbrains.kotlin.compilerRunner.GradleKotlinCompilerWork.run(GradleKotlinCompilerWork.kt:141)
-	at org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction.execute(GradleCompilerRunnerWithWorkers.kt:73)
-	at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:63)
-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:66)
-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:62)
-	at org.gradle.internal.classloader.ClassLoaderUtils.executeInClassloader(ClassLoaderUtils.java:100)
-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.lambda$execute$0(NoIsolationWorkerFactory.java:62)
-	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:44)
-	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:41)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-	at org.gradle.workers.internal.AbstractWorker.executeWrappedInBuildOperation(AbstractWorker.java:41)
-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.execute(NoIsolationWorkerFactory.java:59)
-	at org.gradle.workers.internal.DefaultWorkerExecutor.lambda$submitWork$0(DefaultWorkerExecutor.java:174)
-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runExecution(DefaultConditionalExecutionQueue.java:195)
-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.access$700(DefaultConditionalExecutionQueue.java:128)
-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner$1.run(DefaultConditionalExecutionQueue.java:170)
-	at org.gradle.internal.Factories$1.create(Factories.java:31)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:267)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:131)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:136)
-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:165)
-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:134)
-	... 2 more
 
 
-BUILD FAILED in 2m 10s
-33 actionable tasks: 31 executed, 2 from cache
+BUILD FAILED in 2m 34s
+35 actionable tasks: 33 executed, 2 from cache
 STEP_FAILED rc=1: SKIP_PAYLOAD=1 '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
 FATAL: gradle compile/unit tests failed (compiler output in 00-run-phase8.log)
-########## evidence push ##########
-=== PHASE 8 END 2026-09-08T08:09:39Z FATAL: gradle compile/unit tests failed (compiler output in 00-run-phase8.log) ===
