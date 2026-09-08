@@ -22,51 +22,50 @@ import org.junit.Test
  */
 class RuntimeStateMachineTest {
 
-    private val S = RuntimeStatus
 
     @Test
     fun coldStartPathIsLegal() {
-        assertTrue(RuntimeStateMachine.isLegal(S.STOPPED, S.EXTRACTING))
-        assertTrue(RuntimeStateMachine.isLegal(S.EXTRACTING, S.STARTING))
-        assertTrue(RuntimeStateMachine.isLegal(S.STARTING, S.HEALTHY))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.STOPPED, RuntimeStatus.EXTRACTING))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.EXTRACTING, RuntimeStatus.STARTING))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.STARTING, RuntimeStatus.HEALTHY))
     }
 
     @Test
     fun crashRestartCycleIsLegal() {
-        assertTrue(RuntimeStateMachine.isLegal(S.HEALTHY, S.CRASHED_RESTARTING))
-        assertTrue(RuntimeStateMachine.isLegal(S.CRASHED_RESTARTING, S.STARTING))
-        assertTrue(RuntimeStateMachine.isLegal(S.STARTING, S.HEALTHY))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.HEALTHY, RuntimeStatus.CRASHED_RESTARTING))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.CRASHED_RESTARTING, RuntimeStatus.STARTING))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.STARTING, RuntimeStatus.HEALTHY))
     }
 
     @Test
     fun retryWithinOneStartAttemptIsLegal() {
         // Launch or health failed, backoff elapsed, same loop tries again.
-        assertTrue(RuntimeStateMachine.isLegal(S.STARTING, S.STARTING))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.STARTING, RuntimeStatus.STARTING))
     }
 
     @Test
     fun userStopIsLegalFromEveryActiveState() {
-        assertTrue(RuntimeStateMachine.isLegal(S.EXTRACTING, S.STOPPED))
-        assertTrue(RuntimeStateMachine.isLegal(S.STARTING, S.STOPPED))
-        assertTrue(RuntimeStateMachine.isLegal(S.HEALTHY, S.STOPPED))
-        assertTrue(RuntimeStateMachine.isLegal(S.CRASHED_RESTARTING, S.STOPPED))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.EXTRACTING, RuntimeStatus.STOPPED))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.STARTING, RuntimeStatus.STOPPED))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.HEALTHY, RuntimeStatus.STOPPED))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.CRASHED_RESTARTING, RuntimeStatus.STOPPED))
     }
 
     @Test
     fun giveUpIsLegalFromEveryActiveState() {
-        assertTrue(RuntimeStateMachine.isLegal(S.EXTRACTING, S.FATAL))
-        assertTrue(RuntimeStateMachine.isLegal(S.STARTING, S.FATAL))
-        assertTrue(RuntimeStateMachine.isLegal(S.HEALTHY, S.FATAL))
-        assertTrue(RuntimeStateMachine.isLegal(S.CRASHED_RESTARTING, S.FATAL))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.EXTRACTING, RuntimeStatus.FATAL))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.STARTING, RuntimeStatus.FATAL))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.HEALTHY, RuntimeStatus.FATAL))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.CRASHED_RESTARTING, RuntimeStatus.FATAL))
     }
 
     @Test
     fun reEntryFromDeadEndsGoesThroughExtraction() {
         // A new start() re-runs the whole supervisor: ABI gate first, then
         // extraction. There is no fast path from a dead end to HEALTHY.
-        assertTrue(RuntimeStateMachine.isLegal(S.STOPPED, S.EXTRACTING))
-        assertTrue(RuntimeStateMachine.isLegal(S.UNSUPPORTED_DEVICE, S.EXTRACTING))
-        assertTrue(RuntimeStateMachine.isLegal(S.FATAL, S.EXTRACTING))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.STOPPED, RuntimeStatus.EXTRACTING))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.UNSUPPORTED_DEVICE, RuntimeStatus.EXTRACTING))
+        assertTrue(RuntimeStateMachine.isLegal(RuntimeStatus.FATAL, RuntimeStatus.EXTRACTING))
     }
 
     @Test
@@ -74,33 +73,33 @@ class RuntimeStateMachineTest {
         // STOPPED -> STOPPED is the degenerate stop()/start() race at launch
         // (stop() publishes STOPPED before the first EXTRACTING is published).
         assertEquals(
-            setOf(S.EXTRACTING, S.STOPPED),
-            RuntimeStateMachine.expectedFrom(S.STOPPED),
+            setOf(RuntimeStatus.EXTRACTING, RuntimeStatus.STOPPED),
+            RuntimeStateMachine.expectedFrom(RuntimeStatus.STOPPED),
         )
         assertEquals(
-            setOf(S.STARTING, S.STOPPED, S.FATAL),
-            RuntimeStateMachine.expectedFrom(S.EXTRACTING),
+            setOf(RuntimeStatus.STARTING, RuntimeStatus.STOPPED, RuntimeStatus.FATAL),
+            RuntimeStateMachine.expectedFrom(RuntimeStatus.EXTRACTING),
         )
         assertEquals(
-            setOf(S.STARTING, S.HEALTHY, S.STOPPED, S.FATAL),
-            RuntimeStateMachine.expectedFrom(S.STARTING),
+            setOf(RuntimeStatus.STARTING, RuntimeStatus.HEALTHY, RuntimeStatus.STOPPED, RuntimeStatus.FATAL),
+            RuntimeStateMachine.expectedFrom(RuntimeStatus.STARTING),
         )
         assertEquals(
-            setOf(S.CRASHED_RESTARTING, S.STOPPED, S.FATAL),
-            RuntimeStateMachine.expectedFrom(S.HEALTHY),
+            setOf(RuntimeStatus.CRASHED_RESTARTING, RuntimeStatus.STOPPED, RuntimeStatus.FATAL),
+            RuntimeStateMachine.expectedFrom(RuntimeStatus.HEALTHY),
         )
         assertEquals(
-            setOf(S.STARTING, S.STOPPED, S.FATAL),
-            RuntimeStateMachine.expectedFrom(S.CRASHED_RESTARTING),
+            setOf(RuntimeStatus.STARTING, RuntimeStatus.STOPPED, RuntimeStatus.FATAL),
+            RuntimeStateMachine.expectedFrom(RuntimeStatus.CRASHED_RESTARTING),
         )
         // Dead ends only leave through extraction (or nowhere, for an
         // unsupported device that the user never retries).
-        assertEquals(setOf(S.EXTRACTING), RuntimeStateMachine.expectedFrom(S.FATAL))
-        assertEquals(setOf(S.EXTRACTING), RuntimeStateMachine.expectedFrom(S.UNSUPPORTED_DEVICE))
+        assertEquals(setOf(RuntimeStatus.EXTRACTING), RuntimeStateMachine.expectedFrom(RuntimeStatus.FATAL))
+        assertEquals(setOf(RuntimeStatus.EXTRACTING), RuntimeStateMachine.expectedFrom(RuntimeStatus.UNSUPPORTED_DEVICE))
         // And the whole table is exactly 17 edges: adding or removing one is a
         // contract change that must be a conscious edit of this test.
         var edges = 0
-        for (from in S.values()) edges += RuntimeStateMachine.expectedFrom(from).size
+        for (from in RuntimeStatus.values()) edges += RuntimeStateMachine.expectedFrom(from).size
         assertEquals(17, edges)
     }
 
@@ -108,49 +107,49 @@ class RuntimeStateMachineTest {
     fun aCrashCanOnlyReachHealthyThroughStarting() {
         // HEALTHY must never be reached directly from CRASHED_RESTARTING: the
         // process has to be launched and health-checked again.
-        assertFalse(RuntimeStateMachine.isLegal(S.CRASHED_RESTARTING, S.HEALTHY))
-        assertTrue(RuntimeStateMachine.isLegalVia(S.CRASHED_RESTARTING, S.STARTING, S.HEALTHY))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.CRASHED_RESTARTING, RuntimeStatus.HEALTHY))
+        assertTrue(RuntimeStateMachine.isLegalVia(RuntimeStatus.CRASHED_RESTARTING, RuntimeStatus.STARTING, RuntimeStatus.HEALTHY))
     }
 
     @Test
     fun noStateSkipsExtractionOnReentry() {
         // Stale-payload recovery means every (re)start validates the payload.
-        assertFalse(RuntimeStateMachine.isLegal(S.STOPPED, S.STARTING))
-        assertFalse(RuntimeStateMachine.isLegal(S.STOPPED, S.HEALTHY))
-        assertFalse(RuntimeStateMachine.isLegal(S.FATAL, S.STARTING))
-        assertFalse(RuntimeStateMachine.isLegal(S.FATAL, S.HEALTHY))
-        assertFalse(RuntimeStateMachine.isLegal(S.UNSUPPORTED_DEVICE, S.STARTING))
-        assertFalse(RuntimeStateMachine.isLegal(S.UNSUPPORTED_DEVICE, S.HEALTHY))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.STOPPED, RuntimeStatus.STARTING))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.STOPPED, RuntimeStatus.HEALTHY))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.FATAL, RuntimeStatus.STARTING))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.FATAL, RuntimeStatus.HEALTHY))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.UNSUPPORTED_DEVICE, RuntimeStatus.STARTING))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.UNSUPPORTED_DEVICE, RuntimeStatus.HEALTHY))
     }
 
     @Test
     fun impossibleTransitionsAreRejected() {
         // Extraction is done in one pass: it never reports a crash or goes
         // straight to health.
-        assertFalse(RuntimeStateMachine.isLegal(S.EXTRACTING, S.CRASHED_RESTARTING))
-        assertFalse(RuntimeStateMachine.isLegal(S.EXTRACTING, S.HEALTHY))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.EXTRACTING, RuntimeStatus.CRASHED_RESTARTING))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.EXTRACTING, RuntimeStatus.HEALTHY))
         // The server is not "crashed" until it was healthy once.
-        assertFalse(RuntimeStateMachine.isLegal(S.STARTING, S.CRASHED_RESTARTING))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.STARTING, RuntimeStatus.CRASHED_RESTARTING))
         // Re-entry backwards is not a thing.
-        assertFalse(RuntimeStateMachine.isLegal(S.HEALTHY, S.EXTRACTING))
-        assertFalse(RuntimeStateMachine.isLegal(S.STARTING, S.EXTRACTING))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.HEALTHY, RuntimeStatus.EXTRACTING))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.STARTING, RuntimeStatus.EXTRACTING))
         // Dead ends are not published from active states other than FATAL.
-        assertFalse(RuntimeStateMachine.isLegal(S.EXTRACTING, S.UNSUPPORTED_DEVICE))
-        assertFalse(RuntimeStateMachine.isLegal(S.STARTING, S.UNSUPPORTED_DEVICE))
-        assertFalse(RuntimeStateMachine.isLegal(S.HEALTHY, S.UNSUPPORTED_DEVICE))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.EXTRACTING, RuntimeStatus.UNSUPPORTED_DEVICE))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.STARTING, RuntimeStatus.UNSUPPORTED_DEVICE))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.HEALTHY, RuntimeStatus.UNSUPPORTED_DEVICE))
         // A crashed runtime does not "restart" into a stop by itself.
-        assertFalse(RuntimeStateMachine.isLegal(S.CRASHED_RESTARTING, S.CRASHED_RESTARTING))
-        assertFalse(RuntimeStateMachine.isLegal(S.HEALTHY, S.HEALTHY))
-        assertFalse(RuntimeStateMachine.isLegal(S.FATAL, S.STOPPED))
-        assertFalse(RuntimeStateMachine.isLegal(S.UNSUPPORTED_DEVICE, S.FATAL))
-        assertFalse(RuntimeStateMachine.isLegal(S.UNSUPPORTED_DEVICE, S.STOPPED))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.CRASHED_RESTARTING, RuntimeStatus.CRASHED_RESTARTING))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.HEALTHY, RuntimeStatus.HEALTHY))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.FATAL, RuntimeStatus.STOPPED))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.UNSUPPORTED_DEVICE, RuntimeStatus.FATAL))
+        assertFalse(RuntimeStateMachine.isLegal(RuntimeStatus.UNSUPPORTED_DEVICE, RuntimeStatus.STOPPED))
     }
 
     @Test
     fun theWholeTableIsClosedAndSelfConsistent() {
         // Every (from, to) pair is either legal or rejected - no ambiguity,
         // and every edge points at a status that exists.
-        val all = S.values()
+        val all = RuntimeStatus.values()
         for (from in all) {
             for (to in all) {
                 val legal = RuntimeStateMachine.isLegal(from, to)
@@ -162,7 +161,7 @@ class RuntimeStateMachineTest {
         // as sources (a new status added to the enum without table entries
         // would show up here as an empty source set and fail the test).
         for (from in all) {
-            if (from != S.UNSUPPORTED_DEVICE && from != S.FATAL) {
+            if (from != RuntimeStatus.UNSUPPORTED_DEVICE && from != RuntimeStatus.FATAL) {
                 // Active + STOPPED states all publish; their target set must be
                 // non-empty (UNSUPPORTED_DEVICE/FATAL are set outside publish()
                 // and only re-enter through a fresh start).

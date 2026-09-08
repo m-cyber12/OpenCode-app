@@ -11,6 +11,7 @@ import java.net.ServerSocket
 import java.util.Base64
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * The health check the supervisor trusts to declare the runtime HEALTHY (Phase
@@ -67,7 +68,7 @@ class HealthCheckerTest {
                             val lines = header.toString().split("\r\n")
                             lastRequestLine = lines.firstOrNull()
                             lastAuthHeader = lines.firstOrNull { it.startsWith("Authorization:") }
-                                ?.substringAfter(':', "").trim()
+                                ?.let { line -> line.substringAfter(':', "").trim() }
                             val n = requests.incrementAndGet()
                             val (status, body) = behavior(n)
                             val out = conn.getOutputStream()
@@ -93,8 +94,9 @@ class HealthCheckerTest {
         fun awaitReady(): Boolean = started.await(5, TimeUnit.SECONDS)
 
         /** Deterministic shutdown: close the listening socket (interrupt alone
-         * cannot unblock a plain accept()). */
-        fun stop() {
+         * cannot unblock a plain accept()). Named so because Thread.stop() is a
+         * final supertype member this class cannot hide. */
+        fun shutdown() {
             interrupt()
             runCatching { socket?.close() }
         }
@@ -123,7 +125,7 @@ class HealthCheckerTest {
                 r.lastAuthHeader,
             )
         } finally {
-            r.stop()
+            r.shutdown()
         }
     }
 
@@ -135,7 +137,7 @@ class HealthCheckerTest {
             assertFalse(h.healthy)
             assertEquals(401, h.code)
         } finally {
-            r.stop()
+            r.shutdown()
         }
     }
 
@@ -150,7 +152,7 @@ class HealthCheckerTest {
             assertEquals(200, h.code)
             assertFalse("a 200 without a healthy body must not be healthy", h.healthy)
         } finally {
-            r.stop()
+            r.shutdown()
         }
     }
 
@@ -181,7 +183,7 @@ class HealthCheckerTest {
             assertEquals("the third probe must be the one that returned", 3, seen)
             assertTrue("must not return before the third attempt", elapsed >= 100)
         } finally {
-            r.stop()
+            r.shutdown()
         }
     }
 
@@ -199,7 +201,7 @@ class HealthCheckerTest {
             assertFalse(h!!.healthy)
             assertEquals(500, h.code)
         } finally {
-            r.stop()
+            r.shutdown()
         }
     }
 

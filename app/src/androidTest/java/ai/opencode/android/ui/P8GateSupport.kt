@@ -14,7 +14,7 @@ import ai.opencode.android.ui.chat.TAG_QUESTION_SKIP
 import ai.opencode.android.ui.chat.TAG_TURN_ERROR
 import android.content.Context
 import android.util.Log
-import androidx.compose.ui.test.ActivityComposeTestRule
+import androidx.compose.ui.test.SemanticsNodeInteractionContainer
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -91,7 +91,11 @@ internal data class P8ServerPart(
     val createdMs: Long,
 )
 
-internal class P8GateSupport(private val rule: ActivityComposeTestRule<MainActivity>) {
+// Bound to the container interface rather than the concrete rule class: the
+// compose-test-junit4 version in this project does not expose the concrete
+// rule type on the androidTest compile classpath under a stable name, and the
+// container is all the support code actually uses (node queries + idle waits).
+internal class P8GateSupport<T : SemanticsNodeInteractionContainer>(private val rule: T) {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     val shotDir: File = File(context.filesDir, "screenshots")
@@ -275,12 +279,12 @@ internal class P8GateSupport(private val rule: ActivityComposeTestRule<MainActiv
     }
 
     fun sendPrompt(text: String): Boolean {
-        runCatching { rule.onNodeWithTag(TAG_COMPOSER_INPUT).performTextInput(text) }
-            .onFailure { return false }
+        val typed = runCatching { rule.onNodeWithTag(TAG_COMPOSER_INPUT).performTextInput(text) }.isSuccess
+        if (!typed) return false
         rule.waitForIdle()
         if (!waitFor(30_000) { enabled(TAG_COMPOSER_SEND) }) return false
-        runCatching { rule.onNodeWithTag(TAG_COMPOSER_SEND).performClick() }
-            .onFailure { return false }
+        val clicked = runCatching { rule.onNodeWithTag(TAG_COMPOSER_SEND).performClick() }.isSuccess
+        if (!clicked) return false
         rule.waitForIdle()
         return true
     }

@@ -71,9 +71,16 @@ class StressRecoveryGatesTest {
         }
         val keyInfo = entry.secretKey as? android.security.keystore.KeyInfo
         val insideSecureHardware = keyInfo?.isInsideSecureHardware ?: false
+        // isStrongBoxBacked() is a @SystemApi (added with StrongBox, API 30):
+        // a normal app cannot even COMPILE against it, so the probe reflects.
+        // The reflection itself is the test: if the method or the value is
+        // unreachable, that is recorded, not swallowed.
         var strongBox: String
         if (android.os.Build.VERSION.SDK_INT >= 30) {
-            strongBox = runCatching { keyInfo?.isStrongBoxBacked ?: false }.getOrDefault(false).toString()
+            strongBox = runCatching {
+                val value = keyInfo?.javaClass?.getMethod("isStrongBoxBacked")?.invoke(keyInfo)
+                if (value is Boolean) value.toString() else "probe-returned-${value?.javaClass?.simpleName ?: "null"}"
+            }.getOrDefault("probe-failed")
         } else {
             strongBox = "n/a(api<30)"
         }
