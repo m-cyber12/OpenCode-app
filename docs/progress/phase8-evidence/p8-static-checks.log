@@ -1,0 +1,40 @@
+=== Phase 8 static checks 2026-09-08T07:58:35Z ===
+OK   bash -n on 39 phase scripts
+OK   py_compile on every phase python script
+OK   node --check on every phase8 driver
+note: pre-existing non-ASCII byte in .github/workflows/phase2-spike.yml at line 22 (not this phase's file)
+note: pre-existing non-ASCII byte in spike/workflow/phase2-spike.yml at line 22 (not this phase's file)
+check-ascii: 11 phase6 files (strict), 12 pre-existing (note only), 0 findings
+OK   yaml parse phase8/workflow/phase8-hardening.yml
+OK   phase8/workflow/phase8-hardening.yml triggers on the current branch arena/01a07f92-opencode-app
+check-workflow-p8: 1 files, pyyaml=True
+
+=== kotlin nested-block-comment scan (phase5 lesson) ===
+checked 90 kotlin files, 0 with block-comment anomalies
+OK   kotlin nested-block-comment scan (phase5 lesson)
+
+=== kotlin bracket/annotation balance ===
+check-kotlin-balance: 90 files, 0 findings
+OK   kotlin bracket/annotation balance
+
+=== ui strings + resources ===
+--- check-ui-strings (hardcoded copy + URL literals)
+check-ui-strings: 55 kotlin files, 0 hardcoded-copy findings, 0 url findings
+--- strings.xml sanity: every referenced R.string.* must exist
+strings.xml: 305 defined, 275 referenced, 0 missing, 30 unused (action_close, action_copy, ask_permission_metadata, ask_permission_request, ask_permission_waiting, availability_detail_label, availability_provider_note, chat_attachment_size)
+check-ui-strings.sh rc=0
+OK   ui strings + resources
+
+=== ui accessibility (contentDescription / labels) ===
+check-ui-a11y: 17 files, 17 icon/image, 50 button, 10 field call sites, 0 findings
+OK   ui accessibility (contentDescription / labels)
+
+=== ui lazy lists (no take(8), no eager forEach) ===
+check-ui-lists: 17 files, 4 using LazyColumn, 0 findings
+OK   ui lazy lists (no take(8), no eager forEach)
+
+=== ui purity (screens are functions of state) ===
+check-ui-purity: 17 ui files scanned, 0 findings
+OK   ui purity (screens are functions of state)
+
+=== static checks summary rc=0 ===
