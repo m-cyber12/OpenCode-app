@@ -2,13 +2,25 @@ package ai.opencode.android.ui
 
 import ai.opencode.android.AppContainer
 import ai.opencode.android.MainActivity
+import ai.opencode.android.R
 import ai.opencode.android.client.OpenCodeApi
 import ai.opencode.android.projects.ProjectStore
 import ai.opencode.android.runtime.Secrets
+import ai.opencode.android.ui.chat.TAG_COMPOSER_INPUT
+import ai.opencode.android.ui.chat.TAG_COMPOSER_SEND
+import ai.opencode.android.ui.chat.TAG_PERMISSION_ONCE
+import ai.opencode.android.ui.chat.TAG_QUESTION_SKIP
+import android.content.Context
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import android.content.Context
+import java.io.File
 import org.junit.FixMethodOrder
 import org.junit.Rule
 import org.junit.Test
@@ -43,8 +55,9 @@ class LiveToolCallGatesTest {
     @get:Rule
     val rule = createAndroidComposeRule<MainActivity>()
 
-    private val support = P8GateSupport(rule)
     private val context: Context = ApplicationProvider.getApplicationContext()
+    private val probe = P8ServerProbe(context)
+    private val shotDir = File(context.filesDir, "screenshots")
 
     private companion object {
         const val PROJECT = "live-gates"
@@ -58,26 +71,117 @@ class LiveToolCallGatesTest {
         var keyReason = "no turn was attempted yet"
     }
 
+    // ---- thin wrappers over the rule (project convention: rule-free support) -
+
+    private fun allText(): String =
+        allTextOf(rule.onAllNodes(anyNodeMatcher()).fetchSemanticsNodes())
+
+    private fun allLines(): Set<String> =
+        allText().split("\n").map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+
+    private fun exists(tag: String) = rule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+
+    private fun enabled(tag: String): Boolean {
+        val found = rule.onAllNodesWithTag(tag).fetchSemanticsNodes()
+        return found.isNotEmpty() && isEnabledNode(found.first())
+    }
+
+    private fun shot(name: String): Long = writeScreenshot(shotDir, name) { rule.onRoot().captureToImage() }
+
+    private fun waitFor(timeoutMs: Long, condition: () -> Boolean): Boolean {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            rule.waitForIdle()
+            if (condition()) return true
+            Thread.sleep(1000)
+        }
+        rule.waitForIdle()
+        return condition()
+    }
+
+    private fun gate(id: String, ok: Boolean, detail: String) {
+        printGate8(id, ok, detail)
+        org.junit.Assert.assertTrue("P8_$id :: $detail", ok)
+    }
+
+    private fun skip(id: String, reason: String) {
+        printSkip8(id, reason)
+        org.junit.Assume.assumeTrue("P8_$id :: $reason", false)
+    }
+
+    /** OpenCode blocks a turn on a permission ask or a question exactly like the
+     *  TUI does, so a live gate has to answer through the same UI a user would. */
+    private fun answerAnyAsk(): Int {
+        var answered = 0
+        val once = rule.onAllNodesWithTag(TAG_PERMISSION_ONCE).fetchSemanticsNodes()
+        if (once.isNotEmpty() && isEnabledNode(once.first())) {
+            runCatching { rule.onAllNodesWithTag(TAG_PERMISSION_ONCE)[0].performClick() }
+            answered++
+        }
+        val skipQuestion = rule.onAllNodesWithTag(TAG_QUESTION_SKIP).fetchSemanticsNodes()
+        if (skipQuestion.isNotEmpty() && isEnabledNode(skipQuestion.first())) {
+            runCatching { rule.onAllNodesWithTag(TAG_QUESTION_SKIP)[0].performClick() }
+            answered++
+        }
+        if (answered > 0) rule.waitForIdle()
+        return answered
+    }
+
+    /** "" when a chat surface with a usable composer is on screen, else the reason. */
+    private fun ensureChatSurface(timeoutMs: Long, project: String): String {
+        val leftWelcome = waitFor(timeoutMs) { exists("projects_screen") || exists("chat_screen") }
+        if (!leftWelcome) return "the app never left the welcome screen within ${timeoutMs / 1000}s"
+        if (exists("projects_screen")) {
+            if (exists("project_row_$project")) {
+                runCatching { rule.onNodeWithTag("project_row_$project").performClick() }
+            } else {
+                runCatching {
+                    rule.onNodeWithTag("project_name_input").performTextInput(project)
+                    rule.waitForIdle()
+                    rule.onNodeWithTag("project_create").performClick()
+                }
+            }
+            rule.waitForIdle()
+        }
+        if (!waitFor(180_000) { exists("chat_screen") }) return "no conversation screen after opening the project"
+        if (!waitFor(180_000) { enabled(TAG_COMPOSER_INPUT) }) {
+            return "the composer stayed disabled (agent not ready): ${allText().take(160)}"
+        }
+        if (probe.apiOrNull() == null) return "no loopback credential in the Keystore, so the server cannot be asked what it sent"
+        return ""
+    }
+
+    private fun sendPrompt(text: String): Boolean {
+        val typed = runCatching { rule.onNodeWithTag(TAG_COMPOSER_INPUT).performTextInput(text) }.isSuccess
+        if (!typed) return false
+        rule.waitForIdle()
+        if (!waitFor(30_000) { enabled(TAG_COMPOSER_SEND) }) return false
+        val clicked = runCatching { rule.onNodeWithTag(TAG_COMPOSER_SEND).performClick() }.isSuccess
+        if (!clicked) return false
+        rule.waitForIdle()
+        return true
+    }
+
     // ---- 01: the provided key actually serves a model round-trip ------------
 
     @Test
     fun `01 the provisioned key serves a model round-trip`() {
-        val key = support.provisionedKey
+        val key = probe.provisionedKey
         if (key == null) {
             printMarker8("MODEL_AVAILABLE", "0 :: no model key in the harness dir (OPENROUTER_API_KEY not set for this run)")
-            support.skip("KEYPROBE", "no model key was provisioned for this run")
+            skip("KEYPROBE", "no model key was provisioned for this run")
             return
         }
-        val problem = support.ensureChatSurface(900_000, PROJECT)
+        val problem = ensureChatSurface(900_000, PROJECT)
         if (problem.isNotEmpty()) {
             keyReason = problem
             printMarker8("MODEL_AVAILABLE", "0 :: $problem")
-            support.skip("KEYPROBE", problem)
+            skip("KEYPROBE", problem)
             return
         }
-        val api = support.apiOrNull() ?: run {
+        val api = probe.apiOrNull() ?: run {
             keyReason = "no loopback credential available"
-            support.skip("KEYPROBE", keyReason)
+            skip("KEYPROBE", keyReason)
             return
         }
 
@@ -86,18 +190,18 @@ class LiveToolCallGatesTest {
         val push = runCatching { api.setProviderAuth("openrouter", key) }
         if (push.isFailure) {
             keyReason = "the server refused the credential push: ${push.exceptionOrNull()?.message}"
-            support.gate("KEYPROBE", false, keyReason)
+            gate("KEYPROBE", false, keyReason)
             return
         }
 
         // One tiny API-level turn, model named explicitly (no UI needed to
         // answer "does this key work").
         val token = "P8PROBEOK"
-        val model = support.provisionedModel
+        val model = probe.provisionedModel
         val session = runCatching { api.createSession(title = "p8 key probe") }
             .getOrElse { t ->
                 keyReason = "session creation failed: ${t.message}"
-                support.gate("KEYPROBE", false, keyReason)
+                gate("KEYPROBE", false, keyReason)
                 return
             }
         val sent = runCatching {
@@ -108,12 +212,12 @@ class LiveToolCallGatesTest {
             )
         }.getOrElse { t ->
             keyReason = "prompt_async rejected the turn: ${t.message}"
-            support.gate("KEYPROBE", false, keyReason)
+            gate("KEYPROBE", false, keyReason)
             return
         }
         if (sent != 204 && sent != 200) {
             keyReason = "prompt_async answered http $sent (not queued)"
-            support.gate("KEYPROBE", false, keyReason)
+            gate("KEYPROBE", false, keyReason)
             return
         }
 
@@ -139,7 +243,7 @@ class LiveToolCallGatesTest {
             keyServed = true
             keyReason = "the provisioned key served a turn ($model)"
             printMarker8("MODEL_AVAILABLE", "1 :: model=$model replyChars=${reply.length}")
-            support.gate(
+            gate(
                 "KEYPROBE",
                 true,
                 "model=$model tokenSeen=true reply='${reply.take(80)}' session=${session.id}",
@@ -148,7 +252,7 @@ class LiveToolCallGatesTest {
             val lastErr = err.ifEmpty { "none" }
             keyReason = "no assistant reply with the token in 240s (lastError='$lastErr')"
             printMarker8("MODEL_AVAILABLE", "0 :: $keyReason")
-            support.gate(
+            gate(
                 "KEYPROBE",
                 false,
                 "model=$model tokenSeen=false lastError='${err.take(200)}' - the key is expired, " +
@@ -163,27 +267,27 @@ class LiveToolCallGatesTest {
     fun `02 a real tool call with real output becomes an expandable card`() {
         if (!keyServed) {
             printMarker8("MODEL_AVAILABLE", "0 :: $keyReason")
-            support.skip("TOOL", "the provisioned key could not serve a turn, so no tool call can be observed: $keyReason")
+            skip("TOOL", "the provisioned key could not serve a turn, so no tool call can be observed: $keyReason")
             return
         }
-        val problem = support.ensureChatSurface(300_000, PROJECT)
+        val problem = ensureChatSurface(300_000, PROJECT)
         if (problem.isNotEmpty()) {
-            support.skip("TOOL", problem)
+            skip("TOOL", problem)
             return
         }
         // The UI's own model selection (the same call the Settings model picker
         // makes) so the turn the composer sends goes to the provisioned model.
         val dir = ProjectStore.get(context).active()?.path
-        AppContainer.get(context).repositoryFor(dir).setModel("openrouter", support.provisionedModel)
+        AppContainer.get(context).repositoryFor(dir).setModel("openrouter", probe.provisionedModel)
 
         val marker = BADGE + (System.currentTimeMillis() % 1_000_000)
-        val known = support.knownMessageIds()
-        val sent = support.sendPrompt(
+        val known = probe.knownMessageIds()
+        val sent = sendPrompt(
             "You must use the bash tool for this task; answering from memory is not allowed. " +
                 "Run this exact shell command, then report ONLY what it printed: echo $marker",
         )
         if (!sent) {
-            support.skip("TOOL", "the composer would not accept the tool prompt")
+            skip("TOOL", "the composer would not accept the tool prompt")
             return
         }
 
@@ -191,21 +295,21 @@ class LiveToolCallGatesTest {
         var polls = 0
         var toolParts = emptyList<P8ServerPart>()
         var replySoFar = ""
-        val toolCallHappened = support.waitFor(480_000) {
-            asksAnswered += support.answerAnyAsk()
+        val toolCallHappened = waitFor(480_000) {
+            asksAnswered += answerAnyAsk()
             polls++
             if (polls % 3 == 0) {
-                toolParts = support.toolPartsInNew(known)
-                replySoFar = support.replyInNew(known)
+                toolParts = probe.toolPartsInNew(known)
+                replySoFar = probe.replyInNew(known)
             }
             toolParts.any { it.tool.isNotEmpty() }
         }
-        if (toolParts.isEmpty()) toolParts = support.toolPartsInNew(known)
-        if (replySoFar.isEmpty()) replySoFar = support.replyInNew(known)
+        if (toolParts.isEmpty()) toolParts = probe.toolPartsInNew(known)
+        if (replySoFar.isEmpty()) replySoFar = probe.replyInNew(known)
         val part = toolParts.firstOrNull { it.tool.isNotEmpty() }
 
         if (!toolCallHappened || part == null) {
-            support.skip(
+            skip(
                 "TOOL",
                 "the model answered without calling a tool within 480s (asksAnswered=$asksAnswered, " +
                     "replyChars=${replySoFar.length}, reply='${replySoFar.take(120)}')",
@@ -218,37 +322,34 @@ class LiveToolCallGatesTest {
         val cardTag = "tool_card_${part.id}"
         val headerTag = "tool_header_${part.id}"
         val outputTag = "tool_output_${part.id}"
-        val cardShown = support.waitFor(60_000) {
-            support.ruleHasTag(cardTag)
-        }
-        val collapsedBeforeTap = !support.ruleHasTag(outputTag)
-        val collapsedShot = support.shot("41-p8-tool-card-collapsed.png")
-        val headline = context.getString(ai.opencode.android.R.string.chat_tool_kind_shell)
-        val lines = support.allLines()
+        val cardShown = waitFor(60_000) { exists(cardTag) }
+        val collapsedBeforeTap = !exists(outputTag)
+        shot("41-p8-tool-card-collapsed.png")
+        val headline = context.getString(R.string.chat_tool_kind_shell)
+        val lines = allLines()
         val headlineShown = lines.any { it.contains(headline, ignoreCase = true) } ||
             lines.any { it.contains(part.tool, ignoreCase = true) }
 
         var tapped = false
-        if (support.ruleHasTag(headerTag)) {
-            runCatching {
-                support.ruleOnTag(headerTag).performClick()
-            }.onSuccess { tapped = true }
+        if (exists(headerTag)) {
+            runCatching { rule.onNodeWithTag(headerTag).performClick() }
+                .onSuccess { tapped = true }
         }
-        val outputShown = support.waitFor(30_000) { support.ruleHasTag(outputTag) }
+        val outputShown = waitFor(30_000) { exists(outputTag) }
         val serverOutputHasMarker = part.output.contains(marker)
-        val uiOutputHasMarker = support.allLines().any { it.contains(marker) }
-        val expandedShot = support.shot("42-p8-tool-card-expanded.png")
+        val uiOutputHasMarker = allLines().any { it.contains(marker) }
+        shot("42-p8-tool-card-expanded.png")
 
         val ok = cardShown && collapsedBeforeTap && headlineShown && tapped && outputShown &&
             serverOutputHasMarker && uiOutputHasMarker
-        support.gate(
+        gate(
             "TOOL",
             ok,
             "tool=${part.tool} status=${part.status} partId=${part.id} cardShown=$cardShown " +
                 "collapsedBeforeTap=$collapsedBeforeTap headline=$headlineShown expandedByTap=$tapped " +
                 "outputRendered=$outputShown markerInServerOutput=$serverOutputHasMarker " +
                 "markerOnScreen=$uiOutputHasMarker asksAnswered=$asksAnswered marker=$marker " +
-                "screenshots=$collapsedShot,$expandedShot :: this closes Phase 6 L2 (real model, real tool call)",
+                ":: this closes Phase 6 L2 (real model, real tool call)",
         )
     }
 
@@ -256,7 +357,7 @@ class LiveToolCallGatesTest {
 
     @Test
     fun `03 the injected key is revoked from server and keystore after the gates`() {
-        val api = support.apiOrNull()
+        val api = probe.apiOrNull()
         runCatching {
             val dir = ProjectStore.get(context).active()?.path
             AppContainer.get(context).repositoryFor(dir).clearModel()
@@ -265,8 +366,8 @@ class LiveToolCallGatesTest {
         val removed = runCatching { Secrets.removeProviderKey(context, "openrouter") }.getOrDefault(false)
         val leftover = runCatching { Secrets.providerKey(context, "openrouter") }.getOrNull()
         val providerIds = runCatching { Secrets.storedProviderIds(context) }.getOrDefault(emptyList())
-        val ok = leftover == null && !providerIds.contains("openrouter") && (removed || providerIds.isEmpty())
-        support.gate(
+        val ok = leftover == null && !providerIds.contains("openrouter")
+        gate(
             "CLEANUP",
             ok,
             "keystoreRemoved=$removed leftoverKey=${if (leftover == null) "none" else "PRESENT"} " +

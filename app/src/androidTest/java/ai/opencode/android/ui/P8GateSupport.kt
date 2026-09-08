@@ -1,48 +1,36 @@
 package ai.opencode.android.ui
 
-import ai.opencode.android.MainActivity
 import ai.opencode.android.client.LoopbackGuard
 import ai.opencode.android.client.OpenCodeApi
 import ai.opencode.android.projects.ProjectStore
 import ai.opencode.android.runtime.RuntimeEnv
 import ai.opencode.android.runtime.Secrets
 import ai.opencode.android.security.SecretStore
-import ai.opencode.android.ui.chat.TAG_COMPOSER_INPUT
-import ai.opencode.android.ui.chat.TAG_COMPOSER_SEND
-import ai.opencode.android.ui.chat.TAG_PERMISSION_ONCE
-import ai.opencode.android.ui.chat.TAG_QUESTION_SKIP
-import ai.opencode.android.ui.chat.TAG_TURN_ERROR
 import android.content.Context
 import android.util.Log
-import androidx.compose.ui.test.SemanticsNodeInteractionContainer
-import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import java.io.File
 
 /**
  * Shared plumbing for the two Phase 8 gate classes (StressRecoveryGatesTest and
- * LiveToolCallGatesTest).
+ * LiveToolCallGatesTest), following the Phase 6/7 convention exactly: the
+ * support is deliberately FREE of any Compose test-rule type (the rule
+ * implementation differs between rule flavors, so each gate class keeps its
+ * own thin wrappers around `rule.onAllNodes(...)`), while everything that is
+ * not UI - the verdict channel, the server-side parsing, the credential
+ * plumbing - lives here ONCE.
  *
- * The Phase 6/7 gate classes each keep their own copy of these helpers because
- * their verdict prefix (P6_) is part of Phase 6's evidence contract. The Phase 8
- * classes are new, so they share ONE implementation of the same mechanics - the
- * server is the authority on what was sent, the UI is the authority on what was
- * shown - under a P8_ verdict prefix written to p8-verdicts.txt (same discipline:
- * logcat AND an on-device file, because the logcat ring buffer does not survive a
- * live runtime and the file is what the host script reads deterministically).
+ * Verdict discipline is Phase 5's: "P8_<id> PASS|FAIL|SKIP ::" to logcat AND
+ * an on-device file, because the logcat ring buffer does not survive a live
+ * runtime and the file is what the host script reads deterministically.
  *
- * The model key (when the run provisions one) is NOT read from an intent or the
- * process environment: the host gate script writes it into the app's own
- * files/harness/ directory (the test-only harness area Phase 5 already uses for
- * the loopback password), and these helpers read it back. The key then flows
- * through the product's own credential path - the Keystore-backed SecretStore
- * and OpenCode's own PUT /auth/:providerID - exactly like a key typed into the
- * Settings screen.
+ * The model key (when the run provisions one) is NOT read from an intent or
+ * the process environment: the host gate script writes it into the app's own
+ * files/harness/ directory (the test-only harness area Phase 5 already uses
+ * for the loopback password), and [P8ServerProbe] reads it back. The key then
+ * flows through the product's own credential path - the Keystore-backed
+ * SecretStore and OpenCode's own PUT /auth/:providerID - exactly like a key
+ * typed into the Settings screen.
  */
 
 internal const val P8_GATE_TAG = "OpenCode/gate"
@@ -91,14 +79,12 @@ internal data class P8ServerPart(
     val createdMs: Long,
 )
 
-// Bound to the container interface rather than the concrete rule class: the
-// compose-test-junit4 version in this project does not expose the concrete
-// rule type on the androidTest compile classpath under a stable name, and the
-// container is all the support code actually uses (node queries + idle waits).
-internal class P8GateSupport<T : SemanticsNodeInteractionContainer>(private val rule: T) {
-
-    private val context: Context = ApplicationProvider.getApplicationContext()
-    val shotDir: File = File(context.filesDir, "screenshots")
+/**
+ * The server side of the P8 gates: the app's own loopback client as the
+ * authority on what the server sent, plus the harness-provisioned model
+ * key/model. No UI types anywhere in this class.
+ */
+internal class P8ServerProbe(private val context: Context) {
 
     private val base = "http://${LoopbackGuard.SERVER_BIND_HOSTNAME}:${RuntimeEnv.SERVER_PORT}"
 
@@ -112,58 +98,6 @@ internal class P8GateSupport<T : SemanticsNodeInteractionContainer>(private val 
     val provisionedKey: String? = runCatching {
         File(context.filesDir, "harness/model-key").readText().trim()
     }.getOrNull()?.takeIf { it.isNotEmpty() }
-
-    // ---- thin wrappers over the rule ---------------------------------------
-
-    private fun nodes() = rule.onAllNodes(anyNodeMatcher()).fetchSemanticsNodes()
-
-    private fun allText() = allTextOf(nodes())
-
-    internal fun allLines(): Set<String> =
-        allText().split("\n").map { it.trim() }.filter { it.isNotEmpty() }.toSet()
-
-    private fun exists(tag: String) = rule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
-
-    private fun enabled(tag: String): Boolean {
-        val found = rule.onAllNodesWithTag(tag).fetchSemanticsNodes()
-        return found.isNotEmpty() && isEnabledNode(found.first())
-    }
-
-    fun shot(name: String): Long = writeScreenshot(shotDir, name) { rule.onRoot().captureToImage() }
-
-    /** Is a turn-error card or the availability banner on screen right now? */
-    fun existsTurnErrorOrBanner(): Boolean =
-        rule.onAllNodesWithTag(TAG_TURN_ERROR).fetchSemanticsNodes().isNotEmpty() ||
-            rule.onAllNodesWithTag("availability_banner").fetchSemanticsNodes().isNotEmpty()
-
-    /** Public-on-purpose: the tool-call gate polls a part-id-scoped card tag. */
-    fun ruleHasTag(tag: String): Boolean =
-        rule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
-
-    fun ruleOnTag(tag: String) = rule.onNodeWithTag(tag)
-
-    fun waitFor(timeoutMs: Long, condition: () -> Boolean): Boolean {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            rule.waitForIdle()
-            if (condition()) return true
-            Thread.sleep(1000)
-        }
-        rule.waitForIdle()
-        return condition()
-    }
-
-    fun gate(id: String, ok: Boolean, detail: String) {
-        printGate8(id, ok, detail)
-        org.junit.Assert.assertTrue("P8_$id :: $detail", ok)
-    }
-
-    fun skip(id: String, reason: String) {
-        printSkip8(id, reason)
-        org.junit.Assume.assumeTrue("P8_$id :: $reason", false)
-    }
-
-    // ---- the app's own client, as the authority on what the server sent -----
 
     /** The app's loopback credential from the Keystore (the product path). */
     fun serverPassword(): String? = runCatching {
@@ -235,57 +169,4 @@ internal class P8GateSupport<T : SemanticsNodeInteractionContainer>(private val 
     fun errorInNew(known: Set<String>): P8ServerPart? = serverParts()
         .filter { it.messageID !in known && it.errorName.isNotEmpty() }
         .maxByOrNull { it.createdMs }
-
-    /** OpenCode blocks a turn on a permission ask or a question exactly like the TUI
-     *  does, so a live gate has to answer through the same UI a user would. */
-    fun answerAnyAsk(): Int {
-        var answered = 0
-        val once = rule.onAllNodesWithTag(TAG_PERMISSION_ONCE).fetchSemanticsNodes()
-        if (once.isNotEmpty() && isEnabledNode(once.first())) {
-            runCatching { rule.onAllNodesWithTag(TAG_PERMISSION_ONCE)[0].performClick() }
-            answered++
-        }
-        val skipQuestion = rule.onAllNodesWithTag(TAG_QUESTION_SKIP).fetchSemanticsNodes()
-        if (skipQuestion.isNotEmpty() && isEnabledNode(skipQuestion.first())) {
-            runCatching { rule.onAllNodesWithTag(TAG_QUESTION_SKIP)[0].performClick() }
-            answered++
-        }
-        if (answered > 0) rule.waitForIdle()
-        return answered
-    }
-
-    /** "" when a chat surface with a usable composer is on screen, else the reason. */
-    fun ensureChatSurface(timeoutMs: Long, project: String): String {
-        val leftWelcome = waitFor(timeoutMs) { exists("projects_screen") || exists("chat_screen") }
-        if (!leftWelcome) return "the app never left the welcome screen within ${timeoutMs / 1000}s"
-        if (exists("projects_screen")) {
-            if (exists("project_row_$project")) {
-                runCatching { rule.onNodeWithTag("project_row_$project").performClick() }
-            } else {
-                runCatching {
-                    rule.onNodeWithTag("project_name_input").performTextInput(project)
-                    rule.waitForIdle()
-                    rule.onNodeWithTag("project_create").performClick()
-                }
-            }
-            rule.waitForIdle()
-        }
-        if (!waitFor(180_000) { exists("chat_screen") }) return "no conversation screen after opening the project"
-        if (!waitFor(180_000) { enabled(TAG_COMPOSER_INPUT) }) {
-            return "the composer stayed disabled (agent not ready): ${allText().take(160)}"
-        }
-        if (apiOrNull() == null) return "no loopback credential in the Keystore, so the server cannot be asked what it sent"
-        return ""
-    }
-
-    fun sendPrompt(text: String): Boolean {
-        val typed = runCatching { rule.onNodeWithTag(TAG_COMPOSER_INPUT).performTextInput(text) }.isSuccess
-        if (!typed) return false
-        rule.waitForIdle()
-        if (!waitFor(30_000) { enabled(TAG_COMPOSER_SEND) }) return false
-        val clicked = runCatching { rule.onNodeWithTag(TAG_COMPOSER_SEND).performClick() }.isSuccess
-        if (!clicked) return false
-        rule.waitForIdle()
-        return true
-    }
 }
