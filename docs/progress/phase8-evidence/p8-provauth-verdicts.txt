@@ -1,9 +1,4 @@
-P8_NETPROBE_UI no session
-P8_MODEL_AVAILABLE 0 :: no assistant reply with the token in 240s (lastError='APIError:  (status=0)')
-P8_KEYPROBE FAIL :: model=openai/gpt-4o-mini tokenSeen=false lastError='APIError:  (status=0)' - the key is expired, out of credit, or the model id is wrong for this account
-P8_MODEL_AVAILABLE 0 :: no assistant reply with the token in 240s (lastError='APIError:  (status=0)')
-P8_TOOL SKIP :: the provisioned key could not serve a turn, so no tool call can be observed: no assistant reply with the token in 240s (lastError='APIError:  (status=0)')
-P8_CLEANUP PASS :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
+P8_PROVAUTH FAIL :: serverSawError=false serverErrorName=- serverErrorMessage='-' serverStatus=0 classified=- screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=33307
 P8_KEYRESIDENCY SKIP :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=x86_64 device=sdk_gphone64_x86_64 api=34 :: key material is in the SOFTWARE keystore on this device - the ciphertext-at-rest guarantee holds, key-extraction resistance does not (expected on emulators; a real-device run is the evidence for the hardware claim)
 P8_SERVERKILL PASS :: killedPid=4460 oldPidDead=true sawCrashedRestarting=true restartCount=0 healthyAgain=true healthHttp=200 sawFatal=false newPid=4532 finalStatus=HEALTHY finalDetail='healthy on 127.0.0.1:4111'
 P8_LIFECYCLELOG PASS :: illegalTransitions=0 startingTransitions=9 healthyTransitions=4 logBytes=14859 lastStates='EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111) | CRASHED_RESTARTING (server exited (code=137); restarting (at | STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111) | EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1))'
@@ -13,3 +8,4 @@ P8_KEYPROBE FAIL :: model=openai/gpt-4o-mini tokenSeen=false lastError='APIError
 P8_MODEL_AVAILABLE 0 :: no assistant reply with the token in 240s (lastError='APIError:  (status=0)')
 P8_TOOL SKIP :: the provisioned key could not serve a turn, so no tool call can be observed: no assistant reply with the token in 240s (lastError='APIError:  (status=0)')
 P8_CLEANUP PASS :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
+P8_PROVAUTH FAIL :: serverSawError=false serverErrorName=- serverErrorMessage='-' serverStatus=0 classified=- screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=33307
