@@ -1,7 +1,7 @@
 assert ok: session id present
 shell HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M208DP941AFAXXQ828HKN5F3","input":"{\"command\":\"echo G11_STREAM_EVENT_OK\"}","output":"\"[seccomp] preload handler installed (rc=0)\\nG11_STREAM_EVENT_OK\\n\"","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M20B5TRV7XJTCQ1H8WSFRD4D","input":"{\"command\":\"echo G11_STREAM_EVENT_OK\"}","output":"\"[seccomp] preload handler installed (rc=0)\\nG11_STREAM_EVENT_OK\\n\"","error":null}]}]
 events seen (11): {"server.connected":1,"message.part.updated":6,"message.updated":2,"session.status":1,"session.idle":1}
 assert ok: part update events streamed
 assert ok: message update events streamed
@@ -11,9 +11,9 @@ G11_SSE_OK
 assert ok: session id present
 prompt_async accepted (204)
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"Say exactly: G11_STREAM_MODEL_OK","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to say exactly: \"G11_STREAM_MODEL_OK\"\n\nI should just output this text directly without any tool use.","input":"null","output":"null","error":null},{"type":"text","text":"G11_STREAM_MODEL_OK","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
-model events seen (44): ["server.connected","session.status","session.updated","session.updated","session.diff","message.updated","message.updated","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.delta","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.part.delta","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.updated","message.updated","message.updated","message.updated","session.status","session.status","session.idle","session.updated","session.updated","session.diff","message.updated","message.updated","server.heartbeat"]
-text parts streamed: [{"id":"prt_080870510001AJTMB21jIEjQyb","updates":4,"text":"G11_STREAM_MODEL_OK"}]
+[{"role":"user","parts":[{"type":"text","text":"Say exactly: G11_STREAM_MODEL_OK","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to say exactly: \"G11_STREAM_MODEL_OK\"","input":"null","output":"null","error":null},{"type":"text","text":"G11_STREAM_MODEL_OK","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
+model events seen (35): ["server.connected","session.updated","session.updated","session.diff","message.updated","message.updated","session.status","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.part.delta","message.part.delta","message.part.delta","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.part.delta","message.part.updated","message.part.updated","message.part.updated","message.part.updated","message.updated","message.updated","message.updated","message.updated","session.status","session.status","session.idle","session.updated","session.updated","session.diff","message.updated","message.updated"]
+text parts streamed: [{"id":"prt_080b30f5b001YvIOW32S5HykmF","updates":4,"text":"G11_STREAM_MODEL_OK"}]
 session.status sequence: ["busy","busy","idle"]
 assert ok: agent turn did not fail
 assert ok: streamed text contains the reply
