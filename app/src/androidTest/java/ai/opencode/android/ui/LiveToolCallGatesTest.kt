@@ -162,6 +162,56 @@ class LiveToolCallGatesTest {
         return true
     }
 
+    // ---- 00: what THIS (instrumented-process) server can reach --------------
+
+    @Test
+    fun g00_probeServer() {
+        val api = probe.apiOrNull() ?: run {
+            skip("NETPROBE_UI", "no loopback credential available")
+            return
+        }
+        // Runs the egress probe in the SERVER's own process context (the
+        // command is a child of the server), from inside the instrumented
+        // (:test) app process. Round 8: the main-process server served 40/40
+        // openrouter turns (stage D) while model turns in the instrumented
+        // windows failed with APIError status=0 - this line shows what THIS
+        // server itself reaches, in the same window as g01/g02.
+        val probeFile = File(context.filesDir, "tmp/p8netprobe-ui.js")
+        probeFile.parentFile?.mkdirs()
+        probeFile.writeText(
+            """
+            for (const [n, u] of [["openrouter", "https://openrouter.ai/api/v1/models"],
+                                 ["opencode", "https://opencode.ai/"],
+                                 ["control", "https://www.google.com/"]]) {
+              const t0 = Date.now()
+              try {
+                const r = await fetch(u, { signal: AbortSignal.timeout(15000) })
+                await r.body?.cancel?.()
+                console.log("P8NETPROBE_UI " + n + " http=" + r.status + " ms=" + (Date.now() - t0))
+              } catch (e) {
+                console.log("P8NETPROBE_UI " + n + " error=" + String(e.name || e.message || e).slice(0, 60) + " ms=" + (Date.now() - t0))
+              }
+            }
+            """.trimIndent(),
+        )
+        val bun = File(context.filesDir, "bin/bun").absolutePath
+        val sid = runCatching { api.createSession("p8 netprobe ui") }.getOrNull()?.id
+        val out = if (sid != null) {
+            runCatching {
+                api.shellOutput(sid, "$bun ${probeFile.absolutePath} 2>&1; rm -f ${probeFile.absolutePath}", "build")
+            }.getOrElse { "shell call failed: ${it.message}" }
+        } else {
+            "no session"
+        }
+        probeFile.delete()
+        val lines = out.lineSequence()
+            .filter { it.contains("P8NETPROBE_UI") }
+            .map { it.trim() }
+            .toList()
+        val detail = if (lines.isEmpty()) out.replace(Regex("\\s+"), " ").take(300) else lines.joinToString(" | ")
+        printMarker8("NETPROBE_UI", detail)
+    }
+
     // ---- 01: the provided key actually serves a model round-trip ------------
 
     @Test

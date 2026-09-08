@@ -11,7 +11,7 @@
 // Prints: P8HIST ok=<0|1> turns=<n> avgMs=<..> maxMs=<..> failedTurns=<k>
 //         tailListMs=<..> tailMessages=<m>
 
-import { get, post, createSession, waitTurnComplete, log } from "./gates-lib.js"
+import { get, post, createSession, waitTurnComplete, assistantText, log } from "./gates-lib.js"
 
 const N = Number(process.env.P8_HIST_TURNS || 40)
 const PER_TURN_MS = Number(process.env.P8_HIST_PER_TURN_MS || 120000)
@@ -31,6 +31,8 @@ async function main() {
   const s = await createSession("p8 history")
   const latencies = []
   let failedTurns = 0
+  let textTurns = 0
+  let lastInfoError = ""
   for (let i = 1; i <= N; i++) {
     const t0 = Date.now()
     try {
@@ -41,7 +43,28 @@ async function main() {
       if (pr.status !== 204 && pr.status !== 200) throw new Error("prompt_async http " + pr.status + " " + pr.text.slice(0, 120))
       const done = await waitTurnComplete(s, { timeoutMs: PER_TURN_MS, pollMs: 1500, stablePolls: 2 })
       latencies.push(Date.now() - t0)
-      if (done.failed) failedTurns++
+      if (done.failed) {
+        failedTurns++
+      } else {
+        // Round 8: "no part error" is NOT "the model answered" - the failed
+        // openrouter turns completed with EMPTY assistant messages (parts:[])
+        // and no error on any part. Require the turn's own marker in the
+        // assistant text (marker i cannot be a substring of any earlier turn's
+        // marker, so this is exact).
+        const reply = assistantText(done.messages)
+        if (reply.includes(`P8HIST ${i}`)) textTurns++
+        else log(`turn ${i}: no P8HIST ${i} in reply (replyChars=${reply.length})`)
+      }
+      // Surface the message-info error the parts-only view misses.
+      const lr = await get(`/session/${s}/message?limit=3`)
+      if (lr.ok) {
+        const msgs = JSON.parse(lr.text)
+        const list = Array.isArray(msgs) ? msgs : msgs.messages ?? []
+        const last = list[list.length - 1]
+        const info = last?.info ?? last
+        const ie = info?.error
+        if (ie) lastInfoError = `name=${ie.name} status=${ie.statusCode ?? 0} msg=${String(ie.message ?? "").slice(0, 120)}`
+      }
     } catch (e) {
       failedTurns++
       latencies.push(Date.now() - t0)
@@ -58,10 +81,10 @@ async function main() {
     const messages = JSON.parse(r.text)
     tailMessages = (Array.isArray(messages) ? messages : messages.messages ?? []).length
   }
-  const ok = failedTurns === 0 && tailMessages >= N * 2
+  const ok = failedTurns === 0 && textTurns === N && tailMessages >= N * 2
   console.log(
-    `P8HIST ok=${ok ? 1 : 0} turns=${N} avgMs=${avg} maxMs=${max} failedTurns=${failedTurns} ` +
-    `tailListMs=${tailListMs} tailMessages=${tailMessages}`,
+    `P8HIST ok=${ok ? 1 : 0} turns=${N} textTurns=${textTurns} avgMs=${avg} maxMs=${max} failedTurns=${failedTurns} ` +
+    `tailListMs=${tailListMs} tailMessages=${tailMessages} lastInfoError='${lastInfoError}'`,
   )
   process.exit(ok ? 0 : 1)
 }

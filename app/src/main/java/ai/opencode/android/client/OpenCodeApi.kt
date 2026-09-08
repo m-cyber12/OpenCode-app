@@ -236,6 +236,14 @@ class OpenCodeApi(
         return request("POST", "/session/$sessionID/shell", body.toString()).status
     }
 
+    /** Same call as [shell], returning the response body (diagnostic gates). */
+    fun shellOutput(sessionID: String, command: String, agent: String): String {
+        val body = org.json.JSONObject()
+            .put("agent", agent)
+            .put("command", command)
+        return request("POST", "/session/$sessionID/shell", body.toString()).body
+    }
+
     // ---- permissions -------------------------------------------------------
 
     /** GET /permission — pending permission asks for this instance. */

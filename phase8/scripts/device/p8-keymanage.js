@@ -18,7 +18,7 @@
 // The key path comes from the environment (P8_KEY_FILE) so the credential
 // never appears on a command line.
 
-import { call, log } from "./gates-lib.js"
+import { call, createSession, log } from "./gates-lib.js"
 
 const KEY_FILE = process.env.P8_KEY_FILE || ""
 
@@ -75,7 +75,51 @@ async function main() {
     }
     process.exit(0)
   }
-  log("usage: p8-keymanage.js provision|revoke|probe-net")
+  if (mode === "probe-server") {
+    // The decisive version of probe-net: run the SAME probes in the SERVER's
+    // own process context. Round 8 showed the run-as shell reaches openrouter
+    // (http=200) while the server's model POSTs failed with APIError status=0
+    // in some windows and worked in others (P8HIST 40/40). A child of the
+    // server (via OpenCode's own /shell endpoint - the same path the bash tool
+    // uses) sees the server's environment, proxy settings, and network state;
+    // comparing it against the run-as probe isolates the server process.
+    const FILES = process.env.P8_APP_FILES || "/data/data/ai.opencode.android.debug/files"
+    const BUN = process.env.OPENCODE_BUN_BIN || (FILES + "/bin/bun")
+    const probeSrc = [
+      'for (const [n, u] of [["openrouter", "https://openrouter.ai/api/v1/models"],',
+      '                       ["opencode", "https://opencode.ai/"],',
+      '                       ["control", "https://www.google.com/"]]) {',
+      '  const t0 = Date.now()',
+      '  try {',
+      '    const r = await fetch(u, { signal: AbortSignal.timeout(15000) })',
+      '    await r.body?.cancel?.()',
+      '    console.log("P8NETPROBE_SERVER " + n + " http=" + r.status + " ms=" + (Date.now() - t0))',
+      '  } catch (e) {',
+      '    console.log("P8NETPROBE_SERVER " + n + " error=" + String(e.name || e.message || e).slice(0, 60) + " ms=" + (Date.now() - t0))',
+      '  }',
+      '}',
+      "",
+    ].join("\n")
+    const probePath = FILES + "/tmp/p8netprobe-server.js"
+    await Bun.write(probePath, probeSrc)
+    const sid = await createSession("p8 netprobe server")
+    const r = await call("POST", `/session/${sid}/shell`, {
+      command: `${BUN} ${probePath} 2>&1; rm -f ${probePath}`,
+      agent: "build",
+    })
+    if (!r.ok) {
+      console.log(`P8NETPROBE_SERVER shell http=${r.status} body=${r.text.slice(0, 200)}`)
+      process.exit(0)
+    }
+    const lines = r.text.split("\n").filter((l) => l.includes("P8NETPROBE_SERVER"))
+    if (lines.length === 0) {
+      console.log("P8NETPROBE_SERVER shell http=200 body=" + r.text.slice(0, 300))
+    } else {
+      for (const l of lines) console.log(l.trim())
+    }
+    process.exit(0)
+  }
+  log("usage: p8-keymanage.js provision|revoke|probe-net|probe-server")
   process.exit(2)
 }
 

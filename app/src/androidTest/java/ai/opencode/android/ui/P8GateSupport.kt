@@ -123,7 +123,33 @@ internal class P8ServerProbe(private val context: Context) {
                     val created = m.info?.optJSONObject("time")?.optLong("created") ?: 0L
                     val err = m.info?.optJSONObject("error")
                     val errStatus = err?.optInt("statusCode", 0) ?: 0
-                    m.parts.map { p ->
+                    if (m.parts.isEmpty()) {
+                        // A turn that failed at the provider level can leave an
+                        // assistant message with NO parts and the error only on
+                        // the message info (observed: APIError status=0 turns).
+                        // The parts-only view below would drop it, so surface it
+                        // as one synthetic part carrying the message error.
+                        if (err != null) {
+                            listOf(
+                                P8ServerPart(
+                                    id = "info",
+                                    messageID = m.id,
+                                    role = m.role,
+                                    type = "text",
+                                    tool = "",
+                                    status = "",
+                                    text = "",
+                                    output = "",
+                                    errorName = err.optString("name"),
+                                    errorMessage = err.optString("message"),
+                                    errorStatus = errStatus,
+                                    errorRetryable = err.optBoolean("isRetryable", false),
+                                    createdMs = created,
+                                ),
+                            )
+                        } else emptyList()
+                    } else {
+                        m.parts.map { p ->
                         val state = p.optJSONObject("state")
                         val metadata = state?.optJSONObject("metadata")
                         P8ServerPart(
@@ -141,6 +167,7 @@ internal class P8ServerProbe(private val context: Context) {
                             errorRetryable = err?.optBoolean("isRetryable", false) ?: false,
                             createdMs = created,
                         )
+                        }
                     }
                 }
             }

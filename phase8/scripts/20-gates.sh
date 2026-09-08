@@ -191,6 +191,7 @@ run_p8_class() { # $1=short-name $2=class ; verdicts -> $EV/p8-lines.txt
     timeout 90 adb logcat -d 2>/dev/null | grep -aoE 'P8_MODEL_AVAILABLE [01][^\r]*'
   } | sed 's/[[:space:]]*$//' | sort -u >> "$EV/p8-model-lines.txt" 2>/dev/null || true
   verdict_file_cat > "$EV/p8-${name}-verdicts.txt" 2>/dev/null || true
+  grep -aoE 'P8_?NETPROBE[_A-Z]* [^\r]*' "$out" 2>/dev/null | sed 's/[[:space:]]*$//' | sort -u >> "$LOG" 2>/dev/null || true
   tail -40 "$out" >> "$LOG" 2>/dev/null || true
   if grep -aqE '^OK \([0-9]+ test' "$out" 2>/dev/null; then
     log "$name runner trailer: OK"
@@ -318,43 +319,68 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-log "=== stage C: P8 instrumented gates (stress/recovery + live tool call) ==="
-# Fresh network state for the model-dependent gates (see reboot_and_relaunch).
+log "=== stage C: P8 instrumented stress gates (model-free half) ==="
+# Round-8 finding: in this stage's window the server's MODEL calls failed with
+# network-level APIError (status=0) even though the run-as egress probe saw
+# openrouter at http=200 - while the stage-D post-reboot window served 40/40
+# real turns (P8HIST). So the model-dependent gates (PROVAUTH classification,
+# KEYPROBE, the live TOOL call) moved to stage D, right after that reboot and
+# a fresh key re-provision. Only the model-free stress gates run here.
 reboot_and_relaunch
 stage_drivers || true
-# Egress diagnostics for the model-silence question: per-host reachability
-# from the app's own network namespace (probe-net distinguishes a bad key -
-# hosts reachable, only the model turn hangs - from an egress problem -
-# host(s) unreachable).
+# Egress diagnostics, both flavors: run-as shell (probe-net) and the server's
+# own process context (probe-server, via OpenCode's /shell endpoint).
 run_js_on_device p8-keymanage.js probe-net >> "$LOG" 2>&1 || true
+run_js_on_device p8-keymanage.js probe-server >> "$LOG" 2>&1 || true
 STRESS_RC=0
-run_p8_class "stress" "ai.opencode.android.ui.StressRecoveryGatesTest" || STRESS_RC=1
-for g in KEYRESIDENCY PROVAUTH SERVERKILL LIFECYCLELOG; do
+run_p8_class "stress-a" "ai.opencode.android.ui.StressRecoveryGatesTest#g00_keyResidency" || STRESS_RC=1
+run_p8_class "stress-b" "ai.opencode.android.ui.StressRecoveryGatesTest#g02_serverKill" || STRESS_RC=1
+run_p8_class "stress-c" "ai.opencode.android.ui.StressRecoveryGatesTest#g03_lifecycleLog" || STRESS_RC=1
+for g in KEYRESIDENCY SERVERKILL LIFECYCLELOG; do
   v=$(verdict_of "P8_$g"); p8 "$g" "$v" "$(detail_of "P8_$g")"
 done
-[ "$STRESS_RC" = 0 ] || log "note: stress instrument run rc=$STRESS_RC"
-LIVE_RC=0
-run_p8_class "live" "ai.opencode.android.ui.LiveToolCallGatesTest" || LIVE_RC=1
-for g in KEYPROBE TOOL CLEANUP; do
-  v=$(verdict_of "P8_$g"); p8 "$g" "$v" "$(detail_of "P8_$g")"
-done
-[ "$LIVE_RC" = 0 ] || log "note: live instrument run rc=$LIVE_RC"
-grep -aE 'P8_MODEL_AVAILABLE' "$EV/p8-model-lines.txt" 2>/dev/null >> "$LOG" || true
+[ "$STRESS_RC" = 0 ] || log "note: stress instrument runs rc=$STRESS_RC"
 
 # ---------------------------------------------------------------------------
 log "=== stage D: destructive stress (host-driven, on the relaunch the instrument left behind) ==="
 relaunch_and_export_password
 stage_drivers || true
 [ "$(wait_healthy 240)" = "HEALTH_OK" ] || log "warn: runtime not healthy at the start of stage D"
-# The instrumented CLEANUP gate removed the run's key from the Keystore and
-# the OpenCode auth store (as it must). The host driver gates below still need
-# real model round-trips, so re-push the key into the SERVER's auth store only
-# (p8-keymanage never touches the Keystore); it is revoked again after stage E.
+# The instrumented CLEANUP gate (below, live class) removes the run's key from
+# the Keystore and the OpenCode auth store (as it must). The model gates still
+# need real round-trips, so the key is pushed into the SERVER's auth store
+# (p8-keymanage never touches the Keystore) and re-pushed after each gate that
+# deliberately destroys it; it is revoked again after stage E.
 if [ -n "$MODEL_KEY" ]; then
   P8_HIST_MODEL="$P8_MODEL"
   KEYPROV_OUT=$(run_js_on_device p8-keymanage.js provision 2>&1)
   echo "$KEYPROV_OUT" >> "$LOG"
   echo "$KEYPROV_OUT" | grep -q "P8KEYPROV ok=1" || log "warn: key re-provision before stage D did not confirm"
+fi
+
+# The model-dependent instrumented gates, in their proven window (round 8:
+# P8HIST 40/40 turns in stage D; the stage-C window failed with APIError
+# status=0). Order matters: the live class first (KEYPROBE + TOOL need the
+# valid key; its CLEANUP gate deletes the key and proves the deletion), then
+# PROVAUTH (pushes its own invalid key, observes the classified auth failure,
+# deletes the credential), then a re-provision for the history measurement.
+LIVE_RC=0
+run_js_on_device p8-keymanage.js probe-net >> "$LOG" 2>&1 || true
+run_js_on_device p8-keymanage.js probe-server >> "$LOG" 2>&1 || true
+run_p8_class "live" "ai.opencode.android.ui.LiveToolCallGatesTest" || LIVE_RC=1
+for g in KEYPROBE TOOL CLEANUP; do
+  v=$(verdict_of "P8_$g"); p8 "$g" "$v" "$(detail_of "P8_$g")"
+done
+[ "$LIVE_RC" = 0 ] || log "note: live instrument run rc=$LIVE_RC"
+grep -aE 'P8_MODEL_AVAILABLE' "$EV/p8-model-lines.txt" 2>/dev/null >> "$LOG" || true
+if [ -n "$MODEL_KEY" ]; then
+  PROV_RC=0
+  run_p8_class "provauth" "ai.opencode.android.ui.StressRecoveryGatesTest#g01_providerAuth" || PROV_RC=1
+  v=$(verdict_of "P8_PROVAUTH"); p8 "PROVAUTH" "$v" "$(detail_of "P8_PROVAUTH")"
+  # PROVAUTH ends by deleting the credential it pushed - restore it for D8.
+  KEYPROV_OUT=$(run_js_on_device p8-keymanage.js provision 2>&1)
+  echo "$KEYPROV_OUT" >> "$LOG"
+  echo "$KEYPROV_OUT" | grep -q "P8KEYPROV ok=1" || log "warn: key re-provision after PROVAUTH did not confirm"
 fi
 
 # D1: the toybox staging path the harness itself relies on, on THIS API level.
@@ -569,9 +595,16 @@ fi
 # ---------------------------------------------------------------------------
 log "=== stage E: performance measurement (the report's numbers) ==="
 reboot_and_relaunch
-relaunch_and_export_password
+# NO instrument-based password re-export here (round 9): PASSWD was exported
+# in stage D and is stable per install (Keystore-derived), so the re-export
+# bought nothing - and `am instrument` in this window cost the PERF stream
+# turn in round 8 (240s no-stream timeout in exactly this window, while the
+# same model worked 40/40 in a plain main-process server minutes earlier).
+# reboot_and_relaunch above already left a healthy server in a plain app
+# process - the context the measurement needs.
 stage_drivers || true
 [ "$(wait_healthy 240)" = "HEALTH_OK" ] || log "warn: not healthy at stage E"
+run_js_on_device p8-keymanage.js probe-server >> "$LOG" 2>&1 || true
 # Startup timing from the supervisor's own (timestamped) log: cold = first
 # launch after install_fresh in this run (EXTRACTING -> HEALTHY window).
 rash "tail -c 80000 '$FILES/log/runtime.log' 2>&1" > "$EV/runtime.log" 2>&1 || true
