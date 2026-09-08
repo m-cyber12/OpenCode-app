@@ -1,0 +1,204 @@
+#!/usr/bin/env bash
+# 90-real-device-suite.sh - the Phase 8 REAL DEVICE suite (the user's machine).
+#
+# What runs in CI is an x86_64 emulator with a SOFTWARE keystore. The things
+# only a real arm64 device can answer - secure-hardware key residency, the
+# cold start on real silicon, the live tool call against the real provider -
+# run here, one-shot, from the user's own machine.
+#
+# WHAT THE USER NEEDS (one-time):
+#   1. USB cable, the phone (USB debugging ON: Developer options -> USB debugging),
+#      a PC with https://developer.android.com/tools/releases/platform-tools
+#      (a zip; extract it and put adb on PATH - on Windows: add the folder to
+#      the PATH variable), and a bash shell (Git Bash is fine).
+#   2. The two APKs from the CI run's "phase8-hardening" artifact:
+#        app-debug.apk  and  app-debug-androidTest.apk
+#      next to this script (or pass their paths as $1 and $2).
+#   3. Optional: a (short-lived) OpenRouter API key, TYPED AT THE TERMINAL WHEN
+#      ASKED - never pasted into chat. Without it the live tool-call gate on
+#      the device SKIPs and the rest still runs.
+#
+# WHAT IT DOES (in order):
+#   R1  device facts (model, API, abi, secure-hardware flags)
+#   R2  the toybox staging path the harness relies on, on THIS API level
+#   R3  install, launch, cold start timing from the supervisor's own log
+#   R4  instrumented stress class (key-residency probe measured on real
+#       hardware, provider-auth failure, supervised server-kill restart)
+#   R5  instrumented live class (key probe + real tool call through the UI,
+#       with the key typed at the terminal) - closes Phase 6 L2 on a real
+#       device; the key is revoked from the phone afterwards
+#   R6  memory / CPU / storage footprint, and the verdict bundle
+#
+# The verdict bundle lands in ./p8d-out/ on the PC. Send that folder back (or
+# paste the contents of p8d-out/SUMMARY.txt) and the phase report folds it in.
+set -uo pipefail
+cd "$(dirname "$0")"
+ROOT="$(cd .. && pwd)"
+OUT="p8d-out"
+mkdir -p "$OUT"
+LOG="$OUT/run.log"
+: > "$LOG"
+log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
+
+PASS=0; FAIL=0; SKIP=0
+rec() { echo "$1 $2${3:+ :: $3}" >> "$OUT/SUMMARY.txt"; log "$1 $2${3:+ :: $3}"; }
+rd() { # $1=id $2=rc $3=detail
+  case "$2" in
+    0) PASS=$((PASS+1)); rec "P8D_$1" PASS "$3" ;;
+    7) SKIP=$((SKIP+1)); rec "P8D_$1" SKIP "$3" ;;
+    *) FAIL=$((FAIL+1)); rec "P8D_$1" FAIL "$3" ;;
+  esac
+}
+: > "$OUT/SUMMARY.txt"
+
+APK="${1:-app-debug.apk}"
+TAPK="${2:-app-debug-androidTest.apk}"
+PKG="ai.opencode.android.debug"
+TEST_PKG="ai.opencode.android.debug.test"
+RUNNER="$TEST_PKG/androidx.test.runner.AndroidJUnitRunner"
+FILES="/data/data/$PKG/files"
+PORT=4111
+
+rash() { printf '%s\n' "$1" | adb shell run-as "$PKG" sh 2>&1 | tr -d '\r'; }
+
+# ---- R0: preconditions -------------------------------------------------------
+command -v adb >/dev/null 2>&1 || { echo "FATAL: adb not found on PATH (install platform-tools and add it to PATH)"; exit 2; }
+[ -f "$APK" ] || { echo "FATAL: app APK not found: $APK (download it from the CI artifact)"; exit 2; }
+[ -f "$TAPK" ] || { echo "FATAL: androidTest APK not found: $TAPK (download it from the CI artifact)"; exit 2; }
+DEVS=$(adb devices 2>/dev/null | tail -n +2 | grep -c 'device$' || true)
+if [ "$DEVS" = "0" ]; then
+  echo "FATAL: no authorized device. Connect the phone over USB, enable Developer options -> USB debugging, and accept the authorization dialog."
+  exit 2
+elif [ "$DEVS" -gt 1 ]; then
+  echo "FATAL: more than one device attached; keep only the target phone connected."
+  exit 2
+fi
+log "device attached and authorized"
+
+# ---- R1: device facts --------------------------------------------------------
+{
+  echo "model=$(adb shell getprop ro.product.model | tr -d '\r')"
+  echo "manufacturer=$(adb shell getprop ro.product.manufacturer | tr -d '\r')"
+  echo "android_release=$(adb shell getprop ro.build.version.release | tr -d '\r')"
+  echo "sdk=$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
+  echo "abi=$(adb shell getprop ro.product.cpu.abi | tr -d '\r')"
+  echo "secure_hardware_flags:"
+  adb shell getprop | grep -iE 'ro\.security|keymint|strongbox|titan' | head -12
+} > "$OUT/device-facts.txt" 2>&1
+cat "$OUT/device-facts.txt" | tee -a "$LOG"
+
+# ---- R3a: install + launch ---------------------------------------------------
+log "installing (uninstall first for a clean state)"
+adb uninstall "$TEST_PKG" >/dev/null 2>&1 || true
+adb uninstall "$PKG" >/dev/null 2>&1 || true
+adb install -r -g "$APK" 2>&1 | tail -2 | tee -a "$LOG" || { rd INSTALL 1 "adb install app failed"; }
+adb install -r -g "$TAPK" 2>&1 | tail -2 | tee -a "$LOG" || { rd INSTALL 1 "adb install androidTest failed"; }
+adb shell pm grant "$PKG" android.permission.POST_NOTIFICATIONS >/dev/null 2>&1 || true
+# Harness marker BEFORE first launch (the password export needs it).
+rash "mkdir -p '$FILES/harness'; touch '$FILES/harness/enabled'; chmod 700 '$FILES/harness'; echo harness_rc=\$?" >> "$LOG" 2>&1
+
+# ---- R2: the toybox staging path on THIS API ---------------------------------
+TB_B64=$(cd "$OUT" && mkdir -p tb && printf 'tb-a\n' > tb/a.txt && printf 'tb-b\n' > tb/b.txt && tar cz -C tb . | base64 -w0)
+TB_OUT=$(rash "rm -rf '$FILES/tmp/tb' && mkdir -p '$FILES/tmp/tb' && echo '$TB_B64' | base64 -d | tar xz -C '$FILES/tmp/tb' && ls '$FILES/tmp/tb' | tr '\n' ' ' && echo toybox_rc=\$?" 2>/dev/null)
+TB_API=$(adb shell getprop ro.build.version.sdk | tr -d '\r')
+if echo "$TB_OUT" | grep -q "toybox_rc=0" && echo "$TB_OUT" | grep -q "a.txt"; then
+  rd TOYBOX 0 "base64|base64 -d|tar xz -C dir works on this real device api=$TB_API (closes the harness-staging half for this API; API-29 remains the untested half - see report)"
+else
+  rd TOYBOX 1 "toybox staging failed on api=$TB_API: $(echo "$TB_OUT" | head -2)"
+fi
+
+# ---- R3: cold start on real silicon ------------------------------------------
+T0=$(date +%s)
+adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
+# Unauthenticated by design: the server REFUSES with 401 until it has the
+# Keystore password, so "any HTTP response on loopback" proves the server is
+# up; the supervisor's own log is the authority on the HEALTHY transition.
+COLD_OK=1; H=""
+for _ in $(seq 1 150); do
+  H=$(rash "'$FILES/bin/bun' -e \"const r=await fetch('http://127.0.0.1:$PORT/global/health');console.log(r.status)\" 2>/dev/null" | grep -o '^[0-9][0-9][0-9]' | head -1)
+  if [ "$H" = "200" ] || [ "$H" = "401" ]; then COLD_OK=0; break; fi
+  sleep 2
+done
+COLD_S=$(( $(date +%s) - T0 ))
+COLD_WIN=$(rash "grep -a 'state -> EXTRACTING' '$FILES/log/runtime.log' | head -1" | awk '{print $1}')
+COLD_WIN2=$(rash "grep -a 'state -> HEALTHY' '$FILES/log/runtime.log' | head -1" | awk '{print $1}')
+if [ "$COLD_OK" = "0" ]; then
+  rd COLDSTART 0 "launch -> server answering loopback (http $H) in ${COLD_S}s wall; supervisor log window: $COLD_WIN -> $COLD_WIN2 (fresh install, first extraction included)"
+else
+  rd COLDSTART 1 "no loopback HTTP response within 300s (log window: $COLD_WIN -> $COLD_WIN2)"
+fi
+
+# ---- R4: the stress class (key residency on real hardware) --------------------
+adb shell am instrument -w -e class "ai.opencode.android.ui.StressRecoveryGatesTest" \
+  "$RUNNER" > "$OUT/stress-instrument.log" 2>&1
+STRESS_RC=$?
+{ rash "cat files/p8-verdicts.txt" 2>/dev/null
+  grep -aoE 'P8_[A-Z0-9_]+ (PASS|FAIL|SKIP)[^\r]*' "$OUT/stress-instrument.log" 2>/dev/null
+} | sed 's/[[:space:]]*$//' | sort -u > "$OUT/stress-verdicts.txt" || true
+tail -60 "$OUT/stress-verdicts.txt" | tee -a "$LOG"
+for g in KEYRESIDENCY PROVAUTH SERVERKILL LIFECYCLELOG; do
+  LINES=$(grep -aE "^P8_$g (PASS|FAIL|SKIP)" "$OUT/stress-verdicts.txt" || true)
+  if echo "$LINES" | grep -aq "P8_$g FAIL"; then rd "$g" 1 "$(echo "$LINES" | grep FAIL | tail -1 | sed -E 's/^P8_[A-Z0-9_]+ FAIL (::)? *//' | cut -c1-220)"
+  elif echo "$LINES" | grep -aq "P8_$g PASS"; then rd "$g" 0 "$(echo "$LINES" | grep PASS | tail -1 | sed -E 's/^P8_[A-Z0-9_]+ PASS (::)? *//' | cut -c1-220)"
+  elif echo "$LINES" | grep -aq "P8_$g SKIP"; then rd "$g" 7 "$(echo "$LINES" | grep SKIP | tail -1 | sed -E 's/^P8_[A-Z0-9_]+ SKIP (::)? *//' | cut -c1-220)"
+  else rd "$g" 1 "no verdict line (instrument rc=$STRESS_RC)"
+  fi
+done
+
+# ---- R5: the live class (the real tool call on the real device) ---------------
+printf 'Type an OpenRouter API key to run the live tool-call gate on the device, [Enter] to skip: '
+read -r MODEL_KEY
+printf '\n'
+printf 'Model id (default openai/gpt-4o-mini), [Enter] for default: '
+read -r MODEL
+printf '\n'
+if [ -n "$MODEL_KEY" ]; then
+  MODEL="${MODEL:-openai/gpt-4o-mini}"
+  # The key goes base64-over-stdin: it never appears in a shell command line.
+  B64=$(printf '%s' "$MODEL_KEY" | base64 -w0)
+  rash "echo '$B64' | base64 -d > '$FILES/harness/model-key'; chmod 600 '$FILES/harness/model-key'; echo keybytes=\$(wc -c < '$FILES/harness/model-key')" >> "$LOG" 2>&1
+  printf '%s' "$MODEL" | base64 -w0 > "$OUT/model.b64"
+  MB64=$(cat "$OUT/model.b64")
+  rash "echo '$MB64' | base64 -d > '$FILES/harness/model'" >> "$LOG" 2>&1
+  rm -f "$OUT/model.b64" 2>/dev/null || true
+else
+  log "no key typed: the live model gates will SKIP on the device"
+fi
+adb shell am instrument -w -e class "ai.opencode.android.ui.LiveToolCallGatesTest" \
+  "$RUNNER" > "$OUT/live-instrument.log" 2>&1
+LIVE_RC=$?
+{ rash "cat files/p8-verdicts.txt" 2>/dev/null
+  grep -aoE 'P8_[A-Z0-9_]+ (PASS|FAIL|SKIP)[^\r]*' "$OUT/live-instrument.log" 2>/dev/null
+} | sed 's/[[:space:]]*$//' | sort -u > "$OUT/live-verdicts.txt" || true
+tail -60 "$OUT/live-verdicts.txt" | tee -a "$LOG"
+for g in KEYPROBE TOOL CLEANUP; do
+  LINES=$(grep -aE "^P8_$g (PASS|FAIL|SKIP)" "$OUT/live-verdicts.txt" || true)
+  if echo "$LINES" | grep -aq "P8_$g FAIL"; then rd "$g" 1 "$(echo "$LINES" | grep FAIL | tail -1 | sed -E 's/^P8_[A-Z0-9_]+ FAIL (::)? *//' | cut -c1-220)"
+  elif echo "$LINES" | grep -aq "P8_$g PASS"; then rd "$g" 0 "$(echo "$LINES" | grep PASS | tail -1 | sed -E 's/^P8_[A-Z0-9_]+ PASS (::)? *//' | cut -c1-220)"
+  elif echo "$LINES" | grep -aq "P8_$g SKIP"; then rd "$g" 7 "$(echo "$LINES" | grep SKIP | tail -1 | sed -E 's/^P8_[A-Z0-9_]+ SKIP (::)? *//' | cut -c1-220)"
+  else rd "$g" 1 "no verdict line (instrument rc=$LIVE_RC)"
+  fi
+done
+# The key must not survive on the phone.
+rash "rm -f '$FILES/harness/model-key' '$FILES/harness/model'" >/dev/null 2>&1 || true
+
+# ---- R6: footprint + verdict bundle -------------------------------------------
+adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
+sleep 10
+adb shell dumpsys meminfo "$PKG" 2>/dev/null | tr -d '\r' > "$OUT/meminfo.txt" || true
+adb shell du -sk "$FILES" 2>/dev/null | tr -d '\r' > "$OUT/storage.txt" || true
+adb shell "ls -la '$FILES' 2>/dev/null" | tr -d '\r' > "$OUT/files-layout.txt" || true
+rash "tail -c 40000 '$FILES/log/runtime.log' 2>/dev/null" > "$OUT/runtime.log" 2>&1 || true
+adb logcat -d 2>/dev/null | grep -aE 'OpenCode|TestRunner' | tail -400 > "$OUT/logcat.txt" || true
+adb shell screencap -p > "$OUT/final-screen.png" 2>/dev/null || true
+
+cat >> "$OUT/SUMMARY.txt" <<EOF
+P8D_SUMMARY $(date -u +%FT%TZ)
+gates_pass=$PASS gates_fail=$FAIL gates_skip=$SKIP
+device=$(grep '^model=' "$OUT/device-facts.txt" 2>/dev/null) api=$(grep '^sdk=' "$OUT/device-facts.txt" 2>/dev/null | cut -d= -f2) abi=$(grep '^abi=' "$OUT/device-facts.txt" 2>/dev/null | cut -d= -f2)
+EOF
+log "=== REAL DEVICE SUMMARY ==="; cat "$OUT/SUMMARY.txt" | tee -a "$LOG"
+log "bundle written to ./p8d-out/ - send it back (or paste p8d-out/SUMMARY.txt)"
+RC=0
+[ "$FAIL" -eq 0 ] || RC=1
+exit "$RC"

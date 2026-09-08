@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
-import kotlin.math.min
 import kotlin.random.Random
 
 /**
@@ -51,6 +50,18 @@ class RuntimeManager private constructor(private val appContext: Context) {
 
     private fun publish(status: RuntimeStatus, detail: String, restarts: Int? = null) {
         val cur = _state.value
+        // Phase 8: the transition table is a pure, JVM-tested mirror of this
+        // supervisor. A legal transition is exactly what used to be logged; an
+        // illegal one is additionally flagged, so a state-machine defect in the
+        // supervisor is loud in runtime.log and in the unit tests - without the
+        // table ever changing behaviour on its own.
+        if (!RuntimeStateMachine.isLegal(cur.status, status)) {
+            logger.host(
+                "ILLEGAL_STATE_TRANSITION ${cur.status} -> $status " +
+                    "(expected from ${cur.status}: ${RuntimeStateMachine.expectedFrom(cur.status).sorted()}; " +
+                    "see RuntimeStateMachine)",
+            )
+        }
         _state.value = RuntimeState(
             status = status,
             detail = detail,
@@ -279,17 +290,13 @@ class RuntimeManager private constructor(private val appContext: Context) {
 
     /** Exponential backoff between restarts. Returns false to give up. */
     private fun backoffOrGiveUp(attempts: Int, gen: Int): Boolean {
-        val maxAttempts = 8
-        if (attempts >= maxAttempts) {
+        if (RestartBackoff.shouldGiveUp(attempts)) {
             publish(RuntimeStatus.FATAL, "runtime failed $attempts start attempts — giving up (see diagnostics)")
             running = false
             return false
         }
-        val base = 1000L
-        val cap = 30_000L
-        val exp = min(cap, base shl minOf(attempts - 1, 16))
-        val sleep = (exp * (0.5 + Random.nextDouble())).toLong().coerceIn(500, cap)
-        logger.host("restart backoff: ${sleep}ms (attempt $attempts/$maxAttempts)")
+        val sleep = RestartBackoff.delayMs(attempts, Random.nextDouble())
+        logger.host("restart backoff: ${sleep}ms (attempt $attempts/${RestartBackoff.MAX_ATTEMPTS})")
         val deadline = System.currentTimeMillis() + sleep
         while (running && gen == generation && System.currentTimeMillis() < deadline) Thread.sleep(250)
         return running && gen == generation

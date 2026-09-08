@@ -14,8 +14,11 @@ import os
 import sys
 
 SUFFIXES = (".yml", ".yaml", ".sh")
-STRICT_DIRS = ("phase6",)
-NOTE_DIRS = (".github", "phase5/workflow", "phase4/workflow", "phase3/workflow", "spike/workflow")
+# phase8 joins phase6 as a strict phase (its scripts + the workflow it asks the
+# user to install are CI-facing and must stay ASCII, same recurring rule).
+STRICT_DIRS = ("phase6", "phase8")
+NOTE_DIRS = (".github", "phase5/workflow", "phase4/workflow", "phase3/workflow",
+             "phase7/workflow", "spike/workflow")
 SKIP_DIRS = {"out", "build", ".git", "node_modules"}
 
 
