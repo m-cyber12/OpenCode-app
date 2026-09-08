@@ -1,7 +1,8 @@
 # Phase 8 report — Hardening & Testing
 
-Status: **ALMOST COMPLETE** — 11 CI rounds + one real-device run have produced
-the evidence below; the remaining PENDING items are named precisely. Every
+Status: **ALMOST COMPLETE** — 11 completed CI rounds (one more in flight,
+tree-only delta) + one real-device run have produced the evidence below; the
+remaining PENDING items are named precisely. Every
 section carries the honesty labels the project requires
 (`IMPLEMENTED / TESTED / NOT TESTED / BLOCKED`).
 
@@ -120,10 +121,14 @@ ended with `APIError (status=0)` — no HTTP response — while:
 Round 8's "P8HIST 40/40 success avgMs=3173" was a **false positive** — every
 assistant message had `parts:[]` (silent empty completion); the driver now
 requires the turn's own marker in the reply text, and bails after 5
-consecutive non-answering turns (rounds 9/10 fixes). The round-10 authenticated
-probe (`P8NETPROBE_AUTH`, run-as + server-child, against `/auth/key`)
-additionally separates "dead key" (401) from "egress dead" (200 for a valid
-key, no response for the server's own client).
+consecutive non-answering turns (rounds 9/10 fixes — verified working in
+round 11: `P8HIST ok=0 turns=5 textTurns=0 failedTurns=5 bail=5
+consecutive non-answering turns (avgMs=120530)`, ~10 min instead of ~90).
+The round-10 authenticated probe (`P8NETPROBE_AUTH`, run-as + server-child,
+against `/auth/key`) additionally separates "dead key" (401) from "egress
+dead": **round 11 returned `http=200` from BOTH contexts — the repo key is
+live** — so the server-client failure is unambiguously the process/network
+condition, not credentials.
 
 Conclusion (stated as evidence, not speculation): the CI emulator's network
 path for the server process's own HTTPS client is broken in a way that spares
@@ -275,17 +280,19 @@ status=0+empty-message shape classifies to PROVIDER_OTHER by design).
 Live proofs attempted — and the honest result:
 
 - **P8-PROVAUTH (real rejected key, real UI, real provider): FAIL in every
-  round (CI 6–11, device).** What was observed: the turn with the invalid key
-  **completed silently** — empty assistant message, NO error on the message
-  info, no error text on screen in the recent runs (rounds 9/10:
-  `serverSawError=false serverStatus=0 screenSaysKeyRejected=false`; the
-  round-8 emulator run did surface "This turn failed / APIError" in the UI).
-  So the *human-readable auth-failure* path was not live-proven end-to-end:
-  upstream OpenCode (pinned `05ea5073`) does not consistently record provider
-  errors on the message, and the UI's error text depends on which surface the
-  error reaches. This is recorded as an **upstream observation / open item**
-  (§13) — the classifier handles every shape it CAN receive, and the gate
-  stays strict (it does not relax to match the silence).
+  round (CI 6–11, device).** Round 11, with the round-9 probe fix
+  (synthetic part for zero-part messages), finally saw what the server
+  recorded: `serverSawError=true serverErrorName=APIError
+  serverErrorMessage='' serverStatus=0 classified=PROVIDER_OTHER` — the
+  probe fix works, and the classifier is doing exactly what the JVM tests
+  pin for that shape (status=0 + empty message is NOT an auth shape, so
+  PROVIDER_OTHER is the correct, honest label). But on the CI emulator the
+  emulated-egress condition masks the provider's real 401 (the request never
+  arrives, so no 401 comes back), and on the first device run the probe was
+  the blind round-8 build. The clean 401 → `PROVIDER_AUTH` → "key rejected"
+  live proof is therefore expected from the pending device re-run (working
+  egress + fixed probe). Until then: `IMPLEMENTED + TESTED` (JVM) for the
+  classifier, **live proof PENDING** — not claimed.
 - **P8-NETLOSS (network pulled mid-task): FAIL (rounds 6–10).** The cut WAS
   effective (the turn failed — `status=error`), but the error text was empty
   (same silent shape) and recovery was not demonstrated. `BLOCKED` by the same
@@ -336,9 +343,9 @@ Live proofs attempted — and the honest result:
 | P8-NETLOSS | network loss mid-task → network-shaped error → recovery | FAIL (effective cut, silent error text, §7) | — |
 | P8-BGFG | background 90 s with turn in flight → completes cleanly | FAIL (health 200 in background; verdict never fired, §7) | — |
 | P8-LARGE | 2000 files + 50 MB: API + git stay responsive | **PASS** (list 171 ms, content 252 ms, git 1 000 ms) | — |
-| P8-HIST | 40 sequential turns in one session; tail latency | strict version PENDING round 11 (round 9's false-positive version superseded) | — |
-| P8-STORAGE | low storage: honest behaviour, then cleanup | **PASS** (round 8) | — |
-| P8-PERF | the measured numbers of §6 | numbers captured; model-stream half BLOCKED-CI | subset (R3/R6) |
+| P8-HIST | 40 sequential turns in one session; tail latency | **FAIL (round 11, strict)**: `turns=5 textTurns=0 failedTurns=5 bail=5` — turns hang (120.5 s avg, no completion, no error) under the §3.1.1 condition; the strict driver works as designed (round 9's false-positive version is superseded) | — |
+| P8-STORAGE | low storage: honest behaviour, then cleanup | **PASS** (rounds 8, 11: free 4.37 GB → 2.53 GB under pressure → 4.37 GB after cleanup) | — |
+| P8-PERF | the measured numbers of §6 | numbers captured (rounds 8 + 11); model-stream half BLOCKED-CI (`turnMs=240 002 streamTimedOut=1`) | subset (R3/R6) |
 
 ## 9. Regressions and defects found and fixed during this phase
 
@@ -366,7 +373,10 @@ Live proofs attempted — and the honest result:
 8. **Device-suite verdict parsing** (device run → fixed round 10): summary
    dropped verdicts present in its own files; single-awk parser + logcat
    third source + diagnostic dump.
-9. **CI-emulator model egress** (§3.1.1): not a code defect — an environment
+9. **Per-run runtime.log pull used the wrong path** (round 10 → fixed):
+   `log/runtime.log` instead of `files/log/runtime.log` (silent behind
+   `|| true`; every captured tail was empty). Fixed in the round-12 tree.
+10. **CI-emulator model egress** (§3.1.1): not a code defect — an environment
    finding, isolated by the probe matrix, documented as BLOCKED-CI.
 
 ## 10. Model key handling (deliverable)
@@ -374,9 +384,10 @@ Live proofs attempted — and the honest result:
 - A fresh, short-lived `OPENROUTER_API_KEY` was set as a repo secret by the
   user for the phase's model-dependent testing. **The user rotated their
   account key mid-phase** (the device run used a fresh key typed at the
-  terminal; the repo secret still holds the first key — its live state will be
-  recorded by the `P8NETPROBE_AUTH` probe in the round 10/11 runs: 401 = dead,
-  200 + `is_free/remaining/limit` = live).
+  terminal; the repo secret still holds the first key). The round-10/11
+  `P8NETPROBE_AUTH` probe resolved its state: **the repo key is live
+  (`/auth/key` → http=200 from both probe contexts)** — so no CI model result
+  in this phase can be blamed on the credentials.
 - Usage confined to: P8-KEYPROBE, P8-TOOL, P8-PERF streaming, device R5, and
   the diagnostic probes (never in logs — the key travels base64-over-stdin).
 - Hygiene proven: device harness dir cleaned by the suite (R5 tail) AND by
@@ -422,8 +433,9 @@ evidence bundles in `docs/progress/phase8-evidence/` (CI) and `p8d-out/`
 | 7 | (39 m) | 9 PASS / 8 FAIL / 2 SKIP, `model_available=0` |
 | 8 | 34217406687 | 11 PASS / 6 FAIL / 2 SKIP, `model_available=0` (HIST false positive) |
 | 9 | 34239793862 | **cancelled by user** mid-HIST after ~2 h (HIST hung on per-turn timeouts; round-10 bail added). Evidence pulled from the branch auto-commit: model-free gates green; `P8NETPROBE_SERVER openrouter http=200 ms=404` in stage D (the decisive probe); `P8_NETPROBE_UI no session` (g00 bug) |
-| 10 | 34253707754 | in progress at report time — adds `P8NETPROBE_AUTH` (key validity + tier), per-run `runtime.log` capture, g00 readiness, HIST bail |
-| 11 | 34254826074 | queued at report time — free-tier budgets (300/240 s KEYPROBE, 900 s TOOL); its artifact is the one the final device re-run installs |
+| 10 | 34253707754 | completed (failure = gate FAILs, by design) — first `P8NETPROBE_AUTH` data: **repo key live (http=200)**; per-run `runtime.log` capture (path bug in the pull, fixed in round 12), g00 readiness, HIST bail |
+| 11 | 34254826074 | **final CI evidence** (50 min, all stages completed): 10 PASS / 7 FAIL / 2 SKIP — PASS: P5REG, P7REG, TOYBOX, SERVERKILL, LIFECYCLELOG, CLEANUP, CORRUPT, CRASH, LARGE, STORAGE; FAIL: KEYPROBE, PROVAUTH, HIST (strict bail), NETLOSS, BGFG, SESSIONPERSIST, PERF (model-stream half); SKIP: KEYRESIDENCY (measurement), TOOL (key probe first). PROVAUTH fully characterized (§7). Free-tier budgets (300/240 s, 900 s TOOL) live in its APK — **the artifact the device re-run installs** |
+| 12 | (triggered by the round-11 report push) | tree-only delta: the per-run `runtime.log` pull path fix (§9.9) — the one addition is the server's own stderr around the model-call failures; APK identical to round 11 |
 
 ## 13. Upstream observations (file-worthy, not worked around)
 

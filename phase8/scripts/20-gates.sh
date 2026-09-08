@@ -197,7 +197,7 @@ run_p8_class() { # $1=short-name $2=class ; verdicts -> $EV/p8-lines.txt
   # pulled afterwards - the emulator was wiped). Pull right after each run.
   {
     echo "--- runtime.log tail after $name ($cls) ---"
-    rash "tail -c 6000 log/runtime.log 2>/dev/null"
+    rash "tail -c 6000 '$FILES/log/runtime.log' 2>/dev/null"
   } >> "$LOG" 2>/dev/null || true
   tail -40 "$out" >> "$LOG" 2>/dev/null || true
   if grep -aqE '^OK \([0-9]+ test' "$out" 2>/dev/null; then
