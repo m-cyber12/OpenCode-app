@@ -1,17 +1,24 @@
 # Phase 7 - Workspace, memory and permissions: end-of-phase report
 
-Branch: `arena/01a07dc2-opencode-app` (sources branched from `9ec40a3`)
+Branch: `arena/01a07dc2-opencode-app` (sources branched from `9ec40a3`; workflow
+installed by hand as `.github/workflows/phase7-workspace-memory.yml` in commit
+`809dff1`)
 Phase plan: this report is the phase's own plan-of-record (Phase 7 had no separate
 plan doc; the task is carried in the phase prompt).
-Date: 2026-09-07 (implementation + host-side checks complete; device evidence
-pending the CI run described in section 5).
+Date: 2026-09-08 (device evidence through commit `8cf7a71`)
+Device evidence: five CI runs; the confirming run is **34171137692** - workflow
+conclusion **success**, `ui_gates_pass=7 ui_gates_fail=0 ui_gates_skip=1` on a
+fresh `-wipe-data -no-snapshot` `sdk_gphone64_x86_64` emulator, Android 14 /
+API 34 / x86_64, with the pinned key-free default model serving a real turn
+through the UI.
 
-**Status: implementation complete, device evidence NOT YET PRODUCED.** Every
-piece of Phase 7 is written and passes the host-side static checkers, but no CI
-run has happened in this sandbox (there is no JDK, Gradle, Android SDK, `adb` or
-KVM here), so nothing in this report is labelled TESTED on a device until the
-`phase7` workflow has run. The report is written so the labels can be filled in
-from `phase7/out/evidence/GATES_SUMMARY.txt` without rewriting the sections.
+**Stop condition met.** Workspace isolation (W2) is proven at OpenCode's own file
+layer on the device - not a UI-level filter - and the memory layer (W3) is proven
+inspectable, editable and removable on the device. Project lifecycle (W1), the
+permission bottom sheet (U3), accessibility across the new screens (U7), a live
+turn (L1) and the Phase 5 regression tail (R5) are all green. The single SKIP
+(L2) is the Phase 6 carry-over live-tool-call observation, still
+model-behaviour-dependent and reported as SKIP by design.
 
 Scope discipline: Phase 7 is **user-facing experience on top of the real OpenCode
 runtime** - projects/workspace management, the permission model surfaced
@@ -26,21 +33,22 @@ own file layer, not by a UI-level filter the app invented.
 
 | Item | Label | Evidence |
 | --- | --- | --- |
-| Static checkers (ASCII, bracket/comment balance, UI strings, a11y, lazy lists, UI purity, workflow YAML) | **TESTED (host)** | `bash phase7/scripts/30-static-checks.sh` -> `rc=0`; counts in section 3 |
-| Kotlin compilation + JVM unit tests | **NOT TESTED** | no JDK/Gradle in this sandbox; the first CI run compiles `:app:compileDebugKotlin`, `:app:compileDebugAndroidTestKotlin` and runs `:app:testDebugUnitTest` |
-| JVM unit tests (Phase 7 additions) | **NOT TESTED** | `ProjectIoTest`, `ProjectStoreLifecycleTest`, `ProjectMemoryTest`, `ProviderSetupTest` written, never executed here |
-| Project lifecycle on the real filesystem (W1) | **NOT TESTED** | `WorkspaceIsolationGatesTest.w1_...` written, not run on a device |
-| Workspace isolation through OpenCode's file layer (W2) | **NOT TESTED** | gate written; the server-side mechanism it asserts is pinned to upstream source in section 2 |
-| Memory inspect/edit/remove on the device (W3) | **NOT TESTED** | gate written; `ProjectMemory` reads/writes the exact files upstream loads (section 2) |
-| Permission bottom sheet (Phase 6 U3) | **TESTED (Phase 6)** | `P6_U3 PASS` in Phase 6 runs #6/#11; re-run as regression this phase |
-| Settings permission-policy table + provider/memory sections | **NOT TESTED** | `SettingsScreen` additions compile-checked only; U7 (a11y) re-run covers them |
-| Live tool call (L2, Phase 6 carry-over) | **NOT TESTED** | prompt strengthened this phase; still model-behaviour-dependent |
-| Phase 5 regression tail | **TESTED (Phase 6), re-run pending** | Phase 6 froze 14 PASS / 1 FAIL (P5-G16 red-by-design); `40-fold-regression.sh` folds it as `P7-R5` |
-| Workflow file | **PREPARED, NOT INSTALLED** | `phase7/workflow/phase7-workspace-memory.yml` written; the session token cannot write `.github/workflows/` (403), so a human must copy it (section 5) |
+| Static checkers (ASCII, bracket/comment balance, UI strings, a11y, lazy lists, UI purity, workflow YAML) | **TESTED (host + CI)** | `bash phase7/scripts/30-static-checks.sh` -> `rc=0` in this sandbox and on every CI run; counts in section 3 |
+| Kotlin compilation + JVM unit tests | **TESTED (CI)** | `:app:compileDebugKotlin` + `:app:compileDebugAndroidTestKotlin` + `:app:testDebugUnitTest` green since run #3; **187 JVM tests, 0 failures** |
+| JVM unit tests (Phase 7 additions) | **TESTED (CI)** | `ProjectIoTest`, `ProjectStoreLifecycleTest`, `ProjectMemoryTest`, `ProviderSetupTest` all green (one test-side bug and one product bug found and fixed in runs #1/#2, section 5) |
+| Project lifecycle on the real filesystem (W1) | **TESTED on device** | `P7_W1_PROJECT_LIFECYCLE PASS` (runs #4 and #5): create -> rename -> adopt -> delete on the real app filesystem |
+| Workspace isolation through OpenCode's file layer (W2) | **TESTED on device** | `P7_W2_WORKSPACE_ISOLATION PASS`: `seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true` - the escaping read was refused by the server while the file existed |
+| Memory inspect/edit/remove on the device (W3) | **TESTED on device** | `P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS`: both `AGENTS.md` files (project root + global config dir) written, round-tripped, edited in place, and deleted |
+| Permission bottom sheet (U3) | **TESTED on device** | `P6_U3 PASS` (`answered=true skipped=true scrolledIntoView=true`) - the asks now render in a bottom sheet (Phase 7 change); run #4 caught the gate/sheet incompatibility, fixed in run #5 |
+| Settings permission-policy table + provider/memory sections (U7) | **TESTED on device** | `P6_U7 PASS`: `interactive={chat=23, sessions=11, projects=6, welcome=2, welcome-unsupported=2, settings=5} total=49 unnamed=0` |
+| Live turn through the UI (L1) | **TESTED on device** | `P6_L1 PASS`: `replyShownInUi=true(needle='Blue')`, verified against the server's own messages |
+| Live tool call (L2, Phase 6 carry-over) | **NOT TESTED - SKIP by design** | the model answered without calling a tool within 420s even with the strengthened prompt; the class reports SKIP, never PASS |
+| Phase 5 regression tail | **TESTED on device** | `P7-R5: PASS` - `phase5=14pass/1fail/0skip kotlin=10pass/0fail`, only the documented upstream restriction P5-G16 red |
+| Workflow file | **INSTALLED** | copied to `.github/workflows/phase7-workspace-memory.yml` by hand (the session token gets 403 there); canonical copy at `phase7/workflow/` |
 
-**What has actually run:** the three host-side UI checkers, the ASCII/comment/
-balance checkers, and `bash -n` on every Phase 7 script - all green. Nothing else
-has executed.
+**What has actually run:** five CI runs (#1 compile fail, #2 JVM test fail, #3
+gradle-only green, #4 full run with only U3 red, #5 full run green). The
+confirming run #5 produced the verdicts above on a fresh emulator.
 
 ---
 
@@ -202,7 +210,7 @@ folds the deduplicated union, so an absent gate counts as FAIL.
 | Gate | Class | Asserts |
 | --- | --- | --- |
 | `W1_PROJECT_LIFECYCLE` | `WorkspaceIsolationGatesTest` | create -> rename (dir moves, old gone) -> adopt (kept file survives) -> delete (dir gone) on the real filesystem |
-| `W2_WORKSPACE_ISOLATION` | `WorkspaceIsolationGatesTest` | model-free: listing project A shows only A's tree; the same relative read resolves inside each project's own directory; a read escaping the directory (`../../`) is refused by the server (HTTP 500, "Path escapes the location") while the file exists |
+| `W2_WORKSPACE_ISOLATION` | `WorkspaceIsolationGatesTest` | model-free: listing project A shows only A's tree; the same relative read resolves inside each project's own directory; a read escaping the directory (`../../`) is refused by the server (HTTP 500, upstream's generic "UnknownError / Unexpected server error" wrapper around the `FSUtil.contains` guard) while the file exists |
 | `W3_MEMORY_INSPECTABLE_REMOVABLE` | `WorkspaceIsolationGatesTest` | the exact `AGENTS.md` files OpenCode loads exist at the project root and global config dir, round-trip, edit in place, and delete |
 | `U3` (regression) | `ChatUiGatesTest` | the permission bottom sheet still accepts once/always/reject and the question ask still submits/skips |
 | `U7` (regression) | `ChatUiGatesTest` | the interactive-element accessibility audit, now covering the Phase 7 Projects/Settings additions |
@@ -215,51 +223,98 @@ L1/L2 SKIP with `P6_MODEL_AVAILABLE 0 :: reason` when no model can serve a turn.
 
 ---
 
-## 5. CI: how a run starts, and the current (empty) log
+## 5. CI run log (five runs, two defects, one gate/sheet incompatibility)
 
-The session bot token cannot create or modify files under `.github/workflows/`
-(403 in Phases 2-5) and cannot POST a `workflow_dispatch`. The canonical workflow
-template is committed at **`phase7/workflow/phase7-workspace-memory.yml`**. To
-start a run:
+The workflow is installed at `.github/workflows/phase7-workspace-memory.yml`
+(commit `809dff1`, added by hand - the session token gets 403 on writes under
+`.github/workflows/`). Every push to the branch runs the whole suite; evidence
+lands in `docs/progress/phase7-evidence/` on every exit path.
 
-1. Copy it to `.github/workflows/phase7-workspace-memory.yml` on branch
-   `arena/01a07dc2-opencode-app` (GitHub web "Add file" or a local
-   `cp` + `git add` + `git push`), then push.
-2. Every push to the branch (ignoring `docs/progress/phase7-evidence/**`) then
-   runs: static checks -> payload -> APKs -> fresh `-wipe-data -no-snapshot`
-   emulator -> `WorkspaceIsolationGatesTest` -> `ChatUiGatesTest` ->
-   `LiveChatUiGatesTest` -> Phase 5 regression tail -> evidence committed to
-   `docs/progress/phase7-evidence/`.
-3. Bring-up knob: `phase7/CI_GRADLE_ONLY` containing `1` makes a run compile both
-   APKs and run the JVM unit tests only (no emulator) - the cheapest way to flush
-   out compiler errors before the ~30-minute payload build. It MUST be `0`
-   (it is) for any TESTED claim.
-
-**Current CI log: none.** No Phase 7 run has happened. The first run is expected
-to fail at compile (as every prior phase's first run did), and its
-`compiler-errors.txt` is the artifact to read.
-
-### Defects found and fixed before any CI run
-
-| # | Where | What | Fix |
+| # | Run | Commit | Outcome |
 | --- | --- | --- | --- |
-| 1 | `ProjectsScreen.kt` | the decorative `MoreVert` menu icon used `contentDescription = null` without clearing semantics; `check-ui-a11y` flagged it and gate U7 would too | `Modifier.size(24.dp).clearAndSetSemantics { }`, matching the existing `Chevron` convention |
-| 2 | `AppRoot.kt` | unused `OpenCodeApi`/`ProviderSetup` imports after wiring | removed |
+| 1 | 34168504135 | workflow file install | **FAIL at compile** (4 errors, all Phase 7 code) |
+| 2 | 34169005955 | compile fixes + gradle-only | **FAIL at JVM tests** (1 product bug, 1 test bug) |
+| 3 | 34169371879 | JVM fixes + gradle-only | **GREEN**: compile + 187 JVM tests, 0 failures |
+| 4 | 34169687565 | full run (CI_GRADLE_ONLY=0) | 6 PASS / 1 FAIL (U3) / 1 SKIP (L2) - everything green except the U3 gate vs the new bottom sheet |
+| 5 | 34171137692 | U3 fix | **GREEN**: 7 PASS / 0 FAIL / 1 SKIP. Stop condition met |
 
-### Phase 6 carry-overs addressed this phase
+### Run #1 - compile errors
 
-* **L2 (no live tool call ever observed).** The prompt is now explicit and
-  non-optional ("You must use the bash tool ... answering from memory is not
-  allowed") and the command's output is unknowable to the model, so it cannot be
-  faked. Still model-behaviour-dependent; W2 provides the phase's model-free
-  isolation evidence regardless of whether L2 observes a tool call.
-* **"No provider configured" as a first-class state.** `ProviderSetupClassifier`
-  + the Settings `ProviderSection` make the key-free-default-provider uncertainty
-  explicit (`NO_PROVIDER_CONFIGURED` / `PROVIDER_CONFIGURED` / `CONNECTED`).
+`P7-BUILD FAIL kotlin compile or JVM unit tests failed`. Four errors, all in
+Phase 7 code I wrote, all fixed in the next commit:
+
+| # | Error | Cause | Fix |
+| --- | --- | --- | --- |
+| 1 | `SafProjectTransfer.kt:62 Unresolved reference: openInputStream` | `DocumentFile` has no `openInputStream` - that is a `ContentResolver` method | `context.contentResolver.openInputStream(child.uri)` |
+| 2 | `AppRoot.kt:165 Unresolved reference: value` | `exportTarget` is a `by`-delegated property; `.value` on it does not exist | drop `.value` |
+| 3,4 | `AppRoot.kt:382/402 'if' must have both main and 'else' branches if used as an expression` | the memory write/remove `if/else if` chains are the **last expression** of a `withContext { }` lambda, so Kotlin parses them as expressions | an explicit `else -> Unit` arm |
+
+### Run #2 - JVM unit-test failures
+
+`P7-BUILD FAIL gradle compile/unit tests failed` - the sources now compiled, and
+`testDebugUnitTest` ran. Two failures in `ProjectIoTest`, one product, one test:
+
+| # | Failure | Verdict | Fix |
+| --- | --- | --- | --- |
+| 5 | `copyTreeEnforcesTheByteCapAndLeavesNothingPartial`: `partial target must not exist` | **product bug.** `copyTree`/`writeStream` threw `TooLarge` but left the partial/empty destination file behind - a failed import would leave a phantom half-copied workspace that `ProjectStore.projects()` discovers | both now delete the partial destination before `TooLarge` propagates, and `SafProjectTransfer.importTree` deletes the destination workspace on any failure; new test `writeStreamRemovesThePartialFileWhenTheCapIsBreached` pins it |
+| 6 | `zipTreeRoundTripsFiles`: `FileNotFoundException: .../empty (Is a directory)` | **test bug.** the fixture wrote `writeText` into a path that had just been `mkdirs()`ed | the empty directory is now created directly, without the write |
+
+### Run #3 - gradle-only green
+
+`P7_BUILD pass` (`compileDebugKotlin` + `compileDebugAndroidTestKotlin` +
+`testDebugUnitTest`) with **187 JVM tests, 0 failures**; `P7_STATIC pass`.
+
+### Run #4 - full run: everything green except U3
+
+`ui_gates_pass=6 ui_gates_fail=1 ui_gates_skip=1`. W1, W2, W3, U7, L1 all PASS
+and `P7-R5` PASS (Phase 5 at `14pass/1fail`, only P5-G16) on the first full run -
+the phase's core acceptance evidence held. U3 FAILED with
+`Semantic Node has no parent layout with a Scroll SemanticsAction` at
+`ChatUiGatesTest.kt:820`.
+
+That is the one real Phase 7 consequence this report has to be honest about: the
+permission/question asks were moved into a `ModalBottomSheet` (the phase's
+"mobile-friendly bottom sheet" requirement), and the gate still did
+`performScrollTo()` - a Phase 6 fix for the asks being *below the transcript's
+viewport*. A bottom sheet's content column is not scrollable, so the call threw.
+It also exposed a genuine product gap: with a permission ask and a question
+stacked, a non-scrollable sheet would clip the second ask. Fixed in run #5 by
+restoring `verticalScroll` to the sheet content (Phase 6 behaviour) and guarding
+the gate's `performScrollTo` so it reports instead of aborting.
+
+### Run #5 - GREEN: 7 PASS / 0 FAIL / 1 SKIP
+
+`ui_gates_pass=7 ui_gates_fail=0 ui_gates_skip=1`, `screenshots=11`,
+`model_available=1`, `device_abi=x86_64`, `android_sdk=34`, all three instrument
+classes `rc=0`, `P7-R5: PASS` at Phase 5's frozen steady state. The confirming
+verdicts:
+
+| Gate | Verdict | Detail |
+| --- | --- | --- |
+| `W1_PROJECT_LIFECYCLE` | PASS | `created/renamed/adopted/delete=true` on the real filesystem |
+| `W2_WORKSPACE_ISOLATION` | PASS | `listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true` - the escape read returned upstream's own 500 error body while the file existed |
+| `W3_MEMORY_INSPECTABLE_REMOVABLE` | PASS | project `AGENTS.md` at `files/workspaces/.../AGENTS.md` and global `AGENTS.md` at `files/xdg/config/opencode/AGENTS.md`, both round-tripped and removed |
+| `U3` | PASS | `answered=true skipped=true answersSeen=[(que_gate1, [[staging]])] submitClicks=1 scrolledIntoView=true` |
+| `U7` | PASS | `interactive={...} total=49 unnamed=0` |
+| `L1` | PASS | `replyShownInUi=true(needle='Blue')` - a real turn through the UI |
+| `L2` | SKIP | the model answered without calling a tool within 420s (by design; see below) |
+| `R5` | PASS | `phase5=14pass/1fail/0skip` - only the documented upstream restriction P5-G16 red |
+
+### Phase 6 carry-overs, final state this phase
+
+* **L2 (no live tool call ever observed).** The prompt was strengthened to make
+  tool use explicit and non-optional, and run #5's model still answered without
+  calling one. It stays SKIP by design. Deterministic tool-card coverage is U2
+  (Phase 6, still green); observing a *live* tool call is carried to Phase 8 as a
+  prompt/model-selection task, not a UI task.
+* **"No provider configured" as a first-class state.** Implemented
+  (`ProviderSetupClassifier` + Settings `ProviderSection`); the state is a pure
+  classifier pinned by `ProviderSetupTest`, and its UI is covered by U7's a11y
+  audit (named, so the empty state is never a blank field).
 
 ---
 
-## 6. Evidence locations (populated by the first CI run)
+## 6. Evidence locations (populated by runs #1-#5)
 
 | Path | Contents |
 | --- | --- |
@@ -275,12 +330,19 @@ to fail at compile (as every prior phase's first run did), and its
 
 ---
 
-## 7. Next steps
+## 7. Next steps (Phase 8)
 
-1. Install the workflow (section 5) and run CI once in `CI_GRADLE_ONLY=1` to
-   flush out compiler errors cheaply, then flip to `0` for the full device run.
-2. Fill in the honesty table from `GATES_SUMMARY.txt` once W1/W2/W3 and the
-   regression/live gates have device verdicts.
-3. Remaining Phase 8 items (unchanged): secure-hardware key residency, `toybox
-   tar` on a real API 29 device, non-emulator arm64 full gate suite, and
-   stress/edge-case testing.
+Phase 7 is complete and TESTED on one device (x86_64 emulator, API 34). What
+carries forward, all out of Phase 7 scope:
+
+1. **L2 live tool call** - never observed (model behaviour, not UI). Try a prompt
+   that reliably provokes a tool call, or a model that uses tools more eagerly.
+2. **Device coverage** - secure-hardware key residency, `toybox tar` on a real
+   API 29 device, and a non-emulator arm64 full gate suite remain unverified.
+3. **Stress / edge cases** - Phase 8 scope: concurrent import/rename/delete races,
+   very large trees, malformed zips on import, permission-policy edge values.
+4. **Remote HTTP/SSE MCP** - stays documented-red (upstream `anomalyco/opencode#47644`),
+   surfaced verbatim in Settings.
+
+A repeat full run (e.g. to reconfirm on a second boot) is a single push to the
+branch; the workflow is installed and triggers automatically.
