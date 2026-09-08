@@ -667,3 +667,51 @@
     testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
     ########## 6/7 Phase 8 gates (regressions + stress + live model + perf) ##########
 
+### 2026-09-08T09:39:40Z  run=34207634094  step: 7/7 evidence
+    head=b5e43ca branch=arena/01a07f92-opencode-app log_lines=1977
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 18s
+    BUILD SUCCESSFUL in 1m 10s
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh'
+    --- last 40 log lines ---
+    [2026-09-08T09:24:31Z] P8_SERVERKILL FAIL :: :: killedPid=8129 oldPidDead=true sawCrashedRestarting=false restartCount=0 healthyAgain=false healthHttp=-1 sawFatal=true newPid=- finalStatus=FATAL finalDetail='supervisor error: attempts is 1-based, got 0'
+    [2026-09-08T09:24:31Z] P8_LIFECYCLELOG PASS :: :: illegalTransitions=0 startingTransitions=5 healthyTransitions=2 logBytes=9807 lastStates='EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1)) | EXTRACTING (validating embedded ru
+    [2026-09-08T09:24:31Z] === am instrument ai.opencode.android.ui.LiveToolCallGatesTest ===
+    [2026-09-08T09:32:54Z] instrument rc=0 (live)
+    [2026-09-08T09:32:54Z] live runner trailer: OK
+    [2026-09-08T09:32:54Z] screenshots pulled: 1
+    [2026-09-08T09:32:54Z] P8_KEYPROBE PASS :: :: model=openai/gpt-4o-mini tokenSeen=true reply='Reply with exactly this token and nothing else: P8PROBEOK' session=ses_f7faa808bffer9J3q8qPCRosVv
+    [2026-09-08T09:32:54Z] P8_TOOL SKIP :: :: the model answered without calling a tool within 480s (asksAnswered=0, replyChars=0, reply='')
+    [2026-09-08T09:32:54Z] P8_CLEANUP PASS :: :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
+    [2026-09-08T09:32:54Z] === stage D: destructive stress (host-driven, on the relaunch the instrument left behind) ===
+    [2026-09-08T09:33:10Z] P8_TOYBOX PASS :: base64|base64 -d|tar xz -C dir works on api=34 (harness staging path; the API-29 half is the real-device question - see report)
+    [2026-09-08T09:33:17Z] P8_CORRUPT FAIL :: corrupted payload did not recover cleanly (healthy=yes reextract_lines=0 marker=1)
+    [2026-09-08T09:33:25Z] P8_CRASH PASS :: force-stopped the app process with the server running; relaunch returned to HEALTHY (valid marker -> no re-extraction needed)
+    [2026-09-08T09:33:25Z] P8_SESSIONPERSIST FAIL :: session create driver produced no session id: 
+    [2026-09-08T09:33:25Z] P8_NETLOSS FAIL :: turn could not be started: assert ok: session id present
+    124 | // Payload verified against the pinned upstream (05ea5073): PromptInput is
+    [2026-09-08T09:33:33Z] app backgrounded; 90s in the background with a turn in flight
+    [2026-09-08T09:35:04Z] P8_BGFG FAIL :: background/foreground: no verdict line (mid-background health=200)
+    [2026-09-08T09:35:05Z] P8_LARGE FAIL :: large project incomplete: measure=assert ok: session id present git=GIT_OK
+    [2026-09-08T09:35:07Z] P8_HIST FAIL :: turn 1 failed: prompt_async failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for detail
+    turn 2 failed: prompt_async failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for detail
+    turn 3 failed: prompt_async failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for detail
+    [2026-09-08T09:35:18Z] P8_STORAGE PASS :: free: 4395344KB -> 2552116KB (app), back to 4395328KB after cleanup :: healthy under low storage
+    [2026-09-08T09:35:18Z] === stage E: performance measurement (the report's numbers) ===
+    [2026-09-08T09:35:33Z] cold start (supervisor log): EXTRACTING=2026-09-08T09:23:59.252Z HEALTHY=2026-09-08T09:24:03.491Z -> 4239ms
+    /home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh: line 538: MEMINFO: command not found
+    /home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh: line 540: CPU_BEFORE: command not found
+    [2026-09-08T09:39:39Z] P8_PERF FAIL :: P8PERF ok=0 error=Unable to connect. Is the computer able to access the url? warmRestartMs=246000
+    [2026-09-08T09:39:39Z] === evidence pull ===
+    [2026-09-08T09:39:40Z] === SUMMARY ===
+    P8_SUMMARY 2026-09-08T09:39:40Z
+    gates_pass=8 gates_fail=10 gates_skip=1
+    stress_instrument_rc=0 live_instrument_rc=0
+    screenshots=2
+    model_available=1 model=openai/gpt-4o-mini
+    device_abi=x86_64
+    android_sdk=34
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh'
+    phase8 gates rc=1
+    ########## 7/7 evidence ##########
+
