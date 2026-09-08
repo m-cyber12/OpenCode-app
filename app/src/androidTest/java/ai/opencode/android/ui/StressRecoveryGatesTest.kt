@@ -170,7 +170,7 @@ class StressRecoveryGatesTest {
     // ---- 00: key residency (measured, not assumed) ---------------------------
 
     @Test
-    fun `00 the master key location is measured and recorded`() {
+    fun g00_keyResidency() {
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         // The alias is the one Secrets/SecretStore generates the AES-GCM master
         // key under (documented constant of that class).
@@ -208,7 +208,7 @@ class StressRecoveryGatesTest {
     // ---- 01: a rejected key is an auth failure, never a network failure ------
 
     @Test
-    fun `01 a rejected provider key shows as an auth failure not a network failure`() {
+    fun g01_providerAuth() {
         val problem = ensureChatSurface(900_000, PROJECT)
         if (problem.isNotEmpty()) {
             skip("PROVAUTH", problem)
@@ -276,7 +276,7 @@ class StressRecoveryGatesTest {
     // ---- 02: kill the server; the supervisor must restart it, bounded -------
 
     @Test
-    fun `02 killing the server process triggers a supervised restart to healthy`() {
+    fun g02_serverKill() {
         val problem = ensureChatSurface(900_000, PROJECT)
         if (problem.isNotEmpty()) {
             skip("SERVERKILL", problem)
@@ -356,7 +356,7 @@ class StressRecoveryGatesTest {
     // ---- 03: the supervisor's own log records a clean lifecycle --------------
 
     @Test
-    fun `03 the supervisor log shows the legal transition shape only`() {
+    fun g03_lifecycleLog() {
         val paths = RuntimePaths.get(context)
         val log = if (paths.runtimeLog.isFile) paths.runtimeLog.readText() else ""
         if (log.isEmpty()) {

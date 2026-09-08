@@ -79,6 +79,12 @@ run "kotlin nested-block-comment scan (phase5 lesson)" \
   python3 "$ROOT/phase5/scripts/check-kotlin-comments.py" "$ROOT/app/src"
 run "kotlin bracket/annotation balance" \
   python3 "$ROOT/phase6/scripts/check-kotlin-balance.py" "$ROOT/app/src"
+# D8 (the dexer) rejects spaces in method names ("Space characters in
+# SimpleName ... not allowed prior to DEX version 040") even though Kotlin
+# compiles them. androidTest method names are JVM identifiers: no backticks,
+# no spaces, no leading digit.
+run "androidTest method names are dex-safe identifiers (D8 rule)" \
+  bash -c '! grep -rn "fun \`" "$ROOT/app/src/androidTest" 2>/dev/null'
 
 # ---- 5. the UI rules, all screens --------------------------------------------
 run "ui strings + resources" bash "$ROOT/phase6/scripts/check-ui-strings.sh"

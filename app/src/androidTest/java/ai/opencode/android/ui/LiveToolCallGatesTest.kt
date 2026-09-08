@@ -165,7 +165,7 @@ class LiveToolCallGatesTest {
     // ---- 01: the provided key actually serves a model round-trip ------------
 
     @Test
-    fun `01 the provisioned key serves a model round-trip`() {
+    fun g01_keyProbe() {
         val key = probe.provisionedKey
         if (key == null) {
             printMarker8("MODEL_AVAILABLE", "0 :: no model key in the harness dir (OPENROUTER_API_KEY not set for this run)")
@@ -264,7 +264,7 @@ class LiveToolCallGatesTest {
     // ---- 02: the real tool call, through the real UI (closes Phase 6 L2) -----
 
     @Test
-    fun `02 a real tool call with real output becomes an expandable card`() {
+    fun g02_liveToolCall() {
         if (!keyServed) {
             printMarker8("MODEL_AVAILABLE", "0 :: $keyReason")
             skip("TOOL", "the provisioned key could not serve a turn, so no tool call can be observed: $keyReason")
@@ -356,7 +356,7 @@ class LiveToolCallGatesTest {
     // ---- 03: the injected key must not survive the run -----------------------
 
     @Test
-    fun `03 the injected key is revoked from server and keystore after the gates`() {
+    fun g03_cleanup() {
         val api = probe.apiOrNull()
         runCatching {
             val dir = ProjectStore.get(context).active()?.path
