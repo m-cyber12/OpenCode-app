@@ -6,6 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -30,9 +31,18 @@ class ProjectStorePersistenceTest {
     @get:Rule
     val tmp = TemporaryFolder()
 
-    /** The same two storages survive the "restart"; only the store object dies. */
-    private val root = File(tmp.root, "workspaces").apply { mkdirs() }
+    /**
+     * The same two storages survive the "restart"; only the store object dies.
+     * The root is created in @Before: TemporaryFolder.root is only valid
+     * between the rule's before() and after().
+     */
+    private lateinit var root: File
     private val prefs = FakePrefs()
+
+    @Before
+    fun setUp() {
+        root = File(tmp.root, "workspaces").apply { mkdirs() }
+    }
 
     private fun freshStore(): ProjectStore = ProjectStore(root, prefs)
 

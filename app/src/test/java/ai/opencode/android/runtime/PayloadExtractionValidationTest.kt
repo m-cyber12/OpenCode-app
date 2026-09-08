@@ -217,7 +217,9 @@ class PayloadExtractionValidationTest {
         val out = ByteArrayOutputStream()
         fun writeHeader(name: String, size: Long, type: Char) {
             val hdr = ByteArray(512)
-            name.toByteArray().copyInto(hdr, 0, minOf(name.length, 100))
+            // copyInto's third positional arg is originalStartIndex, not length;
+            // all test names are far shorter than the 100-byte field, so copy all.
+            name.toByteArray().copyInto(hdr)
             "0000644\u0000".toByteArray().copyInto(hdr, 100)
             "0000000\u0000".toByteArray().copyInto(hdr, 108)
             "0000000\u0000".toByteArray().copyInto(hdr, 116)
