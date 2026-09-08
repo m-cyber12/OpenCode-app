@@ -287,3 +287,55 @@
     avd=phase8 (created fresh this run, -wipe-data -no-snapshot)
     ########## 4/7 embedded runtime payload (reuse phase 4's build when present) ##########
 
+### 2026-09-08T08:58:46Z  run=34206564273  step: 5/7 APKs (assembleDebug + assembleDebugAndroidTest + unit tests)
+    head=8396f72 branch=arena/01a07f92-opencode-app log_lines=3323
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 22s
+    > Task :app:dexBuilderDebugAndroidTest FAILED
+    FAILURE: Build failed with an exception.
+    * What went wrong:
+    BUILD FAILED in 1m 10s
+    STEP_FAILED rc=1: '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest --no-daemon --stacktrace
+    FATAL: gradle build/tests failed (compiler output in 00-run-phase8.log)
+    --- last 40 log lines ---
+    	at com.android.tools.r8.internal.to.a(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:28)
+    	... 42 more
+    	Suppressed: java.lang.RuntimeException: java.util.concurrent.ExecutionException: com.android.tools.r8.internal.vo: com.android.tools.r8.internal.Le: Space characters in SimpleName '00 the master key location is measured and recorded' are not allowed prior to DEX version 040
+    		at com.android.tools.r8.dex.c.a(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:99)
+    		... 48 more
+    	Caused by: java.util.concurrent.ExecutionException: com.android.tools.r8.internal.vo: com.android.tools.r8.internal.Le: Space characters in SimpleName '00 the master key location is measured and recorded' are not allowed prior to DEX version 040
+    		at com.google.common.util.concurrent.AbstractFuture.getDoneValue(AbstractFuture.java:592)
+    		at com.google.common.util.concurrent.AbstractFuture.get(AbstractFuture.java:551)
+    		at com.google.common.util.concurrent.FluentFuture$TrustedFuture.get(FluentFuture.java:91)
+    		at com.android.tools.r8.internal.eh0.awaitFutures(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:4)
+    		at com.android.tools.r8.internal.Qg0.a(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:2)
+    		at com.android.tools.r8.dex.c.a(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:78)
+    		... 48 more
+    	Caused by: com.android.tools.r8.internal.vo: com.android.tools.r8.internal.Le: Space characters in SimpleName '00 the master key location is measured and recorded' are not allowed prior to DEX version 040
+    		at com.android.tools.r8.internal.to.a(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:155)
+    		at com.android.tools.r8.internal.to.a(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:133)
+    		at com.android.tools.r8.graph.h4.b(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:2)
+    		at com.android.tools.r8.dex.a.a(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:31)
+    		at com.android.tools.r8.internal.Qg0.a(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:9)
+    		at com.google.common.util.concurrent.TrustedListenableFutureTask$TrustedFutureInterruptibleTask.runInterruptibly(TrustedListenableFutureTask.java:131)
+    		at com.google.common.util.concurrent.InterruptibleTask.run(InterruptibleTask.java:75)
+    		at com.google.common.util.concurrent.TrustedListenableFutureTask.run(TrustedListenableFutureTask.java:82)
+    		at com.google.common.util.concurrent.MoreExecutors$DirectExecutorService.execute(MoreExecutors.java:327)
+    		at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145)
+    		at com.google.common.util.concurrent.AbstractListeningExecutorService.submit(AbstractListeningExecutorService.java:79)
+    		at com.google.common.util.concurrent.AbstractListeningExecutorService.submit(AbstractListeningExecutorService.java:37)
+    		at com.android.tools.r8.internal.eh0.submit(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:1)
+    		at com.android.tools.r8.internal.Qg0.a(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:1)
+    		at com.android.tools.r8.internal.Qg0.b(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:1)
+    		at com.android.tools.r8.dex.a.a(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:29)
+    		at com.android.tools.r8.dex.a.b(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:96)
+    		at com.android.tools.r8.dex.c.a(R8_8.5.35_9c55004e7c41a17b1ed47c4e1952cb6778b3dac6afb6afc113a2737c3cde13e0:77)
+    		... 48 more
+    	Caused by: [CIRCULAR REFERENCE: com.android.tools.r8.internal.Le: Space characters in SimpleName '00 the master key location is measured and recorded' are not allowed prior to DEX version 040]
+    
+    
+    BUILD FAILED in 1m 10s
+    55 actionable tasks: 25 executed, 2 from cache, 28 up-to-date
+    STEP_FAILED rc=1: '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest --no-daemon --stacktrace
+    FATAL: gradle build/tests failed (compiler output in 00-run-phase8.log)
+
