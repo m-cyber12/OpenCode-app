@@ -33,8 +33,10 @@ async function main() {
   let failedTurns = 0
   let textTurns = 0
   let lastInfoError = ""
+  let badStreak = 0
   for (let i = 1; i <= N; i++) {
     const t0 = Date.now()
+    let turnGood = false
     try {
       const body = { parts: [{ type: "text", text: `Turn ${i} of ${N}: reply with exactly: P8HIST ${i}` }] }
       const mb = modelBody()
@@ -52,7 +54,7 @@ async function main() {
         // assistant text (marker i cannot be a substring of any earlier turn's
         // marker, so this is exact).
         const reply = assistantText(done.messages)
-        if (reply.includes(`P8HIST ${i}`)) textTurns++
+        if (reply.includes(`P8HIST ${i}`)) { textTurns++; turnGood = true }
         else log(`turn ${i}: no P8HIST ${i} in reply (replyChars=${reply.length})`)
       }
       // Surface the message-info error the parts-only view misses.
@@ -69,6 +71,19 @@ async function main() {
       failedTurns++
       latencies.push(Date.now() - t0)
       log(`turn ${i} failed: ${String(e.message ?? e).slice(0, 120)}`)
+    }
+    badStreak = turnGood ? 0 : badStreak + 1
+    if (badStreak >= 5) {
+      // Round 9: the model went silent mid-measurement and each remaining
+      // turn consumed its full per-turn timeout (~70 min for the tail). Five
+      // consecutive non-answering turns is conclusive for this window -
+      // report and stop.
+      const bavg = Math.round(latencies.reduce((a, b) => a + b, 0) / Math.max(1, latencies.length))
+      console.log(
+        `P8HIST ok=0 turns=${i} textTurns=${textTurns} failedTurns=${failedTurns} bail=5 consecutive non-answering turns ` +
+        `(avgMs=${bavg} lastInfoError='${lastInfoError}')`,
+      )
+      process.exit(1)
     }
   }
   const avg = Math.round(latencies.reduce((a, b) => a + b, 0) / Math.max(1, latencies.length))

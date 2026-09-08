@@ -195,7 +195,19 @@ class LiveToolCallGatesTest {
             """.trimIndent(),
         )
         val bun = File(context.filesDir, "bin/bun").absolutePath
-        val sid = runCatching { api.createSession("p8 netprobe ui") }.getOrNull()?.id
+        // Round 9: this gate ran before the instrumented-process server was up
+        // (createSession threw -> "no session"). The runtime needs a few
+        // seconds after MainActivity starts; retry until it is ready.
+        val sid = runCatching {
+            var last: Throwable? = null
+            for (i in 0 until 30) {
+                val s = runCatching { api.createSession("p8 netprobe ui") }.getOrNull()
+                if (s != null) return@runCatching s
+                last = RuntimeException("session not ready (attempt ${i + 1})")
+                Thread.sleep(1500)
+            }
+            throw last ?: RuntimeException("session not ready")
+        }.getOrNull()?.id
         val out = if (sid != null) {
             runCatching {
                 api.shellOutput(sid, "$bun ${probeFile.absolutePath} 2>&1; rm -f ${probeFile.absolutePath}", "build")

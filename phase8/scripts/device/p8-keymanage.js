@@ -73,6 +73,33 @@ async function main() {
         console.log(`P8NETPROBE ${name} error=${String(e.name || e.message || e).slice(0, 80)} ms=${Date.now() - t0}`)
       }
     }
+    // Round 10: the AUTHENTICATED variant. /auth/key answers 401 for a dead
+    // key and 200 + metadata (incl. is_free/remaining) for a live one, so one
+    // line separates "bad key" from "egress problem" AND tells us whether the
+    // account is free-tier (tool-call capable models may need credits).
+    const keyFile = process.env.P8_KEY_FILE || ""
+    if (keyFile) {
+      let key = ""
+      try { key = (await Bun.file(keyFile).text()).trim() } catch {}
+      if (key) {
+        const t0 = Date.now()
+        try {
+          const r = await fetch("https://openrouter.ai/api/v1/auth/key", {
+            headers: { Authorization: "Bearer " + key },
+            signal: AbortSignal.timeout(15000),
+          })
+          let info = ""
+          try {
+            const j = await r.json()
+            const d = (j && j.data) || {}
+            info = ` free=${d.is_free ?? "?"} remaining=${d.remaining ?? "?"} limit=${d.limit ?? "?"}`
+          } catch {}
+          console.log(`P8NETPROBE_AUTH net http=${r.status}${info} ms=${Date.now() - t0}`)
+        } catch (e) {
+          console.log(`P8NETPROBE_AUTH net error=${String(e.name || e.message || e).slice(0, 80)} ms=${Date.now() - t0}`)
+        }
+      }
+    }
     process.exit(0)
   }
   if (mode === "probe-server") {
@@ -96,6 +123,19 @@ async function main() {
       '    console.log("P8NETPROBE_SERVER " + n + " http=" + r.status + " ms=" + (Date.now() - t0))',
       '  } catch (e) {',
       '    console.log("P8NETPROBE_SERVER " + n + " error=" + String(e.name || e.message || e).slice(0, 60) + " ms=" + (Date.now() - t0))',
+      '  }',
+      '}',
+      `const __kf = "${FILES}/harness/model-key";`,
+      'let __key = ""; try { __key = (await Bun.file(__kf).text()).trim(); } catch {}',
+      'if (__key) {',
+      '  const ta = Date.now()',
+      '  try {',
+      '    const ra = await fetch("https://openrouter.ai/api/v1/auth/key", { headers: { Authorization: "Bearer " + __key }, signal: AbortSignal.timeout(15000) })',
+      '    let info = ""',
+      '    try { const j = await ra.json(); const d = (j && j.data) || {}; info = " free=" + (d.is_free ?? "?") + " remaining=" + (d.remaining ?? "?") + " limit=" + (d.limit ?? "?") } catch {}',
+      '    console.log("P8NETPROBE_AUTH server http=" + ra.status + info + " ms=" + (Date.now() - ta))',
+      '  } catch (e) {',
+      '    console.log("P8NETPROBE_AUTH server error=" + String(e.name || e.message || e).slice(0, 60) + " ms=" + (Date.now() - ta))',
       '  }',
       '}',
       "",

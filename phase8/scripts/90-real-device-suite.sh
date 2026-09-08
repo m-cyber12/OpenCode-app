@@ -128,22 +128,39 @@ else
   rd COLDSTART 1 "no loopback HTTP response within 300s (log window: $COLD_WIN -> $COLD_WIN2)"
 fi
 
+# The instrumented APK emits P8_ verdicts to stdout, logcat and a device-side
+# file; which channel survives varies by environment, so every summary reads
+# all three. gate_line prints the LAST verdict line for a gate from a file.
+gate_line() { awk -v g="P8_$1" 'NF && $1==g && ($2=="PASS"||$2=="FAIL"||$2=="SKIP"){last=$0} END{if(last!="") print last}' "$2" 2>/dev/null; }
+summarize_gates() { # $1=id-list $2=verdicts-file $3=rc-label
+  local g L V D
+  for g in $1; do
+    L=$(gate_line "$g" "$2")
+    if [ -n "$L" ]; then
+      V=$(printf '%s' "$L" | awk '{print $2}')
+      D=$(printf '%s' "$L" | sed -E 's/^P8_[A-Z0-9_]+ (PASS|FAIL|SKIP) *(::)? *//' | cut -c1-220)
+      case "$V" in
+        PASS) rd "$g" 0 "$D" ;;
+        SKIP) rd "$g" 7 "$D" ;;
+        *)    rd "$g" 1 "$D" ;;
+      esac
+    else
+      rd "$g" 1 "no verdict line ($3); file head: [$(head -c 300 "$2" 2>/dev/null | tr '\n' '|')]"
+    fi
+  done
+}
+
 # ---- R4: the stress class (key residency on real hardware) --------------------
+rash "rm -f files/p8-verdicts.txt" >/dev/null 2>&1 || true
 adb shell am instrument -w -e class "ai.opencode.android.ui.StressRecoveryGatesTest" \
   "$RUNNER" > "$OUT/stress-instrument.log" 2>&1
 STRESS_RC=$?
 { rash "cat files/p8-verdicts.txt" 2>/dev/null
   grep -aoE 'P8_[A-Z0-9_]+ (PASS|FAIL|SKIP)[^\r]*' "$OUT/stress-instrument.log" 2>/dev/null
+  adb logcat -d 2>/dev/null | grep -aoE 'P8_[A-Z0-9_]+ (PASS|FAIL|SKIP)[^\r]*'
 } | sed 's/[[:space:]]*$//' | sort -u > "$OUT/stress-verdicts.txt" || true
 tail -60 "$OUT/stress-verdicts.txt" | tee -a "$LOG"
-for g in KEYRESIDENCY PROVAUTH SERVERKILL LIFECYCLELOG; do
-  LINES=$(grep -aE "^P8_$g (PASS|FAIL|SKIP)" "$OUT/stress-verdicts.txt" || true)
-  if echo "$LINES" | grep -aq "P8_$g FAIL"; then rd "$g" 1 "$(echo "$LINES" | grep FAIL | tail -1 | sed -E 's/^P8_[A-Z0-9_]+ FAIL (::)? *//' | cut -c1-220)"
-  elif echo "$LINES" | grep -aq "P8_$g PASS"; then rd "$g" 0 "$(echo "$LINES" | grep PASS | tail -1 | sed -E 's/^P8_[A-Z0-9_]+ PASS (::)? *//' | cut -c1-220)"
-  elif echo "$LINES" | grep -aq "P8_$g SKIP"; then rd "$g" 7 "$(echo "$LINES" | grep SKIP | tail -1 | sed -E 's/^P8_[A-Z0-9_]+ SKIP (::)? *//' | cut -c1-220)"
-  else rd "$g" 1 "no verdict line (instrument rc=$STRESS_RC)"
-  fi
-done
+summarize_gates "KEYRESIDENCY PROVAUTH SERVERKILL LIFECYCLELOG" "$OUT/stress-verdicts.txt" "instrument rc=$STRESS_RC"
 
 # ---- R5: the live class (the real tool call on the real device) ---------------
 printf 'Type an OpenRouter API key to run the live tool-call gate on the device, [Enter] to skip: '
@@ -164,21 +181,16 @@ if [ -n "$MODEL_KEY" ]; then
 else
   log "no key typed: the live model gates will SKIP on the device"
 fi
+rash "rm -f files/p8-verdicts.txt" >/dev/null 2>&1 || true
 adb shell am instrument -w -e class "ai.opencode.android.ui.LiveToolCallGatesTest" \
   "$RUNNER" > "$OUT/live-instrument.log" 2>&1
 LIVE_RC=$?
 { rash "cat files/p8-verdicts.txt" 2>/dev/null
   grep -aoE 'P8_[A-Z0-9_]+ (PASS|FAIL|SKIP)[^\r]*' "$OUT/live-instrument.log" 2>/dev/null
+  adb logcat -d 2>/dev/null | grep -aoE 'P8_[A-Z0-9_]+ (PASS|FAIL|SKIP)[^\r]*'
 } | sed 's/[[:space:]]*$//' | sort -u > "$OUT/live-verdicts.txt" || true
 tail -60 "$OUT/live-verdicts.txt" | tee -a "$LOG"
-for g in KEYPROBE TOOL CLEANUP; do
-  LINES=$(grep -aE "^P8_$g (PASS|FAIL|SKIP)" "$OUT/live-verdicts.txt" || true)
-  if echo "$LINES" | grep -aq "P8_$g FAIL"; then rd "$g" 1 "$(echo "$LINES" | grep FAIL | tail -1 | sed -E 's/^P8_[A-Z0-9_]+ FAIL (::)? *//' | cut -c1-220)"
-  elif echo "$LINES" | grep -aq "P8_$g PASS"; then rd "$g" 0 "$(echo "$LINES" | grep PASS | tail -1 | sed -E 's/^P8_[A-Z0-9_]+ PASS (::)? *//' | cut -c1-220)"
-  elif echo "$LINES" | grep -aq "P8_$g SKIP"; then rd "$g" 7 "$(echo "$LINES" | grep SKIP | tail -1 | sed -E 's/^P8_[A-Z0-9_]+ SKIP (::)? *//' | cut -c1-220)"
-  else rd "$g" 1 "no verdict line (instrument rc=$LIVE_RC)"
-  fi
-done
+summarize_gates "KEYPROBE TOOL CLEANUP" "$OUT/live-verdicts.txt" "instrument rc=$LIVE_RC"
 # The key must not survive on the phone.
 rash "rm -f '$FILES/harness/model-key' '$FILES/harness/model'" >/dev/null 2>&1 || true
 

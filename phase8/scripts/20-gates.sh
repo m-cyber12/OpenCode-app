@@ -192,6 +192,13 @@ run_p8_class() { # $1=short-name $2=class ; verdicts -> $EV/p8-lines.txt
   } | sed 's/[[:space:]]*$//' | sort -u >> "$EV/p8-model-lines.txt" 2>/dev/null || true
   verdict_file_cat > "$EV/p8-${name}-verdicts.txt" 2>/dev/null || true
   grep -aoE 'P8_?NETPROBE[_A-Z]* [^\r]*' "$out" 2>/dev/null | sed 's/[[:space:]]*$//' | sort -u >> "$LOG" 2>/dev/null || true
+  # Server-side lines for this run's window: model-call failure details land
+  # here, not in the UI (round 8/9: APIError status=0 with zero log detail
+  # pulled afterwards - the emulator was wiped). Pull right after each run.
+  {
+    echo "--- runtime.log tail after $name ($cls) ---"
+    rash "tail -c 6000 log/runtime.log 2>/dev/null"
+  } >> "$LOG" 2>/dev/null || true
   tail -40 "$out" >> "$LOG" 2>/dev/null || true
   if grep -aqE '^OK \([0-9]+ test' "$out" 2>/dev/null; then
     log "$name runner trailer: OK"
