@@ -1,62 +1,63 @@
-[2026-09-08T18:07:36Z] === stage A: workspace isolation + memory (model-free, deterministic) ===
-[2026-09-08T18:07:36Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the gates start from a clean install
+[2026-09-08T20:13:13Z] === stage A: workspace isolation + memory (model-free, deterministic) ===
+[2026-09-08T20:13:13Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the gates start from a clean install
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-09-08T18:07:42Z] === am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest ===
-[2026-09-08T18:07:48Z] instrument rc=0 (isolation)
+[2026-09-08T20:13:20Z] === am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest ===
+[2026-09-08T20:13:27Z] instrument rc=0 (isolation)
 
 ai.opencode.android.projects.WorkspaceIsolationGatesTest:...
 
-Time: 5.342
+Time: 6.15
 
 OK (3 tests)
 
 
-[2026-09-08T18:07:48Z] isolation runner trailer: OK
-[2026-09-08T18:07:48Z] screenshots pulled: 0
-[2026-09-08T18:07:48Z] P7_W1_PROJECT_LIFECYCLE PASS :: :: created=p7-life-1788890863063 renamed=p7-renamed-1788890863063 adopted=p7-adopted-1788890863063 delete=true
-[2026-09-08T18:07:48Z] P7_W2_WORKSPACE_ISOLATION PASS :: :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details
-[2026-09-08T18:07:48Z] P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/data/user/0/ai.opencode.android.debug/files/workspaces/p7-memory-1788890863095/AGENTS.md globalFile=/data/user/0/ai.opencode.android.debug/files/xdg/config/opencode/AGENTS.md
-[2026-09-08T18:07:48Z] === stage B: deterministic UI regression (bottom sheet + accessibility) ===
-[2026-09-08T18:07:48Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
-[2026-09-08T18:08:03Z] instrument rc=0 (chat-ui)
+[2026-09-08T20:13:27Z] isolation runner trailer: OK
+[2026-09-08T20:13:27Z] screenshots pulled: 0
+[2026-09-08T20:13:27Z] P7_W1_PROJECT_LIFECYCLE PASS :: :: created=p7-life-1788898400979 renamed=p7-renamed-1788898400979 adopted=p7-adopted-1788898400979 delete=true
+[2026-09-08T20:13:27Z] P7_W2_WORKSPACE_ISOLATION PASS :: :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details
+[2026-09-08T20:13:27Z] P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/data/user/0/ai.opencode.android.debug/files/workspaces/p7-memory-1788898401011/AGENTS.md globalFile=/data/user/0/ai.opencode.android.debug/files/xdg/config/opencode/AGENTS.md
+[2026-09-08T20:13:27Z] === stage B: deterministic UI regression (bottom sheet + accessibility) ===
+[2026-09-08T20:13:27Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
+[2026-09-08T20:13:44Z] instrument rc=0 (chat-ui)
 
 ai.opencode.android.ui.ChatUiGatesTest:........
 
-Time: 13.602
+Time: 15.303
 
 OK (8 tests)
 
 
-[2026-09-08T18:08:03Z] chat-ui runner trailer: OK
-[2026-09-08T18:08:04Z] screenshots pulled: 9
-[2026-09-08T18:08:04Z] P6_U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
-[2026-09-08T18:08:04Z] P6_U7 PASS :: :: interactive={chat=23, sessions=11, projects=6, welcome=2, welcome-unsupported=2, settings=5} total=49 unnamed=0
-[2026-09-08T18:08:04Z] === stage C: live turn through the UI (key-free default model) ===
-[2026-09-08T18:08:04Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
-[2026-09-08T18:15:32Z] instrument rc=0 (live-chat)
+[2026-09-08T20:13:44Z] chat-ui runner trailer: OK
+[2026-09-08T20:13:44Z] screenshots pulled: 9
+[2026-09-08T20:13:44Z] P6_U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
+[2026-09-08T20:13:44Z] P6_U7 PASS :: :: interactive={chat=23, sessions=11, projects=6, welcome=2, welcome-unsupported=2, settings=5} total=49 unnamed=0
+[2026-09-08T20:13:44Z] === stage C: live turn through the UI (key-free default model) ===
+[2026-09-08T20:13:44Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
+[2026-09-08T20:19:00Z] instrument rc=0 (live-chat)
 
-ai.opencode.android.ui.LiveChatUiGatesTest:.
+ai.opencode.android.ui.LiveChatUiGatesTest:
+ai.opencode.android.ui.LiveChatUiGatesTest:
 
-Time: 447.743
+Time: 315.374
 
 OK (2 tests)
 
 
-[2026-09-08T18:15:33Z] live-chat runner trailer: OK
-[2026-09-08T18:15:33Z] screenshots pulled: 10
-[2026-09-08T18:15:33Z] P6_L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=12 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot=2
-[2026-09-08T18:15:33Z] P6_L2 SKIP :: :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=0); screen='
-[2026-09-08T18:15:33Z] === evidence pull ===
-P6_MODEL_AVAILABLE 1 ::
-P6_MODEL_AVAILABLE 1 :: replyChars=5 asksAnswered=0
-[2026-09-08T18:15:33Z] === SUMMARY ===
-P7_SUMMARY 2026-09-08T18:15:33Z
-ui_gates_pass=6 ui_gates_fail=0 ui_gates_skip=1
+[2026-09-08T20:19:01Z] live-chat runner trailer: OK
+[2026-09-08T20:19:01Z] screenshots pulled: 10
+[2026-09-08T20:19:01Z] P6_L1 SKIP :: :: the turn failed and the app said so:
+[2026-09-08T20:19:01Z] P6_L2 SKIP :: :: no model served a turn, so no tool call can be observed: the turn failed and the app said so:
+[2026-09-08T20:19:01Z] === evidence pull ===
+P6_MODEL_AVAILABLE 0 :: the tu
+P6_MODEL_AVAILABLE 0 :: the turn failed and the app said so:
+[2026-09-08T20:19:02Z] === SUMMARY ===
+P7_SUMMARY 2026-09-08T20:19:02Z
+ui_gates_pass=5 ui_gates_fail=0 ui_gates_skip=2
 isolation_instrument_rc=0 chat_ui_instrument_rc=0 live_chat_instrument_rc=0
 screenshots=11
-model_available=1
+model_available=0
 device_abi=x86_64
 android_sdk=34
