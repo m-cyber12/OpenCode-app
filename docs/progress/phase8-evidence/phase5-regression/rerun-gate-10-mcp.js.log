@@ -9,10 +9,16 @@ assert ok: tools/list includes echo
 assert ok: session id present
 prompt_async accepted (204)
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"Use the MCP tool \"echo\" with the message G10_MCP_AGENT_OK and tell me what it returned.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to use the MCP echo tool with the message \"G10_MCP_AGENT_OK\" and report what it returns.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"gates-mcp_echo","callID":"call_c5f4edf5189a4a849c3d899a","input":"{\"message\":\"G10_MCP_AGENT_OK\"}","output":"\"echo:G10_MCP_AGENT_OK\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The tool returned \"echo:G10_MCP_AGENT_OK\".","input":"null","output":"null","error":null},{"type":"text","text":"It returned `echo:G10_MCP_AGENT_OK`.","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"Use the MCP tool \"echo\" with the message G10_MCP_AGENT_OK and tell me what it returned.","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to use the \"echo\" MCP tool with a specific message.","input":"null","output":"null","error":null},{"type":"tool","state":"completed","text":"","tool":"gates-mcp_echo","callID":"call_021c558bb887404e87cfaccb","input":"{\"message\":\"G10_MCP_AGENT_OK\"}","output":"\"echo:G10_MCP_AGENT_OK\"","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The echo tool returned the message with the echo: prefix. Let me tell the user what it returned.","input":"null","output":"null","error":null},{"type":"text","text":"It returned:\n\n```\necho:G10_MCP_AGENT_OK\n```\n\nThis confirms the MCP echo tool is working correctly - it prepends the stri","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
 --- assistant text ---
 
-It returned `echo:G10_MCP_AGENT_OK`.
+It returned:
+
+```
+echo:G10_MCP_AGENT_OK
+```
+
+This confirms the MCP echo tool is working correctly - it prepends the string `echo:` to the message you send.
 assert ok: agent turn did not fail
 assert ok: agent reported the MCP tool result
 G10_PASS

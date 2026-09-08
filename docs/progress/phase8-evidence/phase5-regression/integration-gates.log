@@ -1,16 +1,16 @@
-[2026-09-08T15:00:17Z] P5-00 app uid resolved: '10192'
-[2026-09-08T15:00:17Z] === P5-01 device / app / payload prerequisites ===
+[2026-09-08T17:19:18Z] P5-00 app uid resolved: '10192'
+[2026-09-08T17:19:18Z] === P5-01 device / app / payload prerequisites ===
 adb devices: emulator-5554	device  
 release=14 sdk=34 abi=x86_64
 app uid: 10192
-    codePath=/data/app/~~S5kDzlQb2pnrrRPCDv-C8A==/ai.opencode.android.debug-HG6AiFsKHjwkoCwD369wCA==
+    codePath=/data/app/~~dnSKsFW-eYzw1n38FuOIDw==/ai.opencode.android.debug-eJAdquOD3NFDhosS7kTcnA==
     versionName=1.18.23-phase5
-[2026-09-08T15:00:22Z] P5-01 versionName=1.18.23-phase5 pid=7043 uid=10192 marker=present
-[2026-09-08T15:00:22Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
+[2026-09-08T17:19:23Z] P5-01 versionName=1.18.23-phase5 pid=6789 uid=10192 marker=present
+[2026-09-08T17:19:23Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
 dirs_rc=0
 warning: templates not found in /home/runner/share/git-core/templates
-FIXTURE_GIT_OK
 error: cannot run maintenance: No such file or directory
+FIXTURE_GIT_OK
 tar: can't link 'node_modules/body-parser/node_modules/content-type/dist/index.d.ts' -> 'node_modules/negotiator/node_modules/content-type/dist/index.d.ts': Permission denied
 tar: can't link 'node_modules/body-parser/node_modules/content-type/dist/index.js.map' -> 'node_modules/negotiator/node_modules/content-type/dist/index.js.map': Permission denied
 tar: can't link 'node_modules/body-parser/node_modules/content-type/dist/index.js' -> 'node_modules/negotiator/node_modules/content-type/dist/index.js': Permission denied
@@ -24,76 +24,76 @@ tar: can't link 'node_modules/type-is/node_modules/content-type/package.json' ->
 tar: can't link 'node_modules/type-is/node_modules/content-type/README.md' -> 'node_modules/negotiator/node_modules/content-type/README.md': Permission denied
 tar: can't link 'node_modules/type-is/node_modules/content-type/LICENSE' -> 'node_modules/negotiator/node_modules/content-type/LICENSE': Permission denied
 tar: had errors
-[2026-09-08T15:00:27Z] P5-03 config_present=yes harness_rc=0
+[2026-09-08T17:19:26Z] P5-03 config_present=yes harness_rc=0
 Starting: Intent { cmp=ai.opencode.android.debug/ai.opencode.android.runtime.DebugControlActivity (has extras) }
-[2026-09-08T15:00:35Z] === P5-04 server password via Keystore + test-only harness export ===
-[2026-09-08T15:00:38Z] P5-04 password: 5698… (48 chars) export_verdict=PASS
-[2026-09-08T15:00:38Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
-09-08 15:00:42.501  7265  7284 I OpenCode/gate: P5_G7_SHELL PASS :: session=ses_f7e76e50dffeV2loP5y3vTipLn streamEvents=10 toolParts=1 outputHasMarker=true last=[text::, text::, tool:bash:running, tool:bash:running, tool:bash:running, tool:bash:running]
-09-08 15:00:42.501  7265  7284 I System.out: P5_G7_SHELL PASS :: session=ses_f7e76e50dffeV2loP5y3vTipLn streamEvents=10 toolParts=1 outputHasMarker=true last=[text::, text::, tool:bash:running, tool:bash:running, tool:bash:running, tool:bash:running]
-09-08 15:00:43.274  7265  7284 I OpenCode/gate: P5_G11_STREAM PASS :: firstFrame=true shell=200 statusEvents=true streamed=[server.connected, session.status, message.updated, message.part.updated] total=14
-09-08 15:00:43.274  7265  7284 I System.out: P5_G11_STREAM PASS :: firstFrame=true shell=200 statusEvents=true streamed=[server.connected, session.status, message.updated, message.part.updated] total=14
-09-08 15:00:43.308  7265  7284 I System.out: P5_HARNESS_EXPORT PASS :: bytes=48 waited=0s health={"healthy":true,"version":"1.18.23-android"} lastErr=none
-09-08 15:00:43.601  7265  7284 I OpenCode/gate: P5_G10_MCP PASS :: status={gates-mcp=connected} (gates-mcp must be connected via stdio)
-09-08 15:00:43.601  7265  7284 I System.out: P5_G10_MCP PASS :: status={gates-mcp=connected} (gates-mcp must be connected via stdio)
-09-08 15:00:43.681  7265  7284 I OpenCode/gate: P5_K9_DURABLE_CONFIG_PATCH PASS :: patch_ok=true persisted=true fixture_mcp_intact=true err=null
-09-08 15:00:43.681  7265  7284 I System.out: P5_K9_DURABLE_CONFIG_PATCH PASS :: patch_ok=true persisted=true fixture_mcp_intact=true err=null
-09-08 15:00:43.712  7265  7284 I OpenCode/gate: P5_LOOPBACK PASS :: loopback_connect=true nonLoopback=[10.0.2.15, 10.0.2.16] external_accepted=0 table=inconclusive(/proc/net denied to the app uid; refusal on 2 non-loopback address(es) is the evidence)
-09-08 15:00:43.712  7265  7284 I System.out: P5_LOOPBACK PASS :: loopback_connect=true nonLoopback=[10.0.2.15, 10.0.2.16] external_accepted=0 table=inconclusive(/proc/net denied to the app uid; refusal on 2 non-loopback address(es) is the evidence)
-09-08 15:00:46.773  7265  7284 I OpenCode/gate: P5_CREDENTIALS PASS :: keystore=yes opencode_connected=true authJson=auth.json onDisk=true mode=600 blobBytes=109
-09-08 15:00:46.774  7265  7284 I System.out: P5_CREDENTIALS PASS :: keystore=yes opencode_connected=true authJson=auth.json onDisk=true mode=600 blobBytes=109
-09-08 15:00:56.157  7265  7284 I OpenCode/gate: P5_G12_PERMISSION PASS :: asked permission=bash patterns=["echo P5_K5_PERM_OK"] bashPolicy=ask replied=once markerSeen=true pendingAfter=0
-09-08 15:00:56.157  7265  7284 I System.out: P5_G12_PERMISSION PASS :: asked permission=bash patterns=["echo P5_K5_PERM_OK"] bashPolicy=ask replied=once markerSeen=true pendingAfter=0
-09-08 15:00:56.329  7265  7284 I OpenCode/gate: P5_G6_HEALTH PASS :: body={"healthy":true,"version":"1.18.23-android"}
-09-08 15:00:56.329  7265  7284 I System.out: P5_G6_HEALTH PASS :: body={"healthy":true,"version":"1.18.23-android"}
-09-08 15:00:56.341  7265  7284 I System.out: P5_DEVICE_FACTS {"abi":"x86_64,arm64-v8a","sdk":34,"model":"Google sdk_gphone64_x86_64","payloadVersion":5,"opencode":"1.18.23@05ea507","keystoreHardwareBacked":false,"secretEntries":["server-password"],"harnessDirPresent":true,"serverHealthy":"{\"healthy\":true,\"version\":\"1.18.23-android\"}"}
-09-08 15:00:56.360  7265  7284 I OpenCode/gate: P5_KEYSTORE PASS :: hardwareBacked=false blobBytes=115 entries=provider-gatecanary,server-password
-09-08 15:00:56.360  7265  7284 I System.out: P5_KEYSTORE PASS :: hardwareBacked=false blobBytes=115 entries=provider-gatecanary,server-password
-[2026-09-08T15:00:56Z] --- Kotlin gate verdict lines ---
+[2026-09-08T17:19:34Z] === P5-04 server password via Keystore + test-only harness export ===
+[2026-09-08T17:19:37Z] P5-04 password: 7253… (48 chars) export_verdict=PASS
+[2026-09-08T17:19:37Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
+09-08 17:19:40.607  7011  7031 I OpenCode/gate: P5_G7_SHELL PASS :: session=ses_f7df7a90cffeXKWmjFQxWQEc5X streamEvents=6 toolParts=1 outputHasMarker=true last=[tool:bash:running, tool:bash:running, tool:bash:running, tool:bash:running, tool:bash:completed, tool:bash:completed]
+09-08 17:19:40.607  7011  7031 I System.out: P5_G7_SHELL PASS :: session=ses_f7df7a90cffeXKWmjFQxWQEc5X streamEvents=6 toolParts=1 outputHasMarker=true last=[tool:bash:running, tool:bash:running, tool:bash:running, tool:bash:running, tool:bash:completed, tool:bash:completed]
+09-08 17:19:41.548  7011  7031 I OpenCode/gate: P5_G11_STREAM PASS :: firstFrame=true shell=200 statusEvents=true streamed=[server.connected, session.status, message.updated, message.part.updated, session.idle] total=20
+09-08 17:19:41.548  7011  7031 I System.out: P5_G11_STREAM PASS :: firstFrame=true shell=200 statusEvents=true streamed=[server.connected, session.status, message.updated, message.part.updated, session.idle] total=20
+09-08 17:19:41.570  7011  7031 I System.out: P5_HARNESS_EXPORT PASS :: bytes=48 waited=0s health={"healthy":true,"version":"1.18.23-android"} lastErr=none
+09-08 17:19:41.817  7011  7031 I OpenCode/gate: P5_G10_MCP PASS :: status={gates-mcp=connected} (gates-mcp must be connected via stdio)
+09-08 17:19:41.817  7011  7031 I System.out: P5_G10_MCP PASS :: status={gates-mcp=connected} (gates-mcp must be connected via stdio)
+09-08 17:19:41.868  7011  7031 I OpenCode/gate: P5_K9_DURABLE_CONFIG_PATCH PASS :: patch_ok=true persisted=true fixture_mcp_intact=true err=null
+09-08 17:19:41.868  7011  7031 I System.out: P5_K9_DURABLE_CONFIG_PATCH PASS :: patch_ok=true persisted=true fixture_mcp_intact=true err=null
+09-08 17:19:41.891  7011  7031 I OpenCode/gate: P5_LOOPBACK PASS :: loopback_connect=true nonLoopback=[10.0.2.15, 10.0.2.16] external_accepted=0 table=inconclusive(/proc/net denied to the app uid; refusal on 2 non-loopback address(es) is the evidence)
+09-08 17:19:41.891  7011  7031 I System.out: P5_LOOPBACK PASS :: loopback_connect=true nonLoopback=[10.0.2.15, 10.0.2.16] external_accepted=0 table=inconclusive(/proc/net denied to the app uid; refusal on 2 non-loopback address(es) is the evidence)
+09-08 17:19:45.072  7011  7031 I OpenCode/gate: P5_CREDENTIALS PASS :: keystore=yes opencode_connected=true authJson=auth.json onDisk=true mode=600 blobBytes=109
+09-08 17:19:45.072  7011  7031 I System.out: P5_CREDENTIALS PASS :: keystore=yes opencode_connected=true authJson=auth.json onDisk=true mode=600 blobBytes=109
+09-08 17:19:52.195  7011  7031 I OpenCode/gate: P5_G12_PERMISSION PASS :: asked permission=bash patterns=["echo P5_K5_PERM_OK"] bashPolicy=ask replied=once markerSeen=true pendingAfter=0
+09-08 17:19:52.195  7011  7031 I System.out: P5_G12_PERMISSION PASS :: asked permission=bash patterns=["echo P5_K5_PERM_OK"] bashPolicy=ask replied=once markerSeen=true pendingAfter=0
+09-08 17:19:52.306  7011  7031 I OpenCode/gate: P5_G6_HEALTH PASS :: body={"healthy":true,"version":"1.18.23-android"}
+09-08 17:19:52.307  7011  7031 I System.out: P5_G6_HEALTH PASS :: body={"healthy":true,"version":"1.18.23-android"}
+09-08 17:19:52.318  7011  7031 I System.out: P5_DEVICE_FACTS {"abi":"x86_64,arm64-v8a","sdk":34,"model":"Google sdk_gphone64_x86_64","payloadVersion":5,"opencode":"1.18.23@05ea507","keystoreHardwareBacked":false,"secretEntries":["server-password"],"harnessDirPresent":true,"serverHealthy":"{\"healthy\":true,\"version\":\"1.18.23-android\"}"}
+09-08 17:19:52.337  7011  7031 I OpenCode/gate: P5_KEYSTORE PASS :: hardwareBacked=false blobBytes=115 entries=provider-gatecanary,server-password
+09-08 17:19:52.337  7011  7031 I System.out: P5_KEYSTORE PASS :: hardwareBacked=false blobBytes=115 entries=provider-gatecanary,server-password
+[2026-09-08T17:19:52Z] --- Kotlin gate verdict lines ---
 P5_CREDENTIALS PASS :: keysto
 P5_G10_MCP PASS :: status={gates-mcp=connected} (gates-mcp must be connected via stdio)
 P5_G11_STREAM PASS :: fi
 P5_G12_PERMISSION PASS :: asked pe
 P5_G6_HEALTH PASS :: body={"healthy":t
-P5_G7_SHELL PASS :: session=ses_f7e76e50dffeV2loP5y3vTipLn st
+P5_G7_SHELL PASS :: session=ses_f7df7a90cffeXKWmjFQxWQEc5X st
 P5_HARNESS_EXPORT PASS :: bytes=48 waited=0s health={"healthy":t
 P5_K9_DURABLE_CONFIG_PATCH PASS :: patch_ok=t
 P5_KEYSTORE PASS :: ha
 P5_LOOPBACK PASS :: loopback_connect=t
-[2026-09-08T15:00:56Z] P5-K instrument_rc=0 kotlin_gates_pass=10/9 fail=0 skipped=0 gradle_ok=1 failures_marker=0 junit_exception_lines=0
-[2026-09-08T15:00:56Z] === relaunching the app for the device-side gate stages ===
+[2026-09-08T17:19:52Z] P5-K instrument_rc=0 kotlin_gates_pass=10/9 fail=0 skipped=0 gradle_ok=1 failures_marker=0 junit_exception_lines=0
+[2026-09-08T17:19:52Z] === relaunching the app for the device-side gate stages ===
 staged_rc=0
-gate-06-health.js gate-07-shell.js gate-10-mcp.js gate-11-stream.js gate-12-permission.js gate-16-mcp-remote.js gates-lib.js p5-model-probe.js [2026-09-08T15:01:03Z] post-instrument runtime: health=OK via host-forward
-[2026-09-08T15:01:03Z] host-forward diagnostic: adb forward tcp:4111 -> http 200 (the drivers do not depend on this path; it works on this image)
-[2026-09-08T15:01:03Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
-[2026-09-08T15:01:20Z] model pre-flight: PROBE ok :: model=big-pickle exact-token reply, session=ses_f7e767c0dffevLa2Wlw0xSAyn1
-[2026-09-08T15:01:20Z] model_available=1 -> drivers and the in-app K2/K5 turns assert real streamed text
-[2026-09-08T15:01:20Z] gate driver runner: the payload's own bun at /data/data/ai.opencode.android.debug/files/bin/bun (on-device, app uid)
-[2026-09-08T15:01:20Z] --- re-run gate-06-health.js (as shipped, no edits) inside the app namespace ---
-[2026-09-08T15:01:20Z] --- re-run gate-07-shell.js (as shipped, no edits) inside the app namespace ---
-[2026-09-08T15:01:29Z] --- re-run gate-10-mcp.js (as shipped, no edits) inside the app namespace ---
-[2026-09-08T15:01:48Z] --- re-run gate-11-stream.js (as shipped, no edits) inside the app namespace ---
-[2026-09-08T15:02:08Z] --- re-run gate-12-permission.js (as shipped, no edits) inside the app namespace ---
-[2026-09-08T15:02:25Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
-[2026-09-08T15:02:26Z] fixture host listener up=1 pid=12616
-[2026-09-08T15:02:26Z] adb reverse tcp:4551 -> host tcp:4551: 4551
-[2026-09-08T15:04:40Z] === P5-G17 loopback-only binding evidence ===
+gate-06-health.js gate-07-shell.js gate-10-mcp.js gate-11-stream.js gate-12-permission.js gate-16-mcp-remote.js gates-lib.js p5-model-probe.js [2026-09-08T17:19:59Z] post-instrument runtime: health=OK via host-forward
+[2026-09-08T17:19:59Z] host-forward diagnostic: adb forward tcp:4111 -> http 200 (the drivers do not depend on this path; it works on this image)
+[2026-09-08T17:19:59Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
+[2026-09-08T17:20:10Z] model pre-flight: PROBE ok :: model=big-pickle exact-token reply, session=ses_f7df7496affe2JzVtU4jdECQdC
+[2026-09-08T17:20:10Z] model_available=1 -> drivers and the in-app K2/K5 turns assert real streamed text
+[2026-09-08T17:20:10Z] gate driver runner: the payload's own bun at /data/data/ai.opencode.android.debug/files/bin/bun (on-device, app uid)
+[2026-09-08T17:20:10Z] --- re-run gate-06-health.js (as shipped, no edits) inside the app namespace ---
+[2026-09-08T17:20:10Z] --- re-run gate-07-shell.js (as shipped, no edits) inside the app namespace ---
+[2026-09-08T17:20:19Z] --- re-run gate-10-mcp.js (as shipped, no edits) inside the app namespace ---
+[2026-09-08T17:20:35Z] --- re-run gate-11-stream.js (as shipped, no edits) inside the app namespace ---
+[2026-09-08T17:20:52Z] --- re-run gate-12-permission.js (as shipped, no edits) inside the app namespace ---
+[2026-09-08T17:21:06Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
+[2026-09-08T17:21:07Z] fixture host listener up=1 pid=12430
+[2026-09-08T17:21:07Z] adb reverse tcp:4551 -> host tcp:4551: 4551
+[2026-09-08T17:23:21Z] === P5-G17 loopback-only binding evidence ===
 === listeners owned by uid 10192 (host-visible /proc/net/tcp) ===
 -- IPv4/IPv6 LISTEN(0A) rows for the app uid --
   tcp_row local=0100007F:100F rem=00000000:0000 state=0A uid=10192
 -- any row for the app uid that is NOT a loopback local address --
 -- outbound (non-LISTEN) app-uid rows: expected provider / network-MCP traffic, recorded, not asserted --
-  outbound local=0100007F:100F peer=0100007F:E202 state=01
-  outbound local=0100007F:100F peer=0100007F:E22A state=01
-  outbound local=1002000A:AEB0 peer=175A41AC:01BB state=01
-  outbound local=0100007F:100F peer=0100007F:E20A state=01
-  outbound local=0100007F:100F peer=0100007F:E21C state=01
-  outbound local=0100007F:100F peer=0100007F:E216 state=01
-  outbound local=0000000000000000FFFF00000100007F:E20A peer=0000000000000000FFFF00000100007F:100F state=01
-  outbound local=0000000000000000FFFF00000100007F:E216 peer=0000000000000000FFFF00000100007F:100F state=01
-  outbound local=0000000000000000FFFF00000100007F:E22A peer=0000000000000000FFFF00000100007F:100F state=01
-  outbound local=0000000000000000FFFF00000100007F:E21C peer=0000000000000000FFFF00000100007F:100F state=01
-  outbound local=0000000000000000FFFF00000100007F:E202 peer=0000000000000000FFFF00000100007F:100F state=01
+  outbound local=0100007F:100F peer=0100007F:8EB2 state=01
+  outbound local=0100007F:100F peer=0100007F:8E98 state=01
+  outbound local=0100007F:100F peer=0100007F:8EA2 state=01
+  outbound local=0100007F:100F peer=0100007F:8EB0 state=01
+  outbound local=1002000A:AA16 peer=165A41AC:01BB state=01
+  outbound local=0100007F:100F peer=0100007F:8E92 state=01
+  outbound local=0000000000000000FFFF00000100007F:8EA2 peer=0000000000000000FFFF00000100007F:100F state=01
+  outbound local=0000000000000000FFFF00000100007F:8EB2 peer=0000000000000000FFFF00000100007F:100F state=01
+  outbound local=0000000000000000FFFF00000100007F:8E98 peer=0000000000000000FFFF00000100007F:100F state=01
+  outbound local=0000000000000000FFFF00000100007F:8E92 peer=0000000000000000FFFF00000100007F:100F state=01
+  outbound local=0000000000000000FFFF00000100007F:8EB0 peer=0000000000000000FFFF00000100007F:100F state=01
 -- UDP: app-uid sockets on mDNS 5353 (0x14F9) --
 -- count of LISTEN rows on port 4111 by the app uid --
   listen_on_4111=1
@@ -103,7 +103,7 @@ gate-06-health.js gate-07-shell.js gate-10-mcp.js gate-11-stream.js gate-12-perm
 
 === the app's own audit (written by runtime/LoopbackAudit) ===
 # OpenCode Android loopback/bind audit (written by the app itself)
-at=2026-09-08T15:01:05Z
+at=2026-09-08T17:20:02Z
 uid=10192
 port=4111 expected_bind=127.0.0.1
 table_verdict=NO_ROWS(seen)
@@ -128,20 +128,20 @@ violations=none
 (unreadable)
 
 === launcher bind evidence (runtime.log) ===
-2026-09-08T14:52:32.420Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-09-08T14:52:32.426Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-09-08T14:52:52.891Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-09-08T14:52:52.895Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-09-08T15:00:20.644Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-09-08T15:00:20.653Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-09-08T15:00:32.693Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-09-08T15:00:32.694Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-09-08T15:00:38.415Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-09-08T15:00:38.417Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-09-08T15:00:40.877Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-09-08T15:00:40.881Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-09-08T15:01:01.643Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-09-08T15:01:01.645Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T17:13:46.531Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T17:13:46.539Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T17:14:06.463Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T17:14:06.472Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T17:19:21.017Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T17:19:21.018Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T17:19:31.431Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T17:19:31.439Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T17:19:36.747Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T17:19:36.756Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T17:19:39.280Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T17:19:39.291Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T17:19:57.337Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T17:19:57.343Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
 
 === OpenCode server log: mDNS publish lines (want none) ===
 (end of mDNS grep)
@@ -149,17 +149,17 @@ violations=none
 === host-side forward (adb forward binds host loopback only) ===
 emulator-5554 tcp:4111 tcp:4111
 
-[2026-09-08T15:04:40Z] P5-G17 table=conclusive wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0 bound_lines=7 publish_lines=0 table_ok=1
-[2026-09-08T15:04:40Z] device global ipv4: '10.0.2.15'
+[2026-09-08T17:23:21Z] P5-G17 table=conclusive wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0 bound_lines=7 publish_lines=0 table_ok=1
+[2026-09-08T17:23:21Z] device global ipv4: '10.0.2.15'
 loopback=OPEN
 global_10.0.2.15=REFUSED:ECONNREFUSED
 bun_rc=0
-[2026-09-08T15:04:41Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
+[2026-09-08T17:23:21Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
 --- filesDir/secrets listing ---
 total 24
-drwx------  2 u0_a192 u0_a192 4096 2026-09-08 15:00 .
-drwxrwx--x 16 u0_a192 u0_a192 4096 2026-09-08 15:04 ..
--rw-------  1 u0_a192 u0_a192  126 2026-09-08 14:52 server-password.enc
+drwx------  2 u0_a192 u0_a192 4096 2026-09-08 17:19 .
+drwxrwx--x 16 u0_a192 u0_a192 4096 2026-09-08 17:23 ..
+-rw-------  1 u0_a192 u0_a192  126 2026-09-08 17:13 server-password.enc
 --- blob magic (each .enc must start with the OCS2 ciphertext header) ---
 CIPHER_OK /data/data/ai.opencode.android.debug/files/secrets/server-password.enc size=126
 enc_count=1
@@ -176,16 +176,16 @@ authcanary_done
 --- server password readable anywhere outside the test harness dir? ---
 leakscan_done
 --- hardware-backed keystore (from the instrumentation run) ---
-09-08 15:00:56.360  7265  7284 I OpenCode/gate: P5_KEYSTORE PASS :: hardwareBacked=false blobBytes=115 entries=provider-gatecanary,server-password
-09-08 15:00:56.360  7265  7284 I System.out: P5_KEYSTORE PASS :: hardwareBacked=false blobBytes=115 entries=provider-gatecanary,server-password
-[2026-09-08T15:04:42Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=600 auth_canary_absent=1 auth_verdict=clean leaks_outside_harness=0
-[2026-09-08T15:04:42Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
---- APK under test: /data/app/~~S5kDzlQb2pnrrRPCDv-C8A==/ai.opencode.android.debug-HG6AiFsKHjwkoCwD369wCA==/base.apk ---
+09-08 17:19:52.337  7011  7031 I OpenCode/gate: P5_KEYSTORE PASS :: hardwareBacked=false blobBytes=115 entries=provider-gatecanary,server-password
+09-08 17:19:52.337  7011  7031 I System.out: P5_KEYSTORE PASS :: hardwareBacked=false blobBytes=115 entries=provider-gatecanary,server-password
+[2026-09-08T17:23:23Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=600 auth_canary_absent=1 auth_verdict=clean leaks_outside_harness=0
+[2026-09-08T17:23:23Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
+--- APK under test: /data/app/~~dnSKsFW-eYzw1n38FuOIDw==/ai.opencode.android.debug-eJAdquOD3NFDhosS7kTcnA==/base.apk ---
       284  1981-01-01 01:01   res/xml/file_paths.xml
       652  1981-01-01 01:01   res/xml/network_security_config.xml
    537864  1981-01-01 01:01   resources.arsc
 ---------                     -------
-375822587                     161 files
+375843459                     161 files
 (dex secret scan done rc=1)
 (asset secret scan done)
 (asset name scan done)
@@ -193,6 +193,6 @@ leakscan_done
 (git grep rc=1)
 --- non-loopback endpoint literals compiled into the client ---
 (url scan done)
-[2026-09-08T15:04:44Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
-[2026-09-08T15:04:44Z] === evidence pull ===
-[2026-09-08T15:04:44Z] === SUMMARY ===
+[2026-09-08T17:23:24Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
+[2026-09-08T17:23:24Z] === evidence pull ===
+[2026-09-08T17:23:25Z] === SUMMARY ===

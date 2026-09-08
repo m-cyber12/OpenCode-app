@@ -2730,6 +2730,7 @@
     abi=x86_64
     EMULATOR_BOOTED
 
+<<<<<<< HEAD
 ### 2026-09-08T17:14:23Z  run=34255372657  step: 4/7 embedded runtime payload (reuse phase 4's build when present)
     head=b650b60 branch=arena/01a07f92-opencode-app log_lines=719
     --- error digest ---
@@ -2781,6 +2782,13 @@
     --- error digest ---
     BUILD SUCCESSFUL in 2m 26s
     BUILD SUCCESSFUL in 1m 13s
+=======
+### 2026-09-08T17:14:09Z  run=34254826074  step: 6/7 Phase 8 gates (regressions + stress + live model + perf)
+    head=6b65012 branch=arena/01a07f92-opencode-app log_lines=1918
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 11s
+    BUILD SUCCESSFUL in 55s
+>>>>>>> 86a0454 (phase8: CI heartbeat (6/7 Phase 8 gates (regressions + stress + live model + perf)))
     --- last 40 log lines ---
     > Task :app:compileDebugAndroidTestJavaWithJavac
     > Task :app:mergeDebugAndroidTestShaders
@@ -2792,6 +2800,7 @@
     > Task :app:mergeExtDexDebug
     > Task :app:dexBuilderDebugAndroidTest
     > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
+<<<<<<< HEAD
     > Task :app:processDebugAndroidTestJavaRes
     > Task :app:mergeDebugAndroidTestJavaResource
     > Task :app:packageDebug
@@ -2799,6 +2808,15 @@
     > Task :app:assembleDebug
     > Task :app:checkDebugAndroidTestDuplicateClasses
     > Task :app:mergeDebugAndroidTestJniLibFolders
+=======
+    > Task :app:packageDebug
+    > Task :app:createDebugApkListingFileRedirect
+    > Task :app:assembleDebug
+    > Task :app:processDebugAndroidTestJavaRes
+    > Task :app:checkDebugAndroidTestDuplicateClasses
+    > Task :app:mergeDebugAndroidTestJniLibFolders
+    > Task :app:mergeDebugAndroidTestJavaResource
+>>>>>>> 86a0454 (phase8: CI heartbeat (6/7 Phase 8 gates (regressions + stress + live model + perf)))
     > Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
     > Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
     > Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
@@ -2817,6 +2835,7 @@
     > Task :app:createDebugAndroidTestApkListingFileRedirect
     > Task :app:assembleDebugAndroidTest
     
+<<<<<<< HEAD
     BUILD SUCCESSFUL in 1m 13s
     74 actionable tasks: 37 executed, 4 from cache, 33 up-to-date
     apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk
@@ -3100,6 +3119,9 @@
     > Task :app:assembleDebugAndroidTest
     
     BUILD SUCCESSFUL in 1m 13s
+=======
+    BUILD SUCCESSFUL in 55s
+>>>>>>> 86a0454 (phase8: CI heartbeat (6/7 Phase 8 gates (regressions + stress + live model + perf)))
     74 actionable tasks: 37 executed, 4 from cache, 33 up-to-date
     apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk
     testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
