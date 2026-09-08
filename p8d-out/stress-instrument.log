@@ -1,0 +1,36 @@
+
+ai.opencode.android.ui.StressRecoveryGatesTest:
+Error in g00_keyResidency(ai.opencode.android.ui.StressRecoveryGatesTest):
+java.lang.AssertionError: P8_KEYRESIDENCY :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=arm64-v8a device=RMX3830 api=35 :: key material is in the SOFTWARE keystore on this device - the ciphertext-at-rest guarantee holds, key-extraction resistance does not (expected on emulators; a real-device run is the evidence for the hardware claim)
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.ui.StressRecoveryGatesTest.gate(StressRecoveryGatesTest.kt:106)
+	at ai.opencode.android.ui.StressRecoveryGatesTest.g00_keyResidency(StressRecoveryGatesTest.kt:219)
+
+Error in g01_providerAuth(ai.opencode.android.ui.StressRecoveryGatesTest):
+java.lang.AssertionError: P8_PROVAUTH :: serverSawError=false serverErrorName=- serverErrorMessage='-' serverStatus=0 classified=- screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=79551
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.ui.StressRecoveryGatesTest.gate(StressRecoveryGatesTest.kt:106)
+	at ai.opencode.android.ui.StressRecoveryGatesTest.g01_providerAuth(StressRecoveryGatesTest.kt:291)
+..
+
+Time: 75,103
+There were 2 failures:
+1) g00_keyResidency(ai.opencode.android.ui.StressRecoveryGatesTest)
+java.lang.AssertionError: P8_KEYRESIDENCY :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=arm64-v8a device=RMX3830 api=35 :: key material is in the SOFTWARE keystore on this device - the ciphertext-at-rest guarantee holds, key-extraction resistance does not (expected on emulators; a real-device run is the evidence for the hardware claim)
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.ui.StressRecoveryGatesTest.gate(StressRecoveryGatesTest.kt:106)
+	at ai.opencode.android.ui.StressRecoveryGatesTest.g00_keyResidency(StressRecoveryGatesTest.kt:219)
+2) g01_providerAuth(ai.opencode.android.ui.StressRecoveryGatesTest)
+java.lang.AssertionError: P8_PROVAUTH :: serverSawError=false serverErrorName=- serverErrorMessage='-' serverStatus=0 classified=- screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=79551
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.ui.StressRecoveryGatesTest.gate(StressRecoveryGatesTest.kt:106)
+	at ai.opencode.android.ui.StressRecoveryGatesTest.g01_providerAuth(StressRecoveryGatesTest.kt:291)
+
+FAILURES!!!
+Tests run: 4,  Failures: 2
+
+

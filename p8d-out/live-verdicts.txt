@@ -1,0 +1,8 @@
+P8_CLEANUP PASS :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
+P8_KEYPROBE PASS :: model=nvidia/nemotron-3-ultra-550b-a55b:free tokenSeen=true reply='P8PROBEOK' session=ses_f7e63183effe4XOTgWYiZX762j
+P8_KEYRESIDENCY FAIL :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=arm64-v8a device=RMX3830 api=35 :: key material is in the SOFTWARE keystore on this device - the ciphertext-at-rest guarantee holds, key-extraction resistance does not (expected on emulators; a real-device run is the evidence for the hardware claim)
+P8_LIFECYCLELOG PASS :: illegalTransitions=0 startingTransitions=4 healthyTransitions=3 logBytes=7240 lastStates='STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111) | EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111) | CRASHED_RESTARTING (server exited (code=137); restarting (at | STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111)'
+P8_MODEL_AVAILABLE 1 :: model=nvidia/nemotron-3-ultra-550b-a55b:free replyChars=9
+P8_PROVAUTH FAIL :: serverSawError=false serverErrorName=- serverErrorMessage='-' serverStatus=0 classified=- screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=79551
+P8_SERVERKILL PASS :: killedPid=14207 oldPidDead=true sawCrashedRestarting=true restartCount=0 healthyAgain=true healthHttp=200 sawFatal=false newPid=14818 finalStatus=HEALTHY finalDetail='healthy on 127.0.0.1:4111'
+P8_TOOL SKIP :: the model answered without calling a tool within 480s (asksAnswered=0, replyChars=0, reply='')

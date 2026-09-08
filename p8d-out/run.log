@@ -1,0 +1,49 @@
+[2026-09-08T15:19:17Z] device attached and authorized
+model=RMX3830
+manufacturer=realme
+android_release=15
+sdk=35
+abi=arm64-v8a
+secure_hardware_flags:
+[2026-09-08T15:19:19Z] installing (uninstall first for a clean state)
+Performing Streamed Install
+Success
+Performing Streamed Install
+Success
+harness_rc=0
+[2026-09-08T15:19:36Z] P8D_TOYBOX PASS :: base64|base64 -d|tar xz -C dir works on this real device api=35 (closes the harness-staging half for this API; API-29 remains the untested half - see report)
+[2026-09-08T15:19:57Z] P8D_COLDSTART PASS :: launch -> server answering loopback (http 401) in 20s wall; supervisor log window: 2026-09-08T15:19:40.497Z -> 2026-09-08T15:19:55.947Z (fresh install, first extraction included)
+P8_KEYRESIDENCY FAIL :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=arm64-v8a device=RMX3830 api=35 :: key material is in the SOFTWARE keystore on this device - the ciphertext-at-rest guarantee holds, key-extraction resistance does not (expected on emulators; a real-device run is the evidence for the hardware claim)
+P8_LIFECYCLELOG PASS :: illegalTransitions=0 startingTransitions=4 healthyTransitions=3 logBytes=7240 lastStates='STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111) | EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111) | CRASHED_RESTARTING (server exited (code=137); restarting (at | STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111)'
+P8_PROVAUTH FAIL :: serverSawError=false serverErrorName=- serverErrorMessage='-' serverStatus=0 classified=- screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=79551
+P8_SERVERKILL PASS :: killedPid=14207 oldPidDead=true sawCrashedRestarting=true restartCount=0 healthyAgain=true healthHttp=200 sawFatal=false newPid=14818 finalStatus=HEALTHY finalDetail='healthy on 127.0.0.1:4111'
+[2026-09-08T15:21:19Z] P8D_KEYRESIDENCY FAIL
+[2026-09-08T15:21:19Z] P8D_PROVAUTH FAIL
+[2026-09-08T15:21:20Z] P8D_SERVERKILL FAIL :: no verdict line (instrument rc=0)
+[2026-09-08T15:21:20Z] P8D_LIFECYCLELOG FAIL :: no verdict line (instrument rc=0)
+keybytes=73
+P8_CLEANUP PASS :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
+P8_KEYPROBE PASS :: model=nvidia/nemotron-3-ultra-550b-a55b:free tokenSeen=true reply='P8PROBEOK' session=ses_f7e63183effe4XOTgWYiZX762j
+P8_KEYRESIDENCY FAIL :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=arm64-v8a device=RMX3830 api=35 :: key material is in the SOFTWARE keystore on this device - the ciphertext-at-rest guarantee holds, key-extraction resistance does not (expected on emulators; a real-device run is the evidence for the hardware claim)
+P8_LIFECYCLELOG PASS :: illegalTransitions=0 startingTransitions=4 healthyTransitions=3 logBytes=7240 lastStates='STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111) | EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111) | CRASHED_RESTARTING (server exited (code=137); restarting (at | STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111)'
+P8_MODEL_AVAILABLE 1 :: model=nvidia/nemotron-3-ultra-550b-a55b:free replyChars=9
+P8_PROVAUTH FAIL :: serverSawError=false serverErrorName=- serverErrorMessage='-' serverStatus=0 classified=- screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=79551
+P8_SERVERKILL PASS :: killedPid=14207 oldPidDead=true sawCrashedRestarting=true restartCount=0 healthyAgain=true healthHttp=200 sawFatal=false newPid=14818 finalStatus=HEALTHY finalDetail='healthy on 127.0.0.1:4111'
+P8_TOOL SKIP :: the model answered without calling a tool within 480s (asksAnswered=0, replyChars=0, reply='')
+[2026-09-08T15:34:32Z] P8D_KEYPROBE FAIL :: no verdict line (instrument rc=0)
+[2026-09-08T15:34:32Z] P8D_TOOL FAIL :: no verdict line (instrument rc=0)
+[2026-09-08T15:34:33Z] P8D_CLEANUP FAIL :: no verdict line (instrument rc=0)
+[2026-09-08T15:34:47Z] === REAL DEVICE SUMMARY ===
+P8D_TOYBOX PASS :: base64|base64 -d|tar xz -C dir works on this real device api=35 (closes the harness-staging half for this API; API-29 remains the untested half - see report)
+P8D_COLDSTART PASS :: launch -> server answering loopback (http 401) in 20s wall; supervisor log window: 2026-09-08T15:19:40.497Z -> 2026-09-08T15:19:55.947Z (fresh install, first extraction included)
+P8D_KEYRESIDENCY FAIL
+P8D_PROVAUTH FAIL
+P8D_SERVERKILL FAIL :: no verdict line (instrument rc=0)
+P8D_LIFECYCLELOG FAIL :: no verdict line (instrument rc=0)
+P8D_KEYPROBE FAIL :: no verdict line (instrument rc=0)
+P8D_TOOL FAIL :: no verdict line (instrument rc=0)
+P8D_CLEANUP FAIL :: no verdict line (instrument rc=0)
+P8D_SUMMARY 2026-09-08T15:34:47Z
+gates_pass=2 gates_fail=7 gates_skip=0
+device=model=RMX3830 api=35 abi=arm64-v8a
+[2026-09-08T15:34:47Z] bundle written to ./p8d-out/ - send it back (or paste p8d-out/SUMMARY.txt)
