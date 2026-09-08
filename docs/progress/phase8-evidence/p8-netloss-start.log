@@ -6,7 +6,7 @@ assert ok: session id present
 128 |   const r = await post(`/session/${sessionID}/prompt_async`, { parts: [{ type: "text", text }] })
 129 |   if (r.status !== 204 && !r.ok) throw new Error("prompt_async failed: " + r.status + " " + r.text.slice(0, 300))
                                                  ^
-error: prompt_async failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_ff15c279"}}
+error: prompt_async failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_f07ddfa7"}}
       at promptAsync (/data/data/ai.opencode.android.debug/files/tmp/p8js/gates-lib.js:129:44)
 
 Bun v1.3.14 (Android x64)

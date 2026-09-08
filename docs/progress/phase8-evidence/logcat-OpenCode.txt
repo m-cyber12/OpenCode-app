@@ -1,5 +1,6 @@
 --------- beginning of main
-09-08 09:24:49.245  8282  8302 I OpenCode/gate: P8_MODEL_AVAILABLE 1 :: model=openai/gpt-4o-mini replyChars=57
-09-08 09:24:49.247  8282  8302 I OpenCode/gate: P8_KEYPROBE PASS :: model=openai/gpt-4o-mini tokenSeen=true reply='Reply with exactly this token and nothing else: P8PROBEOK' session=ses_f7faa808bffer9J3q8qPCRosVv
-09-08 09:32:52.494  8282  8302 I OpenCode/gate: P8_TOOL SKIP :: the model answered without calling a tool within 480s (asksAnswered=0, replyChars=0, reply='')
-09-08 09:32:53.902  8282  8302 I OpenCode/gate: P8_CLEANUP PASS :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
+09-08 10:29:26.395  7907  7926 I OpenCode/gate: P8_MODEL_AVAILABLE 0 :: no assistant reply with the token in 240s (lastError='none')
+09-08 10:29:26.397  7907  7926 I OpenCode/gate: P8_KEYPROBE FAIL :: model=openai/gpt-4o-mini tokenSeen=false lastError='' - the key is expired, out of credit, or the model id is wrong for this account
+09-08 10:29:27.107  7907  7926 I OpenCode/gate: P8_MODEL_AVAILABLE 0 :: no assistant reply with the token in 240s (lastError='none')
+09-08 10:29:27.111  7907  7926 I OpenCode/gate: P8_TOOL SKIP :: the provisioned key could not serve a turn, so no tool call can be observed: no assistant reply with the token in 240s (lastError='none')
+09-08 10:29:28.314  7907  7926 I OpenCode/gate: P8_CLEANUP PASS :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run

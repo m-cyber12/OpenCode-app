@@ -1,49 +1,24 @@
 
 ai.opencode.android.ui.StressRecoveryGatesTest:
-Error in g00_keyResidency(ai.opencode.android.ui.StressRecoveryGatesTest):
-java.lang.AssertionError: P8_KEYRESIDENCY :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=x86_64 device=sdk_gphone64_x86_64 api=34 :: key material is in the SOFTWARE keystore on this device - the ciphertext-at-rest guarantee holds, key-extraction resistance does not (expected on emulators; a real-device run is the evidence for the hardware claim)
-	at org.junit.Assert.fail(Assert.java:89)
-	at org.junit.Assert.assertTrue(Assert.java:42)
-	at ai.opencode.android.ui.StressRecoveryGatesTest.gate(StressRecoveryGatesTest.kt:106)
-	at ai.opencode.android.ui.StressRecoveryGatesTest.g00_keyResidency(StressRecoveryGatesTest.kt:205)
-
+ai.opencode.android.ui.StressRecoveryGatesTest:
 Error in g01_providerAuth(ai.opencode.android.ui.StressRecoveryGatesTest):
 java.lang.AssertionError: P8_PROVAUTH :: serverSawError=false serverErrorName=- serverErrorMessage='-' serverStatus=0 classified=- screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=43693
 	at org.junit.Assert.fail(Assert.java:89)
 	at org.junit.Assert.assertTrue(Assert.java:42)
 	at ai.opencode.android.ui.StressRecoveryGatesTest.gate(StressRecoveryGatesTest.kt:106)
-	at ai.opencode.android.ui.StressRecoveryGatesTest.g01_providerAuth(StressRecoveryGatesTest.kt:266)
+	at ai.opencode.android.ui.StressRecoveryGatesTest.g01_providerAuth(StressRecoveryGatesTest.kt:291)
+..
 
-Error in g02_serverKill(ai.opencode.android.ui.StressRecoveryGatesTest):
-java.lang.AssertionError: P8_SERVERKILL :: killedPid=8129 oldPidDead=true sawCrashedRestarting=false restartCount=0 healthyAgain=false healthHttp=-1 sawFatal=true newPid=- finalStatus=FATAL finalDetail='supervisor error: attempts is 1-based, got 0'
-	at org.junit.Assert.fail(Assert.java:89)
-	at org.junit.Assert.assertTrue(Assert.java:42)
-	at ai.opencode.android.ui.StressRecoveryGatesTest.gate(StressRecoveryGatesTest.kt:106)
-	at ai.opencode.android.ui.StressRecoveryGatesTest.g02_serverKill(StressRecoveryGatesTest.kt:346)
-.
-
-Time: 18.022
-There were 3 failures:
-1) g00_keyResidency(ai.opencode.android.ui.StressRecoveryGatesTest)
-java.lang.AssertionError: P8_KEYRESIDENCY :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=x86_64 device=sdk_gphone64_x86_64 api=34 :: key material is in the SOFTWARE keystore on this device - the ciphertext-at-rest guarantee holds, key-extraction resistance does not (expected on emulators; a real-device run is the evidence for the hardware claim)
-	at org.junit.Assert.fail(Assert.java:89)
-	at org.junit.Assert.assertTrue(Assert.java:42)
-	at ai.opencode.android.ui.StressRecoveryGatesTest.gate(StressRecoveryGatesTest.kt:106)
-	at ai.opencode.android.ui.StressRecoveryGatesTest.g00_keyResidency(StressRecoveryGatesTest.kt:205)
-2) g01_providerAuth(ai.opencode.android.ui.StressRecoveryGatesTest)
+Time: 22.312
+There was 1 failure:
+1) g01_providerAuth(ai.opencode.android.ui.StressRecoveryGatesTest)
 java.lang.AssertionError: P8_PROVAUTH :: serverSawError=false serverErrorName=- serverErrorMessage='-' serverStatus=0 classified=- screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=43693
 	at org.junit.Assert.fail(Assert.java:89)
 	at org.junit.Assert.assertTrue(Assert.java:42)
 	at ai.opencode.android.ui.StressRecoveryGatesTest.gate(StressRecoveryGatesTest.kt:106)
-	at ai.opencode.android.ui.StressRecoveryGatesTest.g01_providerAuth(StressRecoveryGatesTest.kt:266)
-3) g02_serverKill(ai.opencode.android.ui.StressRecoveryGatesTest)
-java.lang.AssertionError: P8_SERVERKILL :: killedPid=8129 oldPidDead=true sawCrashedRestarting=false restartCount=0 healthyAgain=false healthHttp=-1 sawFatal=true newPid=- finalStatus=FATAL finalDetail='supervisor error: attempts is 1-based, got 0'
-	at org.junit.Assert.fail(Assert.java:89)
-	at org.junit.Assert.assertTrue(Assert.java:42)
-	at ai.opencode.android.ui.StressRecoveryGatesTest.gate(StressRecoveryGatesTest.kt:106)
-	at ai.opencode.android.ui.StressRecoveryGatesTest.g02_serverKill(StressRecoveryGatesTest.kt:346)
+	at ai.opencode.android.ui.StressRecoveryGatesTest.g01_providerAuth(StressRecoveryGatesTest.kt:291)
 
 FAILURES!!!
-Tests run: 4,  Failures: 3
+Tests run: 4,  Failures: 1
 
 
