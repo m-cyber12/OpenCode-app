@@ -195,3 +195,49 @@
     STEP_FAILED rc=1: SKIP_PAYLOAD=1 '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
     FATAL: gradle compile/unit tests failed (compiler output in 00-run-phase8.log)
 
+### 2026-09-08T08:47:13Z  run=34206077181  step: gradle-only mode: compile + JVM unit tests (no emulator, no device gates)
+    head=c1e4c24 branch=arena/01a07f92-opencode-app log_lines=676
+    --- error digest ---
+    BUILD SUCCESSFUL in 1m 49s
+    --- last 40 log lines ---
+    MarkdownTest > fencedCodeBlockKeepsLanguageAndByteExactSource PASSED
+    
+    MarkdownTest > blockquoteAndRule PASSED
+    
+    MarkdownTest > pipeTableSplitsCells PASSED
+    
+    MarkdownTest > crlfIsNormalised PASSED
+    
+    MarkdownTest > underscoreInsideAWordIsNotEmphasis PASSED
+    
+    MarkdownTest > listsCarryDepthMarkerAndOrdering PASSED
+    
+    MarkdownTest > linksCarryLabelAndUrl PASSED
+    
+    MarkdownTest > unterminatedFenceIsStillCodeBecauseTheRestHasNotArrived PASSED
+    
+    MarkdownTest > indentedContinuationJoinsThePreviousItem PASSED
+    
+    MarkdownTest > backslashEscapesAreLiteral PASSED
+    
+    MarkdownTest > boldItalicStrikeAndInlineCode PASSED
+    
+    MarkdownTest > paragraphIsOneBlockAndKeepsSoftLineBreaks PASSED
+    
+    MarkdownTest > unterminatedEmphasisStaysLiteralWhileStreaming PASSED
+    
+    MarkdownTest > strongUsesDoubleMarkersAndNestsEmphasis PASSED
+    
+    MarkdownTest > languageNormalisationIsLowercaseAndAliasFree PASSED
+    
+    MarkdownTest > blankLineSeparatesParagraphs PASSED
+    
+    MarkdownTest > tildeFenceAndInfoStringAttributes PASSED
+    
+    MarkdownTest > atxHeadingsCarryTheirLevel PASSED
+    
+    MarkdownTest > unterminatedLinkStaysLiteralWhileStreaming PASSED
+    
+    BUILD SUCCESSFUL in 1m 49s
+    35 actionable tasks: 33 executed, 2 from cache
+
