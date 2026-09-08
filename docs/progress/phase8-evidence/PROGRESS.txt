@@ -1043,3 +1043,51 @@
     testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
     ########## 6/7 Phase 8 gates (regressions + stress + live model + perf) ##########
 
+### 2026-09-08T10:37:58Z  run=34212933944  step: 7/7 evidence
+    head=1837c6e branch=arena/01a07f92-opencode-app log_lines=1980
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 25s
+    BUILD SUCCESSFUL in 1m 9s
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh'
+    --- last 40 log lines ---
+    [2026-09-08T10:29:28Z] instrument rc=0 (live)
+    [2026-09-08T10:29:29Z] live runner trailer: NOT-OK (rc=0)
+    [2026-09-08T10:29:29Z] screenshots pulled: 1
+    [2026-09-08T10:29:29Z] P8_KEYPROBE FAIL :: :: model=openai/gpt-4o-mini tokenSeen=false lastError='' - the key is expired, out of credit, or the model id is wrong for this account
+    [2026-09-08T10:29:29Z] P8_TOOL SKIP :: :: the provisioned key could not serve a turn, so no tool call can be observed: no assistant reply with the token in 240s (lastError='none')
+    [2026-09-08T10:29:29Z] P8_CLEANUP PASS :: :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
+    [2026-09-08T10:29:29Z] === stage D: destructive stress (host-driven, on the relaunch the instrument left behind) ===
+    [2026-09-08T10:30:25Z] P8_TOYBOX PASS :: base64|base64 -d|tar xz -C dir works on api=34 (harness staging path; the API-29 half is the real-device question - see report)
+    [2026-09-08T10:30:33Z] P8_CORRUPT PASS :: truncated launcher + sha-mangled server bundle + wiped marker -> re-extracted and healthy (re-extraction lines=4, marker restored)
+    [2026-09-08T10:30:41Z] P8_CRASH PASS :: force-stopped the app process with the server running; relaunch returned to HEALTHY (valid marker -> no re-extraction needed)
+    [2026-09-08T10:30:51Z] P8_SESSIONPERSIST FAIL :: session or its user message lost across the restart: P8SESVRFY ok=0 sessionsSeen=4 sessionFound=false userMessageFound=false
+    [2026-09-08T10:30:51Z] P8_NETLOSS FAIL :: turn could not be started: assert ok: session id present
+    124 | // Payload verified against the pinned upstream (05ea5073): PromptInput is
+    [2026-09-08T10:31:00Z] app backgrounded; 90s in the background with a turn in flight
+    [2026-09-08T10:32:30Z] P8_BGFG FAIL :: background/foreground: no verdict line (mid-background health=200)
+    [2026-09-08T10:32:31Z] P8_LARGE FAIL :: large project incomplete: measure=assert ok: session id present git=GIT_OK
+    [2026-09-08T10:32:31Z] P8_HIST FAIL :: turn 1 failed: prompt_async http [object Object]
+    turn 2 failed: prompt_async http [object Object]
+    turn 3 failed: prompt_async http [object Object]
+    [2026-09-08T10:32:41Z] P8_STORAGE PASS :: free: 4404216KB -> 2560960KB (app), back to 4404172KB after cleanup :: healthy under low storage
+    [2026-09-08T10:32:41Z] === stage E: performance measurement (the report's numbers) ===
+    [2026-09-08T10:33:37Z] cold start (supervisor log): EXTRACTING=2026-09-08T10:21:36.732Z HEALTHY=2026-09-08T10:21:46.323Z -> 9591ms
+    [2026-09-08T10:37:57Z] warm relaunch: app_up=1 am='Starting: Intent { cmp=ai.opencode.android.debug/ai.opencode.android.MainActivity }
+    Warning: Activity not started, intent has been delivered to currently running top-most instance.' (see gates.log for per-attempt output)
+    /home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh: line 565: MEMINFO: command not found
+    /home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh: line 567: CPU_BEFORE: command not found
+    [2026-09-08T10:37:58Z] P8_PERF FAIL :: P8PERF ok=0 error=Unable to connect. Is the computer able to access the url? warmRestartMs=260000
+    [2026-09-08T10:37:58Z] === evidence pull ===
+    [2026-09-08T10:37:58Z] warn: final key revoke did not confirm
+    [2026-09-08T10:37:58Z] === SUMMARY ===
+    P8_SUMMARY 2026-09-08T10:37:58Z
+    gates_pass=9 gates_fail=8 gates_skip=2
+    stress_instrument_rc=0 live_instrument_rc=0
+    screenshots=2
+    model_available=0 model=openai/gpt-4o-mini
+    device_abi=x86_64
+    android_sdk=34
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh'
+    phase8 gates rc=1
+    ########## 7/7 evidence ##########
+
