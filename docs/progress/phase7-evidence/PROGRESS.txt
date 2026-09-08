@@ -767,3 +767,50 @@
     testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
     ########## 6/8 Phase 7 gates (workspace isolation + memory + UI regression + live turn) ##########
 
+### 2026-09-08T00:31:07Z  run=34172484507  step: 7/8 Phase 5 regression tail (client-integration gates, staged on this device)
+    head=77e4232 branch=arena/01a07dc2-opencode-app log_lines=1783
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 15s
+    BUILD SUCCESSFUL in 1m 1s
+    --- last 40 log lines ---
+    Performing Streamed Install
+    Success
+    Performing Streamed Install
+    Success
+    [2026-09-08T00:20:09Z] === am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest ===
+    [2026-09-08T00:20:16Z] instrument rc=0 (isolation)
+    [2026-09-08T00:20:16Z] isolation runner trailer: OK
+    [2026-09-08T00:20:16Z] screenshots pulled: 0
+    [2026-09-08T00:20:16Z] P7_W1_PROJECT_LIFECYCLE PASS :: :: created=p7-life-1788826809960 renamed=p7-renamed-1788826809960 adopted=p7-adopted-1788826809960 delete=true
+    [2026-09-08T00:20:16Z] P7_W2_WORKSPACE_ISOLATION PASS :: :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details
+    [2026-09-08T00:20:16Z] P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/data/user/0/ai.opencode.android.debug/files/workspaces/p7-memory-1788826809989/AGENTS.md globalFile=/data/user/0/ai.opencode.android.debug/files/xdg/config/opencode/AGENTS.md
+    [2026-09-08T00:20:16Z] === stage B: deterministic UI regression (bottom sheet + accessibility) ===
+    [2026-09-08T00:20:16Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
+    [2026-09-08T00:20:30Z] instrument rc=0 (chat-ui)
+    [2026-09-08T00:20:31Z] chat-ui runner trailer: OK
+    [2026-09-08T00:20:31Z] screenshots pulled: 9
+    [2026-09-08T00:20:31Z] P6_U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
+    [2026-09-08T00:20:31Z] P6_U7 PASS :: :: interactive={chat=23, sessions=11, projects=6, welcome=2, welcome-unsupported=2, settings=5} total=49 unnamed=0
+    [2026-09-08T00:20:31Z] === stage C: live turn through the UI (key-free default model) ===
+    [2026-09-08T00:20:31Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
+    [2026-09-08T00:27:57Z] instrument rc=0 (live-chat)
+    [2026-09-08T00:27:57Z] live-chat runner trailer: OK
+    [2026-09-08T00:27:57Z] screenshots pulled: 10
+    [2026-09-08T00:27:57Z] P6_L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=11 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot=2
+    [2026-09-08T00:27:57Z] P6_L2 SKIP :: :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=0); screen='
+    [2026-09-08T00:27:57Z] === evidence pull ===
+    [2026-09-08T00:27:58Z] === SUMMARY ===
+    P7_SUMMARY 2026-09-08T00:27:58Z
+    ui_gates_pass=6 ui_gates_fail=0 ui_gates_skip=1
+    isolation_instrument_rc=0 chat_ui_instrument_rc=0 live_chat_instrument_rc=0
+    screenshots=11
+    model_available=1
+    device_abi=x86_64
+    android_sdk=34
+    phase7 gates rc=0
+    ########## 7/8 Phase 5 regression tail (client-integration gates, staged on this device) ##########
+    + zod-to-json-schema@3.25.2
+    
+    92 packages installed [263.00ms]
+    MCP_READY: 26M
+
