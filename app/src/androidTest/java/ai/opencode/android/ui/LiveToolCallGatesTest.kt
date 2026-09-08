@@ -316,7 +316,10 @@ class LiveToolCallGatesTest {
         var err = ""
         var probeSession = session
         for (attempt in 1..2) {
-            val deadline = System.currentTimeMillis() + if (attempt == 1) 240_000 else 180_000
+            // Round 11: free-tier OpenRouter models (e.g. Nemotron 3 Ultra :free,
+            // which DOES support tools) answer a 1-line turn in ~4 min on a real
+            // device - the old 240s/180s budgets sampled that as "key failed".
+            val deadline = System.currentTimeMillis() + if (attempt == 1) 300_000 else 240_000
             val (r, e) = probeReply(probeSession.id, deadline)
             reply = r
             err = e
@@ -405,7 +408,10 @@ class LiveToolCallGatesTest {
         var polls = 0
         var toolParts = emptyList<P8ServerPart>()
         var replySoFar = ""
-        val toolCallHappened = waitFor(480_000) {
+        // Round 11: a tool-call turn is TWO model inferences (call, then final
+        // answer). On a free-tier model that is ~4 min each - 480s (round 9
+        // device run: replyChars=0, the turn never completed) is not enough.
+        val toolCallHappened = waitFor(900_000) {
             asksAnswered += answerAnyAsk()
             polls++
             if (polls % 3 == 0) {
@@ -419,11 +425,17 @@ class LiveToolCallGatesTest {
         val part = toolParts.firstOrNull { it.tool.isNotEmpty() }
 
         if (!toolCallHappened || part == null) {
-            skip(
-                "TOOL",
-                "the model answered without calling a tool within 480s (asksAnswered=$asksAnswered, " +
-                    "replyChars=${replySoFar.length}, reply='${replySoFar.take(120)}')",
-            )
+            // Two distinct failure shapes: the turn never completed (free-tier
+            // queue / slow inference - no parts at all), vs the turn completed
+            // but the model chose to answer instead of calling the tool.
+            val detail = if (replySoFar.isEmpty()) {
+                "no tool call AND no reply within 900s - the turn never completed in this window " +
+                    "(free-tier queue / slow inference) (asksAnswered=$asksAnswered, polls=$polls)"
+            } else {
+                "the model answered without calling a tool within 900s (asksAnswered=$asksAnswered, " +
+                    "replyChars=${replySoFar.length}, reply='${replySoFar.take(120)}')"
+            }
+            skip("TOOL", detail)
             return
         }
 
