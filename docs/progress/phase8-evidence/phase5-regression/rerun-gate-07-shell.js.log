@@ -1,29 +1,29 @@
 assert ok: session id present
-G7_SESSION_ID=ses_f7deea388ffenu64JX4zLdEUGd
-G7_SESSION_ID=ses_f7deea388ffenu64JX4zLdEUGd
+G7_SESSION_ID=ses_f7dc25bdfffe507ffdfp3Pafnw
+G7_SESSION_ID=ses_f7dc25bdfffe507ffdfp3Pafnw
 shell endpoint HTTP 200
 === messages dump (turn done, failed=false) ===
-[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M2112Q4RWTHRRRAM8NWMDZ2E","input":"{\"command\":\"echo probe\"}","output":"\"[seccomp] preload handler installed (rc=0)\\nprobe\\n\"","error":null}]},{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M2112Q8WF07M3VHAV5JS58PW","input":"{\"command\":\"echo G7_SHELL_OK from=$(pwd) uname=$(uname -m) shell=$0 && ls -1 | head -3\"}","output":"\"[seccomp] preload handler installed (rc=0)\\n[seccomp] preload handler installed (rc=0)\\n[seccomp] preload handler installed (rc=0)\\n[seccomp] preload handler installed (rc=0)\\nG7_SHELL_OK from=/data/","error":null}]}]
+[{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M213V9222A8DYEESN4TZ03Y4","input":"{\"command\":\"echo probe\"}","output":"\"probe\\n[seccomp] preload handler installed (rc=0)\\n\"","error":null}]},{"role":"user","parts":[{"type":"text","text":"The following tool was executed by the user","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"tool","state":"completed","text":"","tool":"bash","callID":"01M213V95J8ZG1SJE2AWWCNK0Y","input":"{\"command\":\"echo G7_SHELL_OK from=$(pwd) uname=$(uname -m) shell=$0 && ls -1 | head -3\"}","output":"\"G7_SHELL_OK from=/data/data/ai.opencode.android.debug/files/workspaces/gates uname=x86_64 shell=/system/bin/sh\\n[seccomp] preload handler installed (rc=0)\\n[seccomp] preload handler installed (rc=0)\\","error":null}]}]
 tool parts: 2
   tool="bash" state.status=completed
   tool="bash" state.status=completed
 --- tool outputs ---
-[seccomp] preload handler installed (rc=0)
 probe
+[seccomp] preload handler installed (rc=0)
 
-[seccomp] preload handler installed (rc=0)
-[seccomp] preload handler installed (rc=0)
-[seccomp] preload handler installed (rc=0)
-[seccomp] preload handler installed (rc=0)
 G7_SHELL_OK from=/data/data/ai.opencode.android.debug/files/workspaces/gates uname=x86_64 shell=/system/bin/sh
+[seccomp] preload handler installed (rc=0)
+[seccomp] preload handler installed (rc=0)
 README.md
 notes.txt
 src
+[seccomp] preload handler installed (rc=0)
+[seccomp] preload handler installed (rc=0)
 
 assert ok: shell output contains G7_SHELL_OK
 assert ok: tool part completed
 SSE events seen: ["server.connected","message.part.updated","message.updated","session.status","session.idle"]
-bash tool part lifecycle (streamed): ["running","running","running","running","running","running","completed","completed"]
+bash tool part lifecycle (streamed): ["running","running","running","running","running","running","running","running","completed","completed"]
 assert ok: SSE message.part.updated events streamed
 assert ok: SSE session.status events streamed
 assert ok: bash tool part streamed running→completed
