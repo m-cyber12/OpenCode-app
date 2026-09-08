@@ -3,17 +3,17 @@
   tcp_row local=0100007F:100F rem=00000000:0000 state=0A uid=10192
 -- any row for the app uid that is NOT a loopback local address --
 -- outbound (non-LISTEN) app-uid rows: expected provider / network-MCP traffic, recorded, not asserted --
-  outbound local=0100007F:100F peer=0100007F:8EB2 state=01
-  outbound local=0100007F:100F peer=0100007F:8E98 state=01
-  outbound local=0100007F:100F peer=0100007F:8EA2 state=01
-  outbound local=0100007F:100F peer=0100007F:8EB0 state=01
-  outbound local=1002000A:AA16 peer=165A41AC:01BB state=01
-  outbound local=0100007F:100F peer=0100007F:8E92 state=01
-  outbound local=0000000000000000FFFF00000100007F:8EA2 peer=0000000000000000FFFF00000100007F:100F state=01
-  outbound local=0000000000000000FFFF00000100007F:8EB2 peer=0000000000000000FFFF00000100007F:100F state=01
-  outbound local=0000000000000000FFFF00000100007F:8E98 peer=0000000000000000FFFF00000100007F:100F state=01
-  outbound local=0000000000000000FFFF00000100007F:8E92 peer=0000000000000000FFFF00000100007F:100F state=01
-  outbound local=0000000000000000FFFF00000100007F:8EB0 peer=0000000000000000FFFF00000100007F:100F state=01
+  outbound local=0100007F:100F peer=0100007F:8B7C state=01
+  outbound local=0100007F:100F peer=0100007F:8B90 state=01
+  outbound local=0100007F:100F peer=0100007F:8B7A state=01
+  outbound local=0100007F:100F peer=0100007F:8B6C state=01
+  outbound local=0100007F:100F peer=0100007F:8B86 state=01
+  outbound local=1002000A:E0AA peer=165A41AC:01BB state=01
+  outbound local=0000000000000000FFFF00000100007F:8B86 peer=0000000000000000FFFF00000100007F:100F state=01
+  outbound local=0000000000000000FFFF00000100007F:8B6C peer=0000000000000000FFFF00000100007F:100F state=01
+  outbound local=0000000000000000FFFF00000100007F:8B90 peer=0000000000000000FFFF00000100007F:100F state=01
+  outbound local=0000000000000000FFFF00000100007F:8B7C peer=0000000000000000FFFF00000100007F:100F state=01
+  outbound local=0000000000000000FFFF00000100007F:8B7A peer=0000000000000000FFFF00000100007F:100F state=01
 -- UDP: app-uid sockets on mDNS 5353 (0x14F9) --
 -- count of LISTEN rows on port 4111 by the app uid --
   listen_on_4111=1
@@ -23,7 +23,7 @@
 
 === the app's own audit (written by runtime/LoopbackAudit) ===
 # OpenCode Android loopback/bind audit (written by the app itself)
-at=2026-09-08T17:20:02Z
+at=2026-09-08T17:29:21Z
 uid=10192
 port=4111 expected_bind=127.0.0.1
 table_verdict=NO_ROWS(seen)
@@ -48,20 +48,20 @@ violations=none
 (unreadable)
 
 === launcher bind evidence (runtime.log) ===
-2026-09-08T17:13:46.531Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-09-08T17:13:46.539Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-09-08T17:14:06.463Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-09-08T17:14:06.472Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-09-08T17:19:21.017Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-09-08T17:19:21.018Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-09-08T17:19:31.431Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-09-08T17:19:31.439Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-09-08T17:19:36.747Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-09-08T17:19:36.756Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-09-08T17:19:39.280Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-09-08T17:19:39.291Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-09-08T17:19:57.337Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-09-08T17:19:57.343Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T17:19:16.098Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T17:19:16.102Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T17:19:42.761Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T17:19:42.763Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T17:27:13.290Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T17:27:13.300Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T17:27:22.977Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T17:27:22.987Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T17:27:28.735Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T17:27:28.736Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T17:28:13.242Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T17:28:13.251Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T17:29:16.143Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T17:29:16.153Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
 
 === OpenCode server log: mDNS publish lines (want none) ===
 (end of mDNS grep)

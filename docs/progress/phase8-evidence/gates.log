@@ -1,104 +1,104 @@
-[2026-09-08T17:13:37Z] === stage A: Phase 7 regression (workspace isolation + memory + UI + live turn) ===
-[2026-09-08T17:13:37Z] === stage A: workspace isolation + memory (model-free, deterministic) ===
-[2026-09-08T17:13:37Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the gates start from a clean install
+[2026-09-08T17:19:06Z] === stage A: Phase 7 regression (workspace isolation + memory + UI + live turn) ===
+[2026-09-08T17:19:06Z] === stage A: workspace isolation + memory (model-free, deterministic) ===
+[2026-09-08T17:19:06Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the gates start from a clean install
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-09-08T17:13:43Z] === am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest ===
-[2026-09-08T17:13:49Z] instrument rc=0 (isolation)
-[2026-09-08T17:13:49Z] isolation runner trailer: OK
-[2026-09-08T17:13:49Z] screenshots pulled: 0
-[2026-09-08T17:13:49Z] P7_W1_PROJECT_LIFECYCLE PASS :: :: created=p7-life-1788887624082 renamed=p7-renamed-1788887624082 adopted=p7-adopted-1788887624082 delete=true
-[2026-09-08T17:13:49Z] P7_W2_WORKSPACE_ISOLATION PASS :: :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details
-[2026-09-08T17:13:49Z] P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/data/user/0/ai.opencode.android.debug/files/workspaces/p7-memory-1788887624107/AGENTS.md globalFile=/data/user/0/ai.opencode.android.debug/files/xdg/config/opencode/AGENTS.md
-[2026-09-08T17:13:49Z] === stage B: deterministic UI regression (bottom sheet + accessibility) ===
-[2026-09-08T17:13:49Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
-[2026-09-08T17:14:03Z] instrument rc=0 (chat-ui)
-[2026-09-08T17:14:03Z] chat-ui runner trailer: OK
-[2026-09-08T17:14:03Z] screenshots pulled: 9
-[2026-09-08T17:14:03Z] P6_U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
-[2026-09-08T17:14:03Z] P6_U7 PASS :: :: interactive={chat=23, sessions=11, projects=6, welcome=2, welcome-unsupported=2, settings=5} total=49 unnamed=0
-[2026-09-08T17:14:03Z] === stage C: live turn through the UI (key-free default model) ===
-[2026-09-08T17:14:03Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
-[2026-09-08T17:19:15Z] instrument rc=0 (live-chat)
-[2026-09-08T17:19:15Z] live-chat runner trailer: OK
-[2026-09-08T17:19:16Z] screenshots pulled: 10
-[2026-09-08T17:19:16Z] P6_L1 SKIP :: :: the turn failed and the app said so:
-[2026-09-08T17:19:16Z] P6_L2 SKIP :: :: no model served a turn, so no tool call can be observed: the turn failed and the app said so:
-[2026-09-08T17:19:16Z] === evidence pull ===
-[2026-09-08T17:19:16Z] === SUMMARY ===
-P7_SUMMARY 2026-09-08T17:19:16Z
-ui_gates_pass=5 ui_gates_fail=0 ui_gates_skip=2
+[2026-09-08T17:19:12Z] === am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest ===
+[2026-09-08T17:19:19Z] instrument rc=0 (isolation)
+[2026-09-08T17:19:19Z] isolation runner trailer: OK
+[2026-09-08T17:19:20Z] screenshots pulled: 0
+[2026-09-08T17:19:20Z] P7_W1_PROJECT_LIFECYCLE PASS :: :: created=p7-life-1788887953055 renamed=p7-renamed-1788887953055 adopted=p7-adopted-1788887953055 delete=true
+[2026-09-08T17:19:20Z] P7_W2_WORKSPACE_ISOLATION PASS :: :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details
+[2026-09-08T17:19:20Z] P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/data/user/0/ai.opencode.android.debug/files/workspaces/p7-memory-1788887953091/AGENTS.md globalFile=/data/user/0/ai.opencode.android.debug/files/xdg/config/opencode/AGENTS.md
+[2026-09-08T17:19:20Z] === stage B: deterministic UI regression (bottom sheet + accessibility) ===
+[2026-09-08T17:19:20Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
+[2026-09-08T17:19:37Z] instrument rc=0 (chat-ui)
+[2026-09-08T17:19:37Z] chat-ui runner trailer: OK
+[2026-09-08T17:19:38Z] screenshots pulled: 9
+[2026-09-08T17:19:38Z] P6_U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
+[2026-09-08T17:19:38Z] P6_U7 PASS :: :: interactive={chat=23, sessions=11, projects=6, welcome=2, welcome-unsupported=2, settings=5} total=49 unnamed=0
+[2026-09-08T17:19:38Z] === stage C: live turn through the UI (key-free default model) ===
+[2026-09-08T17:19:38Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
+[2026-09-08T17:27:06Z] instrument rc=0 (live-chat)
+[2026-09-08T17:27:06Z] live-chat runner trailer: OK
+[2026-09-08T17:27:07Z] screenshots pulled: 10
+[2026-09-08T17:27:07Z] P6_L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=12 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot=2
+[2026-09-08T17:27:07Z] P6_L2 SKIP :: :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=0); screen='
+[2026-09-08T17:27:07Z] === evidence pull ===
+[2026-09-08T17:27:07Z] === SUMMARY ===
+P7_SUMMARY 2026-09-08T17:27:07Z
+ui_gates_pass=6 ui_gates_fail=0 ui_gates_skip=1
 isolation_instrument_rc=0 chat_ui_instrument_rc=0 live_chat_instrument_rc=0
 screenshots=11
-model_available=0
+model_available=1
 device_abi=x86_64
 android_sdk=34
-[2026-09-08T17:19:16Z] P8_P7REG PASS :: phase7 suite rc=0 fails=0 (W1 W2 W3 U3 U7 L1 L2 all green; see phase7-evidence fold)
-[2026-09-08T17:19:16Z] === stage A2: Phase 5 regression (client gates + loopback + credentials re-verification) ===
+[2026-09-08T17:27:07Z] P8_P7REG PASS :: phase7 suite rc=0 fails=0 (W1 W2 W3 U3 U7 L1 L2 all green; see phase7-evidence fold)
+[2026-09-08T17:27:07Z] === stage A2: Phase 5 regression (client gates + loopback + credentials re-verification) ===
 + zod-to-json-schema@3.25.2
 
-92 packages installed [240.00ms]
+92 packages installed [251.00ms]
 MCP_READY: 26M
 P5_REMOTE_MCP_DEPS reused from phase4/out/mcp/node_modules
 P5_REMOTE_MCP_SMOKE up=1 (log: /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp/smoke.log)
 P5_REMOTE_MCP_BUILT /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp (sdk 1.29.0)
-[2026-09-08T17:19:18Z] P5-00 app uid resolved: '10192'
-[2026-09-08T17:19:18Z] === P5-01 device / app / payload prerequisites ===
-[2026-09-08T17:19:23Z] P5-01 versionName=1.18.23-phase5 pid=6789 uid=10192 marker=present
+[2026-09-08T17:27:09Z] P5-00 app uid resolved: '10192'
+[2026-09-08T17:27:09Z] === P5-01 device / app / payload prerequisites ===
+[2026-09-08T17:27:14Z] P5-01 versionName=1.18.23-phase5 pid=6811 uid=10192 marker=present
 P5-01: PASS phase5-apk-installed-and-app-running
 P5-02: PASS payload-v5-manifest-marker
-[2026-09-08T17:19:23Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
+[2026-09-08T17:27:14Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
 wrote_rc=0
 wrote_rc=0
 wrote_rc=0
 warning: templates not found in /home/runner/share/git-core/templates
 error: cannot run maintenance: No such file or directory
 FIXTURE_GIT_OK
-[2026-09-08T17:19:26Z] P5-03 config_present=yes harness_rc=0
+[2026-09-08T17:27:17Z] P5-03 config_present=yes harness_rc=0
 P5-03: PASS fixture-config-and-harness-marker
-[2026-09-08T17:19:34Z] === P5-04 server password via Keystore + test-only harness export ===
-[2026-09-08T17:19:37Z] P5-04 password: 7253… (48 chars) export_verdict=PASS
+[2026-09-08T17:27:25Z] === P5-04 server password via Keystore + test-only harness export ===
+[2026-09-08T17:28:10Z] P5-04 password: ca33… (48 chars) export_verdict=PASS
 P5-04: PASS keystore-password-authenticated-live-server
-[2026-09-08T17:19:37Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
-[2026-09-08T17:19:52Z] --- Kotlin gate verdict lines ---
-[2026-09-08T17:19:52Z] P5-K instrument_rc=0 kotlin_gates_pass=10/9 fail=0 skipped=0 gradle_ok=1 failures_marker=0 junit_exception_lines=0
+[2026-09-08T17:28:10Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
+[2026-09-08T17:29:10Z] --- Kotlin gate verdict lines ---
+[2026-09-08T17:29:10Z] P5-K instrument_rc=0 kotlin_gates_pass=10/9 fail=0 skipped=0 gradle_ok=1 failures_marker=0 junit_exception_lines=0
 P5-K: PASS kotlin-client-gates-on-device (K1..K9, pass=10 fail=0 skip=0)
-[2026-09-08T17:19:52Z] === relaunching the app for the device-side gate stages ===
-[2026-09-08T17:19:59Z] post-instrument runtime: health=OK via host-forward
-[2026-09-08T17:19:59Z] host-forward diagnostic: adb forward tcp:4111 -> http 200 (the drivers do not depend on this path; it works on this image)
+[2026-09-08T17:29:10Z] === relaunching the app for the device-side gate stages ===
+[2026-09-08T17:29:17Z] post-instrument runtime: health=OK via host-forward
+[2026-09-08T17:29:17Z] host-forward diagnostic: adb forward tcp:4111 -> http 200 (the drivers do not depend on this path; it works on this image)
 P5-05: PASS runtime-healthy-after-instrumentation
-[2026-09-08T17:19:59Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
-[2026-09-08T17:20:10Z] model pre-flight: PROBE ok :: model=big-pickle exact-token reply, session=ses_f7df7496affe2JzVtU4jdECQdC
-[2026-09-08T17:20:10Z] model_available=1 -> drivers and the in-app K2/K5 turns assert real streamed text
-[2026-09-08T17:20:10Z] gate driver runner: the payload's own bun at /data/data/ai.opencode.android.debug/files/bin/bun (on-device, app uid)
-[2026-09-08T17:20:10Z] --- re-run gate-06-health.js (as shipped, no edits) inside the app namespace ---
+[2026-09-08T17:29:17Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
+[2026-09-08T17:29:31Z] model pre-flight: PROBE ok :: model=big-pickle exact-token reply, session=ses_f7deebbc2ffeoHhX1TgQQUfTVg
+[2026-09-08T17:29:31Z] model_available=1 -> drivers and the in-app K2/K5 turns assert real streamed text
+[2026-09-08T17:29:31Z] gate driver runner: the payload's own bun at /data/data/ai.opencode.android.debug/files/bin/bun (on-device, app uid)
+[2026-09-08T17:29:31Z] --- re-run gate-06-health.js (as shipped, no edits) inside the app namespace ---
 P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
-[2026-09-08T17:20:10Z] --- re-run gate-07-shell.js (as shipped, no edits) inside the app namespace ---
+[2026-09-08T17:29:31Z] --- re-run gate-07-shell.js (as shipped, no edits) inside the app namespace ---
 P5-R-07: PASS phase4-driver-gate-07-shell.js-unmodified(on-device)
-[2026-09-08T17:20:19Z] --- re-run gate-10-mcp.js (as shipped, no edits) inside the app namespace ---
+[2026-09-08T17:29:40Z] --- re-run gate-10-mcp.js (as shipped, no edits) inside the app namespace ---
 P5-R-10: PASS phase4-driver-gate-10-mcp.js-unmodified(on-device)
-[2026-09-08T17:20:35Z] --- re-run gate-11-stream.js (as shipped, no edits) inside the app namespace ---
+[2026-09-08T17:29:56Z] --- re-run gate-11-stream.js (as shipped, no edits) inside the app namespace ---
 P5-R-11: PASS phase4-driver-gate-11-stream.js-unmodified(on-device)
-[2026-09-08T17:20:52Z] --- re-run gate-12-permission.js (as shipped, no edits) inside the app namespace ---
+[2026-09-08T17:30:13Z] --- re-run gate-12-permission.js (as shipped, no edits) inside the app namespace ---
 P5-R-12: PASS phase4-driver-gate-12-permission.js-unmodified(on-device)
-[2026-09-08T17:21:06Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
-[2026-09-08T17:21:07Z] fixture host listener up=1 pid=12430
-[2026-09-08T17:21:07Z] adb reverse tcp:4551 -> host tcp:4551: 4551
+[2026-09-08T17:30:31Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
+[2026-09-08T17:30:32Z] fixture host listener up=1 pid=12551
+[2026-09-08T17:30:32Z] adb reverse tcp:4551 -> host tcp:4551: 4551
 P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
-[2026-09-08T17:23:21Z] === P5-G17 loopback-only binding evidence ===
-[2026-09-08T17:23:21Z] P5-G17 table=conclusive wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0 bound_lines=7 publish_lines=0 table_ok=1
-[2026-09-08T17:23:21Z] device global ipv4: '10.0.2.15'
+[2026-09-08T17:32:46Z] === P5-G17 loopback-only binding evidence ===
+[2026-09-08T17:32:46Z] P5-G17 table=conclusive wildcard=0 nonloopback_rows=0 listens=1 mdns_sockets=0 bound_lines=7 publish_lines=0 table_ok=1
+[2026-09-08T17:32:46Z] device global ipv4: '10.0.2.15'
 P5-G17: PASS loopback-only-binding-and-no-mdns
-[2026-09-08T17:23:21Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
-[2026-09-08T17:23:23Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=600 auth_canary_absent=1 auth_verdict=clean leaks_outside_harness=0
+[2026-09-08T17:32:46Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
+[2026-09-08T17:32:48Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=600 auth_canary_absent=1 auth_verdict=clean leaks_outside_harness=0
 P5-G18: PASS credentials-keystore-only-at-rest
-[2026-09-08T17:23:23Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
-[2026-09-08T17:23:24Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
+[2026-09-08T17:32:48Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
+[2026-09-08T17:32:50Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
 P5-G19: PASS no-hardcoded-or-bundled-secrets
-[2026-09-08T17:23:24Z] === evidence pull ===
-[2026-09-08T17:23:25Z] === SUMMARY ===
+[2026-09-08T17:32:50Z] === evidence pull ===
+[2026-09-08T17:32:50Z] === SUMMARY ===
 P5-01: PASS phase5-apk-installed-and-app-running
 P5-02: PASS payload-v5-manifest-marker
 P5-03: PASS fixture-config-and-harness-marker
@@ -114,15 +114,15 @@ P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
 P5-G17: PASS loopback-only-binding-and-no-mdns
 P5-G18: PASS credentials-keystore-only-at-rest
 P5-G19: PASS no-hardcoded-or-bundled-secrets
-P5_SUMMARY 2026-09-08T17:23:25Z
+P5_SUMMARY 2026-09-08T17:32:50Z
 gates_pass=14 gates_fail=1 gates_skip=0
 kotlin_gate_pass=10 kotlin_gate_fail=0 kotlin_gate_skipped=0
-model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f7df7496affe2JzVtU4jdECQdC
+model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f7deebbc2ffeoHhX1TgQQUfTVg
 app_uid=10192 device_abi=x86_64
 live_launcher_processes=0
-[2026-09-08T17:23:25Z] P8_P5REG PASS :: phase5 suite rc=1 fails=1 (G16 red = documented upstream #47644; K1-K9 G6-G12 G17 G18 G19 green)
-[2026-09-08T17:23:25Z] === stage B: model provisioning (the run's repo-secret key, into the harness dir) ===
-[2026-09-08T17:23:25Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test for a clean install
+[2026-09-08T17:32:50Z] P8_P5REG PASS :: phase5 suite rc=1 fails=1 (G16 red = documented upstream #47644; K1-K9 G6-G12 G17 G18 G19 green)
+[2026-09-08T17:32:50Z] === stage B: model provisioning (the run's repo-secret key, into the harness dir) ===
+[2026-09-08T17:32:50Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test for a clean install
 Performing Streamed Install
 Success
 Performing Streamed Install
@@ -130,71 +130,73 @@ Success
 harness_rc=0
 keybytes=73
 wrote_rc=0
-[2026-09-08T17:23:31Z] model key provisioned (key bytes recorded in gates.log, value never logged); model=openai/gpt-4o-mini
-[2026-09-08T17:23:44Z] runtime healthy with Keystore password available to the host drivers
-[2026-09-08T17:23:44Z] === stage C: P8 instrumented stress gates (model-free half) ===
-[2026-09-08T17:23:44Z] rebooting the emulator (fresh network state; relaunching the app)
+[2026-09-08T17:32:57Z] model key provisioned (key bytes recorded in gates.log, value never logged); model=openai/gpt-4o-mini
+[2026-09-08T17:33:53Z] runtime healthy with Keystore password available to the host drivers
+[2026-09-08T17:33:53Z] === stage C: P8 instrumented stress gates (model-free half) ===
+[2026-09-08T17:33:53Z] rebooting the emulator (fresh network state; relaunching the app)
+[2026-09-08T17:39:38Z] wait_healthy timed out (host=000000 device=none)
+[2026-09-08T17:39:38Z] warn: runtime not healthy after the reboot
 staged_rc=0
-P8NETPROBE openrouter http=200 ms=122
-P8NETPROBE opencode http=200 ms=225
-P8NETPROBE control http=200 ms=151
-P8NETPROBE_AUTH net http=200 free=? remaining=? limit=? ms=94
+P8NETPROBE openrouter http=200 ms=1223
+P8NETPROBE opencode http=200 ms=617
+P8NETPROBE control http=200 ms=1061
+P8NETPROBE_AUTH net http=200 free=? remaining=? limit=? ms=79
 assert ok: session id present
-P8NETPROBE_SERVER shell http=500 body={"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_6299e060"}}
-[2026-09-08T17:24:26Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g00_keyResidency ===
-[2026-09-08T17:24:31Z] instrument rc=0 (stress-a)
+P8NETPROBE_SERVER shell http=500 body={"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_5d1d98bb"}}
+[2026-09-08T17:39:42Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g00_keyResidency ===
+[2026-09-08T17:39:46Z] instrument rc=0 (stress-a)
 --- runtime.log tail after stress-a (ai.opencode.android.ui.StressRecoveryGatesTest#g00_keyResidency) ---
 
 ai.opencode.android.ui.StressRecoveryGatesTest:
 ai.opencode.android.ui.StressRecoveryGatesTest:
 
-Time: 2.447
+Time: 2.18
 
 OK (1 test)
 
 
-[2026-09-08T17:24:32Z] stress-a runner trailer: OK
-[2026-09-08T17:24:32Z] screenshots pulled: 0
-[2026-09-08T17:24:32Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g02_serverKill ===
-[2026-09-08T17:24:54Z] instrument rc=0 (stress-b)
+[2026-09-08T17:39:47Z] stress-a runner trailer: OK
+[2026-09-08T17:39:47Z] screenshots pulled: 0
+[2026-09-08T17:39:47Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g02_serverKill ===
+[2026-09-08T17:40:04Z] instrument rc=0 (stress-b)
 --- runtime.log tail after stress-b (ai.opencode.android.ui.StressRecoveryGatesTest#g02_serverKill) ---
 
 ai.opencode.android.ui.StressRecoveryGatesTest:.
 
-Time: 21.578
+Time: 16.534
 
 OK (1 test)
 
 
-[2026-09-08T17:24:54Z] stress-b runner trailer: OK
-[2026-09-08T17:24:54Z] screenshots pulled: 0
-[2026-09-08T17:24:54Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g03_lifecycleLog ===
-[2026-09-08T17:24:57Z] instrument rc=0 (stress-c)
+[2026-09-08T17:40:04Z] stress-b runner trailer: OK
+[2026-09-08T17:40:04Z] screenshots pulled: 0
+[2026-09-08T17:40:04Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g03_lifecycleLog ===
+[2026-09-08T17:40:07Z] instrument rc=0 (stress-c)
 --- runtime.log tail after stress-c (ai.opencode.android.ui.StressRecoveryGatesTest#g03_lifecycleLog) ---
 
 ai.opencode.android.ui.StressRecoveryGatesTest:.
 
-Time: 1.603
+Time: 2.057
 
 OK (1 test)
 
 
-[2026-09-08T17:24:57Z] stress-c runner trailer: OK
-[2026-09-08T17:24:57Z] screenshots pulled: 0
-[2026-09-08T17:24:57Z] P8_KEYRESIDENCY SKIP :: :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=x86_64 device=sdk_gphone64_x86_64 api=34 :: key material is in the SOFTWARE keystore on this devic
-[2026-09-08T17:24:57Z] P8_SERVERKILL PASS :: :: killedPid=4225 oldPidDead=true sawCrashedRestarting=true restartCount=0 healthyAgain=true healthHttp=200 sawFatal=false newPid=4471 finalStatus=HEALTHY finalDetail='healthy on 127.0.0.1:4111'
-[2026-09-08T17:24:57Z] P8_LIFECYCLELOG PASS :: :: illegalTransitions=0 startingTransitions=9 healthyTransitions=3 logBytes=14483 lastStates='EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:411
-[2026-09-08T17:24:57Z] === stage D: destructive stress (host-driven, on the relaunch the instrument left behind) ===
+[2026-09-08T17:40:07Z] stress-c runner trailer: OK
+[2026-09-08T17:40:07Z] screenshots pulled: 0
+[2026-09-08T17:40:07Z] P8_KEYRESIDENCY SKIP :: :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=x86_64 device=sdk_gphone64_x86_64 api=34 :: key material is in the SOFTWARE keystore on this devic
+[2026-09-08T17:40:07Z] P8_SERVERKILL PASS :: :: killedPid=4719 oldPidDead=true sawCrashedRestarting=true restartCount=0 healthyAgain=true healthHttp=200 sawFatal=false newPid=4785 finalStatus=HEALTHY finalDetail='healthy on 127.0.0.1:4111'
+[2026-09-08T17:40:07Z] P8_LIFECYCLELOG PASS :: :: illegalTransitions=0 startingTransitions=9 healthyTransitions=5 logBytes=15372 lastStates='EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:411
+[2026-09-08T17:40:07Z] === stage D: destructive stress (host-driven, on the relaunch the instrument left behind) ===
 staged_rc=0
 P8KEYPROV ok=1
-P8NETPROBE openrouter http=200 ms=461
-P8NETPROBE opencode http=200 ms=1161
-P8NETPROBE control http=200 ms=106
-P8NETPROBE_AUTH net http=200 free=? remaining=? limit=? ms=23
+P8NETPROBE openrouter http=200 ms=1350
+P8NETPROBE opencode http=200 ms=156
+P8NETPROBE control http=200 ms=1550
+P8NETPROBE_AUTH net http=200 free=? remaining=? limit=? ms=95
 assert ok: session id present
-{"info":{"id":"msg_0820d7509001iAzJ3lsqNg88PB","sessionID":"ses_f7df28c1cffe1sOx66mY8GBNuJ","role":"assistant","time":{"created":1788888315145,"completed":1788888316970},"parentID":"msg_0820d74d70015hWFjTJEtzl8wP","modelID":"google/gemini-3-pro-image-preview","providerID":"openrouter","mode":"build","agent":"build","path":{"cwd":"/data/data/ai.opencode.android.debug/files/workspaces/p8-stress","root":"/"},"cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}}},"parts":[{"id":"prt_0820d750b001IyIhS3rCPLZl6H","sessionID":"ses_f7df28c1cffe1sOx66mY8GBNuJ","messageID":"msg_0820d7509001iAzJ3lsqNg88PB","type":"tool","callID":"01M210TX8BM7CFXAFXVHJ6RC6P","tool":"bash","state":{"status":"completed","input":{"command":"/data/data/ai.opencode.android.debug/files/bin/bun /data/data/ai.opencode.android.debug/files/tmp/p8netprobe-server.js 2>&1; rm -f /data/data/ai.opencode.android.debug/files/tmp/p8netprobe-server.js"},"output":"[seccomp] preload handler installed (rc=0)\n[seccomp] preload handler installed (rc=0)\nP8NETPROBE_SERVER openrouter http=200 ms=871\nP8NETPROBE_SERVER opencode http=200 ms=139\nP8NETPROBE_SERVER control http=200 ms=576\nP8NETPROBE_AUTH server http=200 free=? remaining=? limit=? ms=24\n[seccomp] preload handler installed (rc=0)\n","title":"","metadata":{"output":"[seccomp] preload handler installed (rc=0)\n[seccomp] preload handler installed (rc=0)\nP8NETPROBE_SERVER openrouter http=200 ms=871\nP8NETPROBE_SERVER opencode http=200 ms=139\nP8NETPROBE_SERVER control http=200 ms=576\nP8NETPROBE_AUTH server http=200 free=? remaining=? limit=? ms=24\n[seccomp] preload handler installed (rc=0)\n"},"time":{"start":1788888315147,"end":1788888316970}}}]}
-[2026-09-08T17:25:17Z] === am instrument ai.opencode.android.ui.LiveToolCallGatesTest ===
-[2026-09-08T17:34:30Z] instrument rc=0 (live)
+{"info":{"id":"msg_0821bffcd001JRG8fWnfYKdXzT","sessionID":"ses_f7de401fdffenZm3p2NBw7Bigl","role":"assistant","time":{"created":1788889268173,"completed":1788889270696},"parentID":"msg_0821bffa50012VnwmkT0uWPMiI","modelID":"google/gemini-3-pro-image-preview","providerID":"openrouter","mode":"build","agent":"build","path":{"cwd":"/data/data/ai.opencode.android.debug/files/workspaces/p8-stress","root":"/"},"cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}}},"parts":[{"id":"prt_0821bffd1001B7NJC3kgPLMpd9","sessionID":"ses_f7de401fdffenZm3p2NBw7Bigl","messageID":"msg_0821bffcd001JRG8fWnfYKdXzT","type":"tool","callID":"01M211QZYHQSDND6VFYWCV3CCQ","tool":"bash","state":{"status":"completed","input":{"command":"/data/data/ai.opencode.android.debug/files/bin/bun /data/data/ai.opencode.android.debug/files/tmp/p8netprobe-server.js 2>&1; rm -f /data/data/ai.opencode.android.debug/files/tmp/p8netprobe-server.js"},"output":"[seccomp] preload handler installed (rc=0)\n[seccomp] preload handler installed (rc=0)\nP8NETPROBE_SERVER openrouter http=200 ms=566\nP8NETPROBE_SERVER opencode http=200 ms=139\nP8NETPROBE_SERVER control http=200 ms=1554\nP8NETPROBE_AUTH server http=200 free=? remaining=? limit=? ms=26\n[seccomp] preload handler installed (rc=0)\n","title":"","metadata":{"output":"[seccomp] preload handler installed (rc=0)\n[seccomp] preload handler installed (rc=0)\nP8NETPROBE_SERVER openrouter http=200 ms=566\nP8NETPROBE_SERVER opencode http=200 ms=139\nP8NETPROBE_SERVER control http=200 ms=1554\nP8NETPROBE_AUTH server http=200 free=? remaining=? limit=? ms=26\n[seccomp] preload handler installed (rc=0)\n"},"time":{"start":1788889268177,"end":1788889270696}}}]}
+[2026-09-08T17:41:10Z] === am instrument ai.opencode.android.ui.LiveToolCallGatesTest ===
+[2026-09-08T17:51:08Z] instrument rc=0 (live)
 --- runtime.log tail after live (ai.opencode.android.ui.LiveToolCallGatesTest) ---
 
 ai.opencode.android.ui.LiveToolCallGatesTest:.
@@ -206,7 +208,7 @@ java.lang.AssertionError: P8_KEYPROBE :: model=openai/gpt-4o-mini tokenSeen=fals
 	at ai.opencode.android.ui.LiveToolCallGatesTest.g01_keyProbe(LiveToolCallGatesTest.kt:359)
 .
 
-Time: 552.36
+Time: 596.665
 There was 1 failure:
 1) g01_keyProbe(ai.opencode.android.ui.LiveToolCallGatesTest)
 java.lang.AssertionError: P8_KEYPROBE :: model=openai/gpt-4o-mini tokenSeen=false lastError='APIError:  (status=0)' - the key is expired, out of credit, or the model id is wrong for this account
@@ -219,18 +221,18 @@ FAILURES!!!
 Tests run: 4,  Failures: 1
 
 
-[2026-09-08T17:34:30Z] live runner trailer: NOT-OK (rc=0)
+[2026-09-08T17:51:08Z] live runner trailer: NOT-OK (rc=0)
 Error in g01_keyProbe(ai.opencode.android.ui.LiveToolCallGatesTest):
 FAILURES!!!
 Tests run: 4,  Failures: 1
-[2026-09-08T17:34:30Z] screenshots pulled: 0
-[2026-09-08T17:34:31Z] P8_KEYPROBE FAIL :: :: model=openai/gpt-4o-mini tokenSeen=false lastError='APIError:  (status=0)' - the key is expired, out of credit, or the model id is wrong for this account
-[2026-09-08T17:34:31Z] P8_TOOL SKIP :: :: the provisioned key could not serve a turn, so no tool call can be observed: no assistant reply with the token in 240s (lastError='APIError:  (status=0)')
-[2026-09-08T17:34:31Z] P8_CLEANUP PASS :: :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
+[2026-09-08T17:51:08Z] screenshots pulled: 0
+[2026-09-08T17:51:08Z] P8_KEYPROBE FAIL :: :: model=openai/gpt-4o-mini tokenSeen=false lastError='APIError:  (status=0)' - the key is expired, out of credit, or the model id is wrong for this account
+[2026-09-08T17:51:08Z] P8_TOOL SKIP :: :: the provisioned key could not serve a turn, so no tool call can be observed: no assistant reply with the token in 240s (lastError='APIError:  (status=0)')
+[2026-09-08T17:51:08Z] P8_CLEANUP PASS :: :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
 P8_MODEL_AVAILABLE 0 :: no assistant
 P8_MODEL_AVAILABLE 0 :: no assistant reply with the token in 240s (lastError='APIError:  (status=0)')
-[2026-09-08T17:34:31Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g01_providerAuth ===
-[2026-09-08T17:34:42Z] instrument rc=0 (provauth)
+[2026-09-08T17:51:08Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g01_providerAuth ===
+[2026-09-08T17:51:27Z] instrument rc=0 (provauth)
 --- runtime.log tail after provauth (ai.opencode.android.ui.StressRecoveryGatesTest#g01_providerAuth) ---
 
 ai.opencode.android.ui.StressRecoveryGatesTest:
@@ -242,7 +244,7 @@ java.lang.AssertionError: P8_PROVAUTH :: serverSawError=true serverErrorName=API
 	at ai.opencode.android.ui.StressRecoveryGatesTest.g01_providerAuth(StressRecoveryGatesTest.kt:291)
 
 
-Time: 11.028
+Time: 18.381
 There was 1 failure:
 1) g01_providerAuth(ai.opencode.android.ui.StressRecoveryGatesTest)
 java.lang.AssertionError: P8_PROVAUTH :: serverSawError=true serverErrorName=APIError serverErrorMessage='' serverStatus=0 classified=PROVIDER_OTHER screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=43693
@@ -255,46 +257,48 @@ FAILURES!!!
 Tests run: 1,  Failures: 1
 
 
-[2026-09-08T17:34:42Z] provauth runner trailer: NOT-OK (rc=0)
+[2026-09-08T17:51:28Z] provauth runner trailer: NOT-OK (rc=0)
 Error in g01_providerAuth(ai.opencode.android.ui.StressRecoveryGatesTest):
 FAILURES!!!
 Tests run: 1,  Failures: 1
-[2026-09-08T17:34:42Z] screenshots pulled: 1
-[2026-09-08T17:34:42Z] P8_PROVAUTH FAIL :: :: serverSawError=true serverErrorName=APIError serverErrorMessage='' serverStatus=0 classified=PROVIDER_OTHER screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=43693
+[2026-09-08T17:51:28Z] screenshots pulled: 1
+[2026-09-08T17:51:28Z] P8_PROVAUTH FAIL :: :: serverSawError=true serverErrorName=APIError serverErrorMessage='' serverStatus=0 classified=PROVIDER_OTHER screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=43693
 P8KEYPROV ok=0 error=Unable to connect. Is the computer able to access the url?
-[2026-09-08T17:34:42Z] warn: key re-provision after PROVAUTH did not confirm
-[2026-09-08T17:34:42Z] P8_TOYBOX PASS :: base64|base64 -d|tar xz -C dir works on api=34 (harness staging path; the API-29 half is the real-device question - see report)
-[2026-09-08T17:34:50Z] P8_CORRUPT PASS :: truncated launcher + sha-mangled server bundle + wiped marker -> re-extracted and healthy (re-extraction lines=4, marker restored)
-[2026-09-08T17:34:58Z] P8_CRASH PASS :: force-stopped the app process with the server running; relaunch returned to HEALTHY (valid marker -> no re-extraction needed)
-[2026-09-08T17:35:07Z] P8_SESSIONPERSIST FAIL :: session or its user message lost across the restart: P8SESVRFY ok=0 sessionsSeen=7 sessionFound=true userMessageFound=false
-[2026-09-08T17:35:13Z] wifi before cut: Control the Wi-Fi manager
-[2026-09-08T17:36:47Z] P8_NETLOSS FAIL :: status=error errName/text='' recover==== messages dump (turn done, failed=false) === userMsgs=1 (expected: network-shaped error, clean recovery, no double-send)
-[2026-09-08T17:36:55Z] app backgrounded; 90s in the background with a turn in flight
-[2026-09-08T17:38:26Z] P8_BGFG FAIL :: background/foreground: no verdict line (mid-background health=200)
-[2026-09-08T17:38:27Z] P8_LARGE PASS :: P8LARGEMEASURE createMs=18 listMs=132 listEntries=2000 contentMs=42 contentOk=1 gitInitAddCommitMs=1000 (P8LARGEBUILD ok=1 files=2001 bytes=52522580 dirMs=128 dir=/data/data/ai.opencode.android.debug/files/workspaces/p8-large)
-[2026-09-08T17:38:27Z] rebooting the emulator (fresh network state; relaunching the app)
-P8NETPROBE openrouter http=200 ms=838
-P8NETPROBE opencode http=200 ms=178
-P8NETPROBE control http=200 ms=581
-P8NETPROBE_AUTH net http=200 free=? remaining=? limit=? ms=86
-[2026-09-08T17:49:09Z] P8_HIST FAIL :: turn 1 failed: waitTurnComplete timeout
+[2026-09-08T17:51:28Z] warn: key re-provision after PROVAUTH did not confirm
+[2026-09-08T17:51:28Z] P8_TOYBOX PASS :: base64|base64 -d|tar xz -C dir works on api=34 (harness staging path; the API-29 half is the real-device question - see report)
+[2026-09-08T17:51:36Z] P8_CORRUPT PASS :: truncated launcher + sha-mangled server bundle + wiped marker -> re-extracted and healthy (re-extraction lines=4, marker restored)
+[2026-09-08T17:51:45Z] P8_CRASH PASS :: force-stopped the app process with the server running; relaunch returned to HEALTHY (valid marker -> no re-extraction needed)
+[2026-09-08T17:51:55Z] P8_SESSIONPERSIST FAIL :: session or its user message lost across the restart: P8SESVRFY ok=0 sessionsSeen=7 sessionFound=true userMessageFound=false
+[2026-09-08T17:51:59Z] wifi before cut: Control the Wi-Fi manager
+[2026-09-08T17:53:33Z] P8_NETLOSS FAIL :: status=error errName/text='' recover==== messages dump (turn done, failed=false) === userMsgs=1 (expected: network-shaped error, clean recovery, no double-send)
+[2026-09-08T17:53:41Z] app backgrounded; 90s in the background with a turn in flight
+[2026-09-08T17:55:11Z] P8_BGFG FAIL :: background/foreground: no verdict line (mid-background health=200)
+[2026-09-08T17:55:12Z] P8_LARGE PASS :: P8LARGEMEASURE createMs=14 listMs=442 listEntries=2000 contentMs=40 contentOk=1 gitInitAddCommitMs=0 (P8LARGEBUILD ok=1 files=2001 bytes=52522580 dirMs=178 dir=/data/data/ai.opencode.android.debug/files/workspaces/p8-large)
+[2026-09-08T17:55:12Z] rebooting the emulator (fresh network state; relaunching the app)
+P8NETPROBE openrouter http=200 ms=553
+P8NETPROBE opencode http=200 ms=159
+P8NETPROBE control http=200 ms=1064
+P8NETPROBE_AUTH net http=200 free=? remaining=? limit=? ms=85
+[2026-09-08T18:06:06Z] P8_HIST FAIL :: turn 1 failed: waitTurnComplete timeout
 turn 2 failed: waitTurnComplete timeout
 turn 3 failed: waitTurnComplete timeout
-[2026-09-08T17:49:19Z] P8_STORAGE PASS :: free: 4375620KB -> 2532412KB (app), back to 4375448KB after cleanup :: healthy under low storage
-[2026-09-08T17:49:19Z] === stage E: performance measurement (the report's numbers) ===
-[2026-09-08T17:49:19Z] rebooting the emulator (fresh network state; relaunching the app)
+[2026-09-08T18:06:18Z] P8_STORAGE PASS :: free: 4377300KB -> 2534096KB (app), back to 4377144KB after cleanup :: healthy under low storage
+[2026-09-08T18:06:18Z] === stage E: performance measurement (the report's numbers) ===
+[2026-09-08T18:06:18Z] rebooting the emulator (fresh network state; relaunching the app)
+[2026-09-08T18:11:59Z] wait_healthy timed out (host=000000 device=none)
+[2026-09-08T18:11:59Z] warn: runtime not healthy after the reboot
 staged_rc=0
 assert ok: session id present
-{"info":{"id":"msg_0822415d5001qD79WRD1wvquYl","sessionID":"ses_f7ddbedfaffe6hZsgs9Im7EfXX","role":"assistant","time":{"created":1788889798102,"completed":1788889802355},"parentID":"msg_0822415c00016T2YuiUzeWLMfa","modelID":"big-pickle","providerID":"opencode","mode":"build","agent":"build","path":{"cwd":"/data/data/ai.opencode.android.debug/files/workspaces/p8-stress","root":"/"},"cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}}},"parts":[{"id":"prt_0822415da001hKb0H7h8d7Toti","sessionID":"ses_f7ddbedfaffe6hZsgs9Im7EfXX","messageID":"msg_0822415d5001qD79WRD1wvquYl","type":"tool","callID":"01M21285ET6F69438NQJXSXF1B","tool":"bash","state":{"status":"completed","input":{"command":"/data/data/ai.opencode.android.debug/files/bin/bun /data/data/ai.opencode.android.debug/files/tmp/p8netprobe-server.js 2>&1; rm -f /data/data/ai.opencode.android.debug/files/tmp/p8netprobe-server.js"},"output":"[seccomp] preload handler installed (rc=0)\n[seccomp] preload handler installed (rc=0)\nP8NETPROBE_SERVER openrouter http=200 ms=1407\nP8NETPROBE_SERVER opencode http=200 ms=191\nP8NETPROBE_SERVER control http=200 ms=1088\nP8NETPROBE_AUTH server http=200 free=? remaining=? limit=? ms=111\n[seccomp] preload handler installed (rc=0)\n","title":"","metadata":{"output":"[seccomp] preload handler installed (rc=0)\n[seccomp] preload handler installed (rc=0)\nP8NETPROBE_SERVER openrouter http=200 ms=1407\nP8NETPROBE_SERVER opencode http=200 ms=191\nP8NETPROBE_SERVER control http=200 ms=1088\nP8NETPROBE_AUTH server http=200 free=? remaining=? limit=? ms=111\n[seccomp] preload handler installed (rc=0)\n"},"time":{"start":1788889798106,"end":1788889802355}}}]}
-[2026-09-08T17:50:02Z] cold start (supervisor log): EXTRACTING=2026-09-08T17:23:33.958Z HEALTHY=2026-09-08T17:23:43.131Z -> 9173ms
+{"info":{"id":"msg_0823842010017BJYSgD74KXDOa","sessionID":"ses_f7dc7be87ffecCGNcffvkPv7MC","role":"assistant","time":{"created":1788891120129,"completed":1788891123932},"parentID":"msg_0823841ed001Ponv0rM2Dt5fBc","modelID":"big-pickle","providerID":"opencode","mode":"build","agent":"build","path":{"cwd":"/data/data/ai.opencode.android.debug/files/workspaces/p8-stress","root":"/"},"cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}}},"parts":[{"id":"prt_08238420d0014YayT06v45l52J","sessionID":"ses_f7dc7be87ffecCGNcffvkPv7MC","messageID":"msg_0823842010017BJYSgD74KXDOa","type":"tool","callID":"01M213GGGE4X7VFJHHRQHME15M","tool":"bash","state":{"status":"completed","input":{"command":"/data/data/ai.opencode.android.debug/files/bin/bun /data/data/ai.opencode.android.debug/files/tmp/p8netprobe-server.js 2>&1; rm -f /data/data/ai.opencode.android.debug/files/tmp/p8netprobe-server.js"},"output":"[seccomp] preload handler installed (rc=0)\n[seccomp] preload handler installed (rc=0)\nP8NETPROBE_SERVER openrouter http=200 ms=1439\nP8NETPROBE_SERVER opencode http=200 ms=1094\nP8NETPROBE_SERVER control http=200 ms=1050\nP8NETPROBE_AUTH server http=200 free=? remaining=? limit=? ms=105\n[seccomp] preload handler installed (rc=0)\n","title":"","metadata":{"output":"[seccomp] preload handler installed (rc=0)\n[seccomp] preload handler installed (rc=0)\nP8NETPROBE_SERVER openrouter http=200 ms=1439\nP8NETPROBE_SERVER opencode http=200 ms=1094\nP8NETPROBE_SERVER control http=200 ms=1050\nP8NETPROBE_AUTH server http=200 free=? remaining=? limit=? ms=105\n[seccomp] preload handler installed (rc=0)\n"},"time":{"start":1788891120141,"end":1788891123932}}}]}
+[2026-09-08T18:12:04Z] cold start (supervisor log): EXTRACTING=2026-09-08T17:33:00.659Z HEALTHY=2026-09-08T17:33:04.499Z -> 3840ms
 Starting: Intent { cmp=ai.opencode.android.debug/ai.opencode.android.runtime.DebugControlActivity (has extras) }
 warm relaunch attempt 1: Starting: Intent { cmp=ai.opencode.android.debug/ai.opencode.android.MainActivity }
 Warning: Activity not started, its current task has been brought to the front
-[2026-09-08T17:54:26Z] P8_PERF FAIL :: P8PERF ok=0 model=openai/gpt-4o-mini createMs=13 listMs=5 statusMs=8 filelistMs=404 contentMs=10 shellMs=306 shellOk=1 ttftMs=-1 turnMs=240002 streamedParts=0 streamTimedOut=1 warmRestartMs=22000
-[2026-09-08T17:54:26Z] === evidence pull ===
+[2026-09-08T18:16:27Z] P8_PERF FAIL :: P8PERF ok=0 model=openai/gpt-4o-mini createMs=17 listMs=5 statusMs=8 filelistMs=137 contentMs=319 shellMs=386 shellOk=1 ttftMs=-1 turnMs=240003 streamedParts=0 streamTimedOut=1 warmRestartMs=22000
+[2026-09-08T18:16:28Z] === evidence pull ===
 P8KEYREVOKED ok=1 http=200 body='true'
-[2026-09-08T17:54:26Z] === SUMMARY ===
-P8_SUMMARY 2026-09-08T17:54:26Z
+[2026-09-08T18:16:28Z] === SUMMARY ===
+P8_SUMMARY 2026-09-08T18:16:28Z
 gates_pass=10 gates_fail=7 gates_skip=2
 stress_instrument_rc=0 live_instrument_rc=0
 screenshots=2

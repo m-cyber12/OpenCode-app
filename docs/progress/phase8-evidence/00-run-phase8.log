@@ -1,7 +1,7 @@
-=== PHASE 8 START 2026-09-08T17:04:07Z ===
-heartbeat enabled (pid 2079, every 300s -> docs/progress/phase8-evidence/PROGRESS.txt)
+=== PHASE 8 START 2026-09-08T17:09:23Z ===
+heartbeat enabled (pid 2205, every 300s -> docs/progress/phase8-evidence/PROGRESS.txt)
 ########## 1/7 static checks (strings, a11y, lazy lists, ASCII, kotlin comments) ##########
-=== Phase 8 static checks 2026-09-08T17:04:07Z ===
+=== Phase 8 static checks 2026-09-08T17:09:23Z ===
 OK   bash -n on 39 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8 driver
@@ -675,12 +675,12 @@ MarkdownTest > atxHeadingsCarryTheirLevel PASSED
 
 MarkdownTest > unterminatedLinkStaysLiteralWhileStreaming PASSED
 
-BUILD SUCCESSFUL in 2m 11s
+BUILD SUCCESSFUL in 2m 26s
 35 actionable tasks: 33 executed, 2 from cache
 ########## 3/7 environment + FRESH emulator ##########
 installing emulator + system image via phase4/scripts/50-install-sdk.sh
 --- downloading cmdline-tools
--rw-r--r-- 1 runner runner 153607504 Sep  8 17:06 cmdtools.zip
+-rw-r--r-- 1 runner runner 153607504 Sep  8 17:11 cmdtools.zip
 /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
 /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
 --- sdkmanager licenses
@@ -699,10 +699,10 @@ accel:
 KVM (version 12) is installed and usable.
 accel
 --- starting emulator (headless)
-emulator pid=2981
+emulator pid=3092
 * daemon not running; starting now at tcp:5037
 * daemon started successfully
-BOOT_COMPLETED after ~42s
+BOOT_COMPLETED after ~48s
 --- boot state
 List of devices attached
 emulator-5554	device
@@ -796,10 +796,10 @@ git source: f93ff170b93a1782659637824b25923245ac9dd1
 --- Android Git (arm64-v8a, CC=/usr/local/lib/android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang) ---
 GIT_VERSION=2.48.1
     * new build flags
+    * new prefix flags
+    CC builtin/add.o
     CC builtin/am.o
     * new link flags
-    CC builtin/add.o
-    * new prefix flags
     CC builtin/annotate.o
     CC builtin/apply.o
     CC builtin/archive.o
@@ -988,8 +988,8 @@ GIT_VERSION=2.48.1
     CC environment.o
     CC ewah/bitmap.o
     CC ewah/ewah_bitmap.o
-    CC ewah/ewah_rlw.o
     CC ewah/ewah_io.o
+    CC ewah/ewah_rlw.o
     CC exec-cmd.o
     CC fetch-negotiator.o
     CC fetch-pack.o
@@ -1009,8 +1009,8 @@ GIT_VERSION=2.48.1
     CC hex.o
     CC hex-ll.o
     CC hook.o
-    CC json-writer.o
     CC ident.o
+    CC json-writer.o
     CC kwset.o
     CC levenshtein.o
     CC line-log.o
@@ -1143,8 +1143,8 @@ GIT_VERSION=2.48.1
     CC trace2/tr2_tgt_normal.o
     CC trace2/tr2_tgt_perf.o
     CC trace2/tr2_tls.o
-    CC trace2/tr2_tmr.o
     CC trailer.o
+    CC trace2/tr2_tmr.o
     CC transport-helper.o
     CC transport.o
     CC tree-diff.o
@@ -1213,50 +1213,9 @@ arm64-v8a Android Git built (cross-ABI host execution skipped)
 GIT_VERSION=2.48.1
     * new build flags
     GEN hook-list.h
-    * new link flags
-    CC builtin/cat-file.o
-    * new prefix flags
-    CC builtin/bundle.o
-    CC builtin/check-attr.o
-    CC builtin/check-ignore.o
-    CC builtin/check-mailmap.o
-    CC builtin/check-ref-format.o
-    CC builtin/checkout--worker.o
-    CC builtin/checkout-index.o
-    CC builtin/checkout.o
-    CC builtin/clean.o
-    CC builtin/clone.o
-    CC builtin/column.o
-    CC builtin/commit-graph.o
-    CC builtin/commit-tree.o
-    CC builtin/commit.o
-    CC builtin/config.o
-    CC builtin/count-objects.o
-    CC builtin/credential-cache--daemon.o
-    CC builtin/credential-cache.o
-    CC builtin/credential-store.o
-    CC builtin/credential.o
-    CC builtin/describe.o
-    CC builtin/diagnose.o
-    CC builtin/diff-files.o
-    CC builtin/diff-index.o
-    CC builtin/diff-tree.o
-    CC builtin/diff.o
-    CC builtin/difftool.o
-    CC builtin/fast-export.o
-    CC builtin/fast-import.o
-    CC builtin/fetch-pack.o
-    CC builtin/fetch.o
-    CC builtin/fmt-merge-msg.o
-    CC builtin/for-each-ref.o
-    CC builtin/for-each-repo.o
-    CC builtin/fsck.o
-    CC builtin/fsmonitor--daemon.o
-    CC builtin/gc.o
-    CC builtin/get-tar-commit-id.o
-    CC builtin/grep.o
-    CC builtin/hash-object.o
     GEN config-list.h
+    * new prefix flags
+    * new link flags
     CC builtin/hook.o
     CC builtin/index-pack.o
     CC builtin/init-db.o
@@ -1616,6 +1575,47 @@ GIT_VERSION=2.48.1
     CC builtin/blame.o
     CC builtin/branch.o
     CC builtin/bugreport.o
+    CC builtin/bundle.o
+    CC builtin/cat-file.o
+    CC builtin/check-attr.o
+    CC builtin/check-ignore.o
+    CC builtin/check-mailmap.o
+    CC builtin/check-ref-format.o
+    CC builtin/checkout--worker.o
+    CC builtin/checkout-index.o
+    CC builtin/checkout.o
+    CC builtin/clean.o
+    CC builtin/clone.o
+    CC builtin/column.o
+    CC builtin/commit-graph.o
+    CC builtin/commit-tree.o
+    CC builtin/commit.o
+    CC builtin/config.o
+    CC builtin/count-objects.o
+    CC builtin/credential-cache--daemon.o
+    CC builtin/credential-cache.o
+    CC builtin/credential-store.o
+    CC builtin/credential.o
+    CC builtin/describe.o
+    CC builtin/diagnose.o
+    CC builtin/diff-files.o
+    CC builtin/diff-index.o
+    CC builtin/diff-tree.o
+    CC builtin/diff.o
+    CC builtin/difftool.o
+    CC builtin/fast-export.o
+    CC builtin/fast-import.o
+    CC builtin/fetch-pack.o
+    CC builtin/fetch.o
+    CC builtin/fmt-merge-msg.o
+    CC builtin/for-each-ref.o
+    CC builtin/for-each-repo.o
+    CC builtin/fsck.o
+    CC builtin/fsmonitor--daemon.o
+    CC builtin/gc.o
+    CC builtin/get-tar-commit-id.o
+    CC builtin/grep.o
+    CC builtin/hash-object.o
     CC builtin/help.o
     CC help.o
     GEN version-def.h
@@ -1648,35 +1648,35 @@ Turn off this advice by setting config variable advice.detachedHead to false
 
     Updating crates.io index
  Downloading crates ...
-  Downloaded memchr v2.7.6
-  Downloaded log v0.4.28
-  Downloaded termcolor v1.4.1
-  Downloaded aho-corasick v1.1.3
-  Downloaded same-file v1.0.6
-  Downloaded memmap2 v0.9.9
-  Downloaded crossbeam-epoch v0.9.18
   Downloaded cfg-if v1.0.4
-  Downloaded encoding_rs_io v0.1.7
+  Downloaded cc v1.2.41
+  Downloaded crossbeam-epoch v0.9.18
+  Downloaded textwrap v0.16.2
+  Downloaded same-file v1.0.6
+  Downloaded crossbeam-utils v0.8.21
   Downloaded itoa v1.0.15
-  Downloaded find-msvc-tools v0.1.4
-  Downloaded pkg-config v0.3.32
+  Downloaded anyhow v1.0.100
   Downloaded crossbeam-deque v0.8.6
-  Downloaded jobserver v0.1.34
+  Downloaded termcolor v1.4.1
   Downloaded walkdir v2.5.0
   Downloaded shlex v1.3.0
-  Downloaded pcre2 v0.2.11
-  Downloaded crossbeam-utils v0.8.21
-  Downloaded lexopt v0.3.1
-  Downloaded regex-automata v0.4.13
-  Downloaded textwrap v0.16.2
+  Downloaded memmap2 v0.9.9
   Downloaded ryu v1.0.20
-  Downloaded anyhow v1.0.100
+  Downloaded pkg-config v0.3.32
+  Downloaded encoding_rs_io v0.1.7
+  Downloaded pcre2 v0.2.11
+  Downloaded find-msvc-tools v0.1.4
+  Downloaded lexopt v0.3.1
   Downloaded serde_core v1.0.228
-  Downloaded cc v1.2.41
+  Downloaded jobserver v0.1.34
+  Downloaded log v0.4.28
+  Downloaded memchr v2.7.6
   Downloaded serde v1.0.228
+  Downloaded aho-corasick v1.1.3
   Downloaded serde_json v1.0.145
-  Downloaded bstr v1.12.0
   Downloaded regex-syntax v0.8.8
+  Downloaded bstr v1.12.0
+  Downloaded regex-automata v0.4.13
   Downloaded pcre2-sys v0.2.10
   Downloaded libc v0.2.177
   Downloaded encoding_rs v0.8.35
@@ -1685,44 +1685,44 @@ Turn off this advice by setting config variable advice.detachedHead to false
    Compiling regex-syntax v0.8.8
    Compiling log v0.4.28
    Compiling aho-corasick v1.1.3
-   Compiling find-msvc-tools v0.1.4
    Compiling shlex v1.3.0
+   Compiling find-msvc-tools v0.1.4
+   Compiling serde_core v1.0.228
    Compiling regex-automata v0.4.13
    Compiling jobserver v0.1.34
    Compiling cc v1.2.41
-   Compiling serde_core v1.0.228
    Compiling pkg-config v0.3.32
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.ryVDblxUIb/rg-src/crates/matcher)
+   Compiling bstr v1.12.0
+   Compiling pcre2-sys v0.2.10
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/matcher)
    Compiling cfg-if v1.0.4
    Compiling crossbeam-utils v0.8.21
    Compiling encoding_rs v0.8.35
-   Compiling pcre2-sys v0.2.10
-   Compiling bstr v1.12.0
-   Compiling serde v1.0.228
    Compiling serde_json v1.0.145
+   Compiling serde v1.0.228
    Compiling encoding_rs_io v0.1.7
-   Compiling globset v0.4.18 (/tmp/tmp.ryVDblxUIb/rg-src/crates/globset)
+   Compiling globset v0.4.18 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/globset)
    Compiling memmap2 v0.9.9
-   Compiling itoa v1.0.15
-   Compiling termcolor v1.4.1
    Compiling ryu v1.0.20
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.ryVDblxUIb/rg-src/crates/searcher)
+   Compiling termcolor v1.4.1
+   Compiling itoa v1.0.15
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
    Compiling anyhow v1.0.100
    Compiling same-file v1.0.6
    Compiling walkdir v2.5.0
-   Compiling grep-printer v0.3.1 (/tmp/tmp.ryVDblxUIb/rg-src/crates/printer)
+   Compiling grep-printer v0.3.1 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-cli v0.1.12 (/tmp/tmp.ryVDblxUIb/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.ryVDblxUIb/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.ryVDblxUIb/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.ryVDblxUIb/rg-src/crates/ignore)
+   Compiling grep-cli v0.1.12 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.P3MSyYo6nd/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/ignore)
    Compiling textwrap v0.16.2
-   Compiling lexopt v0.3.1
    Compiling pcre2 v0.2.11
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.ryVDblxUIb/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.ryVDblxUIb/rg-src/crates/grep)
-    Finished `release` profile [optimized + debuginfo] target(s) in 42.46s
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/grep)
+   Compiling lexopt v0.3.1
+    Finished `release` profile [optimized + debuginfo] target(s) in 59.98s
 arm64-v8a Android ripgrep OK:  ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 --- Android ripgrep (x86_64, target=x86_64-linux-android) ---
 info: downloading component rust-std
@@ -1746,67 +1746,67 @@ Turn off this advice by setting config variable advice.detachedHead to false
 
    Compiling libc v0.2.177
    Compiling memchr v2.7.6
-   Compiling regex-syntax v0.8.8
    Compiling log v0.4.28
-   Compiling find-msvc-tools v0.1.4
+   Compiling regex-syntax v0.8.8
    Compiling aho-corasick v1.1.3
    Compiling jobserver v0.1.34
    Compiling shlex v1.3.0
-   Compiling pkg-config v0.3.32
-   Compiling cc v1.2.41
+   Compiling find-msvc-tools v0.1.4
    Compiling serde_core v1.0.228
+   Compiling cc v1.2.41
+   Compiling pkg-config v0.3.32
    Compiling regex-automata v0.4.13
    Compiling pcre2-sys v0.2.10
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.ryVDblxUIb/rg-src/crates/matcher)
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/matcher)
    Compiling cfg-if v1.0.4
    Compiling crossbeam-utils v0.8.21
    Compiling encoding_rs v0.8.35
    Compiling bstr v1.12.0
    Compiling serde v1.0.228
    Compiling serde_json v1.0.145
-   Compiling globset v0.4.18 (/tmp/tmp.ryVDblxUIb/rg-src/crates/globset)
+   Compiling globset v0.4.18 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/globset)
    Compiling encoding_rs_io v0.1.7
    Compiling memmap2 v0.9.9
    Compiling termcolor v1.4.1
    Compiling ryu v1.0.20
    Compiling itoa v1.0.15
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.ryVDblxUIb/rg-src/crates/searcher)
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
-   Compiling anyhow v1.0.100
    Compiling same-file v1.0.6
+   Compiling anyhow v1.0.100
    Compiling walkdir v2.5.0
-   Compiling grep-printer v0.3.1 (/tmp/tmp.ryVDblxUIb/rg-src/crates/printer)
+   Compiling grep-printer v0.3.1 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-cli v0.1.12 (/tmp/tmp.ryVDblxUIb/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.ryVDblxUIb/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.ryVDblxUIb/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.ryVDblxUIb/rg-src/crates/ignore)
-   Compiling textwrap v0.16.2
+   Compiling grep-cli v0.1.12 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.P3MSyYo6nd/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/ignore)
    Compiling lexopt v0.3.1
+   Compiling textwrap v0.16.2
    Compiling pcre2 v0.2.11
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.ryVDblxUIb/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.ryVDblxUIb/rg-src/crates/grep)
-    Finished `release` profile [optimized + debuginfo] target(s) in 31.27s
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.P3MSyYo6nd/rg-src/crates/grep)
+    Finished `release` profile [optimized + debuginfo] target(s) in 42.42s
 x86_64 Android ripgrep OK:  ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 === [5/6] OpenCode server bundle @ 05ea5073be967c779d326929b2de6228dda4159d (pinned, fail-loud) ===
 upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
 bundle build complete
 === [6/6] stage payload, compute manifest ===
-payload tarball: 16559492 bytes sha256=cfd4f6531e78bd43c369c5bf4df3a2cace93c5a0ac73a1220f9ed78b83e913d4
+payload tarball: 16559448 bytes sha256=153dcbf8096ad46a1ec72f6397622c7e8d889f1409d924dd5333a5a7ba264d20
 manifest: 30 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/assets/runtime-manifest.json
 === engine layout ===
 11340 ./build.status
 41 ./git.upstream.commit.txt
 5171 ./assets/runtime-manifest.json
-16559492 ./assets/runtime-payload.tar.gz
+16559448 ./assets/runtime-payload.tar.gz
 8184 ./jniLibs/arm64-v8a/libchildshim.so
-35139712 ./jniLibs/arm64-v8a/librg.so
+35139864 ./jniLibs/arm64-v8a/librg.so
 6744 ./jniLibs/arm64-v8a/libseccompshim.so
 89796776 ./jniLibs/arm64-v8a/libbun.so
 7592 ./jniLibs/arm64-v8a/libexecshim.so
 4132208 ./jniLibs/arm64-v8a/libgit.so
 7584 ./jniLibs/x86_64/libchildshim.so
-36761960 ./jniLibs/x86_64/librg.so
+36762144 ./jniLibs/x86_64/librg.so
 7608 ./jniLibs/x86_64/libseccompshim.so
 91788816 ./jniLibs/x86_64/libbun.so
 7864 ./jniLibs/x86_64/libexecshim.so
@@ -1848,11 +1848,11 @@ Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/w
 > Task :app:desugarDebugFileDependencies
 > Task :app:compressDebugAssets
 > Task :app:dexBuilderDebug
-> Task :app:processDebugJavaRes UP-TO-DATE
 > Task :app:mergeDebugGlobalSynthetics
+> Task :app:processDebugJavaRes UP-TO-DATE
 > Task :app:mergeDebugStartupProfile
-> Task :app:mergeDebugJavaResource
 > Task :app:checkDebugDuplicateClasses
+> Task :app:mergeDebugJavaResource
 > Task :app:mergeDebugJniLibFolders
 > Task :app:mergeLibDexDebug
 > Task :app:mergeProjectDexDebug
@@ -1886,13 +1886,13 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:mergeExtDexDebug
 > Task :app:dexBuilderDebugAndroidTest
 > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
+> Task :app:processDebugAndroidTestJavaRes
+> Task :app:mergeDebugAndroidTestJavaResource
 > Task :app:packageDebug
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
-> Task :app:processDebugAndroidTestJavaRes
 > Task :app:checkDebugAndroidTestDuplicateClasses
 > Task :app:mergeDebugAndroidTestJniLibFolders
-> Task :app:mergeDebugAndroidTestJavaResource
 > Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
 > Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
 > Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
@@ -1911,7 +1911,7 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:createDebugAndroidTestApkListingFileRedirect
 > Task :app:assembleDebugAndroidTest
 
-BUILD SUCCESSFUL in 55s
+BUILD SUCCESSFUL in 1m 13s
 74 actionable tasks: 37 executed, 4 from cache, 33 up-to-date
 apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk
 testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
@@ -1921,76 +1921,74 @@ heartbeat push skipped (branch moved or push refused)
 heartbeat push skipped (branch moved or push refused)
 heartbeat push skipped (branch moved or push refused)
 heartbeat push skipped (branch moved or push refused)
-heartbeat push skipped (branch moved or push refused)
-heartbeat push skipped (branch moved or push refused)
-heartbeat push skipped (branch moved or push refused)
-heartbeat push skipped (branch moved or push refused)
-[2026-09-08T17:13:37Z] === stage A: Phase 7 regression (workspace isolation + memory + UI + live turn) ===
-[2026-09-08T17:19:16Z] P8_P7REG PASS :: phase7 suite rc=0 fails=0 (W1 W2 W3 U3 U7 L1 L2 all green; see phase7-evidence fold)
-[2026-09-08T17:19:16Z] === stage A2: Phase 5 regression (client gates + loopback + credentials re-verification) ===
-[2026-09-08T17:23:25Z] P8_P5REG PASS :: phase5 suite rc=1 fails=1 (G16 red = documented upstream #47644; K1-K9 G6-G12 G17 G18 G19 green)
-[2026-09-08T17:23:25Z] === stage B: model provisioning (the run's repo-secret key, into the harness dir) ===
-[2026-09-08T17:23:25Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test for a clean install
+[2026-09-08T17:19:06Z] === stage A: Phase 7 regression (workspace isolation + memory + UI + live turn) ===
+[2026-09-08T17:27:07Z] P8_P7REG PASS :: phase7 suite rc=0 fails=0 (W1 W2 W3 U3 U7 L1 L2 all green; see phase7-evidence fold)
+[2026-09-08T17:27:07Z] === stage A2: Phase 5 regression (client gates + loopback + credentials re-verification) ===
+[2026-09-08T17:32:50Z] P8_P5REG PASS :: phase5 suite rc=1 fails=1 (G16 red = documented upstream #47644; K1-K9 G6-G12 G17 G18 G19 green)
+[2026-09-08T17:32:50Z] === stage B: model provisioning (the run's repo-secret key, into the harness dir) ===
+[2026-09-08T17:32:50Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test for a clean install
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-09-08T17:23:31Z] model key provisioned (key bytes recorded in gates.log, value never logged); model=openai/gpt-4o-mini
-[2026-09-08T17:23:44Z] runtime healthy with Keystore password available to the host drivers
-[2026-09-08T17:23:44Z] === stage C: P8 instrumented stress gates (model-free half) ===
-[2026-09-08T17:23:44Z] rebooting the emulator (fresh network state; relaunching the app)
-[2026-09-08T17:24:26Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g00_keyResidency ===
-[2026-09-08T17:24:31Z] instrument rc=0 (stress-a)
-[2026-09-08T17:24:32Z] stress-a runner trailer: OK
-[2026-09-08T17:24:32Z] screenshots pulled: 0
-[2026-09-08T17:24:32Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g02_serverKill ===
-[2026-09-08T17:24:54Z] instrument rc=0 (stress-b)
-[2026-09-08T17:24:54Z] stress-b runner trailer: OK
-[2026-09-08T17:24:54Z] screenshots pulled: 0
-[2026-09-08T17:24:54Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g03_lifecycleLog ===
-[2026-09-08T17:24:57Z] instrument rc=0 (stress-c)
-[2026-09-08T17:24:57Z] stress-c runner trailer: OK
-[2026-09-08T17:24:57Z] screenshots pulled: 0
-[2026-09-08T17:24:57Z] P8_KEYRESIDENCY SKIP :: :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=x86_64 device=sdk_gphone64_x86_64 api=34 :: key material is in the SOFTWARE keystore on this devic
-[2026-09-08T17:24:57Z] P8_SERVERKILL PASS :: :: killedPid=4225 oldPidDead=true sawCrashedRestarting=true restartCount=0 healthyAgain=true healthHttp=200 sawFatal=false newPid=4471 finalStatus=HEALTHY finalDetail='healthy on 127.0.0.1:4111'
-[2026-09-08T17:24:57Z] P8_LIFECYCLELOG PASS :: :: illegalTransitions=0 startingTransitions=9 healthyTransitions=3 logBytes=14483 lastStates='EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:411
-[2026-09-08T17:24:57Z] === stage D: destructive stress (host-driven, on the relaunch the instrument left behind) ===
-[2026-09-08T17:25:17Z] === am instrument ai.opencode.android.ui.LiveToolCallGatesTest ===
-[2026-09-08T17:34:30Z] instrument rc=0 (live)
-[2026-09-08T17:34:30Z] live runner trailer: NOT-OK (rc=0)
-[2026-09-08T17:34:30Z] screenshots pulled: 0
-[2026-09-08T17:34:31Z] P8_KEYPROBE FAIL :: :: model=openai/gpt-4o-mini tokenSeen=false lastError='APIError:  (status=0)' - the key is expired, out of credit, or the model id is wrong for this account
-[2026-09-08T17:34:31Z] P8_TOOL SKIP :: :: the provisioned key could not serve a turn, so no tool call can be observed: no assistant reply with the token in 240s (lastError='APIError:  (status=0)')
-[2026-09-08T17:34:31Z] P8_CLEANUP PASS :: :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
-[2026-09-08T17:34:31Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g01_providerAuth ===
-[2026-09-08T17:34:42Z] instrument rc=0 (provauth)
-[2026-09-08T17:34:42Z] provauth runner trailer: NOT-OK (rc=0)
-[2026-09-08T17:34:42Z] screenshots pulled: 1
-[2026-09-08T17:34:42Z] P8_PROVAUTH FAIL :: :: serverSawError=true serverErrorName=APIError serverErrorMessage='' serverStatus=0 classified=PROVIDER_OTHER screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=43693
-[2026-09-08T17:34:42Z] warn: key re-provision after PROVAUTH did not confirm
-[2026-09-08T17:34:42Z] P8_TOYBOX PASS :: base64|base64 -d|tar xz -C dir works on api=34 (harness staging path; the API-29 half is the real-device question - see report)
-[2026-09-08T17:34:50Z] P8_CORRUPT PASS :: truncated launcher + sha-mangled server bundle + wiped marker -> re-extracted and healthy (re-extraction lines=4, marker restored)
-[2026-09-08T17:34:58Z] P8_CRASH PASS :: force-stopped the app process with the server running; relaunch returned to HEALTHY (valid marker -> no re-extraction needed)
-[2026-09-08T17:35:07Z] P8_SESSIONPERSIST FAIL :: session or its user message lost across the restart: P8SESVRFY ok=0 sessionsSeen=7 sessionFound=true userMessageFound=false
-[2026-09-08T17:35:13Z] wifi before cut: Control the Wi-Fi manager
-[2026-09-08T17:36:47Z] P8_NETLOSS FAIL :: status=error errName/text='' recover==== messages dump (turn done, failed=false) === userMsgs=1 (expected: network-shaped error, clean recovery, no double-send)
-[2026-09-08T17:36:55Z] app backgrounded; 90s in the background with a turn in flight
-[2026-09-08T17:38:26Z] P8_BGFG FAIL :: background/foreground: no verdict line (mid-background health=200)
-[2026-09-08T17:38:27Z] P8_LARGE PASS :: P8LARGEMEASURE createMs=18 listMs=132 listEntries=2000 contentMs=42 contentOk=1 gitInitAddCommitMs=1000 (P8LARGEBUILD ok=1 files=2001 bytes=52522580 dirMs=128 dir=/data/data/ai.opencode.android.debug/files/workspaces/p8-large)
-[2026-09-08T17:38:27Z] rebooting the emulator (fresh network state; relaunching the app)
-[2026-09-08T17:49:09Z] P8_HIST FAIL :: turn 1 failed: waitTurnComplete timeout
+[2026-09-08T17:32:57Z] model key provisioned (key bytes recorded in gates.log, value never logged); model=openai/gpt-4o-mini
+[2026-09-08T17:33:53Z] runtime healthy with Keystore password available to the host drivers
+[2026-09-08T17:33:53Z] === stage C: P8 instrumented stress gates (model-free half) ===
+[2026-09-08T17:33:53Z] rebooting the emulator (fresh network state; relaunching the app)
+[2026-09-08T17:39:38Z] warn: runtime not healthy after the reboot
+[2026-09-08T17:39:42Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g00_keyResidency ===
+[2026-09-08T17:39:46Z] instrument rc=0 (stress-a)
+[2026-09-08T17:39:47Z] stress-a runner trailer: OK
+[2026-09-08T17:39:47Z] screenshots pulled: 0
+[2026-09-08T17:39:47Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g02_serverKill ===
+[2026-09-08T17:40:04Z] instrument rc=0 (stress-b)
+[2026-09-08T17:40:04Z] stress-b runner trailer: OK
+[2026-09-08T17:40:04Z] screenshots pulled: 0
+[2026-09-08T17:40:04Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g03_lifecycleLog ===
+[2026-09-08T17:40:07Z] instrument rc=0 (stress-c)
+[2026-09-08T17:40:07Z] stress-c runner trailer: OK
+[2026-09-08T17:40:07Z] screenshots pulled: 0
+[2026-09-08T17:40:07Z] P8_KEYRESIDENCY SKIP :: :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=x86_64 device=sdk_gphone64_x86_64 api=34 :: key material is in the SOFTWARE keystore on this devic
+[2026-09-08T17:40:07Z] P8_SERVERKILL PASS :: :: killedPid=4719 oldPidDead=true sawCrashedRestarting=true restartCount=0 healthyAgain=true healthHttp=200 sawFatal=false newPid=4785 finalStatus=HEALTHY finalDetail='healthy on 127.0.0.1:4111'
+[2026-09-08T17:40:07Z] P8_LIFECYCLELOG PASS :: :: illegalTransitions=0 startingTransitions=9 healthyTransitions=5 logBytes=15372 lastStates='EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:411
+[2026-09-08T17:40:07Z] === stage D: destructive stress (host-driven, on the relaunch the instrument left behind) ===
+[2026-09-08T17:41:10Z] === am instrument ai.opencode.android.ui.LiveToolCallGatesTest ===
+[2026-09-08T17:51:08Z] instrument rc=0 (live)
+[2026-09-08T17:51:08Z] live runner trailer: NOT-OK (rc=0)
+[2026-09-08T17:51:08Z] screenshots pulled: 0
+[2026-09-08T17:51:08Z] P8_KEYPROBE FAIL :: :: model=openai/gpt-4o-mini tokenSeen=false lastError='APIError:  (status=0)' - the key is expired, out of credit, or the model id is wrong for this account
+[2026-09-08T17:51:08Z] P8_TOOL SKIP :: :: the provisioned key could not serve a turn, so no tool call can be observed: no assistant reply with the token in 240s (lastError='APIError:  (status=0)')
+[2026-09-08T17:51:08Z] P8_CLEANUP PASS :: :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
+[2026-09-08T17:51:08Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g01_providerAuth ===
+[2026-09-08T17:51:27Z] instrument rc=0 (provauth)
+[2026-09-08T17:51:28Z] provauth runner trailer: NOT-OK (rc=0)
+[2026-09-08T17:51:28Z] screenshots pulled: 1
+[2026-09-08T17:51:28Z] P8_PROVAUTH FAIL :: :: serverSawError=true serverErrorName=APIError serverErrorMessage='' serverStatus=0 classified=PROVIDER_OTHER screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=43693
+[2026-09-08T17:51:28Z] warn: key re-provision after PROVAUTH did not confirm
+[2026-09-08T17:51:28Z] P8_TOYBOX PASS :: base64|base64 -d|tar xz -C dir works on api=34 (harness staging path; the API-29 half is the real-device question - see report)
+[2026-09-08T17:51:36Z] P8_CORRUPT PASS :: truncated launcher + sha-mangled server bundle + wiped marker -> re-extracted and healthy (re-extraction lines=4, marker restored)
+[2026-09-08T17:51:45Z] P8_CRASH PASS :: force-stopped the app process with the server running; relaunch returned to HEALTHY (valid marker -> no re-extraction needed)
+[2026-09-08T17:51:55Z] P8_SESSIONPERSIST FAIL :: session or its user message lost across the restart: P8SESVRFY ok=0 sessionsSeen=7 sessionFound=true userMessageFound=false
+[2026-09-08T17:51:59Z] wifi before cut: Control the Wi-Fi manager
+[2026-09-08T17:53:33Z] P8_NETLOSS FAIL :: status=error errName/text='' recover==== messages dump (turn done, failed=false) === userMsgs=1 (expected: network-shaped error, clean recovery, no double-send)
+[2026-09-08T17:53:41Z] app backgrounded; 90s in the background with a turn in flight
+[2026-09-08T17:55:11Z] P8_BGFG FAIL :: background/foreground: no verdict line (mid-background health=200)
+[2026-09-08T17:55:12Z] P8_LARGE PASS :: P8LARGEMEASURE createMs=14 listMs=442 listEntries=2000 contentMs=40 contentOk=1 gitInitAddCommitMs=0 (P8LARGEBUILD ok=1 files=2001 bytes=52522580 dirMs=178 dir=/data/data/ai.opencode.android.debug/files/workspaces/p8-large)
+[2026-09-08T17:55:12Z] rebooting the emulator (fresh network state; relaunching the app)
+[2026-09-08T18:06:06Z] P8_HIST FAIL :: turn 1 failed: waitTurnComplete timeout
 turn 2 failed: waitTurnComplete timeout
 turn 3 failed: waitTurnComplete timeout
-[2026-09-08T17:49:19Z] P8_STORAGE PASS :: free: 4375620KB -> 2532412KB (app), back to 4375448KB after cleanup :: healthy under low storage
-[2026-09-08T17:49:19Z] === stage E: performance measurement (the report's numbers) ===
-[2026-09-08T17:49:19Z] rebooting the emulator (fresh network state; relaunching the app)
-[2026-09-08T17:50:02Z] cold start (supervisor log): EXTRACTING=2026-09-08T17:23:33.958Z HEALTHY=2026-09-08T17:23:43.131Z -> 9173ms
+[2026-09-08T18:06:18Z] P8_STORAGE PASS :: free: 4377300KB -> 2534096KB (app), back to 4377144KB after cleanup :: healthy under low storage
+[2026-09-08T18:06:18Z] === stage E: performance measurement (the report's numbers) ===
+[2026-09-08T18:06:18Z] rebooting the emulator (fresh network state; relaunching the app)
+[2026-09-08T18:11:59Z] warn: runtime not healthy after the reboot
+[2026-09-08T18:12:04Z] cold start (supervisor log): EXTRACTING=2026-09-08T17:33:00.659Z HEALTHY=2026-09-08T17:33:04.499Z -> 3840ms
 /home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh: line 655: MEMINFO: command not found
 /home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh: line 657: CPU_BEFORE: command not found
-[2026-09-08T17:54:26Z] P8_PERF FAIL :: P8PERF ok=0 model=openai/gpt-4o-mini createMs=13 listMs=5 statusMs=8 filelistMs=404 contentMs=10 shellMs=306 shellOk=1 ttftMs=-1 turnMs=240002 streamedParts=0 streamTimedOut=1 warmRestartMs=22000
-[2026-09-08T17:54:26Z] === evidence pull ===
-[2026-09-08T17:54:26Z] === SUMMARY ===
-P8_SUMMARY 2026-09-08T17:54:26Z
+[2026-09-08T18:16:27Z] P8_PERF FAIL :: P8PERF ok=0 model=openai/gpt-4o-mini createMs=17 listMs=5 statusMs=8 filelistMs=137 contentMs=319 shellMs=386 shellOk=1 ttftMs=-1 turnMs=240003 streamedParts=0 streamTimedOut=1 warmRestartMs=22000
+[2026-09-08T18:16:28Z] === evidence pull ===
+[2026-09-08T18:16:28Z] === SUMMARY ===
+P8_SUMMARY 2026-09-08T18:16:28Z
 gates_pass=10 gates_fail=7 gates_skip=2
 stress_instrument_rc=0 live_instrument_rc=0
 screenshots=2
@@ -2001,12 +1999,12 @@ STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase8/scrip
 phase8 gates rc=1
 ########## 7/7 evidence ##########
 heartbeat push skipped (branch moved or push refused)
-P8_SUMMARY 2026-09-08T17:54:26Z
+P8_SUMMARY 2026-09-08T18:16:28Z
 gates_pass=10 gates_fail=7 gates_skip=2
 stress_instrument_rc=0 live_instrument_rc=0
 screenshots=2
 model_available=0 model=openai/gpt-4o-mini
 device_abi=x86_64
 android_sdk=34
-=== PHASE 8 END 2026-09-08T17:54:27Z rc=1 (gates=1 fails=7) ===
+=== PHASE 8 END 2026-09-08T18:16:29Z rc=1 (gates=1 fails=7) ===
 ########## evidence push ##########
