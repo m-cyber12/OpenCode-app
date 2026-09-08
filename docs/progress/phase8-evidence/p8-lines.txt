@@ -1,0 +1,41 @@
+P8_P7REG PASS :: phase7 suite rc=0 fails=0 (W1 W2 W3 U3 U7 L1 L2 all green; see phase7-evidence fold)
+P8_P5REG PASS :: phase5 suite rc=1 fails=1 (G16 red = documented upstream #47644; K1-K9 G6-G12 G17 G18 G19 green)
+P8_KEYRESIDENCY FAIL :: maste
+P8_KEYRESIDENCY FAIL :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=x86_64 device=sdk_gphone64_x86_64 api=34 :: key material is in the SOFTWARE keystore on this device - the ciphertext-at-rest guarantee holds, key-extraction resistance does not (expected on emulators; a real-device run is the evidence for the hardware claim)
+P8_LIFECYCLELOG PASS :: illegalT
+P8_LIFECYCLELOG PASS :: illegalTransitions=0 startingTransitions=5 healthyTransitions=2 logBytes=9807 lastStates='EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1)) | EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111) | CRASHED_RESTARTING (server exited (code=137); restarting) | FATAL (supervisor error: attempts is 1-based, got 0) | EXTRACTING (validating embedded runtime)'
+P8_PROVAUTH FAIL :: se
+P8_PROVAUTH FAIL :: serverSawError=false serverErrorName=- serverErrorMessage='-' serverStatus=0 classified=- screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=43693
+P8_SERVERKILL FAIL :: killedPid=8129 oldPidDead=t
+P8_SERVERKILL FAIL :: killedPid=8129 oldPidDead=true sawCrashedRestarting=false restartCount=0 healthyAgain=false healthHttp=-1 sawFatal=true newPid=- finalStatus=FATAL finalDetail='supervisor error: attempts is 1-based, got 0'
+P8_KEYRESIDENCY FAIL :: :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=x86_64 device=sdk_gphone64_x86_64 api=34 :: key material is in the SOFTWARE keystore on this devic
+P8_PROVAUTH FAIL :: :: serverSawError=false serverErrorName=- serverErrorMessage='-' serverStatus=0 classified=- screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=43693
+P8_SERVERKILL FAIL :: :: killedPid=8129 oldPidDead=true sawCrashedRestarting=false restartCount=0 healthyAgain=false healthHttp=-1 sawFatal=true newPid=- finalStatus=FATAL finalDetail='supervisor error: attempts is 1-based, got 0'
+P8_LIFECYCLELOG PASS :: :: illegalTransitions=0 startingTransitions=5 healthyTransitions=2 logBytes=9807 lastStates='EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1)) | EXTRACTING (validating embedded ru
+P8_CLEANUP PASS :: keysto
+P8_CLEANUP PASS :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
+P8_KEYPROBE PASS :: model=openai/gpt-4o-mini tokenSeen=t
+P8_KEYPROBE PASS :: model=openai/gpt-4o-mini tokenSeen=true reply='Reply with exactly this token and nothing else: P8PROBEOK' session=ses_f7faa808bffer9J3q8qPCRosVv
+P8_KEYRESIDENCY FAIL :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=x86_64 device=sdk_gphone64_x86_64 api=34 :: key material is in the SOFTWARE keystore on this device - the ciphertext-at-rest guarantee holds, key-extraction resistance does not (expected on emulators; a real-device run is the evidence for the hardware claim)
+P8_LIFECYCLELOG PASS :: illegalTransitions=0 startingTransitions=5 healthyTransitions=2 logBytes=9807 lastStates='EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1)) | EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111) | CRASHED_RESTARTING (server exited (code=137); restarting) | FATAL (supervisor error: attempts is 1-based, got 0) | EXTRACTING (validating embedded runtime)'
+P8_MODEL_AVAILABLE 1 :: model=openai/gpt-4o-mini replyChars=57
+P8_PROVAUTH FAIL :: serverSawError=false serverErrorName=- serverErrorMessage='-' serverStatus=0 classified=- screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=43693
+P8_SERVERKILL FAIL :: killedPid=8129 oldPidDead=true sawCrashedRestarting=false restartCount=0 healthyAgain=false healthHttp=-1 sawFatal=true newPid=- finalStatus=FATAL finalDetail='supervisor error: attempts is 1-based, got 0'
+P8_TOOL SKIP :: the model answe
+P8_TOOL SKIP :: the model answered without calling a tool within 480s (asksAnswered=0, replyChars=0, reply='')
+P8_KEYPROBE PASS :: :: model=openai/gpt-4o-mini tokenSeen=true reply='Reply with exactly this token and nothing else: P8PROBEOK' session=ses_f7faa808bffer9J3q8qPCRosVv
+P8_TOOL SKIP :: :: the model answered without calling a tool within 480s (asksAnswered=0, replyChars=0, reply='')
+P8_CLEANUP PASS :: :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
+P8_TOYBOX PASS :: base64|base64 -d|tar xz -C dir works on api=34 (harness staging path; the API-29 half is the real-device question - see report)
+P8_CORRUPT FAIL :: corrupted payload did not recover cleanly (healthy=yes reextract_lines=0 marker=1)
+P8_CRASH PASS :: force-stopped the app process with the server running; relaunch returned to HEALTHY (valid marker -> no re-extraction needed)
+P8_SESSIONPERSIST FAIL :: session create driver produced no session id: 
+P8_NETLOSS FAIL :: turn could not be started: assert ok: session id present
+124 | // Payload verified against the pinned upstream (05ea5073): PromptInput is
+P8_BGFG FAIL :: background/foreground: no verdict line (mid-background health=200)
+P8_LARGE FAIL :: large project incomplete: measure=assert ok: session id present git=GIT_OK
+P8_HIST FAIL :: turn 1 failed: prompt_async failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for detail
+turn 2 failed: prompt_async failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for detail
+turn 3 failed: prompt_async failed: 500 {"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for detail
+P8_STORAGE PASS :: free: 4395344KB -> 2552116KB (app), back to 4395328KB after cleanup :: healthy under low storage
+P8_PERF FAIL :: P8PERF ok=0 error=Unable to connect. Is the computer able to access the url? warmRestartMs=246000

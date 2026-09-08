@@ -1,0 +1,12 @@
+assert ok: session id present
+38 | if (mode === "measure") {
+39 |   const t = (fn) => { const a = Date.now(); return fn().then((v) => ({ v, ms: Date.now() - a })) }
+40 |   const create = await t(() => createSession("p8 large perf"))
+41 |   const list = await t(async () => {
+42 |     const r = await get(`/file?path=${encodeURIComponent(DIR + "/src")}`)
+43 |     if (!r.ok) throw new Error("file list http " + r.status)
+                              ^
+error: file list http 500
+      at <anonymous> (/data/data/ai.opencode.android.debug/files/tmp/p8js/p8-large.js:43:26)
+
+Bun v1.3.14 (Android x64)

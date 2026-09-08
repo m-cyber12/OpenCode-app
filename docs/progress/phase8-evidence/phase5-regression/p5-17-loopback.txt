@@ -1,0 +1,71 @@
+=== listeners owned by uid 10192 (host-visible /proc/net/tcp) ===
+-- IPv4/IPv6 LISTEN(0A) rows for the app uid --
+  tcp_row local=0100007F:100F rem=00000000:0000 state=0A uid=10192
+-- any row for the app uid that is NOT a loopback local address --
+-- outbound (non-LISTEN) app-uid rows: expected provider / network-MCP traffic, recorded, not asserted --
+  outbound local=0100007F:100F peer=0100007F:8AE6 state=01
+  outbound local=0100007F:100F peer=0100007F:8AF6 state=01
+  outbound local=0100007F:100F peer=0100007F:8AFE state=01
+  outbound local=0100007F:100F peer=0100007F:8AC6 state=01
+  outbound local=0100007F:100F peer=0100007F:8AD6 state=01
+  outbound local=1002000A:9D46 peer=165A41AC:01BB state=01
+  outbound local=0000000000000000FFFF00000100007F:8AF6 peer=0000000000000000FFFF00000100007F:100F state=01
+  outbound local=0000000000000000FFFF00000100007F:8AD6 peer=0000000000000000FFFF00000100007F:100F state=01
+  outbound local=0000000000000000FFFF00000100007F:8AC6 peer=0000000000000000FFFF00000100007F:100F state=01
+  outbound local=0000000000000000FFFF00000100007F:8AFE peer=0000000000000000FFFF00000100007F:100F state=01
+  outbound local=0000000000000000FFFF00000100007F:8AE6 peer=0000000000000000FFFF00000100007F:100F state=01
+-- UDP: app-uid sockets on mDNS 5353 (0x14F9) --
+-- count of LISTEN rows on port 4111 by the app uid --
+  listen_on_4111=1
+-- count of LISTEN rows on port 4111 by ANY uid --
+  any_listen_on_4111=1
+-- wildcard LISTEN rows for the app uid (00000000 or all-zero IPv6) --
+
+=== the app's own audit (written by runtime/LoopbackAudit) ===
+# OpenCode Android loopback/bind audit (written by the app itself)
+at=2026-09-08T09:20:24Z
+uid=10192
+port=4111 expected_bind=127.0.0.1
+table_verdict=NO_ROWS(seen)
+table_detail=port=4111 listeners=0 loopback_only=false mdns_sockets=0 binds=[]
+probe_loopback_connect=OK
+probe_external_address=10.0.2.15
+probe_external_connect=REFUSED(ECONNREFUSED)
+mdns_sockets_owned_by_uid=0 (expected 0; OpenCode publishes mDNS only for a non-loopback bind)
+server_version=1.18.23-android
+keystore_hardware_backed=false
+secret_entries=server-password
+violations=none
+
+## raw socket tables as seen by the app uid
+## tcp (/proc/net/tcp)
+(unreadable)
+## tcp6 (/proc/net/tcp6)
+(unreadable)
+## udp (/proc/net/udp)
+(unreadable)
+## udp6 (/proc/net/udp6)
+(unreadable)
+
+=== launcher bind evidence (runtime.log) ===
+2026-09-08T09:10:50.869Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T09:10:50.877Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T09:11:13.368Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T09:11:13.377Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T09:18:51.217Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T09:18:51.227Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T09:19:05.771Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T09:19:05.778Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T09:19:09.315Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T09:19:09.316Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T09:19:13.885Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T09:19:13.887Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-08T09:20:14.841Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-08T09:20:14.849Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+
+=== OpenCode server log: mDNS publish lines (want none) ===
+(end of mDNS grep)
+
+=== host-side forward (adb forward binds host loopback only) ===
+emulator-5554 tcp:4111 tcp:4111
+
