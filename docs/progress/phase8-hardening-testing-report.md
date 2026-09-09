@@ -201,70 +201,79 @@ to make the next run answer this in two seconds instead of ten minutes.
 #### 3.1.4 Round 14 — key preflight (fail in 2 s, not 10 min)
 
 Because OpenCode cannot be relied on to report provider-auth failures, the
-device suite now asks the provider **directly from the phone, before the gates
+device suite asks the provider **directly from the phone, before the gates
 run**, and prints the provider's own words as `P8KEYPREFLIGHT` (saved to
-`p8d-out/key-preflight.txt`):
+`p8d-out/key-preflight.txt`). It asks two questions — *is the key accepted?*
+(`GET /v1beta/models?key=…`) and *does this model exist for this key?* (the same
+response filtered to `generateContent`-capable models) — auto-switching to a
+model the key itself reports when the configured id is absent. The shape check
+now accepts `AIza…`, `AQ.…` and `sk-or-…` and is a **warning only**.
 
-- `google` → `GET https://generativelanguage.googleapis.com/v1beta/models?key=…`,
-  reporting `http=` and the number of models returned.
-- `openrouter` → `GET /api/v1/auth/key` with the bearer token.
+#### 3.1.5 Device run 5 — the preflight fired, and caught OUR bug, not Google's
 
-The preflight asks **two** questions, because run 4 proved one is not enough
-and the two failures need opposite fixes:
+Run 5 (round-14 APK) returned `P8KEYPREFLIGHT no output` **in one second**, and
+that single fact overturns the whole line of investigation. A network probe
+against Google cannot fail in one second with no output, no status, and no
+error text — a timeout would have taken 20 s, a rejection would have carried a
+status. Something killed the process before it ran any JavaScript.
 
-1. **Is the key accepted?** `GET /v1beta/models?key=…` → `key=OK http=200` or
-   `key=REJECTED http=<code> body=<Google's own message>`.
-2. **Does this model exist for this key?** the same response is filtered to the
-   models advertising `generateContent`, and the configured id is looked up in
-   that list → `modelUsable=true|false`. On `false` the suite **auto-switches to
-   the first model the key itself reported** (`available=…`) and continues,
-   which absorbs the `AQ.`-key/older-model-id `404` without a second trip to the
-   user. On a rejected key it records `P8D_KEYPROBE SKIP` carrying Google's
-   message and skips the live gates rather than burning ten minutes on a
-   guaranteed silent failure.
+The same run contains the contrast that identifies it:
 
-For `openrouter` the preflight is `GET /api/v1/auth/key` with the bearer token.
-The key is written to `files/tmp/pfkey` base64-over-stdin and deleted in the
-same shell invocation, so it still never appears on a command line. The shape
-check now accepts `AIza…`, `AQ.…` and `sk-or-…`, and is a **warning only** — the
-preflight, which asks the provider instead of guessing, is the authority.
+| Context (device run 5) | outcome |
+|---|---|
+| server's **child** process (OpenCode `/shell` → bun) | `openrouter http=200`, `gemini http=404` (expected for a bare root GET), `opencode http=200`, `control http=200` |
+| server's **own** process (model calls) | `APIError serverStatus=0`, empty message — silent |
+| **run-as child** (`$FILES/bin/bun script.js`, the preflight) | **no output at all, ~1 s** |
 
-All four preflight branches (usable / auto-switch / rejected / no-output) were
-exercised against captured response shapes on the host before shipping.
-**Status: IMPLEMENTED, NOT YET TESTED on device** — device run 5 is what
-decides between "key problem", "model-id problem", and "something else".
+**Root cause: the harness was launching Bun the wrong way.** The app never
+executes `bin/bun` directly. `RuntimeProcess.start()` execs
+`libexecshim.so` with `OPENCODE_BUN_EXEC` and `OPENCODE_SECCOMP_SHIM` set, so
+that `libseccompshim.so` is `LD_PRELOAD`ed and its constructor installs a
+`SIGSYS` handler **before Bun's native init**. That handler exists precisely
+because Android's per-app seccomp filter turns unknown syscalls into a **fatal
+`SIGSYS`** rather than `ENOSYS` — the code comments record bun dying this way
+during its own startup. Every ad-hoc `'$FILES/bin/bun' …` in the device suite
+skipped that path entirely, so those probes were killed by a signal and printed
+nothing.
 
-#### 3.1.1 The CI-emulator model silence (isolated, documented, not hidden)
+Consequences, stated plainly:
 
-Across CI rounds 6–11 every model call made by the OpenCode **server process**
-ended with `APIError (status=0)` — no HTTP response — while:
+- The round-14 preflight **never contacted Google**. Its "no output" was our
+  launcher failing, and the suite then logged the misleading
+  `preflight produced no output (bun/egress problem)` — it discarded the raw
+  transcript by piping straight into `grep … | head -1`, destroying the only
+  evidence.
+- The **cold-start probe used the same raw-bun call**. Its 150-iteration wait
+  loop read "no output" as "server not up yet", which is the most likely
+  explanation for the absurd `320 s` (run 5) and `326 s` (run 3) COLDSTART wall
+  numbers sitting next to supervisor windows of **17.6 s** and **21.8 s**. The
+  supervisor windows are the numbers of record; **the wall figures from runs 3
+  and 5 are retracted as instrument error.**
+- This does **not** explain the server's own silent model turns (the server
+  process is launched correctly, through the shim). That remains open — but it
+  was never the same failure as the preflight's, and conflating them sent runs
+  4 and 5 chasing the API.
 
-| Context (CI emulator) | openrouter | evidence |
-|---|---|---|
-| run-as shell child (bun) | **200**, 90–1200 ms | `P8NETPROBE` lines, every stage, rounds 8–10 |
-| server's own child (OpenCode `/shell` → bun) | **200**, 404 ms (round 9 stage D) | `P8NETPROBE_SERVER` |
-| server process's own model POST | **status=0, no response** | P8-KEYPROBE/PROVAUTH/PERF/HIST, all rounds |
-| loopback (server serving the app/drivers) | 200 | every gate |
-| keyless built-in model (local, no egress) | real text | stage A live turn, rounds 6–9 |
+#### 3.1.6 Round 15 — fix the instrument, then re-measure
 
-Round 8's "P8HIST 40/40 success avgMs=3173" was a **false positive** — every
-assistant message had `parts:[]` (silent empty completion); the driver now
-requires the turn's own marker in the reply text, and bails after 5
-consecutive non-answering turns (rounds 9/10 fixes — verified working in
-round 11: `P8HIST ok=0 turns=5 textTurns=0 failedTurns=5 bail=5
-consecutive non-answering turns (avgMs=120530)`, ~10 min instead of ~90).
-The round-10 authenticated probe (`P8NETPROBE_AUTH`, run-as + server-child,
-against `/auth/key`) additionally separates "dead key" (401) from "egress
-dead": **round 11 returned `http=200` from BOTH contexts — the repo key is
-live** — so the server-client failure is unambiguously the process/network
-condition, not credentials.
+1. **`dbun()`** — one helper that runs a device-side Bun script exactly as the
+   app does: `libexecshim.so` with `OPENCODE_BUN_EXEC` + `OPENCODE_SECCOMP_SHIM`,
+   `HOME`/`TMPDIR` set, and `echo dbun_rc=$?` appended. `nativeLibraryDir` is
+   resolved from `pm path` after install. The preflight and the cold-start
+   health probe both use it now.
+2. **Stop destroying evidence.** `key-preflight.txt` keeps the full raw
+   transcript plus the exit code. When Bun is killed by a signal the suite says
+   so explicitly — *"bun terminated by signal 31 (rc=159) — this is a
+   RUNTIME/seccomp launch failure on the device, NOT a provider problem"* —
+   instead of blaming the network.
+3. **New gate `P8D-BUNLAUNCH`** runs the same trivial script both ways (raw vs
+   exec-shim) and records each exit code, so the launch path is a measured
+   verdict in `SUMMARY.txt` rather than an assumption. Exit `159` = `128+31`
+   (`SIGSYS`) is called out by name.
 
-Conclusion (stated as evidence, not speculation): the CI emulator's network
-path for the server process's own HTTPS client is broken in a way that spares
-every child process. The real device disproves any product-level cause. This is
-documented as **BLOCKED-CI (emulator-specific)**; the model-dependent gates
-therefore carry their verdicts from the real-device suite, and the CI run
-remains the authority for every model-free gate (all green, §8).
+All parsing branches (signal / success / rejected / auto-switch / no-output)
+were exercised against captured output shapes on the host before shipping.
+**Status: IMPLEMENTED, NOT YET TESTED on device.**
 
 ### 3.2 Secure-hardware key residency
 

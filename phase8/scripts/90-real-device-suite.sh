@@ -58,8 +58,40 @@ TEST_PKG="ai.opencode.android.debug.test"
 RUNNER="$TEST_PKG/androidx.test.runner.AndroidJUnitRunner"
 FILES="/data/data/$PKG/files"
 PORT=4111
+# nativeLibraryDir: the ONLY exec-allowed directory for this package. bin/bun is
+# a symlink into it, and the exec shim (libexecshim.so) lives here too.
+NATIVE_LIB_DIR=""
+ABI_NOW=""
 
 rash() { printf '%s\n' "$1" | adb shell run-as "$PKG" sh 2>&1 | tr -d '\r'; }
+
+# Run a bun script the SAME WAY THE APP DOES.
+#
+# Round 15 finding: every ad-hoc `$FILES/bin/bun script.js` in this suite was
+# launching bun RAW - without the exec shim and without LD_PRELOAD of
+# libseccompshim.so. The app never does that (RuntimeProcess.start() execs
+# libexecshim.so with OPENCODE_BUN_EXEC + OPENCODE_SECCOMP_SHIM set), because
+# Android's per-app seccomp filter turns unknown syscalls into a FATAL SIGSYS
+# instead of ENOSYS. A raw bun therefore dies on a signal during startup and
+# prints NOTHING - exactly the "P8KEYPREFLIGHT no output in 1s" we recorded.
+# So the preflight was never measuring the provider at all; it was measuring
+# our own launch bug.
+#
+# $1 = absolute path of the .js to run, rest = extra "VAR=val" env pairs.
+dbun() {
+  _js="$1"; shift
+  _env="$*"
+  _exec="$NATIVE_LIB_DIR/libexecshim.so"
+  _shim="$NATIVE_LIB_DIR/libseccompshim.so"
+  if [ -n "$NATIVE_LIB_DIR" ]; then
+    rash "cd '$FILES' && HOME='$FILES/home' TMPDIR='$FILES/tmp' \
+      OPENCODE_BUN_EXEC='$NATIVE_LIB_DIR/libbun.so' \
+      OPENCODE_SECCOMP_SHIM='$_shim' \
+      $_env '$_exec' '$_js' 2>&1; echo dbun_rc=\$?"
+  else
+    rash "cd '$FILES' && HOME='$FILES/home' TMPDIR='$FILES/tmp' $_env '$FILES/bin/bun' '$_js' 2>&1; echo dbun_rc=\$?"
+  fi
+}
 
 # ---- R0: preconditions -------------------------------------------------------
 command -v adb >/dev/null 2>&1 || { echo "FATAL: adb not found on PATH (install platform-tools and add it to PATH)"; exit 2; }
@@ -96,6 +128,16 @@ adb install -r -g "$TAPK" 2>&1 | tail -2 | tee -a "$LOG" || { rd INSTALL 1 "adb 
 adb shell pm grant "$PKG" android.permission.POST_NOTIFICATIONS >/dev/null 2>&1 || true
 # Harness marker BEFORE first launch (the password export needs it).
 rash "mkdir -p '$FILES/harness'; touch '$FILES/harness/enabled'; chmod 700 '$FILES/harness'; echo harness_rc=\$?" >> "$LOG" 2>&1
+ABI_NOW=$(adb shell getprop ro.product.cpu.abi | tr -d '\r')
+APK_PATH_NOW=$(adb shell pm path "$PKG" | tr -d '\r' | sed 's/^package://' | head -1)
+if [ -n "$APK_PATH_NOW" ]; then
+  case "$ABI_NOW" in
+    arm64*) NATIVE_LIB_DIR="$(dirname "$APK_PATH_NOW")/lib/arm64" ;;
+    x86_64) NATIVE_LIB_DIR="$(dirname "$APK_PATH_NOW")/lib/x86_64" ;;
+    *)      NATIVE_LIB_DIR="$(dirname "$APK_PATH_NOW")/lib/$ABI_NOW" ;;
+  esac
+fi
+log "nativeLibraryDir=$NATIVE_LIB_DIR abi=$ABI_NOW"
 
 # ---- R2: the toybox staging path on THIS API ---------------------------------
 TB_B64=$(cd "$OUT" && mkdir -p tb && printf 'tb-a\n' > tb/a.txt && printf 'tb-b\n' > tb/b.txt && tar cz -C tb . | base64 -w0)
@@ -107,6 +149,32 @@ else
   rd TOYBOX 1 "toybox staging failed on api=$TB_API: $(echo "$TB_OUT" | head -2)"
 fi
 
+# ---- R2b: bun launch-path self-test (round 15) --------------------------------
+# The decisive experiment for the "silent model turn" mystery. Runs the SAME
+# trivial script three ways and reports each exit code:
+#   raw   : $FILES/bin/bun script.js            (what this suite used to do)
+#   shim  : libexecshim.so + LD_PRELOAD shim    (what the APP actually does)
+# A raw bun killed by SIGSYS exits 159 (128+31) with no stdout. If raw fails and
+# shim succeeds, every previous "no output"/"egress" reading taken through raw
+# bun was measuring our launcher, not the network or the provider.
+rash "echo 'console.log(\"P8BUNSELFTEST alive=1 v=\"+(process.versions&&process.versions.bun))' > '$FILES/tmp/selftest.js'" >/dev/null 2>&1
+RAW_OUT=$(rash "cd '$FILES' && HOME='$FILES/home' '$FILES/bin/bun' '$FILES/tmp/selftest.js' 2>&1; echo raw_rc=\$?")
+SHIM_OUT=$(dbun "$FILES/tmp/selftest.js")
+rash "rm -f '$FILES/tmp/selftest.js'" >/dev/null 2>&1
+{ echo "=== raw bun ==="; printf '%s\n' "$RAW_OUT"
+  echo "=== exec-shim bun ==="; printf '%s\n' "$SHIM_OUT"; } > "$OUT/bun-launch-selftest.txt"
+RAW_RC=$(printf '%s\n' "$RAW_OUT" | sed -n 's/.*raw_rc=\([0-9]*\).*/\1/p' | tail -1)
+SHIM_RC=$(printf '%s\n' "$SHIM_OUT" | sed -n 's/.*dbun_rc=\([0-9]*\).*/\1/p' | tail -1)
+RAW_OK=$(printf '%s\n' "$RAW_OUT" | grep -c 'P8BUNSELFTEST alive=1' || true)
+SHIM_OK=$(printf '%s\n' "$SHIM_OUT" | grep -c 'P8BUNSELFTEST alive=1' || true)
+RAW_SIG=""
+[ -n "${RAW_RC:-}" ] && [ "${RAW_RC:-0}" -gt 128 ] 2>/dev/null && RAW_SIG=" (killed by signal $((RAW_RC-128)))"
+if [ "${SHIM_OK:-0}" -ge 1 ]; then
+  rd BUNLAUNCH 0 "exec-shim bun runs (rc=$SHIM_RC); raw bun alive=${RAW_OK:-0} rc=${RAW_RC:-?}$RAW_SIG :: the app's launch path is the working one; raw bun invocations in a harness are not representative"
+else
+  rd BUNLAUNCH 1 "NEITHER launch path produced output (shim rc=${SHIM_RC:-?}, raw rc=${RAW_RC:-?}$RAW_SIG) - see bun-launch-selftest.txt"
+fi
+
 # ---- R3: cold start on real silicon ------------------------------------------
 T0=$(date +%s)
 adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
@@ -115,7 +183,11 @@ adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 ||
 # up; the supervisor's own log is the authority on the HEALTHY transition.
 COLD_OK=1; H=""
 for _ in $(seq 1 150); do
-  H=$(rash "'$FILES/bin/bun' -e \"const r=await fetch('http://127.0.0.1:$PORT/global/health');console.log(r.status)\" 2>/dev/null" | grep -o '^[0-9][0-9][0-9]' | head -1)
+  # Round 15: through the exec shim, like the app (a raw bun dies on SIGSYS and
+  # printed nothing, which this loop mis-read as "server not up yet" for 150
+  # iterations - the likely cause of the absurd 320s/326s COLDSTART numbers).
+  rash "echo \"const r=await fetch('http://127.0.0.1:$PORT/global/health');console.log(r.status)\" > '$FILES/tmp/health.js'" >/dev/null 2>&1
+  H=$(dbun "$FILES/tmp/health.js" | grep -o '^[0-9][0-9][0-9]' | head -1)
   if [ "$H" = "200" ] || [ "$H" = "401" ]; then COLD_OK=0; break; fi
   sleep 2
 done
@@ -234,11 +306,29 @@ const t=await r.text();
 console.log("P8KEYPREFLIGHT provider=openrouter http="+r.status+" body="+t.replace(/\s+/g," ").slice(0,220));'
   fi
   PF_B64=$(printf '%s' "$PF_JS" | base64 -w0)
-  PF_OUT=$(rash "echo '$PF_B64' | base64 -d > '$FILES/tmp/pf.js'; PF='$FILES/tmp/pfkey' PFMODEL='$MODEL' '$FILES/bin/bun' '$FILES/tmp/pf.js' 2>&1; rm -f '$FILES/tmp/pf.js' '$FILES/tmp/pfkey'" 2>/dev/null | grep -a 'P8KEYPREFLIGHT' | head -1)
-  echo "${PF_OUT:-P8KEYPREFLIGHT no output}" | tee -a "$LOG" > "$OUT/key-preflight.txt"
+  rash "echo '$PF_B64' | base64 -d > '$FILES/tmp/pf.js'" >/dev/null 2>&1
+  # Round 15: run bun THROUGH THE EXEC SHIM (see dbun) and KEEP THE RAW OUTPUT.
+  # The old code piped straight into `grep P8KEYPREFLIGHT | head -1`, so when
+  # bun died on SIGSYS the crash text was thrown away and all we kept was the
+  # useless string "no output". The raw transcript is the evidence now.
+  PF_RAW=$(dbun "$FILES/tmp/pf.js" "PF='$FILES/tmp/pfkey'" "PFMODEL='$MODEL'")
+  rash "rm -f '$FILES/tmp/pf.js' '$FILES/tmp/pfkey'" >/dev/null 2>&1
+  PF_OUT=$(printf '%s\n' "$PF_RAW" | grep -a 'P8KEYPREFLIGHT' | head -1)
+  PF_RC=$(printf '%s\n' "$PF_RAW" | sed -n 's/.*dbun_rc=\([0-9]*\).*/\1/p' | tail -1)
+  {
+    echo "${PF_OUT:-P8KEYPREFLIGHT no parsed line}"
+    echo "--- raw preflight transcript (exit rc=${PF_RC:-?}) ---"
+    printf '%s\n' "$PF_RAW"
+  } > "$OUT/key-preflight.txt"
+  printf '%s\n' "${PF_OUT:-P8KEYPREFLIGHT no parsed line (rc=${PF_RC:-?})}" | tee -a "$LOG" >/dev/null
+  # A bun that dies on a signal exits 128+N (SIGSYS=31 -> 159) and prints
+  # nothing parseable. Say so explicitly instead of blaming the network.
+  if [ -z "$PF_OUT" ] && [ -n "${PF_RC:-}" ] && [ "${PF_RC:-0}" -gt 128 ] 2>/dev/null; then
+    log "PREFLIGHT: bun terminated by signal $((PF_RC-128)) (rc=$PF_RC) - this is a RUNTIME/seccomp launch failure on the device, NOT a provider problem. See $OUT/key-preflight.txt"
+  fi
   case "$PF_OUT" in
     "")
-      log "preflight produced no output (bun/egress problem) - continuing, the gates will show it" ;;
+      log "preflight produced no parseable line - see $OUT/key-preflight.txt for the raw transcript (rc=${PF_RC:-?}); continuing, the gates will show it" ;;
     *modelUsable=true*)
       log "preflight OK: the provider accepted this key AND serves model '$MODEL'" ;;
     *modelUsable=false*)
