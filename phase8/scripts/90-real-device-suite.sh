@@ -187,27 +187,46 @@ if [ -n "$MODEL_KEY" ]; then
   MODEL="${MODEL:-$DEF_MODEL}"
   # Cheap shape check so a mis-typed key is caught here, not 20 minutes later
   # as a silent empty turn. Gemini keys look like AIza...; OpenRouter sk-or-...
+  # Google AI Studio issues BOTH formats: the classic "AIzaSy..." (39 chars) and
+  # the newer "AQ.Ab8RN6..." keys (~52 chars) rolled out in Aug 2026. Round 13
+  # only knew the first shape and cried wolf on a perfectly valid AQ. key, so
+  # this check accepts both - and it is only ever a warning. The PREFLIGHT
+  # below is the authority: it asks the provider instead of guessing.
   case "$PROVIDER:$MODEL_KEY" in
-    google:AIza*|openrouter:sk-or-*) : ;;
-    *) log "WARNING: the typed key does not look like a $KEY_LABEL key (provider=$PROVIDER, ${#MODEL_KEY} chars)" ;;
+    google:AIza*|google:AQ.*|openrouter:sk-or-*) : ;;
+    *) log "WARNING: the typed key does not match a known $KEY_LABEL key shape (provider=$PROVIDER, ${#MODEL_KEY} chars) - the preflight below decides" ;;
   esac
   log "live gates provider=$PROVIDER model=$MODEL keychars=${#MODEL_KEY}"
 
   # ---- PREFLIGHT (round 14) ---------------------------------------------------
-  # Round 13 spent 10 minutes producing a silent KEYPROBE failure because the
-  # typed key was not a valid Google AI Studio key (53 chars, no AIza prefix -
-  # AI Studio keys are AIza + 35 chars). OpenCode reports provider auth
-  # failures as empty completions (report S13), so a bad key is INVISIBLE at
-  # the gate level. Ask the provider directly, from the phone, BEFORE spending
-  # the run: this answers in ~2 s and prints the provider's own words.
+  # Round 13 spent 10 minutes on a SILENT KEYPROBE failure: OpenCode reports
+  # provider auth/model errors as empty completions (report S13), so anything
+  # wrong with the credential or the model id is INVISIBLE at the gate level.
+  # Ask the provider directly, from the phone, BEFORE spending the run.
+  # It answers in ~2 s and prints the provider's own words. Two questions, not
+  # one - because an "AQ." key can authenticate fine and still 404 on an older
+  # model id, which is a completely different fix:
+  #   1. is the KEY accepted?        (list models)
+  #   2. does THIS MODEL exist for it? (fetch that model, and if not, name the
+  #      generateContent-capable models the key actually has)
   PF_KB64=$(printf '%s' "$MODEL_KEY" | base64 -w0)
   rash "echo '$PF_KB64' | base64 -d > '$FILES/tmp/pfkey'" >/dev/null 2>&1
   if [ "$PROVIDER" = "google" ]; then
     PF_JS='const k=(await Bun.file(process.env.PF||"").text()).trim();
+const M=(process.env.PFMODEL||"").trim();
 const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models?key="+k,{signal:AbortSignal.timeout(20000)});
 const t=await r.text();
-let n=0; try{const j=JSON.parse(t); n=(j.models||[]).length}catch{}
-console.log("P8KEYPREFLIGHT provider=google http="+r.status+" models="+n+" body="+t.replace(/\s+/g," ").slice(0,220));'
+let n=0,names=[];
+try{const j=JSON.parse(t);const ms=j.models||[];n=ms.length;
+  names=ms.filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent"))
+          .map(m=>String(m.name||"").replace("models/",""));}catch{}
+if(r.status!==200){
+  console.log("P8KEYPREFLIGHT provider=google key=REJECTED http="+r.status+" body="+t.replace(/\s+/g," ").slice(0,220));
+}else{
+  const hit=names.includes(M);
+  console.log("P8KEYPREFLIGHT provider=google key=OK http=200 models="+n+" model="+M+" modelUsable="+hit+
+    (hit?"":" available="+names.slice(0,12).join(",")));
+}'
   else
     PF_JS='const k=(await Bun.file(process.env.PF||"").text()).trim();
 const r=await fetch("https://openrouter.ai/api/v1/auth/key",{headers:{Authorization:"Bearer "+k},signal:AbortSignal.timeout(20000)});
@@ -215,13 +234,29 @@ const t=await r.text();
 console.log("P8KEYPREFLIGHT provider=openrouter http="+r.status+" body="+t.replace(/\s+/g," ").slice(0,220));'
   fi
   PF_B64=$(printf '%s' "$PF_JS" | base64 -w0)
-  PF_OUT=$(rash "echo '$PF_B64' | base64 -d > '$FILES/tmp/pf.js'; PF='$FILES/tmp/pfkey' '$FILES/bin/bun' '$FILES/tmp/pf.js' 2>&1; rm -f '$FILES/tmp/pf.js' '$FILES/tmp/pfkey'" 2>/dev/null | grep -a 'P8KEYPREFLIGHT' | head -1)
+  PF_OUT=$(rash "echo '$PF_B64' | base64 -d > '$FILES/tmp/pf.js'; PF='$FILES/tmp/pfkey' PFMODEL='$MODEL' '$FILES/bin/bun' '$FILES/tmp/pf.js' 2>&1; rm -f '$FILES/tmp/pf.js' '$FILES/tmp/pfkey'" 2>/dev/null | grep -a 'P8KEYPREFLIGHT' | head -1)
   echo "${PF_OUT:-P8KEYPREFLIGHT no output}" | tee -a "$LOG" > "$OUT/key-preflight.txt"
   case "$PF_OUT" in
-    *http=200*)
-      log "preflight OK: the provider accepted this key" ;;
     "")
       log "preflight produced no output (bun/egress problem) - continuing, the gates will show it" ;;
+    *modelUsable=true*)
+      log "preflight OK: the provider accepted this key AND serves model '$MODEL'" ;;
+    *modelUsable=false*)
+      # The key is fine; the model id is not available to it. Auto-recover
+      # rather than burn the run: take the first generateContent model the key
+      # itself reported (the AQ.-key rollout 404s several older ids).
+      PF_PICK=$(printf '%s' "$PF_OUT" | sed -n 's/.* available=\([^, ]*\).*/\1/p')
+      if [ -n "$PF_PICK" ]; then
+        log "PREFLIGHT: model '$MODEL' is NOT available to this key; switching to '$PF_PICK' (reported by the key itself)"
+        MODEL="$PF_PICK"
+      else
+        log "PREFLIGHT FAILED - model '$MODEL' is not available to this key and no alternative was reported."
+        rec P8D_KEYPROBE SKIP "preflight: $PF_OUT"
+        SKIP=$((SKIP+1))
+        MODEL_KEY=""
+      fi ;;
+    *http=200*)
+      log "preflight OK: the provider accepted this key" ;;
     *)
       log "PREFLIGHT FAILED - the provider REJECTED this key, so the live gates cannot pass."
       log "Fix the key and re-run; skipping the live model gates to save ~10 minutes."

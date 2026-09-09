@@ -169,23 +169,34 @@ new coverage. Model-free gates were unchanged: TOYBOX PASS, COLDSTART PASS
 (`illegalTransitions=0`), KEYRESIDENCY FAIL-as-measurement (unchanged software
 keystore result).
 
-**P8D-KEYPROBE FAIL / P8D-TOOL SKIP — cause identified as an invalid key, not
-the provider or the app.** Two independent lines prove it:
+**P8D-KEYPROBE FAIL / P8D-TOOL SKIP — cause NOT yet established.** An earlier
+revision of this section claimed the typed key was invalid because it was 53
+characters with no `AIza` prefix. **That claim was wrong and is retracted**:
+Google AI Studio began issuing keys with an `AQ.` prefix (e.g.
+`AQ.Ab8RN6…`, ~52 characters) alongside the classic `AIzaSy…` (39 characters)
+in August 2026, and the user confirmed from the AI Studio key page that this is
+exactly what they typed. The suite's shape check knew only the old format and
+cried wolf on a valid key. Recorded here because the harness's own diagnostic
+misled the analysis — the honesty rule cuts both ways.
 
-- The suite's own shape check fired: `WARNING: the typed key does not look like
-  a Gemini (Google AI Studio) key (provider=google)`, and the harness recorded
-  `keybytes=53`. Google AI Studio keys are `AIza` + 35 characters (39 total);
-  the provisioned credential was neither the right prefix nor the right length.
-- Egress was healthy in the same window:
+What the run does establish:
+
+- Egress was healthy in the gate window:
   `P8NETPROBE_UI openrouter http=200 ms=693 | gemini http=404 ms=574 |
   opencode http=200 ms=809 | control http=200 ms=529`. The `404` is the
-  **expected** answer for a bare `GET` on the Gemini API root (no method path),
-  i.e. the host resolved, TLS completed, and Google's front end replied — the
-  network is not the blocker.
+  expected reply to a bare `GET` on the Gemini API root (no method path) — the
+  host resolved and Google's front end answered, so the network is not the
+  blocker.
+- The turn failed the way §13 predicts: `tokenSeen=false lastError=''` — a
+  silent empty completion, which upstream produces for provider auth *and*
+  model-id errors alike. **The observable evidence cannot distinguish "key
+  rejected" from "model id not served to this key"**, and one further candidate
+  is now known: the `AQ.` key rollout is reported to `404` on several older
+  model ids, which would make `gemini-2.5-flash` itself the fault rather than
+  the credential.
 
-So the failure mode is once again upstream's **silent empty completion** (§13):
-a rejected provider credential surfaces as `tokenSeen=false lastError=''`
-rather than an auth error. That cost a 10-minute run to learn one bit.
+Status: **P8D-TOOL remains BLOCKED, cause under investigation.** Round 14 exists
+to make the next run answer this in two seconds instead of ten minutes.
 
 #### 3.1.4 Round 14 — key preflight (fail in 2 s, not 10 min)
 
@@ -198,12 +209,30 @@ run**, and prints the provider's own words as `P8KEYPREFLIGHT` (saved to
   reporting `http=` and the number of models returned.
 - `openrouter` → `GET /api/v1/auth/key` with the bearer token.
 
-On a non-200 the suite logs the rejection, records `P8D_KEYPROBE SKIP` with the
-provider's message, and skips the live model gates instead of burning ten
-minutes on a guaranteed silent failure. The key is written to `files/tmp/pfkey`
-base64-over-stdin and deleted in the same shell invocation, so it still never
-appears on a command line. **Status: IMPLEMENTED, NOT YET TESTED** — device
-run 5 with a valid `AIza…` key is what flips P8-TOOL.
+The preflight asks **two** questions, because run 4 proved one is not enough
+and the two failures need opposite fixes:
+
+1. **Is the key accepted?** `GET /v1beta/models?key=…` → `key=OK http=200` or
+   `key=REJECTED http=<code> body=<Google's own message>`.
+2. **Does this model exist for this key?** the same response is filtered to the
+   models advertising `generateContent`, and the configured id is looked up in
+   that list → `modelUsable=true|false`. On `false` the suite **auto-switches to
+   the first model the key itself reported** (`available=…`) and continues,
+   which absorbs the `AQ.`-key/older-model-id `404` without a second trip to the
+   user. On a rejected key it records `P8D_KEYPROBE SKIP` carrying Google's
+   message and skips the live gates rather than burning ten minutes on a
+   guaranteed silent failure.
+
+For `openrouter` the preflight is `GET /api/v1/auth/key` with the bearer token.
+The key is written to `files/tmp/pfkey` base64-over-stdin and deleted in the
+same shell invocation, so it still never appears on a command line. The shape
+check now accepts `AIza…`, `AQ.…` and `sk-or-…`, and is a **warning only** — the
+preflight, which asks the provider instead of guessing, is the authority.
+
+All four preflight branches (usable / auto-switch / rejected / no-output) were
+exercised against captured response shapes on the host before shipping.
+**Status: IMPLEMENTED, NOT YET TESTED on device** — device run 5 is what
+decides between "key problem", "model-id problem", and "something else".
 
 #### 3.1.1 The CI-emulator model silence (isolated, documented, not hidden)
 
