@@ -1,12 +1,12 @@
 P8D_TOYBOX PASS :: base64|base64 -d|tar xz -C dir works on this real device api=35 (closes the harness-staging half for this API; API-29 remains the untested half - see report)
-P8D_COLDSTART PASS :: launch -> server answering loopback (http 401) in 326s wall; supervisor log window: 2026-09-08T19:20:10.645Z -> 2026-09-08T19:20:32.415Z (fresh install, first extraction included)
+P8D_COLDSTART PASS :: launch -> server answering loopback (http 401) in 20s wall; supervisor log window: 2026-09-09T09:14:48.162Z ->  (fresh install, first extraction included)
 P8D_KEYRESIDENCY FAIL :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=arm64-v8a device=RMX3830 api=35 :: key material is in the SOFTWARE keystore on this device - the ciph
 P8D_PROVAUTH FAIL :: serverSawError=true serverErrorName=APIError serverErrorMessage='' serverStatus=0 classified=PROVIDER_OTHER screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=79551
-P8D_SERVERKILL PASS :: killedPid=14037 oldPidDead=true sawCrashedRestarting=true restartCount=0 healthyAgain=true healthHttp=200 sawFatal=false newPid=14275 finalStatus=HEALTHY finalDetail='healthy on 127.0.0.1:4111'
-P8D_LIFECYCLELOG PASS :: illegalTransitions=0 startingTransitions=4 healthyTransitions=3 logBytes=7494 lastStates='STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111) | EXTRACTING (validating embedded runtime) |
-P8D_KEYPROBE FAIL :: model=nvidia/nemotron-3-ultra-550b-a55b:free tokenSeen=false lastError='' - the key is expired, out of credit, or the model id is wrong for this account
+P8D_SERVERKILL PASS :: killedPid=30202 oldPidDead=true sawCrashedRestarting=true restartCount=0 healthyAgain=true healthHttp=200 sawFatal=false newPid=30650 finalStatus=HEALTHY finalDetail='healthy on 127.0.0.1:4111'
+P8D_LIFECYCLELOG PASS :: illegalTransitions=0 startingTransitions=4 healthyTransitions=3 logBytes=7418 lastStates='STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111) | EXTRACTING (validating embedded runtime) |
+P8D_KEYPROBE FAIL :: model=gemini-2.5-flash tokenSeen=false lastError='' - the key is expired, out of credit, or the model id is wrong for this account
 P8D_TOOL SKIP :: the provisioned key could not serve a turn, so no tool call can be observed: no assistant reply with the token in 240s (lastError='none')
 P8D_CLEANUP PASS :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
-P8D_SUMMARY 2026-09-08T19:36:36Z
+P8D_SUMMARY 2026-09-09T09:29:21Z
 gates_pass=5 gates_fail=3 gates_skip=1
 device=model=RMX3830 api=35 abi=arm64-v8a

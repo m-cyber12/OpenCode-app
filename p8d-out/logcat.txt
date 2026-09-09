@@ -1,85 +1,19 @@
-09-08 23:06:14.918 14501 14515 E TestRunner: assumption failed: g02_liveToolCall(ai.opencode.android.ui.LiveToolCallGatesTest)
-09-08 23:06:14.922 14501 14515 E TestRunner: ----- begin exception -----
-09-08 23:06:14.922 14501 14515 E TestRunner: org.junit.AssumptionViolatedException: P8_TOOL :: the provisioned key could not serve a turn, so no tool call can be observed: no assistant reply with the token in 240s (lastError='none')
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.Assume.assumeTrue(Assume.java:68)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at ai.opencode.android.ui.LiveToolCallGatesTest.skip(LiveToolCallGatesTest.kt:109)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at ai.opencode.android.ui.LiveToolCallGatesTest.g02_liveToolCall(LiveToolCallGatesTest.kt:374)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at java.lang.reflect.Method.invoke(Native Method)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.rules.ExternalResource$1.evaluate(ExternalResource.java:54)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.junit4.AndroidComposeTestRule$apply$1$evaluate$1.invoke(AndroidComposeTestRule.android.kt:272)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.junit4.AndroidComposeTestRule$apply$1$evaluate$1.invoke(AndroidComposeTestRule.android.kt:271)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$AndroidComposeUiTestImpl.withDisposableContent(ComposeUiTest.android.kt:495)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$runTest$1$1$1$1$1$1.invoke(ComposeUiTest.android.kt:327)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment.withComposeIdlingResource(ComposeUiTest.android.kt:379)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment.access$withComposeIdlingResource(ComposeUiTest.android.kt:230)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$runTest$1$1$1$1$1.invoke(ComposeUiTest.android.kt:326)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment.withWindowRecomposer(ComposeUiTest.android.kt:353)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment.access$withWindowRecomposer(ComposeUiTest.android.kt:230)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$runTest$1$1$1$1.invoke(ComposeUiTest.android.kt:325)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment.withTestCoroutines(ComposeUiTest.android.kt:366)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment.access$withTestCoroutines(ComposeUiTest.android.kt:230)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$runTest$1$1$1.invoke(ComposeUiTest.android.kt:324)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.junit4.EspressoLink.withStrategy(EspressoLink.android.kt:66)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$runTest$1$1.invoke(ComposeUiTest.android.kt:323)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.junit4.IdlingResourceRegistry.withRegistry(IdlingResourceRegistry.jvm.kt:157)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment$runTest$1.invoke(ComposeUiTest.android.kt:322)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.junit4.ComposeRootRegistry.withRegistry(ComposeRootRegistry.android.kt:146)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.AndroidComposeUiTestEnvironment.runTest(ComposeUiTest.android.kt:321)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at androidx.compose.ui.test.junit4.AndroidComposeTestRule$apply$1.evaluate(AndroidComposeTestRule.android.kt:271)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
-09-08 23:06:14.922 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at org.junit.runners.Suite.runChild(Suite.java:128)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at org.junit.runners.Suite.runChild(Suite.java:27)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
-09-08 23:06:14.923 14501 14515 E TestRunner: 	at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2601)
-09-08 23:06:14.923 14501 14515 E TestRunner: ----- end exception -----
-09-08 23:06:14.925 14501 14515 I TestRunner: finished: g02_liveToolCall(ai.opencode.android.ui.LiveToolCallGatesTest)
-09-08 23:06:14.933 14501 14515 I TestRunner: started: g03_cleanup(ai.opencode.android.ui.LiveToolCallGatesTest)
-09-08 23:06:15.465 14501 14501 I OpenCode/host: start() ignored: supervisor already running
-09-08 23:06:15.469 14501 14501 I OpenCode/host: start() ignored: supervisor already running
-09-08 23:06:19.715 14501 14515 I OpenCode/gate: P8_CLEANUP PASS :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
-09-08 23:06:20.133 14501 14515 I TestRunner: finished: g03_cleanup(ai.opencode.android.ui.LiveToolCallGatesTest)
-09-08 23:06:20.149 14501 14515 I TestRunner: run finished: 4 tests, 1 failed, 0 ignored
-09-08 23:06:24.733 17900 17944 I OpenCode/host: ABI gate: ok abi=arm64-v8a sdk=35 model=realme RMX3830
-09-08 23:06:24.736 17900 17900 I OpenCode/host: start() ignored: supervisor already running
-09-08 23:06:24.739 17900 17944 I OpenCode/host: state -> EXTRACTING (validating embedded runtime)
-09-08 23:06:27.083 17900 17944 I OpenCode/host: extraction valid (30 files, 1.18.23 @ 05ea507)
-09-08 23:06:27.084 17900 17944 I OpenCode/host: payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-09-08 23:06:27.106 17900 17944 I OpenCode/host: server password loaded from AndroidKeyStore (keystore=false)
-09-08 23:06:27.108 17900 17944 I OpenCode/host: state -> STARTING (starting OpenCode server (attempt 1))
-09-08 23:06:27.137 17900 18035 I OpenCode/server: [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~nj98oT4aHvJF6CJDCmivQw==/ai.opencode.android.debug-xSxT6Yu6eLndWF6QUcnANA==/lib/arm64/libbun.so
-09-08 23:06:27.138 17900 18035 I OpenCode/server: [stderr] [exec-shim] arm64: skipping child BPF filter; using LD_PRELOAD seccomp handler
-09-08 23:06:27.214 17900 18035 I OpenCode/server: [stderr] [seccomp] preload handler installed (rc=0)
-09-08 23:06:27.430 17900 18035 I OpenCode/server: [stderr] [launcher] main entered platform=android arch=arm64
-09-08 23:06:27.441 17900 18035 I OpenCode/server: [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-09-08 23:06:27.443 17900 18035 I OpenCode/server: [stderr] [launcher] importing OpenCode bundle
-09-08 23:06:31.741 17900 18035 I OpenCode/server: [stderr] [launcher] OpenCode bundle imported
-09-08 23:06:31.742 17900 18035 I OpenCode/server: [stderr] [launcher] binding 127.0.0.1:4111
-09-08 23:06:33.217 17900 18034 I OpenCode/server: SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-09-08 23:06:33.219 17900 18034 I OpenCode/server: BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+09-09 12:59:03.981 32092 32145 I OpenCode/gate: P8_CLEANUP PASS :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
+09-09 12:59:04.462 32092 32145 I TestRunner: finished: g03_cleanup(ai.opencode.android.ui.LiveToolCallGatesTest)
+09-09 12:59:04.469 32092 32145 I TestRunner: run finished: 4 tests, 1 failed, 0 ignored
+09-09 12:59:09.165  5876  6028 I OpenCode/host: ABI gate: ok abi=arm64-v8a sdk=35 model=realme RMX3830
+09-09 12:59:09.167  5876  5876 I OpenCode/host: start() ignored: supervisor already running
+09-09 12:59:09.216  5876  6028 I OpenCode/host: state -> EXTRACTING (validating embedded runtime)
+09-09 12:59:12.482  5876  6028 I OpenCode/host: extraction valid (30 files, 1.18.23 @ 05ea507)
+09-09 12:59:12.484  5876  6028 I OpenCode/host: payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+09-09 12:59:12.523  5876  6028 I OpenCode/host: server password loaded from AndroidKeyStore (keystore=false)
+09-09 12:59:12.525  5876  6028 I OpenCode/host: state -> STARTING (starting OpenCode server (attempt 1))
+09-09 12:59:12.579  5876  6028 I OpenCode/host: server started: pid=6077 abi=arm64-v8a port=4111
+09-09 12:59:12.583  5876  6080 I OpenCode/server: [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~ATxS3eDSusBOuQ7ZFbwRKw==/ai.opencode.android.debug-RbNB59eG56FMQ2PUZaxtzg==/lib/arm64/libbun.so
+09-09 12:59:12.584  5876  6080 I OpenCode/server: [stderr] [exec-shim] arm64: skipping child BPF filter; using LD_PRELOAD seccomp handler
+09-09 12:59:12.665  5876  6080 I OpenCode/server: [stderr] [seccomp] preload handler installed (rc=0)
+09-09 12:59:13.853  5876  6080 I OpenCode/server: [stderr] [launcher] main entered platform=android arch=arm64
+09-09 12:59:13.865  5876  6080 I OpenCode/server: [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+09-09 12:59:13.866  5876  6080 I OpenCode/server: [stderr] [launcher] importing OpenCode bundle
+09-09 12:59:19.328  5876  6080 I OpenCode/server: [stderr] [launcher] OpenCode bundle imported
+09-09 12:59:19.330  5876  6080 I OpenCode/server: [stderr] [launcher] binding 127.0.0.1:4111
