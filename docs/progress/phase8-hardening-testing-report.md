@@ -154,8 +154,56 @@ models publish roughly 10–15 RPM and hundreds-to-1,500 RPD at 250 K+ TPM, no
 card — whereas the unfunded OpenRouter tier is 50 requests/day at lowest
 priority. A tool-call turn needs at least two inferences; the Gemini free tier
 can serve that repeatedly, the unfunded OpenRouter tier demonstrably could not.
-**Status: IMPLEMENTED, NOT YET TESTED on device** — the next device run with a
-Gemini key is what flips P8-TOOL.
+**Status: IMPLEMENTED, TESTED on device (device run 4) — the provider switch
+works; the run failed on the key, not on the code.**
+
+#### 3.1.3 Device run 4 (2026-09-09, round-13 APK, provider `google`)
+
+The Gemini path executed end to end: `live gates provider=google
+model=gemini-2.5-flash`, the provider id reached every call site, and
+**P8D-CLEANUP PASS** now proves the Keystore/auth-store cleanup path for a
+**non-OpenRouter provider** (`storedProviderIds=` empty afterwards) — that is
+new coverage. Model-free gates were unchanged: TOYBOX PASS, COLDSTART PASS
+(**20 s** wall, fresh install incl. first extraction), SERVERKILL PASS
+(`killedPid=30202 → newPid=30650 finalStatus=HEALTHY`), LIFECYCLELOG PASS
+(`illegalTransitions=0`), KEYRESIDENCY FAIL-as-measurement (unchanged software
+keystore result).
+
+**P8D-KEYPROBE FAIL / P8D-TOOL SKIP — cause identified as an invalid key, not
+the provider or the app.** Two independent lines prove it:
+
+- The suite's own shape check fired: `WARNING: the typed key does not look like
+  a Gemini (Google AI Studio) key (provider=google)`, and the harness recorded
+  `keybytes=53`. Google AI Studio keys are `AIza` + 35 characters (39 total);
+  the provisioned credential was neither the right prefix nor the right length.
+- Egress was healthy in the same window:
+  `P8NETPROBE_UI openrouter http=200 ms=693 | gemini http=404 ms=574 |
+  opencode http=200 ms=809 | control http=200 ms=529`. The `404` is the
+  **expected** answer for a bare `GET` on the Gemini API root (no method path),
+  i.e. the host resolved, TLS completed, and Google's front end replied — the
+  network is not the blocker.
+
+So the failure mode is once again upstream's **silent empty completion** (§13):
+a rejected provider credential surfaces as `tokenSeen=false lastError=''`
+rather than an auth error. That cost a 10-minute run to learn one bit.
+
+#### 3.1.4 Round 14 — key preflight (fail in 2 s, not 10 min)
+
+Because OpenCode cannot be relied on to report provider-auth failures, the
+device suite now asks the provider **directly from the phone, before the gates
+run**, and prints the provider's own words as `P8KEYPREFLIGHT` (saved to
+`p8d-out/key-preflight.txt`):
+
+- `google` → `GET https://generativelanguage.googleapis.com/v1beta/models?key=…`,
+  reporting `http=` and the number of models returned.
+- `openrouter` → `GET /api/v1/auth/key` with the bearer token.
+
+On a non-200 the suite logs the rejection, records `P8D_KEYPROBE SKIP` with the
+provider's message, and skips the live model gates instead of burning ten
+minutes on a guaranteed silent failure. The key is written to `files/tmp/pfkey`
+base64-over-stdin and deleted in the same shell invocation, so it still never
+appears on a command line. **Status: IMPLEMENTED, NOT YET TESTED** — device
+run 5 with a valid `AIza…` key is what flips P8-TOOL.
 
 #### 3.1.1 The CI-emulator model silence (isolated, documented, not hidden)
 

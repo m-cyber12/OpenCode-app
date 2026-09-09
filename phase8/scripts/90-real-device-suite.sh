@@ -189,9 +189,48 @@ if [ -n "$MODEL_KEY" ]; then
   # as a silent empty turn. Gemini keys look like AIza...; OpenRouter sk-or-...
   case "$PROVIDER:$MODEL_KEY" in
     google:AIza*|openrouter:sk-or-*) : ;;
-    *) log "WARNING: the typed key does not look like a $KEY_LABEL key (provider=$PROVIDER) - continuing anyway" ;;
+    *) log "WARNING: the typed key does not look like a $KEY_LABEL key (provider=$PROVIDER, ${#MODEL_KEY} chars)" ;;
   esac
-  log "live gates provider=$PROVIDER model=$MODEL"
+  log "live gates provider=$PROVIDER model=$MODEL keychars=${#MODEL_KEY}"
+
+  # ---- PREFLIGHT (round 14) ---------------------------------------------------
+  # Round 13 spent 10 minutes producing a silent KEYPROBE failure because the
+  # typed key was not a valid Google AI Studio key (53 chars, no AIza prefix -
+  # AI Studio keys are AIza + 35 chars). OpenCode reports provider auth
+  # failures as empty completions (report S13), so a bad key is INVISIBLE at
+  # the gate level. Ask the provider directly, from the phone, BEFORE spending
+  # the run: this answers in ~2 s and prints the provider's own words.
+  PF_KB64=$(printf '%s' "$MODEL_KEY" | base64 -w0)
+  rash "echo '$PF_KB64' | base64 -d > '$FILES/tmp/pfkey'" >/dev/null 2>&1
+  if [ "$PROVIDER" = "google" ]; then
+    PF_JS='const k=(await Bun.file(process.env.PF||"").text()).trim();
+const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models?key="+k,{signal:AbortSignal.timeout(20000)});
+const t=await r.text();
+let n=0; try{const j=JSON.parse(t); n=(j.models||[]).length}catch{}
+console.log("P8KEYPREFLIGHT provider=google http="+r.status+" models="+n+" body="+t.replace(/\s+/g," ").slice(0,220));'
+  else
+    PF_JS='const k=(await Bun.file(process.env.PF||"").text()).trim();
+const r=await fetch("https://openrouter.ai/api/v1/auth/key",{headers:{Authorization:"Bearer "+k},signal:AbortSignal.timeout(20000)});
+const t=await r.text();
+console.log("P8KEYPREFLIGHT provider=openrouter http="+r.status+" body="+t.replace(/\s+/g," ").slice(0,220));'
+  fi
+  PF_B64=$(printf '%s' "$PF_JS" | base64 -w0)
+  PF_OUT=$(rash "echo '$PF_B64' | base64 -d > '$FILES/tmp/pf.js'; PF='$FILES/tmp/pfkey' '$FILES/bin/bun' '$FILES/tmp/pf.js' 2>&1; rm -f '$FILES/tmp/pf.js' '$FILES/tmp/pfkey'" 2>/dev/null | grep -a 'P8KEYPREFLIGHT' | head -1)
+  echo "${PF_OUT:-P8KEYPREFLIGHT no output}" | tee -a "$LOG" > "$OUT/key-preflight.txt"
+  case "$PF_OUT" in
+    *http=200*)
+      log "preflight OK: the provider accepted this key" ;;
+    "")
+      log "preflight produced no output (bun/egress problem) - continuing, the gates will show it" ;;
+    *)
+      log "PREFLIGHT FAILED - the provider REJECTED this key, so the live gates cannot pass."
+      log "Fix the key and re-run; skipping the live model gates to save ~10 minutes."
+      rec P8D_KEYPROBE SKIP "preflight: $PF_OUT"
+      SKIP=$((SKIP+1))
+      MODEL_KEY="" ;;
+  esac
+fi
+if [ -n "$MODEL_KEY" ]; then
   PB64=$(printf '%s' "$PROVIDER" | base64 -w0)
   rash "echo '$PB64' | base64 -d > '$FILES/harness/provider'" >> "$LOG" 2>&1
   # The key goes base64-over-stdin: it never appears in a shell command line.
