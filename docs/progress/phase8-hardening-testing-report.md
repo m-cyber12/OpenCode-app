@@ -275,6 +275,97 @@ All parsing branches (signal / success / rejected / auto-switch / no-output)
 were exercised against captured output shapes on the host before shipping.
 **Status: IMPLEMENTED, NOT YET TESTED on device.**
 
+#### 3.1.7 Device run 6 — the instrument was fixed, and it named the real fault
+
+Round 15 shipped `P8D-BUNLAUNCH` and kept raw transcripts. Both paid off
+immediately.
+
+**Confirmed fixes.** `P8D-BUNLAUNCH PASS`: exec-shim Bun runs
+(`P8BUNSELFTEST alive=1 v=1.3.14`, `rc=0`) while raw `bin/bun` gives
+`rc=127 inaccessible or not found`. `P8D-COLDSTART` fell from the retracted
+320 s to **13 s wall** — confirming §3.1.5: the old wall figures were the
+broken probe, not the product. Gate count improved to **6 PASS / 3 FAIL /
+1 SKIP**.
+
+**The preflight's raw transcript — the thing round 14 threw away — named the
+fault outright:**
+
+```
+error: Unable to connect. Is the computer able to access the url?
+  path: "https://generativelanguage.googleapis.com/v1beta/models?key=<redacted>"
+  code: "ConnectionRefused"
+```
+
+**Root cause: `run-as` shells have no network, by kernel design.** Android
+builds with `CONFIG_ANDROID_PARANOID_NETWORK`, which permits socket creation
+only to processes in the `inet` group (**AID_INET, GID 3003**). The framework
+puts an app's own UID in that group when it holds `INTERNET`, but an `adb
+run-as` shell does not inherit it — so every socket it opens is refused. The
+host-side preflight could never have reached Google from that context, no
+matter how correct the key was. This also explains the whole misleading
+pattern: the server's own child processes reach the network
+(`openrouter http=200`, `control http=200`) because they inherit the app UID's
+groups, while everything we probed from `run-as` looked "dead".
+
+Two rounds of API-hunting were therefore chasing a harness artefact. **The key
+has still never actually been tested.**
+
+#### 3.1.8 SECURITY INCIDENT — live API key committed to a public repository
+
+Bun's connection-error message prints the **full request URL**, and a Gemini
+key travels in the query string (`?key=…`). Round 15's "keep the raw
+transcript" fix wrote that transcript verbatim to
+`p8d-out/key-preflight.txt`, which was uploaded to this **public** repository
+in commit `52e7c4d`. The key was exposed in plaintext.
+
+- **Severity:** high — a valid, unrevoked Google AI Studio credential, publicly
+  readable and indexable.
+- **Immediate action:** the value in the working tree is redacted, but **the
+  key remains in Git history at `52e7c4d` and must be treated as compromised.
+  Revocation by the user is the only real remedy** (see §10).
+- **Prevention (round 16):** every artifact the device suite writes now passes
+  through a `redact()` filter (`AQ.…`, `AIza…`, `sk-or-…`, `Bearer …`), and the
+  on-device preflight never prints a key or a URL containing one.
+- **Lesson recorded:** "capture more evidence" and "handle secrets" are in
+  direct tension. The round-15 fix improved diagnostics and simultaneously
+  created a credential leak, because the transcript was treated as opaque text.
+  Any raw-output capture must be redacted *at the point of capture*.
+
+#### 3.1.9 Round 16 — preflight moved into a network-capable context
+
+The preflight now runs **inside the instrumented gate**, in the probe that is a
+child of the server (the context proven to have egress), and is reported as its
+own gate, `P8_KEYPREFLIGHT`, ahead of KEYPROBE/TOOL. It answers *is the key
+accepted?* and *is this model available to it?* without ever emitting the
+credential. The host-side preflight is deleted. **Status: IMPLEMENTED, NOT YET
+TESTED.**
+
+### 3.1.10 Why the CI workflow is red (and why device runs still ran)
+
+A fair challenge from the user: *why run device tests while CI is not green?*
+
+The honest answer is that **"red" here is not one thing**, and the report has
+not made that distinction visible enough. Round 15's CI run is
+**10 PASS / 7 FAIL / 2 SKIP**, and the seven failures split cleanly:
+
+| CI gate | Red because | Blocks device work? |
+|---|---|---|
+| KEYPROBE, PERF, HIST | emulator server-process egress (§3.1.1) — model turns get `status=0` | No — the device is the authority for model gates |
+| PROVAUTH | classifier sees `APIError status=0`, not a 401, for the same reason | No |
+| NETLOSS, BGFG | verdict lines missing / turn-shaped assertions that depend on a model turn | Partly — real defects in the *verifier*, not proven product bugs |
+| SESSIONPERSIST | `sessionFound=true userMessageFound=false` — a genuine open defect | **No, and this one should have been fixed first** |
+
+So: five of seven are downstream of the one documented emulator condition, and
+the device suite exists precisely because that condition cannot be fixed in CI.
+Running on-device was the right call for *those*.
+
+**But the challenge lands on SESSIONPERSIST.** That is a real, reproducible,
+model-independent failure that has been carried as an "open item" across
+rounds 8–15 while effort went into chasing model turns. It should have been
+fixed before spending six device runs on the tool card. That is a
+prioritisation error, and it is recorded as one — not as an environment
+problem. It is now the top item in the hand-off (§11).
+
 ### 3.2 Secure-hardware key residency
 
 The app's master key (AES-256-GCM, non-exportable, AndroidKeyStore) is
@@ -531,6 +622,18 @@ Live proofs attempted — and the honest result:
 - Hygiene proven: device harness dir cleaned by the suite (R5 tail) AND by
   P8-CLEANUP (Keystore + auth store, PASS on CI and device); CI host removes
   its copy at run end.
+- **🔴 ACTION REQUIRED — a live Gemini API key was leaked to this public
+  repository.** Round 15's raw-transcript capture wrote Bun's connection error
+  verbatim, and that error contains the full request URL including
+  `?key=<the Gemini key>`; the file was uploaded in commit `52e7c4d`
+  (`p8d-out/key-preflight.txt`). The working-tree value is now redacted and the
+  suite redacts all artifacts (§3.1.8), **but the key is still readable in Git
+  history and must be considered compromised.** The user must:
+  1. **Revoke/delete that key now** at <https://aistudio.google.com/apikey>
+     (deleting the key is sufficient; rewriting history is not required and is
+     not a substitute for revocation).
+  2. Create a replacement key for any further runs.
+  The agent cannot revoke Google credentials; this is the user's action.
 - **Removal from the repository secrets: PENDING** — the user removes
   `OPENROUTER_API_KEY` after the final model-dependent device run (bot token
   cannot manage secrets). This section will be updated with the confirmation.
@@ -541,12 +644,20 @@ Phase 9 (release packaging/docs) starts from: this report's final state, the
 evidence bundles in `docs/progress/phase8-evidence/` (CI) and `p8d-out/`
 (device), and these explicit open items:
 
-1. **L2 final half**: one more device run (round-11 APK, 900 s TOOL budget,
-   free-tier model) — P8-TOOL PASS closes L2; a SKIP with `replyChars>0`
-   would mean the model answered without the tool (prompt problem, fixable);
-   `replyChars=0` again would mean the free tier is too slow (document as
-   BLOCKED-free-tier, L2 = "real model round-trip TESTED, tool card
-   not-observed" — no exaggeration).
+0. **🔴 REVOKE THE LEAKED GEMINI KEY** (§3.1.8, §10) — highest priority, and it
+   is a user action the agent cannot perform.
+1. **P8-SESSIONPERSIST FAIL — fix this BEFORE any further model chasing.**
+   `sessionFound=true userMessageFound=false` is model-independent, reproducible
+   in CI, and has been carried since round 8 while six device runs went after
+   the tool card. Deciding product-bug vs verifier-bug is the single highest-
+   value remaining engineering task, and prioritising it below L2 was a
+   mistake (§3.1.10).
+2. **L2 final half**: one more device run (round-16 APK) — `P8_KEYPREFLIGHT` now
+   answers, in a network-capable context, whether the credential and model are
+   usable *before* KEYPROBE/TOOL run. P8-TOOL PASS closes L2; a SKIP with
+   `replyChars>0` means the model answered without the tool (prompt problem);
+   `replyChars=0` means throughput (document as BLOCKED, L2 = "real model
+   round-trip TESTED, tool card not-observed" — no exaggeration).
 2. **Upstream silent-completion behaviour** (§7/§13): provider failures (bad
    key, network loss) complete as empty turns without a recorded error —
    classify for upstream / work around in the UI layer in Phase 9+.

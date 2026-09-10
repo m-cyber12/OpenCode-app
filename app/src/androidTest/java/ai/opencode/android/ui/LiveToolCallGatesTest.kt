@@ -184,6 +184,7 @@ class LiveToolCallGatesTest {
         probeFile.parentFile?.mkdirs()
         probeFile.writeText(
             """
+            const FILES_DIR = ${"\""}${context.filesDir.absolutePath}${"\""}
             for (const [n, u] of [["openrouter", "https://openrouter.ai/api/v1/models"],
                                  ["gemini", "https://generativelanguage.googleapis.com/"],
                                  ["opencode", "https://opencode.ai/"],
@@ -196,6 +197,49 @@ class LiveToolCallGatesTest {
               } catch (e) {
                 console.log("P8NETPROBE_UI " + n + " error=" + String(e.name || e.message || e).slice(0, 60) + " ms=" + (Date.now() - t0))
               }
+            }
+            // Round 16: the KEY preflight, moved here from the host script.
+            // A `run-as` shell is NOT in the inet group (AID_INET 3003), so
+            // Android's paranoid-network kernel check refuses every socket it
+            // opens - which is why the round-15 host preflight died with
+            // ConnectionRefused without ever reaching Google. This context is a
+            // child of the SERVER, which demonstrably reaches the network
+            // (the probes above), so the answer here is trustworthy.
+            // NOTE: never print the key, and never print a URL containing it.
+            try {
+              const kf = FILES_DIR + "/harness/model-key"
+              const mf = FILES_DIR + "/harness/model"
+              const pf = FILES_DIR + "/harness/provider"
+              let key = "", model = "", prov = "openrouter"
+              try { key = (await Bun.file(kf).text()).trim() } catch {}
+              try { model = (await Bun.file(mf).text()).trim() } catch {}
+              try { prov = ((await Bun.file(pf).text()).trim()) || "openrouter" } catch {}
+              if (key && prov === "google") {
+                const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?key=" + encodeURIComponent(key),
+                                      { signal: AbortSignal.timeout(20000) })
+                const t = await r.text()
+                let names = []
+                try {
+                  const j = JSON.parse(t)
+                  names = (j.models || [])
+                    .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
+                    .map((m) => String(m.name || "").replace("models/", ""))
+                } catch {}
+                if (r.status !== 200) {
+                  console.log("P8KEYPREFLIGHT provider=google key=REJECTED http=" + r.status)
+                } else {
+                  const hit = names.includes(model)
+                  console.log("P8KEYPREFLIGHT provider=google key=OK http=200 models=" + names.length +
+                    " model=" + model + " modelUsable=" + hit +
+                    (hit ? "" : " available=" + names.slice(0, 12).join(",")))
+                }
+              } else if (key) {
+                const r = await fetch("https://openrouter.ai/api/v1/auth/key",
+                  { headers: { Authorization: "Bearer " + key }, signal: AbortSignal.timeout(20000) })
+                console.log("P8KEYPREFLIGHT provider=openrouter http=" + r.status)
+              }
+            } catch (e) {
+              console.log("P8KEYPREFLIGHT error=" + String(e.name || e.message || e).slice(0, 80))
             }
             """.trimIndent(),
         )
@@ -227,6 +271,17 @@ class LiveToolCallGatesTest {
             .toList()
         val detail = if (lines.isEmpty()) out.replace(Regex("\\s+"), " ").take(300) else lines.joinToString(" | ")
         printMarker8("NETPROBE_UI", detail)
+
+        // Round 16: the key preflight now runs in this (network-capable)
+        // context. Surface it as its own gate so SUMMARY.txt answers
+        // "was the credential usable?" before anyone reads KEYPROBE.
+        val pf = out.lineSequence().map { it.trim() }.firstOrNull { it.startsWith("P8KEYPREFLIGHT") }
+        when {
+            pf == null -> skip("KEYPREFLIGHT", "no preflight line (no key provisioned, or the probe did not run)")
+            pf.contains("modelUsable=true") || Regex("provider=openrouter http=200").containsMatchIn(pf) ->
+                gate("KEYPREFLIGHT", true, pf)
+            else -> gate("KEYPREFLIGHT", false, "$pf :: the credential/model is not usable, so KEYPROBE and TOOL cannot pass")
+        }
     }
 
     // ---- 01: the provided key actually serves a model round-trip ------------
