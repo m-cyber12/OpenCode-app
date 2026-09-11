@@ -5849,6 +5849,7 @@
     ########## 4/7 embedded runtime payload (reuse phase 4's build when present) ##########
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 ### 2026-09-11T10:35:17Z  run=34589519803  step: 3/7 environment + FRESH emulator
     head=4611e57 branch=arena/01a07f92-opencode-app log_lines=692
     --- error digest ---
@@ -5948,6 +5949,14 @@
     BUILD SUCCESSFUL in 1m
     --- last 40 log lines ---
     > Task :app:mergeExtDexDebug
+=======
+### 2026-09-11T10:33:37Z  run=34588978389  step: 6/7 Phase 8 gates (regressions + stress + live model + perf)
+    head=d24d41c branch=arena/01a07f92-opencode-app log_lines=1918
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 24s
+    BUILD SUCCESSFUL in 1m 6s
+    --- last 40 log lines ---
+>>>>>>> 0290f25 (phase8: CI heartbeat (6/7 Phase 8 gates (regressions + stress + live model + perf)))
     > Task :app:compileDebugAndroidTestJavaWithJavac
     > Task :app:mergeDebugAndroidTestShaders
     > Task :app:compileDebugAndroidTestShaders NO-SOURCE
@@ -5956,6 +5965,7 @@
     > Task :app:compressDebugAndroidTestAssets
     > Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
     > Task :app:dexBuilderDebugAndroidTest
+<<<<<<< HEAD
     > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
     > Task :app:processDebugAndroidTestJavaRes
     > Task :app:mergeDebugAndroidTestJavaResource
@@ -6014,17 +6024,31 @@
     > Task :app:mergeDebugAndroidTestJniLibFolders
     > Task :app:mergeProjectDexDebugAndroidTest
     > Task :app:mergeExtDexDebugAndroidTest
+=======
+    > Task :app:mergeExtDexDebug
+    > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
+    > Task :app:processDebugAndroidTestJavaRes
+    > Task :app:checkDebugAndroidTestDuplicateClasses
+    > Task :app:mergeDebugAndroidTestJniLibFolders
+    > Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
+    > Task :app:mergeDebugAndroidTestJavaResource
+>>>>>>> 0290f25 (phase8: CI heartbeat (6/7 Phase 8 gates (regressions + stress + live model + perf)))
     > Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
     > Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
     > Task :app:validateSigningDebugAndroidTest
     > Task :app:writeDebugAndroidTestSigningConfigVersions
     > Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+<<<<<<< HEAD
+=======
+    > Task :app:mergeProjectDexDebugAndroidTest
+>>>>>>> 0290f25 (phase8: CI heartbeat (6/7 Phase 8 gates (regressions + stress + live model + perf)))
     > Task :app:compileDebugUnitTestKotlin UP-TO-DATE
     > Task :app:preDebugUnitTestBuild
     > Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
     > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
     > Task :app:processDebugUnitTestJavaRes UP-TO-DATE
     > Task :app:testDebugUnitTest UP-TO-DATE
+<<<<<<< HEAD
     > Task :app:packageDebugAndroidTest
     > Task :app:createDebugAndroidTestApkListingFileRedirect
     > Task :app:assembleDebugAndroidTest
@@ -6077,11 +6101,23 @@
     > Task :app:assembleDebugAndroidTest
     
     BUILD SUCCESSFUL in 1m
+=======
+    > Task :app:mergeExtDexDebugAndroidTest
+    > Task :app:packageDebugAndroidTest
+    > Task :app:createDebugAndroidTestApkListingFileRedirect
+    > Task :app:assembleDebugAndroidTest
+    > Task :app:packageDebug
+    > Task :app:createDebugApkListingFileRedirect
+    > Task :app:assembleDebug
+    
+    BUILD SUCCESSFUL in 1m 6s
+>>>>>>> 0290f25 (phase8: CI heartbeat (6/7 Phase 8 gates (regressions + stress + live model + perf)))
     74 actionable tasks: 37 executed, 4 from cache, 33 up-to-date
     apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk
     testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
     ########## 6/7 Phase 8 gates (regressions + stress + live model + perf) ##########
 
+<<<<<<< HEAD
 ### 2026-09-11T11:00:25Z  run=34589519803  step: 6/7 Phase 8 gates (regressions + stress + live model + perf)
     head=93488ba branch=arena/01a07f92-opencode-app log_lines=1918
     --- error digest ---
@@ -6272,3 +6308,5 @@
 
 =======
 >>>>>>> ffdc6ce (phase8: CI heartbeat (4/7 embedded runtime payload (reuse phase 4's build when present)))
+=======
+>>>>>>> 0290f25 (phase8: CI heartbeat (6/7 Phase 8 gates (regressions + stress + live model + perf)))
