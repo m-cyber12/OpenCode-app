@@ -14,6 +14,24 @@ import { get, post, createSession, promptAsync, log } from "./gates-lib.js"
 
 const [mode, sessionArg, markerArg] = process.argv.slice(2)
 
+// Read the user message carrying `marker` back from the server, if present.
+async function userMessagePresent(sessionID, marker) {
+  const mr = await get(`/session/${sessionID}/message`)
+  if (!mr.ok) return false
+  let msgs = []
+  try {
+    const parsed = JSON.parse(mr.text)
+    msgs = Array.isArray(parsed) ? parsed : parsed.messages ?? []
+  } catch {
+    return false
+  }
+  return msgs.some(
+    (m) =>
+      (m.info?.role ?? m.role) === "user" &&
+      (m.parts ?? []).some((p) => p.type === "text" && (p.text ?? "").includes(marker)),
+  )
+}
+
 if (mode === "create") {
   const marker = "P8SESS" + (Date.now() % 1000000)
   // createSession returns the session id STRING (not an object) - the whole
@@ -30,7 +48,30 @@ if (mode === "create") {
     promptErr = String(e.message ?? e).slice(0, 120)
     log("prompt after create failed (continuing, persistence is about the stored user message): " + promptErr)
   }
-  console.log(`P8SESCREATE ${sid} ${marker} promptErr=${promptErr}`)
+
+  // ---- Round 18: PROVE THE PRECONDITION BEFORE THE KILL ---------------------
+  // `prompt_async` answers 204 the moment the turn is QUEUED - not when the
+  // user message has been written to the session store. The gate used to
+  // force-stop the app immediately after that 204, so a FAIL could mean either
+  // "persistence is broken" (product bug) or "the message was never stored in
+  // the first place" (a race in this harness). Those need opposite fixes, and
+  // the old verdict could not tell them apart - which is why
+  // `sessionFound=true userMessageFound=false` sat unexplained for 8 rounds.
+  //
+  // Poll until the server itself reports the user message, and publish that
+  // fact. If it is not there before the kill, the later FAIL is OUR race, and
+  // `stored=0` says so in the verdict line.
+  let stored = false
+  const deadline = Date.now() + 30000
+  while (Date.now() < deadline) {
+    if (await userMessagePresent(sid, marker)) {
+      stored = true
+      break
+    }
+    await new Promise((r) => setTimeout(r, 500))
+  }
+  if (!stored) log("WARNING: the user message was NOT readable before the restart - a later FAIL is this race, not persistence")
+  console.log(`P8SESCREATE ${sid} ${marker} promptErr=${promptErr} stored=${stored ? 1 : 0}`)
   process.exit(0)
 }
 
@@ -44,14 +85,18 @@ if (mode === "verify") {
     sessions = Array.isArray(parsed) ? parsed : parsed.sessions ?? []
   }
   const found = sessions.some((s) => (s.id ?? s.info?.id) === sessionID)
+  // Round 18: the store is opened lazily after a cold start, so give the
+  // server the same grace on the way back that `create` gave it on the way in.
+  // Without this a slow reopen reads as "data lost".
   let userMsgFound = false
   if (found) {
-    const mr = await get(`/session/${sessionID}/message`)
-    if (mr.ok) {
-      const messages = JSON.parse(mr.text)
-      const msgs = Array.isArray(messages) ? messages : messages.messages ?? []
-      userMsgFound = msgs.some((m) => (m.info?.role ?? m.role) === "user" &&
-        (m.parts ?? []).some((p) => p.type === "text" && (p.text ?? "").includes(marker)))
+    const deadline = Date.now() + 15000
+    while (Date.now() < deadline) {
+      if (await userMessagePresent(sessionID, marker)) {
+        userMsgFound = true
+        break
+      }
+      await new Promise((r) => setTimeout(r, 500))
     }
   }
   const ok = found && userMsgFound

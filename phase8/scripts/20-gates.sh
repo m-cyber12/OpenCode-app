@@ -447,10 +447,17 @@ else
   adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
   [ "$(wait_healthy 300)" = "HEALTH_OK" ] || log "warn: not healthy before the persistence verify"
   VERIFY_OUT=$(run_js_on_device p8-sessionpersist.js verify "$SID" "$SESSMARK" 2>&1)
+  # Round 18: `create` now proves the user message was actually stored BEFORE
+  # the kill (stored=1). That turns an ambiguous FAIL into a diagnosis:
+  #   stored=1 + verify ok=0 -> real persistence defect (data was there, then lost)
+  #   stored=0 + verify ok=0 -> harness race (never stored; nothing to persist)
+  SESS_STORED=$(echo "$SESS_OUT" | grep -o 'stored=[01]' | head -1 | cut -d= -f2)
   if echo "$VERIFY_OUT" | grep -q 'P8SESVRFY ok=1'; then
-    p8 SESSIONPERSIST 0 "$(echo "$VERIFY_OUT" | grep P8SESVRFY | head -1) (the server's session store + project pointer survived the process death)"
+    p8 SESSIONPERSIST 0 "$(echo "$VERIFY_OUT" | grep P8SESVRFY | head -1) storedBeforeKill=${SESS_STORED:-?} (the server's session store + project pointer survived the process death)"
+  elif [ "${SESS_STORED:-0}" = "0" ]; then
+    p8 SESSIONPERSIST 1 "INCONCLUSIVE (harness race, not a proven product bug): the user message was never readable BEFORE the restart (stored=0), so nothing was there to persist. $(echo "$VERIFY_OUT" | grep P8SESVRFY | head -1)"
   else
-    p8 SESSIONPERSIST 1 "session or its user message lost across the restart: $(echo "$VERIFY_OUT" | head -2)"
+    p8 SESSIONPERSIST 1 "REAL PERSISTENCE DEFECT: the user message WAS stored before the kill (stored=1) and is gone after the restart. $(echo "$VERIFY_OUT" | grep P8SESVRFY | head -1)"
   fi
 fi
 

@@ -432,6 +432,61 @@ fixed before spending six device runs on the tool card. That is a
 prioritisation error, and it is recorded as one — not as an environment
 problem. It is now the top item in the hand-off (§11).
 
+### 3.1.13 Round 18 — P8-SESSIONPERSIST: the ambiguity removed
+
+Per §3.1.10 this was promoted above L2. Investigation first, fix second.
+
+**What the failure actually said:** `P8SESVRFY ok=0 sessionsSeen=7
+sessionFound=true userMessageFound=false` — the session itself survived the
+process death; only the user message was missing.
+
+**Two hypotheses, opposite fixes.** Either (a) the store loses the message
+across a restart — a real product defect — or (b) the message was never stored
+before the kill, making the whole verdict a harness race.
+
+**Parsing was ruled out first.** The verifier's matcher
+(`(m.info?.role ?? m.role) === "user"` + a text part containing the marker)
+was replayed against the real wire shapes: wrapped `{info,parts}`, flat
+`{role,parts}`, assistant-only, user-with-empty-parts, and empty list. It
+returns the correct answer in all five cases, so the verifier is not
+mis-reading a message that is present.
+
+**The race is real and was structural.** `POST /session/:id/prompt_async`
+returns **204 the instant the turn is QUEUED**, not when the user message is
+durably written. The gate called `force-stop` immediately after that 204, with
+no wait — so the app was killed inside the window where the message may only
+exist in memory. On the emulator, where model turns are refused outright
+(§3.1.1), that window is exactly where every run landed. **The gate could never
+distinguish (a) from (b)** — which is why the verdict sat unexplained for eight
+rounds.
+
+**The fix is to make the precondition explicit rather than assumed:**
+
+1. `create` now **polls the server until it reports the user message** (30 s
+   budget) and publishes the result as `stored=0|1` on `P8SESCREATE`. If the
+   message is not readable before the kill, it logs a warning saying a later
+   FAIL is the harness's own race.
+2. `verify` gives the same grace on the way back (15 s), because the store is
+   opened lazily after a cold start — without it a slow reopen reads as
+   "data lost".
+3. The gate now emits a **diagnosis instead of a bare FAIL**:
+
+| `stored` before kill | verify | verdict |
+|---|---|---|
+| 1 | ok=1 | PASS — data was there, survived |
+| **1** | **ok=0** | **REAL PERSISTENCE DEFECT** — proven product bug |
+| 0 | ok=0 | **INCONCLUSIVE (harness race)** — nothing was there to persist |
+
+All three branches were exercised on the host before shipping, as was the
+matcher.
+
+**Honest status:** the *ambiguity* is fixed, and that was the actual blocker —
+the old gate produced a verdict that could not be acted on. Whether a genuine
+persistence defect exists underneath is **still unknown**, and the next CI run
+will now say which of the two it is in its own verdict line rather than leaving
+it to interpretation. **Status: IMPLEMENTED, NOT YET TESTED.** No claim is made
+that the product bug is fixed — none has yet been proven to exist.
+
 ### 3.2 Secure-hardware key residency
 
 The app's master key (AES-256-GCM, non-exportable, AndroidKeyStore) is
@@ -712,12 +767,12 @@ evidence bundles in `docs/progress/phase8-evidence/` (CI) and `p8d-out/`
 
 0. **🔴 REVOKE THE LEAKED GEMINI KEY** (§3.1.8, §10) — highest priority, and it
    is a user action the agent cannot perform.
-1. **P8-SESSIONPERSIST FAIL — fix this BEFORE any further model chasing.**
-   `sessionFound=true userMessageFound=false` is model-independent, reproducible
-   in CI, and has been carried since round 8 while six device runs went after
-   the tool card. Deciding product-bug vs verifier-bug is the single highest-
-   value remaining engineering task, and prioritising it below L2 was a
-   mistake (§3.1.10).
+1. **P8-SESSIONPERSIST — ambiguity resolved in round 18 (§3.1.13), verdict
+   pending.** The gate now proves the user message was stored *before* the kill
+   and reports `REAL PERSISTENCE DEFECT` vs `INCONCLUSIVE (harness race)`
+   explicitly. Read that line in the next CI run: if it says the former, there
+   is a genuine store bug to fix in Phase 9; if the latter, the eight rounds of
+   red were the harness and the gate is now sound.
 2. **L2 — closed as `BLOCKED-GEO` (§3.1.11), not by further device runs.**
    `P8_KEYPREFLIGHT` proved Google's endpoint returns `403` to this device's
    network even without a credential, so the tool card cannot be observed from
