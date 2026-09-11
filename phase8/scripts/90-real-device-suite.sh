@@ -91,6 +91,27 @@ redact() {
 # So the preflight was never measuring the provider at all; it was measuring
 # our own launch bug.
 #
+# Poll a bun probe INSIDE ONE device shell: $1=js $2=max tries $3=sleep secs.
+# One adb round-trip and one process spawn per try instead of a full
+# adb+run-as+exec-shim stack per try (see R3 comment).
+dbun_poll() {
+  _js="$1"; _tries="${2:-150}"; _slp="${3:-2}"
+  if [ -n "$NATIVE_LIB_DIR" ]; then
+    rash "cd '$FILES' && i=0; while [ \$i -lt $_tries ]; do \
+      out=\$(HOME='$FILES/home' TMPDIR='$FILES/tmp' \
+        OPENCODE_BUN_EXEC='$NATIVE_LIB_DIR/libbun.so' \
+        OPENCODE_SECCOMP_SHIM='$NATIVE_LIB_DIR/libseccompshim.so' \
+        '$NATIVE_LIB_DIR/libexecshim.so' '$_js' 2>/dev/null); \
+      case \"\$out\" in *200*|*401*) echo \"\$out\"; exit 0;; esac; \
+      i=\$((i+1)); sleep $_slp; done; echo timeout"
+  else
+    rash "cd '$FILES' && i=0; while [ \$i -lt $_tries ]; do \
+      out=\$(HOME='$FILES/home' '$FILES/bin/bun' '$_js' 2>/dev/null); \
+      case \"\$out\" in *200*|*401*) echo \"\$out\"; exit 0;; esac; \
+      i=\$((i+1)); sleep $_slp; done; echo timeout"
+  fi
+}
+
 # $1 = absolute path of the .js to run, rest = extra "VAR=val" env pairs.
 dbun() {
   _js="$1"; shift
@@ -196,15 +217,15 @@ adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 ||
 # Keystore password, so "any HTTP response on loopback" proves the server is
 # up; the supervisor's own log is the authority on the HEALTHY transition.
 COLD_OK=1; H=""
-for _ in $(seq 1 150); do
-  # Round 15: through the exec shim, like the app (a raw bun dies on SIGSYS and
-  # printed nothing, which this loop mis-read as "server not up yet" for 150
-  # iterations - the likely cause of the absurd 320s/326s COLDSTART numbers).
-  rash "echo \"const r=await fetch('http://127.0.0.1:$PORT/global/health');console.log(r.status)\" > '$FILES/tmp/health.js'" >/dev/null 2>&1
-  H=$(dbun "$FILES/tmp/health.js" | grep -o '^[0-9][0-9][0-9]' | head -1)
-  if [ "$H" = "200" ] || [ "$H" = "401" ]; then COLD_OK=0; break; fi
-  sleep 2
-done
+# Round 17: the poll used to re-write the probe file and spawn a fresh
+# adb+run-as+exec-shim+Bun startup on EVERY iteration. Each of those costs
+# seconds, so the measured "wall" was dominated by the instrument, not the
+# app: run 6 reported 319s wall against a supervisor window of 17.6s. Write
+# the probe ONCE, and poll it with a bounded loop INSIDE a single device
+# shell, so the timing reflects the product.
+rash "echo \"const r=await fetch('http://127.0.0.1:$PORT/global/health');console.log(r.status)\" > '$FILES/tmp/health.js'" >/dev/null 2>&1
+H=$(dbun_poll "$FILES/tmp/health.js" 150 2 | grep -oE '^(200|401)' | head -1)
+[ -n "$H" ] && COLD_OK=0
 COLD_S=$(( $(date +%s) - T0 ))
 COLD_WIN=$(rash "grep -a 'state -> EXTRACTING' '$FILES/log/runtime.log' | head -1" | awk '{print $1}')
 COLD_WIN2=$(rash "grep -a 'state -> HEALTHY' '$FILES/log/runtime.log' | head -1" | awk '{print $1}')

@@ -340,6 +340,72 @@ accepted?* and *is this model available to it?* without ever emitting the
 credential. The host-side preflight is deleted. **Status: IMPLEMENTED, NOT YET
 TESTED.**
 
+#### 3.1.11 Device run 7 — the preflight answered, and L2 is now BLOCKED-GEO
+
+The round-16 on-device preflight worked exactly as intended and ended the
+investigation with one line:
+
+```
+P8NETPROBE_UI openrouter http=200 ms=874
+P8NETPROBE_UI gemini     http=403 ms=704
+P8NETPROBE_UI opencode   http=200 ms=963
+P8NETPROBE_UI control    http=200 ms=558
+P8KEYPREFLIGHT provider=google key=REJECTED http=403
+```
+
+**The decisive detail is that the `403` also appears on the KEYLESS probe.**
+`P8NETPROBE_UI gemini` is a bare `GET` of the API root carrying no credential
+at all, and Google refused it too — while openrouter, opencode and the control
+host all returned `200` in the same window from the same process. A rejection
+that does not depend on the key cannot be caused by the key.
+
+**Conclusion: `generativelanguage.googleapis.com` is geo-blocked for this
+device's network.** Google restricts the Gemini API by request-origin IP
+(documented unsupported regions include Iran, where this device is operating),
+returning `403`/`FAILED_PRECONDITION "User location is not supported"`. Earlier
+runs' `404` on the same probe was the *normal* answer for a bare root GET, i.e.
+the endpoint was reachable then; the `403` now is a refusal at the edge.
+
+This also finally explains the **silent empty turns** that consumed rounds
+13–16: OpenCode's provider call was being refused at the network edge, and
+upstream's silent-completion behaviour (§13) converted that refusal into an
+empty assistant message with no `info.error`. Two independent faults —
+`run-as` having no `AID_INET` (§3.1.7) and this geo-block — produced the same
+"no output" signature, which is why each fix revealed another layer.
+
+**Status of L2: `BLOCKED-GEO`, not "failing".** Honest statement of what is and
+is not proven:
+
+- **PROVEN on real hardware:** a real model round-trip through the product's own
+  credential path (device run 1, `P8D-KEYPROBE PASS`, `reply='P8PROBEOK'`).
+- **NOT OBSERVED:** the tool card (`P8D-TOOL`). It is blocked by provider
+  reachability from this device's network, not by app code, and no amount of
+  harness work can close it from here.
+- Routes that would close it (all outside the current constraints, listed for
+  Phase 9, none silently assumed): a network whose egress IP is in a supported
+  region; a provider reachable from this region that OpenCode supports and that
+  serves tool calls; or attaching billing, which lifts the regional restriction
+  for some regions.
+
+`P8_KEYPREFLIGHT` is retained as a permanent gate: any future run now states in
+one line whether the provider is reachable and the credential usable, *before*
+spending twenty minutes discovering it indirectly.
+
+#### 3.1.12 Round 17 — the cold-start number was still measuring the harness
+
+Run 7 reported `319 s wall` against a supervisor window of **17.6 s**
+(09:50:46.443 → 09:51:04.055). The round-15 fix made the health probe *work*
+but left it inside a 150-iteration host loop that, on every single iteration,
+re-wrote the probe file and paid a full `adb` + `run-as` + exec-shim + Bun
+cold start. The loop was timing itself.
+
+Round 17 writes the probe once and polls it with a bounded loop **inside a
+single device shell** (`dbun_poll`), so one `adb` round-trip covers the whole
+wait. Both branches (early success, timeout) were exercised on the host before
+shipping. The supervisor-window figures (**13–21.8 s**) remain the numbers of
+record; **every `wall` figure from runs 3, 5 and 7 is retracted as instrument
+overhead.**
+
 ### 3.1.10 Why the CI workflow is red (and why device runs still ran)
 
 A fair challenge from the user: *why run device tests while CI is not green?*
@@ -652,12 +718,13 @@ evidence bundles in `docs/progress/phase8-evidence/` (CI) and `p8d-out/`
    the tool card. Deciding product-bug vs verifier-bug is the single highest-
    value remaining engineering task, and prioritising it below L2 was a
    mistake (§3.1.10).
-2. **L2 final half**: one more device run (round-16 APK) — `P8_KEYPREFLIGHT` now
-   answers, in a network-capable context, whether the credential and model are
-   usable *before* KEYPROBE/TOOL run. P8-TOOL PASS closes L2; a SKIP with
-   `replyChars>0` means the model answered without the tool (prompt problem);
-   `replyChars=0` means throughput (document as BLOCKED, L2 = "real model
-   round-trip TESTED, tool card not-observed" — no exaggeration).
+2. **L2 — closed as `BLOCKED-GEO` (§3.1.11), not by further device runs.**
+   `P8_KEYPREFLIGHT` proved Google's endpoint returns `403` to this device's
+   network even without a credential, so the tool card cannot be observed from
+   here. Final honest wording: *real model round-trip TESTED on device; tool
+   card NOT OBSERVED, blocked by provider geo-restriction.* Re-open only from a
+   network in a supported region, or with a tool-capable provider reachable
+   from this one — do not spend more device runs against Gemini from here.
 2. **Upstream silent-completion behaviour** (§7/§13): provider failures (bad
    key, network loss) complete as empty turns without a recorded error —
    classify for upstream / work around in the UI layer in Phase 9+.
