@@ -6547,6 +6547,7 @@
     testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
     ########## 6/7 Phase 8 gates (regressions + stress + live model + perf) ##########
 
+<<<<<<< HEAD
 ### 2026-09-12T10:05:01Z  run=34687272434  step: 4/7 embedded runtime payload (reuse phase 4's build when present)
     head=5e78c58 branch=arena/01a07f92-opencode-app log_lines=719
     --- error digest ---
@@ -6599,6 +6600,15 @@
     BUILD SUCCESSFUL in 2m 15s
     BUILD SUCCESSFUL in 1m 6s
     --- last 40 log lines ---
+=======
+### 2026-09-12T10:02:51Z  run=34686344707  step: 6/7 Phase 8 gates (regressions + stress + live model + perf)
+    head=99eef48 branch=arena/01a07f92-opencode-app log_lines=1918
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 7s
+    BUILD SUCCESSFUL in 56s
+    --- last 40 log lines ---
+    > Task :app:mergeExtDexDebug
+>>>>>>> a6d6372 (phase8: CI heartbeat (6/7 Phase 8 gates (regressions + stress + live model + perf)))
     > Task :app:compileDebugAndroidTestJavaWithJavac
     > Task :app:mergeDebugAndroidTestShaders
     > Task :app:compileDebugAndroidTestShaders NO-SOURCE
@@ -6607,6 +6617,7 @@
     > Task :app:compressDebugAndroidTestAssets
     > Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
     > Task :app:dexBuilderDebugAndroidTest
+<<<<<<< HEAD
     > Task :app:mergeExtDexDebug
     > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
     > Task :app:processDebugAndroidTestJavaRes
@@ -6614,12 +6625,27 @@
     > Task :app:mergeDebugAndroidTestJniLibFolders
     > Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
     > Task :app:mergeDebugAndroidTestJavaResource
+=======
+    > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
+    > Task :app:processDebugAndroidTestJavaRes
+    > Task :app:checkDebugAndroidTestDuplicateClasses
+    > Task :app:mergeDebugAndroidTestJavaResource
+    > Task :app:packageDebug
+    > Task :app:createDebugApkListingFileRedirect
+    > Task :app:assembleDebug
+    > Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
+    > Task :app:mergeDebugAndroidTestJniLibFolders
+    > Task :app:mergeProjectDexDebugAndroidTest
+>>>>>>> a6d6372 (phase8: CI heartbeat (6/7 Phase 8 gates (regressions + stress + live model + perf)))
     > Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
     > Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
     > Task :app:validateSigningDebugAndroidTest
     > Task :app:writeDebugAndroidTestSigningConfigVersions
     > Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+<<<<<<< HEAD
     > Task :app:mergeProjectDexDebugAndroidTest
+=======
+>>>>>>> a6d6372 (phase8: CI heartbeat (6/7 Phase 8 gates (regressions + stress + live model + perf)))
     > Task :app:compileDebugUnitTestKotlin UP-TO-DATE
     > Task :app:preDebugUnitTestBuild
     > Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
@@ -6630,6 +6656,7 @@
     > Task :app:packageDebugAndroidTest
     > Task :app:createDebugAndroidTestApkListingFileRedirect
     > Task :app:assembleDebugAndroidTest
+<<<<<<< HEAD
     > Task :app:packageDebug
     > Task :app:createDebugApkListingFileRedirect
     > Task :app:assembleDebug
@@ -6776,6 +6803,10 @@
     > Task :app:assembleDebug
     
     BUILD SUCCESSFUL in 1m 6s
+=======
+    
+    BUILD SUCCESSFUL in 56s
+>>>>>>> a6d6372 (phase8: CI heartbeat (6/7 Phase 8 gates (regressions + stress + live model + perf)))
     74 actionable tasks: 37 executed, 4 from cache, 33 up-to-date
     apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk
     testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
