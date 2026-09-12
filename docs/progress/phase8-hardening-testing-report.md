@@ -122,9 +122,10 @@ tool card tagged with that part's id.
   completed — the model did not refuse the tool; it was still queued/generating).
   OpenRouter's model page confirms this exact free endpoint **does** support
   tools and tool_choice, so capability is not the blocker — throughput is.
-  Round 11 raised the budgets (KEYPROBE 300 s/240 s, TOOL 900 s) and will
-  close (or further document) this on the next device run. **PENDING device
-  re-run.**
+  Round 11 raised the budgets (KEYPROBE 300 s/240 s, TOOL 900 s).
+  **[SUPERSEDED] The throughput explanation did not survive: runs 2–8 showed
+  the turns send no provider request at all (§3.1.11b). Final status is
+  `BLOCKED-PROVIDER-SELECTION`, carried to Phase 9.**
 - **CI emulator: BLOCKED** — see §3.1.1.
 
 - **Device runs 2 and 3 (round-11 APK, 900 s TOOL budget): still no tool card,
@@ -362,7 +363,12 @@ accepted?* and *is this model available to it?* without ever emitting the
 credential. The host-side preflight is deleted. **Status: IMPLEMENTED, NOT YET
 TESTED.**
 
-#### 3.1.11 Device run 7 — the preflight answered, and L2 is now BLOCKED-GEO
+#### 3.1.11 Device run 7 — ⚠️ RETRACTED CONCLUSION (kept for the record)
+
+> **This subsection's conclusion is WRONG and was overturned by run 8
+> (§3.1.11b).** It is preserved unedited because the reasoning error — treating
+> one transient `403` as a standing regional block — is the point. Read
+> §3.1.11b for the corrected finding.
 
 The round-16 on-device preflight worked exactly as intended and ended the
 investigation with one line:
@@ -395,7 +401,7 @@ empty assistant message with no `info.error`. Two independent faults —
 `run-as` having no `AID_INET` (§3.1.7) and this geo-block — produced the same
 "no output" signature, which is why each fix revealed another layer.
 
-**Status of L2: `BLOCKED-GEO`, not "failing".** Honest statement of what is and
+**[RETRACTED — see §3.1.11b] Status of L2: `BLOCKED-GEO`, not "failing".** Honest statement of what is and
 is not proven:
 
 - **PROVEN on real hardware:** a real model round-trip through the product's own
