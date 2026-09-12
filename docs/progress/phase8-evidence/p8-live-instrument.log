@@ -2,21 +2,21 @@
 ai.opencode.android.ui.LiveToolCallGatesTest:
 ai.opencode.android.ui.LiveToolCallGatesTest:
 Error in g01_keyProbe(ai.opencode.android.ui.LiveToolCallGatesTest):
-java.lang.AssertionError: P8_KEYPROBE :: model=openai/gpt-4o-mini tokenSeen=false lastError='APIError:  (status=0)' - the key is expired, out of credit, or the model id is wrong for this account
+java.lang.AssertionError: P8_KEYPROBE :: model=openai/gpt-4o-mini tokenSeen=false lastError='APIError:  (status=0)' :: serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] serverErrors=[timestamp=2026-09-12T10:26:12.436Z level=ERROR run=4e800f38 message=process session.id=ses_f6ad8ca05ffehrvXtACJF4I7ql messageID=msg_095273a6200115WSl5benTzljR error="Insufficient credits. This account | timestamp=2026-09-12T10:31:13.448Z level=ERROR run=4e800f38 message="stream error" providerID=ope] (if serverSelected names a DIFFERENT provider than the one provisioned, the turn never used this credential)
 	at org.junit.Assert.fail(Assert.java:89)
 	at org.junit.Assert.assertTrue(Assert.java:42)
 	at ai.opencode.android.ui.LiveToolCallGatesTest.gate(LiveToolCallGatesTest.kt:108)
-	at ai.opencode.android.ui.LiveToolCallGatesTest.g01_keyProbe(LiveToolCallGatesTest.kt:419)
+	at ai.opencode.android.ui.LiveToolCallGatesTest.g01_keyProbe(LiveToolCallGatesTest.kt:437)
 .
 
-Time: 554.684
+Time: 597.32
 There was 1 failure:
 1) g01_keyProbe(ai.opencode.android.ui.LiveToolCallGatesTest)
-java.lang.AssertionError: P8_KEYPROBE :: model=openai/gpt-4o-mini tokenSeen=false lastError='APIError:  (status=0)' - the key is expired, out of credit, or the model id is wrong for this account
+java.lang.AssertionError: P8_KEYPROBE :: model=openai/gpt-4o-mini tokenSeen=false lastError='APIError:  (status=0)' :: serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] serverErrors=[timestamp=2026-09-12T10:26:12.436Z level=ERROR run=4e800f38 message=process session.id=ses_f6ad8ca05ffehrvXtACJF4I7ql messageID=msg_095273a6200115WSl5benTzljR error="Insufficient credits. This account | timestamp=2026-09-12T10:31:13.448Z level=ERROR run=4e800f38 message="stream error" providerID=ope] (if serverSelected names a DIFFERENT provider than the one provisioned, the turn never used this credential)
 	at org.junit.Assert.fail(Assert.java:89)
 	at org.junit.Assert.assertTrue(Assert.java:42)
 	at ai.opencode.android.ui.LiveToolCallGatesTest.gate(LiveToolCallGatesTest.kt:108)
-	at ai.opencode.android.ui.LiveToolCallGatesTest.g01_keyProbe(LiveToolCallGatesTest.kt:419)
+	at ai.opencode.android.ui.LiveToolCallGatesTest.g01_keyProbe(LiveToolCallGatesTest.kt:437)
 
 FAILURES!!!
 Tests run: 4,  Failures: 1
