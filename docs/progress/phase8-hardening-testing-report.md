@@ -391,6 +391,80 @@ is not proven:
 one line whether the provider is reachable and the credential usable, *before*
 spending twenty minutes discovering it indirectly.
 
+#### 3.1.11b Device run 8 — the geo-block call was WRONG, and the user's dashboard found the real cause
+
+**Retraction.** §3.1.11 concluded that Gemini was geo-blocked for this device and
+closed L2 as `BLOCKED-GEO`. **That was wrong**, and run 8 disproves it from two
+directions:
+
+```
+P8KEYPREFLIGHT provider=google key=OK http=200 models=40 model=gemini-2.5-flash modelUsable=true
+P8NETPROBE_UI gemini http=404 ms=709      (bare root GET — the normal answer)
+```
+
+The key authenticates, Google lists **40 models**, and the configured model is
+present. The `403` in run 7 was a **transient** edge response, not a standing
+regional block — I generalised one sample into a permanent conclusion and
+closed a gap on it. That was premature, and the closure is withdrawn.
+
+**The decisive evidence came from the user, not the harness.** They checked the
+Google AI Studio usage dashboard and reported **exactly one request, successful**.
+That single fact is what identifies the real fault:
+
+- One request = the round-16 **preflight** (which returns `key=OK`).
+- The KEYPROBE and TOOL turns that followed produced **zero requests**.
+
+So the server is not being refused by Google, and it is not timing out against
+Google. **It never sends a request at all.** Every "silent empty turn" since
+round 6 is consistent with this: no request, no response, no error — upstream
+completes the message empty (§13).
+
+**Root cause: the provider SDK package is not present on the device, and cannot
+be fetched.** OpenCode resolves each provider to an npm package
+(models.dev metadata, captured in this repo's own snapshot):
+
+| provider | npm package | on device? |
+|---|---|---|
+| `opencode` | `@ai-sdk/openai-compatible` | **bundled** — built into `node.js` |
+| `openrouter` | `@openrouter/ai-sdk-provider` | not shipped |
+| `google` | `@ai-sdk/google` | not shipped |
+
+The payload's `node_modules` contains exactly three entries —
+`jsonc-parser`, and stubs for `@lydell/node-pty` and `bun-pty`
+(`phase4/scripts/10-build-payload.sh`). Phase 5 already recorded the
+constraint that makes this fatal: *"our userspace has no npm"*
+(phase5 report, MCP section). A provider whose SDK is missing therefore cannot
+be constructed, and the device log confirms the server never even attempts a
+fetch — there is no install, registry, or `@ai-sdk` line anywhere in
+`runtime.log`.
+
+**The corroborating detail nobody had connected:** every model turn that has
+*ever* succeeded on this device used `providerID:"opencode"`,
+`modelID:"big-pickle"` — the one provider whose SDK is compiled into the
+bundle. Visible in run 8's own netprobe turn.
+
+**What about device run 1's `openrouter` PASS?** It is real evidence
+(`reply='P8PROBEOK'`) and is not withdrawn, but it is now the **anomaly** to
+explain rather than the baseline, since the same provider produced nothing in
+runs 2–8. Until that is explained, §3.1's L2 claim rests on a single
+unreproduced observation, and this report should not lean on it harder than
+that.
+
+**Corrected status of L2:** not `BLOCKED-GEO`, and not a credential problem —
+**`BLOCKED-PAYLOAD`: the provider SDK for any third-party provider is absent
+from the runtime payload and cannot be installed at runtime.** This is a real,
+actionable product gap, it is ours, and it is fixable — by bundling the
+provider SDKs into the payload build (the same way `jsonc-parser` is vendored)
+rather than by any further device runs, key rotations, or network changes.
+
+**Process note, recorded deliberately.** Rounds 13–17 produced four
+increasingly confident wrong diagnoses — bad key format, account restriction,
+geo-block — each built on one observation, while the decisive measurement
+(*does a request reach the provider at all?*) was never taken. The user's
+dashboard check took seconds and settled it. The harness should have asked
+that question directly; `P8_KEYPREFLIGHT` now proves reachability, but nothing
+yet proves the **turn** reaches the provider, which is why the gap was missed.
+
 #### 3.1.12 Round 17 — the cold-start number was still measuring the harness
 
 Run 7 reported `319 s wall` against a supervisor window of **17.6 s**
@@ -773,13 +847,17 @@ evidence bundles in `docs/progress/phase8-evidence/` (CI) and `p8d-out/`
    explicitly. Read that line in the next CI run: if it says the former, there
    is a genuine store bug to fix in Phase 9; if the latter, the eight rounds of
    red were the harness and the gate is now sound.
-2. **L2 — closed as `BLOCKED-GEO` (§3.1.11), not by further device runs.**
-   `P8_KEYPREFLIGHT` proved Google's endpoint returns `403` to this device's
-   network even without a credential, so the tool card cannot be observed from
-   here. Final honest wording: *real model round-trip TESTED on device; tool
-   card NOT OBSERVED, blocked by provider geo-restriction.* Re-open only from a
-   network in a supported region, or with a tool-capable provider reachable
-   from this one — do not spend more device runs against Gemini from here.
+2. **L2 — `BLOCKED-PAYLOAD` (§3.1.11b). The `BLOCKED-GEO` closure is
+   RETRACTED.** Run 8 showed `key=OK models=40 modelUsable=true`, and the
+   user's Google dashboard showed exactly one request (the preflight) — so the
+   model turns never reach the provider at all. Cause: third-party provider
+   SDKs (`@ai-sdk/google`, `@openrouter/ai-sdk-provider`) are absent from the
+   payload and there is no npm on device to fetch them; only the bundled
+   `opencode` provider has ever served a turn. **Fix is a payload change, not a
+   device run:** vendor the provider SDK(s) into
+   `phase4/scripts/10-build-payload.sh` beside `jsonc-parser`, rebuild the
+   payload, then re-run the live gates. Do not spend further device runs until
+   that lands.
 2. **Upstream silent-completion behaviour** (§7/§13): provider failures (bad
    key, network loss) complete as empty turns without a recorded error —
    classify for upstream / work around in the UI layer in Phase 9+.
