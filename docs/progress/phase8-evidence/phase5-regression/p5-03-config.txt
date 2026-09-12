@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "shell": "/system/bin/sh",
+  "permission": {
+    "bash": "ask",
+    "edit": "ask",
+    "webfetch": "ask"
+  },
+  "mcp": {
+    "gates-mcp": {
+      "type": "local",
+      "command": ["/data/data/ai.opencode.android.debug/files/bin/bun", "/data/data/ai.opencode.android.debug/files/mcp/mcp-server.js"],
+      "environment": {}
+    }
+  }
+}
