@@ -121,6 +121,26 @@ internal class P8ServerProbe(private val context: Context) {
         OpenCodeApi(base, RuntimeEnv.SERVER_USER, password, directory = dir)
     }.getOrNull()
 
+    /**
+     * Tail of OpenCode's OWN structured log (xdg data/state `.../opencode/log`).
+     * The device bundle never captured this until round 19, which is why eight
+     * runs of "silent empty turn" carried no explanation: the message API says
+     * nothing when a turn completes empty, but this log records
+     * `llm runtime selected llm.provider=... llm.model=...` and any provider
+     * or npm failure. Never contains credentials.
+     */
+    fun serverLogTail(maxChars: Int = 4000): String = runCatching {
+        val dirs = listOf(
+            File(context.filesDir, "xdg/data/opencode/log"),
+            File(context.filesDir, "xdg/state/opencode/log"),
+        )
+        val newest = dirs.flatMap { d -> d.listFiles()?.toList().orEmpty() }
+            .filter { it.isFile }
+            .maxByOrNull { it.lastModified() } ?: return@runCatching ""
+        val text = newest.readText()
+        if (text.length <= maxChars) text else text.takeLast(maxChars)
+    }.getOrDefault("")
+
     /** Every part (and each assistant message's own error) in the project's
      *  most recent session that has a user turn. */
     fun serverParts(): List<P8ServerPart> {

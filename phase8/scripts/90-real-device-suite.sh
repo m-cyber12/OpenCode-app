@@ -347,6 +347,20 @@ adb shell dumpsys meminfo "$PKG" 2>/dev/null | tr -d '\r' > "$OUT/meminfo.txt" |
 adb shell du -sk "$FILES" 2>/dev/null | tr -d '\r' > "$OUT/storage.txt" || true
 adb shell "ls -la '$FILES' 2>/dev/null" | tr -d '\r' > "$OUT/files-layout.txt" || true
 rash "tail -c 40000 '$FILES/log/runtime.log' 2>/dev/null" > "$OUT/runtime.log" 2>&1 || true
+# Round 19: OpenCode's OWN structured log. This is the single most valuable
+# file for any model-turn question and the device suite has never pulled it -
+# which is why eight runs produced "silent empty turn" with no explanation
+# while the CI bundle (which DOES pull it, 20-gates.sh) carried lines like
+# `llm runtime selected llm.provider=... llm.model=...` and
+# `NpmInstallFailedError`. Without it the device evidence cannot say WHY a
+# turn produced nothing; with it, the provider error names itself.
+rash 'for d in "'"$FILES"'/xdg/data/opencode/log" "'"$FILES"'/xdg/state/opencode/log"; do for f in "$d"/*.log; do [ -e "$f" ] || continue; echo "### $f"; tail -300 "$f"; done; done'   | redact > "$OUT/opencode-server.log" 2>&1 || true
+# The one-line answer to "which provider/model did the server actually use?"
+grep -ao "llm.runtime=[a-z-]* llm.provider=[a-zA-Z0-9_-]* llm.model=[a-zA-Z0-9./_-]*" "$OUT/opencode-server.log" 2>/dev/null   | sort | uniq -c | sort -rn > "$OUT/provider-used.txt" 2>&1 || true
+if [ -s "$OUT/provider-used.txt" ]; then
+  log "providers actually used by the server this run:"
+  cat "$OUT/provider-used.txt" | tee -a "$LOG"
+fi
 adb logcat -d 2>/dev/null | grep -aE 'OpenCode|TestRunner' | tail -400 > "$OUT/logcat.txt" || true
 adb shell screencap -p > "$OUT/final-screen.png" 2>/dev/null || true
 

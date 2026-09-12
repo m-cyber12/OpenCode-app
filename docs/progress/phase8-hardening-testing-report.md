@@ -419,24 +419,41 @@ Google. **It never sends a request at all.** Every "silent empty turn" since
 round 6 is consistent with this: no request, no response, no error — upstream
 completes the message empty (§13).
 
-**Root cause: the provider SDK package is not present on the device, and cannot
-be fetched.** OpenCode resolves each provider to an npm package
-(models.dev metadata, captured in this repo's own snapshot):
+**Leading hypothesis (stated as a hypothesis, not a conclusion): the turn never
+selects the provisioned provider.**
 
-| provider | npm package | on device? |
-|---|---|---|
-| `opencode` | `@ai-sdk/openai-compatible` | **bundled** — built into `node.js` |
-| `openrouter` | `@openrouter/ai-sdk-provider` | not shipped |
-| `google` | `@ai-sdk/google` | not shipped |
+A correction to an earlier draft of this section, which asserted that the
+provider SDK is "not shipped and cannot be fetched": that was **too strong and
+is withdrawn**. Upstream's `packages/opencode/package.json` at the pinned commit
+lists `@ai-sdk/google` and `@openrouter/ai-sdk-provider` as **direct
+dependencies**, and `provider.ts` imports them through a static
+`BUNDLED_PROVIDERS` map. The payload build marks only `jsonc-parser`,
+`@lydell/node-pty` and `bun-pty` as `external`, so the bundler should inline
+every provider SDK into `node.js`. Whether that actually happened in the shipped
+payload is **not yet verified**, and asserting it without checking would repeat
+the exact mistake of rounds 13-17.
 
-The payload's `node_modules` contains exactly three entries —
-`jsonc-parser`, and stubs for `@lydell/node-pty` and `bun-pty`
-(`phase4/scripts/10-build-payload.sh`). Phase 5 already recorded the
-constraint that makes this fatal: *"our userspace has no npm"*
-(phase5 report, MCP section). A provider whose SDK is missing therefore cannot
-be constructed, and the device log confirms the server never even attempts a
-fetch — there is no install, registry, or `@ai-sdk` line anywhere in
-`runtime.log`.
+What *is* established, from the server's own structured log in the CI bundle:
+
+```
+llm runtime selected  llm.runtime=ai-sdk llm.provider=opencode llm.model=big-pickle   (x7, every occurrence)
+background dependency install failed ... NpmInstallFailedError
+  (cause: @opencode-ai/plugin: No matching version found for @opencode-ai/plugin@1.18.23-android)
+```
+
+**Every single "llm runtime selected" line across all captured evidence names
+`provider=opencode`** — the one provider compiled into the bundle — and there
+is not one line naming `google` or `openrouter`. Combined with the user's
+dashboard (one request, from the preflight; zero from the turns), the evidence
+says the model turn is not reaching the provisioned provider at all. *Why* it
+falls back is the open question: provider construction failing, auth not being
+resolved, or the model reference not being applied.
+
+The `NpmInstallFailedError` is a second, independent finding: the runtime does
+attempt npm work on device and fails, because the payload reports version
+`1.18.23-android` while `@opencode-ai/plugin` has no such published version.
+That is a real Android-specific defect in its own right (plugins can never
+install), logged as an open item.
 
 **The corroborating detail nobody had connected:** every model turn that has
 *ever* succeeded on this device used `providerID:"opencode"`,
@@ -847,17 +864,21 @@ evidence bundles in `docs/progress/phase8-evidence/` (CI) and `p8d-out/`
    explicitly. Read that line in the next CI run: if it says the former, there
    is a genuine store bug to fix in Phase 9; if the latter, the eight rounds of
    red were the harness and the gate is now sound.
-2. **L2 — `BLOCKED-PAYLOAD` (§3.1.11b). The `BLOCKED-GEO` closure is
-   RETRACTED.** Run 8 showed `key=OK models=40 modelUsable=true`, and the
-   user's Google dashboard showed exactly one request (the preflight) — so the
-   model turns never reach the provider at all. Cause: third-party provider
-   SDKs (`@ai-sdk/google`, `@openrouter/ai-sdk-provider`) are absent from the
-   payload and there is no npm on device to fetch them; only the bundled
-   `opencode` provider has ever served a turn. **Fix is a payload change, not a
-   device run:** vendor the provider SDK(s) into
-   `phase4/scripts/10-build-payload.sh` beside `jsonc-parser`, rebuild the
-   payload, then re-run the live gates. Do not spend further device runs until
-   that lands.
+2. **L2 — `BLOCKED-PROVIDER-SELECTION` (§3.1.11b). The `BLOCKED-GEO` closure is
+   RETRACTED, and so is the follow-up "SDK missing from payload" claim.** Run 8
+   showed `key=OK models=40 modelUsable=true`; the user's dashboard showed one
+   request (the preflight) and none from the turns; and every
+   `llm runtime selected` line ever captured says `llm.provider=opencode`,
+   never `google`/`openrouter`. So the turn silently runs on the bundled
+   provider instead of the provisioned one. **Next step is diagnostic, not
+   another blind run:** round 19 makes the device bundle capture OpenCode's own
+   server log (`opencode-server.log` + `provider-used.txt`) and puts the
+   server's own words into the KEYPROBE verdict. One run now answers *why* the
+   provider is not selected.
+3. **`NpmInstallFailedError` on device** — the runtime reports version
+   `1.18.23-android`, for which `@opencode-ai/plugin` has no published version,
+   so background dependency install always fails. Plugins cannot install on
+   Android. Independent defect, newly identified, not yet fixed.
 2. **Upstream silent-completion behaviour** (§7/§13): provider failures (bad
    key, network loss) complete as empty turns without a recorded error —
    classify for upstream / work around in the UI layer in Phase 9+.

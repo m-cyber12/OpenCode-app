@@ -414,13 +414,34 @@ class LiveToolCallGatesTest {
             )
         } else {
             val lastErr = err.ifEmpty { "none" }
+            // Round 19: when the turn completes empty, the message carries NO
+            // error object, so `lastError` is '' and the old verdict guessed
+            // ("expired / out of credit / wrong model") - three guesses, all
+            // of which were wrong in rounds 13-18. OpenCode's OWN structured
+            // log does record what it did (`llm runtime selected
+            // llm.provider=...`) and any provider/npm failure. Read it and put
+            // the server's own words in the verdict instead of guessing.
+            val serverSays = probe.serverLogTail(4000)
+            val providerLine = Regex("llm\\.runtime=\\S+ llm\\.provider=\\S+ llm\\.model=\\S+")
+                .findAll(serverSays).map { it.value }.toList().distinct().takeLast(3)
+            val errLines = serverSays.lineSequence()
+                .filter { it.contains("level=ERROR") || it.contains("level=WARN") }
+                .map { it.take(200) }.toList().takeLast(3)
             keyReason = "no assistant reply with the token in 240s (lastError='$lastErr')"
             printMarker8("MODEL_AVAILABLE", "0 :: $keyReason")
+            printMarker8(
+                "SERVERLOG",
+                "providerSelected=[${providerLine.joinToString(" | ")}] " +
+                    "lastServerErrors=[${errLines.joinToString(" | ")}]",
+            )
             gate(
                 "KEYPROBE",
                 false,
-                "model=$model tokenSeen=false lastError='${err.take(200)}' - the key is expired, " +
-                    "out of credit, or the model id is wrong for this account",
+                "model=$model tokenSeen=false lastError='${err.take(200)}' :: " +
+                    "serverSelected=[${providerLine.joinToString(" | ").take(200)}] " +
+                    "serverErrors=[${errLines.joinToString(" | ").take(300)}] " +
+                    "(if serverSelected names a DIFFERENT provider than the one provisioned, " +
+                    "the turn never used this credential)",
             )
         }
     }
