@@ -8,7 +8,7 @@ POST /mcp p5-remote-http http://10.0.2.2:4551/mcp -> 200 {"p5_patch_probe":{"sta
 assert ok: POST /mcp for p5-remote-http accepted (200 {"p5_patch_probe":{"status":"disabled"},"gates-mcp":{"status":"connected"},"p5-remote-http":{"status":"failed","error":"Failed to get tools"}})
 GATE16 ERROR: Error: timeout waiting for p5-remote-http=connected (last: {"gates-mcp":"connected","p5_patch_probe":"disabled","p5-remote-http":"failed","p5-remote-http#error":"Failed to get tools"})
     at waitFor (/data/data/ai.opencode.android.debug/files/tmp/p5js/gate-16-mcp-remote.js:182:13)
-POST /mcp p5-remote-json http://10.0.2.2:4551/mcp?mode=json -> 200 {"p5_patch_probe":{"status":"disabled"},"gates-mcp":{"status":"connected"},"p5-remote-http":{"status":"failed","error":"Failed to get tools"},"p5-remote-json":{"status":"failed","error":"Failed to get [837ms]
+POST /mcp p5-remote-json http://10.0.2.2:4551/mcp?mode=json -> 200 {"p5_patch_probe":{"status":"disabled"},"gates-mcp":{"status":"connected"},"p5-remote-http":{"status":"failed","error":"Failed to get tools"},"p5-remote-json":{"status":"failed","error":"Failed to get [764ms]
 assert ok: POST /mcp for p5-remote-json accepted (200 {"p5_patch_probe":{"status":"disabled"},"gates-mcp":{"status":"connected"},"p5-remote-http":{"status":"failed","error":"Failed to get tools"},"p5-remote-json":{"status":"failed","error":"Failed to get)
 DIAGNOSTIC json_mode_status=not-connected(status=failed error=Failed to get tools) — reported, not asserted (SSE mode is what G16 measures)
 POST /mcp/p5-remote-json/disconnect -> 200

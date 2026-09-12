@@ -6549,6 +6549,7 @@
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 ### 2026-09-12T10:05:01Z  run=34687272434  step: 4/7 embedded runtime payload (reuse phase 4's build when present)
     head=5e78c58 branch=arena/01a07f92-opencode-app log_lines=719
     --- error digest ---
@@ -6568,6 +6569,40 @@
 =======
     -rw-r--r-- 1 runner runner 153607504 Sep 12 10:01 cmdtools.zip
 >>>>>>> 1ce7b8d (phase8: CI heartbeat (4/7 embedded runtime payload (reuse phase 4's build when present)))
+=======
+### 2026-09-12T10:03:21Z  run=34687209139  step: 3/7 environment + FRESH emulator
+    head=8736164 branch=arena/01a07f92-opencode-app log_lines=695
+    --- error digest ---
+    BUILD SUCCESSFUL in 2m 38s
+    --- last 40 log lines ---
+    
+    MarkdownTest > backslashEscapesAreLiteral PASSED
+    
+    MarkdownTest > boldItalicStrikeAndInlineCode PASSED
+    
+    MarkdownTest > paragraphIsOneBlockAndKeepsSoftLineBreaks PASSED
+    
+    MarkdownTest > unterminatedEmphasisStaysLiteralWhileStreaming PASSED
+    
+    MarkdownTest > strongUsesDoubleMarkersAndNestsEmphasis PASSED
+    
+    MarkdownTest > languageNormalisationIsLowercaseAndAliasFree PASSED
+    
+    MarkdownTest > blankLineSeparatesParagraphs PASSED
+    
+    MarkdownTest > tildeFenceAndInfoStringAttributes PASSED
+    
+    MarkdownTest > atxHeadingsCarryTheirLevel PASSED
+    
+    MarkdownTest > unterminatedLinkStaysLiteralWhileStreaming PASSED
+    
+    BUILD SUCCESSFUL in 2m 38s
+    35 actionable tasks: 33 executed, 2 from cache
+    ########## 3/7 environment + FRESH emulator ##########
+    installing emulator + system image via phase4/scripts/50-install-sdk.sh
+    --- downloading cmdline-tools
+    -rw-r--r-- 1 runner runner 153607504 Sep 12 10:01 cmdtools.zip
+>>>>>>> 53c1e17 (phase8: CI heartbeat (3/7 environment + FRESH emulator))
     /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
     /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
     --- sdkmanager licenses
@@ -6580,6 +6615,7 @@
     system image: android-34/google_apis/x86_64
     Loading local repository...                                                     [=========                              ] 25% Loading local repository...       [=========                              ] 25% Fetch remote repository...        [=======================================] 100% Fetch remote repository...       
     Auto-selecting single ABI x86_64
+<<<<<<< HEAD
     Do you wish to create a custom hardware profile? [no] --- emulator accel-check
     accel:
     0
@@ -6880,3 +6916,6 @@
     ########## 6/7 Phase 8 gates (regressions + stress + live model + perf) ##########
 
 >>>>>>> 1cd363e (phase8: CI heartbeat (6/7 Phase 8 gates (regressions + stress + live model + perf)))
+=======
+    Do you wish to create a custom hardware profile? [no] 
+>>>>>>> 53c1e17 (phase8: CI heartbeat (3/7 environment + FRESH emulator))
