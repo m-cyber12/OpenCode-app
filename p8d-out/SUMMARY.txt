@@ -1,14 +1,14 @@
 P8D_TOYBOX PASS :: base64|base64 -d|tar xz -C dir works on this real device api=35 (closes the harness-staging half for this API; API-29 remains the untested half - see report)
 P8D_BUNLAUNCH PASS :: exec-shim bun runs (rc=0); raw bun alive=0 rc=127 :: the app's launch path is the working one; raw bun invocations in a harness are not representative
-P8D_COLDSTART PASS :: launch -> server answering loopback (http 401) in 319s wall; supervisor log window: 2026-09-11T09:50:46.443Z -> 2026-09-11T09:51:04.055Z (fresh install, first extraction included)
+P8D_COLDSTART PASS :: launch -> server answering loopback (http 401) in 321s wall; supervisor log window: 2026-09-12T09:09:21.014Z -> 2026-09-12T09:09:39.707Z (fresh install, first extraction included)
 P8D_KEYRESIDENCY FAIL :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=arm64-v8a device=RMX3830 api=35 :: key material is in the SOFTWARE keystore on this device - the ciph
 P8D_PROVAUTH FAIL :: serverSawError=true serverErrorName=APIError serverErrorMessage='' serverStatus=0 classified=PROVIDER_OTHER screenSaysKeyRejected=false screenSaysUnreachable=false asksAnswered=0 screenshot=79551
-P8D_SERVERKILL PASS :: killedPid=32744 oldPidDead=true sawCrashedRestarting=true restartCount=0 healthyAgain=true healthHttp=200 sawFatal=false newPid=1104 finalStatus=HEALTHY finalDetail='healthy on 127.0.0.1:4111'
-P8D_LIFECYCLELOG PASS :: illegalTransitions=0 startingTransitions=4 healthyTransitions=3 logBytes=7417 lastStates='STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111) | EXTRACTING (validating embedded runtime) |
+P8D_SERVERKILL PASS :: killedPid=11258 oldPidDead=true sawCrashedRestarting=true restartCount=0 healthyAgain=true healthHttp=200 sawFatal=false newPid=12095 finalStatus=HEALTHY finalDetail='healthy on 127.0.0.1:4111'
+P8D_LIFECYCLELOG PASS :: illegalTransitions=0 startingTransitions=4 healthyTransitions=3 logBytes=7416 lastStates='STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:4111) | EXTRACTING (validating embedded runtime) |
 P8D_KEYPREFLIGHT SKIP :: no preflight line (no key provisioned, or the probe did not run)
 P8D_KEYPROBE FAIL :: model=gemini-2.5-flash tokenSeen=false lastError='' - the key is expired, out of credit, or the model id is wrong for this account
 P8D_TOOL SKIP :: the provisioned key could not serve a turn, so no tool call can be observed: no assistant reply with the token in 240s (lastError='none')
 P8D_CLEANUP PASS :: keystoreRemoved=true leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
-P8D_SUMMARY 2026-09-11T10:07:47Z
+P8D_SUMMARY 2026-09-12T09:26:51Z
 gates_pass=6 gates_fail=3 gates_skip=2
 device=model=RMX3830 api=35 abi=arm64-v8a
