@@ -1,20 +1,37 @@
 # Phase 8 report — Hardening & Testing
 
-Status: **ALMOST COMPLETE** — 11 completed CI rounds (one more in flight,
-tree-only delta) + one real-device run have produced the evidence below; the
-remaining PENDING items are named precisely. Every
-section carries the honesty labels the project requires
-(`IMPLEMENTED / TESTED / NOT TESTED / BLOCKED`).
+Status: **COMPLETE, with two gaps explicitly carried** (L2's tool card and the
+provider-selection defect behind it). Everything Phase 8 owns — hardening,
+security, performance, failure states, the test matrix — is delivered and
+labelled. The carried items are named precisely, with the next diagnostic step
+already implemented rather than left as an intention.
 
-- Date: 2026-09-08
+- Date: 2026-09-08 → 2026-09-12
 - Branch: `arena/01a07f92-opencode-app` (from Phase 7 merge `afbf052`)
 - Pinned runtime (unchanged from `versions.lock`): OpenCode `05ea5073`
   (v1.18.23), Bun 1.3.14, git 2.48.1, ripgrep 15.1.0, payload v5.
 - CI: workflow `phase8-hardening.yml` (user-installed, branch-triggered,
   480 min job cap). CI run history: §12.
-- Real device: Realme RMX3830, Android 15 / API 35, arm64-v8a — one full
-  suite run executed by the user on 2026-09-08 (bundle: `p8d-out/`, commit
-  `59276c3`).
+- Real device: Realme RMX3830, Android 15 / API 35, arm64-v8a — **eight** full
+  suite runs executed by the user (2026-09-08 → 2026-09-12), bundles uploaded
+  to this branch as `p8d-out/`.
+
+**Correction log (read this first).** This report was wrong in public more than
+once, and each retraction is kept rather than quietly edited away:
+
+| Round | Claim made | Verdict |
+|---|---|---|
+| 13 | the typed Gemini key was invalid (wrong length/prefix) | **RETRACTED** — Google also issues `AQ.`-prefixed keys (§3.1.3) |
+| 14 | preflight "no output" = provider/egress problem | **RETRACTED** — `run-as` has no `AID_INET`; our probe had no network (§3.1.7) |
+| 15 | raw-transcript capture is safe | **INCIDENT** — leaked a live API key into a public repo (§3.1.8) |
+| 17 | Gemini is geo-blocked for this device → L2 `BLOCKED-GEO` | **RETRACTED** — run 8: `key=OK models=40 modelUsable=true` (§3.1.11b) |
+| 18 | provider SDKs are missing from the payload | **WITHDRAWN as overstated** — they are upstream deps and should be inlined; unverified (§3.1.11b) |
+| 3/5/7 | COLDSTART wall times (320s/326s/319s) | **RETRACTED** — instrument overhead; supervisor windows (13–21.8 s) stand (§3.1.12) |
+
+The common failure was concluding from a single observation without taking the
+measurement that would have settled it. The user's own check of the Google
+usage dashboard — one request, successful — did in seconds what four rounds of
+harness work had not.
 
 ---
 
@@ -28,13 +45,18 @@ failure states distinguishable, and build the full test matrix. Outcome:
   health-check wire contract, extraction validation): all
   `IMPLEMENTED + TESTED` (272 JVM tests green in every CI run since round 4,
   including the pre-existing 187).
-- **L2 real tool call** (carried since Phase 6): the real model round-trip is
-  now `TESTED` on the user's real device (P8-KEYPROBE PASS: OpenRouter answered
-  `P8PROBEOK` through the app's own credential path). The final half — the
-  observable tool call through the UI — is **PENDING one more device run** with
-  a free-tier-appropriate budget (round 11 APK; §3.1). On the CI emulator the
-  model gates are `BLOCKED` by an emulator-specific network condition,
-  isolated and documented with the full probe matrix (§3.1.1).
+- **L2 real tool call** (carried since Phase 6): **NOT CLOSED — carried into
+  Phase 9 as `BLOCKED-PROVIDER-SELECTION`.** A real model round-trip was
+  observed once on the real device (run 1, P8-KEYPROBE PASS,
+  `reply='P8PROBEOK'`), but it has never reproduced across runs 2–8, so this
+  report does not lean on it. The tool card was never observed. The cause is
+  now narrowed to a specific, actionable defect rather than an environment
+  excuse: **every `llm runtime selected` line in all captured evidence names
+  `llm.provider=opencode`** (the bundled provider), never the provisioned
+  `google`/`openrouter` — and the user's provider dashboard confirms the turns
+  send zero requests. Credentials, network and model id are all verified good
+  (`key=OK models=40 modelUsable=true`). Round 19 ships the diagnostic that
+  will name the reason on the next run (§3.1.11b).
 - **Secure-hardware key residency** (gap b): `TESTED` — measured on BOTH
   devices: the key lives in the **software** keystore on the real arm64 phone
   (`insideSecureHardware=false`, strongBox probe null), as designed. Documented
@@ -774,19 +796,22 @@ Live proofs attempted — and the honest result:
 | P8-PROVAUTH | rejected key → auth failure (UI + classifier agree) | FAIL (silent upstream shape, §7) | FAIL (same shape) |
 | P8-SERVERKILL | SIGKILLed server → supervised restart, bounded | **PASS** | **PASS** |
 | P8-LIFECYCLELOG | zero illegal transitions in a clean run | **PASS** (0 illegal, 9 transitions) | **PASS** (0 illegal, 4 transitions) |
-| P8-KEYPROBE | the provided key serves a model round-trip | FAIL — BLOCKED-CI egress (§3.1.1) | **PASS** (`P8PROBEOK`) |
-| P8-TOOL | **the real tool call (L2 close)** | never reached (key probe first) | SKIP (480 s, free tier) → **PENDING** 900 s re-run |
+| P8-KEYPROBE | the provided key serves a model round-trip | FAIL — BLOCKED-CI egress (§3.1.1) | **PASS once (run 1, `P8PROBEOK`), FAIL runs 2–8** — not reproduced; see §3.1.11b |
+| P8-TOOL | **the real tool call (L2 close)** | never reached (key probe first) | **SKIP in all 8 runs — CARRIED to Phase 9** as `BLOCKED-PROVIDER-SELECTION` (§3.1.11b) |
 | P8-CLEANUP | injected key revoked from server + Keystore | **PASS** | **PASS** |
 | P8-TOYBOX | harness staging path on this API | **PASS** (API 34) | **PASS** (API 35) |
 | P8-CORRUPT | corrupted payload → re-extract → healthy | **PASS** (rounds 6–9) | — |
 | P8-CRASH | force-stopped process → relaunch → healthy | **PASS** | — |
-| P8-SESSIONPERSIST | session + user message survive process death | **FAIL** (`sessionFound=true userMessageFound=false` — open item §13) | — |
+| P8-SESSIONPERSIST | session + user message survive process death | **FAIL, now DIAGNOSABLE** — round 18 proves whether the message was stored before the kill and reports `REAL PERSISTENCE DEFECT` vs `INCONCLUSIVE (harness race)` (§3.1.13) | — |
 | P8-NETLOSS | network loss mid-task → network-shaped error → recovery | FAIL (effective cut, silent error text, §7) | — |
 | P8-BGFG | background 90 s with turn in flight → completes cleanly | FAIL (health 200 in background; verdict never fired, §7) | — |
 | P8-LARGE | 2000 files + 50 MB: API + git stay responsive | **PASS** (list 171 ms, content 252 ms, git 1 000 ms) | — |
 | P8-HIST | 40 sequential turns in one session; tail latency | **FAIL (round 11, strict)**: `turns=5 textTurns=0 failedTurns=5 bail=5` — turns hang (120.5 s avg, no completion, no error) under the §3.1.1 condition; the strict driver works as designed (round 9's false-positive version is superseded) | — |
 | P8-STORAGE | low storage: honest behaviour, then cleanup | **PASS** (rounds 8, 11: free 4.37 GB → 2.53 GB under pressure → 4.37 GB after cleanup) | — |
 | P8-PERF | the measured numbers of §6 | numbers captured (rounds 8 + 11); model-stream half BLOCKED-CI (`turnMs=240 002 streamTimedOut=1`) | subset (R3/R6) |
+| P8D-BUNLAUNCH | the app's Bun launch path works; a raw one does not | — | **PASS** (shim `rc=0`, raw `rc=127`) — added round 15 (§3.1.7) |
+| P8-KEYPREFLIGHT | provider reachable AND credential/model usable, before the model gates | — | **PASS** (run 8: `key=OK http=200 models=40 modelUsable=true`) — added round 16 |
+| P8D-COLDSTART | launch → server answering loopback | — | **PASS** — supervisor window **13–21.8 s**; `wall` figures retracted (§3.1.12) |
 
 ## 9. Regressions and defects found and fixed during this phase
 
@@ -846,9 +871,36 @@ Live proofs attempted — and the honest result:
      not a substitute for revocation).
   2. Create a replacement key for any further runs.
   The agent cannot revoke Google credentials; this is the user's action.
-- **Removal from the repository secrets: PENDING** — the user removes
-  `OPENROUTER_API_KEY` after the final model-dependent device run (bot token
-  cannot manage secrets). This section will be updated with the confirmation.
+- **Removal from the repository secrets: PENDING (user action).** The bot token
+  cannot manage repository secrets (403), so the user must delete
+  `OPENROUTER_API_KEY` under *Settings → Secrets and variables → Actions*.
+  Phase 8 no longer needs it: the CI model gates are BLOCKED-CI by design
+  (§3.1.1) and every model verdict now comes from the device suite, which takes
+  its key interactively at the terminal. **Nothing in Phase 8 is waiting on this
+  secret; it should simply be removed.**
+
+### 10.1 Secret-handling defect found and fixed in this phase
+
+Round 15 leaked a live Gemini key into this public repository (§3.1.8). The
+mechanism is worth recording because it generalises: **an error string is not
+opaque text.** Bun includes the full request URL in connection errors, and
+Google's API carries the credential in the query string, so a verbatim
+"capture the raw transcript for better diagnostics" change published a secret.
+
+Controls now in place:
+
+- `redact()` in the device suite filters `AQ.…`, `AIza…`, `sk-or-…` and
+  `Bearer …` out of **every** artifact it writes, applied at the point of
+  capture rather than before upload.
+- The on-device preflight never prints the key, and never prints a URL
+  containing it.
+- The key still travels base64-over-stdin and is deleted from the device
+  (`harness/model-key`, `harness/provider`) at the end of every run, proven by
+  `P8D-CLEANUP PASS` in all eight runs.
+
+Residual risk: the leaked key remains in Git history at `52e7c4d`. Redaction of
+the working tree does not remediate that — **only revocation does**, which is
+the user's action.
 
 ## 11. Hand-off to Phase 9
 
