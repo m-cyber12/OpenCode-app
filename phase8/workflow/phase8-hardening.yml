@@ -1,0 +1,122 @@
+# PHASE 8 - HARDENING & TESTING suite: Phase 7 + Phase 5 regression, the P8
+# stress/recovery and live-model instrumented gates (including the real tool
+# call that closes Phase 6 L2), the destructive host gates (corrupted payload,
+# crash/restart, network loss mid-task, background/foreground, large project,
+# large history, low storage, toybox staging), and the measured performance
+# numbers for the phase report.
+#
+# HOW TO INSTALL (one-time, needs the GitHub UI):
+#   copy this file to   .github/workflows/phase8-hardening.yml
+#   on the branch       arena/01a07f92-opencode-app
+#   and push. The session bot token cannot create or modify files under
+#   .github/workflows/ (verified in Phases 2-7), so this copy is the only way
+#   a Phase 8 run can start.
+#
+# SECRETS:
+#   OPENROUTER_API_KEY  a fresh, short-lived key (set by the user for this
+#   phase). It is used ONLY for the model-dependent gates (KEYPROBE / TOOL /
+#   PERF stream) and MUST BE REMOVED from the repo secrets after the phase's
+#   model-dependent testing is done (the phase report confirms the removal).
+#   When the secret is absent the model gates SKIP with the reason on record -
+#   the run still produces every other verdict.
+#
+# Iteration knob: while new Kotlin is being brought up, the tracked marker
+# file phase8/CI_GRADLE_ONLY (containing "1") makes a run compile the app +
+# androidTest APK and run the JVM unit tests only - no payload build, no
+# emulator, no device gates - so a compiler error comes back in about ten
+# minutes instead of hours. It is a bring-up knob, not a verdict: a gradle-only
+# run publishes no device evidence and says so in GATES_SUMMARY.txt.
+name: phase8-hardening
+
+on:
+  push:
+    branches:
+      - "arena/01a07f92-opencode-app"
+    paths-ignore:
+      - "docs/progress/phase8-evidence/**"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why this run is being dispatched (free text)"
+        required: false
+        default: "manual phase8 hardening/test gate run"
+
+jobs:
+  phase8-hardening-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 480
+    permissions:
+      contents: write
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      # The model the live gates use through OpenRouter. Cheap + tool-capable +
+      # stable; override here (or in the dispatch) to change it.
+      OPENROUTER_MODEL: openai/gpt-4o-mini
+      # Focused re-runs (while iterating on a single area):
+      # P8_SKIP_P7REG / P8_SKIP_P5REG / P8_SKIP_PUSH (see 00-run-phase8.sh).
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Fix /dev/kvm permissions (Phase 2 lesson: never assume KVM just works)"
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm || true
+            ls -la /dev/kvm
+          else
+            echo "KVM_MISSING (the emulator will be unusable; gates fail loudly)"
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: "Run the Phase 8 suite (static checks -> payload -> APKs -> fresh emulator -> regressions -> stress gates -> live model gates -> perf)"
+        run: bash phase8/scripts/00-run-phase8.sh
+        shell: bash
+
+      - name: "Commit evidence to the branch (docs/progress/phase8-evidence)"
+        if: always()
+        run: |
+          # The orchestrator already copies + pushes; this step is the fallback in
+          # case it stopped before reaching its own evidence stage.
+          mkdir -p docs/progress/phase8-evidence
+          if [ -d phase8/out/evidence ]; then
+            cp -r phase8/out/evidence/. docs/progress/phase8-evidence/ 2>/dev/null || true
+          fi
+          cp phase8/out/00-run-phase8.log docs/progress/phase8-evidence/ 2>/dev/null || true
+          git add -A docs/progress/phase8-evidence/ || true
+          if git diff --cached --quiet; then
+            echo "no evidence changes; skipping commit"
+          else
+            git -c user.name="arena-ai-coding-agent[bot]" \
+                -c user.email="arena-ai-coding-agent[bot]@users.noreply.github.com" \
+                commit -m "phase8: hardening/test evidence (auto)" || true
+            git push origin "HEAD:${{ github.ref_name }}" || echo "PUSH_FAILED"
+          fi
+
+      - name: "Upload artifacts"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase8-hardening
+          path: |
+            phase8/out/evidence/
+            phase8/out/00-run-phase8.log
+            docs/progress/phase8-evidence/
+            app/build/outputs/apk/
+          if-no-files-found: ignore
+
+      - name: "Gate summary (readable in the Actions log)"
+        if: always()
+        run: |
+          if [ -f phase8/out/evidence/GATES_SUMMARY.txt ]; then
+            cat phase8/out/evidence/GATES_SUMMARY.txt
+          else
+            echo "NO_PHASE8_SUMMARY - the suite did not reach its gate stage"
+            exit 1
+          fi

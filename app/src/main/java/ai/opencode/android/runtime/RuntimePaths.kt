@@ -23,10 +23,13 @@ import java.io.File
  * mounted no-exec (W^X). They ship as JNI libs and are executed from
  * [Context.getApplicationInfo].nativeLibraryDir via the bin/ symlinks.
  */
-class RuntimePaths private constructor(context: Context) {
+class RuntimePaths private constructor(
+    filesDir: File,
+    nativeLibraryDir: File,
+) {
 
-    val filesDir: File = context.filesDir
-    val nativeLibraryDir: File = File(context.applicationInfo.nativeLibraryDir)
+    val filesDir: File = filesDir
+    val nativeLibraryDir: File = nativeLibraryDir
 
     val binDir: File = File(filesDir, "bin")
     // The payload is extracted FLAT into filesDir (matching the proven Phase 3
@@ -124,7 +127,18 @@ class RuntimePaths private constructor(context: Context) {
 
         fun get(context: Context): RuntimePaths =
             instance ?: synchronized(this) {
-                instance ?: RuntimePaths(context.applicationContext).also { instance = it }
+                instance ?: RuntimePaths(
+                    context.filesDir,
+                    File(context.applicationInfo.nativeLibraryDir),
+                ).also { instance = it }
             }
+
+        /**
+         * Test-only constructor for JVM unit tests (Phase 8: environment
+         * construction is a unit-test matrix item). Production code always goes
+         * through [get]; this never registers the singleton.
+         */
+        fun forTesting(filesDir: File, nativeLibraryDir: File): RuntimePaths =
+            RuntimePaths(filesDir, nativeLibraryDir)
     }
 }

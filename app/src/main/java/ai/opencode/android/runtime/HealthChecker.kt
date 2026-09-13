@@ -2,6 +2,7 @@ package ai.opencode.android.runtime
 
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Base64
 
 /**
  * Health is a verified HTTP response, not merely "process launched".
@@ -23,10 +24,11 @@ class HealthChecker(
                 connectTimeout = timeoutMs
                 readTimeout = timeoutMs
                 requestMethod = "GET"
-                val cred = android.util.Base64.encodeToString(
-                    "$user:$password".toByteArray(),
-                    android.util.Base64.NO_WRAP,
-                )
+                // java.util.Base64 (not android.util.Base64) on purpose: identical
+                // output on API 26+ (minSdk is 29), and it keeps this class
+                // exercisable by JVM unit tests against a real localhost socket
+                // (Phase 8: the health-check contract is a unit-test matrix item).
+                val cred = Base64.getEncoder().encodeToString("$user:$password".toByteArray())
                 setRequestProperty("Authorization", "Basic $cred")
             }
             val code = conn.responseCode

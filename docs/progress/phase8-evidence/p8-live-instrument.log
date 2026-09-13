@@ -1,0 +1,24 @@
+
+ai.opencode.android.ui.LiveToolCallGatesTest:
+ai.opencode.android.ui.LiveToolCallGatesTest:
+Error in g01_keyProbe(ai.opencode.android.ui.LiveToolCallGatesTest):
+java.lang.AssertionError: P8_KEYPROBE :: model=openai/gpt-4o-mini tokenSeen=false lastError='APIError:  (status=0)' :: serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] serverErrors=[timestamp=2026-09-12T10:31:42.375Z level=ERROR run=f09b8db9 message=process session.id=ses_f6ad3c208ffedQ55SXVFTvQiJ8 messageID=msg_0952c3e5b0017AVPA75GChZKBV error="Insufficient credits. This account | timestamp=2026-09-12T10:36:42.092Z level=ERROR run=f09b8db9 message="stream error" providerID=ope] (if serverSelected names a DIFFERENT provider than the one provisioned, the turn never used this credential)
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.ui.LiveToolCallGatesTest.gate(LiveToolCallGatesTest.kt:108)
+	at ai.opencode.android.ui.LiveToolCallGatesTest.g01_keyProbe(LiveToolCallGatesTest.kt:437)
+.
+
+Time: 598.961
+There was 1 failure:
+1) g01_keyProbe(ai.opencode.android.ui.LiveToolCallGatesTest)
+java.lang.AssertionError: P8_KEYPROBE :: model=openai/gpt-4o-mini tokenSeen=false lastError='APIError:  (status=0)' :: serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] serverErrors=[timestamp=2026-09-12T10:31:42.375Z level=ERROR run=f09b8db9 message=process session.id=ses_f6ad3c208ffedQ55SXVFTvQiJ8 messageID=msg_0952c3e5b0017AVPA75GChZKBV error="Insufficient credits. This account | timestamp=2026-09-12T10:36:42.092Z level=ERROR run=f09b8db9 message="stream error" providerID=ope] (if serverSelected names a DIFFERENT provider than the one provisioned, the turn never used this credential)
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.ui.LiveToolCallGatesTest.gate(LiveToolCallGatesTest.kt:108)
+	at ai.opencode.android.ui.LiveToolCallGatesTest.g01_keyProbe(LiveToolCallGatesTest.kt:437)
+
+FAILURES!!!
+Tests run: 4,  Failures: 1
+
+
