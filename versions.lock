@@ -1,5 +1,12 @@
-# versions.lock — pinned component versions (DRAFT, Phase 1)
+# versions.lock — pinned component versions (RELEASE, Phase 9 — 2026-09-15)
 #
+# Status: every pin below is what the Phase 9 release build ships. Checked
+# mechanically: phase9/scripts/check-lock.py compares this file with
+# RuntimeVersion.kt, app/build.gradle.kts versionName and the built
+# runtime-manifest.json (static check + device gate P9_LOCK). The historical
+# phase notes are kept because they explain WHY a pin is what it is.
+#
+# Originally:
 # Populated from static inspection of upstream OpenCode at
 # commit 05ea5073be967c779d326929b2de6228dda4159d. All entries are NOT TESTED
 # on Android until Phase 2/3 proves them. Regenerate/update whenever the
@@ -15,6 +22,12 @@ opencode:
   upstream: https://github.com/anomalyco/opencode
   commit: 05ea5073be967c779d326929b2de6228dda4159d   # HEAD of `dev` (default branch)
   version: 1.18.23                                    # packages/*/package.json
+  # PHASE 9: the bundle's OPENCODE_VERSION define is the bare "1.18.23" (was
+  # "1.18.23-android" through Phase 8). Upstream config.ts installs
+  # @opencode-ai/plugin@<OPENCODE_VERSION> when a plugin is configured, and
+  # @opencode-ai/plugin@1.18.23-android does not exist on npm -> every plugin
+  # install failed (the carried Phase 5/8 bug). Channel stays "android".
+  channel: android
   # NOTE (2026-08-28, Phase 2): the first spike run (evidence commit d161ccd) built the
   # bundle from `dev` HEAD 755ebdb94ee7 (v1.18.25, "sync release versions for v1.18.25"),
   # because the artifact script cloned dev without checking out the pinned commit.
@@ -138,7 +151,7 @@ android_host:
   agp: 8.5.2
   gradle: 8.9
   compose_bom: 2024.06.00
-  payload_version: 5     # bumped on payload/layout change; drives re-extraction (5 = Phase 5)
+  payload_version: 6     # bumped on payload/layout change; drives re-extraction (6 = Phase 9: bare OPENCODE_VERSION define, see below)
   # per-ABI JNI executables (Android extracts to nativeLibraryDir, exec-allowed):
   jni_libs:
     - { name: libbun.so,  source: "@oven/bun-linux-{x64|aarch64}-android@1.3.14", bionic: true }

@@ -62,6 +62,19 @@ internal fun printMarker8(name: String, value: String) {
     p8Emit("P8_$name $value")
 }
 
+/** Phase 9 gates share the channel (same file, same logcat tag), own prefix. */
+internal fun printGate9(id: String, ok: Boolean, detail: String) {
+    p8Emit("P9_$id ${if (ok) "PASS" else "FAIL"} :: $detail")
+}
+
+internal fun printSkip9(id: String, reason: String) {
+    p8Emit("P9_$id SKIP :: $reason")
+}
+
+internal fun printMarker9(name: String, value: String) {
+    p8Emit("P9_$name $value")
+}
+
 /** One part as the server reports it, reduced to what the P8 gates need. */
 internal data class P8ServerPart(
     val id: String,

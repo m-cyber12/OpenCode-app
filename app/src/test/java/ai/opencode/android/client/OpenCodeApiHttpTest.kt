@@ -84,7 +84,7 @@ class OpenCodeApiHttpTest {
 
     @Test
     fun healthIsGlobalAndCarriesBasicAuth() {
-        responseBody = """{"healthy":true,"version":"1.18.23-android"}"""
+        responseBody = """{"healthy":true,"version":"1.18.23"}"""
         val h = api().health()
         assertTrue(h.getBoolean("healthy"))
         val r = lastExchange!!

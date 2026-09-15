@@ -404,7 +404,14 @@ class OpenCodeApi(
                     )
                 }
             }
-            entries.add(ProviderEntry(id = pid, name = pr.optString("name").ifEmpty { pid }, models = models))
+            entries.add(
+                ProviderEntry(
+                    id = pid,
+                    name = pr.optString("name").ifEmpty { pid },
+                    models = models,
+                    source = pr.optString("source"),
+                ),
+            )
         }
         return ProviderSnapshot(allIds = ids, connected = con, defaultModel = defaults, entries = entries)
     }
@@ -635,7 +642,14 @@ class OpenCodeApi(
         val deprecated: Boolean get() = status == "deprecated"
     }
 
-    data class ProviderEntry(val id: String, val name: String, val models: List<ModelEntry>)
+    /**
+     * One entry of upstream's `GET /provider` `all` list. [source] is upstream's
+     * own `Provider.Info.source` ("env" | "config" | "custom" | "api"): a
+     * provider the loaded instance built from a stored API key reports "api";
+     * a bare catalog entry reports "custom". That is the observable that tells
+     * a stale instance (credential written, table not rebuilt) from a live one.
+     */
+    data class ProviderEntry(val id: String, val name: String, val models: List<ModelEntry>, val source: String = "")
 
     data class ProviderSnapshot(
         val allIds: List<String>,

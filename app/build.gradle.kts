@@ -29,13 +29,12 @@ android {
         applicationId = "ai.opencode.android"
         minSdk = 29          // W^X: exec only from nativeLibraryDir; ABI gating enforces arm64/x64
         targetSdk = 34
-        versionCode = 6      // phase 6 (UI). Bumped: nothing in the runtime contract changed.
-        // versionName deliberately still carries "phase5": Phase 5's P5-01 gate asserts the
-        // installed APK's versionName matches *phase5* (phase5/scripts/20-integration-gates.sh),
-        // and Phase 6 changes no runtime/API/payload contract (payloadVersion stays 5), so the
-        // honest value is unchanged. A UI-phase bump here would move a Phase 5 gate, which a
-        // polish phase may not do - it would read as a regression that is not one.
-        versionName = "1.18.23-phase5"   // tracks the pinned OpenCode version (versions.lock)
+        versionCode = 7      // Phase 9 release: payloadVersion 6 (bare OPENCODE_VERSION define,
+                             // provider-cache invalidation on credential change).
+        // versionName = "<pinned OpenCode version>-phase9". Phase 5's P5-01 gate accepts
+        // *phase5*..*phase9* (phase5/scripts/20-integration-gates.sh); P9_LOCK asserts the
+        // prefix equals versions.lock's opencode version.
+        versionName = "1.18.23-phase9"   // tracks the pinned OpenCode version (versions.lock)
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")   // arm64 ships; x86_64 for CI/emulator
         }
@@ -45,9 +44,26 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Release signing: opt-in via env (CI secret P9_KEYSTORE_B64 decoded to a
+    // file + P9_KEYSTORE_PASSWORD / P9_KEY_ALIAS / P9_KEY_PASSWORD). Without
+    // them the release build is UNSIGNED (adb install needs a signature; the
+    // published artifact says so in its name) - no key material lives in git.
+    val relKs = System.getenv("P9_KEYSTORE_FILE")?.let { file(it) }?.takeIf { it.exists() }
+    if (relKs != null) {
+        signingConfigs {
+            create("release") {
+                storeFile = relKs
+                storePassword = System.getenv("P9_KEYSTORE_PASSWORD") ?: ""
+                keyAlias = System.getenv("P9_KEY_ALIAS") ?: "opencode"
+                keyPassword = System.getenv("P9_KEY_PASSWORD") ?: (System.getenv("P9_KEYSTORE_PASSWORD") ?: "")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (relKs != null) signingConfig = signingConfigs.getByName("release")
             // No proguard stripping: the app shell is small and keeps stack
             // traces readable for runtime diagnostics.
         }

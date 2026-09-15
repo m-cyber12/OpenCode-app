@@ -184,11 +184,9 @@ class OpenCodeRepository(
             runCatching { api.providers() }.onSuccess { p ->
                 // OpenCode's own `default` map (providerID -> modelID); used as
                 // the model hint, never invented by the client.
-                val cur = _state.value.model
-                val first = p.defaultModel.entries.firstOrNull()
                 _state.value = _state.value.copy(
                     providers = p,
-                    model = cur ?: first?.let { OpenCodeApi.ModelRef(it.key, it.value) },
+                    model = _state.value.model ?: defaultModelHint(p),
                 )
             }.onFailure { errors.add("providers: ${it.message}") }
 
@@ -557,11 +555,19 @@ class OpenCodeRepository(
             try {
                 store.put(ai.opencode.android.security.SecretNames.providerSecretName(providerID), apiKey)
                 api.setProviderAuth(providerID, apiKey)
-                val p = api.providers()
+                val p = applyCredentialChange(providerID)
+                // The user just connected this provider: make it the model the
+                // composer sends unless they already pinned one on it. Without
+                // this, the hint stays on whatever provider the catalog listed
+                // first (Phase 8: a `subconscious/...` id nobody had a key for).
+                val cur = _state.value.model
+                val next = if (cur?.providerID == providerID) cur else defaultModelHint(p, prefer = providerID) ?: cur
                 _state.value = _state.value.copy(
                     providers = p,
+                    model = next,
                     notice = "credential stored (Keystore) for $providerID; " +
-                        "OpenCode reports connected=" + p.connected.contains(providerID),
+                        "OpenCode reports connected=" + p.connected.contains(providerID) +
+                        (if (next != null && next != cur) "; model -> ${next.providerID}/${next.modelID}" else ""),
                     error = "",
                 )
             } catch (t: Throwable) {
@@ -575,12 +581,53 @@ class OpenCodeRepository(
             runCatching {
                 store.delete(ai.opencode.android.security.SecretNames.providerSecretName(providerID))
                 api.deleteProviderAuth(providerID)
-                api.providers()
-            }.onSuccess {
-                _state.value = _state.value.copy(providers = it, notice = "credential revoked for $providerID")
+                applyCredentialChange(providerID)
+            }.onSuccess { p ->
+                val cur = _state.value.model
+                val next = if (cur?.providerID == providerID) defaultModelHint(p) else cur
+                _state.value = _state.value.copy(
+                    providers = p,
+                    model = next,
+                    notice = "credential revoked for $providerID",
+                )
             }.onFailure { fail("revoke provider", it) }
         }
     }
+
+    /**
+     * PHASE 9 FIX (carried Phase 8 defect: "turns silently use the bundled
+     * `opencode` provider instead of the configured one").
+     *
+     * Root cause, traced in upstream `provider/provider.ts` at the pinned
+     * commit: the provider table is an `InstanceState` built ONCE per loaded
+     * instance, and it reads `auth.json` (`auth.all()`) while being built.
+     * `PUT /auth/:providerID` (`ControlHttpApi.authSet`) only writes that file;
+     * it does not invalidate the instance. So after provisioning, the running
+     * instance still has no `openrouter`/`google` entry:
+     *  - a prompt naming that provider dies with `ProviderModelNotFoundError`
+     *    (published only as `session.error`, no assistant message - the
+     *    "silent empty turn" of Phase 8 rounds 6-18), and
+     *  - a prompt without an explicit model falls to `Provider.defaultModel()`
+     *    -> the only provider present, `opencode/big-pickle` (every
+     *    `llm.provider=opencode` line in the Phase 8 evidence).
+     * Upstream's own desktop client knows this: after `auth.set` it calls
+     * `instance.dispose()` (packages/app/src/utils/server-compat.ts) so the
+     * next request rebuilds the instance with the credential. This client
+     * skipped that step. The fix is the same call, through the public API:
+     * `POST /global/dispose` (upstream's "provider list changed" reset), then
+     * re-read `GET /provider` - which is what forces the rebuild.
+     */
+    private fun applyCredentialChange(providerID: String): OpenCodeApi.ProviderSnapshot {
+        // A failed dispose is not fatal for the credential write, but it means
+        // the running instance may still be stale - say so instead of hiding it.
+        runCatching { api.dispose() }.onFailure {
+            _state.value = _state.value.copy(notice = "warning: instance reset after $providerID credential change failed: ${it.message}")
+        }
+        return api.providers()
+    }
+
+    private fun defaultModelHint(p: OpenCodeApi.ProviderSnapshot, prefer: String? = null): OpenCodeApi.ModelRef? =
+        DefaultModelHint.pick(p, prefer)
 
     /**
      * Pin the model the client sends with each prompt. Defaults to OpenCode's

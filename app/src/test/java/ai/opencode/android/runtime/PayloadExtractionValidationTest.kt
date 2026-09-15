@@ -37,7 +37,7 @@ class PayloadExtractionValidationTest {
         root: File,
         marker: File,
         files: Map<String, String>,
-        payloadVersion: Int = 5,
+        payloadVersion: Int = RuntimeVersion.PAYLOAD_VERSION,
     ): RuntimeManifest {
         val entries = ArrayList<ManifestEntry>()
         for ((path, content) in files) {
@@ -194,7 +194,7 @@ class PayloadExtractionValidationTest {
     fun anUnsafeManifestEntryIsAReExtraction() {
         val (root, marker, _) = fixture()
         val manifest = RuntimeManifest(
-            payloadVersion = 5,
+            payloadVersion = RuntimeVersion.PAYLOAD_VERSION,
             opencodeCommit = RuntimeVersion.OPENCODE_COMMIT,
             opencodeVersion = RuntimeVersion.OPENCODE_VERSION,
             bunVersion = RuntimeVersion.BUN_VERSION,

@@ -200,7 +200,7 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 P501=1
-case "$VER" in *phase5*) [ -n "$APP_UID" ] && [ -n "$PID" ] && P501=0 ;; esac
+case "$VER" in *phase5*|*phase6*|*phase7*|*phase8*|*phase9*) [ -n "$APP_UID" ] && [ -n "$PID" ] && P501=0 ;; esac
 log "P5-01 versionName=$VER pid=${PID:-none} uid=${APP_UID:-unresolved} marker=$([ -n "$MARKER" ] && echo present || echo ABSENT)"
 p5 01 "$P501" "phase5-apk-installed-and-app-running"
 

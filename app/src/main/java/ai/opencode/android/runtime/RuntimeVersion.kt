@@ -28,7 +28,7 @@ object RuntimeVersion {
      * Bumped whenever the payload layout/manifest changes. Stored in the
      * extraction marker; a mismatch forces re-extraction.
      */
-    const val PAYLOAD_VERSION = 5
+    const val PAYLOAD_VERSION = 6   // 6 = Phase 9: bare OPENCODE_VERSION (plugin install fix)
 
     /**
      * The manifest is generated from the same lockfile as this app. A payload

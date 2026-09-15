@@ -47,7 +47,7 @@ GIT_PIN="v2.48.1"
 ZLIB_PIN="v1.3.1"
 BUN_PIN="1.3.14"
 RG_PIN="15.1.0"
-PAYLOAD_VERSION=5   # Phase 5: launcher loopback audit + Keystore secret layout
+PAYLOAD_VERSION=6   # Phase 9: OPENCODE_VERSION is the bare upstream semver (plugin installs); 5 = Phase 5 launcher/Keystore layout
 STATUS="$ENGINE/build.status"
 : > "$STATUS"
 note() { echo "$*" | tee -a "$STATUS"; }
@@ -323,7 +323,15 @@ await Bun.build({
   external: ["jsonc-parser", "@lydell/node-pty", "bun-pty"],
   define: {
     OPENCODE_MODELS_DEV: generated.modelsData,
-    OPENCODE_VERSION: `"1.18.23-android"`,
+    // PHASE 9 FIX (carried bug): the runtime reports InstallationVersion verbatim
+    // and upstream config.ts installs `@opencode-ai/plugin@<InstallationVersion>`
+    // into every config dir whenever the channel is not "local". npm publishes
+    // 1.18.23 but no "1.18.23-android", so every plugin install failed
+    // (NpmInstallFailedError, Phase 8 §11). The version string must be the bare
+    // upstream semver; the Android provenance lives in OPENCODE_CHANNEL (which
+    // upstream only uses for isPreview()/user-agent - it is not part of the
+    // npm spec) and in the runtime manifest.
+    OPENCODE_VERSION: `"1.18.23"`,
     OPENCODE_CHANNEL: `"android"`,
   },
   files: { "opencode-web-ui.gen.ts": "" },
@@ -380,7 +388,7 @@ for dirpath, _, names in os.walk(stage):
         data = open(p, "rb").read()
         files[rel] = {"sha256": hashlib.sha256(data).hexdigest(), "size": len(data)}
 manifest = {
-    "payloadVersion": int(os.environ.get("PAYLOAD_VERSION", "5")),
+    "payloadVersion": int(os.environ.get("PAYLOAD_VERSION", "6")),
     "opencodeCommit": commit,
     "opencodeVersion": "1.18.23",
     "bunVersion": "1.3.14",

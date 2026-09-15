@@ -414,7 +414,7 @@ class ChatUiGatesTest {
             diagnosticsLoading = false,
             storedProviderIds = "anthropic",
             hardwareBacked = "software",
-            appVersion = "1.18.23-phase5 (6)",
+            appVersion = "1.18.23-phase9 (7)",
             theme = ThemeChoice.DARK,
             dynamicColor = false,
             onThemeChange = { },
