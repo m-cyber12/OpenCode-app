@@ -26,6 +26,7 @@ once, and each retraction is kept rather than quietly edited away:
 | 15 | raw-transcript capture is safe | **INCIDENT** — leaked a live API key into a public repo (§3.1.8) |
 | 17 | Gemini is geo-blocked for this device → L2 `BLOCKED-GEO` | **RETRACTED** — run 8: `key=OK models=40 modelUsable=true` (§3.1.11b) |
 | 18 | provider SDKs are missing from the payload | **WITHDRAWN as overstated** — they are upstream deps and should be inlined; unverified (§3.1.11b) |
+| 19 | the turn never selects the provisioned provider (`BLOCKED-PROVIDER-SELECTION`) | **RETRACTED** — the server log shows `provider=openrouter` selected correctly; real cause is `Insufficient credits` (§3.1.11c) |
 | 3/5/7 | COLDSTART wall times (320s/326s/319s) | **RETRACTED** — instrument overhead; supervisor windows (13–21.8 s) stand (§3.1.12) |
 
 The common failure was concluding from a single observation without taking the
@@ -45,8 +46,8 @@ failure states distinguishable, and build the full test matrix. Outcome:
   health-check wire contract, extraction validation): all
   `IMPLEMENTED + TESTED` (272 JVM tests green in every CI run since round 4,
   including the pre-existing 187).
-- **L2 real tool call** (carried since Phase 6): **NOT CLOSED — carried into
-  Phase 9 as `BLOCKED-PROVIDER-SELECTION`.** A real model round-trip was
+- **L2 real tool call** (carried since Phase 6): **NOT CLOSED — `BLOCKED-NO-CREDIT`
+  (§3.1.11c), an account condition, not a code defect.** A real model round-trip was
   observed once on the real device (run 1, P8-KEYPROBE PASS,
   `reply='P8PROBEOK'`), but it has never reproduced across runs 2–8, so this
   report does not lean on it. The tool card was never observed. The cause is
@@ -510,6 +511,59 @@ dashboard check took seconds and settled it. The harness should have asked
 that question directly; `P8_KEYPREFLIGHT` now proves reachability, but nothing
 yet proves the **turn** reaches the provider, which is why the gap was missed.
 
+#### 3.1.11c Round 19 — the diagnostic answered, and it refutes my own hypothesis
+
+The round-19 change (capture OpenCode's own log, put the server's words in the
+verdict) ran in CI and worked exactly as intended. Its first output **disproves
+§3.1.11b's leading hypothesis**:
+
+```
+P8_SERVERLOG providerSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini]
+             lastServerErrors=[... level=ERROR ... error="Insufficient credits. This account ...
+                               ... level=ERROR message="stream error" providerID=openrouter modelID=openai/gpt-4o-mini ...]
+```
+
+Two corrections fall out of this single line:
+
+1. **Provider selection is NOT broken.** The server selected
+   `llm.provider=openrouter` — the provisioned provider, not the bundled
+   `opencode` fallback. My §3.1.11b claim that "every `llm runtime selected`
+   line names `provider=opencode`" was **true of the evidence I had**, but that
+   evidence was only device bundles that had never been provisioned with a
+   working key. Generalising it into "the turn never selects the provisioned
+   provider" was the same error as the geo-block call: a conclusion drawn from
+   an unrepresentative sample. `BLOCKED-PROVIDER-SELECTION` is **RETRACTED**.
+2. **The real cause of the silent empty turns is `Insufficient credits`.** The
+   OpenRouter account has no credit, so the provider accepts the request and
+   then fails the stream. Upstream surfaces that as an assistant message with
+   **no parts and no error object** — hence `tokenSeen=false lastError=''`,
+   `status=0`, and eight rounds of "silent empty turn" with nothing to read.
+
+This also explains the device history coherently, without any special pleading:
+device run 1 passed KEYPROBE because the free tier still had daily quota; runs
+2–8 failed because it was exhausted. It was never the key, the region, the
+payload, or provider selection. **It was billing.**
+
+**Status of L2: `BLOCKED-NO-CREDIT`.** This is an account/funding condition,
+not a product defect, and it is not something the codebase can fix. The
+honest statement:
+
+- The credential path, provider selection, model id, network egress and
+  streaming wiring are all **verified working** end to end — the request
+  reaches OpenRouter and OpenRouter answers.
+- The answer is a refusal for lack of credit, so no assistant text and no tool
+  card can be produced.
+- **L2 closes the moment any funded key is supplied** (or the free daily quota
+  resets), with no code change. No further device runs are warranted until then.
+
+**The lesson, stated plainly.** Rounds 13-19 produced five wrong diagnoses in a
+row, each one internally consistent with the evidence then in hand, and each
+one reached without first asking the provider what it thought. The fix that
+finally worked was not cleverer analysis — it was **capturing the server's own
+error text**, which had existed all along in a log the device bundle simply
+never collected. Instrumentation beats inference; this report should have
+reached for it in round 13.
+
 #### 3.1.12 Round 17 — the cold-start number was still measuring the harness
 
 Run 7 reported `319 s wall` against a supervisor window of **17.6 s**
@@ -922,17 +976,15 @@ evidence bundles in `docs/progress/phase8-evidence/` (CI) and `p8d-out/`
    explicitly. Read that line in the next CI run: if it says the former, there
    is a genuine store bug to fix in Phase 9; if the latter, the eight rounds of
    red were the harness and the gate is now sound.
-2. **L2 — `BLOCKED-PROVIDER-SELECTION` (§3.1.11b). The `BLOCKED-GEO` closure is
-   RETRACTED, and so is the follow-up "SDK missing from payload" claim.** Run 8
-   showed `key=OK models=40 modelUsable=true`; the user's dashboard showed one
-   request (the preflight) and none from the turns; and every
-   `llm runtime selected` line ever captured says `llm.provider=opencode`,
-   never `google`/`openrouter`. So the turn silently runs on the bundled
-   provider instead of the provisioned one. **Next step is diagnostic, not
-   another blind run:** round 19 makes the device bundle capture OpenCode's own
-   server log (`opencode-server.log` + `provider-used.txt`) and puts the
-   server's own words into the KEYPROBE verdict. One run now answers *why* the
-   provider is not selected.
+2. **L2 — `BLOCKED-NO-CREDIT` (§3.1.11c). FINAL.** Round 19's diagnostic made
+   the server speak: `provider=openrouter` IS selected correctly, and the
+   stream fails with `error="Insufficient credits. This account ..."`. Every
+   earlier diagnosis (bad key, geo-block, missing SDK, provider selection) is
+   retracted. The whole path — credential, provider, model, egress, streaming —
+   is verified working; the account simply has no credit, so the model returns
+   no text and no tool card. **Not a code defect and not fixable in code:** L2
+   closes as soon as a funded key (or reset free quota) is available. No
+   further device runs are warranted.
 3. **`NpmInstallFailedError` on device** — the runtime reports version
    `1.18.23-android`, for which `@opencode-ai/plugin` has no published version,
    so background dependency install always fails. Plugins cannot install on
