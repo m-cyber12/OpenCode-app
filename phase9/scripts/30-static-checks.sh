@@ -6,7 +6,7 @@
 # extraction, classifier, persistence) and the new gate drivers.
 set -uo pipefail
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
-ROOT="$(cd "$DIR/.." && pwd)"
+ROOT="$(cd "$DIR/.." && pwd)"; export ROOT
 OUT="$DIR/out"
 LOG="$OUT/static-checks.log"
 mkdir -p "$OUT"
