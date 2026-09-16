@@ -6919,3 +6919,50 @@
 =======
     Do you wish to create a custom hardware profile? [no] 
 >>>>>>> 53c1e17 (phase8: CI heartbeat (3/7 environment + FRESH emulator))
+### 2026-09-16T18:04:49Z  run=35131462527  step: 1/7 static checks (strings, a11y, lazy lists, ASCII, kotlin comments)
+    head=ee6779a branch=arena/01a0a540-opencode-app log_lines=48
+    --- error digest ---
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/30-static-checks.sh'
+    FATAL: static checks failed (see p8-static-checks.log)
+    --- last 40 log lines ---
+    note: pre-existing non-ASCII byte in spike/workflow/phase2-spike.yml at line 22 (not this phase's file)
+    check-ascii: 11 phase6 files (strict), 13 pre-existing (note only), 0 findings
+    OK   yaml parse phase8/workflow/phase8-hardening.yml
+    FAIL phase8/workflow/phase8-hardening.yml: triggers on ['arena/01a07f92-opencode-app'] but this session works on arena/01a0a540-opencode-app (the workflow would never run)
+    check-workflow-p8: 1 files, pyyaml=True
+    
+    === kotlin nested-block-comment scan (phase5 lesson) ===
+    checked 93 kotlin files, 0 with block-comment anomalies
+    OK   kotlin nested-block-comment scan (phase5 lesson)
+    
+    === kotlin bracket/annotation balance ===
+    check-kotlin-balance: 93 files, 0 findings
+    OK   kotlin bracket/annotation balance
+    
+    === androidTest method names are dex-safe identifiers (D8 rule) ===
+    OK   androidTest method names are dex-safe identifiers (D8 rule)
+    
+    === ui strings + resources ===
+    --- check-ui-strings (hardcoded copy + URL literals)
+    check-ui-strings: 56 kotlin files, 0 hardcoded-copy findings, 0 url findings
+    --- strings.xml sanity: every referenced R.string.* must exist
+    strings.xml: 305 defined, 275 referenced, 0 missing, 30 unused (action_close, action_copy, ask_permission_metadata, ask_permission_request, ask_permission_waiting, availability_detail_label, availability_provider_note, chat_attachment_size)
+    check-ui-strings.sh rc=0
+    OK   ui strings + resources
+    
+    === ui accessibility (contentDescription / labels) ===
+    check-ui-a11y: 17 files, 17 icon/image, 50 button, 10 field call sites, 0 findings
+    OK   ui accessibility (contentDescription / labels)
+    
+    === ui lazy lists (no take(8), no eager forEach) ===
+    check-ui-lists: 17 files, 4 using LazyColumn, 0 findings
+    OK   ui lazy lists (no take(8), no eager forEach)
+    
+    === ui purity (screens are functions of state) ===
+    check-ui-purity: 17 ui files scanned, 0 findings
+    OK   ui purity (screens are functions of state)
+    
+    === static checks summary rc=1 ===
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/30-static-checks.sh'
+    FATAL: static checks failed (see p8-static-checks.log)
+
