@@ -7201,3 +7201,51 @@
     testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
     ########## 6/7 Phase 8 gates (regressions + stress + live model + perf) ##########
 
+### 2026-09-16T18:43:06Z  run=35132822991  step: 7/7 evidence
+    head=fce0cd7 branch=arena/01a0a540-opencode-app log_lines=310
+    --- error digest ---
+    BUILD SUCCESSFUL in 11s
+    BUILD SUCCESSFUL in 1m 45s
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh'
+    --- last 40 log lines ---
+    [2026-09-16T18:36:56Z] === stage D: destructive stress (host-driven, on the relaunch the instrument left behind) ===
+    [2026-09-16T18:37:15Z] === am instrument ai.opencode.android.ui.LiveToolCallGatesTest ===
+    [2026-09-16T18:37:39Z] instrument rc=0 (live)
+    [2026-09-16T18:37:39Z] live runner trailer: OK
+    [2026-09-16T18:37:39Z] screenshots pulled: 0
+    [2026-09-16T18:37:39Z] P8_KEYPROBE SKIP :: :: no model key was provisioned for this run
+    [2026-09-16T18:37:39Z] P8_TOOL SKIP :: :: the provisioned key could not serve a turn, so no tool call can be observed: no turn was attempted yet
+    [2026-09-16T18:37:39Z] P8_CLEANUP PASS :: :: keystoreRemoved=false leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
+    [2026-09-16T18:37:39Z] P8_TOYBOX PASS :: base64|base64 -d|tar xz -C dir works on api=34 (harness staging path; the API-29 half is the real-device question - see report)
+    [2026-09-16T18:37:51Z] P8_CORRUPT PASS :: truncated launcher + sha-mangled server bundle + wiped marker -> re-extracted and healthy (re-extraction lines=4, marker restored)
+    [2026-09-16T18:37:59Z] P8_CRASH PASS :: force-stopped the app process with the server running; relaunch returned to HEALTHY (valid marker -> no re-extraction needed)
+    [2026-09-16T18:38:08Z] P8_SESSIONPERSIST PASS :: P8SESVRFY ok=1 sessionsSeen=4 sessionFound=true userMessageFound=true storedBeforeKill=1 (the server's session store + project pointer survived the process death)
+    [2026-09-16T18:38:11Z] wifi before cut: Control the Wi-Fi manager
+    [2026-09-16T18:38:29Z] P8_NETLOSS FAIL :: status= errName/text='' recover=P8NETRECOVER ok=0 error=Unable to connect. Is the computer able to access the url? userMsgs=? (expected: network-shaped error, clean recovery, no double-send)
+    [2026-09-16T18:38:38Z] app backgrounded; 90s in the background with a turn in flight
+    [2026-09-16T18:40:08Z] P8_BGFG FAIL :: background/foreground: no verdict line (mid-background health=200)
+    [2026-09-16T18:40:11Z] P8_LARGE PASS :: P8LARGEMEASURE createMs=100 listMs=1643 listEntries=2000 contentMs=84 contentOk=1 gitInitAddCommitMs=1000 (P8LARGEBUILD ok=1 files=2001 bytes=52522580 dirMs=229 dir=/data/data/ai.opencode.android.debug/files/workspaces/p8-large)
+    [2026-09-16T18:40:11Z] rebooting the emulator (fresh network state; relaunching the app)
+    [2026-09-16T18:41:13Z] P8_HIST FAIL :: turn 1 failed: Unable to connect. Is the computer able to access the url?
+    turn 2 failed: Unable to connect. Is the computer able to access the url?
+    turn 3 failed: Unable to connect. Is the computer able to access the url?
+    [2026-09-16T18:41:24Z] P8_STORAGE PASS :: free: 4340172KB -> 2496992KB (app), back to 4340344KB after cleanup :: healthy under low storage
+    [2026-09-16T18:41:24Z] === stage E: performance measurement (the report's numbers) ===
+    [2026-09-16T18:41:24Z] rebooting the emulator (fresh network state; relaunching the app)
+    [2026-09-16T18:42:31Z] cold start (supervisor log): EXTRACTING=2026-09-16T18:34:59.882Z HEALTHY=2026-09-16T18:35:04.037Z -> 4155ms
+    /home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh: line 662: MEMINFO: command not found
+    /home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh: line 664: CPU_BEFORE: command not found
+    [2026-09-16T18:43:05Z] P8_PERF PASS :: P8PERF ok=1 model=default(key-free) createMs=129 listMs=22 statusMs=3 filelistMs=80 contentMs=35 shellMs=1261 shellOk=1 ttftMs=-1 turnMs=7641 streamedParts=0 streamTimedOut=0 warmRestartMs=25000 coldWindow='4155'
+    [2026-09-16T18:43:06Z] === evidence pull ===
+    [2026-09-16T18:43:06Z] === SUMMARY ===
+    P8_SUMMARY 2026-09-16T18:43:06Z
+    gates_pass=11 gates_fail=4 gates_skip=4
+    stress_instrument_rc=0 live_instrument_rc=0
+    screenshots=1
+    model_available=0 model=openai/gpt-4o-mini
+    device_abi=x86_64
+    android_sdk=34
+    STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh'
+    phase8 gates rc=1
+    ########## 7/7 evidence ##########
+
