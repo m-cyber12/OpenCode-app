@@ -1,0 +1,16 @@
+16 | }
+17 | 
+18 | export async function call(method, path, body, { directory = DIRECTORY } = {}) {
+19 |   const sep = path.includes("?") ? "&" : "?"
+20 |   const url = BASE + path + sep + "directory=" + encodeURIComponent(directory)
+21 |   const r = await fetch(url, {
+                       ^
+error: Unable to connect. Is the computer able to access the url?
+  path: "http://127.0.0.1:4111/session/ses_f547cf022ffemCYiQmC2Fu2ThW/message?directory=%2Fdata%2Fdata%2Fai.opencode.android.debug%2Ffiles%2Fworkspaces%2Fp8-stress",
+ errno: 0,
+  code: "ConnectionRefused"
+
+      at async call (/data/data/ai.opencode.android.debug/files/tmp/p8js/gates-lib.js:21:19)
+      at async firstAssistantError (/data/data/ai.opencode.android.debug/files/tmp/p8js/p8-netloss.js:30:19)
+
+Bun v1.3.14 (Android x64)

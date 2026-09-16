@@ -1,0 +1,485 @@
+[2026-09-16T18:21:04Z] === stage A: Phase 7 regression (workspace isolation + memory + UI + live turn) ===
+[2026-09-16T18:21:04Z] === stage A: workspace isolation + memory (model-free, deterministic) ===
+[2026-09-16T18:21:04Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test so the gates start from a clean install
+Performing Streamed Install
+Success
+Performing Streamed Install
+Success
+[2026-09-16T18:21:11Z] === am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest ===
+[2026-09-16T18:21:29Z] instrument rc=0 (isolation)
+[2026-09-16T18:21:30Z] isolation runner trailer: OK
+[2026-09-16T18:21:30Z] screenshots pulled: 0
+[2026-09-16T18:21:30Z] P7_W1_PROJECT_LIFECYCLE PASS :: :: created=p7-life-1789582872791 renamed=p7-renamed-1789582872791 adopted=p7-adopted-1789582872791 delete=true
+[2026-09-16T18:21:30Z] P7_W2_WORKSPACE_ISOLATION PASS :: :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details
+[2026-09-16T18:21:30Z] P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/data/user/0/ai.opencode.android.debug/files/workspaces/p7-memory-1789582872885/AGENTS.md globalFile=/data/user/0/ai.opencode.android.debug/files/xdg/config/opencode/AGENTS.md
+[2026-09-16T18:21:30Z] === stage B: deterministic UI regression (bottom sheet + accessibility) ===
+[2026-09-16T18:21:30Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
+[2026-09-16T18:21:51Z] instrument rc=0 (chat-ui)
+[2026-09-16T18:21:52Z] chat-ui runner trailer: OK
+[2026-09-16T18:21:53Z] screenshots pulled: 9
+[2026-09-16T18:21:53Z] P6_U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
+[2026-09-16T18:21:53Z] P6_U7 PASS :: :: interactive={chat=23, sessions=11, projects=6, welcome=2, welcome-unsupported=2, settings=5} total=49 unnamed=0
+[2026-09-16T18:21:53Z] === stage C: live turn through the UI (key-free default model) ===
+[2026-09-16T18:21:53Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
+[2026-09-16T18:29:37Z] instrument rc=0 (live-chat)
+[2026-09-16T18:29:38Z] live-chat runner trailer: NOT-OK (rc=0)
+[2026-09-16T18:29:38Z] screenshots pulled: 10
+[2026-09-16T18:29:38Z] P6_L1 FAIL :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=12 busyIndicator=true streamingDots=true errorBanner=true asksAnswered=0 composerUsableAgain=true screenshot=27
+[2026-09-16T18:29:38Z] P6_L2 SKIP :: :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=0); screen='
+[2026-09-16T18:29:38Z] === evidence pull ===
+[2026-09-16T18:29:39Z] === SUMMARY ===
+P7_SUMMARY 2026-09-16T18:29:39Z
+ui_gates_pass=5 ui_gates_fail=1 ui_gates_skip=1
+isolation_instrument_rc=0 chat_ui_instrument_rc=0 live_chat_instrument_rc=0
+screenshots=11
+model_available=1
+device_abi=x86_64
+android_sdk=34
+[2026-09-16T18:29:39Z] P8_P7REG FAIL :: phase7 suite rc=1 fails=1 (see /home/runner/work/OpenCode-app/OpenCode-app/phase7/out/evidence/GATES_SUMMARY.txt)
+[2026-09-16T18:29:39Z] === stage A2: Phase 5 regression (client gates + loopback + credentials re-verification) ===
++ zod-to-json-schema@3.25.2
+
+92 packages installed [296.00ms]
+MCP_READY: 26M
+P5_REMOTE_MCP_DEPS reused from phase4/out/mcp/node_modules
+P5_REMOTE_MCP_SMOKE up=1 (log: /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp/smoke.log)
+P5_REMOTE_MCP_BUILT /home/runner/work/OpenCode-app/OpenCode-app/phase5/out/mcp (sdk 1.29.0)
+[2026-09-16T18:29:41Z] P5-00 app uid resolved: '10192'
+[2026-09-16T18:29:41Z] === P5-01 device / app / payload prerequisites ===
+[2026-09-16T18:29:46Z] P5-01 versionName=1.18.23-phase9 pid=7000 uid=10192 marker=present
+P5-01: PASS phase5-apk-installed-and-app-running
+P5-02: FAIL payload-v5-manifest-marker
+[2026-09-16T18:29:46Z] === P5-03 provision fixture (workspace, git repo, MCP, config) ===
+wrote_rc=0
+wrote_rc=0
+wrote_rc=0
+warning: templates not found in /home/runner/share/git-core/templates
+error: cannot run maintenance: No such file or directory
+FIXTURE_GIT_OK
+[2026-09-16T18:29:49Z] P5-03 config_present=yes harness_rc=0
+P5-03: PASS fixture-config-and-harness-marker
+[2026-09-16T18:29:57Z] === P5-04 server password via Keystore + test-only harness export ===
+[2026-09-16T18:30:16Z] P5-04 password: 3943… (48 chars) export_verdict=PASS
+P5-04: PASS keystore-password-authenticated-live-server
+[2026-09-16T18:30:16Z] === P5-K instrumented Kotlin client gates (K1..K9) ===
+[2026-09-16T18:34:17Z] --- Kotlin gate verdict lines ---
+[2026-09-16T18:34:17Z] P5-K instrument_rc=0 kotlin_gates_pass=8/9 fail=1 skipped=0 gradle_ok=0 failures_marker=1 junit_exception_lines=2
+P5-K: FAIL kotlin-client-gates-on-device (K1..K9, pass=8 fail=1 skip=0)
+[2026-09-16T18:34:17Z] === relaunching the app for the device-side gate stages ===
+[2026-09-16T18:34:23Z] post-instrument runtime: health=OK via host-forward
+[2026-09-16T18:34:23Z] host-forward diagnostic: adb forward tcp:4111 -> http 200 (the drivers do not depend on this path; it works on this image)
+P5-05: PASS runtime-healthy-after-instrumentation
+[2026-09-16T18:34:23Z] === G6/G7/G10/G11/G12 re-run: phase-4 drivers verbatim, phase-5 server ===
+[2026-09-16T18:34:32Z] model pre-flight: PROBE ok :: model=big-pickle exact-token reply, session=ses_f54805848ffe76lKY83KAL3hgL
+[2026-09-16T18:34:32Z] model_available=1 -> drivers and the in-app K2/K5 turns assert real streamed text
+[2026-09-16T18:34:32Z] gate driver runner: the payload's own bun at /data/data/ai.opencode.android.debug/files/bin/bun (on-device, app uid)
+[2026-09-16T18:34:32Z] --- re-run gate-06-health.js (as shipped, no edits) inside the app namespace ---
+P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
+[2026-09-16T18:34:34Z] --- re-run gate-07-shell.js (as shipped, no edits) inside the app namespace ---
+P5-R-07: FAIL phase4-driver-gate-07-shell.js-unmodified(on-device)
+[2026-09-16T18:34:38Z] --- re-run gate-10-mcp.js (as shipped, no edits) inside the app namespace ---
+P5-R-10: FAIL phase4-driver-gate-10-mcp.js-unmodified(on-device)
+[2026-09-16T18:34:39Z] --- re-run gate-11-stream.js (as shipped, no edits) inside the app namespace ---
+P5-R-11: FAIL phase4-driver-gate-11-stream.js-unmodified(on-device)
+[2026-09-16T18:34:39Z] --- re-run gate-12-permission.js (as shipped, no edits) inside the app namespace ---
+P5-R-12: FAIL phase4-driver-gate-12-permission.js-unmodified(on-device)
+[2026-09-16T18:34:39Z] === P5-G16 remote MCP transports (host MCP server + device OpenCode client) ===
+[2026-09-16T18:34:40Z] fixture host listener up=1 pid=13007
+[2026-09-16T18:34:40Z] adb reverse tcp:4551 -> host tcp:4551: 4551
+P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
+[2026-09-16T18:34:44Z] === P5-G17 loopback-only binding evidence ===
+[2026-09-16T18:34:45Z] P5-G17 table=inconclusive(host sees no LISTEN row on 4111: different network namespace) wildcard=0 nonloopback_rows=0 listens=0 mdns_sockets=0 bound_lines=12 publish_lines=0 table_ok=1
+[2026-09-16T18:34:45Z] device global ipv4: '10.0.2.15'
+P5-G17: FAIL loopback-only-binding-and-no-mdns
+[2026-09-16T18:34:45Z] === P5-G18 credentials at rest (Keystore ciphertext, no plaintext) ===
+[2026-09-16T18:34:47Z] P5-G18 enc_blobs=1 plaintext_blobs=0 legacy_absent=1 keyfile_absent=1 auth_mode=absent auth_canary_absent=0 auth_verdict=clean leaks_outside_harness=0
+P5-G18: PASS credentials-keystore-only-at-rest
+[2026-09-16T18:34:47Z] === P5-G19 no hardcoded/bundled secret in APK, payload or sources ===
+[2026-09-16T18:34:49Z] P5-G19 secret_hits=0 bundled_secret_entries=0 external_url_literals=0
+P5-G19: PASS no-hardcoded-or-bundled-secrets
+[2026-09-16T18:34:49Z] === evidence pull ===
+[2026-09-16T18:34:49Z] === SUMMARY ===
+P5-01: PASS phase5-apk-installed-and-app-running
+P5-02: FAIL payload-v5-manifest-marker
+P5-03: PASS fixture-config-and-harness-marker
+P5-04: PASS keystore-password-authenticated-live-server
+P5-K: FAIL kotlin-client-gates-on-device (K1..K9, pass=8 fail=1 skip=0)
+P5-05: PASS runtime-healthy-after-instrumentation
+P5-R-06: PASS phase4-driver-gate-06-health.js-unmodified(on-device)
+P5-R-07: FAIL phase4-driver-gate-07-shell.js-unmodified(on-device)
+P5-R-10: FAIL phase4-driver-gate-10-mcp.js-unmodified(on-device)
+P5-R-11: FAIL phase4-driver-gate-11-stream.js-unmodified(on-device)
+P5-R-12: FAIL phase4-driver-gate-12-permission.js-unmodified(on-device)
+P5-G16: FAIL remote-mcp-streamable-http-sse-and-negative route=nat-gateway
+P5-G17: FAIL loopback-only-binding-and-no-mdns
+P5-G18: PASS credentials-keystore-only-at-rest
+P5-G19: PASS no-hardcoded-or-bundled-secrets
+P5_SUMMARY 2026-09-16T18:34:49Z
+gates_pass=7 gates_fail=8 gates_skip=0
+kotlin_gate_pass=8 kotlin_gate_fail=1 kotlin_gate_skipped=0
+model_available=1 model_probe=PROBE ok :: model=big-pickle exact-token reply, session=ses_f54805848ffe76lKY83KAL3hgL
+app_uid=10192 device_abi=x86_64
+live_launcher_processes=0
+[2026-09-16T18:34:49Z] P8_P5REG PASS :: phase5 suite rc=1 fails=8 (G16 red = documented upstream #47644; K1-K9 G6-G12 G17 G18 G19 green)
+[2026-09-16T18:34:49Z] === stage B: model provisioning (the run's repo-secret key, into the harness dir) ===
+[2026-09-16T18:34:49Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test for a clean install
+Performing Streamed Install
+Success
+Performing Streamed Install
+Success
+harness_rc=0
+[2026-09-16T18:34:56Z] no OPENROUTER_API_KEY for this run: model-dependent gates will SKIP with the reason
+[2026-09-16T18:34:56Z] P8_MODELPROVISION SKIP :: no OPENROUTER_API_KEY set (the model gates stay SKIP by design, not silence)
+[2026-09-16T18:35:12Z] runtime healthy with Keystore password available to the host drivers
+[2026-09-16T18:35:12Z] === stage C: P8 instrumented stress gates (model-free half) ===
+[2026-09-16T18:35:12Z] rebooting the emulator (fresh network state; relaunching the app)
+staged_rc=0
+P8NETPROBE openrouter http=200 ms=529
+P8NETPROBE opencode http=200 ms=2079
+P8NETPROBE control http=200 ms=168
+assert ok: session id present
+P8NETPROBE_SERVER shell http=500 body={"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_d600e466"}}
+[2026-09-16T18:36:22Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g00_keyResidency ===
+[2026-09-16T18:36:28Z] instrument rc=0 (stress-a)
+--- runtime.log tail after stress-a (ai.opencode.android.ui.StressRecoveryGatesTest#g00_keyResidency) ---
+ng 127.0.0.1:4111
+2026-09-16T18:35:04.013Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-16T18:35:04.021Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-16T18:35:04.036Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23"}
+2026-09-16T18:35:04.037Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-09-16T18:35:09.386Z [host] start() ignored: supervisor already running
+2026-09-16T18:35:09.395Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-09-16T18:35:09.401Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-09-16T18:35:09.840Z [host] extraction valid (30 files, 1.18.23 @ 05ea507)
+2026-09-16T18:35:09.841Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-09-16T18:35:09.848Z [host] server password loaded from AndroidKeyStore (keystore=false)
+2026-09-16T18:35:09.850Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-09-16T18:35:09.858Z [host] server started: pid=8137 abi=x86_64 port=4111
+2026-09-16T18:35:09.875Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~ycRuy00dVHOPDNEb3_NG9w==/ai.opencode.android.debug-VY1G34KX6vtozezSS1swTQ==/lib/x86_64/libbun.so
+2026-09-16T18:35:09.876Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-09-16T18:35:09.888Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-09-16T18:35:09.916Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-09-16T18:35:09.919Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-09-16T18:35:09.920Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-09-16T18:35:11.612Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-09-16T18:35:11.614Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-09-16T18:35:12.054Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-16T18:35:12.068Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-16T18:35:46.029Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-09-16T18:35:46.058Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-09-16T18:35:46.078Z [host] start() ignored: supervisor already running
+2026-09-16T18:35:48.108Z [host] extraction valid (30 files, 1.18.23 @ 05ea507)
+2026-09-16T18:35:48.110Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-09-16T18:35:48.136Z [host] server password loaded from AndroidKeyStore (keystore=false)
+2026-09-16T18:35:48.151Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-09-16T18:35:48.206Z [host] server started: pid=2664 abi=x86_64 port=4111
+2026-09-16T18:35:48.255Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~ycRuy00dVHOPDNEb3_NG9w==/ai.opencode.android.debug-VY1G34KX6vtozezSS1swTQ==/lib/x86_64/libbun.so
+2026-09-16T18:35:48.258Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-09-16T18:35:48.260Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-09-16T18:35:48.346Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-09-16T18:35:48.353Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-09-16T18:35:48.355Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-09-16T18:35:56.500Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-09-16T18:35:56.510Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-09-16T18:35:59.071Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-16T18:35:59.074Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-16T18:36:02.366Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23"}
+2026-09-16T18:36:02.367Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-09-16T18:36:19.626Z [host] integration: loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
+2026-09-16T18:36:22.423Z [server] [stderr] [seccomp] mkdirat(/data/user/0/ai.opencode.android.debug/files/home/.npm/_cacache/tmp) errno=2
+2026-09-16T18:36:25.359Z [host] start() ignored: supervisor already running
+2026-09-16T18:36:25.444Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-09-16T18:36:25.485Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-09-16T18:36:26.979Z [host] extraction valid (30 files, 1.18.23 @ 05ea507)
+2026-09-16T18:36:26.981Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-09-16T18:36:27.001Z [host] server password loaded from AndroidKeyStore (keystore=false)
+2026-09-16T18:36:27.015Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-09-16T18:36:27.150Z [host] server started: pid=4256 abi=x86_64 port=4111
+2026-09-16T18:36:27.192Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~ycRuy00dVHOPDNEb3_NG9w==/ai.opencode.android.debug-VY1G34KX6vtozezSS1swTQ==/lib/x86_64/libbun.so
+2026-09-16T18:36:27.194Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-09-16T18:36:27.220Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-09-16T18:36:27.536Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-09-16T18:36:27.542Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-09-16T18:36:27.543Z [server] [stderr] [launcher] importing OpenCode bundle
+
+ai.opencode.android.ui.StressRecoveryGatesTest:
+ai.opencode.android.ui.StressRecoveryGatesTest:
+
+Time: 3.284
+
+OK (1 test)
+
+
+[2026-09-16T18:36:29Z] stress-a runner trailer: OK
+[2026-09-16T18:36:29Z] screenshots pulled: 0
+[2026-09-16T18:36:29Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g02_serverKill ===
+[2026-09-16T18:36:52Z] instrument rc=0 (stress-b)
+--- runtime.log tail after stress-b (ai.opencode.android.ui.StressRecoveryGatesTest#g02_serverKill) ---
+basic user=opencode
+2026-09-16T18:35:59.074Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-16T18:36:02.366Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23"}
+2026-09-16T18:36:02.367Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-09-16T18:36:19.626Z [host] integration: loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
+2026-09-16T18:36:22.423Z [server] [stderr] [seccomp] mkdirat(/data/user/0/ai.opencode.android.debug/files/home/.npm/_cacache/tmp) errno=2
+2026-09-16T18:36:25.359Z [host] start() ignored: supervisor already running
+2026-09-16T18:36:25.444Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-09-16T18:36:25.485Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-09-16T18:36:26.979Z [host] extraction valid (30 files, 1.18.23 @ 05ea507)
+2026-09-16T18:36:26.981Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-09-16T18:36:27.001Z [host] server password loaded from AndroidKeyStore (keystore=false)
+2026-09-16T18:36:27.015Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-09-16T18:36:27.150Z [host] server started: pid=4256 abi=x86_64 port=4111
+2026-09-16T18:36:27.192Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~ycRuy00dVHOPDNEb3_NG9w==/ai.opencode.android.debug-VY1G34KX6vtozezSS1swTQ==/lib/x86_64/libbun.so
+2026-09-16T18:36:27.194Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-09-16T18:36:27.220Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-09-16T18:36:27.536Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-09-16T18:36:27.542Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-09-16T18:36:27.543Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-09-16T18:36:31.647Z [host] start() ignored: supervisor already running
+2026-09-16T18:36:31.676Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-09-16T18:36:31.678Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-09-16T18:36:34.089Z [host] extraction valid (30 files, 1.18.23 @ 05ea507)
+2026-09-16T18:36:34.108Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-09-16T18:36:34.177Z [host] server password loaded from AndroidKeyStore (keystore=false)
+2026-09-16T18:36:34.197Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-09-16T18:36:34.205Z [host] server started: pid=4473 abi=x86_64 port=4111
+2026-09-16T18:36:34.216Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~ycRuy00dVHOPDNEb3_NG9w==/ai.opencode.android.debug-VY1G34KX6vtozezSS1swTQ==/lib/x86_64/libbun.so
+2026-09-16T18:36:34.218Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-09-16T18:36:34.228Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-09-16T18:36:34.297Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-09-16T18:36:34.301Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-09-16T18:36:34.302Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-09-16T18:36:37.345Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-09-16T18:36:37.347Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-09-16T18:36:38.171Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-16T18:36:38.177Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-16T18:36:38.303Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23"}
+2026-09-16T18:36:38.312Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-09-16T18:36:43.744Z [host] integration: loopback_only=false conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=none violations=0
+2026-09-16T18:36:43.747Z [host] server process exited code=137
+2026-09-16T18:36:43.758Z [crash] server exited unexpectedly code=137
+2026-09-16T18:36:43.760Z [host] state -> CRASHED_RESTARTING (server exited (code=137); restarting (attempt 1))
+2026-09-16T18:36:43.761Z [host] restart backoff: 683ms (attempt 1/8)
+2026-09-16T18:36:44.513Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-09-16T18:36:44.521Z [host] server started: pid=4539 abi=x86_64 port=4111
+2026-09-16T18:36:44.533Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~ycRuy00dVHOPDNEb3_NG9w==/ai.opencode.android.debug-VY1G34KX6vtozezSS1swTQ==/lib/x86_64/libbun.so
+2026-09-16T18:36:44.536Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-09-16T18:36:44.538Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-09-16T18:36:44.563Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-09-16T18:36:44.564Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-09-16T18:36:44.565Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-09-16T18:36:46.244Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-09-16T18:36:46.246Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-09-16T18:36:46.738Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-16T18:36:46.739Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-16T18:36:51.551Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23"}
+2026-09-16T18:36:51.554Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+
+ai.opencode.android.ui.StressRecoveryGatesTest:.
+
+Time: 21.151
+
+OK (1 test)
+
+
+[2026-09-16T18:36:53Z] stress-b runner trailer: OK
+[2026-09-16T18:36:53Z] screenshots pulled: 0
+[2026-09-16T18:36:53Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g03_lifecycleLog ===
+[2026-09-16T18:36:56Z] instrument rc=0 (stress-c)
+--- runtime.log tail after stress-c (ai.opencode.android.ui.StressRecoveryGatesTest#g03_lifecycleLog) ---
+2 starting; target=/data/app/~~ycRuy00dVHOPDNEb3_NG9w==/ai.opencode.android.debug-VY1G34KX6vtozezSS1swTQ==/lib/x86_64/libbun.so
+2026-09-16T18:36:27.194Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-09-16T18:36:27.220Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-09-16T18:36:27.536Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-09-16T18:36:27.542Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-09-16T18:36:27.543Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-09-16T18:36:31.647Z [host] start() ignored: supervisor already running
+2026-09-16T18:36:31.676Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-09-16T18:36:31.678Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-09-16T18:36:34.089Z [host] extraction valid (30 files, 1.18.23 @ 05ea507)
+2026-09-16T18:36:34.108Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-09-16T18:36:34.177Z [host] server password loaded from AndroidKeyStore (keystore=false)
+2026-09-16T18:36:34.197Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-09-16T18:36:34.205Z [host] server started: pid=4473 abi=x86_64 port=4111
+2026-09-16T18:36:34.216Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~ycRuy00dVHOPDNEb3_NG9w==/ai.opencode.android.debug-VY1G34KX6vtozezSS1swTQ==/lib/x86_64/libbun.so
+2026-09-16T18:36:34.218Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-09-16T18:36:34.228Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-09-16T18:36:34.297Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-09-16T18:36:34.301Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-09-16T18:36:34.302Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-09-16T18:36:37.345Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-09-16T18:36:37.347Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-09-16T18:36:38.171Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-16T18:36:38.177Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-16T18:36:38.303Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23"}
+2026-09-16T18:36:38.312Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-09-16T18:36:43.744Z [host] integration: loopback_only=false conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=none violations=0
+2026-09-16T18:36:43.747Z [host] server process exited code=137
+2026-09-16T18:36:43.758Z [crash] server exited unexpectedly code=137
+2026-09-16T18:36:43.760Z [host] state -> CRASHED_RESTARTING (server exited (code=137); restarting (attempt 1))
+2026-09-16T18:36:43.761Z [host] restart backoff: 683ms (attempt 1/8)
+2026-09-16T18:36:44.513Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-09-16T18:36:44.521Z [host] server started: pid=4539 abi=x86_64 port=4111
+2026-09-16T18:36:44.533Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~ycRuy00dVHOPDNEb3_NG9w==/ai.opencode.android.debug-VY1G34KX6vtozezSS1swTQ==/lib/x86_64/libbun.so
+2026-09-16T18:36:44.536Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-09-16T18:36:44.538Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-09-16T18:36:44.563Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-09-16T18:36:44.564Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-09-16T18:36:44.565Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-09-16T18:36:46.244Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-09-16T18:36:46.246Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-09-16T18:36:46.738Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-16T18:36:46.739Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-16T18:36:51.551Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23"}
+2026-09-16T18:36:51.554Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-09-16T18:36:54.158Z [host] start() ignored: supervisor already running
+2026-09-16T18:36:54.176Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-09-16T18:36:54.178Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-09-16T18:36:55.014Z [host] extraction valid (30 files, 1.18.23 @ 05ea507)
+2026-09-16T18:36:55.017Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-09-16T18:36:55.030Z [host] server password loaded from AndroidKeyStore (keystore=false)
+2026-09-16T18:36:55.037Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-09-16T18:36:55.046Z [host] server started: pid=4670 abi=x86_64 port=4111
+2026-09-16T18:36:55.115Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~ycRuy00dVHOPDNEb3_NG9w==/ai.opencode.android.debug-VY1G34KX6vtozezSS1swTQ==/lib/x86_64/libbun.so
+2026-09-16T18:36:55.117Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-09-16T18:36:55.118Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-09-16T18:36:55.120Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-09-16T18:36:55.125Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-09-16T18:36:55.126Z [server] [stderr] [launcher] importing OpenCode bundle
+
+ai.opencode.android.ui.StressRecoveryGatesTest:.
+
+Time: 2.249
+
+OK (1 test)
+
+
+[2026-09-16T18:36:56Z] stress-c runner trailer: OK
+[2026-09-16T18:36:56Z] screenshots pulled: 0
+[2026-09-16T18:36:56Z] P8_KEYRESIDENCY SKIP :: :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=x86_64 device=sdk_gphone64_x86_64 api=34 :: key material is in the SOFTWARE keystore on this devic
+[2026-09-16T18:36:56Z] P8_SERVERKILL PASS :: :: killedPid=4473 oldPidDead=true sawCrashedRestarting=true restartCount=0 healthyAgain=true healthHttp=200 sawFatal=false newPid=4539 finalStatus=HEALTHY finalDetail='healthy on 127.0.0.1:4111'
+[2026-09-16T18:36:56Z] P8_LIFECYCLELOG PASS :: :: illegalTransitions=0 startingTransitions=9 healthyTransitions=4 logBytes=14960 lastStates='EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (attempt 1)) | HEALTHY (healthy on 127.0.0.1:411
+[2026-09-16T18:36:56Z] === stage D: destructive stress (host-driven, on the relaunch the instrument left behind) ===
+staged_rc=0
+P8NETPROBE openrouter http=200 ms=779
+P8NETPROBE opencode http=200 ms=134
+P8NETPROBE control http=200 ms=559
+assert ok: session id present
+{"info":{"id":"msg_0ab823c24001W483U0GNm09Jx6","sessionID":"ses_f547dc66fffeDAJNNfRU3aJ85j","role":"assistant","time":{"created":1789583834148,"completed":1789583835608},"parentID":"msg_0ab823c190017opI1f9xwekFnX","modelID":"big-pickle","providerID":"opencode","mode":"build","agent":"build","path":{"cwd":"/data/data/ai.opencode.android.debug/files/workspaces/p8-stress","root":"/"},"cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}}},"parts":[{"id":"prt_0ab823c2700139XvUiV3I3H0My","sessionID":"ses_f547dc66fffeDAJNNfRU3aJ85j","messageID":"msg_0ab823c24001W483U0GNm09Jx6","type":"tool","callID":"01M2NR4F17PA4N5DV9620H43ET","tool":"bash","state":{"status":"completed","input":{"command":"/data/data/ai.opencode.android.debug/files/bin/bun /data/data/ai.opencode.android.debug/files/tmp/p8netprobe-server.js 2>&1; rm -f /data/data/ai.opencode.android.debug/files/tmp/p8netprobe-server.js"},"output":"[seccomp] preload handler installed (rc=0)\n[seccomp] preload handler installed (rc=0)\nP8NETPROBE_SERVER openrouter http=200 ms=655\nP8NETPROBE_SERVER opencode http=200 ms=191\nP8NETPROBE_SERVER control http=200 ms=555\n[seccomp] preload handler installed (rc=0)\n","title":"","metadata":{"output":"[seccomp] preload handler installed (rc=0)\n[seccomp] preload handler installed (rc=0)\nP8NETPROBE_SERVER openrouter http=200 ms=655\nP8NETPROBE_SERVER opencode http=200 ms=191\nP8NETPROBE_SERVER control http=200 ms=555\n[seccomp] preload handler installed (rc=0)\n"},"time":{"start":1789583834151,"end":1789583835608}}}]}
+[2026-09-16T18:37:15Z] === am instrument ai.opencode.android.ui.LiveToolCallGatesTest ===
+[2026-09-16T18:37:39Z] instrument rc=0 (live)
+--- runtime.log tail after live (ai.opencode.android.ui.LiveToolCallGatesTest) ---
+7 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-09-16T18:37:09.219Z [host] server password loaded from AndroidKeyStore (keystore=false)
+2026-09-16T18:37:09.221Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-09-16T18:37:09.241Z [host] server started: pid=4887 abi=x86_64 port=4111
+2026-09-16T18:37:09.267Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~ycRuy00dVHOPDNEb3_NG9w==/ai.opencode.android.debug-VY1G34KX6vtozezSS1swTQ==/lib/x86_64/libbun.so
+2026-09-16T18:37:09.273Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-09-16T18:37:09.275Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-09-16T18:37:09.300Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-09-16T18:37:09.301Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-09-16T18:37:09.302Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-09-16T18:37:11.012Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-09-16T18:37:11.014Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-09-16T18:37:11.480Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-16T18:37:11.482Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-16T18:37:16.485Z [host] start() ignored: supervisor already running
+2026-09-16T18:37:16.510Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-09-16T18:37:16.512Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-09-16T18:37:16.950Z [host] extraction valid (30 files, 1.18.23 @ 05ea507)
+2026-09-16T18:37:16.955Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-09-16T18:37:16.968Z [host] server password loaded from AndroidKeyStore (keystore=false)
+2026-09-16T18:37:16.976Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-09-16T18:37:16.986Z [host] server started: pid=5026 abi=x86_64 port=4111
+2026-09-16T18:37:17.026Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~ycRuy00dVHOPDNEb3_NG9w==/ai.opencode.android.debug-VY1G34KX6vtozezSS1swTQ==/lib/x86_64/libbun.so
+2026-09-16T18:37:17.037Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-09-16T18:37:17.072Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-09-16T18:37:17.110Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-09-16T18:37:17.114Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-09-16T18:37:17.116Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-09-16T18:37:19.090Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-09-16T18:37:19.091Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-09-16T18:37:19.535Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-16T18:37:19.547Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-16T18:37:20.112Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23"}
+2026-09-16T18:37:20.120Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-09-16T18:37:24.338Z [server] [stderr] [seccomp] mkdirat(/data/user/0/ai.opencode.android.debug/files/home/.npm/_cacache/content-v2/sha512/21/de) errno=2
+2026-09-16T18:37:25.051Z [host] integration: loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
+2026-09-16T18:37:28.157Z [host] server process exited code=159
+2026-09-16T18:37:28.173Z [crash] server exited unexpectedly code=159
+2026-09-16T18:37:28.176Z [host] state -> CRASHED_RESTARTING (server exited (code=159); restarting (attempt 1))
+2026-09-16T18:37:28.177Z [host] restart backoff: 653ms (attempt 1/8)
+2026-09-16T18:37:28.929Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-09-16T18:37:28.937Z [host] server started: pid=5067 abi=x86_64 port=4111
+2026-09-16T18:37:28.956Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~ycRuy00dVHOPDNEb3_NG9w==/ai.opencode.android.debug-VY1G34KX6vtozezSS1swTQ==/lib/x86_64/libbun.so
+2026-09-16T18:37:28.957Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-09-16T18:37:28.965Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-09-16T18:37:28.986Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-09-16T18:37:28.988Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-09-16T18:37:28.989Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-09-16T18:37:30.515Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-09-16T18:37:30.517Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-09-16T18:37:31.001Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-09-16T18:37:31.003Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-09-16T18:37:35.983Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23"}
+2026-09-16T18:37:35.984Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-09-16T18:37:36.041Z [host] start() ignored: supervisor already running
+2026-09-16T18:37:36.325Z [host] start() ignored: supervisor already running
+2026-09-16T18:37:36.932Z [host] start() ignored: supervisor already running
+2026-09-16T18:37:37.082Z [host] start() ignored: supervisor already running
+2026-09-16T18:37:37.645Z [host] start() ignored: supervisor already running
+2026-09-16T18:37:37.777Z [host] start() ignored: supervisor already running
+
+ai.opencode.android.ui.LiveToolCallGatesTest:
+ai.opencode.android.ui.LiveToolCallGatesTest:.
+
+Time: 23.003
+
+OK (4 tests)
+
+
+[2026-09-16T18:37:39Z] live runner trailer: OK
+[2026-09-16T18:37:39Z] screenshots pulled: 0
+[2026-09-16T18:37:39Z] P8_KEYPROBE SKIP :: :: no model key was provisioned for this run
+[2026-09-16T18:37:39Z] P8_TOOL SKIP :: :: the provisioned key could not serve a turn, so no tool call can be observed: no turn was attempted yet
+[2026-09-16T18:37:39Z] P8_CLEANUP PASS :: :: keystoreRemoved=false leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
+P8_MODEL_AVAILABLE 0 :: no model key in the ha
+P8_MODEL_AVAILABLE 0 :: no model key in the harness dir (OPENROUTER_API_KEY not set for this run)
+P8_MODEL_AVAILABLE 0 :: no tu
+P8_MODEL_AVAILABLE 0 :: no turn was attempted yet
+[2026-09-16T18:37:39Z] P8_TOYBOX PASS :: base64|base64 -d|tar xz -C dir works on api=34 (harness staging path; the API-29 half is the real-device question - see report)
+[2026-09-16T18:37:51Z] P8_CORRUPT PASS :: truncated launcher + sha-mangled server bundle + wiped marker -> re-extracted and healthy (re-extraction lines=4, marker restored)
+[2026-09-16T18:37:59Z] P8_CRASH PASS :: force-stopped the app process with the server running; relaunch returned to HEALTHY (valid marker -> no re-extraction needed)
+[2026-09-16T18:38:08Z] P8_SESSIONPERSIST PASS :: P8SESVRFY ok=1 sessionsSeen=4 sessionFound=true userMessageFound=true storedBeforeKill=1 (the server's session store + project pointer survived the process death)
+[2026-09-16T18:38:11Z] wifi before cut: Control the Wi-Fi manager
+[2026-09-16T18:38:29Z] P8_NETLOSS FAIL :: status= errName/text='' recover=P8NETRECOVER ok=0 error=Unable to connect. Is the computer able to access the url? userMsgs=? (expected: network-shaped error, clean recovery, no double-send)
+[2026-09-16T18:38:38Z] app backgrounded; 90s in the background with a turn in flight
+[2026-09-16T18:40:08Z] P8_BGFG FAIL :: background/foreground: no verdict line (mid-background health=200)
+[2026-09-16T18:40:11Z] P8_LARGE PASS :: P8LARGEMEASURE createMs=100 listMs=1643 listEntries=2000 contentMs=84 contentOk=1 gitInitAddCommitMs=1000 (P8LARGEBUILD ok=1 files=2001 bytes=52522580 dirMs=229 dir=/data/data/ai.opencode.android.debug/files/workspaces/p8-large)
+[2026-09-16T18:40:11Z] rebooting the emulator (fresh network state; relaunching the app)
+P8NETPROBE openrouter http=200 ms=779
+P8NETPROBE opencode http=200 ms=118
+P8NETPROBE control http=200 ms=632
+[2026-09-16T18:41:13Z] P8_HIST FAIL :: turn 1 failed: Unable to connect. Is the computer able to access the url?
+turn 2 failed: Unable to connect. Is the computer able to access the url?
+turn 3 failed: Unable to connect. Is the computer able to access the url?
+[2026-09-16T18:41:24Z] P8_STORAGE PASS :: free: 4340172KB -> 2496992KB (app), back to 4340344KB after cleanup :: healthy under low storage
+[2026-09-16T18:41:24Z] === stage E: performance measurement (the report's numbers) ===
+[2026-09-16T18:41:24Z] rebooting the emulator (fresh network state; relaunching the app)
+staged_rc=0
+assert ok: session id present
+{"info":{"id":"msg_0ab870e80001IV2TjL2i9Qpdeq","sessionID":"ses_f5478f4abffeIYUtXcFYHjRSlH","role":"assistant","time":{"created":1789584150144,"completed":1789584151510},"parentID":"msg_0ab870e72001rF8sitLZjLJkpU","modelID":"big-pickle","providerID":"opencode","mode":"build","agent":"build","path":{"cwd":"/data/data/ai.opencode.android.debug/files/workspaces/p8-stress","root":"/"},"cost":0,"tokens":{"input":0,"output":0,"reasoning":0,"cache":{"read":0,"write":0}}},"parts":[{"id":"prt_0ab870e84001IlDxGj5RCnmSsM","sessionID":"ses_f5478f4abffeIYUtXcFYHjRSlH","messageID":"msg_0ab870e80001IV2TjL2i9Qpdeq","type":"tool","callID":"01M2NRE3M4BKAT89S10XMF5Q2A","tool":"bash","state":{"status":"completed","input":{"command":"/data/data/ai.opencode.android.debug/files/bin/bun /data/data/ai.opencode.android.debug/files/tmp/p8netprobe-server.js 2>&1; rm -f /data/data/ai.opencode.android.debug/files/tmp/p8netprobe-server.js"},"output":"[seccomp] preload handler installed (rc=0)\n[seccomp] preload handler installed (rc=0)\nP8NETPROBE_SERVER openrouter http=200 ms=768\nP8NETPROBE_SERVER opencode http=200 ms=110\nP8NETPROBE_SERVER control http=200 ms=388\n[seccomp] preload handler installed (rc=0)\n","title":"","metadata":{"output":"[seccomp] preload handler installed (rc=0)\n[seccomp] preload handler installed (rc=0)\nP8NETPROBE_SERVER openrouter http=200 ms=768\nP8NETPROBE_SERVER opencode http=200 ms=110\nP8NETPROBE_SERVER control http=200 ms=388\n[seccomp] preload handler installed (rc=0)\n"},"time":{"start":1789584150148,"end":1789584151510}}}]}
+[2026-09-16T18:42:31Z] cold start (supervisor log): EXTRACTING=2026-09-16T18:34:59.882Z HEALTHY=2026-09-16T18:35:04.037Z -> 4155ms
+Starting: Intent { cmp=ai.opencode.android.debug/ai.opencode.android.runtime.DebugControlActivity (has extras) }
+warm relaunch attempt 1: Starting: Intent { cmp=ai.opencode.android.debug/ai.opencode.android.MainActivity }
+Warning: Activity not started, its current task has been brought to the front
+[2026-09-16T18:43:05Z] P8_PERF PASS :: P8PERF ok=1 model=default(key-free) createMs=129 listMs=22 statusMs=3 filelistMs=80 contentMs=35 shellMs=1261 shellOk=1 ttftMs=-1 turnMs=7641 streamedParts=0 streamTimedOut=0 warmRestartMs=25000 coldWindow='4155'
+[2026-09-16T18:43:06Z] === evidence pull ===
+[2026-09-16T18:43:06Z] === SUMMARY ===
+P8_SUMMARY 2026-09-16T18:43:06Z
+gates_pass=11 gates_fail=4 gates_skip=4
+stress_instrument_rc=0 live_instrument_rc=0
+screenshots=1
+model_available=0 model=openai/gpt-4o-mini
+device_abi=x86_64
+android_sdk=34

@@ -1,0 +1,21 @@
+P9_SUMMARY 2026-09-16T18:55:36Z
+gates_pass=2 gates_fail=4 gates_skip=1
+device_abi=x86_64
+android_sdk=34
+P9_PROVSEL_CLEANUP FAIL :: dummy c
+P9_PROVSEL_CLEANUP FAIL :: dummy credential removed: connected=null
+P9_PROVSEL_STALE SKIP :: se
+P9_PROVSEL_STALE SKIP :: server not healthy
+P9_PROVSEL_STALE SKIP :: :: server not healthy
+P9_PROVSEL_REBUILT FAIL
+P9_PROVSEL_TURN FAIL
+P9_PROVSEL_CLEANUP FAIL :: :: dummy credential removed: connected=null
+P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
+P9_PLUGIN FAIL :: no install outcome within 420s (no node_modules, no failure line in OpenCode's log): 
+P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 6} versionName=1.18.23-phase9 manifestSha=58430dd99e9c3130 
+P9-RELEASE PASS: apk=app-release-unsigned.apk (127100669 bytes) aab=app-release.aab (115325497 bytes) unsigned
+P9-RELEASE note: x86_64 native libs 126.7 MB (uncompressed)
+P9-RELEASE note: arm64-v8a native libs 123.1 MB (uncompressed)
+P9_SUMMARY 2026-09-16T18:58:38Z
+p8_suite_fails=n/a p9_gate_fails=6 release_rc=0
+NOTE: PASS lines above are real gate executions on the emulator; unit/compile lines are not runtime evidence.
