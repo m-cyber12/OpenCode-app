@@ -45,14 +45,12 @@ files, and the loopback server that can run a shell in the app's sandbox.
    redacts all captured errors, but the key remains in Git history and **must
    be treated as compromised. Revocation at <https://aistudio.google.com/apikey>
    is the required action and is the repository owner's to perform**; no
-   history rewrite is needed once it is revoked. Status at the time of this
-   document: **user action, not confirmable from the repository**.
+   history rewrite is needed once it is revoked. Status: **revoked by the repository owner on 2026-09-16** (owner's
+   statement; not verifiable from the repository).
 2. **`OPENROUTER_API_KEY` repository secret** (Phase 8 temporary key for
    model-dependent CI gates). Nothing in the pipeline requires it - without it
    the model gates SKIP with the reason on record. The automation account
-   cannot manage repository secrets (403); **removal under
-   *Settings -> Secrets and variables -> Actions* is the repository owner's
-   action**. If a future run needs a live model, add a fresh short-lived key
+   cannot manage repository secrets (403); **removed by the repository owner on 2026-09-16**. If a future run needs a live model, add a fresh short-lived key
    for that run and remove it afterwards.
 3. Every phase suite removes injected credentials from the device at its end
    (P8-CLEANUP) and the Phase 9 provider gate removes its dummy key

@@ -71,7 +71,10 @@ python3 "$ROOT/phase6/scripts/check-ascii.py" "$ROOT" 2>&1 | tee -a "$LOG"
 # OWN sessions' branches, so a branch check against this session's branch would
 # fail on them by construction (the Phase 7 regression runs from its script,
 # phase7/scripts/20-gates.sh, not from its workflow).
-python3 "$ROOT/phase8/scripts/check-workflow-p8.py" "$ROOT" 2>&1 | tee -a "$LOG"
+# When a later phase's orchestrator folds this suite in (Phase 9), the workflow
+# that must trigger on the current branch is THAT phase's template, not the
+# Phase 8 one (whose branch is historical). P8_WORKFLOW_PHASE selects it.
+python3 "$ROOT/phase8/scripts/check-workflow-p8.py" "$ROOT" "${P8_WORKFLOW_PHASE:-phase8}" 2>&1 | tee -a "$LOG"
 [ "${PIPESTATUS[0]}" = 0 ] || RC=1
 
 # ---- 4. Kotlin lexical sanity (no compiler available locally) ---------------

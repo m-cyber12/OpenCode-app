@@ -26,9 +26,9 @@ written, wired and statically checked — but they have **not run yet**.
 | Release APK/AAB + runtime artifacts | **NOT PRODUCED YET** — produced by stage 6 of the pipeline (`assembleRelease`/`bundleRelease`, `runtime-payload-engine.tar.gz`, manifest) and uploaded as `opencode-android-release`. Unsigned unless `P9_KEYSTORE_*` secrets are set. |
 | Capability matrix, README, ARCHITECTURE, RUNTIME, SECURITY, TESTING | IMPLEMENTED (written from executed Phase 4–8 evidence; every row labelled) |
 | `versions.lock` accurate | IMPLEMENTED + TESTED (mechanically: `check-lock.py` OK locally against `RuntimeVersion.kt` and `versionName`; the manifest half runs in CI as `P9_LOCK`) |
-| Phase 8 temporary secrets removed | **BLOCKED (user action)**: `OPENROUTER_API_KEY` repo secret and the leaked Gemini key (commit `52e7c4d`) can only be removed/revoked by the repository owner; not confirmable from the repository |
+| Phase 8 temporary secrets removed | **DONE (owner-confirmed 2026-09-16)**: `OPENROUTER_API_KEY` repo secret deleted and the Gemini key from commit `52e7c4d` revoked by the repository owner; the repository itself cannot verify either, so this rests on the owner's statement |
 | Permanent limitations documented (G16 remote MCP, toybox on API 29, keystore residency) | IMPLEMENTED (README, RUNTIME, SECURITY, CAPABILITY-MATRIX) |
-| Check against `12-FINAL-ACCEPTANCE.md` / `11-FINAL-ACCEPTANCE.md` | **BLOCKED**: no such file exists in the repository or its history (`git log --all`); §7 checks against the acceptance criteria stated in the Phase 9 brief instead |
+| Check against `11-FINAL-ACCEPTANCE.md` | **PENDING (joint review)**: the checklist is part of the project brief, not of the repository, and is reviewed together with the project owner after Phase 9 completes; §7 pre-checks the criteria stated in the Phase 9 brief |
 | L2 real tool card | still **BLOCKED-NO-CREDIT** (unchanged from Phase 8; needs a funded key — see §3) |
 
 ## 1. Carried bug 1 — provider selection falls back to the bundled `opencode` provider
@@ -173,14 +173,13 @@ their source cited; per-ABI release sizes will come from the pipeline.
 
 ## 6. Secrets
 
-- `OPENROUTER_API_KEY` repository secret: **removal pending — user action**
-  (bot: 403 on secrets). The pipeline does not need it; model gates SKIP.
-- Gemini key in commit `52e7c4d`: **revocation pending — user action**; the
-  repository cannot confirm it. Documented in SECURITY.md as compromised until
-  revoked.
+- `OPENROUTER_API_KEY` repository secret: **deleted by the owner (2026-09-16)**.
+  The pipeline does not need it; model gates SKIP.
+- Gemini key in commit `52e7c4d`: **revoked by the owner (2026-09-16)**. It
+  remains in Git history as a dead credential; no history rewrite needed.
 - Phase 9 gates use a dummy key and remove it (`P9_PROVSEL_CLEANUP`).
 
-## 7. Acceptance check (against the Phase 9 brief; no `12-FINAL-ACCEPTANCE.md` exists in the repo)
+## 7. Acceptance pre-check (against the Phase 9 brief; the `11-FINAL-ACCEPTANCE.md` checklist is reviewed with the project owner separately)
 
 | Criterion | Result |
 |---|---|
@@ -192,7 +191,7 @@ their source cited; per-ABI release sizes will come from the pipeline.
 | README/ARCHITECTURE/RUNTIME/SECURITY/TESTING incl. Android versions/ABI, limitations, APK size, perf, troubleshooting | Done |
 | `versions.lock` accurate | Done + mechanically checked |
 | Release APK/AAB + runtime artifacts + final test report | Artifacts: produced by the pipeline (**not yet**); test report: this document + `GATES_SUMMARY.txt` when the run completes |
-| Phase 8 temp secrets removed | **User action pending** |
+| Phase 8 temp secrets removed | Done (owner-confirmed) |
 | Honesty labels on every claim | Applied |
 
 ## 8. What the next run will tell us (and what to do)

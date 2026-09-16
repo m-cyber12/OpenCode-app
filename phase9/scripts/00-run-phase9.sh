@@ -147,7 +147,7 @@ else
   # The Phase 8 orchestrator boots the emulator, builds the APKs, runs everything
   # and writes phase8/out/evidence/GATES_SUMMARY.txt. Its own evidence push is
   # disabled (P8_SKIP_PUSH) - Phase 9 publishes one evidence tree.
-  P8_SKIP_PUSH=1 bash "$ROOT/phase8/scripts/00-run-phase8.sh" >> "$MAINLOG" 2>&1 || P8RC=$?
+  P8_SKIP_PUSH=1 P8_WORKFLOW_PHASE=phase9 bash "$ROOT/phase8/scripts/00-run-phase8.sh" >> "$MAINLOG" 2>&1 || P8RC=$?
   P8SUM="$ROOT/phase8/out/evidence/GATES_SUMMARY.txt"
   if [ -f "$P8SUM" ]; then
     # Every Phase 8 / Phase 7 / Phase 5 verdict, by name, into the release summary.
