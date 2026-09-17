@@ -13,7 +13,7 @@ evidence bundle; anything without one is labelled.
 | git | v2.48.1 | upstream source, Android NDK 28.2.13676358, `NO_PERL NO_CURL NO_OPENSSL NO_EXPAT`, bionic | same (init/add/commit/diff/log: P5 G-gates, P8-LARGE) |
 | ripgrep | 15.1.0 | upstream source, cargo, `x86_64/aarch64-linux-android`, pcre2 | same |
 | shell | `/system/bin/sh` (Android's mksh) | not bundled; OpenCode `shell` config points to it | same (bash tool via `/shell` endpoint, P5, P8-PERF `shellOk=1`) |
-| payload | v7 | `runtime-payload.tar.gz` + `runtime-manifest.json` (+ pre-seeded `@opencode-ai/plugin` tree) | v7 TESTED in CI run 2 (`P9_PLUGIN PASS`, zero exit-159); run 2 also showed v7 re-extracting on every launch because the verifier looked for the seed at its pre-promotion path - fixed (`installedLocation`), pending run 3 |
+| payload | v7 | `runtime-payload.tar.gz` + `runtime-manifest.json` (+ pre-seeded `@opencode-ai/plugin` tree) | v7 TESTED in CI run 2 (`P9_PLUGIN PASS`, zero exit-159); run 2 also showed v7 re-extracting on every launch because the verifier looked for the seed at its pre-promotion path - fixed (`installedLocation`), TESTED in run 3: extraction once per fresh install, `P8_CORRUPT PASS` |
 
 `versions.lock` is the source of truth; `phase9/scripts/check-lock.py`
 asserts `RuntimeVersion.kt`, `app/build.gradle.kts` and the built manifest

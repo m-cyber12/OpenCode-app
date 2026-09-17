@@ -74,8 +74,8 @@ gates start from a rebuilt provider table.
 | Live model turn | BLOCKED (no credit / egress condition) | PASS once (run 1, free model), then no credit | - |
 | Real tool card (L2) | never observed | never observed | - |
 | Toybox tar harness staging | TESTED (34) | TESTED (35) | NOT TESTED |
-| Phase 9 `P9_VERSION`, `P9_PLUGIN`, `P9_LOCK`, `P9-RELEASE` | **PASS** (run 35201496822; zero exit-159 in the run) | NOT RUN | - |
-| Phase 9 `P9_PROVSEL_*` | **NO VERDICT yet** (runs 1-2 never reached the server from the test process; fixed for run 3) | NOT RUN | - |
+| Phase 9 `P9_VERSION`, `P9_PLUGIN`, `P9_LOCK`, `P9-RELEASE` | **PASS** (runs 35201496822, 35238052238; zero exit-159) | NOT RUN | - |
+| Phase 9 `P9_PROVSEL_STALE/REBUILT/TURN/CLEANUP` | **PASS** (run 35238052238: defect reproduced, dispose rebuilds table, turn reaches `openrouter`) | NOT RUN | - |
 
 ## Phase 8 numbers carried into this release
 

@@ -20,10 +20,10 @@ written, wired and statically checked — but they have **not run yet**.
 
 | Item | Label |
 |---|---|
-| Provider-selection fallback bug — root cause, fix in `OpenCodeRepository` + `DefaultModelHint`, gates `P9_PROVSEL_*` | **IMPLEMENTED, NOT TESTED** — runs 1 and 2 never reached a verdict (run 2: the gate class did not start the runtime in its own instrumentation process, the Phase 5 lesson; fixed for run 3, §2c) |
+| Provider-selection fallback bug — root cause, fix in `OpenCodeRepository` + `DefaultModelHint`, gates `P9_PROVSEL_*` | **TESTED (run 3, 35238052238)**: `STALE reproduced=true` (defect observed on the real server), `REBUILT instanceSource=api models=369` after dispose, `TURN userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false llm.provider=openrouter`, `CLEANUP connected=false` — §2d |
 | `@opencode-ai/plugin` install bug — bare `OPENCODE_VERSION` (**TESTED**: `P9_VERSION PASS`, runs 1+2) + pre-seeded plugin tree in payload v7 (**TESTED, run 2**: `P9_PLUGIN PASS`, seed present at 1.18.23, 0 install failures, **0 exit-159 in the whole run** vs 113 in run 1 - §2c) |
-| Phase 9 CI pipeline (`phase9-release.yml` + `00-run-phase9.sh` + `20-gates.sh`) | **TESTED** end-to-end (run 35132822991 reached all 7 stages and printed every gate) |
-| Release APK/AAB + runtime artifacts | **PRODUCED (run 2, payload v7)**: `app-release-unsigned.apk` 130 557 869 B (130.6 MB), `app-release.aab` 118 782 367 B (118.8 MB), payload tar + manifest, artifact `opencode-android-release`. Unsigned (no keystore secret). |
+| Phase 9 CI pipeline (`phase9-release.yml` + `00-run-phase9.sh` + `20-gates.sh`) | **TESTED** end-to-end; run 3 (35238052238) concluded **success**: `gates_pass=7 gates_fail=0 gates_skip=0`, 279 JVM tests green, release_rc=0 |
+| Release APK/AAB + runtime artifacts | **PRODUCED (run 3, payload v7)**: `app-release-unsigned.apk` 130 558 433 B (130.6 MB), `app-release.aab` 118 783 314 B (118.8 MB), payload tar + manifest, artifact `opencode-android-release`. Unsigned (no keystore secret). |
 | Capability matrix, README, ARCHITECTURE, RUNTIME, SECURITY, TESTING | IMPLEMENTED (written from executed Phase 4–8 evidence; every row labelled) |
 | `versions.lock` accurate | IMPLEMENTED + TESTED (mechanically: `check-lock.py` OK locally against `RuntimeVersion.kt` and `versionName`; the manifest half runs in CI as `P9_LOCK`) |
 | Phase 8 temporary secrets removed | **DONE (owner-confirmed 2026-09-16)**: `OPENROUTER_API_KEY` repo secret deleted and the Gemini key from commit `52e7c4d` revoked by the repository owner; the repository itself cannot verify either, so this rests on the owner's statement |
@@ -74,7 +74,7 @@ written, wired and statically checked — but they have **not run yet**.
   the provider back (`P8KEYPROV ok=1 disposed=1 instanceSource=api`);
   `LiveToolCallGatesTest.g01` disposes and emits `P8_PROVSTATE`.
 
-### Verification (written, NOT TESTED)
+### Verification (TESTED in run 3 — see §2d)
 
 `app/src/androidTest/.../client/ProviderSelectionGatesTest.kt`, driven by
 `phase9/scripts/20-gates.sh`, dummy `openrouter` key (never a real one):
@@ -203,6 +203,25 @@ Consequences of that defect in run 2, and what else changed for run 3:
   remains BLOCKED-UPSTREAM-SYSCALL and is documented in RUNTIME.md and the
   capability matrix.
 
+## 2d. CI run 3 (35238052238, 2026-09-17) - green
+
+`P9_SUMMARY gates_pass=7 gates_fail=0 gates_skip=0`, workflow conclusion
+**success**. Evidence in `docs/progress/phase9-evidence/`.
+
+| Gate | Verdict | What it proved |
+|---|---|---|
+| `P9_PROVSEL_STALE` | **PASS** `reproduced=true` | after a bare `PUT /auth/openrouter` the server reports `connected=true` but the loaded instance still serves `instanceSource=custom` — **bug 1 observed on the real server**, exactly as diagnosed |
+| `P9_PROVSEL_REBUILT` | **PASS** | after `POST /global/dispose`: `instanceSource=api models=369` — the fix rebuilds the provider table |
+| `P9_PROVSEL_TURN` | **PASS** | `prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false`, server log `llm.provider=openrouter` — the turn goes to the configured provider, not to `opencode/big-pickle` |
+| `P9_PROVSEL_CLEANUP` | **PASS** | dummy credential removed, `connected=false` |
+| `P9_VERSION`, `P9_PLUGIN`, `P9_LOCK`, `P9-RELEASE` | **PASS** | as run 2; zero `code=159` in every runtime.log again |
+| re-extraction defect (§2c) | **closed** | `runtime.log` shows `(re)extracting` only for `no extraction marker` (fresh install / P8-CORRUPT wipe); no `missing plugin-seed/...` line anywhere; `pluginSeedEntriesAreVerifiedAtTheirPromotedLocation` ran green |
+| Phase 8 fold | pass=12 fail=3 skip=5 | **`P8_CORRUPT PASS` again** (re-extraction lines=5, marker restored). Remaining FAIL = NETLOSS, BGFG, PERF-stream: all need a model turn and the run has no key (documented, unchanged since Phase 8). |
+
+Both carried bugs are therefore **TESTED closed** on the emulator (API 34,
+x86_64) with the real server. Not tested on a physical arm64 device in this
+phase (the same code paths; the Phase 8 phone evidence predates the fixes).
+
 ## 3. Permanent limitations (final wording)
 
 | Limitation | Where documented | Label |
@@ -283,7 +302,9 @@ their source cited; per-ABI release sizes will come from the pipeline.
 | Phase 8 temp secrets removed | Done (owner-confirmed) |
 | Honesty labels on every claim | Applied |
 
-## 8. What the next run (run 3) will tell us (and what to do)
+## 8. Run history and what a further run would add
+
+Run 1 35132822991 (v6, crash loop found) -> run 2 35201496822 (v7, crash loop gone, re-extraction defect found) -> run 3 35238052238 (**success**). Items below were the run-3 checklist; all are answered in §2d. A further run only adds value with a funded `OPENROUTER_API_KEY` (NETLOSS/BGFG/PERF-stream/L2) or on a physical arm64 device.
 
 0. `runtime.log` must show `extraction complete` at most once per fresh
    install and no `missing plugin-seed/...` line - the re-extraction defect

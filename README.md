@@ -44,17 +44,18 @@ the reason.
 - **Works only with a funded model key**: the actual LLM turn and tool calls
   (the last credit-bearing run returned a real model reply; CI runs without
   a key SKIP those gates). See TESTING.md.
-- **Fixed this release, NOT YET RE-VERIFIED** (the CI run that proves them is
-  the Phase 9 workflow, which the repository owner must install - see below):
+- **Fixed this release, TESTED in CI** (Phase 9 workflow run 35238052238,
+  emulator API 34, real embedded server; evidence in `docs/progress/phase9-evidence/`):
   1. Provider selection silently falling back to the bundled `opencode`
      provider after adding a key (root cause: no provider-cache invalidation
      after `PUT /auth/:id`; the app now calls `/global/dispose` and picks a
-     default model from a *connected* provider).
+     default model from a *connected* provider). `P9_PROVSEL_STALE` reproduced
+     the defect, `_REBUILT`/`_TURN` show the turn reaching `openrouter`.
   2. `@opencode-ai/plugin` install always failing (root cause: the bundle
      reported version `1.18.23-android`, which npm does not have; it now
-     reports the bare `1.18.23` - TESTED). The first CI run then showed the
+     reports the bare `1.18.23` - TESTED `P9_VERSION`). The first CI run then showed the
      on-device `npm install` itself crashes Bun (SIGSYS), so the payload now
-     ships the plugin pre-installed; installing *additional* plugins on
+     ships the plugin pre-installed (TESTED `P9_PLUGIN`, zero SIGSYS in runs 2-3); installing *additional* plugins on
      device remains BLOCKED (see RUNTIME.md).
 - **Permanent limitations**: remote HTTP/SSE MCP servers fail through an
   upstream defect ([#47644](docs/progress/upstream-issue-47644-mcp-swallowed-error.md));
@@ -77,7 +78,7 @@ bash phase4/scripts/10-build-payload.sh        # -> phase4/out/engine/{assets,jn
 `./gradlew ... -PskipPayload` compiles the app without the payload (unit tests
 and compile checks only; the resulting APK cannot run the server).
 
-Release artifact sizes (CI run 35201496822, payload v7): `app-release-unsigned.apk`
+Release artifact sizes (CI run 35238052238, payload v7): `app-release-unsigned.apk`
 **130.6 MB** (both ABIs), `app-release.aab` **118.8 MB** (v6 was 127.1 / 115.3 MB; the +3.5 MB is the pre-seeded plugin tree); native libs per ABI
 ~123 MB (arm64-v8a) / ~127 MB (x86_64) uncompressed, so an arm64 device
 download from the AAB is roughly half the universal APK.
