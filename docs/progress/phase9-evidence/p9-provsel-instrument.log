@@ -43,16 +43,9 @@ Caused by: java.net.ConnectException: Failed to connect to /127.0.0.1:4111
 	at ai.opencode.android.client.OpenCodeApi.request(OpenCodeApi.kt:87)
 	... 36 more
 
-Error in g04_cleanup(ai.opencode.android.client.ProviderSelectionGatesTest):
-java.lang.AssertionError: P9_PROVSEL_CLEANUP :: dummy credential removed: connected=null
-	at org.junit.Assert.fail(Assert.java:89)
-	at org.junit.Assert.assertTrue(Assert.java:42)
-	at ai.opencode.android.client.ProviderSelectionGatesTest.gate(ProviderSelectionGatesTest.kt:79)
-	at ai.opencode.android.client.ProviderSelectionGatesTest.g04_cleanup(ProviderSelectionGatesTest.kt:214)
 
-
-Time: 240.643
-There were 3 failures:
+Time: 481.079
+There were 2 failures:
 1) g02_disposeRebuildsWithCredential(ai.opencode.android.client.ProviderSelectionGatesTest)
 ai.opencode.android.client.OpenCodeApi$ApiException: POST /global/dispose failed: Failed to connect to /127.0.0.1:4111
 	at ai.opencode.android.client.OpenCodeApi.request(OpenCodeApi.kt:99)
@@ -93,14 +86,8 @@ Caused by: java.net.ConnectException: Failed to connect to /127.0.0.1:4111
 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getOutputStream(HttpURLConnectionImpl.java:262)
 	at ai.opencode.android.client.OpenCodeApi.request(OpenCodeApi.kt:87)
 	... 36 more
-3) g04_cleanup(ai.opencode.android.client.ProviderSelectionGatesTest)
-java.lang.AssertionError: P9_PROVSEL_CLEANUP :: dummy credential removed: connected=null
-	at org.junit.Assert.fail(Assert.java:89)
-	at org.junit.Assert.assertTrue(Assert.java:42)
-	at ai.opencode.android.client.ProviderSelectionGatesTest.gate(ProviderSelectionGatesTest.kt:79)
-	at ai.opencode.android.client.ProviderSelectionGatesTest.g04_cleanup(ProviderSelectionGatesTest.kt:214)
 
 FAILURES!!!
-Tests run: 4,  Failures: 3
+Tests run: 4,  Failures: 2
 
 

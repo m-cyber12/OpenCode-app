@@ -1,64 +1,8 @@
 
-ai.opencode.android.client.OpenCodeClientGatesTest:......
-Error in k8_credentialProvisioningReachesOpenCodesAuthStore(ai.opencode.android.client.OpenCodeClientGatesTest):
-ai.opencode.android.client.OpenCodeApi$ApiException: GET /provider?directory=%2Fdata%2Fuser%2F0%2Fai.opencode.android.debug%2Ffiles%2Fworkspaces%2Fgates failed: Failed to connect to /127.0.0.1:4111
-	at ai.opencode.android.client.OpenCodeApi.request(OpenCodeApi.kt:99)
-	at ai.opencode.android.client.OpenCodeApi.request$default(OpenCodeApi.kt:64)
-	at ai.opencode.android.client.OpenCodeApi.providers(OpenCodeApi.kt:370)
-	at ai.opencode.android.client.OpenCodeClientGatesTest.k8_credentialProvisioningReachesOpenCodesAuthStore(OpenCodeClientGatesTest.kt:459)
-	... 33 trimmed
-Caused by: java.net.ConnectException: Failed to connect to /127.0.0.1:4111
-	at com.android.okhttp.internal.io.RealConnection.connectSocket(RealConnection.java:147)
-	at com.android.okhttp.internal.io.RealConnection.connect(RealConnection.java:116)
-	at com.android.okhttp.internal.http.StreamAllocation.findConnection(StreamAllocation.java:186)
-	at com.android.okhttp.internal.http.StreamAllocation.findHealthyConnection(StreamAllocation.java:128)
-	at com.android.okhttp.internal.http.StreamAllocation.newStream(StreamAllocation.java:97)
-	at com.android.okhttp.internal.http.HttpEngine.connect(HttpEngine.java:289)
-	at com.android.okhttp.internal.http.HttpEngine.sendRequest(HttpEngine.java:232)
-	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:465)
-	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponse(HttpURLConnectionImpl.java:411)
-	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponseCode(HttpURLConnectionImpl.java:542)
-	at ai.opencode.android.client.OpenCodeApi.request(OpenCodeApi.kt:89)
-	... 37 more
+ai.opencode.android.client.OpenCodeClientGatesTest:...........
 
-Error in k5_permissionAskIsAnsweredByTheApp(ai.opencode.android.client.OpenCodeClientGatesTest):
-java.lang.AssertionError: P5_G12_PERMISSION FAIL :: no permission.asked frame arrived (bashPolicy='ask', turnSettled=true) — the client approval path was never exercised
-	at org.junit.Assert.fail(Assert.java:89)
-	at org.junit.Assert.assertTrue(Assert.java:42)
-	at ai.opencode.android.client.OpenCodeClientGatesTest.gate(OpenCodeClientGatesTest.kt:118)
-	at ai.opencode.android.client.OpenCodeClientGatesTest.k5_permissionAskIsAnsweredByTheApp(OpenCodeClientGatesTest.kt:272)
-...
+Time: 19.217
 
-Time: 240.242
-There were 2 failures:
-1) k8_credentialProvisioningReachesOpenCodesAuthStore(ai.opencode.android.client.OpenCodeClientGatesTest)
-ai.opencode.android.client.OpenCodeApi$ApiException: GET /provider?directory=%2Fdata%2Fuser%2F0%2Fai.opencode.android.debug%2Ffiles%2Fworkspaces%2Fgates failed: Failed to connect to /127.0.0.1:4111
-	at ai.opencode.android.client.OpenCodeApi.request(OpenCodeApi.kt:99)
-	at ai.opencode.android.client.OpenCodeApi.request$default(OpenCodeApi.kt:64)
-	at ai.opencode.android.client.OpenCodeApi.providers(OpenCodeApi.kt:370)
-	at ai.opencode.android.client.OpenCodeClientGatesTest.k8_credentialProvisioningReachesOpenCodesAuthStore(OpenCodeClientGatesTest.kt:459)
-	... 33 trimmed
-Caused by: java.net.ConnectException: Failed to connect to /127.0.0.1:4111
-	at com.android.okhttp.internal.io.RealConnection.connectSocket(RealConnection.java:147)
-	at com.android.okhttp.internal.io.RealConnection.connect(RealConnection.java:116)
-	at com.android.okhttp.internal.http.StreamAllocation.findConnection(StreamAllocation.java:186)
-	at com.android.okhttp.internal.http.StreamAllocation.findHealthyConnection(StreamAllocation.java:128)
-	at com.android.okhttp.internal.http.StreamAllocation.newStream(StreamAllocation.java:97)
-	at com.android.okhttp.internal.http.HttpEngine.connect(HttpEngine.java:289)
-	at com.android.okhttp.internal.http.HttpEngine.sendRequest(HttpEngine.java:232)
-	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:465)
-	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponse(HttpURLConnectionImpl.java:411)
-	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponseCode(HttpURLConnectionImpl.java:542)
-	at ai.opencode.android.client.OpenCodeApi.request(OpenCodeApi.kt:89)
-	... 37 more
-2) k5_permissionAskIsAnsweredByTheApp(ai.opencode.android.client.OpenCodeClientGatesTest)
-java.lang.AssertionError: P5_G12_PERMISSION FAIL :: no permission.asked frame arrived (bashPolicy='ask', turnSettled=true) — the client approval path was never exercised
-	at org.junit.Assert.fail(Assert.java:89)
-	at org.junit.Assert.assertTrue(Assert.java:42)
-	at ai.opencode.android.client.OpenCodeClientGatesTest.gate(OpenCodeClientGatesTest.kt:118)
-	at ai.opencode.android.client.OpenCodeClientGatesTest.k5_permissionAskIsAnsweredByTheApp(OpenCodeClientGatesTest.kt:272)
-
-FAILURES!!!
-Tests run: 11,  Failures: 2
+OK (11 tests)
 
 
