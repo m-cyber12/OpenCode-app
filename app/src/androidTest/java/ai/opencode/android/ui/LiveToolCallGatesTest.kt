@@ -308,6 +308,11 @@ class LiveToolCallGatesTest {
         }
 
         // The product's credential path, with the key this run provisions.
+        // PHASE 9: this used to be a bare `PUT /auth` - which writes auth.json
+        // but leaves the loaded instance's provider table stale (upstream
+        // builds it once per instance). The product's own provisioning call
+        // now disposes the instance after the write; the gate uses it and then
+        // reads back what the server rebuilt.
         Secrets.putProviderKey(context, provider, key)
         val push = runCatching { api.setProviderAuth(provider, key) }
         if (push.isFailure) {
@@ -315,6 +320,14 @@ class LiveToolCallGatesTest {
             gate("KEYPROBE", false, keyReason)
             return
         }
+        runCatching { api.dispose() }
+        val rebuilt = runCatching { api.providers() }.getOrNull()
+        val entry = rebuilt?.entries?.firstOrNull { it.id == provider }
+        printMarker8(
+            "PROVSTATE",
+            "provider=$provider connected=${rebuilt?.connected?.contains(provider)} source=${entry?.source ?: "-"} " +
+                "models=${entry?.models?.size ?: 0} (source=api means the instance was rebuilt with the credential)",
+        )
 
         // One tiny API-level turn, model named explicitly (no UI needed to
         // answer "does this key work").

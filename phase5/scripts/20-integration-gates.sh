@@ -200,7 +200,7 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 P501=1
-case "$VER" in *phase5*) [ -n "$APP_UID" ] && [ -n "$PID" ] && P501=0 ;; esac
+case "$VER" in *phase5*|*phase6*|*phase7*|*phase8*|*phase9*) [ -n "$APP_UID" ] && [ -n "$PID" ] && P501=0 ;; esac
 log "P5-01 versionName=$VER pid=${PID:-none} uid=${APP_UID:-unresolved} marker=$([ -n "$MARKER" ] && echo present || echo ABSENT)"
 p5 01 "$P501" "phase5-apk-installed-and-app-running"
 
@@ -208,7 +208,7 @@ p5 01 "$P501" "phase5-apk-installed-and-app-running"
 # secrets + harness dir + loopback audit). Accept 4 only if the APK was built
 # before the version bump, and say so loudly in that case.
 P502=1
-if echo "$MARKER" | grep -qE '"payloadVersion":5'; then P502=0; fi
+if echo "$MARKER" | grep -qE '"payloadVersion":[567]'; then P502=0; fi   # 5 = Phase 5 layout; 6/7 = Phase 9 (superset)
 if [ "$P502" != 0 ] && echo "$MARKER" | grep -qE '"payloadVersion":4'; then
   log "P5-02 payloadVersion=4 (phase-4 payload with a phase-5 app) — layout compatible, recorded as skip"
   P502=7

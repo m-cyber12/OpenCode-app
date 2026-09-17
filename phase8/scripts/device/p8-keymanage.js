@@ -40,7 +40,14 @@ async function main() {
       console.log(`P8KEYPROV ok=0 error=provider auth push http ${r.status}`)
       process.exit(1)
     }
-    console.log("P8KEYPROV ok=1")
+    // PHASE 9: PUT /auth only writes auth.json; the loaded instance keeps its
+    // credential-less provider table until it is rebuilt (upstream
+    // provider.ts InstanceState). Dispose, then read the rebuilt table back.
+    const d = await call("POST", "/global/dispose")
+    const p = await call("GET", "/provider")
+    let source = "-"
+    try { source = (JSON.parse(p.text).all || []).find((x) => x.id === "openrouter")?.source ?? "-" } catch {}
+    console.log(`P8KEYPROV ok=1 disposed=${d.ok ? 1 : 0} instanceSource=${source}`)
     process.exit(0)
   }
   if (mode === "revoke") {

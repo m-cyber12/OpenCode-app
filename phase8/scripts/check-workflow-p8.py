@@ -5,7 +5,7 @@ Same rules as phase7/scripts/check-workflow.py (quoted step names, valid YAML,
 triggers on THIS session's branch), pointed at phase8/workflow. Kept as a small
 standalone so the Phase 7 checker stays untouched.
 
-Usage: python3 phase8/scripts/check-workflow-p8.py [repo-root]
+Usage: python3 phase8/scripts/check-workflow-p8.py [repo-root] [phase-dir=phase8]
 """
 import os
 import re
@@ -64,13 +64,14 @@ def check_branch(path, body, root, branch):
 def main():
     root = sys.argv[1] if len(sys.argv) > 1 else "."
     branch = current_branch(root)
-    base = os.path.join(root, "phase8", "workflow")
+    phase = sys.argv[2] if len(sys.argv) > 2 else "phase8"
+    base = os.path.join(root, phase, "workflow")
     if not os.path.isdir(base):
-        print("FAIL no phase8/workflow directory")
+        print("FAIL no %s/workflow directory" % phase)
         return 1
     paths = [os.path.join(base, f) for f in sorted(os.listdir(base)) if f.endswith((".yml", ".yaml"))]
     if not paths:
-        print("FAIL no workflow template under phase8/workflow")
+        print("FAIL no workflow template under %s/workflow" % phase)
         return 1
     try:
         import yaml

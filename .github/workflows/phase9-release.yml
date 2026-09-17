@@ -1,0 +1,150 @@
+# PHASE 9 - RELEASE pipeline: the whole product built and verified in one job.
+#   static checks -> JVM unit tests -> embedded runtime payload (pinned upstream
+#   OpenCode bundle, Bun-for-Android, Bionic git/ripgrep, sha256 manifest) ->
+#   debug + androidTest APKs -> fresh emulator -> FULL Phase 8 suite (which
+#   folds in the Phase 5 and Phase 7 regressions) -> Phase 9 gates (provider
+#   selection fix, plugin install fix, version string, versions.lock == shipped)
+#   -> release APK + AAB -> one GATES_SUMMARY.txt with every gate's PASS/FAIL/SKIP
+#   printed as the last step (and deciding the job status).
+#
+# HOW TO INSTALL (one-time, needs the GitHub UI):
+#   copy this file to   .github/workflows/phase9-release.yml
+#   on the branch       arena/01a0a540-opencode-app
+#   and push. The session bot token cannot create or modify files under
+#   .github/workflows/ (verified in Phases 2-8).
+#
+# SECRETS (all optional):
+#   OPENROUTER_API_KEY  live-model gates (Phase 8 KEYPROBE/TOOL/PERF-stream and
+#                       Phase 9 P9_PROVSEL_TURN). When absent those gates SKIP
+#                       with the reason on record. Phase 8's temporary key must
+#                       be REMOVED after the last model-dependent run.
+#   P9_KEYSTORE_B64, P9_KEYSTORE_PASSWORD, P9_KEY_ALIAS, P9_KEY_PASSWORD
+#                       release signing. Without them the release APK/AAB are
+#                       built UNSIGNED (still uploaded; install needs signing).
+#
+# Iteration knob: tracked marker file phase9/CI_GRADLE_ONLY containing "1"
+# (or dispatch input gradle_only=true) = compile + JVM tests only; no payload,
+# no emulator, no verdicts, no release artifacts. Never a release run.
+name: phase9-release
+
+on:
+  push:
+    branches:
+      - "arena/01a0a540-opencode-app"
+    paths-ignore:
+      - "docs/progress/phase9-evidence/**"
+      - "docs/progress/phase8-evidence/**"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why this run is being dispatched (free text)"
+        required: false
+        default: "manual phase9 release run"
+      gradle_only:
+        description: "compile + JVM tests only (no emulator, no release)"
+        required: false
+        default: "false"
+
+jobs:
+  phase9-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 540
+    permissions:
+      contents: write
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_MODEL: openai/gpt-4o-mini
+      P9_GRADLE_ONLY: ${{ github.event.inputs.gradle_only == 'true' && '1' || '0' }}
+      P9_KEYSTORE_B64: ${{ secrets.P9_KEYSTORE_B64 }}
+      P9_KEYSTORE_PASSWORD: ${{ secrets.P9_KEYSTORE_PASSWORD }}
+      P9_KEY_ALIAS: ${{ secrets.P9_KEY_ALIAS }}
+      P9_KEY_PASSWORD: ${{ secrets.P9_KEY_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Fix /dev/kvm permissions (Phase 2 lesson: never assume KVM just works)"
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm || true
+            ls -la /dev/kvm
+          else
+            echo "KVM_MISSING (the emulator will be unusable; gates fail loudly)"
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: "Release keystore (only when the signing secrets exist)"
+        run: |
+          if [ -n "${P9_KEYSTORE_B64:-}" ]; then
+            echo "$P9_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "P9_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+            echo "signing: keystore provided"
+          else
+            echo "signing: no keystore secret - release artifacts will be UNSIGNED"
+          fi
+
+      - name: "Run the Phase 9 release pipeline (static -> unit -> payload -> APKs -> emulator -> Phase 8 suite -> Phase 9 gates -> release APK/AAB)"
+        run: bash phase9/scripts/00-run-phase9.sh
+        shell: bash
+
+      - name: "Commit evidence to the branch (docs/progress/phase9-evidence)"
+        if: always()
+        run: |
+          # The orchestrator already copies + pushes; this is the fallback if it
+          # stopped before its own evidence stage.
+          mkdir -p docs/progress/phase9-evidence
+          if [ -d phase9/out/evidence ]; then
+            cp -r phase9/out/evidence/. docs/progress/phase9-evidence/ 2>/dev/null || true
+          fi
+          cp phase9/out/00-run-phase9.log docs/progress/phase9-evidence/ 2>/dev/null || true
+          rm -f docs/progress/phase9-evidence/emulator.log
+          find docs/progress/phase9-evidence -type f -size +2M -delete 2>/dev/null || true
+          git add -A docs/progress/phase9-evidence/ || true
+          if git diff --cached --quiet; then
+            echo "no evidence changes; skipping commit"
+          else
+            git -c user.name="arena-ai-coding-agent[bot]" \
+                -c user.email="arena-ai-coding-agent[bot]@users.noreply.github.com" \
+                commit -m "phase9: release gate evidence (auto)" || true
+            git pull --rebase origin "${{ github.ref_name }}" || true
+            git push origin "HEAD:${{ github.ref_name }}" || echo "PUSH_FAILED"
+          fi
+
+      - name: "Upload release artifacts (APK, AAB, runtime payload + manifest)"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencode-android-release
+          path: |
+            phase9/out/release/
+          if-no-files-found: warn
+
+      - name: "Upload evidence + logs"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase9-evidence
+          path: |
+            phase9/out/evidence/
+            phase9/out/00-run-phase9.log
+            phase8/out/evidence/
+            phase8/out/00-run-phase8.log
+            app/build/reports/
+          if-no-files-found: ignore
+
+      - name: "Gate summary (every gate, readable in the Actions log)"
+        if: always()
+        run: |
+          if [ -f phase9/out/evidence/GATES_SUMMARY.txt ]; then
+            cat phase9/out/evidence/GATES_SUMMARY.txt
+          else
+            echo "NO_PHASE9_SUMMARY - the pipeline did not reach its gate stage"
+            exit 1
+          fi

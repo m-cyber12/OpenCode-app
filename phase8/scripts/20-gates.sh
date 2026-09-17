@@ -117,6 +117,15 @@ wait_healthy() { # $1=timeout-s ; needs PASSWD
     sleep 2
   done
   printf '[%s] wait_healthy timed out (host=%s device=%s)\n' "$(date -u +%FT%TZ)" "$last_host" "${last_dev:-none}" >> "$LOG"
+  # Forensics for the "server logged HEALTHY but neither probe reached it"
+  # pattern seen in run 35201496822 (P8_CORRUPT): record who is alive, what
+  # adb is forwarding, and the device-side fetch error verbatim.
+  {
+    printf '  wait_healthy forensics: app_pid=%s forward=[%s]\n' \
+      "$(adb shell pidof "$PKG" 2>/dev/null | tr -d '\r')" "$(adb forward --list 2>/dev/null | tr '\n' ' ')"
+    printf '  device probe raw: %s\n' "$(rash "'$FILES/bin/bun' -e \"fetch('http://127.0.0.1:$PORT/global/health').then(r=>console.log('CODE'+r.status),e=>console.log('ERR '+e.code+' '+e.message))\" 2>&1 | head -3" | tr '\n' ' ')"
+    printf '  last runtime.log states: %s\n' "$(rash "grep -a 'state ->' '$FILES/log/runtime.log' 2>/dev/null | tail -3" | tr '\n' '|')"
+  } >> "$LOG" 2>&1
   echo HEALTH_TIMEOUT; return 1
 }
 

@@ -37,7 +37,7 @@ class PayloadExtractionValidationTest {
         root: File,
         marker: File,
         files: Map<String, String>,
-        payloadVersion: Int = 5,
+        payloadVersion: Int = RuntimeVersion.PAYLOAD_VERSION,
     ): RuntimeManifest {
         val entries = ArrayList<ManifestEntry>()
         for ((path, content) in files) {
@@ -91,6 +91,46 @@ class PayloadExtractionValidationTest {
                 root, marker, File(root, "opencode/dist/node/node.js"), File(root, "launcher.js"), manifest,
             ),
         )
+    }
+
+    // ---- Phase 9: the plugin seed is verified where it is PROMOTED --------------
+    // CI run 35201496822: verify() looked for plugin-seed/... under filesDir,
+    // the extractor had moved it to xdg/config/opencode/, so every launch
+    // re-extracted (and P8-CORRUPT could not see a clean recovery).
+
+    @Test
+    fun pluginSeedEntriesAreVerifiedAtTheirPromotedLocation() {
+        val root = tmp.newFolder("files9")
+        val marker = File(root, "runtime/.extracted")
+        // manifest says plugin-seed/...; on disk it lives under xdg/config/opencode/...
+        val seedContent = "{\"name\":\"@opencode-ai/plugin\"}"
+        val manifest = writePayloadAndManifest(
+            root, marker,
+            mapOf(
+                "opencode/dist/node/node.js" to "bundle",
+                "launcher.js" to "launcher",
+                "plugin-seed/node_modules/@opencode-ai/plugin/package.json" to seedContent,
+            ),
+        )
+        val staged = File(root, "plugin-seed/node_modules/@opencode-ai/plugin/package.json")
+        val promoted = File(root, "xdg/config/opencode/node_modules/@opencode-ai/plugin/package.json")
+        promoted.parentFile.mkdirs()
+        staged.renameTo(promoted)
+        File(root, "plugin-seed").deleteRecursively()
+        assertEquals(
+            promoted,
+            PayloadExtractor.installedLocation(root, "plugin-seed/node_modules/@opencode-ai/plugin/package.json"),
+        )
+        assertEquals(File(root, "launcher.js"), PayloadExtractor.installedLocation(root, "launcher.js"))
+        val reason = PayloadExtractor.verifyExtraction(
+            root, marker, File(root, "opencode/dist/node/node.js"), File(root, "launcher.js"), manifest,
+        )
+        assertEquals("promoted seed must verify clean, got: $reason", null, reason)
+        promoted.writeText("tampered")
+        val tampered = PayloadExtractor.verifyExtraction(
+            root, marker, File(root, "opencode/dist/node/node.js"), File(root, "launcher.js"), manifest,
+        )
+        assertTrue("tampered seed must be caught: $tampered", tampered != null && tampered.contains("plugin-seed/"))
     }
 
     // ---- every failure mode the extractor must catch -------------------------
@@ -194,7 +234,7 @@ class PayloadExtractionValidationTest {
     fun anUnsafeManifestEntryIsAReExtraction() {
         val (root, marker, _) = fixture()
         val manifest = RuntimeManifest(
-            payloadVersion = 5,
+            payloadVersion = RuntimeVersion.PAYLOAD_VERSION,
             opencodeCommit = RuntimeVersion.OPENCODE_COMMIT,
             opencodeVersion = RuntimeVersion.OPENCODE_VERSION,
             bunVersion = RuntimeVersion.BUN_VERSION,

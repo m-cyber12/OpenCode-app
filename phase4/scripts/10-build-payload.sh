@@ -47,7 +47,7 @@ GIT_PIN="v2.48.1"
 ZLIB_PIN="v1.3.1"
 BUN_PIN="1.3.14"
 RG_PIN="15.1.0"
-PAYLOAD_VERSION=5   # Phase 5: launcher loopback audit + Keystore secret layout
+PAYLOAD_VERSION=7   # 7 = Phase 9: bare OPENCODE_VERSION + pre-seeded @opencode-ai/plugin tree (plugin-seed/); 6 = bare version only; 5 = Phase 5 launcher/Keystore layout
 STATUS="$ENGINE/build.status"
 : > "$STATUS"
 note() { echo "$*" | tee -a "$STATUS"; }
@@ -323,7 +323,15 @@ await Bun.build({
   external: ["jsonc-parser", "@lydell/node-pty", "bun-pty"],
   define: {
     OPENCODE_MODELS_DEV: generated.modelsData,
-    OPENCODE_VERSION: `"1.18.23-android"`,
+    // PHASE 9 FIX (carried bug): the runtime reports InstallationVersion verbatim
+    // and upstream config.ts installs `@opencode-ai/plugin@<InstallationVersion>`
+    // into every config dir whenever the channel is not "local". npm publishes
+    // 1.18.23 but no "1.18.23-android", so every plugin install failed
+    // (NpmInstallFailedError, Phase 8 §11). The version string must be the bare
+    // upstream semver; the Android provenance lives in OPENCODE_CHANNEL (which
+    // upstream only uses for isPreview()/user-agent - it is not part of the
+    // npm spec) and in the runtime manifest.
+    OPENCODE_VERSION: `"1.18.23"`,
     OPENCODE_CHANNEL: `"android"`,
   },
   files: { "opencode-web-ui.gen.ts": "" },
@@ -360,6 +368,33 @@ module.exports = { spawn() { throw new Error("bun-pty unavailable on Android (st
 EOF
 cp "$DIR/payload/launcher.js" "$STAGE/launcher.js"
 
+# Phase 9: pre-seed @opencode-ai/plugin@<pinned> for the global config dir.
+# Upstream (config.ts) forks `npm install @opencode-ai/plugin@<OPENCODE_VERSION>`
+# into every config dir on instance load unless node_modules already exists and
+# package-lock.json covers the package (core/src/npm.ts Npm.install). With the
+# bare version define the install now runs on-device - and Arborist trips a
+# syscall Android's app seccomp filter kills (SIGSYS, exit 159; Phase 9 CI run
+# 35132822991 saw 113 crash/restart cycles). Shipping the installed tree means
+# the on-device npm path is never entered for the default plugin set, and the
+# plugin API works offline. The extractor promotes plugin-seed/ into
+# xdg/config/opencode/ (never overwriting a user's opencode.json).
+note "=== plugin seed: @opencode-ai/plugin@${OPENCODE_VERSION_BARE:-1.18.23} ==="
+SEED="$WORK/plugin-seed"
+rm -rf "$SEED" && mkdir -p "$SEED"
+( cd "$SEED" \
+  && printf '{ "name": "opencode-android-config", "private": true, "version": "0.0.0" }\n' > package.json \
+  && npm install --ignore-scripts --no-audit --no-fund --no-bin-links --save-exact \
+       "@opencode-ai/plugin@${OPENCODE_VERSION_BARE:-1.18.23}" >> "$STATUS" 2>&1 \
+  && find node_modules \( -name '*.d.ts' -o -name '*.d.mts' -o -name '*.d.cts' -o -name '*.map' \
+        -o -name '*.md' -o -name 'LICENSE*' -o -name '*.ts' -o -name '*.mts' -o -name '*.cts' \) -type f -delete \
+  && rm -rf node_modules/.bin node_modules/@msgpackr-extract \
+  && find node_modules -type l -delete \
+  && find node_modules -type d -empty -delete )
+[ -f "$SEED/node_modules/@opencode-ai/plugin/package.json" ] || { note "plugin seed FAILED"; exit 1; }
+mkdir -p "$STAGE/plugin-seed"
+cp -r "$SEED/node_modules" "$SEED/package.json" "$SEED/package-lock.json" "$STAGE/plugin-seed/"
+note "plugin seed: $(find "$STAGE/plugin-seed" -type f | wc -l) files, $(du -sk "$STAGE/plugin-seed" | cut -f1) KB, plugin $(python3 -c 'import json;print(json.load(open("'"$STAGE"'/plugin-seed/node_modules/@opencode-ai/plugin/package.json"))["version"])')"
+
 # Deterministic tar (sorted, no owner/mtime noise) then gzip.
 PAYLOAD_TGZ="$ENGINE/assets/runtime-payload.tar.gz"
 ( cd "$STAGE" && find . -type f | sed 's|^\./||' | sort \
@@ -380,7 +415,7 @@ for dirpath, _, names in os.walk(stage):
         data = open(p, "rb").read()
         files[rel] = {"sha256": hashlib.sha256(data).hexdigest(), "size": len(data)}
 manifest = {
-    "payloadVersion": int(os.environ.get("PAYLOAD_VERSION", "5")),
+    "payloadVersion": int(os.environ.get("PAYLOAD_VERSION", "7")),
     "opencodeCommit": commit,
     "opencodeVersion": "1.18.23",
     "bunVersion": "1.3.14",
