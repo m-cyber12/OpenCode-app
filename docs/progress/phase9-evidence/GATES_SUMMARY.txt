@@ -1,21 +1,25 @@
-P9_SUMMARY 2026-09-17T09:47:28Z
-gates_pass=3 gates_fail=2 gates_skip=2
+P9_SUMMARY 2026-09-17T15:44:04Z
+gates_pass=7 gates_fail=0 gates_skip=0
 device_abi=x86_64
 android_sdk=34
-P9_PROVSEL_CLEANUP SKIP :: se
-P9_PROVSEL_CLEANUP SKIP :: server not healthy
-P9_PROVSEL_STALE SKIP :: se
-P9_PROVSEL_STALE SKIP :: server not healthy
-P9_PROVSEL_STALE SKIP :: :: server not healthy
-P9_PROVSEL_REBUILT FAIL
-P9_PROVSEL_TURN FAIL
-P9_PROVSEL_CLEANUP SKIP :: :: server not healthy
+P9_PROVSEL_CLEANUP PASS :: dummy c
+P9_PROVSEL_CLEANUP PASS :: dummy credential removed: connected=false
+P9_PROVSEL_REBUILT PASS :: afte
+P9_PROVSEL_REBUILT PASS :: after POST /global/dispose: connected=true instanceSource=api models=369 (was instanceSource=custom before the dispose)
+P9_PROVSEL_STALE PASS :: afte
+P9_PROVSEL_STALE PASS :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
+P9_PROVSEL_TURN PASS :: p
+P9_PROVSEL_TURN PASS :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode default
+P9_PROVSEL_STALE PASS :: :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
+P9_PROVSEL_REBUILT PASS :: :: after POST /global/dispose: connected=true instanceSource=api models=369 (was instanceSource=custom before the dispose)
+P9_PROVSEL_TURN PASS :: :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode d
+P9_PROVSEL_CLEANUP PASS :: :: dummy credential removed: connected=false
 P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
 P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
-P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase9 manifestSha=b7d347ede010eafa 
-P9-RELEASE PASS: apk=app-release-unsigned.apk (130557869 bytes) aab=app-release.aab (118782367 bytes) unsigned
+P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase9 manifestSha=8066badd33a7df0c 
+P9-RELEASE PASS: apk=app-release-unsigned.apk (130558433 bytes) aab=app-release.aab (118783314 bytes) unsigned
 P9-RELEASE note: x86_64 native libs 126.7 MB (uncompressed)
 P9-RELEASE note: arm64-v8a native libs 123.1 MB (uncompressed)
-P9_SUMMARY 2026-09-17T09:49:49Z
-p8_suite_fails=n/a p9_gate_fails=2 release_rc=0
+P9_SUMMARY 2026-09-17T15:46:27Z
+p8_suite_fails=n/a p9_gate_fails=0 release_rc=0
 NOTE: PASS lines above are real gate executions on the emulator; unit/compile lines are not runtime evidence.

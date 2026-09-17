@@ -1,7 +1,7 @@
-=== PHASE 8 START 2026-09-17T08:52:33Z ===
-heartbeat enabled (pid 10103, every 300s -> docs/progress/phase8-evidence/PROGRESS.txt)
+=== PHASE 8 START 2026-09-17T15:12:51Z ===
+heartbeat enabled (pid 10127, every 300s -> docs/progress/phase8-evidence/PROGRESS.txt)
 ########## 1/7 static checks (strings, a11y, lazy lists, ASCII, kotlin comments) ##########
-=== Phase 8 static checks 2026-09-17T08:52:33Z ===
+=== Phase 8 static checks 2026-09-17T15:12:51Z ===
 OK   bash -n on 39 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8 driver
@@ -92,12 +92,12 @@ PAYLOAD STAGING SKIPPED: compile/test-only run, no APK was produced.
 > Task :app:processDebugUnitTestJavaRes UP-TO-DATE
 > Task :app:testDebugUnitTest UP-TO-DATE
 
-BUILD SUCCESSFUL in 11s
+BUILD SUCCESSFUL in 12s
 35 actionable tasks: 2 executed, 33 up-to-date
 ########## 3/7 environment + FRESH emulator ##########
 installing emulator + system image via phase4/scripts/50-install-sdk.sh
 --- downloading cmdline-tools
--rw-r--r-- 1 runner runner 153607504 Sep 17 08:52 cmdtools.zip
+-rw-r--r-- 1 runner runner 153607504 Sep 17 15:13 cmdtools.zip
 /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
 /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
 --- sdkmanager licenses
@@ -115,7 +115,7 @@ accel:
 KVM (version 12) is installed and usable.
 accel
 --- starting emulator (headless)
-emulator pid=10685
+emulator pid=10722
 * daemon not running; starting now at tcp:5037
 * daemon started successfully
 BOOT_COMPLETED after ~48s
@@ -174,8 +174,8 @@ Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/w
 > Task :app:processDebugJavaRes UP-TO-DATE
 > Task :app:mergeDebugStartupProfile
 > Task :app:checkDebugDuplicateClasses
-> Task :app:mergeDebugJavaResource
 > Task :app:mergeDebugJniLibFolders
+> Task :app:mergeDebugJavaResource
 > Task :app:mergeLibDexDebug
 > Task :app:mergeProjectDexDebug
 > Task :app:mergeDebugNativeLibs
@@ -198,6 +198,7 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:processDebugAndroidTestResources UP-TO-DATE
 > Task :app:compileDebugAndroidTestKotlin UP-TO-DATE
 > Task :app:javaPreCompileDebugAndroidTest FROM-CACHE
+> Task :app:mergeExtDexDebug
 > Task :app:compileDebugAndroidTestJavaWithJavac
 > Task :app:mergeDebugAndroidTestShaders
 > Task :app:compileDebugAndroidTestShaders NO-SOURCE
@@ -206,13 +207,15 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:compressDebugAndroidTestAssets
 > Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
 > Task :app:dexBuilderDebugAndroidTest
-> Task :app:mergeExtDexDebug
 > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
 > Task :app:processDebugAndroidTestJavaRes
 > Task :app:checkDebugAndroidTestDuplicateClasses
-> Task :app:mergeDebugAndroidTestJniLibFolders
-> Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
 > Task :app:mergeDebugAndroidTestJavaResource
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+> Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
+> Task :app:mergeDebugAndroidTestJniLibFolders
 > Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
 > Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
 > Task :app:validateSigningDebugAndroidTest
@@ -229,79 +232,74 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:packageDebugAndroidTest
 > Task :app:createDebugAndroidTestApkListingFileRedirect
 > Task :app:assembleDebugAndroidTest
-> Task :app:packageDebug
-> Task :app:createDebugApkListingFileRedirect
-> Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 1m 48s
+BUILD SUCCESSFUL in 1m 50s
 74 actionable tasks: 37 executed, 4 from cache, 33 up-to-date
 apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/debug/app-debug.apk
 testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 ########## 6/7 Phase 8 gates (regressions + stress + live model + perf) ##########
-[2026-09-17T08:57:05Z] === stage A: Phase 7 regression (workspace isolation + memory + UI + live turn) ===
-[2026-09-17T08:58:47Z] P8_P7REG PASS :: phase7 suite rc=0 fails=0 (W1 W2 W3 U3 U7 L1 L2 all green; see phase7-evidence fold)
-[2026-09-17T08:58:47Z] === stage A2: Phase 5 regression (client gates + loopback + credentials re-verification) ===
-[2026-09-17T09:03:40Z] P8_P5REG PASS :: phase5 suite rc=1 fails=1 (G16 red = documented upstream #47644; K1-K9 G6-G12 G17 G18 G19 green)
-[2026-09-17T09:03:40Z] === stage B: model provisioning (the run's repo-secret key, into the harness dir) ===
-[2026-09-17T09:03:40Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test for a clean install
+[2026-09-17T15:18:50Z] === stage A: Phase 7 regression (workspace isolation + memory + UI + live turn) ===
+[2026-09-17T15:20:19Z] P8_P7REG PASS :: phase7 suite rc=0 fails=0 (W1 W2 W3 U3 U7 L1 L2 all green; see phase7-evidence fold)
+[2026-09-17T15:20:19Z] === stage A2: Phase 5 regression (client gates + loopback + credentials re-verification) ===
+[2026-09-17T15:24:42Z] P8_P5REG PASS :: phase5 suite rc=1 fails=1 (G16 red = documented upstream #47644; K1-K9 G6-G12 G17 G18 G19 green)
+[2026-09-17T15:24:42Z] === stage B: model provisioning (the run's repo-secret key, into the harness dir) ===
+[2026-09-17T15:24:42Z] uninstalling ai.opencode.android.debug / ai.opencode.android.debug.test for a clean install
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-09-17T09:03:47Z] no OPENROUTER_API_KEY for this run: model-dependent gates will SKIP with the reason
-[2026-09-17T09:03:47Z] P8_MODELPROVISION SKIP :: no OPENROUTER_API_KEY set (the model gates stay SKIP by design, not silence)
-[2026-09-17T09:04:10Z] runtime healthy with Keystore password available to the host drivers
-[2026-09-17T09:04:10Z] === stage C: P8 instrumented stress gates (model-free half) ===
-[2026-09-17T09:04:10Z] rebooting the emulator (fresh network state; relaunching the app)
-[2026-09-17T09:10:02Z] warn: runtime not healthy after the reboot
-[2026-09-17T09:10:07Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g00_keyResidency ===
-[2026-09-17T09:10:11Z] instrument rc=0 (stress-a)
-[2026-09-17T09:10:11Z] stress-a runner trailer: OK
-[2026-09-17T09:10:11Z] screenshots pulled: 0
-[2026-09-17T09:10:11Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g02_serverKill ===
-[2026-09-17T09:10:33Z] instrument rc=0 (stress-b)
-[2026-09-17T09:10:33Z] stress-b runner trailer: OK
-[2026-09-17T09:10:33Z] screenshots pulled: 0
-[2026-09-17T09:10:33Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g03_lifecycleLog ===
-[2026-09-17T09:10:36Z] instrument rc=0 (stress-c)
-[2026-09-17T09:10:36Z] stress-c runner trailer: OK
-[2026-09-17T09:10:36Z] screenshots pulled: 0
-[2026-09-17T09:10:36Z] P8_KEYRESIDENCY SKIP :: :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=x86_64 device=sdk_gphone64_x86_64 api=34 :: key material is in the SOFTWARE keystore on this devic
-[2026-09-17T09:10:36Z] P8_SERVERKILL PASS :: :: killedPid=4783 oldPidDead=true sawCrashedRestarting=true restartCount=0 healthyAgain=true healthHttp=200 sawFatal=false newPid=4840 finalStatus=HEALTHY finalDetail='healthy on 127.0.0.1:4111'
-[2026-09-17T09:10:36Z] P8_LIFECYCLELOG PASS :: :: illegalTransitions=0 startingTransitions=6 healthyTransitions=5 logBytes=13318 lastStates='EXTRACTING (validating embedded runtime) | EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (atte
-[2026-09-17T09:10:36Z] === stage D: destructive stress (host-driven, on the relaunch the instrument left behind) ===
-[2026-09-17T09:11:05Z] === am instrument ai.opencode.android.ui.LiveToolCallGatesTest ===
-[2026-09-17T09:11:23Z] instrument rc=0 (live)
-[2026-09-17T09:11:23Z] live runner trailer: OK
-[2026-09-17T09:11:23Z] screenshots pulled: 0
-[2026-09-17T09:11:23Z] P8_KEYPROBE SKIP :: :: no model key was provisioned for this run
-[2026-09-17T09:11:23Z] P8_TOOL SKIP :: :: the provisioned key could not serve a turn, so no tool call can be observed: no turn was attempted yet
-[2026-09-17T09:11:23Z] P8_CLEANUP PASS :: :: keystoreRemoved=false leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
-[2026-09-17T09:11:23Z] P8_TOYBOX PASS :: base64|base64 -d|tar xz -C dir works on api=34 (harness staging path; the API-29 half is the real-device question - see report)
-[2026-09-17T09:16:35Z] P8_CORRUPT FAIL :: corrupted payload did not recover cleanly (healthy=no reextract_lines=20 marker=1)
-[2026-09-17T09:16:48Z] P8_CRASH PASS :: force-stopped the app process with the server running; relaunch returned to HEALTHY (valid marker -> no re-extraction needed)
-[2026-09-17T09:17:08Z] P8_SESSIONPERSIST PASS :: P8SESVRFY ok=1 sessionsSeen=4 sessionFound=true userMessageFound=true storedBeforeKill=1 (the server's session store + project pointer survived the process death)
-[2026-09-17T09:17:11Z] wifi before cut: Control the Wi-Fi manager
-[2026-09-17T09:18:44Z] P8_NETLOSS FAIL :: status=error errName/text='' recover==== messages dump (turn done, failed=false) === userMsgs=1 (expected: network-shaped error, clean recovery, no double-send)
-[2026-09-17T09:18:53Z] app backgrounded; 90s in the background with a turn in flight
-[2026-09-17T09:20:23Z] P8_BGFG FAIL :: background/foreground: no verdict line (mid-background health=200)
-[2026-09-17T09:20:24Z] P8_LARGE PASS :: P8LARGEMEASURE createMs=15 listMs=160 listEntries=2000 contentMs=277 contentOk=1 gitInitAddCommitMs=0 (P8LARGEBUILD ok=1 files=2001 bytes=52522580 dirMs=173 dir=/data/data/ai.opencode.android.debug/files/workspaces/p8-large)
-[2026-09-17T09:20:24Z] rebooting the emulator (fresh network state; relaunching the app)
+[2026-09-17T15:24:49Z] no OPENROUTER_API_KEY for this run: model-dependent gates will SKIP with the reason
+[2026-09-17T15:24:49Z] P8_MODELPROVISION SKIP :: no OPENROUTER_API_KEY set (the model gates stay SKIP by design, not silence)
+[2026-09-17T15:25:09Z] runtime healthy with Keystore password available to the host drivers
+[2026-09-17T15:25:09Z] === stage C: P8 instrumented stress gates (model-free half) ===
+[2026-09-17T15:25:09Z] rebooting the emulator (fresh network state; relaunching the app)
+[2026-09-17T15:26:02Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g00_keyResidency ===
+[2026-09-17T15:26:10Z] instrument rc=0 (stress-a)
+[2026-09-17T15:26:10Z] stress-a runner trailer: OK
+[2026-09-17T15:26:11Z] screenshots pulled: 0
+[2026-09-17T15:26:11Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g02_serverKill ===
+[2026-09-17T15:26:50Z] instrument rc=0 (stress-b)
+[2026-09-17T15:26:51Z] stress-b runner trailer: OK
+[2026-09-17T15:26:51Z] screenshots pulled: 0
+[2026-09-17T15:26:51Z] === am instrument ai.opencode.android.ui.StressRecoveryGatesTest#g03_lifecycleLog ===
+[2026-09-17T15:26:54Z] instrument rc=0 (stress-c)
+[2026-09-17T15:26:54Z] stress-c runner trailer: OK
+[2026-09-17T15:26:54Z] screenshots pulled: 0
+[2026-09-17T15:26:54Z] P8_KEYRESIDENCY SKIP :: :: masterKey=present insideSecureHardware=false strongBoxBacked=probe-returned-null secretStoreIsHardwareBacked=false abi=x86_64 device=sdk_gphone64_x86_64 api=34 :: key material is in the SOFTWARE keystore on this devic
+[2026-09-17T15:26:54Z] P8_SERVERKILL PASS :: :: killedPid=4361 oldPidDead=true sawCrashedRestarting=true restartCount=0 healthyAgain=true healthHttp=200 sawFatal=false newPid=4596 finalStatus=HEALTHY finalDetail='healthy on 127.0.0.1:4111'
+[2026-09-17T15:26:54Z] P8_LIFECYCLELOG PASS :: :: illegalTransitions=0 startingTransitions=6 healthyTransitions=5 logBytes=11719 lastStates='EXTRACTING (validating embedded runtime) | EXTRACTING (validating embedded runtime) | STARTING (starting OpenCode server (atte
+[2026-09-17T15:26:54Z] === stage D: destructive stress (host-driven, on the relaunch the instrument left behind) ===
+[2026-09-17T15:27:23Z] === am instrument ai.opencode.android.ui.LiveToolCallGatesTest ===
+[2026-09-17T15:27:39Z] instrument rc=0 (live)
+[2026-09-17T15:27:39Z] live runner trailer: OK
+[2026-09-17T15:27:39Z] screenshots pulled: 0
+[2026-09-17T15:27:39Z] P8_KEYPROBE SKIP :: :: no model key was provisioned for this run
+[2026-09-17T15:27:39Z] P8_TOOL SKIP :: :: the provisioned key could not serve a turn, so no tool call can be observed: no turn was attempted yet
+[2026-09-17T15:27:39Z] P8_CLEANUP PASS :: :: keystoreRemoved=false leftoverKey=none storedProviderIds= :: the short-lived CI key must not persist on the device after the run
+[2026-09-17T15:27:39Z] P8_TOYBOX PASS :: base64|base64 -d|tar xz -C dir works on api=34 (harness staging path; the API-29 half is the real-device question - see report)
+[2026-09-17T15:27:51Z] P8_CORRUPT PASS :: truncated launcher + sha-mangled server bundle + wiped marker -> re-extracted and healthy (re-extraction lines=5, marker restored)
+[2026-09-17T15:28:05Z] P8_CRASH PASS :: force-stopped the app process with the server running; relaunch returned to HEALTHY (valid marker -> no re-extraction needed)
+[2026-09-17T15:28:17Z] P8_SESSIONPERSIST PASS :: P8SESVRFY ok=1 sessionsSeen=4 sessionFound=true userMessageFound=true storedBeforeKill=1 (the server's session store + project pointer survived the process death)
+[2026-09-17T15:28:20Z] wifi before cut: Control the Wi-Fi manager
+[2026-09-17T15:30:01Z] P8_NETLOSS FAIL :: status=error errName/text='' recover==== messages dump (turn done, failed=false) === userMsgs=1 (expected: network-shaped error, clean recovery, no double-send)
+[2026-09-17T15:30:09Z] app backgrounded; 90s in the background with a turn in flight
+[2026-09-17T15:31:39Z] P8_BGFG FAIL :: background/foreground: no verdict line (mid-background health=200)
+[2026-09-17T15:31:41Z] P8_LARGE PASS :: P8LARGEMEASURE createMs=16 listMs=179 listEntries=2000 contentMs=273 contentOk=1 gitInitAddCommitMs=1000 (P8LARGEBUILD ok=1 files=2001 bytes=52522580 dirMs=301 dir=/data/data/ai.opencode.android.debug/files/workspaces/p8-large)
+[2026-09-17T15:31:41Z] rebooting the emulator (fresh network state; relaunching the app)
 grep: write error: Broken pipe
-/home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh: line 567: echo: write error: Broken pipe
-[2026-09-17T09:25:34Z] P8_HIST PASS :: [{"role":"user","parts":[{"type":"text","text":"Turn 1 of 40: reply with exactly: P8HIST 1","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user is asking me to reply with exactly \"P8HIST 1\" for turn 1 of 40.","input":"null","output":"null","error":null},{"type":"text","text":"P8HIST 1","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
-[2026-09-17T09:25:48Z] P8_STORAGE PASS :: free: 4378684KB -> 2535476KB (app), back to 4378516KB after cleanup :: healthy under low storage
-[2026-09-17T09:25:48Z] === stage E: performance measurement (the report's numbers) ===
-[2026-09-17T09:25:48Z] rebooting the emulator (fresh network state; relaunching the app)
-[2026-09-17T09:31:37Z] warn: runtime not healthy after the reboot
-[2026-09-17T09:31:40Z] cold start (supervisor log): EXTRACTING=2026-09-17T09:03:50.445Z HEALTHY=2026-09-17T09:03:58.146Z -> 7701ms
-/home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh: line 662: MEMINFO: command not found
-/home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh: line 664: CPU_BEFORE: command not found
-[2026-09-17T09:36:04Z] P8_PERF FAIL :: P8PERF ok=0 model=default(key-free) createMs=29 listMs=8 statusMs=11 filelistMs=458 contentMs=221 shellMs=171 shellOk=1 ttftMs=3899 turnMs=240002 streamedParts=1 streamTimedOut=1 warmRestartMs=22000
-[2026-09-17T09:36:04Z] === evidence pull ===
-[2026-09-17T09:36:04Z] === SUMMARY ===
-P8_SUMMARY 2026-09-17T09:36:04Z
-gates_pass=11 gates_fail=4 gates_skip=4
+/home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh: line 576: echo: write error: Broken pipe
+[2026-09-17T15:34:50Z] P8_HIST PASS :: [{"role":"user","parts":[{"type":"text","text":"Turn 1 of 40: reply with exactly: P8HIST 1","input":"null","output":"null","error":null}]},{"role":"assistant","parts":[{"type":"step-start","text":"","input":"null","output":"null","error":null},{"type":"reasoning","text":"The user wants me to reply with exactly \"P8HIST 1\".","input":"null","output":"null","error":null},{"type":"text","text":"P8HIST 1","input":"null","output":"null","error":null},{"type":"step-finish","text":"","input":"null","output":"null","error":null}]}]
+[2026-09-17T15:35:07Z] P8_STORAGE PASS :: free: 4398868KB -> 2555664KB (app), back to 4398828KB after cleanup :: healthy under low storage
+[2026-09-17T15:35:07Z] === stage E: performance measurement (the report's numbers) ===
+[2026-09-17T15:35:07Z] rebooting the emulator (fresh network state; relaunching the app)
+[2026-09-17T15:36:02Z] cold start (supervisor log): EXTRACTING=2026-09-17T15:24:52.136Z HEALTHY=2026-09-17T15:24:59.846Z -> 7710ms
+/home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh: line 671: MEMINFO: command not found
+/home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh: line 673: CPU_BEFORE: command not found
+[2026-09-17T15:40:26Z] P8_PERF FAIL :: P8PERF ok=0 model=default(key-free) createMs=30 listMs=6 statusMs=1 filelistMs=135 contentMs=38 shellMs=764 shellOk=1 ttftMs=1576 turnMs=240003 streamedParts=1 streamTimedOut=1 warmRestartMs=22000
+[2026-09-17T15:40:26Z] === evidence pull ===
+[2026-09-17T15:40:26Z] === SUMMARY ===
+P8_SUMMARY 2026-09-17T15:40:26Z
+gates_pass=12 gates_fail=3 gates_skip=4
 stress_instrument_rc=0 live_instrument_rc=0
 screenshots=1
 model_available=0 model=openai/gpt-4o-mini
@@ -310,11 +308,11 @@ android_sdk=34
 STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase8/scripts/20-gates.sh'
 phase8 gates rc=1
 ########## 7/7 evidence ##########
-P8_SUMMARY 2026-09-17T09:36:04Z
-gates_pass=11 gates_fail=4 gates_skip=4
+P8_SUMMARY 2026-09-17T15:40:26Z
+gates_pass=12 gates_fail=3 gates_skip=4
 stress_instrument_rc=0 live_instrument_rc=0
 screenshots=1
 model_available=0 model=openai/gpt-4o-mini
 device_abi=x86_64
 android_sdk=34
-=== PHASE 8 END 2026-09-17T09:36:06Z rc=1 (gates=1 fails=4) ===
+=== PHASE 8 END 2026-09-17T15:40:28Z rc=1 (gates=1 fails=3) ===
