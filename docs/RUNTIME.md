@@ -13,7 +13,7 @@ evidence bundle; anything without one is labelled.
 | git | v2.48.1 | upstream source, Android NDK 28.2.13676358, `NO_PERL NO_CURL NO_OPENSSL NO_EXPAT`, bionic | same (init/add/commit/diff/log: P5 G-gates, P8-LARGE) |
 | ripgrep | 15.1.0 | upstream source, cargo, `x86_64/aarch64-linux-android`, pcre2 | same |
 | shell | `/system/bin/sh` (Android's mksh) | not bundled; OpenCode `shell` config points to it | same (bash tool via `/shell` endpoint, P5, P8-PERF `shellOk=1`) |
-| payload | v6 | `runtime-payload.tar.gz` + `runtime-manifest.json` | v6 NOT YET RUN in CI (see below) |
+| payload | v7 | `runtime-payload.tar.gz` + `runtime-manifest.json` (+ pre-seeded `@opencode-ai/plugin` tree) | v6 TESTED in CI run 1 (exposed the npm SIGSYS crash loop); v7 pending run 2 |
 
 `versions.lock` is the source of truth; `phase9/scripts/check-lock.py`
 asserts `RuntimeVersion.kt`, `app/build.gradle.kts` and the built manifest
@@ -88,7 +88,7 @@ informational, not fatal (Phase 8 note). Details and the evidence chain:
 | file watching | disabled | `@parcel/watcher` has no Android binding; upstream falls back gracefully |
 | MCP stdio | works | P5 G10 (real `@modelcontextprotocol/sdk` server spawned by the runtime's own bun) |
 | MCP remote HTTP/SSE | **fails** | upstream #47644 swallows the transport error; permanent until upstream fixes |
-| plugins (`@opencode-ai/plugin`) | install path fixed in v6 | verification gate `P9_PLUGIN` needs registry egress from the emulator; SKIPs otherwise |
+| plugins (`@opencode-ai/plugin`) | pre-installed in the payload (v7) | **on-device `npm install` (any extra plugin) SIGSYS-crashes Bun** - exit 159, supervised restart; documented BLOCKED until the syscall is added to the shim table (`P9_PLUGIN` forensics) |
 | sqlite | `bun:sqlite` | Bun 1.3.14 has no `node:sqlite`; the bundle targets `bun` |
 
 ## Android versions and ABIs
@@ -124,7 +124,7 @@ informational, not fatal (Phase 8 note). Details and the evidence chain:
 | HEALTHY but chat says the model service is unreachable | Settings -> Diagnostics; `xdg/state/opencode/log/` | device has no network, or provider outage. Classified as NETWORK from the server's own error. |
 | Added a key but turns use the wrong model / return nothing | Settings -> Providers (should list the provider as connected after save) | pre-Phase-9 builds needed an app restart (provider cache); v6 disposes the instance on save. If it persists, check `session.error` in the OpenCode log for `ProviderModelNotFoundError`. |
 | Empty assistant turn, no error shown | OpenCode log | upstream completes provider failures as silent empty turns (Phase 8 §7/§13); the raw provider text, when present, is in the disclosure of the error card. Known upstream behaviour. |
-| Plugin never installs | `xdg/state/opencode/log/*.log` for `NpmInstallFailedError` | v5 payloads (version `1.18.23-android`) always failed; v6 reports `1.18.23`. Needs registry egress. |
+| Server restarts every ~8 s (`code=159` in `runtime.log`, `_cacache` lines before it) | `runtime.log`, OpenCode log `dependency install failed` | upstream is running `npm install` for a plugin on-device and Arborist hits a trapped syscall. Payload v7 pre-seeds the default plugin so this path is not entered; remove any extra `plugin:` entry from `opencode.json` to stop the loop. |
 | Remote MCP server "connected" but no tools | - | upstream #47644; use a stdio MCP server instead. |
 | Background turn stops | notification | the foreground service must be allowed to run (battery optimisation exemption); the server itself keeps answering health in the background (P8-BGFG measurement). |
 

@@ -13,7 +13,7 @@ no reimplementation of the agent in Kotlin.
 | App version | `1.18.23-phase9` (versionCode 7) - prefix = pinned OpenCode version |
 | Android | minSdk 29 (Android 10) - targetSdk 34, compileSdk 34 |
 | ABI | **arm64-v8a** ships; **x86_64** for emulator/CI only; armeabi-v7a/x86 refused with an explicit message |
-| Runtime | Bun 1.3.14 (official Android/bionic build), git v2.48.1, ripgrep 15.1.0, embedded payload v6 |
+| Runtime | Bun 1.3.14 (official Android/bionic build), git v2.48.1, ripgrep 15.1.0, embedded payload v7 |
 | Pins | [`versions.lock`](versions.lock) (mechanically checked against the app and the built payload) |
 
 ## Documents
@@ -52,7 +52,10 @@ the reason.
      default model from a *connected* provider).
   2. `@opencode-ai/plugin` install always failing (root cause: the bundle
      reported version `1.18.23-android`, which npm does not have; it now
-     reports the bare `1.18.23`).
+     reports the bare `1.18.23` - TESTED). The first CI run then showed the
+     on-device `npm install` itself crashes Bun (SIGSYS), so the payload now
+     ships the plugin pre-installed; installing *additional* plugins on
+     device remains BLOCKED (see RUNTIME.md).
 - **Permanent limitations**: remote HTTP/SSE MCP servers fail through an
   upstream defect ([#47644](docs/progress/upstream-issue-47644-mcp-swallowed-error.md));
   no PTY (interactive terminal feature off; the bash tool itself works);
@@ -74,10 +77,10 @@ bash phase4/scripts/10-build-payload.sh        # -> phase4/out/engine/{assets,jn
 `./gradlew ... -PskipPayload` compiles the app without the payload (unit tests
 and compile checks only; the resulting APK cannot run the server).
 
-Release artifact sizes: the debug APK containing both ABIs measured
-**143.8 MB** in Phase 8. The arm64-only download from an AAB is roughly half;
-the exact per-ABI number is printed by the release pipeline
-(`P9-RELEASE note:` lines in `GATES_SUMMARY.txt`).
+Release artifact sizes (CI run 35132822991, payload v6): `app-release-unsigned.apk`
+**127.1 MB** (both ABIs), `app-release.aab` **115.3 MB**; native libs per ABI
+~123 MB (arm64-v8a) / ~127 MB (x86_64) uncompressed, so an arm64 device
+download from the AAB is roughly half the universal APK.
 
 ## CI / release pipeline
 

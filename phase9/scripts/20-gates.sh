@@ -140,29 +140,47 @@ fi
 # the emulator is a precondition; when the probe below cannot reach it, SKIP.
 REG_PROBE=$(rash "cd '$FILES' && timeout 60 '$FILES/bin/bun' -e 'const r=await fetch(\"https://registry.npmjs.org/@opencode-ai/plugin/latest\");console.log(\"REG\"+r.status)' 2>&1" | grep -o 'REG[0-9]*' | head -1)
 log "npm registry probe from the app uid: ${REG_PROBE:-none}"
-PLUG_DEADLINE=$(( $(date +%s) + 420 ))
-PLUG_LOG=""; PLUG_OK=""; PLUG_FAIL=""; PLUG_NM=""
+# Phase 9 payload v7 ships the installed tree (plugin-seed/ -> xdg/config/opencode).
+# The gate therefore asserts three things over a 150 s observation window:
+#   (a) node_modules/@opencode-ai/plugin exists at the pinned version,
+#   (b) OpenCode's own log records NO "background dependency install failed"
+#       (upstream's Npm.install short-circuited - Arborist never ran),
+#   (c) the server did not die with exit 159 (SIGSYS) in the window - the
+#       crash loop that run 35132822991 exposed when the install DID run.
+CRASH159_BEFORE=$(rash "grep -c 'code=159' '$FILES/log/runtime.log' 2>/dev/null" | tr -dc '0-9'); CRASH159_BEFORE=${CRASH159_BEFORE:-0}
+INSTFAIL_BEFORE=$(rash 'for d in "'"$FILES"'/xdg/data/opencode/log" "'"$FILES"'/xdg/state/opencode/log"; do cat "$d"/*.log 2>/dev/null; done | grep -ac "dependency install failed"' | tr -dc '0-9'); INSTFAIL_BEFORE=${INSTFAIL_BEFORE:-0}
+# touch the workspace instance so config (and thus the install path) is loaded
+HPW=$(rash "cat '$FILES/harness/server-password' 2>/dev/null" | tr -d '\r\n ')
+curl -s -u "opencode:$HPW" --max-time 20 "http://127.0.0.1:$PORT/provider" -o /dev/null || true
+PLUG_DEADLINE=$(( $(date +%s) + 150 ))
+PLUG_LOG=""; PLUG_FAIL=""; PLUG_NM=""; PLUG_VER=""
 while [ "$(date +%s)" -lt "$PLUG_DEADLINE" ]; do
   PLUG_LOG=$(rash 'for d in "'"$FILES"'/xdg/data/opencode/log" "'"$FILES"'/xdg/state/opencode/log"; do for f in "$d"/*.log; do [ -e "$f" ] || continue; grep -a "dependency install\|opencode-ai/plugin\|NpmInstallFailedError" "$f"; done; done 2>/dev/null' | tail -20)
-  PLUG_FAIL=$(printf '%s\n' "$PLUG_LOG" | grep -a "NpmInstallFailedError\|dependency install failed" | tail -1)
-  PLUG_NM=$(rash "ls -d '$FILES'/xdg/config/opencode/node_modules/@opencode-ai/plugin '$FILES'/workspaces/*/.opencode/node_modules/@opencode-ai/plugin 2>/dev/null | head -3" | tr '\n' ' ')
+  PLUG_NM=$(rash "ls -d '$FILES'/xdg/config/opencode/node_modules/@opencode-ai/plugin 2>/dev/null" | tr '\n' ' ')
   PLUG_VER=$(rash "cat '$FILES'/xdg/config/opencode/node_modules/@opencode-ai/plugin/package.json 2>/dev/null" | python3 -c 'import json,sys
 try: print(json.load(sys.stdin).get("version",""))
 except Exception: print("")' 2>/dev/null)
-  [ -n "$PLUG_NM" ] && break
-  [ -n "$PLUG_FAIL" ] && break
   sleep 15
 done
 printf '%s\n' "$PLUG_LOG" > "$EV/p9-plugin-install.log"
-if [ -n "$PLUG_NM" ]; then
-  p9 PLUGIN 0 "@opencode-ai/plugin installed on device: $PLUG_NM version='${PLUG_VER:-?}' (upstream's background install, previously NpmInstallFailedError on 1.18.23-android)"
-elif [ -n "$PLUG_FAIL" ]; then
-  p9 PLUGIN 1 "install still failing: $(printf '%s' "$PLUG_FAIL" | cut -c1-220)"
-elif [ "${REG_PROBE:-}" != "REG200" ]; then
-  p9 PLUGIN 7 "no registry egress from the emulator (probe=${REG_PROBE:-none}); the install could not be exercised here - the version fix itself is proven by P9_VERSION"
-else
-  p9 PLUGIN 1 "no install outcome within 420s (no node_modules, no failure line in OpenCode's log): $(printf '%s' "$PLUG_LOG" | tail -2 | cut -c1-200)"
+CRASH159_AFTER=$(rash "grep -c 'code=159' '$FILES/log/runtime.log' 2>/dev/null" | tr -dc '0-9'); CRASH159_AFTER=${CRASH159_AFTER:-0}
+INSTFAIL_AFTER=$(rash 'for d in "'"$FILES"'/xdg/data/opencode/log" "'"$FILES"'/xdg/state/opencode/log"; do cat "$d"/*.log 2>/dev/null; done | grep -ac "dependency install failed"' | tr -dc '0-9'); INSTFAIL_AFTER=${INSTFAIL_AFTER:-0}
+NEW159=$(( CRASH159_AFTER - CRASH159_BEFORE )); NEWFAIL=$(( INSTFAIL_AFTER - INSTFAIL_BEFORE ))
+# SIGSYS forensics whenever a 159 happened anywhere in this boot (diagnosis for the shim table)
+if [ "$CRASH159_AFTER" -gt 0 ]; then
+  { adb logcat -b all -d 2>/dev/null | grep -aE 'type=1326|SYS_SECCOMP|Fatal signal 31|disallowed .* system call|seccomp prevented' | tail -40
+    rash "ls -t /data/tombstones 2>/dev/null | head -3" 2>/dev/null
+  } > "$EV/p9-sigsys-forensics.txt" 2>&1 || true
 fi
+if [ -n "$PLUG_NM" ] && [ "$PLUG_VER" = "$LOCKV" ] && [ "$NEWFAIL" = 0 ] && [ "$NEW159" = 0 ]; then
+  p9 PLUGIN 0 "@opencode-ai/plugin@$PLUG_VER present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +$NEWFAIL, exit-159 crashes +$NEW159 in 150 s; total 159s this boot=$CRASH159_AFTER)"
+elif [ -z "$PLUG_NM" ]; then
+  p9 PLUGIN 1 "plugin seed missing on device (payload v7 promotion did not happen): $(printf '%s' "$PLUG_LOG" | tail -1 | cut -c1-200)"
+else
+  p9 PLUGIN 1 "seed present (version='$PLUG_VER' want $LOCKV) but install-failed lines +$NEWFAIL, exit-159 crashes +$NEW159 in the window: $(printf '%s' "$PLUG_LOG" | tail -1 | cut -c1-200)"
+fi
+# Extra plugin beyond the seed: NOT exercised here on purpose - it is the path
+# that SIGSYS-crashes the server (documented BLOCKED, forensics above when seen).
 
 # ---------------------------------------------------------------------------
 log "=== P9 stage 3: versions.lock == manifest == RuntimeVersion.kt == APK ==="

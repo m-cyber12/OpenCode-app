@@ -206,11 +206,23 @@ class ProviderSelectionGatesTest {
 
     @Test
     fun g04_cleanup() {
-        val api = apiOrNull()
-        runCatching { api?.deleteProviderAuth(PROVIDER) }
-        runCatching { api?.dispose() }
-        val after = runCatching { api?.providers() }.getOrNull()
-        val gone = after?.connected?.contains(PROVIDER) == false
-        gate("PROVSEL_CLEANUP", gone, "dummy credential removed: connected=${after?.connected?.contains(PROVIDER)}")
+        val api = apiOrNull() ?: run { skip("PROVSEL_CLEANUP", "no loopback credential available"); return }
+        if (!waitHealthy(api, 240_000)) { skip("PROVSEL_CLEANUP", "server not healthy"); return }
+        runCatching { api.deleteProviderAuth(PROVIDER) }
+        runCatching { api.dispose() }
+        // The server may be mid-restart (supervised); retry the readback briefly
+        // instead of reporting "connected=null" as a failed cleanup.
+        var after: OpenCodeApi.ProviderSnapshot? = null
+        val deadline = System.currentTimeMillis() + 60_000
+        while (after == null && System.currentTimeMillis() < deadline) {
+            after = runCatching { api.providers() }.getOrNull()
+            if (after == null) Thread.sleep(3000)
+        }
+        val gone = after != null && !after.connected.contains(PROVIDER)
+        gate(
+            "PROVSEL_CLEANUP",
+            gone,
+            "dummy credential removed: connected=${after?.connected?.contains(PROVIDER) ?: "unreadable (server unreachable for 60 s)"}",
+        )
     }
 }

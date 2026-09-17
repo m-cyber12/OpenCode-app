@@ -235,7 +235,7 @@ H1_LAUNCH=1; rash "test -f '$FILES/launcher.js'" && H1_LAUNCH=0
 H1_NM=1; rash "test -d '$FILES/node_modules'" && H1_NM=0
 # payloadVersion 6 (Phase 9), 5 (Phase 5) and 4 (Phase 4) are all valid app-known layouts;
 # the marker only has to match what this build's RuntimeVersion expects.
-H1_MARK=1; echo "$MARKER" | grep -qE '"payloadVersion":[456]' && H1_MARK=0
+H1_MARK=1; echo "$MARKER" | grep -qE '"payloadVersion":[4567]' && H1_MARK=0
 log "H1 node=$H1_NODE launcher=$H1_LAUNCH node_modules=$H1_NM marker=$H1_MARK exec=$EXEC_OK"
 if [ "$EXEC_OK" = "1" ] && [ "$H1_NODE" = 0 ] && [ "$H1_LAUNCH" = 0 ] \
    && [ "$H1_NM" = 0 ] && [ "$H1_MARK" = 0 ]; then

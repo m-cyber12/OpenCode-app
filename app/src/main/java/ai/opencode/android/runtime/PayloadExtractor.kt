@@ -104,6 +104,28 @@ class PayloadExtractor(
         return null
     }
 
+    private fun promotePluginSeed(seed: File) {
+        if (!seed.isDirectory) return
+        val dst = paths.xdgConfigOpencode
+        dst.mkdirs()
+        val nm = File(dst, "node_modules")
+        val nmNew = File(dst, "node_modules.seed")
+        val nmOld = File(dst, "node_modules.old")
+        nmNew.deleteRecursively(); nmOld.deleteRecursively()
+        val srcNm = File(seed, "node_modules")
+        if (srcNm.isDirectory) {
+            if (!srcNm.renameTo(nmNew)) { srcNm.copyRecursively(nmNew, overwrite = true) }
+            if (nm.exists()) nm.renameTo(nmOld)
+            if (!nmNew.renameTo(nm)) { nmNew.copyRecursively(nm, overwrite = true); nmNew.deleteRecursively() }
+            nmOld.deleteRecursively()
+        }
+        for (name in listOf("package.json", "package-lock.json")) {
+            val f = File(seed, name)
+            if (f.isFile) f.copyTo(File(dst, name), overwrite = true)
+        }
+        logger.host("plugin seed promoted into ${dst.name}/ (node_modules + lockfile)")
+    }
+
     private fun extract(manifest: RuntimeManifest): Result {
         val staging = File(paths.filesDir, "payload.staging")
         val oldRoots = listOf("opencode", "node_modules", "launcher.js")
@@ -144,6 +166,13 @@ class PayloadExtractor(
                 }
                 bak.deleteRecursively()
             }
+            // Phase 9: the pre-installed @opencode-ai/plugin tree goes under the
+            // global config dir so upstream's Npm.install finds node_modules +
+            // a lockfile that already covers the package and never runs
+            // Arborist on-device (which SIGSYS-crashes under the app filter).
+            // Only the seed's own files are replaced; a user's opencode.json
+            // (or anything else in that dir) is left alone.
+            promotePluginSeed(File(staging, "plugin-seed"))
             staging.deleteRecursively()
 
             paths.extractionMarker.writeText(

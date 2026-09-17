@@ -21,9 +21,9 @@ written, wired and statically checked — but they have **not run yet**.
 | Item | Label |
 |---|---|
 | Provider-selection fallback bug — root cause, fix in `OpenCodeRepository` + `DefaultModelHint`, gates `P9_PROVSEL_*` | **IMPLEMENTED, NOT TESTED** (awaits CI run) |
-| `@opencode-ai/plugin` install bug — root cause, fix in payload build (bare `OPENCODE_VERSION`), gates `P9_VERSION`, `P9_PLUGIN` | **IMPLEMENTED, NOT TESTED** (`P9_PLUGIN` additionally needs registry egress from the emulator; SKIPs with reason otherwise) |
-| Phase 9 CI pipeline (`phase9-release.yml` + `00-run-phase9.sh` + `20-gates.sh`) | IMPLEMENTED; static checks PASS locally; **NOT TESTED** end-to-end (install step is a user action) |
-| Release APK/AAB + runtime artifacts | **NOT PRODUCED YET** — produced by stage 6 of the pipeline (`assembleRelease`/`bundleRelease`, `runtime-payload-engine.tar.gz`, manifest) and uploaded as `opencode-android-release`. Unsigned unless `P9_KEYSTORE_*` secrets are set. |
+| `@opencode-ai/plugin` install bug — bare `OPENCODE_VERSION` (**TESTED**: `P9_VERSION PASS`, run 1) + pre-seeded plugin tree in payload v7 (**IMPLEMENTED, NOT TESTED** until run 2; run 1 showed the on-device install itself SIGSYS-crashes Bun - §2b) |
+| Phase 9 CI pipeline (`phase9-release.yml` + `00-run-phase9.sh` + `20-gates.sh`) | **TESTED** end-to-end (run 35132822991 reached all 7 stages and printed every gate) |
+| Release APK/AAB + runtime artifacts | **PRODUCED (run 1, payload v6)**: `app-release-unsigned.apk` 127.1 MB, `app-release.aab` 115.3 MB, payload tar + manifest, artifact `opencode-android-release`. Unsigned (no keystore secret). Run 2 re-produces them on payload v7. |
 | Capability matrix, README, ARCHITECTURE, RUNTIME, SECURITY, TESTING | IMPLEMENTED (written from executed Phase 4–8 evidence; every row labelled) |
 | `versions.lock` accurate | IMPLEMENTED + TESTED (mechanically: `check-lock.py` OK locally against `RuntimeVersion.kt` and `versionName`; the manifest half runs in CI as `P9_LOCK`) |
 | Phase 8 temporary secrets removed | **DONE (owner-confirmed 2026-09-16)**: `OPENROUTER_API_KEY` repo secret deleted and the Gemini key from commit `52e7c4d` revoked by the repository owner; the repository itself cannot verify either, so this rests on the owner's statement |
@@ -113,6 +113,52 @@ plugin` or a failure line in the server log; SKIP with the probe result if
 the emulator has no registry egress — Phase 8 showed the server process's
 egress on the CI emulator is unreliable, so a SKIP there is possible and is
 reported as such, not as a pass).
+
+## 2b. CI run 1 (35132822991, 2026-09-16) - what it proved and what it found
+
+Every stage was reached: P9-STATIC, P9-UNIT (278 JVM tests), P9-PAYLOAD (v6),
+APKs, fresh emulator, full Phase 8 suite, Phase 9 gates, **release build
+(`app-release-unsigned.apk` 127 100 669 B, `app-release.aab` 115 325 497 B;
+native libs arm64-v8a 123.1 MB / x86_64 126.7 MB uncompressed)**.
+
+| Gate | Verdict | Meaning |
+|---|---|---|
+| `P9_VERSION` | **PASS** | `/global/health` reports `1.18.23` - bug 2's version half is fixed and TESTED |
+| `P9_LOCK` | **PASS** | shipped manifest == versions.lock == app constants == versionName |
+| `P9-RELEASE` | **PASS** | first release artifacts of the project (unsigned; no keystore secret) |
+| Phase 8 SERVERKILL, CRASH, CORRUPT, LIFECYCLELOG, LARGE, STORAGE, SESSIONPERSIST, TOYBOX, CLEANUP, PERF(op half) | PASS | hardening baseline holds on payload v6 |
+| `P9_PLUGIN`, all `P9_PROVSEL_*`, `P8_P7REG` (P6_L1), P5-R-07/10/11/12, P5-G17, `P8_HIST`, `P8_NETLOSS`, `P8_BGFG` | FAIL | **one cause, below** |
+
+**Finding (new, serious, now fixed in code): the plugin-version fix made the
+server crash-loop.** With the bare version, upstream's background
+`npm install @opencode-ai/plugin@1.18.23` runs for real on every instance
+load. Arborist begins writing `~/.npm/_cacache` and ~5 s later Bun dies with
+**exit 159 = SIGSYS** (a syscall the app seccomp filter traps and our shims
+do not emulate). The supervisor restarts it, the install retries, it dies
+again: **113 exit-159 events in this run** (Phase 8 evidence on v5: 0),
+roughly one every 8-10 s. Every gate that needs the server to stay up for a
+turn failed with "connection refused"; `P9_PLUGIN` never saw an outcome
+because each restart found the previous attempt's lock
+(`LockCompromisedError`). On v5 the install 404'd instantly, so the crashing
+code path was never reached - the fix exposed a latent crash rather than
+introducing the syscall problem, but the effect was an unusable app.
+
+Fix (payload **v7**): the payload ships the *installed* plugin tree
+(`plugin-seed/` -> `xdg/config/opencode/{node_modules,package.json,package-lock.json}`,
+built on the host with `npm install --ignore-scripts`, types/maps/bin stripped,
+~3.5 MB compressed). Upstream's `Npm.install` sees `node_modules` and a lockfile
+covering the package and returns without calling Arborist. The plugin API
+therefore works, offline, without the crashing path. `P9_PLUGIN` now asserts:
+seed present at the pinned version, zero new `dependency install failed`
+lines and zero new exit-159 in a 150 s window; when any 159 is seen it also
+captures the kernel's `type=1326 ... syscall=N` audit lines
+(`p9-sigsys-forensics.txt`) so the shim table can be extended.
+
+**Residual limitation (documented, BLOCKED until the syscall is identified):
+a plugin the user adds beyond the seeded package triggers the on-device
+Arborist path and can crash the server** (supervised restart, bounded). Also
+fixed from this run: P5-02 accepted only `payloadVersion 5`;
+`P9_PROVSEL_CLEANUP` reported a mid-restart readback as failure.
 
 ## 3. Permanent limitations (final wording)
 
