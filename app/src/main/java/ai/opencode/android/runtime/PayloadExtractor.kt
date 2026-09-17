@@ -222,7 +222,7 @@ class PayloadExtractor(
 
             for (e in manifest.entries) {
                 if (!RuntimeManifest.isSafeRelativePath(e.path)) return "unsafe manifest path: ${e.path}"
-                val f = File(root, e.path)
+                val f = installedLocation(root, e.path)
                 if (!f.isFile) return "missing ${e.path}"
                 if (f.length() != e.size) return "size mismatch on ${e.path}: ${f.length()} != ${e.size}"
                 val sha = sha256(f)
@@ -230,6 +230,20 @@ class PayloadExtractor(
             }
             return null
         }
+
+        /** Payload roots promoted somewhere other than filesDir/<same path>. */
+        const val PLUGIN_SEED_ROOT = "plugin-seed/"
+        const val PLUGIN_SEED_DEST = "xdg/config/opencode/"
+
+        /**
+         * Where a manifest entry lives AFTER promotion. Everything is flat under
+         * filesDir except the Phase 9 plugin seed, which is promoted into the
+         * OpenCode global config dir (so upstream's Npm.install finds it).
+         */
+        fun installedLocation(root: File, manifestPath: String): File =
+            if (manifestPath.startsWith(PLUGIN_SEED_ROOT))
+                File(root, PLUGIN_SEED_DEST + manifestPath.removePrefix(PLUGIN_SEED_ROOT))
+            else File(root, manifestPath)
 
         fun sha256(f: File): String {
             val md = MessageDigest.getInstance("SHA-256")

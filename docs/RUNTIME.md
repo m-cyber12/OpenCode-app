@@ -13,7 +13,7 @@ evidence bundle; anything without one is labelled.
 | git | v2.48.1 | upstream source, Android NDK 28.2.13676358, `NO_PERL NO_CURL NO_OPENSSL NO_EXPAT`, bionic | same (init/add/commit/diff/log: P5 G-gates, P8-LARGE) |
 | ripgrep | 15.1.0 | upstream source, cargo, `x86_64/aarch64-linux-android`, pcre2 | same |
 | shell | `/system/bin/sh` (Android's mksh) | not bundled; OpenCode `shell` config points to it | same (bash tool via `/shell` endpoint, P5, P8-PERF `shellOk=1`) |
-| payload | v7 | `runtime-payload.tar.gz` + `runtime-manifest.json` (+ pre-seeded `@opencode-ai/plugin` tree) | v6 TESTED in CI run 1 (exposed the npm SIGSYS crash loop); v7 pending run 2 |
+| payload | v7 | `runtime-payload.tar.gz` + `runtime-manifest.json` (+ pre-seeded `@opencode-ai/plugin` tree) | v7 TESTED in CI run 2 (`P9_PLUGIN PASS`, zero exit-159); run 2 also showed v7 re-extracting on every launch because the verifier looked for the seed at its pre-promotion path - fixed (`installedLocation`), pending run 3 |
 
 `versions.lock` is the source of truth; `phase9/scripts/check-lock.py`
 asserts `RuntimeVersion.kt`, `app/build.gradle.kts` and the built manifest
@@ -119,6 +119,7 @@ informational, not fatal (Phase 8 note). Details and the evidence chain:
 | Symptom | Where to look | Likely cause / action |
 |---|---|---|
 | "Unsupported device" screen | `AbiGate` | 32-bit-only device. Nothing to do. |
+| `(re)extracting` on every launch (`extraction invalid (missing ...)` each start, +4-10 s) | `runtime.log` | the verifier expected a manifest entry at a path the extractor promotes elsewhere (payload v7 `plugin-seed/` -> `xdg/config/opencode/`); fixed by `PayloadExtractor.installedLocation`. A fresh install should log `extraction complete` once. |
 | Stuck in EXTRACTING, then FATAL | `files/log/runtime.log`: `manifest mismatch` / `sha256` | corrupted payload or low storage; the app re-extracts on the next launch (P8-CORRUPT). Free space if `ENOSPC`. |
 | STARTING -> CRASHED_RESTARTING loop -> FATAL | `runtime.log` (child stderr captured), `files/log/crashes/` | SIGSYS = seccomp (should not happen with shims; file with the crash capture); `EADDRINUSE` = a stray process (the sweep should have killed it; force-stop the app). |
 | HEALTHY but chat says the model service is unreachable | Settings -> Diagnostics; `xdg/state/opencode/log/` | device has no network, or provider outage. Classified as NETWORK from the server's own error. |

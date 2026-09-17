@@ -77,8 +77,8 @@ bash phase4/scripts/10-build-payload.sh        # -> phase4/out/engine/{assets,jn
 `./gradlew ... -PskipPayload` compiles the app without the payload (unit tests
 and compile checks only; the resulting APK cannot run the server).
 
-Release artifact sizes (CI run 35132822991, payload v6): `app-release-unsigned.apk`
-**127.1 MB** (both ABIs), `app-release.aab` **115.3 MB**; native libs per ABI
+Release artifact sizes (CI run 35201496822, payload v7): `app-release-unsigned.apk`
+**130.6 MB** (both ABIs), `app-release.aab` **118.8 MB** (v6 was 127.1 / 115.3 MB; the +3.5 MB is the pre-seeded plugin tree); native libs per ABI
 ~123 MB (arm64-v8a) / ~127 MB (x86_64) uncompressed, so an arm64 device
 download from the AAB is roughly half the universal APK.
 

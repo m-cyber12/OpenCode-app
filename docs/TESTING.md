@@ -53,7 +53,7 @@ upstream error on record (Phase 8's stricter gates).
 | `P9_PROVSEL_TURN` | prompt with an explicit `openrouter/...` model; inspect server log for `llm.provider=` and `ProviderModelNotFoundError` | the turn is routed to the provisioned provider (auth failure with the dummy key is the *expected* outcome and still proves routing); real reply only with a real key |
 | `P9_PROVSEL_CLEANUP` | `DELETE /auth/openrouter`, dispose, re-read | no credential left behind |
 | `P9_VERSION` | `GET /global/health` `version` == `versions.lock` opencode version | the bare version define (plugin fix) shipped |
-| `P9_PLUGIN` | write `plugin: ["@opencode-ai/plugin"]` into `opencode.json`, restart instance, wait <= 420 s for `node_modules/@opencode-ai/plugin` or `NpmInstallFailedError` in the server log | plugin install now succeeds; SKIP if the emulator has no registry egress (recorded probe) |
+| `P9_PLUGIN` | seed `@opencode-ai/plugin@<lock>` present in `xdg/config/opencode/node_modules`; in a 150 s window +0 `dependency install failed` and +0 `code=159`; SIGSYS forensics (`type=1326`) captured if any 159 is seen | the pre-seeded plugin tree is used and the on-device npm path (which SIGSYS-crashed Bun in run 1) is not entered |
 | `P9_LOCK` | `check-lock.py --require-manifest` | shipped manifest == versions.lock == app constants == versionName |
 | `P9-RELEASE` | gradle release build; sizes; signing state | release artifacts exist; unsigned unless `P9_KEYSTORE_*` secrets are set |
 
@@ -74,7 +74,8 @@ gates start from a rebuilt provider table.
 | Live model turn | BLOCKED (no credit / egress condition) | PASS once (run 1, free model), then no credit | - |
 | Real tool card (L2) | never observed | never observed | - |
 | Toybox tar harness staging | TESTED (34) | TESTED (35) | NOT TESTED |
-| Phase 9 provider/plugin/version gates | **NOT YET RUN** | NOT RUN | - |
+| Phase 9 `P9_VERSION`, `P9_PLUGIN`, `P9_LOCK`, `P9-RELEASE` | **PASS** (run 35201496822; zero exit-159 in the run) | NOT RUN | - |
+| Phase 9 `P9_PROVSEL_*` | **NO VERDICT yet** (runs 1-2 never reached the server from the test process; fixed for run 3) | NOT RUN | - |
 
 ## Phase 8 numbers carried into this release
 

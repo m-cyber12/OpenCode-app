@@ -2,6 +2,7 @@ package ai.opencode.android.client
 
 import ai.opencode.android.projects.ProjectStore
 import ai.opencode.android.runtime.RuntimeEnv
+import ai.opencode.android.runtime.RuntimeManager
 import ai.opencode.android.runtime.Secrets
 import ai.opencode.android.security.SecretStore
 import ai.opencode.android.ui.printGate9
@@ -13,6 +14,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.FixMethodOrder
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
@@ -66,6 +68,26 @@ class ProviderSelectionGatesTest {
         @Volatile var staleSourceBefore = "-"
         @Volatile var sourceAfter = "-"
         @Volatile var connectedBefore = false
+    }
+
+    /**
+     * Phase 5 lesson (OpenCodeClientGatesTest): `am instrument` replaces the app
+     * process, and the OpenCode server is a CHILD of that process - so this
+     * process has no server unless the app's own start path runs here. Run 2
+     * (35201496822) skipped every PROVSEL gate with "server not healthy" for
+     * exactly this reason.
+     */
+    @Before
+    fun startRuntimeInThisProcess() {
+        runCatching { RuntimeManager.get(context).start() }
+            .onFailure { println("P9_RUNTIME preflight: start() threw " + it.javaClass.simpleName + ": " + it.message) }
+        val deadline = System.currentTimeMillis() + 240_000
+        while (System.currentTimeMillis() < deadline) {
+            val api = apiOrNull()
+            if (api != null && runCatching { api.health().optBoolean("healthy") }.getOrDefault(false)) return
+            Thread.sleep(2000)
+        }
+        println("P9_RUNTIME preflight: no healthy server in this process after 240s")
     }
 
     private fun apiOrNull(): OpenCodeApi? = runCatching {

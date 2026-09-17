@@ -20,10 +20,10 @@ written, wired and statically checked — but they have **not run yet**.
 
 | Item | Label |
 |---|---|
-| Provider-selection fallback bug — root cause, fix in `OpenCodeRepository` + `DefaultModelHint`, gates `P9_PROVSEL_*` | **IMPLEMENTED, NOT TESTED** (awaits CI run) |
-| `@opencode-ai/plugin` install bug — bare `OPENCODE_VERSION` (**TESTED**: `P9_VERSION PASS`, run 1) + pre-seeded plugin tree in payload v7 (**IMPLEMENTED, NOT TESTED** until run 2; run 1 showed the on-device install itself SIGSYS-crashes Bun - §2b) |
+| Provider-selection fallback bug — root cause, fix in `OpenCodeRepository` + `DefaultModelHint`, gates `P9_PROVSEL_*` | **IMPLEMENTED, NOT TESTED** — runs 1 and 2 never reached a verdict (run 2: the gate class did not start the runtime in its own instrumentation process, the Phase 5 lesson; fixed for run 3, §2c) |
+| `@opencode-ai/plugin` install bug — bare `OPENCODE_VERSION` (**TESTED**: `P9_VERSION PASS`, runs 1+2) + pre-seeded plugin tree in payload v7 (**TESTED, run 2**: `P9_PLUGIN PASS`, seed present at 1.18.23, 0 install failures, **0 exit-159 in the whole run** vs 113 in run 1 - §2c) |
 | Phase 9 CI pipeline (`phase9-release.yml` + `00-run-phase9.sh` + `20-gates.sh`) | **TESTED** end-to-end (run 35132822991 reached all 7 stages and printed every gate) |
-| Release APK/AAB + runtime artifacts | **PRODUCED (run 1, payload v6)**: `app-release-unsigned.apk` 127.1 MB, `app-release.aab` 115.3 MB, payload tar + manifest, artifact `opencode-android-release`. Unsigned (no keystore secret). Run 2 re-produces them on payload v7. |
+| Release APK/AAB + runtime artifacts | **PRODUCED (run 2, payload v7)**: `app-release-unsigned.apk` 130 557 869 B (130.6 MB), `app-release.aab` 118 782 367 B (118.8 MB), payload tar + manifest, artifact `opencode-android-release`. Unsigned (no keystore secret). |
 | Capability matrix, README, ARCHITECTURE, RUNTIME, SECURITY, TESTING | IMPLEMENTED (written from executed Phase 4–8 evidence; every row labelled) |
 | `versions.lock` accurate | IMPLEMENTED + TESTED (mechanically: `check-lock.py` OK locally against `RuntimeVersion.kt` and `versionName`; the manifest half runs in CI as `P9_LOCK`) |
 | Phase 8 temporary secrets removed | **DONE (owner-confirmed 2026-09-16)**: `OPENROUTER_API_KEY` repo secret deleted and the Gemini key from commit `52e7c4d` revoked by the repository owner; the repository itself cannot verify either, so this rests on the owner's statement |
@@ -160,6 +160,49 @@ Arborist path and can crash the server** (supervised restart, bounded). Also
 fixed from this run: P5-02 accepted only `payloadVersion 5`;
 `P9_PROVSEL_CLEANUP` reported a mid-restart readback as failure.
 
+## 2c. CI run 2 (35201496822, 2026-09-17) - crash loop gone, one new defect found
+
+Payload v7 did what it was built for. Whole-run numbers, from
+`docs/progress/phase9-evidence/`:
+
+| Gate | Verdict | Evidence |
+|---|---|---|
+| `P9_PLUGIN` | **PASS** | seed `@opencode-ai/plugin@1.18.23` present in `xdg/config/opencode/node_modules`; +0 `dependency install failed`; +0 `code=159` in the 150 s window; **zero `code=159` in every `runtime.log` of the run** (run 1: 113) |
+| `P9_VERSION`, `P9_LOCK` (payloadVersion 7), `P9-RELEASE` | **PASS** | as run 1, now on v7 |
+| Phase 8 fold | pass=11 fail=4 skip=4 | PASS: CLEANUP, CRASH, **HIST (was FAIL in run 1)**, LARGE, LIFECYCLELOG, P5REG (K1-K9, R-06/07/10/11/12, G17 conclusive), **P7REG (L1 green again)**, SERVERKILL, SESSIONPERSIST, STORAGE, TOYBOX. FAIL: CORRUPT (below), NETLOSS / BGFG / PERF-stream (key-free, egress-dependent, unchanged since Phase 8). SKIP: the five key-dependent gates. |
+| `P9_PROVSEL_TURN`, `_REBUILT` | FAIL | `Failed to connect to 127.0.0.1:4111` on the first POST |
+| `P9_PROVSEL_STALE`, `_CLEANUP` | SKIP | "server not healthy" |
+
+**Defect found (IMPLEMENTED fix, NOT TESTED until run 3): the runtime
+re-extracted the whole payload on every launch.** `verifyExtraction` checks
+each manifest entry at `filesDir/<path>`, but v7 promotes `plugin-seed/*` to
+`xdg/config/opencode/*`, so every start logged
+`extraction invalid (missing plugin-seed/node_modules/.package-lock.json) -> (re)extracting`
+and spent 4-10 s re-extracting 1062 files (the server itself came up fine
+afterwards, which is why most gates still passed). Fix: `installedLocation()`
+maps seed entries to their promoted path; unit test
+`pluginSeedEntriesAreVerifiedAtTheirPromotedLocation` covers both the clean
+verify and a tampered promoted file.
+
+Consequences of that defect in run 2, and what else changed for run 3:
+
+* `P8_CORRUPT FAIL (healthy=no reextract_lines=20 marker=1)`: the device
+  re-extracted and its own log shows `HEALTHY` at 09:16:45, but neither the
+  host-forward nor the on-device probe got a 200 inside the window while the
+  runtime.log filled with re-extraction lines. Not fully explained;
+  `wait_healthy` now writes forensics on timeout (app pid, `adb forward
+  --list`, the raw device-side fetch error, last three states) so run 3 tells
+  us instead of us guessing.
+* `P9_PROVSEL_*`: the test class never called `RuntimeManager.start()` in its
+  own process. `am instrument` replaces the app process and the server is a
+  child of it - the exact lesson recorded in `OpenCodeClientGatesTest`
+  (Phase 5). A `@Before` now starts the runtime and waits up to 240 s for
+  health, as the Phase 5 gates do.
+* Plugin bug 2 is now **TESTED closed for the seeded package**; the residual
+  limitation (user-added plugins -> on-device Arborist -> possible SIGSYS)
+  remains BLOCKED-UPSTREAM-SYSCALL and is documented in RUNTIME.md and the
+  capability matrix.
+
 ## 3. Permanent limitations (final wording)
 
 | Limitation | Where documented | Label |
@@ -240,7 +283,11 @@ their source cited; per-ABI release sizes will come from the pipeline.
 | Phase 8 temp secrets removed | Done (owner-confirmed) |
 | Honesty labels on every claim | Applied |
 
-## 8. What the next run will tell us (and what to do)
+## 8. What the next run (run 3) will tell us (and what to do)
+
+0. `runtime.log` must show `extraction complete` at most once per fresh
+   install and no `missing plugin-seed/...` line - the re-extraction defect
+   is closed; `P8_CORRUPT` should return to PASS as in Phase 8.
 
 1. If `P9_PROVSEL_STALE reproduced=true` and `P9_PROVSEL_REBUILT PASS`: bug 1
    diagnosis confirmed and fixed → relabel TESTED in the docs.
