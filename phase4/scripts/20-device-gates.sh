@@ -27,7 +27,7 @@ LOG="$EV/device-gates.log"
 : > "$SUMMARY"; : > "$LOG"
 log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
 
-PKG="ai.opencode.android.debug"
+PKG="io.github.mcyber12.opencode.debug"
 FILES="/data/data/$PKG/files"
 PORT=4111
 WORKDIR="$FILES/workspaces/gates"

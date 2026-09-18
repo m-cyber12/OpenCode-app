@@ -179,12 +179,19 @@ private val LightScheme = lightColorScheme(
     outlineVariant = PaperOutlineSoft,
 )
 
+// Phase 10 polish: one step softer everywhere. The Phase 6 radii were slightly
+// angular next to the surfaces they sit on (a tool card inside a list item inside
+// a rounded screen), and this project's visual language is "calm, modern chat
+// app" - generous whitespace and soft surfaces - fused with terminal affordances
+// for anything the agent actually executes. Radii move up, nothing else does:
+// no colour role, no layout role and no test tag is touched by this change, which
+// is what keeps the Phase 6 gate suite (F1-F4, U1-U8) meaningful across it.
 private val OpenCodeShapes = Shapes(
-    extraSmall = RoundedCornerShape(6.dp),
-    small = RoundedCornerShape(10.dp),
-    medium = RoundedCornerShape(14.dp),
-    large = RoundedCornerShape(20.dp),
-    extraLarge = RoundedCornerShape(26.dp),
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(22.dp),
+    extraLarge = RoundedCornerShape(28.dp),
 )
 
 /**

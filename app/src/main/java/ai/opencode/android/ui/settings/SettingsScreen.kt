@@ -1,5 +1,6 @@
 package ai.opencode.android.ui.settings
 
+import ai.opencode.android.BuildConfig
 import ai.opencode.android.R
 import ai.opencode.android.client.AgentAvailability
 import ai.opencode.android.client.OpenCodeApi
@@ -57,6 +58,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import ai.opencode.android.BuildConfig
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -123,6 +125,7 @@ fun SettingsScreen(
     onRemoveMemory: (String) -> Unit = {},
     onShareDiagnostics: () -> Unit,
     onCopyDiagnostics: () -> Unit,
+    onOpenUrl: (String) -> Unit = {},
     onRefreshDiagnostics: () -> Unit,
     onRestartRuntime: () -> Unit,
     onBack: () -> Unit,
@@ -146,6 +149,7 @@ fun SettingsScreen(
             "memory",
             "appearance",
             "about",
+            "opensource",
         )
     }
 
@@ -157,8 +161,9 @@ fun SettingsScreen(
         )
         LazyColumn(
             modifier = Modifier.fillMaxSize().semantics { testTag = "settings_list" },
-            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            // Phase 10 polish: same one-step-of-air treatment as the transcript.
+            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             items(items = sections, key = { it }) { section ->
                 when (section) {
@@ -215,7 +220,12 @@ fun SettingsScreen(
                         onThemeChange = onThemeChange,
                         onDynamicColorChange = onDynamicColorChange,
                     )
-                    else -> AboutSection(appVersion = appVersion, serverVersion = state.serverVersion)
+                    "about" -> AboutSection(
+                        appVersion = appVersion,
+                        serverVersion = state.serverVersion,
+                        onOpenUrl = onOpenUrl,
+                    )
+                    else -> OpenSourceSection(onOpenUrl = onOpenUrl)
                 }
             }
         }
@@ -1200,16 +1210,126 @@ private fun ThemeButton(
 }
 
 @Composable
-private fun AboutSection(appVersion: String, serverVersion: String) {
+private fun AboutSection(
+    appVersion: String,
+    serverVersion: String,
+    onOpenUrl: (String) -> Unit,
+) {
     SectionCard(
         title = stringResource(R.string.settings_section_about),
         body = stringResource(R.string.settings_about_body),
     ) {
         KeyValueRow(label = stringResource(R.string.settings_about_version), value = appVersion.ifEmpty { "-" }, mono = true)
+        // The application ID comes from BuildConfig, so this row cannot drift from
+        // what the APK was actually built as. It is the one identifier a user (or a
+        // support thread) needs and can never guess from the UI otherwise.
+        KeyValueRow(
+            label = stringResource(R.string.settings_about_package),
+            value = BuildConfig.APPLICATION_ID,
+            mono = true,
+        )
         KeyValueRow(
             label = stringResource(R.string.settings_runtime_server),
             value = serverVersion.ifEmpty { "-" },
             mono = true,
         )
+        // Phase 10 honesty block: this build is an independent client of the
+        // upstream project, and it says so on the one screen a curious user or a
+        // reviewer opens. It is also where the trademark position is stated in
+        // plain words instead of being implied - see docs/BRANDING.md.
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.settings_about_independent),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.settings_about_trademark),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(4.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LinkButton(
+                label = stringResource(R.string.settings_about_upstream_action),
+                url = stringResource(R.string.settings_about_upstream_url),
+                tag = "about_upstream",
+                onOpenUrl = onOpenUrl,
+            )
+            LinkButton(
+                label = stringResource(R.string.settings_about_privacy_action),
+                url = stringResource(R.string.settings_about_privacy_url),
+                tag = "about_privacy",
+                onOpenUrl = onOpenUrl,
+            )
+        }
+    }
+}
+
+/**
+ * A button that opens an external page.
+ *
+ * The URL is a parameter, never a literal in this file: the UI layer does not
+ * compile URLs (phase6/scripts/check-ui-strings.py), and the label - not the URL -
+ * is what a user sees. One helper, so a future link cannot quietly render the raw
+ * address into a surface where the welcome/chat gates forbid it.
+ */
+@Composable
+private fun LinkButton(label: String, url: String, tag: String, onOpenUrl: (String) -> Unit) {
+    TextButton(
+        onClick = { onOpenUrl(url) },
+        modifier = Modifier.height(46.dp).semantics { testTag = tag },
+    ) {
+        Text(label)
+    }
+}
+
+/**
+ * The licences of everything this APK actually contains.
+ *
+ * Every row is a real component in the shipped artifact, not a formality: the
+ * OpenCode bundle, Bun, git and ripgrep are all inside the payload, and the
+ * AndroidX/Kotlin libraries are inside the APK. Git is the one GPL-2.0 component,
+ * so its written offer is spelled out rather than glossed over
+ * (docs/THIRD-PARTY-NOTICES.md carries the pinned sources).
+ */
+@Composable
+private fun OpenSourceSection(onOpenUrl: (String) -> Unit) {
+    SectionCard(
+        title = stringResource(R.string.settings_section_opensource),
+        body = stringResource(R.string.settings_opensource_body),
+    ) {
+        KeyValueRow(
+            label = stringResource(R.string.settings_opensource_agent),
+            value = stringResource(R.string.settings_opensource_agent_value),
+            mono = true,
+        )
+        KeyValueRow(
+            label = stringResource(R.string.settings_opensource_components),
+            value = stringResource(R.string.settings_opensource_components_value),
+            mono = true,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.settings_opensource_gpl_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(4.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LinkButton(
+                label = stringResource(R.string.settings_opensource_license_action),
+                url = stringResource(R.string.settings_opensource_license_url),
+                tag = "opensource_license",
+                onOpenUrl = onOpenUrl,
+            )
+            LinkButton(
+                label = stringResource(R.string.settings_opensource_notices_action),
+                url = stringResource(R.string.settings_opensource_notices_url),
+                tag = "opensource_notices",
+                onOpenUrl = onOpenUrl,
+            )
+        }
     }
 }

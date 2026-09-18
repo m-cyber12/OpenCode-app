@@ -351,5 +351,31 @@
     <string name="settings_section_about">About</string>
     <string name="settings_about_body">This app is a client of the OpenCode agent running on this device. Every message, tool call and permission you see comes from the agent own interface, unedited.</string>
     <string name="settings_about_version">App version</string>
+    <string name="settings_about_package">Package name</string>
+    <!-- Phase 10: independence and trademark, stated in the app rather than implied
+         by the name and icon. The app carries upstream's name and icon at the
+         project owner's direction, pending upstream's permission; this copy is the
+         disclosure that keeps that arrangement honest in the meantime. Keep both
+         lines if the name ever changes - only the second one becomes moot. -->
+    <string name="settings_about_independent">This is an independent client built on the open-source OpenCode project. It is not built, published or endorsed by the OpenCode project or its maintainers.</string>
+    <string name="settings_about_trademark">OpenCode and the OpenCode logo belong to the OpenCode project and its maintainers. They are used here to describe what this app runs, with the project owner seeking the project permission for that use.</string>
+    <string name="settings_about_upstream_action">Upstream project</string>
+    <string name="settings_about_privacy_action">Privacy</string>
+    <!-- URLs live here, not in Kotlin: the UI layer compiles no URL literals
+         (phase6/scripts/check-ui-strings.py, and Phase 5 P5-G19 on the APK). -->
+    <string name="settings_about_upstream_url" translatable="false">https://github.com/anomalyco/opencode</string>
+    <string name="settings_about_privacy_url" translatable="false">https://github.com/m-cyber12/OpenCode-app/blob/main/docs/PRIVACY-POLICY.md</string>
+
+    <string name="settings_section_opensource">Open source</string>
+    <string name="settings_opensource_body">Everything this app runs is open source. These are the components inside the installed app, with their licences.</string>
+    <string name="settings_opensource_agent">Agent, runtime, tools</string>
+    <string name="settings_opensource_agent_value">OpenCode (MIT) - bundled unmodified, pinned commit</string>
+    <string name="settings_opensource_components">Programs in the APK</string>
+    <string name="settings_opensource_components_value">Bun (MIT), Git (GPL-2.0-only), ripgrep (MIT or Unlicense)</string>
+    <string name="settings_opensource_gpl_note">Git is bundled as a separate program under the GPL-2.0. Its complete corresponding source, and the exact build recipe used for this app, are linked below. Written offer: the source is published at that link for as long as this app is distributed.</string>
+    <string name="settings_opensource_license_action">Upstream licence</string>
+    <string name="settings_opensource_notices_action">All notices</string>
+    <string name="settings_opensource_license_url" translatable="false">https://github.com/anomalyco/opencode/blob/dev/LICENSE</string>
+    <string name="settings_opensource_notices_url" translatable="false">https://github.com/m-cyber12/OpenCode-app/blob/main/docs/THIRD-PARTY-NOTICES.md</string>
     <string name="settings_notice_label">Last result</string>
 </resources>

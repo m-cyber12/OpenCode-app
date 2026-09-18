@@ -1,0 +1,175 @@
+# PHASE 10 - SIGNING / STORE-PREP pipeline: the same app Phase 9 built, now
+# packaged, gated in its RELEASE shape, and turned into a store listing package.
+#
+# What it does, in order (each stage's verdict named in GATES_SUMMARY.txt):
+#   1. static checks - Phase 9's (not weakened) + Phase 10's release invariants
+#      (no key material anywhere, the published identity, the store package)
+#   2. compile + JVM unit tests            (fast fail before the payload build)
+#   3. embedded runtime payload            (built once, reused by both builds)
+#   4. FRESH emulator (phone-sized screen: 1080x1920 - store screenshots)
+#      a. debug APKs          -> Phase 6 UI gates (F1-F4, U1-U8) on the debug build
+#      b. release-shaped SMOKE build (same applicationId as release, debuggable,
+#         debug-key signed) -> the SAME Phase 6 UI gates, plus the packaging gates
+#      c. store screenshots   -> adb screencap of the real app on a phone-sized
+#         screen, validated against Play's rules
+#   5. release APK + AAB exactly as CI can produce them: UNSIGNED; both are then
+#      inspected with phase10/scripts/check-apk.py (identity, icon, payload,
+#      permissions, ABI split, debuggable=false, signature state)
+#   6. Phase 9 gates on the same device (provider selection, plugin seed, version,
+#      versions.lock == shipped)   - skippable while iterating (P10_SKIP_P9GATES=1)
+#   7. one GATES_SUMMARY.txt printed as the last step, which decides the job status
+#
+# WHY THIS WORKFLOW CANNOT SIGN ANYTHING (docs/RELEASE.md s8): there is no
+# keystore step, no keystore secret, and no signing environment variable below.
+# The release artifacts this job publishes are UNSIGNED by construction. Signing
+# is the human's step (docs/RELEASE.md s4), performed on a machine they control;
+# `phase10/scripts/check-release-invariants.py` fails the run if a signing secret
+# ever appears in this file. The release-shaped SMOKE build exists precisely so
+# that "does the release configuration behave differently?" can be answered on a
+# device WITHOUT putting a release key in CI - it is signed with the public
+# Android debug key and its APK name says TEST-ONLY.
+#
+# HOW TO INSTALL (one-time, needs the GitHub UI - the automation's bot token
+# cannot create or modify .github/workflows/):
+#   copy this file to   .github/workflows/phase10-release.yml
+#   on the branch       arena/01a0b15e-opencode-app
+#   and commit. The Phase 9 workflow, if still installed, triggers on the Phase 9
+#   session's branch only and is unaffected.
+#
+# SECRETS: none are required and none may be added. An `OPENROUTER_API_KEY` repo
+# secret is OPTIONAL and only enables the live-model gates (they SKIP with the
+# reason on record when it is absent); it is a provider key, not signing material.
+#
+# Iteration knobs (never for a verdict run):
+#   phase10/CI_GRADLE_ONLY (tracked, "1") or dispatch input gradle_only=true
+#     -> compile + JVM tests only; no payload, no emulator, no verdicts.
+#   P10_SKIP_SMOKE=1     -> skip the release-shape smoke stage
+#   P10_SKIP_P9GATES=1   -> skip the Phase 9 gates (iteration only)
+#   P10_SKIP_SHOTS=1     -> skip the store screenshot capture
+name: phase10-release
+
+on:
+  push:
+    branches:
+      - "arena/01a0b15e-opencode-app"
+    paths-ignore:
+      - "docs/progress/phase10-evidence/**"
+      - "docs/progress/phase9-evidence/**"
+      - "docs/progress/phase8-evidence/**"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why this run is being dispatched (free text)"
+        required: false
+        default: "manual phase10 signing/store-prep run"
+      gradle_only:
+        description: "compile + JVM tests only (no emulator, no artifacts)"
+        required: false
+        default: "false"
+
+jobs:
+  phase10-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 540
+    permissions:
+      contents: write
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_MODEL: openai/gpt-4o-mini
+      P10_GRADLE_ONLY: ${{ github.event.inputs.gradle_only == 'true' && '1' || '0' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Fix /dev/kvm permissions (Phase 2 lesson: never assume KVM just works)"
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm || true
+            ls -la /dev/kvm
+          else
+            echo "KVM_MISSING (the emulator will be unusable; gates fail loudly)"
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: "Confirm CI has no signing material (Phase 10 rule: CI cannot sign)"
+        run: |
+          for v in P9_KEYSTORE_B64 P9_KEYSTORE_FILE RELEASE_KEYSTORE_FILE RELEASE_KEYSTORE_PASSWORD P10_KEYSTORE_B64; do
+            if [ -n "$(printenv "$v" || true)" ]; then
+              echo "FAIL: $v is set in this workflow environment. CI must never receive signing material." >&2
+              exit 1
+            fi
+          done
+          echo "no signing material in the environment: release artifacts will be UNSIGNED (docs/RELEASE.md)"
+
+      - name: "Run the Phase 10 pipeline (static -> unit -> payload -> emulator -> UI gates -> smoke gates -> screenshots -> release APK/AAB -> inspection)"
+        run: bash phase10/scripts/00-run-phase10.sh
+        shell: bash
+
+      - name: "Commit evidence to the branch (docs/progress/phase10-evidence)"
+        if: always()
+        run: |
+          mkdir -p docs/progress/phase10-evidence
+          if [ -d phase10/out/evidence ]; then
+            cp -r phase10/out/evidence/. docs/progress/phase10-evidence/ 2>/dev/null || true
+          fi
+          cp phase10/out/00-run-phase10.log docs/progress/phase10-evidence/ 2>/dev/null || true
+          rm -f docs/progress/phase10-evidence/emulator.log
+          find docs/progress/phase10-evidence -type f -size +2M -delete 2>/dev/null || true
+          git add -A docs/progress/phase10-evidence/ || true
+          if git diff --cached --quiet; then
+            echo "no evidence changes; skipping commit"
+          else
+            git -c user.name="arena-ai-coding-agent[bot]" \
+                -c user.email="arena-ai-coding-agent[bot]@users.noreply.github.com" \
+                commit -m "phase10: signing/store-prep gate evidence (auto)" || true
+            git pull --rebase origin "${{ github.ref_name }}" || true
+            git push origin "HEAD:${{ github.ref_name }}" || echo "PUSH_FAILED"
+          fi
+
+      - name: "Upload the unsigned release artifacts (APK, AAB, hashes, payload manifest)"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencode-android-unsigned-release
+          path: |
+            phase10/out/release/
+          if-no-files-found: warn
+
+      - name: "Upload the release-shaped smoke build + store screenshots"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencode-android-smoke-test-only
+          path: |
+            phase10/out/smoke/
+            phase10/out/screenshots/
+          if-no-files-found: ignore
+
+      - name: "Upload evidence + logs"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase10-evidence
+          path: |
+            phase10/out/evidence/
+            phase10/out/00-run-phase10.log
+            phase6/out/evidence/
+            app/build/reports/
+          if-no-files-found: ignore
+
+      - name: "Gate summary (every gate, readable in the Actions log)"
+        if: always()
+        run: |
+          if [ -f phase10/out/evidence/GATES_SUMMARY.txt ]; then
+            cat phase10/out/evidence/GATES_SUMMARY.txt
+          else
+            echo "NO_PHASE10_SUMMARY - the pipeline did not reach its gate stage"
+            exit 1
+          fi

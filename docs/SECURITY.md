@@ -8,7 +8,7 @@ files, and the loopback server that can run a shell in the app's sandbox.
 
 | Control | Implementation | Verified (gate) |
 |---|---|---|
-| Everything app-private | runtime, workspaces, XDG dirs, logs, secrets under `/data/data/ai.opencode.android/files` (mode 0700; no external storage, no `MANAGE_EXTERNAL_STORAGE`) | P5-G18, P7-W2, device `files-layout.txt` (Phase 8 §4 #1) |
+| Everything app-private | runtime, workspaces, XDG dirs, logs, secrets under `/data/data/io.github.mcyber12.opencode/files` (mode 0700; no external storage, no `MANAGE_EXTERNAL_STORAGE`) | P5-G18, P7-W2, device `files-layout.txt` (Phase 8 §4 #1) |
 | Loopback-only server | `opencode serve --hostname 127.0.0.1 --port 4111`; `LoopbackGuard` refuses any non-loopback base URL in the client; `LoopbackAudit` records `/proc/net/tcp` binds at start | P5-G17 (proc-net audit + external-interface refusal), device `SERVER_BOUND url=http://127.0.0.1:4111/` |
 | Server authentication | HTTP Basic, user `opencode`, per-install random password generated on first run; every app request and every health poll carries it; a wrong password gets 401 (JVM `HealthCheckerTest`) | P5-04, P5-05 |
 | Secrets at rest | `SecretStore`: AES-256-GCM, key = non-exportable `AndroidKeyStore` AES key (`OCS2` blob format, per-secret random IV) in `files/secrets/<name>.enc`; holds the server password and provider keys the user enters; the pre-Phase-5 plaintext password file is migrated and deleted | P5-G18 (blobs, no plaintext, `auth.json` 0600), P8-CLEANUP (revoked key provably gone from Keystore + server) |

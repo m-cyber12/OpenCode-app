@@ -73,7 +73,7 @@ private const val ROUTE_SESSIONS = "sessions"
 private const val ROUTE_SETTINGS = "settings"
 
 @Composable
-fun AppRoot(onShareDiagnostics: () -> Unit) {
+fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -427,6 +427,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit) {
                     onCopyDiagnostics = { copyToClipboard(context, diagnosticsLines.joinToString("\n")) },
                     onRefreshDiagnostics = { loadDiagnostics() },
                     onRestartRuntime = { runtime.resetAndRestart() },
+                    // Phase 10: the About / open-source section opens external pages
+                    // (upstream project, licence texts, this project's own notices).
+                    // The URL itself comes from strings.xml - the UI layer never
+                    // compiles a URL literal, which is also what P5-G19 checks for.
+                    onOpenUrl = onOpenUrl,
                     onBack = { route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT },
                 )
 

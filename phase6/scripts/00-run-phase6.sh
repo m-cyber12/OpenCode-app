@@ -30,8 +30,8 @@ mkdir -p "$OUT" "$EV"
 MAINLOG="$OUT/00-run-phase6.log"
 : > "$MAINLOG"
 
-PKG="ai.opencode.android.debug"
-TEST_PKG="ai.opencode.android.debug.test"
+PKG="io.github.mcyber12.opencode.debug"
+TEST_PKG="io.github.mcyber12.opencode.debug.test"
 
 step() { HB_STEP="$1"; echo; echo "########## $1 ##########" | tee -a "$MAINLOG"; }
 

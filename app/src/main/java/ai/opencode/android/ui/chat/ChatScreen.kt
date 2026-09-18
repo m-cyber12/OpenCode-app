@@ -359,8 +359,11 @@ private fun TranscriptPane(
             modifier = Modifier
                 .fillMaxSize()
                 .semantics { testTag = TAG_TRANSCRIPT },
-            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            // Phase 10 polish: a little more air between turns and at the edges.
+            // Bounded (14->16 dp padding, 14->18 dp between turns) so the number of
+            // rows a viewport composes stays in the same range U1 asserts on.
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             if (messages.isEmpty()) {
                 item(key = "empty") { EmptyState(title = emptyTitle, body = emptyBody) }

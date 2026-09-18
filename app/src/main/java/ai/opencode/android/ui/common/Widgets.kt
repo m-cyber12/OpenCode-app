@@ -152,7 +152,9 @@ fun SectionCard(
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Column(Modifier.padding(14.dp)) {
+        // 14 -> 16 dp on the section card: the title now has room to breathe above
+        // the first row, which is what makes a list of sections scan as sections.
+        Column(Modifier.padding(16.dp)) {
             Text(text = title, style = MaterialTheme.typography.titleSmall)
             if (body.isNotEmpty()) {
                 Spacer(Modifier.height(4.dp))

@@ -3,6 +3,7 @@ package ai.opencode.android
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -41,7 +42,10 @@ class MainActivity : ComponentActivity() {
             notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         setContent {
-            AppRoot(onShareDiagnostics = { shareDiagnostics() })
+            AppRoot(
+                onShareDiagnostics = { shareDiagnostics() },
+                onOpenUrl = { url -> openUrl(url) },
+            )
         }
         RuntimeService.start(this)
     }
@@ -72,5 +76,24 @@ class MainActivity : ComponentActivity() {
             }
             startActivity(Intent.createChooser(send, "Share OpenCode diagnostics"))
         }.start()
+    }
+
+    /**
+     * Open one of the app's own informational links (upstream project, licence
+     * texts, privacy policy, notices) in whatever browser the user has.
+     *
+     * Phase 10. The URLs live in strings.xml, not here: the UI layer must not
+     * compile a URL literal (Phase 5's P5-G19 asserts the built app talks to
+     * nothing but its own loopback server; phase6/scripts/check-ui-strings.py
+     * enforces the same rule on the source). A missing browser is not a crash -
+     * the failure is swallowed exactly like a missing share target.
+     */
+    private fun openUrl(url: String) {
+        if (url.isBlank()) return
+        runCatching {
+            startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        }
     }
 }
