@@ -38,8 +38,8 @@ LOG="$EV/gates.log"
 : > "$SUMMARY"; : > "$LOG"
 log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
 
-PKG="ai.opencode.android.debug"
-TEST_PKG="ai.opencode.android.debug.test"
+PKG="io.github.mcyber12.opencode.debug"
+TEST_PKG="io.github.mcyber12.opencode.debug.test"
 RUNNER="$TEST_PKG/androidx.test.runner.AndroidJUnitRunner"
 FILES="/data/data/$PKG/files"
 EXT_VERDICT_P6="/storage/emulated/0/Android/data/$PKG/files/p6-verdicts.txt"

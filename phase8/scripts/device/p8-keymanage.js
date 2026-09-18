@@ -117,7 +117,7 @@ async function main() {
     // server (via OpenCode's own /shell endpoint - the same path the bash tool
     // uses) sees the server's environment, proxy settings, and network state;
     // comparing it against the run-as probe isolates the server process.
-    const FILES = process.env.P8_APP_FILES || "/data/data/ai.opencode.android.debug/files"
+    const FILES = process.env.P8_APP_FILES || "/data/data/io.github.mcyber12.opencode.debug/files"
     const BUN = process.env.OPENCODE_BUN_BIN || (FILES + "/bin/bun")
     const probeSrc = [
       'for (const [n, u] of [["openrouter", "https://openrouter.ai/api/v1/models"],',

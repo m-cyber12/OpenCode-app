@@ -1,10 +1,19 @@
-# versions.lock — pinned component versions (RELEASE, Phase 9 — 2026-09-15)
+# versions.lock — pinned component versions (RELEASE, Phase 10 — 2026-09-18)
 #
-# Status: every pin below is what the Phase 9 release build ships. Checked
-# mechanically: phase9/scripts/check-lock.py compares this file with
-# RuntimeVersion.kt, app/build.gradle.kts versionName and the built
-# runtime-manifest.json (static check + device gate P9_LOCK). The historical
-# phase notes are kept because they explain WHY a pin is what it is.
+# Status: every pin below is what the release build ships. Checked mechanically:
+# phase9/scripts/check-lock.py compares this file with RuntimeVersion.kt,
+# app/build.gradle.kts versionName and the built runtime-manifest.json (static
+# check + device gate P9_LOCK); phase10/scripts/check-release-invariants.py
+# compares the `app:` block below with app/build.gradle.kts and the manifest.
+# The historical phase notes are kept because they explain WHY a pin is what it
+# is.
+#
+# PHASE 10 (signing + store prep): the RUNTIME pins are unchanged from Phase 9 -
+# no component was rebuilt, no payload byte changed. What changed is the app's
+# PUBLISHED IDENTITY (see `app:` below): Phase 10 chose the Play application ID,
+# which is permanent at first publish, and bumped versionCode for the signed
+# store build. The identity is pinned here for the same reason the runtime is:
+# so "what we ship" and "what we pinned" cannot drift.
 #
 # Originally:
 # Populated from static inspection of upstream OpenCode at
@@ -17,6 +26,24 @@
 # 301-redirects to it (same repository id 975734319 — a rename, not a fork).
 # The default branch is `dev` (there is no `main`/`master`). The pinned commit
 # 05ea5073... is unchanged and is still HEAD of `dev` at package version 1.18.23.
+
+app:                                   # PHASE 10 - the published identity
+  # The Play application ID. PERMANENT at first publish: Play never accepts a
+  # change of application ID for an existing listing, and a new ID means a new
+  # listing with zero installs. It is deliberately in the developer's own
+  # namespace rather than upstream's (ai.opencode.*), which is a domain the
+  # project does not own and which reads as an official package - see
+  # docs/BRANDING.md, including the rename path if the name/logo permission is
+  # not granted (the ID does not change in that case; that is the point).
+  applicationId: io.github.mcyber12.opencode
+  displayName: OpenCode                # what the launcher shows (strings.xml app_name)
+  versionName: 1.18.23-phase10         # "<pinned OpenCode version>-<phase>"
+  versionCode: "8"                     # Play requires a strictly increasing integer
+  minSdk: "29"                         # W^X: exec only from nativeLibraryDir
+  targetSdk: "34"                      # Play requires a recent targetSdk
+  abis: arm64-v8a,x86_64               # arm64 ships to users; x86_64 for CI/emulator
+  signing: upload-key, human-held      # docs/RELEASE.md; CI can never sign
+  monetization: free                   # no billing code, no ads - docs/STORE-LISTING.md
 
 opencode:
   upstream: https://github.com/anomalyco/opencode
@@ -149,7 +176,14 @@ abi_scope:
 # ============================================================================
 android_host:
   app_module: app/
-  application_id: ai.opencode.android
+  # PHASE 10: the published applicationId moved to the developer's own namespace.
+  # It was ai.opencode.android through Phase 9 - upstream's real domain, which reads
+  # as an official package and is an impersonation risk in review. The authoritative
+  # value for this block is the `app:` block at the top of this file (mechanically
+  # checked against app/build.gradle.kts by phase10/scripts/check-release-invariants.py);
+  # the Kotlin `namespace` is still ai.opencode.android and is not user-visible.
+  application_id: io.github.mcyber12.opencode
+  kotlin_namespace: ai.opencode.android
   min_sdk: 29            # W^X: exec only from nativeLibraryDir; ABI gate enforces 64-bit
   target_sdk: 34
   compile_sdk: 34

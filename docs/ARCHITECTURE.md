@@ -8,7 +8,7 @@ model provider is the only remote party.
 
 ```
 +-------------------------------------------------------------------------+
-| Android app process  (ai.opencode.android, Kotlin/Compose)              |
+| Android app process  (io.github.mcyber12.opencode, Kotlin/Compose)              |
 |                                                                         |
 |  UI (Compose)  <--StateFlow--  OpenCodeRepository  <--HTTP/SSE--+       |
 |      |                             |  OpenCodeApi / EventStream |       |
@@ -49,7 +49,12 @@ model provider is the only remote party.
 | `runtime-payload.tar.gz` | asset | `opencode/dist/node/node.js` (Bun.build of upstream `packages/opencode`, target `bun`, defines `OPENCODE_VERSION="1.18.23"`, `OPENCODE_CHANNEL="android"`), `*.wasm` (tree-sitter, photon), `node_modules` needed at runtime, `launcher.js`. |
 | `runtime-manifest.json` | asset | pins (`opencodeCommit/opencodeVersion/bunVersion/gitVersion/rgVersion/payloadVersion`), per-file sha256 + size, tarball sha256. Extraction is refused on mismatch; `payloadVersion` bump forces re-extraction. |
 
-### Data layout (app-private, `/data/data/ai.opencode.android/files`)
+### Data layout (app-private, `/data/data/io.github.mcyber12.opencode/files`)
+
+*(Phase 10 renamed the published applicationId from `ai.opencode.android` to
+`io.github.mcyber12.opencode`; the Kotlin namespace - the source package - is
+still `ai.opencode.android`, which is internal and not user-visible. The private
+storage path follows the applicationId.)*
 
 ```
 runtime/opencode/dist/node/node.js  extracted + validated payload

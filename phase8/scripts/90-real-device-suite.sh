@@ -53,8 +53,8 @@ rd() { # $1=id $2=rc $3=detail
 
 APK="${1:-app-debug.apk}"
 TAPK="${2:-app-debug-androidTest.apk}"
-PKG="ai.opencode.android.debug"
-TEST_PKG="ai.opencode.android.debug.test"
+PKG="io.github.mcyber12.opencode.debug"
+TEST_PKG="io.github.mcyber12.opencode.debug.test"
 RUNNER="$TEST_PKG/androidx.test.runner.AndroidJUnitRunner"
 FILES="/data/data/$PKG/files"
 PORT=4111

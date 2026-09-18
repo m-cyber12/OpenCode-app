@@ -9,8 +9,8 @@ no reimplementation of the agent in Kotlin.
 
 | | |
 |---|---|
-| Package | `ai.opencode.android` (debug: `ai.opencode.android.debug`) |
-| App version | `1.18.23-phase9` (versionCode 7) - prefix = pinned OpenCode version |
+| Package (published) | `io.github.mcyber12.opencode` (debug: `io.github.mcyber12.opencode.debug`) - the Play application ID, permanent at first publish; see [docs/BRANDING.md](docs/BRANDING.md) |
+| App version | `1.18.23-phase10` (versionCode 8) - prefix = pinned OpenCode version |
 | Android | minSdk 29 (Android 10) - targetSdk 34, compileSdk 34 |
 | ABI | **arm64-v8a** ships; **x86_64** for emulator/CI only; armeabi-v7a/x86 refused with an explicit message |
 | Runtime | Bun 1.3.14 (official Android/bionic build), git v2.48.1, ripgrep 15.1.0, embedded payload v7 |
@@ -25,7 +25,12 @@ no reimplementation of the agent in Kotlin.
 | [docs/SECURITY.md](docs/SECURITY.md) | secrets (AES-256-GCM under AndroidKeyStore), loopback auth, threat model, known limits |
 | [docs/TESTING.md](docs/TESTING.md) | JVM tests, on-device gate suites, CI pipeline, evidence layout, how to read a verdict |
 | [docs/CAPABILITY-MATRIX.md](docs/CAPABILITY-MATRIX.md) | `Capability / Desktop OpenCode / Android implementation / Status` |
-| [docs/progress/](docs/progress/) | per-phase reports with evidence (Phase 0-9); the Phase 9 report is the final test report |
+| [docs/RELEASE.md](docs/RELEASE.md) | **signing and release**: keystore, the human signing step, verification, Play App Signing |
+| [docs/BRANDING.md](docs/BRANDING.md) | app name/icon, the OpenCode trademark position, and the rename path that never touches the package name |
+| [docs/PRIVACY-POLICY.md](docs/PRIVACY-POLICY.md) | what the app does with data, written from the implementation (the listing links to it) |
+| [docs/STORE-LISTING.md](docs/STORE-LISTING.md) | the complete Play listing package: descriptions, screenshots, content rating, data safety |
+| [docs/THIRD-PARTY-NOTICES.md](docs/THIRD-PARTY-NOTICES.md) | everything inside the APK and its licence, incl. the GPL-2.0 written offer for Git |
+| [docs/progress/](docs/progress/) | per-phase reports with evidence (Phase 0-10); the **Phase 10** report is the current release report |
 
 ## Status (honest, as of 2026-09-15)
 

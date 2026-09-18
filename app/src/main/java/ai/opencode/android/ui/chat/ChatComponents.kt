@@ -21,6 +21,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,6 +62,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -203,7 +210,11 @@ fun MessageRow(
 
         for (part in message.parts) {
             PartRow(part = part, streaming = streaming)
-            Spacer(Modifier.height(6.dp))
+            // Phase 10 polish: 6 -> 10 dp between the pieces of one turn. The
+            // brief's "generous whitespace" has to be visible between a sentence
+            // and the tool card that follows it, which is where a reader's eye
+            // needs the break.
+            Spacer(Modifier.height(10.dp))
         }
 
         val error = message.error
@@ -392,16 +403,40 @@ fun ToolCard(part: Transcript.Part, modifier: Modifier = Modifier) {
     val headline = toolHeadline(part.tool)
     val title = oneLine(part.title.ifBlank { primaryInputValue(part.input) })
 
+    // Phase 10 polish - "a tool is running here, this is not prose":
+    //   * a 4 dp status rail down the left edge, drawn in the status colour, so a
+    //     running/failed/finished tool is distinguishable at a glance and without
+    //     reading the pill (and, being colour PLUS position, without relying on
+    //     colour alone);
+    //   * `animateContentSize`, so expanding a card is a transition rather than a
+    //     jump - finite on purpose: an infinite animation would keep the Compose
+    //     test clock busy and hang `waitForIdle()` in the UI gates;
+    //   * a bordered output box, so the agent's own words and a command's raw
+    //     output are never the same surface.
     Surface(
         modifier = modifier.fillMaxWidth().semantics { testTag = "${TAG_TOOL_CARD}_${part.id}" },
         color = chat.toolContainer,
-        shape = MaterialTheme.shapes.medium,
+        shape = MaterialTheme.shapes.large,
         border = BorderStroke(
             1.dp,
             if (part.status == "error") MaterialTheme.colorScheme.error else chat.toolBorder,
         ),
     ) {
-        Column {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .animateContentSize()
+                .drawBehind {
+                    // The rail spans whatever the card's content measured to.
+                    val stroke = 4.dp.toPx()
+                    drawRoundRect(
+                        color = statusColor,
+                        size = Size(stroke, size.height),
+                        cornerRadius = CornerRadius(stroke / 2f),
+                    )
+                }
+                .padding(start = 4.dp),
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -440,7 +475,7 @@ fun ToolCard(part: Transcript.Part, modifier: Modifier = Modifier) {
 
             if (expanded) {
                 HorizontalDivider(thickness = 1.dp, color = chat.toolBorder)
-                Column(Modifier.padding(12.dp)) {
+                Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 14.dp)) {
                     if (part.input.isNotBlank()) {
                         SectionLabel(stringResource(R.string.chat_tool_section_input))
                         ScrollableMono(part.input)
@@ -465,6 +500,9 @@ fun ToolCard(part: Transcript.Part, modifier: Modifier = Modifier) {
 
                     SectionLabel(stringResource(R.string.chat_tool_section_output))
                     if (output.isNotBlank()) {
+                        // Terminal treatment: the output is monospace, syntax-tinted
+                        // for the languages we can name, and boxed so it cannot be
+                        // mistaken for the assistant's own sentence.
                         CodeBlock(
                             language = outputLanguage(part.tool, meta),
                             source = output,
@@ -595,14 +633,26 @@ private fun StreamingDots() {
     }
 }
 
-/** Decorative chevron: the row it sits in already carries the accessible name. */
+/**
+ * Decorative chevron: the row it sits in already carries the accessible name.
+ *
+ * Phase 10 polish: the SAME icon rotates instead of swapping between two icons,
+ * so opening a card reads as one continuous motion. It stays `clearAndSetSemantics`
+ * - the accessible name belongs to the row, not to the arrow - and the animation
+ * is finite, so it cannot hold the Compose test clock open.
+ */
 @Composable
 private fun Chevron(up: Boolean) {
+    val rotation by animateFloatAsState(
+        targetValue = if (up) 180f else 0f,
+        animationSpec = tween(durationMillis = 180),
+        label = "chevron",
+    )
     Icon(
-        imageVector = if (up) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+        imageVector = Icons.Filled.KeyboardArrowDown,
         contentDescription = null,
         tint = ChatTheme.chat.muted,
-        modifier = Modifier.size(20.dp).clearAndSetSemantics { },
+        modifier = Modifier.size(20.dp).rotate(rotation).clearAndSetSemantics { },
     )
 }
 

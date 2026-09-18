@@ -65,7 +65,7 @@ run_c() {
   [ "$rc" = 0 ] || { echo "STEP_FAILED rc=$rc: ${*}" | tee -a "$MAINLOG"; return 1; }
   return 0
 }
-PKG="ai.opencode.android.debug"
+PKG="io.github.mcyber12.opencode.debug"
 
 echo "=== PHASE 5 START $(date -u +%FT%TZ) staged=$STAGED ===" | tee -a "$MAINLOG"
 SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"

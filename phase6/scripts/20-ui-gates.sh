@@ -38,16 +38,29 @@ LOG="$EV/ui-gates.log"
 : > "$SUMMARY"; : > "$LOG"
 log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
 
-PKG="ai.opencode.android.debug"
-TEST_PKG="ai.opencode.android.debug.test"
+# Phase 10: P6_PKG lets a caller point this driver at another build of the same
+# app - the release-shaped `smoke` variant (applicationId without the .debug
+# suffix) - without changing what Phases 6/7/8/9 exercise. The default is the
+# debug build, exactly as before.
+PKG="${P6_PKG:-io.github.mcyber12.opencode.debug}"
+TEST_PKG="${P6_TEST_PKG:-${P6_PKG:+$P6_PKG.test}}"
+TEST_PKG="${TEST_PKG:-io.github.mcyber12.opencode.debug.test}"
+# The test package label differs when a caller overrides PKG: derive it when the
+# caller only gave us the target package.
+case "$PKG" in *".debug") : ;; *) [ -n "${P6_TEST_PKG:-}" ] || TEST_PKG="$PKG.test" ;; esac
 RUNNER="$TEST_PKG/androidx.test.runner.AndroidJUnitRunner"
 FILES="/data/data/$PKG/files"
 # Verdict file the gates write inside the app's own storage (UiGateSupport.emit).
 VERDICT_NAME="p6-verdicts.txt"
 EXT_VERDICT="/storage/emulated/0/Android/data/$PKG/files/$VERDICT_NAME"
 
-APK="$(ls "$ROOT/app/build/outputs/apk/debug/"*.apk 2>/dev/null | head -1)"
-TAPK="$(ls "$ROOT/app/build/outputs/apk/androidTest/debug/"*.apk 2>/dev/null | head -1)"
+if [ -n "${P6_PKG:-}" ]; then
+  APK="${P6_APK:-$(ls "$ROOT/app/build/outputs/apk/smoke/"*.apk 2>/dev/null | head -1)}"
+  TAPK="${P6_TAPK:-$(ls "$ROOT/app/build/outputs/apk/androidTest/smoke/"*.apk 2>/dev/null | head -1)}"
+else
+  APK="$(ls "$ROOT/app/build/outputs/apk/debug/"*.apk 2>/dev/null | head -1)"
+  TAPK="$(ls "$ROOT/app/build/outputs/apk/androidTest/debug/"*.apk 2>/dev/null | head -1)"
+fi
 
 PASS=0; FAIL=0; SKIP=0
 : > "$EV/p6-ui-lines.txt"
