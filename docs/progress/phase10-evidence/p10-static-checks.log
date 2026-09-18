@@ -1,7 +1,7 @@
-=== Phase 10 static checks 2026-09-18T12:35:39Z ===
+=== Phase 10 static checks 2026-09-18T19:17:15Z ===
 
 === phase 9 static checks (not weakened) ===
-=== Phase 9 static checks 2026-09-18T12:35:39Z ===
+=== Phase 9 static checks 2026-09-18T19:17:15Z ===
 OK   bash -n on 42 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8/phase9 driver
@@ -9,7 +9,7 @@ note: pre-existing non-ASCII byte in .github/workflows/phase2-spike.yml at line 
 note: pre-existing non-ASCII byte in spike/workflow/phase2-spike.yml at line 22 (not this phase's file)
 check-ascii: 11 phase6 files (strict), 14 pre-existing (note only), 0 findings
 OK   yaml parse phase9/workflow/phase9-release.yml
-FAIL phase9/workflow/phase9-release.yml: triggers on ['arena/01a0a540-opencode-app'] but this session works on main (the workflow would never run)
+FAIL phase9/workflow/phase9-release.yml: triggers on ['arena/01a0a540-opencode-app'] but this session works on arena/01a0b557-opencode-app (the workflow would never run)
 check-workflow-p8: 1 files, pyyaml=True
 NOTE phase9 workflow trigger branch is the Phase 9 session's (expected when read from another session)
 NOTE workflow check rc=1 (see above)
@@ -59,13 +59,17 @@ OK   no OPENCODE_VERSION define with an -android suffix (plugin-install bug, Pha
 OK   phase 9 static checks (not weakened)
 
 === release invariants (no key material / published identity / store package) ===
-NOTE docs/store/screenshots needs at least 2 PNGs of a real screen size (have 0)
-INVARIANTS PASS (0 findings, 1 notes)
+INVARIANTS PASS (0 findings, 0 notes)
 OK   release invariants (no key material / published identity / store package)
 
 === apk/aab inspector self-test ===
-SELFTEST PASS (17 checks)
+SELFTEST PASS (27 checks)
 OK   apk/aab inspector self-test
+
+=== app/build.gradle.kts static checks (balance, order, run-#6 fix present, identity greps) ===
+GRADLE_CHECK file=app/build.gradle.kts findings=0 notes=0 identity=[versionName=1.18.23-phase10 versionCode=8 applicationId=io.github.mcyber12.opencode]
+GRADLE_CHECK PASS
+OK   app/build.gradle.kts static checks (balance, order, run-#6 fix present, identity greps)
 OK   bash -n on the phase10 scripts
 OK   py_compile on the phase10 python
 
@@ -76,4 +80,4 @@ OK   phase10 workflow template present + no signing secret is pulled in
 OK   no infinite animations in the UI layer (Compose test clock)
 
 === phase 10 static checks summary rc=0 ===
-FAIL phase9/workflow/phase9-release.yml: triggers on ['arena/01a0a540-opencode-app'] but this session works on main (the workflow would never run)
+FAIL phase9/workflow/phase9-release.yml: triggers on ['arena/01a0a540-opencode-app'] but this session works on arena/01a0b557-opencode-app (the workflow would never run)

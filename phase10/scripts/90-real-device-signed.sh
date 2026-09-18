@@ -111,8 +111,10 @@ if [ -z "$APK" ]; then
 fi
 [ -f "$APK" ] || { echo "FATAL: $APK not found"; exit 2; }
 log "verifying $APK"
-VNAME=$(grep -o 'versionName = "[^"]*"' -m1 "$ROOT/app/build.gradle.kts" | cut -d'"' -f2)
-VCODE=$(grep -oE 'versionCode = [0-9]+' -m1 "$ROOT/app/build.gradle.kts" | grep -oE '[0-9]+')
+# Anchored extraction (the unanchored grep matched the `// versionName = "<pinned
+# OpenCode version>-phase10"` comment line first - same bug as CI run #6).
+VNAME=$(grep -E '^[[:space:]]*versionName = "' "$ROOT/app/build.gradle.kts" | head -1 | cut -d'"' -f2)
+VCODE=$(grep -E '^[[:space:]]*versionCode = [0-9]+' "$ROOT/app/build.gradle.kts" | head -1 | grep -oE 'versionCode = [0-9]+' | grep -oE '[0-9]+')
 REPORT="$OUT/artifact-report.txt"
 {
   echo "=== check-apk.py (identity, contents, signature presence) ==="

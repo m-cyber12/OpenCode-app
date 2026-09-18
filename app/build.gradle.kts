@@ -257,7 +257,11 @@ dependencies {
     // release-shaped code (see buildTypes.smoke), so it needs the test-host
     // activity in its own manifest too - `debugImplementation` alone would leave
     // createComposeRule() without an activity to host the composition.
-        configurations.configureEach {
+    // The `smokeImplementation` type-safe accessor cannot be used here: it is
+    // only generated for configurations that exist when the script body starts,
+    // and `smoke` is created in this very file. Deferred lookup by name is the
+    // supported way to add to a build-type configuration declared in-place.
+    configurations.configureEach {
         if (name == "smokeImplementation") {
             project.dependencies.add(name, "androidx.compose.ui:ui-test-manifest")
         }
@@ -277,6 +281,13 @@ fun engineJniOut(): File = layout.buildDirectory.dir("generated/engine/jniLibs")
 val verifyAndStagePayload = tasks.register("verifyAndStagePayload") {
     group = "opencode"
     description = "Verifies and stages phase4/out/engine into generated asset/jniLibs dirs."
+    // The staging task copies files but declares no outputs Gradle could hash,
+    // so a "saved" run of it could legitimately re-stage NOTHING and stay green.
+    // It must execute on every build that packages anything (CI run #6 had this
+    // task log "Runtime payload OK" while the release merge fed on a stale or
+    // earlier snapshot of the same directory); `upToDateWhen { false }` removes
+    // the option of skipping.
+    outputs.upToDateWhen { false }
     doLast {
         // CI-only escape hatch for *compile-only* runs (no packaging): Gradle's
         // "fast feedback" job has to be able to type-check ~2,600 new Kotlin lines
@@ -309,6 +320,22 @@ val verifyAndStagePayload = tasks.register("verifyAndStagePayload") {
                     "into phase4/out/engine/."
             )
         }
+        // The manifest alone is NOT the payload: CI run #6 staged a tree that a
+        // later APK inspection said had no payload tarball in it. Which half was
+        // missing then can only be answered next time if the BUILD refuses to
+        // stage an engine without its tarball - the app cannot boot without it
+        // (PayloadExtractor fails closed), so staging a manifest-only tree is a
+        // build bug, never a legitimate state.
+        val payloadTgz = File(srcAssets, "runtime-payload.tar.gz")
+        if (!payloadTgz.isFile) {
+            throw GradleException(
+                "Embedded runtime payload incomplete: ${payloadTgz.path} not found " +
+                    "(runtime-manifest.json IS present - an assets dir with a manifest but no " +
+                    "tarball means phase4/out/engine was assembled wrongly or half-cleaned).\n" +
+                    "Rebuild it:  bash phase4/scripts/10-build-payload.sh"
+            )
+        }
+        println("PAYLOAD_SOURCE runtime-payload.tar.gz=${payloadTgz.length()}B runtime-manifest.json=${mf.length()}B")
         val libs = listOf("libbun.so", "libgit.so", "librg.so", "libseccompshim.so", "libexecshim.so", "libchildshim.so")
         val abis = listOf("arm64-v8a", "x86_64")
         var completeAbis = 0
@@ -336,9 +363,52 @@ val verifyAndStagePayload = tasks.register("verifyAndStagePayload") {
         srcAssets.copyRecursively(assetsDst, overwrite = true)
         srcJni.copyRecursively(jniDst, overwrite = true)
         println("Runtime payload OK: $completeAbis complete ABI(s); staged assets + jniLibs to $assetsDst / $jniDst")
+        // The diagnostic that CI run #6 lacked: "verifyAndStagePayload said OK,
+        // the APK had no payload - which side lied?" answered directly from the
+        // log. One line per staged asset, with the size, and the same for the
+        // jniLibs tree; `merge*Assets` runs downstream, so what is listed here is
+        // what it must package.
+        val stagedAssets = assetsDst.walkTopDown().filter { it.isFile }.sortedBy { it.name }.toList()
+        val stagedJni = jniDst.walkTopDown().filter { it.isFile }.sortedBy { it.name }.toList()
+        println("STAGED_ASSETS n=${stagedAssets.size} " +
+            stagedAssets.joinToString(", ") { "${it.name}(${it.length()}B)" }.take(400))
+        println("STAGED_JNILIBS n=${stagedJni.size} " +
+            stagedJni.joinToString(", ") { "${it.parentFile.name}/${it.name}" }.take(400))
+        val stagedPayload = File(assetsDst, "runtime-payload.tar.gz")
+        if (!stagedPayload.isFile || stagedPayload.length() != payloadTgz.length()) {
+            throw GradleException(
+                "Staging lossless-by-construction check failed: ${stagedPayload.path} is " +
+                    (if (stagedPayload.isFile) "${stagedPayload.length()}B" else "absent") +
+                    " but the source is ${payloadTgz.length()}B"
+            )
+        }
     }
 }
 
 tasks.named("preBuild") {
     dependsOn(verifyAndStagePayload)
+}
+
+// The ordering guarantee `preBuild` alone did NOT provide (run #6): asset-
+// merging/compressing tasks must consume a staged directory, and without an
+// explicit edge Gradle is free to schedule them whenever - including before
+// staging has written anything, or from a build-cache entry produced by an
+// earlier, unstaged invocation (run #6's release smoke test had
+// `compressSmokeAssets FROM-CACHE` next to a log line saying "Runtime payload
+// OK", and the APK it fed had no payload). Three parts, one per mechanism:
+//   1. hard dependency on the staging task for every variant's asset chain;
+//   2. staging can never be skipped (upToDateWhen false above);
+//   3. the asset tasks must never be SERVED from the build cache: their payload
+//      input is a generated directory, and a cache entry from a build where it
+//      was empty is key-identical otherwise. Paying a few seconds of real work
+//      per build buys a deterministic answer.
+tasks.configureEach {
+    if ((name.startsWith("merge") || name.startsWith("compress") || name.startsWith("generate")) &&
+        name.endsWith("Assets")
+    ) {
+        dependsOn(verifyAndStagePayload)
+        // Never cache-restore an asset merge/compress: its payload input is
+        // staged by a task whose work a cache entry cannot see (run #6).
+        outputs.cacheIf { false }
+    }
 }

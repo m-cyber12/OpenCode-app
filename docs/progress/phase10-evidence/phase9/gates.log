@@ -1,52 +1,30 @@
-[2026-09-18T12:54:39Z] === P9 stage 1: provider selection (the carried defect, reproduced then fixed) ===
-[2026-09-18T13:04:19Z] warn: runtime not healthy before PROVSEL (the class waits again itself)
-[2026-09-18T13:04:19Z] === am instrument ai.opencode.android.client.ProviderSelectionGatesTest ===
-[2026-09-18T13:28:25Z] instrument rc=0 (provsel)
-	at ai.opencode.android.client.OpenCodeApi.dispose(OpenCodeApi.kt:116)
-	at ai.opencode.android.client.ProviderSelectionGatesTest.g02_disposeRebuildsWithCredential(ProviderSelectionGatesTest.kt:170)
+[2026-09-18T19:35:21Z] === P9 stage 1: provider selection (the carried defect, reproduced then fixed) ===
+[2026-09-18T19:35:44Z] === am instrument ai.opencode.android.client.ProviderSelectionGatesTest ===
+[2026-09-18T19:36:02Z] instrument rc=0 (provsel)
 
-Error in g03_turnSelectsConfiguredProvider(ai.opencode.android.client.ProviderSelectionGatesTest):
-ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 401 on POST /session?directory=%2Fdata%2Fuser%2F0%2Fio.github.mcyber12.opencode.debug%2Ffiles%2Fworkspaces%2Ffirst-run-gates: 
-	at ai.opencode.android.client.OpenCodeApi.request(OpenCodeApi.kt:93)
-	at ai.opencode.android.client.OpenCodeApi.request$default(OpenCodeApi.kt:64)
-	at ai.opencode.android.client.OpenCodeApi.createSession(OpenCodeApi.kt:140)
-	at ai.opencode.android.client.ProviderSelectionGatesTest.g03_turnSelectsConfiguredProvider(ProviderSelectionGatesTest.kt:187)
+ai.opencode.android.client.ProviderSelectionGatesTest:....
+
+Time: 16.461
+
+OK (4 tests)
 
 
-Time: 1,444.819
-There were 2 failures:
-1) g02_disposeRebuildsWithCredential(ai.opencode.android.client.ProviderSelectionGatesTest)
-ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 401 on POST /global/dispose: 
-	at ai.opencode.android.client.OpenCodeApi.request(OpenCodeApi.kt:93)
-	at ai.opencode.android.client.OpenCodeApi.request$default(OpenCodeApi.kt:64)
-	at ai.opencode.android.client.OpenCodeApi.dispose(OpenCodeApi.kt:116)
-	at ai.opencode.android.client.ProviderSelectionGatesTest.g02_disposeRebuildsWithCredential(ProviderSelectionGatesTest.kt:170)
-2) g03_turnSelectsConfiguredProvider(ai.opencode.android.client.ProviderSelectionGatesTest)
-ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 401 on POST /session?directory=%2Fdata%2Fuser%2F0%2Fio.github.mcyber12.opencode.debug%2Ffiles%2Fworkspaces%2Ffirst-run-gates: 
-	at ai.opencode.android.client.OpenCodeApi.request(OpenCodeApi.kt:93)
-	at ai.opencode.android.client.OpenCodeApi.request$default(OpenCodeApi.kt:64)
-	at ai.opencode.android.client.OpenCodeApi.createSession(OpenCodeApi.kt:140)
-	at ai.opencode.android.client.ProviderSelectionGatesTest.g03_turnSelectsConfiguredProvider(ProviderSelectionGatesTest.kt:187)
-
-FAILURES!!!
-Tests run: 4,  Failures: 2
-
-
-[2026-09-18T13:28:25Z] P9_PROVSEL_STALE SKIP :: :: server not healthy
-[2026-09-18T13:28:25Z] P9_PROVSEL_REBUILT FAIL
-[2026-09-18T13:28:25Z] P9_PROVSEL_TURN FAIL
-[2026-09-18T13:28:25Z] P9_PROVSEL_CLEANUP SKIP :: :: server not healthy
-[2026-09-18T13:28:25Z] === P9 stage 2: runtime version string + plugin install ===
-[2026-09-18T13:38:06Z] warn: runtime not healthy before VERSION/PLUGIN
-[2026-09-18T13:38:07Z] P9_VERSION FAIL :: /global/health version='' vs versions.lock '1.18.23'
-[2026-09-18T13:38:08Z] npm registry probe from the app uid: REG200
-[2026-09-18T13:40:39Z] P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
-[2026-09-18T13:40:39Z] === P9 stage 3: versions.lock == manifest == RuntimeVersion.kt == APK ===
-OK lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=8d97d871e32f5030 
-[2026-09-18T13:40:39Z] P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=8d97d871e32f5030 
-[2026-09-18T13:40:39Z] === evidence pull ===
-[2026-09-18T13:40:40Z] === P9 SUMMARY ===
-P9_SUMMARY 2026-09-18T13:40:40Z
-gates_pass=2 gates_fail=3 gates_skip=2
+[2026-09-18T19:36:02Z] P9_PROVSEL_STALE PASS :: :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
+[2026-09-18T19:36:02Z] P9_PROVSEL_REBUILT PASS :: :: after POST /global/dispose: connected=true instanceSource=api models=371 (was instanceSource=custom before the dispose)
+[2026-09-18T19:36:02Z] P9_PROVSEL_TURN PASS :: :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode d
+[2026-09-18T19:36:02Z] P9_PROVSEL_CLEANUP PASS :: :: dummy credential removed: connected=false
+P9_PROVSEL_BASELINE p
+P9_PROVSEL_SERVERLOG selected=[llm.
+[2026-09-18T19:36:02Z] === P9 stage 2: runtime version string + plugin install ===
+[2026-09-18T19:36:24Z] P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
+[2026-09-18T19:36:26Z] npm registry probe from the app uid: REG200
+[2026-09-18T19:39:01Z] P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
+[2026-09-18T19:39:01Z] === P9 stage 3: versions.lock == manifest == RuntimeVersion.kt == APK ===
+OK lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=8f1250060da8131f 
+[2026-09-18T19:39:01Z] P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=8f1250060da8131f 
+[2026-09-18T19:39:01Z] === evidence pull ===
+[2026-09-18T19:39:01Z] === P9 SUMMARY ===
+P9_SUMMARY 2026-09-18T19:39:01Z
+gates_pass=7 gates_fail=0 gates_skip=0
 device_abi=x86_64
 android_sdk=34

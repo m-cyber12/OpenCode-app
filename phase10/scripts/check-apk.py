@@ -228,7 +228,24 @@ def parse_manifest(buf):
     info["networkSecurityConfig"] = bool(app_attrs.get("networkSecurityConfig"))
     info["icon_declared"] = bool(app_attrs.get("icon"))
     info["round_icon_declared"] = bool(app_attrs.get("roundIcon"))
-    info["label_is_resource"] = str(app_attrs.get("label", "")).startswith("@")
+    # A binary AXML does NOT store `@string/app_name` as that text: aapt2 writes
+    # it as a resource-ID reference (TYPE_REFERENCE, e.g. 0x7F0A0001), which this
+    # parser surfaces as an int. The first version of this check compared
+    # str(label) to startswith("@") and therefore called every REAL release APK
+    # "a literal label" (CI run #6: label=2131296266). An int value IS a
+    # resource reference; a string is a resource only when it still carries the
+    # "@..." form (which the test encoder produces). The raw value is reported
+    # so a reader can see which case occurred.
+    label = app_attrs.get("label")
+    if isinstance(label, int):
+        info["label_is_resource"] = True
+        info["label_raw"] = "0x%08x" % label
+    elif isinstance(label, str):
+        info["label_is_resource"] = label.startswith("@")
+        info["label_raw"] = label
+    else:
+        info["label_is_resource"] = False
+        info["label_raw"] = None
     info["elements"] = [{"tag": t, "attrs": a} for t, a in elements]
     info["strings"] = strings
     return info
@@ -322,7 +339,9 @@ def signature_report(path):
 
 def zip_survey(path):
     survey = {"entry_count": 0, "size_bytes": os.path.getsize(path), "abis": {},
-              "native_libs": {}, "assets": {"runtime_manifest": False, "payload_asset": False},
+              "native_libs": {}, "assets": {"runtime_manifest": False, "payload_asset": False,
+                                             "payload_name": None, "payload_bytes": None,
+                                             "asset_list": []},
               "uncompressed_bytes": 0, "compressed_bytes": 0, "top_level": {}}
     is_aab = path.endswith(".aab")
     with zipfile.ZipFile(path) as zf:
@@ -345,10 +364,28 @@ def zip_survey(path):
                 d["count"] += 1
                 d["bytes"] += i.file_size
                 survey["native_libs"]["%s/%s" % (abi, lib)] = i.file_size
+            if key.startswith("assets/"):
+                # Run #6 failed with "no payload asset" while the app ran the
+                # runtime on the very same APK: a bare boolean was not enough to
+                # tell packaging truth from extension mismatch. The full list
+                # (name + stored size per asset entry) makes the next such
+                # question answerable from the report alone.
+                survey["assets"]["asset_list"].append("%s(%dB)" % (key[len("assets/"):], i.file_size))
             if key == "assets/runtime-manifest.json":
                 survey["assets"]["runtime_manifest"] = True
-            if key.startswith("assets/") and key.endswith((".tar.gz", ".tgz")):
+            # AAPT may repackage a ".gz" asset DECOMPRESSED and renamed
+            # (runtime-payload.tar.gz -> runtime-payload.tar); the app itself
+            # reads both names (PayloadExtractor). Accepting only .tar.gz here
+            # once produced a false FAIL on an APK whose runtime demonstrably
+            # worked, so the accepted set mirrors the app's own candidate list.
+            asset_name = key[len("assets/"):] if key.startswith("assets/") else ""
+            if asset_name in ("runtime-payload.tar.gz", "runtime-payload.tar", "runtime-payload.tgz") \
+                    or asset_name.endswith((".tar.gz", ".tgz", ".tar")):
                 survey["assets"]["payload_asset"] = True
+                if survey["assets"]["payload_name"] is None or asset_name.startswith("runtime-payload"):
+                    survey["assets"]["payload_name"] = asset_name
+                    survey["assets"]["payload_bytes"] = i.file_size
+    survey["assets"]["asset_list"].sort()
     return survey
 
 
@@ -430,7 +467,15 @@ def main(argv):
             for cand in pb_strings:
                 if cand == ex["package"] or (ex["package"] and ex["package"] in cand):
                     mf["package"] = ex["package"]
-                if ex["version_name"] and cand == ex["version_name"]:
+                # Same containment semantics as the package line above: the
+                # printable-run scanner recovers a protobuf field's text glued
+                # to its neighbours ("versionName1.18.23-phase10..."), so an
+                # EXACT match was unsatisfiable - run #7 proved that: the
+                # bundle's manifest carries the version (substring found), the
+                # gate still FAILed demanding a standalone token. A crude
+                # scanner gets to use one containment rule for all strings.
+                if ex["version_name"] and (cand == ex["version_name"]
+                                           or ex["version_name"] in cand):
                     mf["versionName"] = ex["version_name"]
     except zipfile.BadZipFile as e:
         print("FAIL %s is not a readable zip (%s)" % (path, e))
@@ -471,8 +516,10 @@ def main(argv):
                   "package=%r expected %r" % (mf.get("package"), ex["package"]))
     if ex["version_name"]:
         if manifest_format == "protobuf":
-            check(any(ex["version_name"] == c for c in pb_strings),
-                  "versionName %r not found among the bundle manifest's strings"
+            check(any(ex["version_name"] in c for c in pb_strings),
+                  "versionName %r not found among the bundle manifest's strings "
+                  "(substring match, as for the package - the protobuf scan is "
+                  "run-delimited, not token-delimited: see protobuf_strings())"
                   % ex["version_name"])
         else:
             check(mf.get("versionName") == ex["version_name"],
@@ -511,7 +558,9 @@ def main(argv):
     if ex["payload"]:
         check(survey["assets"]["runtime_manifest"],
               "assets/runtime-manifest.json missing - the embedded runtime is not in this artifact")
-        check(survey["assets"]["payload_asset"], "no assets/*.tar.gz payload in this artifact")
+        check(survey["assets"]["payload_asset"],
+              "no runtime payload asset in this artifact (expected assets/runtime-payload.tar.gz"
+              " or the .tar form AAPT may store it as)")
 
     report["findings"] = findings
     if ex["json"]:
@@ -538,6 +587,14 @@ def main(argv):
              ",".join("%s(%d libs,%.1fMB)" % (a, d["count"], d["bytes"] / 1048576.0)
                       for a, d in sorted(survey["abis"].items())),
              survey["assets"]["payload_asset"], survey["assets"]["runtime_manifest"]))
+    if survey["assets"]["payload_name"]:
+        print("PAYLOAD_ASSET name=%s bytes=%d"
+              % (survey["assets"]["payload_name"], survey["assets"]["payload_bytes"]))
+    # The raw truth about the assets directory, one line, so "staged but not
+    # packaged" and "packaged under a different name" are distinguishable
+    # without opening the zip (run #6 cost two CI runs to tell apart).
+    print("ASSETS %d entries: %s" % (len(survey["assets"]["asset_list"]),
+                                     ", ".join(survey["assets"]["asset_list"])[:300]))
     for f in findings:
         print("FINDING %s" % f)
     print("VERDICT %s" % ("PASS" if not findings else "FAIL"))
