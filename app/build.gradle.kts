@@ -215,10 +215,7 @@ android {
     }
 }
 
-// One line, every build, before anything else compiles: which signing identity this
-// invocation will use. It is the cheapest possible defence against the classic
-// "we shipped an unsigned artifact because the CI secret was missing" failure.
-logger.lifecycle(signingLine)
+    logger.lifecycle(signingLine)
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
@@ -260,7 +257,11 @@ dependencies {
     // release-shaped code (see buildTypes.smoke), so it needs the test-host
     // activity in its own manifest too - `debugImplementation` alone would leave
     // createComposeRule() without an activity to host the composition.
-    smokeImplementation("androidx.compose.ui:ui-test-manifest")
+        configurations.configureEach {
+        if (name == "smokeImplementation") {
+            project.dependencies.add(name, "androidx.compose.ui:ui-test-manifest")
+        }
+    }
     // Real org.json on the JVM so manifest parsing/markers are testable locally.
     testImplementation("org.json:json:20240303")
 }
