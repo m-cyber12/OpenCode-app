@@ -251,7 +251,7 @@ Complete in this repository (`docs/STORE-LISTING.md` + `docs/PRIVACY-POLICY.md` 
 | Monetization | **completely free: no billing library, no IAP, no ads, no subscription** (owner instruction). `versions.lock` pins `monetization: free`; the invariants checker reads it |
 | Icon (512×512) | `docs/store/icon-512.png` — upstream's `prod/icon.png`, unmodified |
 | Feature graphic (1024×500) | `docs/store/feature-graphic-1024x500.png` — reproduced from upstream's own wordmark plus two lines of type, in this app's own theme colours, by two documented ImageMagick commands (`docs/store/README.md`) |
-| Screenshots | **MISSING (0 files)** — `phase10/scripts/60-store-assets.sh` requires at least 2, >= 320 px per side and an aspect ratio no wider than 2:1, and refuses anything that was not produced by a device run. The Phase 6/8/9 evidence screenshots are 320×616 (ratio 0.5195) and are therefore **rejected by design** — verified this phase: the validator now reports `14 rejected` for them instead of silently skipping them (§5.4), because they are emulator gate evidence, not listing assets |
+| Screenshots | **MISSING (0 files)** - and now a **gate**, not a checklist line: the pipeline runs the strict store-package check after the capture stage and records `P10_STORE_ASSETS` in `GATES_SUMMARY.txt`, so a run without a real image set cannot report a complete store package.  — `phase10/scripts/60-store-assets.sh` requires at least 2, >= 320 px per side and an aspect ratio no wider than 2:1, and refuses anything that was not produced by a device run. The Phase 6/8/9 evidence screenshots are 320×616 (ratio 0.5195) and are therefore **rejected by design** — verified this phase: the validator now reports `14 rejected` for them instead of silently skipping them (§5.4), because they are emulator gate evidence, not listing assets |
 
 The listing text is written so that the three carry-forward limitations stay
 honest: remote HTTP/SSE MCP is "an upstream limitation, documented in the app and in
@@ -460,7 +460,7 @@ python3 phase10/scripts/test-check-apk.py               # SELFTEST PASS (17 chec
 
 * **New**: `docs/RELEASE.md`, `docs/BRANDING.md`, `docs/PRIVACY-POLICY.md`,
   `docs/STORE-LISTING.md`, `docs/THIRD-PARTY-NOTICES.md`, `docs/store/` (icon,
-  feature graphic, README), `phase10/` (13 scripts, workflow template, README),
+  feature graphic, README), `phase10/` (12 scripts, workflow template, README),
   `README.md` doc index and identity rows, launcher icons in 5 densities + adaptive
   XMLs, About/Trademark strings, the `app:` block in `versions.lock`.
 * **Changed**: `app/build.gradle.kts` (applicationId, versionCode/Name, signing

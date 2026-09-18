@@ -172,6 +172,9 @@ open-source OpenCode project.
 ## Submission checklist
 
 - [ ] `phase10/scripts/check-release-invariants.py . --require-store-assets` passes
+      (the Phase 10 pipeline runs exactly this after the screenshot stage and records
+      it as the `P10_STORE_ASSETS` verdict, so the checklist item is machine-checked
+      rather than remembered)
 - [ ] Signed AAB produced from the Phase 10 artifacts (docs/RELEASE.md s4) and verified (s5)
 - [ ] `phase10/scripts/90-real-device-signed.sh` run against the signed APK on a real arm64 phone
 - [ ] Privacy policy URL is public and matches `docs/PRIVACY-POLICY.md` (the link above is on the `main` branch: merge before submitting, or point the field at the branch's blob URL)

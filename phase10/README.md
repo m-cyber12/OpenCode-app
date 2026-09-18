@@ -35,6 +35,7 @@ The rules it implements, in one line each:
 | `scripts/40-release-verify.sh` | builds the release APK/AAB, asserts they are UNSIGNED (CI rule), and inspects them byte-for-byte |
 | `scripts/70-device-screenshots.sh` | real device screenshots via `adb screencap`, driven by the accessibility tree (no hardcoded coordinates) |
 | `scripts/60-store-assets.sh` | validates the screenshots against Play's rules and installs them into `docs/store/screenshots/` |
+| `check-release-invariants.py --require-store-assets` | the same strict answer as the listing checklist: 512 icon + 1024x500 graphic + at least two real screenshots. The pipeline runs it after the screenshot stage as `P10_STORE_ASSETS` |
 | `scripts/sign-release-local.sh` | **the human signing step**, scripted: aligns, signs, verifies, prints the certificate fingerprint, and refuses a keystore inside the repository |
 | `scripts/90-real-device-signed.sh` | verifies the **signed** build on a real arm64 phone through the UI (first run, screenshots, a live turn, footprint, crash/obfuscation sweep) and writes a verdict bundle |
 

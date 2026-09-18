@@ -225,6 +225,16 @@ else
   run_c 2400 "bash '$DIR/scripts/70-device-screenshots.sh' --out '$SHOTS'" || true
   SHOTRC=0
   run_c 300 "bash '$DIR/scripts/60-store-assets.sh' --from '$SHOTS' --out '$ROOT/docs/store/screenshots' > '$EV/store-assets.log' 2>&1; cat '$EV/store-assets.log'" || SHOTRC=1
+  # The item on the submission checklist (docs/STORE-LISTING.md), now a gate: the
+  # listing needs the 512 icon, the 1024x500 feature graphic and at least two
+  # screenshots at a real screen size. Checked here, after the copy, so "are the
+  # listing assets Play-ready" is a named verdict in GATES_SUMMARY.txt instead of an
+  # operator's judgement call.
+  if python3 "$DIR/scripts/check-release-invariants.py" "$ROOT" --require-store-assets > "$EV/store-assets-strict.txt" 2>&1; then
+    echo "P10_STORE_ASSETS PASS :: 512 icon + 1024x500 feature graphic + $(ls -1 "$ROOT"/docs/store/screenshots/*.png 2>/dev/null | wc -l | tr -d ' ') screenshots at a real screen size" >> "$EV/p10-lines.txt"
+  else
+    echo "P10_STORE_ASSETS FAIL :: $(grep -a '^FAIL' "$EV/store-assets-strict.txt" | head -2 | tr '\n' ';' | cut -c1-260)" >> "$EV/p10-lines.txt"
+  fi
 fi
 
 step "8/9 release APK + AAB (CI produces them UNSIGNED) + byte-level inspection"
