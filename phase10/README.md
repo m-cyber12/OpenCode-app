@@ -30,6 +30,7 @@ The rules it implements, in one line each:
 | `scripts/check-release-invariants.py` | no key material in the tree; the published identity matches `versions.lock`; the store package exists and fits Play's limits; the installed workflow cannot sign |
 | `scripts/check-apk.py` | reads a built APK/AAB: manifest (binary AXML or protobuf), signature presence + certificate id, native libs per ABI, embedded payload - with expectations on the command line |
 | `scripts/test-check-apk.py` | the inspector's own test: encodes a binary AndroidManifest.xml, packs APK/AAB-shaped zips, and asserts the inspector reads them back - and FAILS a wrong expectation |
+| `scripts/check-gradle-script.py` | static shape checks for `app/build.gradle.kts` (delimiter balance, define-before-use, the run-#6 packaging fix still present, the shell gates' anchored identity greps agree with the file) - the defects that cost CI runs 1, 2, 3 and 6 were all of this kind, and `app/src` scans do not cover the build script |
 | `scripts/00-run-phase10.sh` | the orchestrator: static -> unit -> payload -> emulator -> debug UI gates -> smoke gates -> store screenshots -> unsigned release APK/AAB + inspection -> Phase 9 gates -> one summary |
 | `scripts/50-smoke-gates.sh` | builds and gates the release-shaped build (`-PtestBuildType=smoke`) |
 | `scripts/40-release-verify.sh` | builds the release APK/AAB, asserts they are UNSIGNED (CI rule), and inspects them byte-for-byte |

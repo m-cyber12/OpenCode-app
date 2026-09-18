@@ -1,16 +1,19 @@
 # Phase 10 report — signing, final verification, branding and publish prep
 
-Status: **IMPLEMENTED, gated statically, and NOT YET EXECUTED on a device or in
-CI.** Phase 10 has no verified device result to report: the authoring sandbox has
-no JDK, no Gradle, no Android SDK, no emulator and no adb, and the Phase 10 CI
-workflow cannot be installed by the automation account (measured: HTTP 403
-"Resource not accessible by integration" — §1.4). Everything below that involves
-building, installing or running anything is therefore labelled **NOT TESTED**, and
-the machine steps that will produce those results are written, wired and
-statically checked.
+Status: **IMPLEMENTED, gated statically, and NOT YET GREEN IN CI.** This header
+supersedes the original one: the workflow WAS installed (`.github/workflows/
+phase10-release.yml` on `main`, via the GitHub web UI per §1.4) and Phase 10 has
+since run in CI **six times, all red**, each red for a specific diagnosed reason
+- the ledger and the fixes are in section 0b. The authoring sandbox still has no
+JDK, no Gradle, no Android SDK and no emulator, so every device/CI claim below
+remains **NOT TESTED until the run dispatched from the recovery branch reports
+otherwise**; the green bar is: `30-static-checks.sh` rc=0, invariants PASS,
+inspector self-test 26/26, gradle-script check 0 findings.
 
 - Date: 2026-09-18
-- Branch: `arena/01a0b15e-opencode-app` (from `main` @ `fbf3e5f`)
+- Branch: `arena/01a0b15e-opencode-app` (from `main` @ `fbf3e5f`); runs #4-#6's
+  fixes and the CI dispatch continue on `arena/01a0b557-opencode-app`
+  (from `main` @ `4bac020`) - see §0b for why the work had to move.
 - Pins unchanged from Phase 9: OpenCode `05ea5073` v1.18.23, Bun 1.3.14,
   git v2.48.1, ripgrep 15.1.0, payload v7; app `1.18.23-phase10` (versionCode 8)
 - Identity change (the one deliberate product change in this phase):
@@ -34,6 +37,98 @@ statically checked.
 | 5 | Visual polish + Phase 6 gates re-run (F1–F4, U1–U8, a11y, lazy lists) | **POLISH IMPLEMENTED**; the **static** layer re-run is **TESTED green** (§5.3); the **runtime** F1–F4/U1–U8 gate re-run is **NOT TESTED** — it is wired to run twice per CI run (debug + release-shaped smoke) and any regression fails the job | §5 |
 | 6 | Phase 9 carry-forward items | Two unchanged and correctly **not overstated**; the third (live tool call only ever verified on x86_64) now has a machine-readable closing path (§6) | §6 |
 | 7 | Walkthrough of `11-FINAL-ACCEPTANCE.md` against the **signed** final build | **BLOCKED** — there is no signed build yet. §7 pre-checks every criterion that can be checked today and says which artifact each one needs | §7 |
+
+## 0b. CI run ledger (runs #1-#6) and the branch recovery (this session)
+
+Phase 10 has now consumed six red CI runs. Every one of them is accounted for
+below with the artifact that records it; all are in
+`docs/progress/phase10-evidence/` (the run #6 set is committed; earlier runs'
+verdicts are recorded here from their session reports and the workflow history).
+
+| run | symptom (from the evidence) | root cause | state |
+|---|---|---|---|
+| #1 | gradle compile error: `signingLine` "unresolved reference" at the one-line log call after `dependencies` | the `val` was defined inside the `android { }` block; the log line was moved out of scope | FIXED on main by hand-edit (moved `logger.lifecycle(signingLine)` inside the block, before `buildTypes`) |
+| #2 | `smokeImplementation(...)` accessor unresolved in the `dependencies` block | type-safe accessors only exist for configurations present when the script starts; `smoke` is created in this same file | FIXED (deferred `configurations.configureEach` lookup; this session re-applied + documented it) |
+| #3 | `BuildConfig` duplicate import in `SettingsScreen.kt` | hand-edit added a second import line | FIXED on main (import removed; this session's static layer now greps for duplicate imports via `check-gradle-script.py`) |
+| #6 | `P10_SMOKE_APK FAIL`, `RELEASE_APK FAIL`, `UNSIGNED` misreport, `phase9_gate_fails=3` | four checker/packaging defects + one pipeline-sequencing defect, below | FIXED HERE (statically verified; the CI proof is the run this session dispatches) |
+
+The run #6 evidence (`p10-release-apk-report.txt`, `GATES_SUMMARY.txt`,
+`00-run-phase10.log`, `p9-provsel-instrument.log`) names all of these precisely:
+
+1. **Label int ref.** Binary AXML stores `android:label="@string/app_name"` as a
+   resource-ID int (measured: `label: 2131296266`), and `check-apk.py` asked
+   whether `str(label)` starts with `@`. Every real release APK therefore read
+   "label is a literal". Fixed: int resource ids are accepted, `label_raw`
+   reports the encoding actually seen, and `test-check-apk.py` now encodes all
+   three label shapes (string-@, int-ref, literal) and asserts each verdict.
+2. **versionName placeholder.** Four scripts extracted the expected version with
+   `grep -o 'versionName = "..."' -m1`, which matched the prose comment
+   `// versionName = "<pinned OpenCode version>-phase10"` before the real
+   assignment (measured: `expected '<pinned OpenCode version>-phase10'`).
+   Fixed in all four (40, 50, 90, sign-release-local) with a line-anchored
+   grep, plus an explicit FATAL when extraction yields nothing (an empty
+   expectation silently passing `--expect-version-name ""` is the same class of
+   bug with a different face). `check-gradle-script.py` now keeps the anchored
+   form and the file's value in agreement.
+3. **Payload staged but not packaged.** The Gradle log said "Runtime payload
+   OK" (19,965,610-byte tarball staged), and the release/smoke APKs had no
+   payload asset. `verifyAndStagePayload` hangs off `preBuild` only, so the
+   merge/compress asset tasks had NO task edge to it, and run #6 also shows
+   `compressSmokeAssets FROM-CACHE`: a build-cache entry can legitimately serve
+   a merge/compress whose staged-input snapshot predates the payload. Fixed on
+   three axes: explicit `dependsOn(verifyAndStagePayload)` for every
+   `merge*/compress*/generate*Assets` task, `upToDateWhen { false }` on staging,
+   and `outputs.cacheIf { false }` on the asset tasks (they are cheap; the
+   correctness is not). Plus: staging now FAILS the build if
+   `runtime-payload.tar.gz` is absent while the manifest is present (a
+   manifest-only engine tree is a build bug), and prints `PAYLOAD_SOURCE` /
+   `STAGED_ASSETS` lines so the next such question is answerable from one log.
+   In the same family: `check-apk.py`'s payload survey accepted only
+   `.tar.gz`/`.tgz`, but AAPT may store the asset decompressed as
+   `runtime-payload.tar` - a fact this repo had already learned in Phase 4
+   (both `PayloadExtractor` and the Phase 4 gate accept the two names). The
+   survey now mirrors that, reports `PAYLOAD_ASSET name=... bytes=...`, and
+   lists every `assets/` entry (`asset_list`) in the report.
+4. **UNSIGNED misreport.** The signature-state check appended its full second
+   report into the identity report (`>>`), so the file held two concatenated
+   verdicts, and the UNSIGNED gate read findings that belonged to the other
+   run. Fixed: separate file `p10-release-apk-unsigned-report.txt`, and the
+   gate detail line now carries the actual `SIGNATURE scheme=...` so "PASS with
+   scheme=none" is visible without opening anything.
+5. **NEW this session (the 401 cascade):** run #6's `phase9_gate_fails=3` was
+   not one of the four known fixes and would have kept CI red after them.
+   `p9-provsel-instrument.log` + `p9-harness-export.log` show every P9 failure
+   as `HTTP 401` / "exported credential did not authenticate the live server":
+   the debug app's client was authenticating against a FOREIGN server. Stages
+   6-7 leave the SMOKE app installed and running, and its runtime binds the
+   same fixed loopback port 4111 (`RuntimeEnv.SERVER_PORT`) that the P9 stage's
+   debug server must bind - the debug server cannot start, and every P9 HTTP
+   call lands on the smoke server with the wrong (other Keystore) password.
+   Fixed in `00-run-phase10.sh` stage 9: force-stop both identities and
+   uninstall the smoke build (release applicationId; nothing published uses
+   it) before the Phase 9 driver runs.
+
+**Branch recovery, stated honestly.** The last session fixed items 1-4 on
+`arena/01a0b15e-opencode-app` and committed locally (`b7454f7`, `55267a4`), but
+the push failed when the PR merged, so those commits existed only in a sandbox
+that no longer exists; `origin/main` advanced with only the partial hand-edits
+described in runs #1-#3. This session therefore did not cherry-pick anything -
+**the fixes were re-derived from the run #6 evidence and re-implemented here**
+(the old objects are unrecoverable), which is also why they now carry regression
+tests the old versions did not: `test-check-apk.py` grew from 17 asserted checks
+(it hardcoded `10 + 7` while actually running 18 - a small monument to hardcoded
+counts) to 26 COMPUTED ones, and a
+new `phase10/scripts/check-gradle-script.py` is wired into the static layer to
+hold the build-script shapes (including "the run #6 fix is still in the file")
+that Phase 9's scans never covered. Status of all five: **IMPLEMENTED,
+statically TESTED green** (this session: `30-static-checks.sh` rc=0,
+`INVARIANTS PASS`, `GRADLE_CHECK PASS` 0 findings, self-test 26/26, plus
+negative tests proving the two new checkers fail on the old shapes); **NOT YET
+PROVEN IN CI** until the run dispatched from this branch reports
+`label_is_resource true` (int form), `versionName=1.18.23-phase10` in the
+MANIFEST line vs expectations, `payload True` with `asset_list` naming
+`runtime-payload.tar.gz(19965610B)`, `UNSIGNED PASS ... scheme=none`, and
+`phase9_gate_fails=0`.
 
 ## 1. Signing
 
