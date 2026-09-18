@@ -139,6 +139,8 @@ android {
         "RELEASE SIGNING: not configured -> release artifacts are UNSIGNED (CI behavior; see docs/RELEASE.md)"
     }
 
+    logger.lifecycle(signingLine)
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -214,8 +216,6 @@ android {
         unitTests.all { it.testLogging { events("passed", "skipped", "failed") } }
     }
 }
-
-    logger.lifecycle(signingLine)
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
