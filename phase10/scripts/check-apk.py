@@ -467,7 +467,15 @@ def main(argv):
             for cand in pb_strings:
                 if cand == ex["package"] or (ex["package"] and ex["package"] in cand):
                     mf["package"] = ex["package"]
-                if ex["version_name"] and cand == ex["version_name"]:
+                # Same containment semantics as the package line above: the
+                # printable-run scanner recovers a protobuf field's text glued
+                # to its neighbours ("versionName1.18.23-phase10..."), so an
+                # EXACT match was unsatisfiable - run #7 proved that: the
+                # bundle's manifest carries the version (substring found), the
+                # gate still FAILed demanding a standalone token. A crude
+                # scanner gets to use one containment rule for all strings.
+                if ex["version_name"] and (cand == ex["version_name"]
+                                           or ex["version_name"] in cand):
                     mf["versionName"] = ex["version_name"]
     except zipfile.BadZipFile as e:
         print("FAIL %s is not a readable zip (%s)" % (path, e))
@@ -508,8 +516,10 @@ def main(argv):
                   "package=%r expected %r" % (mf.get("package"), ex["package"]))
     if ex["version_name"]:
         if manifest_format == "protobuf":
-            check(any(ex["version_name"] == c for c in pb_strings),
-                  "versionName %r not found among the bundle manifest's strings"
+            check(any(ex["version_name"] in c for c in pb_strings),
+                  "versionName %r not found among the bundle manifest's strings "
+                  "(substring match, as for the package - the protobuf scan is "
+                  "run-delimited, not token-delimited: see protobuf_strings())"
                   % ex["version_name"])
         else:
             check(mf.get("versionName") == ex["version_name"],

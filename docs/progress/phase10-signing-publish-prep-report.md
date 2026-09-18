@@ -1,14 +1,14 @@
 # Phase 10 report — signing, final verification, branding and publish prep
 
-Status: **IMPLEMENTED, gated statically, and NOT YET GREEN IN CI.** This header
-supersedes the original one: the workflow WAS installed (`.github/workflows/
-phase10-release.yml` on `main`, via the GitHub web UI per §1.4) and Phase 10 has
-since run in CI **six times, all red**, each red for a specific diagnosed reason
-- the ledger and the fixes are in section 0b. The authoring sandbox still has no
-JDK, no Gradle, no Android SDK and no emulator, so every device/CI claim below
-remains **NOT TESTED until the run dispatched from the recovery branch reports
-otherwise**; the green bar is: `30-static-checks.sh` rc=0, invariants PASS,
-inspector self-test 26/26, gradle-script check 0 findings.
+Status: **fixes PROVEN IN CI #7 on the artifact; verdict plumbing FIXED; the
+clean green run (#8) is what the merge waits for.** This header supersedes the
+original one: the workflow WAS installed (`.github/workflows/phase10-release.yml`
+on `main`, via the GitHub web UI per §1.4) and Phase 10 has run in CI **seven
+times**: #1-#6 red for diagnosed reasons, #7 all-gates-pass-but-the-job-was
+GREEN-WHILE-A-GATE-FAILED (the verdict-fold defect, §0b - the scarcest kind of
+red: the invisible one). The authoring sandbox still has no JDK, no Gradle, no
+Android SDK and no emulator; every claim below cites either a static check run
+here or a CI-evidence file committed under `docs/progress/phase10-evidence/`.
 
 - Date: 2026-09-18
 - Branch: `arena/01a0b15e-opencode-app` (from `main` @ `fbf3e5f`); runs #4-#6's
@@ -120,15 +120,62 @@ tests the old versions did not: `test-check-apk.py` grew from 17 asserted checks
 counts) to 26 COMPUTED ones, and a
 new `phase10/scripts/check-gradle-script.py` is wired into the static layer to
 hold the build-script shapes (including "the run #6 fix is still in the file")
-that Phase 9's scans never covered. Status of all five: **IMPLEMENTED,
-statically TESTED green** (this session: `30-static-checks.sh` rc=0,
-`INVARIANTS PASS`, `GRADLE_CHECK PASS` 0 findings, self-test 26/26, plus
-negative tests proving the two new checkers fail on the old shapes); **NOT YET
-PROVEN IN CI** until the run dispatched from this branch reports
-`label_is_resource true` (int form), `versionName=1.18.23-phase10` in the
-MANIFEST line vs expectations, `payload True` with `asset_list` naming
-`runtime-payload.tar.gz(19965610B)`, `UNSIGNED PASS ... scheme=none`, and
-`phase9_gate_fails=0`.
+that Phase 9's scans never covered.
+
+### Run #7 (branch `arena/01a0b557`, job 35373257370, `17:35:47Z`): the fixes landed; the VERDICT PLUMBING did not
+
+The owner dispatched gradle-only first (35372594071, 3m1s, **success**: static
++ 279 JVM tests green on the re-applied fixes) and then the full pipeline
+(20m46s). The four re-derived fixes and the port-handover fix all proved out
+**on the artifact**, from the committed evidence:
+
+| must-show | measured in run #7 |
+|---|---|
+| label as int resource ref | `label_is_resource: true`, `label_raw: 0x7f09000a` (attr `2131296266`), `findings: []` |
+| versionName real, not placeholder | `MANIFEST ... versionName=1.18.23-phase10` on both smoke and release, and the gates' expectation matched it |
+| payload staged AND packaged | `STAGED_ASSETS n=2 runtime-manifest.json(187351B), runtime-payload.tar.gz(19965923B)` (Gradle log) -> `PAYLOAD_ASSET name=runtime-payload.tar bytes=108615680` in the APK: the run-#6 "missing payload" was **AAPT's decompress-and-rename** as much as the staging race - half of it the old extension check could never have seen; both mechanisms are now fixed and the two logs agree |
+| UNSIGNED with its own report | `p10-release-apk-unsigned-report.txt` separate, `UNSIGNED PASS ... SIGNATURE scheme=none v1_files=0 v2_v3_block=False` |
+| P9 handover | `phase9_gate_fails=0` - all five P9 gates PASS on the debug build right after the smoke stage (the 401 cascade is gone), including P9_VERSION `1.18.23` == versions.lock and the PROVSEL stale/rebuilt pair |
+
+**But the job must not have been green, and it was** - two more findings, this
+time in the gate plumbing itself (fixed in the commit this ledger lands in,
+proven by simulating the orchestrator's fold+count against the new line
+format):
+
+6. **False-green verdict folding.** `40-release-verify.sh` wrote its verdicts as
+   `RELEASE_APK PASS` / `RELEASE_AAB FAIL` - no `P10_` prefix - while the
+   orchestrator folds and counts `^P10_[A-Z0-9_]+ (PASS|FAIL|SKIP)`. Every
+   release-stage verdict was invisible: the AAB gate FAILED
+   (`P10-RELEASE FAIL: see the log` printed as a human note) and
+   `phase10_gate_fails=0` reported a clean run. This is the project's cardinal
+   anti-pattern - a gate that cannot fail the build - found by reading the
+   evidence instead of the badge. Fixed: the stage's `rec()` now emits
+   `P10_<id>` lines (the human log keeps the bare names); the fold counts the
+   stage's FAILs, and `P10_RELEASE_SUMMARY pass=N fail=N` cannot collide with
+   the verdict pattern.
+7. **The AAB expectation was unsatisfiable.** The bundle's protobuf manifest
+   DOES carry `1.18.23-phase10` (found inside the printable run
+   `versionName1.18.23-phase10...`) but the AAB branch of `check-apk.py`
+   demanded an EXACT token match - a rule the file's own `protobuf_strings()`
+   docstring says a printable-run scan cannot support, and one the package
+   check on the same artifact already uses containment for. Fixed to
+   containment for both, with a self-test that (a) reproduces the glued-run
+   shape run #7 produced and (b) still FAILS a wrong version
+   (`1.18.24-phase10` not found) - containment is not a rubber stamp.
+   `test-check-apk.py` is now 27 computed checks.
+
+Two smaller honest notes from the same run: the store-screenshot stage produced
+**3** valid shots this time (01-welcome, 05-settings, 06-settings-open-source -
+the projects capture was absent; the gate requires >=2, so PASS, and the R5
+real-device set replaces the whole directory before submission anyway), and the
+payload tarball's sha drifted (`8d97d871...` -> `39f8f3bd...`) between runs 6
+and 7 on identical component versions and file counts - the tar embeds build
+mtimes, which is why `P9_LOCK` pins the manifest's version fields, not its
+digest; recorded here so nobody mistakes a rebuild for a payload change.
+
+**Run #8 must come before any merge**: with the fold fixed, the same green
+badge would now be produced only by a run whose release stage is genuinely
+clean end to end (`P10_RELEASE_APK/UNSIGNED/RELEASE_AAB` all PASS *and counted*).
 
 ## 1. Signing
 

@@ -27,7 +27,12 @@ LOG="$EV/release-verify.log"
 log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
 
 : > "$EV/p10-lines.txt.tmp"
-rec() { echo "$1 $2${3:+ :: $3}"; echo "$1 $2${3:+ :: $3}" >> "$EV/p10-release-lines.txt"; log "$1 $2${3:+ :: $3}"; }
+# The rec() names MUST carry the P10_ prefix: the orchestrator folds and counts
+# verdict lines with `grep '^P10_[A-Z0-9_]+ (PASS|FAIL|SKIP)'`, and unprefixed
+# names made every verdict of this stage invisible to it - run #7 shipped
+# RELEASE_AAB FAIL next to "phase10_gate_fails=0" and a GREEN job, which is the
+# worst failure mode this project knows (a gate that cannot fail the build).
+rec() { echo "P10_$1 $2${3:+ :: $3}"; echo "P10_$1 $2${3:+ :: $3}" >> "$EV/p10-release-lines.txt"; log "$1 $2${3:+ :: $3}"; }
 PASS=0; FAIL=0
 p10() { case "$2" in 0) PASS=$((PASS+1)); rec "$1" PASS "$3" ;; *) FAIL=$((FAIL+1)); rec "$1" FAIL "$3" ;; esac; }
 

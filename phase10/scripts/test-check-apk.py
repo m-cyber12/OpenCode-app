@@ -311,7 +311,11 @@ def main():
 
     # 7. an AAB (base/ folder + protobuf manifest) is reported, not crashed on
     aab = os.path.join(tmp, "app-release.aab")
-    proto = (b"\x0a\x1e" + b"io.github.mcyber12.opencode" + b"\x12\x10" + b"1.18.23-phase10")
+    # versionName GLUED to its field name, exactly like a real bundle's printable
+    # runs (run #7: the standalone-token form does not exist there, and the
+    # exact-match rule failed a bundle that carries the right version).
+    proto = (b"\x0a\x1e" + b"io.github.mcyber12.opencode"
+             + b"\x12\x13" + b"versionName1.18.23-phase10")
     with zipfile.ZipFile(aab, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("base/manifest/AndroidManifest.xml", proto)
         zf.writestr("base/dex/classes.dex", b"dex\n035\x00")
@@ -326,6 +330,11 @@ def main():
         fails.append("AAB survey failed: %s" % out[-300:])
     if "kind=aab" not in out:
         fails.append("AAB not reported as an aab")
+    # ...and a WRONG version must still fail the AAB path (containment is not
+    # a rubber stamp): "1.18.24" appears in no run of the bytes above.
+    rc, out = run([aab, "--expect-version-name", "1.18.24-phase10"])
+    if rc == 0 or "not found among the bundle manifest" not in out:
+        fails.append("a wrong versionName passed the AAB substring check (rc=%d)" % rc)
 
     # 8. end-to-end: the int-encoded (real aapt2) label must PASS the full
     # checker, and the literal must FAIL it with the label finding.
@@ -352,10 +361,10 @@ def main():
 
     for f in fails:
         print("SELFTEST FAIL %s" % f)
-    # one honest total: the parse/label dict checks + the 12 assertions the
+    # one honest total: the parse/label dict checks + the 13 assertions the
     # section runs make (a hardcoded count once drifted from reality by one).
     print("SELFTEST %s (%d checks)" % ("PASS" if not fails else "FAIL",
-                                       len(checks) + 12))
+                                       len(checks) + 13))
     return 1 if fails else 0
 
 
