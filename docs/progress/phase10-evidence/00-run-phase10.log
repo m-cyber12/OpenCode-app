@@ -1,9 +1,9 @@
-=== PHASE 10 START 2026-09-18T09:59:08Z ===
+=== PHASE 10 START 2026-09-18T11:04:47Z ===
 ########## 1/9 static checks (phase 9 invariants + phase 10 release invariants) ##########
-=== Phase 10 static checks 2026-09-18T09:59:08Z ===
+=== Phase 10 static checks 2026-09-18T11:04:47Z ===
 
 === phase 9 static checks (not weakened) ===
-=== Phase 9 static checks 2026-09-18T09:59:08Z ===
+=== Phase 9 static checks 2026-09-18T11:04:47Z ===
 OK   bash -n on 42 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8/phase9 driver
@@ -98,26 +98,22 @@ Daemon will be stopped at the end of the build
 > Configure project :app
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:132:9: Variable 'signingLine' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:136:33: Unnecessary non-null assertion (!!) on a non-null receiver of type File
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:221:18: Unresolved reference: signingLine
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:263:5: Unresolved reference: smokeImplementation
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts:218:22: Unresolved reference: signingLine
 
 FAILURE: Build completed with 2 failures.
 
 1: Task failed with an exception.
 -----------
 * Where:
-Build file '/home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts' line: 221
+Build file '/home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts' line: 218
 
 * What went wrong:
-Script compilation errors:
+Script compilation error:
 
-  Line 221: logger.lifecycle(signingLine)
-                             ^ Unresolved reference: signingLine
+  Line 218:     logger.lifecycle(signingLine)
+                                 ^ Unresolved reference: signingLine
 
-  Line 263:     smokeImplementation("androidx.compose.ui:ui-test-manifest")
-                ^ Unresolved reference: smokeImplementation
-
-2 errors
+1 error
 
 * Try:
 > Run with --info or --debug option to get more log output.
@@ -125,7 +121,7 @@ Script compilation errors:
 > Get more help at https://help.gradle.org.
 
 * Exception is:
-ScriptCompilationException(scriptCompilationErrors=[ScriptCompilationError(message=Unresolved reference: signingLine, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-2043517354035210969.tmp/build.gradle.kts (221:18)), ScriptCompilationError(message=Unresolved reference: smokeImplementation, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-2043517354035210969.tmp/build.gradle.kts (263:5))])
+ScriptCompilationException(scriptCompilationErrors=[ScriptCompilationError(message=Unresolved reference: signingLine, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-18047265035379676246.tmp/build.gradle.kts (218:22))])
 	at org.gradle.kotlin.dsl.support.KotlinCompilerKt.compileKotlinScriptModuleTo(KotlinCompiler.kt:190)
 	at org.gradle.kotlin.dsl.support.KotlinCompilerKt.compileKotlinScriptToDirectory(KotlinCompiler.kt:148)
 	at org.gradle.kotlin.dsl.execution.ResidualProgramCompiler$compileScript$1.invoke(ResidualProgramCompiler.kt:712)
@@ -385,18 +381,15 @@ ScriptCompilationException(scriptCompilationErrors=[ScriptCompilationError(messa
 2: Task failed with an exception.
 -----------
 * Where:
-Build file '/home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts' line: 221
+Build file '/home/runner/work/OpenCode-app/OpenCode-app/app/build.gradle.kts' line: 218
 
 * What went wrong:
-Script compilation errors:
+Script compilation error:
 
-  Line 221: logger.lifecycle(signingLine)
-                             ^ Unresolved reference: signingLine
+  Line 218:     logger.lifecycle(signingLine)
+                                 ^ Unresolved reference: signingLine
 
-  Line 263:     smokeImplementation("androidx.compose.ui:ui-test-manifest")
-                ^ Unresolved reference: smokeImplementation
-
-2 errors
+1 error
 
 * Try:
 > Run with --info or --debug option to get more log output.
@@ -404,7 +397,7 @@ Script compilation errors:
 > Get more help at https://help.gradle.org.
 
 * Exception is:
-ScriptCompilationException(scriptCompilationErrors=[ScriptCompilationError(message=Unresolved reference: signingLine, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-2043517354035210969.tmp/build.gradle.kts (221:18)), ScriptCompilationError(message=Unresolved reference: smokeImplementation, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-2043517354035210969.tmp/build.gradle.kts (263:5))])
+ScriptCompilationException(scriptCompilationErrors=[ScriptCompilationError(message=Unresolved reference: signingLine, location=/home/runner/.gradle/.tmp/gradle-kotlin-dsl-18047265035379676246.tmp/build.gradle.kts (218:22))])
 	at org.gradle.kotlin.dsl.support.KotlinCompilerKt.compileKotlinScriptModuleTo(KotlinCompiler.kt:190)
 	at org.gradle.kotlin.dsl.support.KotlinCompilerKt.compileKotlinScriptToDirectory(KotlinCompiler.kt:148)
 	at org.gradle.kotlin.dsl.execution.ResidualProgramCompiler$compileScript$1.invoke(ResidualProgramCompiler.kt:712)
@@ -661,9 +654,8 @@ ScriptCompilationException(scriptCompilationErrors=[ScriptCompilationError(messa
 
 ==============================================================================
 
-BUILD FAILED in 59s
+BUILD FAILED in 1m 5s
 STEP_FAILED rc=1: SKIP_PAYLOAD=1 '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
 FATAL: kotlin compile or JVM unit tests failed (compiler-errors.txt)
 P10-BUILD FAIL: kotlin compile or JVM unit tests failed (compiler-errors.txt)
 P10_SUMMARY gates not reached (build/environment failure) - see 00-run-phase10.log
-=== PHASE 10 END 2026-09-18T10:00:14Z FATAL: kotlin compile or JVM unit tests failed (compiler-errors.txt) ===
