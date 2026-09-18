@@ -87,8 +87,12 @@ APK="$SMOKE_APK"
 
 # ---- 2. inspect the artifact before trusting it ------------------------------
 log "=== inspecting the smoke APK (identity, payload, abis, signing) ==="
-VNAME=$(grep -o 'versionName = "[^"]*"' -m1 "$ROOT/app/build.gradle.kts" | cut -d'"' -f2)
-VCODE=$(grep -oE 'versionCode = [0-9]+' -m1 "$ROOT/app/build.gradle.kts" | grep -oE '[0-9]+')
+# Anchored extraction: an unanchored grep matched the comment line
+# `// versionName = "<pinned OpenCode version>-phase10"` first (run #6), and the
+# smoke gate then expected a placeholder instead of the real version.
+VNAME=$(grep -E '^[[:space:]]*versionName = "' "$ROOT/app/build.gradle.kts" | head -1 | cut -d'"' -f2)
+VCODE=$(grep -E '^[[:space:]]*versionCode = [0-9]+' "$ROOT/app/build.gradle.kts" | head -1 | grep -oE 'versionCode = [0-9]+' | grep -oE '[0-9]+')
+[ -n "$VNAME" ] && [ -n "$VCODE" ] || { echo "FATAL: could not extract versionName/versionCode" >&2; exit 2; }
 INSPECT="$EV/p10-smoke-apk-report.txt"
 # Expectations for a SMOKE build, stated explicitly so the report cannot be read
 # as "this is a release artifact": the packaged form is right, the debug flag is

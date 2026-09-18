@@ -103,7 +103,15 @@ def end_element(name_idx):
 
 
 def build_axml(package="io.github.mcyber12.opencode", version_code=8,
-               version_name="1.18.23-phase10", debuggable=False, with_icon=True):
+               version_name="1.18.23-phase10", debuggable=False, with_icon=True,
+               label_mode="string"):
+    """label_mode selects how android:label is ENCODED, which is the whole point
+    of the run-#6 regression:
+      "string"    TYPE_STRING -> "@string/app_name" (the test's original shape)
+      "ref"       TYPE_REFERENCE -> a resource id int, exactly what real aapt2
+                  emits for @string/app_name in a binary manifest
+      "literal"   TYPE_STRING -> "OpenCode" (a translatable-nit the check rejects)
+    """
     strings = []
     idx = {}
 
@@ -121,7 +129,7 @@ def build_axml(package="io.github.mcyber12.opencode", version_code=8,
               "debuggable", "label", "icon", "roundIcon", "uses-permission",
               "name", "activity", "service", "exported",
               ".MainActivity", ".runtime.RuntimeService",
-              "android.permission.INTERNET", "@string/app_name", "true", "false"]:
+              "android.permission.INTERNET", "@string/app_name", "OpenCode", "true", "false"]:
         s(v)
 
     F = NO_INDEX
@@ -143,8 +151,15 @@ def build_axml(package="io.github.mcyber12.opencode", version_code=8,
         (android_ns, s("allowBackup"), -1, (TYPE_INT_BOOLEAN, 0)),
         (android_ns, s("extractNativeLibs"), -1, (TYPE_INT_BOOLEAN, 1)),
         (android_ns, s("networkSecurityConfig"), -1, (TYPE_REFERENCE, 0x7F123456)),
-        (android_ns, s("label"), s("@string/app_name"), (TYPE_STRING, s("@string/app_name"))),
     ]
+    if label_mode == "ref":
+        # what real aapt2 writes for @string/app_name: a TYPE_REFERENCE whose
+        # data is the resource id, with no raw string at all
+        app_attrs.append((android_ns, s("label"), -1, (TYPE_REFERENCE, 0x7F0A0001)))
+    elif label_mode == "literal":
+        app_attrs.append((android_ns, s("label"), s("OpenCode"), (TYPE_STRING, s("OpenCode"))))
+    else:
+        app_attrs.append((android_ns, s("label"), s("@string/app_name"), (TYPE_STRING, s("@string/app_name"))))
     if with_icon:
         app_attrs.append((android_ns, s("icon"), -1, (TYPE_REFERENCE, 0x7F0F0000)))
         app_attrs.append((android_ns, s("roundIcon"), -1, (TYPE_REFERENCE, 0x7F0F0001)))
@@ -184,14 +199,15 @@ def build_axml(package="io.github.mcyber12.opencode", version_code=8,
     return header + pool + body
 
 
-def make_apk(path, axml, signed=False, payload=True, abis=("arm64-v8a", "x86_64")):
+def make_apk(path, axml, signed=False, payload=True, abis=("arm64-v8a", "x86_64"),
+              payload_name="assets/runtime-payload.tar.gz"):
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("AndroidManifest.xml", axml)
         zf.writestr("resources.arsc", b"\x02\x00\x0c\x00" + b"\x00" * 64)
         zf.writestr("classes.dex", b"dex\n035\x00" + b"\x00" * 64)
         if payload:
             zf.writestr("assets/runtime-manifest.json", '{"payloadVersion": 7}\n')
-            zf.writestr("assets/opencode-runtime.tar.gz", b"\x1f\x8b\x08\x00" + b"\x00" * 512)
+            zf.writestr(payload_name, b"\x1f\x8b\x08\x00" + b"\x00" * 512)
         for abi in abis:
             for lib in ("libbun.so", "libgit.so", "librg.so", "libseccompshim.so",
                         "libexecshim.so", "libchildshim.so"):
@@ -231,6 +247,24 @@ def main():
         (mf["allowBackup"] == "false" and mf["extractNativeLibs"] == "true", "application flags"),
         (mf["networkSecurityConfig"] is True, "networkSecurityConfig present"),
     ]
+    # 1b. the label ENCODING regressions (CI run #6): a resource id written as an
+    # int must be accepted; a literal string must still be flagged.
+    ref_apk = os.path.join(tmp, "app-label-ref.apk")
+    make_apk(ref_apk, build_axml(label_mode="ref"))
+    with zipfile.ZipFile(ref_apk) as zf:
+        mf_ref = check_apk.parse_manifest(zf.read("AndroidManifest.xml"))
+    checks.append((mf_ref["label_is_resource"],
+                   "int resource-id label (real aapt2 form) read as a resource"))
+    checks.append((mf_ref.get("label_raw") == "0x7f0a0001",
+                   "label_raw reports the reference: %r" % mf_ref.get("label_raw")))
+    lit_apk = os.path.join(tmp, "app-label-literal.apk")
+    make_apk(lit_apk, build_axml(label_mode="literal"))
+    with zipfile.ZipFile(lit_apk) as zf:
+        mf_lit = check_apk.parse_manifest(zf.read("AndroidManifest.xml"))
+    checks.append((mf_lit["label_is_resource"] is False,
+                   "literal string label rejected as not-a-resource"))
+    checks.append((mf_lit.get("label_raw") == "OpenCode",
+                   "label_raw reports the literal: %r" % mf_lit.get("label_raw")))
     for ok, msg in checks:
         if not ok:
             fails.append("parse: " + msg)
@@ -293,10 +327,35 @@ def main():
     if "kind=aab" not in out:
         fails.append("AAB not reported as an aab")
 
+    # 8. end-to-end: the int-encoded (real aapt2) label must PASS the full
+    # checker, and the literal must FAIL it with the label finding.
+    rc, out = run([ref_apk, "--expect-payload", "--expect-not-debuggable"])
+    if rc != 0 or "label is a literal" in out:
+        fails.append("resource-id label failed the full checker: %s" % out[-200:])
+    rc, out = run([lit_apk, "--expect-payload"])
+    if rc == 0 or "label is a literal" not in out:
+        fails.append("literal label slipped through the full checker (rc=%d)" % rc)
+
+    # 9. the AAPT decompression quirk: a payload stored as assets/*.tar (no .gz)
+    # must be FOUND, named and sized in the report (the runtime reads both names).
+    tar_apk = os.path.join(tmp, "app-payload-tar.apk")
+    make_apk(tar_apk, build_axml(), payload_name="assets/runtime-payload.tar")
+    rc, out = run([tar_apk, "--expect-payload"])
+    if rc != 0 or "PAYLOAD_ASSET name=runtime-payload.tar" not in out:
+        fails.append("a .tar-stored payload was not accepted/identified: %s" % out[-300:])
+
+    # 10. the asset_list diagnostic: every asset entry appears with its size.
+    rc, out = run([apk, "--expect-payload"])
+    if ("ASSETS 2 entries: runtime-manifest.json" not in out
+            or "runtime-payload.tar.gz(" not in out):
+        fails.append("asset_list line missing/incomplete: %s" % out[-300:])
+
     for f in fails:
         print("SELFTEST FAIL %s" % f)
+    # one honest total: the parse/label dict checks + the 12 assertions the
+    # section runs make (a hardcoded count once drifted from reality by one).
     print("SELFTEST %s (%d checks)" % ("PASS" if not fails else "FAIL",
-                                       10 + 7))
+                                       len(checks) + 12))
     return 1 if fails else 0
 
 

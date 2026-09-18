@@ -244,6 +244,24 @@ step "9/9 Phase 9 gates on the same device (provider selection, plugin seed, ver
 if [ "${P10_SKIP_P9GATES:-0}" = "1" ]; then
   note_gate "P9-GATES SKIP: P10_SKIP_P9GATES=1 (iteration knob)"
 else
+  # Run-#6 finding, root-caused from p9-provsel-instrument.log + p9-harness-
+  # export.log: every P9 failure was an HTTP 401 or "exported credential did
+  # not authenticate the live server" - the debug client was authenticating
+  # against a FOREIGN server. Stages 6/7 leave the SMOKE app installed and
+  # running, and its runtime server binds the same fixed loopback port (4111,
+  # RuntimeEnv.SERVER_PORT) the debug app's supervisor must bind; the debug
+  # server then cannot start, and everything the P9 driver does over :4111
+  # reaches the smoke app's server with the wrong Keystore-held password.
+  # The P9 gates must run against the DEBUG build this pipeline produced, so
+  # the smoke identity is force-stopped and uninstalled first (its androidTest
+  # package with it - a released app is never installed in CI, so uninstalling
+  # the id cannot touch one).
+  echo "p9 preamble: removing the smoke build so port 4111 belongs to the debug runtime again" | tee -a "$MAINLOG"
+  adb shell am force-stop io.github.mcyber12.opencode >/dev/null 2>&1 || true
+  adb shell am force-stop io.github.mcyber12.opencode.debug >/dev/null 2>&1 || true
+  adb uninstall io.github.mcyber12.opencode.test >/dev/null 2>&1 || true
+  adb uninstall io.github.mcyber12.opencode >/dev/null 2>&1 || true
+  sleep 3
   P9RC=0
   bash "$ROOT/phase9/scripts/20-gates.sh" >> "$MAINLOG" 2>&1 || P9RC=$?
   grep -ahE '^P9_[A-Z0-9_]+ (PASS|FAIL|SKIP)' "$ROOT/phase9/out/evidence/p9-lines.txt" 2>/dev/null | cut -c1-300 >> "$FINAL"

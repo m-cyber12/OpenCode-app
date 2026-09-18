@@ -116,11 +116,16 @@ if [ -n "$CERT_SHA" ] && [ -n "$VERIFIED_SHA" ] && [ "$CERT_SHA" != "$VERIFIED_S
 fi
 
 # check-apk.py confirms the artifact's identity as well as its signature state.
+# versionName is extracted ANCHORED to the line start: the build file carries a
+# comment `// versionName = "<pinned OpenCode version>-phase10"` and an
+# unanchored grep picks that placeholder up first (it did, in CI run #6).
 CHECK="$(cd "$(dirname "$0")" && pwd)/check-apk.py"
+VNAME_EXPECT=$(grep -E '^[[:space:]]*versionName = "' "$REPO_ROOT/app/build.gradle.kts" | head -1 | cut -d'"' -f2)
+[ -n "$VNAME_EXPECT" ] || fail "could not extract versionName from app/build.gradle.kts"
 for f in "$APK_OUT" "$OUT/$(basename "${AAB:-}")"; do
   [ -f "$f" ] || continue
   python3 "$CHECK" "$f" --expect-signed --expect-package io.github.mcyber12.opencode \
-    --expect-version-name "$(grep -o 'versionName = "[^"]*"' -m1 "$REPO_ROOT/app/build.gradle.kts" | cut -d'"' -f2)" \
+    --expect-version-name "$VNAME_EXPECT" \
     >> "$REPORT" 2>&1 || echo "NOTE: check-apk.py reported a finding for $(basename "$f") - read $REPORT"
 done
 

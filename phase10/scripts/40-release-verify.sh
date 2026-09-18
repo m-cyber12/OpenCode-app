@@ -31,9 +31,17 @@ rec() { echo "$1 $2${3:+ :: $3}"; echo "$1 $2${3:+ :: $3}" >> "$EV/p10-release-l
 PASS=0; FAIL=0
 p10() { case "$2" in 0) PASS=$((PASS+1)); rec "$1" PASS "$3" ;; *) FAIL=$((FAIL+1)); rec "$1" FAIL "$3" ;; esac; }
 
-VNAME=$(grep -o 'versionName = "[^"]*"' -m1 "$ROOT/app/build.gradle.kts" | cut -d'"' -f2)
-VCODE=$(grep -oE 'versionCode = [0-9]+' -m1 "$ROOT/app/build.gradle.kts" | grep -oE '[0-9]+')
-APPID=$(grep -oE 'applicationId = "[^"]*"' -m1 "$ROOT/app/build.gradle.kts" | cut -d'"' -f2)
+# Extract the EXPECTED identity from build.gradle.kts, anchored at the start of
+# the line: the file carries a prose comment containing `// versionName = "<pinned
+# OpenCode version>-phase10"`, and an unanchored grep found the comment first, so
+# every --expect-version-name in CI compared against that placeholder (run #6).
+# Anchored + head -1 sees only real assignments, which are never indented-away
+# inside a comment.
+VNAME=$(grep -E '^[[:space:]]*versionName = "' "$ROOT/app/build.gradle.kts" | head -1 | cut -d'"' -f2)
+VCODE=$(grep -E '^[[:space:]]*versionCode = [0-9]+' "$ROOT/app/build.gradle.kts" | head -1 | grep -oE 'versionCode = [0-9]+' | grep -oE '[0-9]+')
+APPID=$(grep -E '^[[:space:]]*applicationId = "' "$ROOT/app/build.gradle.kts" | head -1 | cut -d'"' -f2)
+[ -n "$VNAME" ] && [ -n "$VCODE" ] && [ -n "$APPID" ] \
+  || { echo "FATAL: could not extract versionName/versionCode/applicationId from app/build.gradle.kts" >&2; exit 2; }
 DEBUG_APPID="$APPID.debug"
 log "expected identity: applicationId=$APPID versionName=$VNAME versionCode=$VCODE"
 
@@ -82,10 +90,15 @@ p10 RELEASE_APK_DETAIL 0 "$(grep -a '^CONTENTS ' "$APK_REPORT" | head -1 | tr -s
 # In CI the expected state is unsigned, so that is what is asserted here; the
 # human's signed artifact is verified by sign-release-local.sh + check-apk.py
 # --expect-signed (docs/RELEASE.md s4/s5).
-if python3 "$DIR/scripts/check-apk.py" "$APK" --expect-unsigned >> "$APK_REPORT" 2>&1; then
-  p10 UNSIGNED 0 "CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md)"
+# Written to its OWN report file (run #6 appended this second checker run into
+# the first report with ">>", so the file held two concatenated reports, the
+# "UNSIGNED" verdict's PASS/FAIL was decided by findings that belonged to the
+# identity run, and the evidence was unreadable without diffing it).
+UNSIGNED_REPORT="$EV/p10-release-apk-unsigned-report.txt"
+if python3 "$DIR/scripts/check-apk.py" "$APK" --expect-unsigned > "$UNSIGNED_REPORT" 2>&1; then
+  p10 UNSIGNED 0 "CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); $(grep -a '^SIGNATURE ' "$UNSIGNED_REPORT" | head -1)"
 else
-  p10 UNSIGNED 1 "the CI release APK is SIGNED - CI must never receive signing material. Investigate before publishing anything"
+  p10 UNSIGNED 1 "the CI release APK is SIGNED - CI must never receive signing material. Investigate before publishing anything; $(grep -a '^FINDING' "$UNSIGNED_REPORT" | head -2 | tr '\n' ';' | cut -c1-200)"
 fi
 
 # ---- AAB: identity + payload (protobuf manifest; see check-apk.py) -----------

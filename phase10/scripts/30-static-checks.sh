@@ -51,6 +51,14 @@ run "release invariants (no key material / published identity / store package)" 
 # back what was encoded - including that it FAILS a wrong expectation.
 run "apk/aab inspector self-test" python3 "$ROOT/phase10/scripts/test-check-apk.py"
 
+# ---- 3b. the build script's static shape -----------------------------------
+# Phase 9's syntax scans cover app/src, NOT app/build.gradle.kts; CI runs 1, 2,
+# 3 and 6 each paid for a defect that lived exactly there (use-before-definition,
+# a type-safe accessor that cannot exist, a duplicate import, a payload fix that
+# must not silently leave the file). This checker pays 0.1 s per run instead.
+run "app/build.gradle.kts static checks (balance, order, run-#6 fix present, identity greps)" \
+  python3 "$ROOT/phase10/scripts/check-gradle-script.py" "$ROOT"
+
 # ---- 4. shell/python syntax of the Phase 10 tree ---------------------------
 SHELLSYN=0
 while IFS= read -r f; do
