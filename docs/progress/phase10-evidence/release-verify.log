@@ -1,0 +1,108 @@
+[2026-09-18T12:52:01Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=<pinned OpenCode version>-phase10 versionCode=8
+[2026-09-18T12:52:01Z] === gradle :app:assembleRelease :app:bundleRelease ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :app
+RELEASE SIGNING: not configured -> release artifacts are UNSIGNED (CI behavior; see docs/RELEASE.md)
+
+> Task :app:buildKotlinToolingMetadata
+> Task :app:checkKotlinGradlePluginConfigurationErrors
+
+> Task :app:verifyAndStagePayload
+PAYLOAD STAGING: -PskipPayload=null SKIP_PAYLOAD=null
+Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/assets / /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/jniLibs
+
+> Task :app:preBuild
+> Task :app:preReleaseBuild
+> Task :app:generateReleaseBuildConfig
+> Task :app:generateReleaseResValues FROM-CACHE
+> Task :app:checkReleaseAarMetadata
+> Task :app:mapReleaseSourceSetPaths
+> Task :app:generateReleaseResources
+> Task :app:packageReleaseResources
+> Task :app:parseReleaseLocalResources FROM-CACHE
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRelease FROM-CACHE
+
+> Task :app:processReleaseMainManifest
+/home/runner/work/OpenCode-app/OpenCode-app/app/src/main/AndroidManifest.xml:32:9-41 Warning:
+	android:extractNativeLibs should not be specified in this source AndroidManifest.xml file. See https://d.android.com/guide/topics/manifest/application-element#extractNativeLibs for more information.
+The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml file and update the build file accordingly. See https://d.android.com/studio/build/agp-upgrade-assistant for more information.
+
+> Task :app:processReleaseManifest
+> Task :app:javaPreCompileRelease FROM-CACHE
+> Task :app:extractProguardFiles
+> Task :app:mergeReleaseResources
+> Task :app:mergeReleaseJniLibFolders
+> Task :app:processReleaseManifestForPackage
+> Task :app:desugarReleaseFileDependencies
+> Task :app:mergeReleaseStartupProfile
+> Task :app:checkReleaseDuplicateClasses
+> Task :app:mergeReleaseNativeLibs
+> Task :app:mergeReleaseArtProfile
+> Task :app:processReleaseResources
+> Task :app:stripReleaseDebugSymbols
+> Task :app:mergeExtDexRelease
+
+> Task :app:stripReleaseDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libbun.so, libchildshim.so, libexecshim.so, libgit.so, librg.so, libseccompshim.so.
+
+> Task :app:mergeReleaseShaders
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:extractReleaseNativeSymbolTables
+> Task :app:mergeReleaseAssets
+> Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:extractReleaseVersionControlInfo
+> Task :app:optimizeReleaseResources
+> Task :app:collectReleaseDependencies
+> Task :app:sdkReleaseDependencyData
+> Task :app:writeReleaseAppMetadata
+> Task :app:writeReleaseSigningConfigVersions
+> Task :app:processApplicationManifestReleaseForBundle
+> Task :app:configureReleaseDependencies
+> Task :app:parseReleaseIntegrityConfig
+> Task :app:bundleReleaseResources
+> Task :app:compressReleaseAssets
+> Task :app:compileReleaseKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/security/SecretStore.kt:119:54 'getter for isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:202:5 Parameter 'runtime' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:544:43 'Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:240:5 Parameter 'availability' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:243:9 Variable 'chat' is never used
+
+> Task :app:compileReleaseJavaWithJavac
+> Task :app:generateReleaseLintVitalReportModel
+> Task :app:dexBuilderRelease
+> Task :app:mergeReleaseGlobalSynthetics
+> Task :app:processReleaseJavaRes
+> Task :app:mergeReleaseJavaResource
+> Task :app:mergeDexRelease
+> Task :app:compileReleaseArtProfile
+> Task :app:buildReleasePreBundle
+> Task :app:packageReleaseBundle
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:packageRelease
+> Task :app:createReleaseApkListingFileRedirect
+> Task :app:signReleaseBundle
+> Task :app:produceReleaseBundleIdeListingFile
+> Task :app:createReleaseBundleListingFileRedirect
+> Task :app:bundleRelease
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
+> Task :app:assembleRelease
+
+BUILD SUCCESSFUL in 2m 37s
+60 actionable tasks: 56 executed, 4 from cache
+[2026-09-18T12:54:39Z] apk=app-release-unsigned.apk (130884625 bytes)
+[2026-09-18T12:54:39Z] aab=app-release.aab (119093665 bytes)
+[2026-09-18T12:54:39Z] RELEASE_APK FAIL :: check-apk findings: FINDING application label is a literal, not a @string resource;FINDING versionName='1.18.23-phase10' expected '<pinned OpenCode version>-phase10';FINDING no assets/*.tar.gz payload in this artifact;
+[2026-09-18T12:54:39Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=169 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=False manifest_asset=True
+[2026-09-18T12:54:39Z] UNSIGNED FAIL :: the CI release APK is SIGNED - CI must never receive signing material. Investigate before publishing anything
+[2026-09-18T12:54:39Z] RELEASE_AAB FAIL :: check-apk findings: FINDING versionName '<pinned OpenCode version>-phase10' not found among the bundle manifest's strings;FINDING no assets/*.tar.gz payload in this artifact;
+[2026-09-18T12:54:39Z] sha256:
+4cdf84bcad932eb0786892219964a529eb11886d50ef7925dfec1a3190280799  ./app-release-unsigned.apk
+7bbb139ca03c6e127f670ce9c905f8f9394c5237c86a02282640e0cffab9c7d4  ./app-release.aab

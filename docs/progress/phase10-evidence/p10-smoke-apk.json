@@ -1,0 +1,129 @@
+{
+  "artifact": "TEST-ONLY-debugkey-app-smoke.apk",
+  "contents": {
+    "abis": {
+      "arm64-v8a": {
+        "bytes": 129087704,
+        "count": 6
+      },
+      "x86_64": {
+        "bytes": 132841552,
+        "count": 6
+      }
+    },
+    "assets": {
+      "payload_asset": false,
+      "runtime_manifest": true
+    },
+    "compressed_bytes": 150089984,
+    "entry_count": 178,
+    "native_libs": {
+      "arm64-v8a/libbun.so": 89796776,
+      "arm64-v8a/libchildshim.so": 8184,
+      "arm64-v8a/libexecshim.so": 7592,
+      "arm64-v8a/libgit.so": 4132208,
+      "arm64-v8a/librg.so": 35136200,
+      "arm64-v8a/libseccompshim.so": 6744,
+      "x86_64/libbun.so": 91788816,
+      "x86_64/libchildshim.so": 7584,
+      "x86_64/libexecshim.so": 7864,
+      "x86_64/libgit.so": 4258048,
+      "x86_64/librg.so": 36771632,
+      "x86_64/libseccompshim.so": 7608
+    },
+    "size_bytes": 150122737,
+    "top_level": {
+      "AndroidManifest.xml": 1,
+      "DebugProbesKt.bin": 1,
+      "META-INF": 47,
+      "assets": 2,
+      "classes.dex": 1,
+      "classes10.dex": 1,
+      "classes11.dex": 1,
+      "classes12.dex": 1,
+      "classes13.dex": 1,
+      "classes14.dex": 1,
+      "classes2.dex": 1,
+      "classes3.dex": 1,
+      "classes4.dex": 1,
+      "classes5.dex": 1,
+      "classes6.dex": 1,
+      "classes7.dex": 1,
+      "classes8.dex": 1,
+      "classes9.dex": 1,
+      "kotlin": 7,
+      "lib": 12,
+      "res": 93,
+      "resources.arsc": 1
+    },
+    "uncompressed_bytes": 393081779
+  },
+  "findings": [
+    "application label is a literal, not a @string resource",
+    "versionName='1.18.23-phase10' expected '<pinned OpenCode version>-phase10'",
+    "no assets/*.tar.gz payload in this artifact"
+  ],
+  "kind": "apk",
+  "manifest": {
+    "allowBackup": "false",
+    "application_attrs": {
+      "_ns_allowBackup": 68,
+      "_ns_appComponentFactory": 68,
+      "_ns_debuggable": 68,
+      "_ns_extractNativeLibs": 68,
+      "_ns_icon": 68,
+      "_ns_label": 68,
+      "_ns_networkSecurityConfig": 68,
+      "_ns_roundIcon": 68,
+      "_ns_supportsRtl": 68,
+      "_ns_theme": 68,
+      "allowBackup": "false",
+      "appComponentFactory": "androidx.core.app.CoreComponentFactory",
+      "debuggable": "true",
+      "extractNativeLibs": "true",
+      "icon": 2131230720,
+      "label": 2131296266,
+      "networkSecurityConfig": 2131492865,
+      "roundIcon": 2131230722,
+      "supportsRtl": "true",
+      "theme": 2131361800
+    },
+    "components": {
+      "activities": [
+        "ai.opencode.android.MainActivity",
+        "ai.opencode.android.runtime.DebugControlActivity",
+        "androidx.activity.ComponentActivity"
+      ],
+      "services": [
+        "ai.opencode.android.runtime.RuntimeService"
+      ]
+    },
+    "debuggable": true,
+    "extractNativeLibs": "true",
+    "icon_declared": true,
+    "label_is_resource": false,
+    "minSdk": 29,
+    "networkSecurityConfig": true,
+    "package": "io.github.mcyber12.opencode",
+    "permissions": [
+      "android.permission.FOREGROUND_SERVICE",
+      "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
+      "android.permission.INTERNET",
+      "android.permission.POST_NOTIFICATIONS",
+      "io.github.mcyber12.opencode.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+    ],
+    "platformBuildVersionCode": 34,
+    "round_icon_declared": true,
+    "targetSdk": 34,
+    "versionCode": 8,
+    "versionName": "1.18.23-phase10"
+  },
+  "manifest_format": "axml",
+  "signature": {
+    "comment": "",
+    "scheme": "v2/v3",
+    "v1_certificate_sha256": null,
+    "v1_meta_inf": [],
+    "v2_or_v3_block": true
+  }
+}

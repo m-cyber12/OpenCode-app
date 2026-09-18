@@ -1,0 +1,11 @@
+P9_PROVSEL_CLEANUP SKIP :: se
+P9_PROVSEL_CLEANUP SKIP :: server not healthy
+P9_PROVSEL_STALE SKIP :: se
+P9_PROVSEL_STALE SKIP :: server not healthy
+P9_PROVSEL_STALE SKIP :: :: server not healthy
+P9_PROVSEL_REBUILT FAIL
+P9_PROVSEL_TURN FAIL
+P9_PROVSEL_CLEANUP SKIP :: :: server not healthy
+P9_VERSION FAIL :: /global/health version='' vs versions.lock '1.18.23'
+P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
+P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=8d97d871e32f5030 

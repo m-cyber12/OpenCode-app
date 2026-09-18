@@ -1,0 +1,129 @@
+[2026-09-18T12:48:06Z] === building the smoke variant (release configuration, debug-key signed) ===
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :app
+RELEASE SIGNING: not configured -> release artifacts are UNSIGNED (CI behavior; see docs/RELEASE.md)
+
+> Task :app:verifyAndStagePayload
+PAYLOAD STAGING: -PskipPayload=null SKIP_PAYLOAD=null
+Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/assets / /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/jniLibs
+
+> Task :app:preBuild
+> Task :app:preSmokeBuild
+> Task :app:mergeSmokeNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors
+> Task :app:generateSmokeBuildConfig
+> Task :app:generateSmokeResValues FROM-CACHE
+> Task :app:checkSmokeAarMetadata
+> Task :app:mapSmokeSourceSetPaths
+> Task :app:generateSmokeResources
+> Task :app:packageSmokeResources
+> Task :app:parseSmokeLocalResources FROM-CACHE
+> Task :app:createSmokeCompatibleScreenManifests
+> Task :app:extractDeepLinksSmoke FROM-CACHE
+
+> Task :app:processSmokeMainManifest
+/home/runner/work/OpenCode-app/OpenCode-app/app/src/main/AndroidManifest.xml:32:9-41 Warning:
+	android:extractNativeLibs should not be specified in this source AndroidManifest.xml file. See https://d.android.com/guide/topics/manifest/application-element#extractNativeLibs for more information.
+The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml file and update the build file accordingly. See https://d.android.com/studio/build/agp-upgrade-assistant for more information.
+
+> Task :app:processSmokeManifest
+> Task :app:javaPreCompileSmoke FROM-CACHE
+> Task :app:processSmokeManifestForPackage
+> Task :app:mergeSmokeShaders
+> Task :app:compileSmokeShaders NO-SOURCE
+> Task :app:generateSmokeAssets UP-TO-DATE
+> Task :app:mergeSmokeResources
+> Task :app:mergeSmokeAssets
+> Task :app:compressSmokeAssets FROM-CACHE
+> Task :app:desugarSmokeFileDependencies FROM-CACHE
+> Task :app:mergeSmokeStartupProfile
+> Task :app:checkSmokeDuplicateClasses
+> Task :app:processSmokeResources
+> Task :app:mergeSmokeJniLibFolders
+> Task :app:mergeExtDexSmoke FROM-CACHE
+> Task :app:mergeLibDexSmoke FROM-CACHE
+> Task :app:validateSigningSmoke
+> Task :app:writeSmokeAppMetadata
+> Task :app:writeSmokeSigningConfigVersions
+> Task :app:preSmokeAndroidTestBuild SKIPPED
+> Task :app:processSmokeAndroidTestManifest
+> Task :app:generateSmokeAndroidTestBuildConfig
+> Task :app:checkSmokeAndroidTestAarMetadata
+> Task :app:generateSmokeAndroidTestResValues FROM-CACHE
+> Task :app:mapSmokeAndroidTestSourceSetPaths
+> Task :app:mergeSmokeNativeLibs
+> Task :app:generateSmokeAndroidTestResources
+> Task :app:javaPreCompileSmokeAndroidTest FROM-CACHE
+> Task :app:mergeSmokeAndroidTestShaders
+> Task :app:compileSmokeAndroidTestShaders NO-SOURCE
+> Task :app:generateSmokeAndroidTestAssets UP-TO-DATE
+
+> Task :app:stripSmokeDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libbun.so, libchildshim.so, libexecshim.so, libgit.so, librg.so, libseccompshim.so.
+
+> Task :app:mergeSmokeAndroidTestAssets
+> Task :app:compressSmokeAndroidTestAssets FROM-CACHE
+> Task :app:mergeSmokeAndroidTestResources
+> Task :app:checkSmokeAndroidTestDuplicateClasses
+> Task :app:desugarSmokeAndroidTestFileDependencies FROM-CACHE
+> Task :app:mergeExtDexSmokeAndroidTest FROM-CACHE
+> Task :app:mergeLibDexSmokeAndroidTest FROM-CACHE
+> Task :app:mergeSmokeAndroidTestJniLibFolders
+> Task :app:processSmokeAndroidTestResources
+> Task :app:mergeSmokeAndroidTestNativeLibs NO-SOURCE
+> Task :app:stripSmokeAndroidTestDebugSymbols NO-SOURCE
+> Task :app:validateSigningSmokeAndroidTest
+> Task :app:writeSmokeAndroidTestSigningConfigVersions
+> Task :app:compileSmokeKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/security/SecretStore.kt:119:54 'getter for isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:202:5 Parameter 'runtime' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:544:43 'Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:240:5 Parameter 'availability' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:243:9 Variable 'chat' is never used
+
+> Task :app:compileSmokeJavaWithJavac
+> Task :app:dexBuilderSmoke
+> Task :app:mergeSmokeGlobalSynthetics FROM-CACHE
+> Task :app:processSmokeJavaRes
+> Task :app:mergeProjectDexSmoke
+> Task :app:bundleSmokeClassesToCompileJar
+> Task :app:mergeSmokeJavaResource
+> Task :app:packageSmoke
+> Task :app:createSmokeApkListingFileRedirect
+> Task :app:assembleSmoke
+
+> Task :app:compileSmokeAndroidTestKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/client/OpenCodeClientGatesTest.kt:392:39 Type mismatch: inferred type is String? but String was expected
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/FirstRunUiGatesTest.kt:231:32 Variable 'createdThroughUi' initializer is redundant
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/FirstRunUiGatesTest.kt:232:21 Variable 'typed' initializer is redundant
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/StressRecoveryGatesTest.kt:187:45 'getter for isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java
+
+> Task :app:compileSmokeAndroidTestJavaWithJavac
+> Task :app:dexBuilderSmokeAndroidTest
+> Task :app:mergeSmokeAndroidTestGlobalSynthetics FROM-CACHE
+> Task :app:processSmokeAndroidTestJavaRes
+> Task :app:mergeProjectDexSmokeAndroidTest
+> Task :app:mergeSmokeAndroidTestJavaResource
+> Task :app:packageSmokeAndroidTest
+> Task :app:createSmokeAndroidTestApkListingFileRedirect
+> Task :app:assembleSmokeAndroidTest
+
+BUILD SUCCESSFUL in 1m 24s
+69 actionable tasks: 53 executed, 16 from cache
+[2026-09-18T12:49:31Z] smoke apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/smoke/app-smoke.apk
+[2026-09-18T12:49:31Z] smoke testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/smoke/app-smoke-androidTest.apk
+[2026-09-18T12:49:31Z] === inspecting the smoke APK (identity, payload, abis, signing) ===
+[2026-09-18T12:49:31Z] P10_SMOKE_APK FAIL :: check-apk reported findings: FINDING application label is a literal, not a @string resource;FINDING versionName='1.18.23-phase10' expected '<pinned OpenCode version>-phase10';FINDING no assets/*.tar.gz payload in this artifact;
+[2026-09-18T12:49:31Z] P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
+[2026-09-18T12:49:31Z] === installing the smoke build (fresh) ===
+Performing Streamed Install
+Success
+Performing Streamed Install
+Success
+[2026-09-18T12:49:33Z] === Phase 6 UI gates against the SMOKE build (P6_PKG=io.github.mcyber12.opencode) ===
+[2026-09-18T12:51:30Z] P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0 on the release-shaped build (identical gates to the debug run)
+[2026-09-18T12:51:30Z] P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
