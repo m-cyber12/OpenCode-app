@@ -1,14 +1,17 @@
 # Phase 10 report — signing, final verification, branding and publish prep
 
-Status: **fixes PROVEN IN CI #7 on the artifact; verdict plumbing FIXED; the
-clean green run (#8) is what the merge waits for.** This header supersedes the
-original one: the workflow WAS installed (`.github/workflows/phase10-release.yml`
-on `main`, via the GitHub web UI per §1.4) and Phase 10 has run in CI **seven
-times**: #1-#6 red for diagnosed reasons, #7 all-gates-pass-but-the-job-was
+Status: **CI-green on the branch (run #8: 86 counted verdict lines, zero FAIL),
+all fixes proven on the artifact.** This header supersedes the original one: the
+workflow WAS installed and Phase 10 has now run in CI **eight times**: #1-#6 red
+for diagnosed reasons, #7 gates-passed but the job was
 GREEN-WHILE-A-GATE-FAILED (the verdict-fold defect, §0b - the scarcest kind of
-red: the invisible one). The authoring sandbox still has no JDK, no Gradle, no
-Android SDK and no emulator; every claim below cites either a static check run
-here or a CI-evidence file committed under `docs/progress/phase10-evidence/`.
+red: the invisible one), #8 every gate PASS *and counted* on
+`arena/01a0b557-opencode-app` (job 35381311437, evidence commits
+`2f18da9`/`3bf2721`). Still outside CI and honestly pending: the human signing
+step and the signed-build real-arm64 device pass (§1.3, §2) - CI cannot sign by
+design. The authoring sandbox has no JDK, no Gradle, no Android SDK and no
+emulator; every claim below cites either a static check run here or a
+CI-evidence file committed under `docs/progress/phase10-evidence/`.
 
 - Date: 2026-09-18
 - Branch: `arena/01a0b15e-opencode-app` (from `main` @ `fbf3e5f`); runs #4-#6's
@@ -27,14 +30,14 @@ here or a CI-evidence file committed under `docs/progress/phase10-evidence/`.
 
 | # | Deliverable | Label | Where the proof is |
 |---|---|---|---|
-| 1 | Signing documented and reproducible **without a secret touching the repo, CI or chat** | **IMPLEMENTED + TESTED (statically)** — `phase10/scripts/check-release-invariants.py` `INVARIANTS PASS (0 findings, 2 notes)`; `docs/RELEASE.md` complete (keystore generation, resolution order, alignment, verification, Play App Signing, "what CI may never do") | §1, `phase10/out/evidence` in CI, `docs/progress/phase10-evidence/local/static-checks.txt` |
+| 1 | Signing documented and reproducible **without a secret touching the repo, CI or chat** | **IMPLEMENTED + TESTED (statically + CI runs #7/#8: `P10_UNSIGNED PASS`, scheme=none, CI guard step, zero secret pulls)** — `phase10/scripts/check-release-invariants.py` `INVARIANTS PASS (0 findings, 2 notes)`; `docs/RELEASE.md` complete (keystore generation, resolution order, alignment, verification, Play App Signing, "what CI may never do") | §1, `phase10/out/evidence` in CI, `docs/progress/phase10-evidence/local/static-checks.txt` |
 | 1b | A real release keystore exists | **NOT DONE, by design** — human-owned, offline, never seen by this project. `sign-release-local.sh` (the scriptable part of the human step) is written and syntax-checked; it has never signed anything | §1.2 |
 | 1c | Signed APK + AAB produced from Phase 9's gated artifacts | **BLOCKED on the human keystore step.** Adds nothing to the app: sign-and-align only | §1.3 |
 | 2 | Signed build verified on a real arm64 device (first run, runtime health, live model turn L2, no crashes) | **NOT TESTED** — script written (`90-real-device-signed.sh`, R1–R9), needs a phone, a signed APK and a window of the owner's time. Phase 9's last device evidence is x86_64-only, and was a *debug* build | §2 |
 | 2b | R8 / obfuscation breakage | **VERIFIED BY INSPECTION (build configuration), sweep NOT TESTED**: `isMinifyEnabled = false` and no ProGuard/R8 config file is referenced, so the class/method names in the shipped APK are not rewritten and there is nothing for obfuscation to break. The runtime half (no `ClassNotFound`/`NoSuchMethod` in logcat) runs in CI (§2.3) | §2.3 |
 | 3 | Final name / icon / branding decision + trademark handling | **DECIDED (owner instruction) + IMPLEMENTED**: name `OpenCode`, upstream's desktop icon, independence + trademark disclaimers in-app (Settings -> About) and in the listing; upstream permission request is an **OPEN item with the OpenCode project** (§3.4) | §3 |
 | 4 | Play Store listing package | **SUBSTANTIALLY COMPLETE, 2 gaps**: all text fields, privacy policy, data-safety and content-rating answers, support contact, icon and feature graphic are done; **screenshots are missing** (must come from a device run) and the Console submission itself is obviously not done | §4 |
-| 5 | Visual polish + Phase 6 gates re-run (F1–F4, U1–U8, a11y, lazy lists) | **POLISH IMPLEMENTED**; the **static** layer re-run is **TESTED green** (§5.3); the **runtime** F1–F4/U1–U8 gate re-run is **NOT TESTED** — it is wired to run twice per CI run (debug + release-shaped smoke) and any regression fails the job | §5 |
+| 5 | Visual polish + Phase 6 gates re-run (F1–F4, U1–U8, a11y, lazy lists) | **POLISH IMPLEMENTED**; the **static** layer re-run is **TESTED green** (§5.3); the **runtime** F1–F4/U1–U8 gate re-run is **TESTED GREEN IN CI** — run #8 executed all 14 gates twice (debug + release-shaped smoke = 28 PASS lines, 0 FAIL); on a signed build / real hardware it remains the human step (§2) | §5, `phase6/` + `smoke-ui/` evidence |
 | 6 | Phase 9 carry-forward items | Two unchanged and correctly **not overstated**; the third (live tool call only ever verified on x86_64) now has a machine-readable closing path (§6) | §6 |
 | 7 | Walkthrough of `11-FINAL-ACCEPTANCE.md` against the **signed** final build | **BLOCKED** — there is no signed build yet. §7 pre-checks every criterion that can be checked today and says which artifact each one needs | §7 |
 
@@ -176,6 +179,39 @@ digest; recorded here so nobody mistakes a rebuild for a payload change.
 **Run #8 must come before any merge**: with the fold fixed, the same green
 badge would now be produced only by a run whose release stage is genuinely
 clean end to end (`P10_RELEASE_APK/UNSIGNED/RELEASE_AAB` all PASS *and counted*).
+
+### Run #8 (job 35381311437, head `a8f8d33`, `18:59:11Z`): the first run where green MEANS green
+
+The owner's trigger edit landed the recovery branch in `on.push.branches`; the
+push itself started the pipeline - the run this phase has been trying to make
+honest, now self-triggering. Verdicts, from `GATES_SUMMARY.txt` at the evidence
+tip `3bf2721`:
+
+* 86 `PASS` verdict lines, **zero** `FAIL`/`SKIP` lines; `phase6_ui_fails=0
+  phase10_gate_fails=0 phase9_gate_fails=0`.
+* The release stage's lines are now **visible and counted** (the fold fix):
+  `P10_RELEASE_APK PASS`, `P10_RELEASE_APK_DETAIL PASS` (`payload=True
+  manifest_asset=True`), `P10_UNSIGNED PASS ... scheme=none v1_files=0
+  v2_v3_block=False`, `P10_RELEASE_AAB PASS` - the AAB containment fix holding
+  on a real bundle (`PAYLOAD_ASSET name=runtime-payload.tar bytes=108615680`
+  in the AAB too).
+* Identity: `versionCode=8 versionName=1.18.23-phase10` on smoke AND release;
+  `debuggable=False` (release) / `True` (smoke, by design); `P10_NO_DEBUG_ID
+  PASS`; both ABIs on both artifacts.
+* Staging chain again consistent: `PAYLOAD_SOURCE runtime-payload.tar.gz=19965703B`
+  -> `STAGED_ASSETS n=2 ...` -> APK/AAB carry `runtime-payload.tar(108615680B)`.
+  The payload sha (`023a2fd4...`) again differs from #6/#7 by the tar-mtime rule
+  documented above; component versions and files=1062 are identical.
+* All five P9 gates PASS for the second consecutive run (port-handover fix
+  holds); the 14 Phase-6 UI gates PASS on BOTH the debug build and the
+  release-shaped smoke build (28 lines, incl. L1/L2 live-model turns);
+  `P10_STORE_ASSETS PASS` (icon + feature graphic + 3 screenshots, 0 rejected).
+* `P10-STATIC PASS` covers INVARIANTS (0 findings) and the inspector self-test
+  (27 checks) inside the CI static stage, as designed.
+
+**What remains outside CI, unchanged by this:** the human signing step (§1.2/
+§1.3) and the signed-build real-arm64 device pass (§2, R1-R9). CI has now
+proven everything it can prove without the key.
 
 ## 1. Signing
 
@@ -559,13 +595,15 @@ final walkthrough adds:
 
 ## 8. Owner action list (in order)
 
-1. **Install the workflow**: GitHub web UI -> `phase10/workflow/phase10-release.yml`
-   -> Raw -> copy -> Add file -> `.github/workflows/phase10-release.yml` on
-   `arena/01a0b15e-opencode-app` -> commit (the bot token is refused here: §1.4).
-   *That commit starts the run.*
-2. **Watch the run** (`phases 10 pipeline`, ~2 h: payload build + emulator stages).
-   The last line of `GATES_SUMMARY.txt` is the verdict; the artifacts are
-   `opencode-android-release` (unsigned APK+AAB) and the evidence bundle.
+1. ~~Install the workflow~~ **DONE** (web UI, §1.4) - and extended: `a8f8d33`
+   added `arena/01a0b557-opencode-app` to `on.push.branches`, so every push to
+   the recovery branch auto-runs the pipeline; the template copy is kept
+   byte-identical to the installed one.
+2. ~~Watch the run~~ **DONE for the CI-verdict purpose**: run #7 proved the
+   artifact fixes, run #8 proved the counted verdicts (job 35381311437). The
+   artifacts to sign are `opencode-android-unsigned-release` (unsigned APK+AAB
+   + `release-sha256.txt`); the test-only pair is `opencode-android-smoke-test-only`
+   - **never upload the smoke build** (docs/RELEASE.md §9).
 3. **Generate the upload keystore** offline, on your own machine
    (`docs/RELEASE.md` §2), and store it outside the repository.
 4. **Sign CI's artifacts** with `phase10/scripts/sign-release-local.sh` (never
