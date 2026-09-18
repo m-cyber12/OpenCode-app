@@ -1,4 +1,4 @@
-RELEASE_APK FAIL :: check-apk findings: FINDING application label is a literal, not a @string resource;FINDING versionName='1.18.23-phase10' expected '<pinned OpenCode version>-phase10';FINDING no assets/*.tar.gz payload in this artifact;
-RELEASE_APK_DETAIL PASS :: CONTENTS entries=169 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=False manifest_asset=True
-UNSIGNED FAIL :: the CI release APK is SIGNED - CI must never receive signing material. Investigate before publishing anything
-RELEASE_AAB FAIL :: check-apk findings: FINDING versionName '<pinned OpenCode version>-phase10' not found among the bundle manifest's strings;FINDING no assets/*.tar.gz payload in this artifact;
+RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
+RELEASE_APK_DETAIL PASS :: CONTENTS entries=169 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
+UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
+RELEASE_AAB FAIL :: check-apk findings: FINDING versionName '1.18.23-phase10' not found among the bundle manifest's strings;

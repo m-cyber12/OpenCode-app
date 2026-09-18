@@ -1,3 +1,7 @@
 --------- beginning of main
-09-18 13:12:22.022  8735  8755 I OpenCode/gate: P9_PROVSEL_STALE SKIP :: server not healthy
-09-18 13:28:25.210  8735  8755 I OpenCode/gate: P9_PROVSEL_CLEANUP SKIP :: server not healthy
+09-18 17:32:42.994  8260  8283 I OpenCode/gate: P9_PROVSEL_BASELINE provider=openrouter connected=false source=custom
+09-18 17:32:44.381  8260  8283 I OpenCode/gate: P9_PROVSEL_STALE PASS :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
+09-18 17:32:45.843  8260  8283 I OpenCode/gate: P9_PROVSEL_REBUILT PASS :: after POST /global/dispose: connected=true instanceSource=api models=370 (was instanceSource=custom before the dispose)
+09-18 17:32:47.987  8260  8283 I OpenCode/gate: P9_PROVSEL_SERVERLOG selected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] modelNotFound=false logGrew=0
+09-18 17:32:47.987  8260  8283 I OpenCode/gate: P9_PROVSEL_TURN PASS :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode default
+09-18 17:32:49.484  8260  8283 I OpenCode/gate: P9_PROVSEL_CLEANUP PASS :: dummy credential removed: connected=false

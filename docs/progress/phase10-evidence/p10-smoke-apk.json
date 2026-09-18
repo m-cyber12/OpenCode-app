@@ -3,35 +3,41 @@
   "contents": {
     "abis": {
       "arm64-v8a": {
-        "bytes": 129087704,
+        "bytes": 129087696,
         "count": 6
       },
       "x86_64": {
-        "bytes": 132841552,
+        "bytes": 132841616,
         "count": 6
       }
     },
     "assets": {
-      "payload_asset": false,
+      "asset_list": [
+        "runtime-manifest.json(187351B)",
+        "runtime-payload.tar(108615680B)"
+      ],
+      "payload_asset": true,
+      "payload_bytes": 108615680,
+      "payload_name": "runtime-payload.tar",
       "runtime_manifest": true
     },
-    "compressed_bytes": 150089984,
+    "compressed_bytes": 150091205,
     "entry_count": 178,
     "native_libs": {
       "arm64-v8a/libbun.so": 89796776,
       "arm64-v8a/libchildshim.so": 8184,
       "arm64-v8a/libexecshim.so": 7592,
       "arm64-v8a/libgit.so": 4132208,
-      "arm64-v8a/librg.so": 35136200,
+      "arm64-v8a/librg.so": 35136192,
       "arm64-v8a/libseccompshim.so": 6744,
       "x86_64/libbun.so": 91788816,
       "x86_64/libchildshim.so": 7584,
       "x86_64/libexecshim.so": 7864,
       "x86_64/libgit.so": 4258048,
-      "x86_64/librg.so": 36771632,
+      "x86_64/librg.so": 36771696,
       "x86_64/libseccompshim.so": 7608
     },
-    "size_bytes": 150122737,
+    "size_bytes": 150123957,
     "top_level": {
       "AndroidManifest.xml": 1,
       "DebugProbesKt.bin": 1,
@@ -56,13 +62,9 @@
       "res": 93,
       "resources.arsc": 1
     },
-    "uncompressed_bytes": 393081779
+    "uncompressed_bytes": 393092067
   },
-  "findings": [
-    "application label is a literal, not a @string resource",
-    "versionName='1.18.23-phase10' expected '<pinned OpenCode version>-phase10'",
-    "no assets/*.tar.gz payload in this artifact"
-  ],
+  "findings": [],
   "kind": "apk",
   "manifest": {
     "allowBackup": "false",
@@ -101,7 +103,8 @@
     "debuggable": true,
     "extractNativeLibs": "true",
     "icon_declared": true,
-    "label_is_resource": false,
+    "label_is_resource": true,
+    "label_raw": "0x7f09000a",
     "minSdk": 29,
     "networkSecurityConfig": true,
     "package": "io.github.mcyber12.opencode",
