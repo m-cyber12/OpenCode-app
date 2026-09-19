@@ -217,14 +217,23 @@ step "5b/9 workspace location + visibility (Phase 10 continuation: files must no
 # storage move is a Phase 7 guarantee's blast radius, so Phase 7's gates are part
 # of this stage rather than a footnote.
 WSRC=0
+# Own add-only lines file (stage 6 truncates p10-lines.txt; see the note below).
+# Removed first so a skipped stage can never be read as a previous run's PASS.
+rm -f "$EV/p10-workspace-lines.txt"
 run_c 3600 "bash '$DIR/scripts/93-workspace-gates.sh' --out '$OUT/workspace'" || WSRC=1
 cp "$OUT/workspace/workspace-gates.log" "$EV/workspace-gates.log" 2>/dev/null || true
 cp "$OUT/workspace/visibility/workspace-visibility.log" "$EV/workspace-visibility.log" 2>/dev/null || true
 # Renamed into the P10_ namespace so the phase-10 verdict fold (which counts
 # ^P10_[A-Z0-9_]+) sees them: a Phase 7 gate re-run on the new root is a Phase 10
 # verdict, and an invisible PASS would be worse than no gate at all (run #6).
+#
+# Written to their OWN lines file, not p10-lines.txt: stage 6 (the smoke build)
+# truncates p10-lines.txt when it starts, so anything appended here before that
+# stage silently disappears - which is exactly what happened on the first run of
+# this stage (the verdicts were in workspace-gates.log and in the job log, and
+# absent from GATES_SUMMARY.txt). The summary step folds this file too.
 grep -ahE '^(P7_W[0-9]_[A-Z_]+|P10D_VISIBILITY_[A-Z_]+) (PASS|FAIL|SKIP)' "$OUT/workspace/workspace-gates.log" 2>/dev/null \
-  | sed -e 's/^P7_/P10_WS_/' -e 's/^P10D_VISIBILITY_/P10_WS_VISIBILITY_/' | cut -c1-400 >> "$EV/p10-lines.txt"
+  | sed -e 's/^P7_/P10_WS_/' -e 's/^P10D_VISIBILITY_/P10_WS_VISIBILITY_/' | cut -c1-400 >> "$EV/p10-workspace-lines.txt"
 [ "${WSRC:-0}" = 0 ] || note_gate "P10-WORKSPACE note: driver rc=$WSRC (the verdict lines above are the record)"
 
 step "6/9 release-shaped SMOKE build (release applicationId + packaging, debug-key signed)"
@@ -291,6 +300,7 @@ step "summary"
 # subshells), so they are folded in here rather than trusted to be echoed.
 { grep -ahE '^P10_[A-Z0-9_]+ (PASS|FAIL|SKIP)' "$EV/p10-lines.txt" 2>/dev/null
   grep -ahE '^P10_[A-Z0-9_]+ (PASS|FAIL|SKIP)' "$EV/p10-release-lines.txt" 2>/dev/null
+  grep -ahE '^P10_[A-Z0-9_]+ (PASS|FAIL|SKIP)' "$EV/p10-workspace-lines.txt" 2>/dev/null
   grep -ahE '^P10_SMOKE_UI_[A-Z0-9_]+ (PASS|FAIL|SKIP)' "$EV/p10-lines.txt" 2>/dev/null
   grep -ahE '^STORE-ASSETS (PASS|FAIL)' "$EV/store-assets.log" 2>/dev/null
   grep -ahE '^P10_SHOTS (PASS|FAIL)' "$EV/p10-screenshots.log" 2>/dev/null
