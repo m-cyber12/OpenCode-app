@@ -32,6 +32,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
@@ -102,6 +103,7 @@ fun ChatScreen(
     onOpenSessions: () -> Unit,
     onOpenProjects: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenFiles: () -> Unit = {},
     onPermissionReply: (String, String) -> Unit,
     onQuestionSubmit: (String, List<List<String>>) -> Unit,
     onQuestionSkip: (String) -> Unit,
@@ -132,6 +134,13 @@ fun ChatScreen(
                 val conversationsLabel = stringResource(R.string.chat_conversations)
                 val newLabel = stringResource(R.string.chat_new_conversation)
                 val settingsLabel = stringResource(R.string.chat_open_settings)
+                val filesLabel = stringResource(R.string.chat_open_files)
+                IconButton(
+                    onClick = onOpenFiles,
+                    modifier = Modifier.semantics { testTag = "open_files" },
+                ) {
+                    Icon(Icons.Filled.Folder, contentDescription = filesLabel)
+                }
                 IconButton(
                     onClick = onOpenSessions,
                     modifier = Modifier.semantics { testTag = "open_sessions" },

@@ -9,6 +9,9 @@ import ai.opencode.android.client.UiError
 import ai.opencode.android.projects.Project
 import ai.opencode.android.runtime.RuntimeVersion
 import ai.opencode.android.ui.chat.ChatScreen
+import ai.opencode.android.ui.files.FileNode
+import ai.opencode.android.ui.files.FilesScreen
+import ai.opencode.android.ui.files.OpenFile
 import ai.opencode.android.ui.chat.SessionPanel
 import ai.opencode.android.ui.chat.TAG_COMPOSER_INPUT
 import ai.opencode.android.ui.chat.TAG_COMPOSER_SEND
@@ -129,6 +132,15 @@ class ChatUiGatesTest {
     private var copies = 0
     private var welcomeContinue = 0
     private var welcomeSettings = 0
+    private val openedDirs = mutableListOf<String>()
+    private val openedFiles = mutableListOf<String>()
+    private val copiedPaths = mutableListOf<String>()
+    private val savedCopies = mutableListOf<String>()
+    private var upTaps = 0
+    private var closedFiles = 0
+    private var publishes = 0
+    private var filesBack = 0
+    private val publishedLabel = mutableStateOf("")
 
     // ---- fabrication helpers ------------------------------------------------
 
@@ -269,7 +281,7 @@ class ChatUiGatesTest {
      * what the assertions expect - and growing [liveMessages] still recomposes the
      * transcript the way a streaming turn does.
      */
-    private enum class Surface { CHAT, LIVE_CHAT, SESSIONS, PROJECTS, WELCOME, SETTINGS }
+    private enum class Surface { CHAT, LIVE_CHAT, SESSIONS, PROJECTS, WELCOME, SETTINGS, FILES }
 
     private val surface = mutableStateOf(Surface.CHAT)
     private val chatState = mutableStateOf(uiState())
@@ -283,6 +295,11 @@ class ChatUiGatesTest {
     private val projectList = mutableStateListOf<Project>()
     private val projectActive = mutableStateOf("")
     private val welcomeRuntime = mutableStateOf(healthy)
+    private val filesNodes = mutableStateListOf<FileNode>()
+    private val filesPath = mutableStateOf("")
+    private val filesOpen = mutableStateOf<OpenFile?>(null)
+    private val filesLoading = mutableStateOf(false)
+    private val filesError = mutableStateOf("")
     private val settingsRuntime = mutableStateOf(healthy)
     private val settingsState = mutableStateOf(uiState())
     private val settingsAvailability = mutableStateOf(AgentAvailability.READY)
@@ -301,6 +318,7 @@ class ChatUiGatesTest {
                     Surface.PROJECTS -> ProjectsSurface()
                     Surface.WELCOME -> WelcomeSurface()
                     Surface.SETTINGS -> SettingsSurface()
+                    Surface.FILES -> FilesSurface()
                 }
             }
         }
@@ -402,6 +420,48 @@ class ChatUiGatesTest {
             onContinue = { welcomeContinue++ },
             onOpenSettings = { welcomeSettings++ },
         )
+    }
+
+    @Composable
+    private fun FilesSurface() {
+        FilesScreen(
+            projectName = "gates",
+            projectPath = "/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/workspaces/gates",
+            locationIsExternal = true,
+            currentPath = filesPath.value,
+            nodes = filesNodes.toList(),
+            loading = filesLoading.value,
+            error = filesError.value,
+            openFile = filesOpen.value,
+            publishLabel = publishedLabel.value,
+            onOpenDir = { openedDirs.add(it) },
+            onOpenFile = { openedFiles.add(it) },
+            onUp = { upTaps++ },
+            onCloseFile = { closedFiles++ },
+            onCopyPath = { copiedPaths.add(it) },
+            onSaveCopy = { savedCopies.add(it) },
+            onPublish = { publishes++ },
+            onBack = { filesBack++ },
+        )
+    }
+
+    private fun renderFiles(
+        path: String = "",
+        nodes: List<FileNode> = emptyList(),
+        open: OpenFile? = null,
+        loading: Boolean = false,
+        error: String = "",
+        publishLabel: String = "",
+    ) {
+        filesPath.value = path
+        filesNodes.clear()
+        filesNodes.addAll(nodes)
+        filesOpen.value = open
+        filesLoading.value = loading
+        filesError.value = error
+        publishedLabel.value = publishLabel
+        surface.value = Surface.FILES
+        show()
     }
 
     @Composable
@@ -1254,6 +1314,19 @@ class ChatUiGatesTest {
 
         renderSettings()
         audit("settings")
+
+        // Phase 10 continuation: the project-files screen is part of the app now,
+        // so it is part of the semantics audit as well (a directory row, a file
+        // row and the two actions that get files out to a visible folder).
+        renderFiles(
+            path = "src",
+            nodes = listOf(
+                FileNode(name = "main.kt", path = "src/main.kt", isDirectory = false),
+                FileNode(name = "app", path = "src/app", isDirectory = true),
+            ),
+            publishLabel = "Published 3 file(s) to the folder you picked",
+        )
+        audit("files")
         shot("18-settings-a11y.png")
 
         val enoughControls = counts.values.sum() >= 25 && (counts["chat"] ?: 0) >= 10
@@ -1354,6 +1427,104 @@ class ChatUiGatesTest {
                 "switch=$switched delete=$deleted renameEditor=$editor rename=$renamed new=$created " +
                 "busyPill=$busyLabel waitingPill=$waitingLabel untitled=$untitledLabel revertNote=$revertedNote " +
                 "emptyState=$emptyTitle/$emptyBody",
+        )
+    }
+
+    // ---- U9: the project-files screen (Phase 10 continuation) ---------------
+
+    /**
+     * The file browser is how a user sees what the agent wrote without leaving the
+     * app, so the gate drives it the way a user does: a listing renders, a folder
+     * opens, a file opens with its text, the location line shows the real path, and
+     * the two ways out to visible storage ("Save a copy", "Publish to a folder")
+     * are present and wired.
+     *
+     * This is a UI gate, not a storage gate: whether the files are reachable from
+     * outside the app is proven by the W4/visibility gates on a device, and whether
+     * the agent's OWN file layer lists them is proven by the Phase 7 W2 gate.
+     */
+    @Test
+    fun u9_fileBrowserListsOpensAndOffersAWayOut() {
+        val rootPath = "/storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces/gates"
+        renderFiles(
+            path = "",
+            nodes = listOf(
+                FileNode(name = "src", path = "src", isDirectory = true),
+                FileNode(name = "README.md", path = "README.md", isDirectory = false),
+            ),
+        )
+        val listed = exists("files_list") && countTag("files_dir") == 1 && countTag("files_file") == 1
+        val pathShown = onScreenText().contains(rootPath)
+        val locationCopy = onScreenText().contains(context.getString(R.string.files_location_title))
+        shot("20-files-listing.png")
+
+        // tapping the folder asks for that folder (the driver loads it)
+        rule.onAllNodesWithTag("files_dir")[0].performClick()
+        rule.waitForIdle()
+        val openedDir = openedDirs.contains("src")
+
+        // ...and inside a folder the "up one level" affordance exists
+        renderFiles(path = "src", nodes = listOf(FileNode(name = "main.kt", path = "src/main.kt", isDirectory = false)))
+        val upShown = exists("files_up")
+        rule.onAllNodesWithTag("files_up")[0].performClick()
+        rule.waitForIdle()
+        val upWorks = upTaps == 1
+
+        // tapping a file opens it; the viewer shows the content and the two actions
+        rule.onAllNodesWithTag("files_file")[0].performClick()
+        rule.waitForIdle()
+        val openedFile = openedFiles.contains("src/main.kt")
+
+        renderFiles(
+            path = "src",
+            open = OpenFile(
+                path = "src/main.kt",
+                name = "main.kt",
+                text = "fun main() = println(\"hello\")",
+                bytes = 29,
+                binary = false,
+                truncated = false,
+            ),
+        )
+        val viewer = exists("files_viewer") && exists("files_viewer_body")
+        val bodyText = onScreenText().contains("fun main() = println(\"hello\")")
+        val saveCopyShown = exists("files_save_copy")
+        rule.onAllNodesWithTag("files_save_copy")[0].performClick()
+        rule.waitForIdle()
+        val saveCopyWired = savedCopies.contains("src/main.kt")
+        shot("21-files-viewer.png")
+
+        // closing returns to the listing
+        renderFiles(path = "src", nodes = listOf(FileNode(name = "main.kt", path = "src/main.kt", isDirectory = false)))
+        rule.onAllNodesWithTag("files_file")[0].performClick()
+        rule.waitForIdle()
+        renderFiles(path = "src", open = OpenFile("src/main.kt", "main.kt", "x", 1L, false, false))
+        rule.onAllNodesWithTag("files_viewer_close")[0].performClick()
+        rule.waitForIdle()
+        val closed = closedFiles == 1
+
+        // publish + copy-path are the ways out to a folder a file manager can open
+        val publishShown = exists("files_publish")
+        rule.onAllNodesWithTag("files_publish")[0].performClick()
+        rule.waitForIdle()
+        val publishWired = publishes == 1
+        rule.onAllNodesWithTag("files_copy_path")[0].performClick()
+        rule.waitForIdle()
+        val copyWired = copiedPaths.contains(rootPath)
+
+        // the empty state is a real state, not a blank screen
+        renderFiles(path = "", nodes = emptyList())
+        val emptyShown = exists("files_empty")
+        val ok = listed && pathShown && locationCopy && openedDir && upShown && upWorks && openedFile &&
+            viewer && bodyText && saveCopyShown && saveCopyWired && closed && publishShown && publishWired &&
+            copyWired && emptyShown
+        gate(
+            "U9",
+            ok,
+            "listed=$listed pathShown=$pathShown locationCopy=$locationCopy openedDir=$openedDir " +
+                "upShown=$upShown upWorks=$upWorks openedFile=$openedFile viewer=$viewer body=$bodyText " +
+                "saveCopy=$saveCopyShown/$saveCopyWired closed=$closed publish=$publishShown/$publishWired " +
+                "copyPath=$copyWired empty=$emptyShown",
         )
     }
 }

@@ -84,6 +84,7 @@ fun ProjectsScreen(
     onDelete: (String) -> Unit = {},
     onImport: () -> Unit = {},
     onExport: (String) -> Unit = {},
+    onFiles: (String) -> Unit = {},
     importing: Boolean = false,
     importError: String = "",
     sessionCounts: Map<String, Int> = emptyMap(),
@@ -143,6 +144,7 @@ fun ProjectsScreen(
                     },
                     onDelete = { deleteTarget = project },
                     onExport = { onExport(project.name) },
+                onFiles = { onFiles(project.name) },
                 )
             }
         }
@@ -296,6 +298,7 @@ private fun ProjectRow(
     onRename: () -> Unit,
     onDelete: () -> Unit,
     onExport: () -> Unit,
+    onFiles: () -> Unit,
 ) {
     val chat = ChatTheme.chat
     val opened = relativeTimeLabel(project.lastOpenedMs, now)
@@ -349,6 +352,14 @@ private fun ProjectRow(
                                 onRename()
                             },
                             modifier = Modifier.semantics { testTag = "project_rename_${project.name}" },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.projects_files)) },
+                            onClick = {
+                                menuOpen = false
+                                onFiles()
+                            },
+                            modifier = Modifier.semantics { testTag = "project_files_${project.name}" },
                         )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.projects_export)) },

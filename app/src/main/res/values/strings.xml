@@ -92,6 +92,7 @@
     <string name="projects_menu">Actions for %1$s</string>
     <string name="projects_rename">Rename</string>
     <string name="projects_export">Export</string>
+    <string name="projects_files">Files</string>
     <string name="projects_delete">Delete</string>
     <string name="projects_rename_label">New name</string>
     <string name="projects_rename_save">Save name</string>
@@ -131,6 +132,7 @@
     <string name="chat_new_conversation">New conversation</string>
     <string name="chat_open_settings">Settings and diagnostics</string>
     <string name="chat_open_projects">Projects</string>
+    <string name="chat_open_files">Project files</string>
     <string name="chat_untitled">New conversation</string>
     <string name="chat_empty_title">Start a conversation</string>
     <string name="chat_empty_body">Ask for a change, a fix or an explanation. The agent works inside this project folder and shows every step it takes, including the commands it runs and the files it edits.</string>
@@ -378,4 +380,28 @@
     <string name="settings_opensource_license_url" translatable="false">https://github.com/anomalyco/opencode/blob/dev/LICENSE</string>
     <string name="settings_opensource_notices_url" translatable="false">https://github.com/m-cyber12/OpenCode-app/blob/main/docs/THIRD-PARTY-NOTICES.md</string>
     <string name="settings_notice_label">Last result</string>
+
+    <!-- ========================================================== files -->
+    <string name="files_subtitle">Files: </string>
+    <string name="files_location_title">Where these files are</string>
+    <string name="files_location_external">This is a real folder outside the app sandbox: a PC can read it with adb (adb pull of this path works on a stock, non-rooted phone). Android 11 and newer stop other apps from browsing the Android/data directory, so a phone file manager will not open it - use Publish to put a copy anywhere you like.</string>
+    <string name="files_location_internal">This device reported no usable external storage, so the project stays in app-private storage that only this app can read. Use Publish to put a copy in a folder you can browse.</string>
+    <string name="files_copy_path">Copy path</string>
+    <string name="files_publish">Publish to a folder</string>
+    <string name="files_loading">Reading the folder</string>
+    <string name="files_empty">This folder is empty.</string>
+    <string name="files_up">Up one level</string>
+    <string name="files_dir_description">Folder</string>
+    <string name="files_file_description">File</string>
+    <string name="files_viewer_close">Close the file</string>
+    <string name="files_viewer_size">%1$d bytes</string>
+    <string name="files_save_copy">Save a copy</string>
+    <string name="files_viewer_binary">This looks like a binary file, so it is not shown here. Save a copy to open it with another app.</string>
+    <string name="files_viewer_truncated">Showing the first part of the file; save a copy for the whole thing.</string>
+    <string name="files_publish_failed">Publish failed: %1$s</string>
+    <string name="files_publish_nothing">Nothing to publish yet.</string>
+    <string name="files_publish_done">Published %1$d file(s) to the folder you picked</string>
+    <string name="files_load_failed">Could not read the project files: %1$s</string>
+    <string name="files_save_copy_done">Saved %1$s (%2$d bytes) to the folder you picked</string>
+    <string name="files_save_copy_failed">Could not save the copy: %1$s</string>
 </resources>

@@ -7,6 +7,11 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -34,6 +39,8 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission(),
     ) { /* optional; the FGS runs regardless on API < 33 or if denied */ }
 
+    // `testTagsAsResourceId` is still experimental in the pinned Compose version.
+    @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
@@ -42,10 +49,26 @@ class MainActivity : ComponentActivity() {
             notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         setContent {
-            AppRoot(
-                onShareDiagnostics = { shareDiagnostics() },
-                onOpenUrl = { url -> openUrl(url) },
-            )
+            // PHASE 10 CONTINUATION. Expose the Compose test tags as resource ids in
+            // the accessibility tree.
+            //
+            // Why this is a product decision, not a test hack: the signed release
+            // build is not debuggable, so `run-as` does not exist there and the only
+            // way to drive the shipped app from a desktop harness (or an
+            // accessibility service, or the owner verifying a build by script) is
+            // uiautomator's view of the real window. Without this, that view offers
+            // only the rendered copy - and a script that taps "the button that says
+            // Continue" breaks the day a string changes, while the app itself looks
+            // ambiguous to anything else driving it. The tags are stable identifiers
+            // (`welcome_continue`, `files_publish`, ...), they carry no user data,
+            // and they are never spoken: resource ids do not affect what TalkBack
+            // reads, which the U7 semantics audit still checks property by property.
+            Box(Modifier.semantics { testTagsAsResourceId = true }) {
+                AppRoot(
+                    onShareDiagnostics = { shareDiagnostics() },
+                    onOpenUrl = { url -> openUrl(url) },
+                )
+            }
         }
         RuntimeService.start(this)
     }

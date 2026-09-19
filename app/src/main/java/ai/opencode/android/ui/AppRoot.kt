@@ -13,6 +13,9 @@ import ai.opencode.android.projects.SafProjectTransfer
 import ai.opencode.android.runtime.RuntimeManager
 import ai.opencode.android.ui.chat.ChatScreen
 import ai.opencode.android.ui.chat.SessionPanel
+import ai.opencode.android.ui.files.FileNode
+import ai.opencode.android.ui.files.FilesScreen
+import ai.opencode.android.ui.files.OpenFile
 import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.ui.common.ThemeChoice
 import ai.opencode.android.ui.common.toSummary
@@ -71,6 +74,7 @@ private const val ROUTE_PROJECTS = "projects"
 private const val ROUTE_CHAT = "chat"
 private const val ROUTE_SESSIONS = "sessions"
 private const val ROUTE_SETTINGS = "settings"
+private const val ROUTE_FILES = "files"
 
 @Composable
 fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
@@ -173,6 +177,121 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         exportTarget = null
     }
 
+    // ---- Phase 10 continuation: the project's files, in the app ---------------
+    //
+    // The lists come from OpenCode's own file API (the layer the agent's tools
+    // use), so the user sees the real workspace, not a parallel view of it. The
+    // repository already carries the active project as its instance directory,
+    // which is exactly the scope `/file` resolves in.
+    var filesPath by remember { mutableStateOf("") }
+    var filesNodes by remember { mutableStateOf(emptyList<FileNode>()) }
+    var filesLoading by remember { mutableStateOf(false) }
+    var filesError by remember { mutableStateOf("") }
+    var openFile by remember { mutableStateOf<OpenFile?>(null) }
+    var publishLabel by remember { mutableStateOf("") }
+    val projectDir = remember(projectName) {
+        if (projectName.isEmpty()) null else File(container.workspacesRoot(), projectName)
+    }
+
+    // SAF: save one file, or publish the whole project into a folder the user
+    // picks. Both are the paths to a location a file manager can actually open
+    // (Android 11+ blocks other APPS from browsing Android/data - see FilesScreen).
+    var saveCopyTarget by remember { mutableStateOf<File?>(null) }
+    var publishTarget by remember { mutableStateOf<File?>(null) }
+    val saveCopyPicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
+        val source = saveCopyTarget
+        saveCopyTarget = null
+        if (uri != null && source != null && projectDir != null) {
+            scope.launch {
+                val result = withContext(Dispatchers.IO) {
+                    runCatching { SafProjectTransfer(context, container.workspacesRoot()).saveFileCopy(source, uri) }
+                }
+                result.onSuccess { bytes ->
+                    publishLabel = context.getString(R.string.files_save_copy_done, source.name, bytes)
+                }.onFailure { t ->
+                    filesError = context.getString(R.string.files_save_copy_failed, t.message ?: t.javaClass.simpleName)
+                }
+            }
+        }
+    }
+    val publishPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        val source = publishTarget
+        publishTarget = null
+        if (uri != null && source != null) {
+            // Remember the grant for the folder: the point of publishing is that the
+            // copy is somewhere the user and other apps can reach, and a future
+            // publish to the same folder should not need the picker again.
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                )
+            }
+            scope.launch {
+                filesError = ""
+                val result = withContext(Dispatchers.IO) {
+                    runCatching {
+                        SafProjectTransfer(context, container.workspacesRoot())
+                            .publishTree(source, uri, source.name)
+                    }
+                }
+                result.onSuccess { published ->
+                    publishLabel = context.getString(R.string.files_publish_done, published.files)
+                }.onFailure { t ->
+                    publishLabel = context.getString(R.string.files_publish_failed, t.message ?: t.javaClass.simpleName)
+                }
+            }
+        }
+    }
+
+    fun loadFiles(relPath: String) {
+        filesLoading = true
+        filesError = ""
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    repository.api.fileList(relPath).map { entry ->
+                        FileNode(
+                            name = entry.path.substringAfterLast('/').ifEmpty { entry.path },
+                            path = entry.path,
+                            isDirectory = entry.type == "directory",
+                        )
+                    }
+                }
+            }
+            result.onSuccess { nodes ->
+                filesNodes = nodes
+                filesPath = relPath
+            }.onFailure { t ->
+                filesError = context.getString(R.string.files_load_failed, t.message ?: t.javaClass.simpleName)
+            }
+            filesLoading = false
+        }
+    }
+
+    fun openProjectFile(relPath: String) {
+        if (projectDir == null) return
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching { repository.api.fileContent(relPath) }
+            }
+            result.onSuccess { body ->
+                val truncated = body.length > FILE_VIEW_LIMIT
+                val shown = if (truncated) body.take(FILE_VIEW_LIMIT) else body
+                openFile = OpenFile(
+                    path = relPath,
+                    name = relPath.substringAfterLast('/'),
+                    text = shown,
+                    bytes = File(projectDir, relPath).length(),
+                    binary = shown.contains('\u0000'),
+                    truncated = truncated,
+                )
+            }.onFailure { t ->
+                filesError = context.getString(R.string.files_load_failed, t.message ?: t.javaClass.simpleName)
+            }
+        }
+    }
+
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
             scope.launch {
@@ -199,6 +318,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     .groupingBy { it.directory }
                     .eachCount()
             }
+        }
+        if (route == ROUTE_FILES) {
+            // Reset the viewer on entry so the screen always opens on the listing.
+            openFile = null
+            if (filesPath.isEmpty()) loadFiles("")
         }
         if (route == ROUTE_SETTINGS) {
             if (diagnosticsLines.isEmpty()) loadDiagnostics()
@@ -257,7 +381,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val turnAvailability = uiState.turnError?.kind ?: AgentAvailability.READY
     val availability = UiError.combine(summary.availability, serverAvailability, turnAvailability)
 
-    BackHandler(enabled = route == ROUTE_SESSIONS || route == ROUTE_SETTINGS || route == ROUTE_PROJECTS) {
+    BackHandler(enabled = route == ROUTE_SESSIONS || route == ROUTE_SETTINGS || route == ROUTE_PROJECTS || route == ROUTE_FILES) {
         route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT
     }
 
@@ -315,6 +439,15 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         if (projectName == name) projectName = store.activeName()
                         projects = store.projects()
                     },
+                    onFiles = { name ->
+                        val opened = store.projects().firstOrNull { it.name == name }
+                        if (opened != null) {
+                            store.select(opened.name)
+                            projectName = opened.name
+                        }
+                        filesPath = ""
+                        route = ROUTE_FILES
+                    },
                     onImport = { importPicker.launch(null) },
                     onExport = { name ->
                         exportTarget = store.projects().firstOrNull { it.name == name }
@@ -343,6 +476,46 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     },
                     onDelete = { id -> repository.deleteSession(id) },
                     onRename = { id, title -> repository.renameSession(id, title) },
+                )
+
+                ROUTE_FILES -> FilesScreen(
+                    projectName = projectName.ifEmpty { stringResource(R.string.projects_title) },
+                    projectPath = projectDir?.absolutePath.orEmpty(),
+                    locationIsExternal = container.workspacesAreVisibleToOtherTools(),
+                    currentPath = filesPath,
+                    nodes = filesNodes,
+                    loading = filesLoading,
+                    error = filesError,
+                    openFile = openFile,
+                    publishLabel = publishLabel,
+                    onOpenDir = { rel -> loadFiles(rel) },
+                    onOpenFile = { rel -> openProjectFile(rel) },
+                    onUp = {
+                        val parent = filesPath.substringBeforeLast('/', "")
+                        loadFiles(parent)
+                    },
+                    onCloseFile = { openFile = null },
+                    onCopyPath = { path ->
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                        clipboard?.setPrimaryClip(ClipData.newPlainText("path", path))
+                    },
+                    onSaveCopy = { rel ->
+                        val source = projectDir?.let { File(it, rel) }
+                        if (source != null) {
+                            saveCopyTarget = source
+                            saveCopyPicker.launch(rel.substringAfterLast('/'))
+                        }
+                    },
+                    onPublish = {
+                        val source = projectDir
+                        if (source == null) {
+                            filesError = context.getString(R.string.files_publish_nothing)
+                        } else {
+                            publishTarget = source
+                            publishPicker.launch(null)
+                        }
+                    },
+                    onBack = { route = ROUTE_CHAT },
                 )
 
                 ROUTE_SETTINGS -> SettingsScreen(
@@ -453,6 +626,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         route = ROUTE_PROJECTS
                     },
                     onOpenSettings = { route = ROUTE_SETTINGS },
+                    onOpenFiles = {
+                        filesPath = ""
+                        route = ROUTE_FILES
+                    },
                     onPermissionReply = { id, reply -> repository.replyPermission(id, reply) },
                     onQuestionSubmit = { id, answers -> repository.replyQuestion(id, answers) },
                     onQuestionSkip = { id -> repository.rejectQuestion(id) },
@@ -467,6 +644,14 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
 
 /** The picker's mime filter: any file the user can point at. */
 private const val ANY_CONTENT = "*/*"
+
+/**
+ * How much of a file the in-app viewer renders. The point of the screen is to see
+ * what the agent wrote, not to be an editor: a 4 MB bundle log would otherwise be
+ * handed to one Text composable and stutter the UI. "Save a copy" gives the whole
+ * file.
+ */
+private const val FILE_VIEW_LIMIT = 200_000
 
 /** Copy diagnostics to the clipboard without leaving the composable tree. */
 private fun copyToClipboard(context: Context, text: String) {

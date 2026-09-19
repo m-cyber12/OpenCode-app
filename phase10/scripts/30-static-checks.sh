@@ -72,6 +72,16 @@ while IFS= read -r f; do
 done < <(find "$ROOT/phase10" -name '*.py' -type f | sort)
 [ "$PYSYN" = 0 ] && echo "OK   py_compile on the phase10 python" | tee -a "$LOG" || RC=1
 
+# ---- 4b. the real-device driver's helpers are themselves tested -------------
+# The v1 signed-build run produced a FAIL that could not be diagnosed from its own
+# bundle, because its screenshot check was "the file exists" and its UI check was a
+# grep. Both helpers now have self-tests: a checker that cannot tell a black frame
+# from a screen, or that silently matches nothing, is worse than no checker.
+run "screenshot sanity checker self-test (black/blank vs a real screen)" \
+  python3 "$ROOT/phase10/scripts/test-p10d-png.py"
+run "uiautomator dump reader self-test (tap targets, disabled states, diagnostics)" \
+  python3 "$ROOT/phase10/scripts/test-p10d-ui.py"
+
 # ---- 5. the Phase 10 workflow exists in the tree and cannot sign ------------
 # The workflow is REQUIRED to explain which secrets must never be added (and its
 # own guard step checks that they are absent), so NAMING them is fine. What must
