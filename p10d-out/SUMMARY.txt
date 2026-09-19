@@ -1,0 +1,20 @@
+P10D_ABI PASS :: arm64-v8a device (the ABI this app ships to users)
+P10D_ANDROID_VERSION PASS :: API 35 (minSdk 29)
+P10D_ARTIFACT FAIL :: check-apk findings: 
+P10D_SIGNATURE SKIP :: apksigner not on PATH: signature checked for PRESENCE by check-apk.py only. Install build-tools and re-run for the cryptographic verdict (docs/RELEASE.md s5)
+P10D_INSTALL PASS :: adb install of the signed release APK succeeded (this is the artifact a user would sideload)
+P10D_VERSION_ON_DEVICE PASS :: installed versionName=1.18.23-phase10 code=8
+P10D_FIRST_RUN FAIL :: no working screen after 941s (see p10d-ui.xml, run.log; the app also offers Settings -> Share diagnostics)
+P10D_FIRST_RUN_PROJECT SKIP :: no 'New project' action visible (the app may already have a project open, or hit the projects screen differently)
+P10D_SCREENSHOTS FAIL :: only 0 screenshots captured from the signed build (see screenshots.log)
+P10D_LIVE_TURN SKIP :: could not find the composer on the conversation surface (see p10d-ui.xml)
+P10D_MEMORY PASS :: total PSS 109 MB (see meminfo.txt)
+P10D_STORAGE SKIP :: storage unreadable without run-as on a non-debuggable build (expected)
+P10D_PACKAGING_SWEEP FAIL :: 3 packaging/runtime failure line(s) in logcat.txt - this is exactly what release packaging breaks (read them before uploading)
+P10D_NO_CRASH FAIL :: 0
+0 crash marker(s) in logcat.txt
+phase10 real-device verification of the SIGNED build 2026-09-19T09:51:17Z
+-- model availability marker (closes the x86_64-only live-tool-call carry-forward when 1)
+P6_MODEL_AVAILABLE 0 :: signed build, arm64 device, driven through the composer
+apk=app-release-signed.apk sha256=608159940d4e3c9868ef7dc2447a4f1adab7e4b1bfae0760228e47db558fc49f
+pass=5 fail=5 skip=4
