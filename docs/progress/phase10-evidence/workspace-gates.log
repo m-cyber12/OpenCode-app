@@ -1,0 +1,23 @@
+[2026-09-19T14:33:52Z] installing io.github.mcyber12.opencode.debug + its test APK (keeps data: the runtime the gates talk to is already up)
+[2026-09-19T14:33:55Z] === am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest (W1-W4) ===
+[2026-09-19T14:34:02Z] instrument rc=0
+[2026-09-19T14:34:02Z] --- verdict lines ---
+P7_W1_PROJECT_LIFECYCLE PASS :: c
+P7_W1_PROJECT_LIFECYCLE PASS :: created=p7-life-1789828441411 renamed=p7-renamed-1789828441411 adopted=p7-adopted-1789828441411 delete=true
+P7_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=t
+P7_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_739fe6a2"}'
+P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: p
+P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: projectFile=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/workspaces/p7-memory-1789828441417/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
+P7_W4_WORKSPACE_VISIBLE PASS ::
+P7_W4_WORKSPACE_VISIBLE PASS :: root=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/workspaces external=true underData=false legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces serverWrote=true readBack=true marker=P10_VISIBLE_1789828435593 project=w4-storage-1789828435578 shellStatus=200 dirOnDisk=true size=26
+W1_PROJECT_LIFECYCLE PASS :: :: created=p7-life-1789828441411 renamed=p7-renamed-1789828441411 adopted=p7-adopted-1789828441411 delete=true
+W2_WORKSPACE_ISOLATION PASS :: :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_739fe6a2"}'
+W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/workspaces/p7-memory-1789828441417/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
+W4_WORKSPACE_VISIBLE PASS :: :: root=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/workspaces external=true underData=false legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces serverWrote=true readBack=true marker=P10_VISIBLE_1789828435593 project=w4-storage-1789828435578 shellStatus=200 dirOnDisk=true size=26
+[2026-09-19T14:34:02Z] === visibility from outside the app (non-root adb shell), project='w4-storage-1789828435578' ===
+P10D_VISIBILITY_LOCATION PASS :: the app-specific external root exists and holds 2 project(s): /storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/workspaces (Android 14)
+P10D_VISIBILITY_SHELL_LIST PASS :: a non-root shell lists the project directory (/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/workspaces/w4-storage-1789828435578): 4 lines
+P10D_VISIBILITY_SHELL_READ PASS :: read p10-visible.txt from outside the app: 'P10_VISIBLE_1789828435593' (P10_VISIBLE marker)
+P10D_VISIBILITY_OLD_ROOT_EMPTY PASS :: the old app-private root is not readable from a shell at all (as designed): ls: /data/data/io.github.mcyber12.opencode.debug/files/workspaces: Permission denied
+P10D_VISIBILITY_SHELL_BASELINE PASS :: baseline holds: an unprivileged shell cannot read /data/data/io.github.mcyber12.opencode.debug at all, so the PASSs above are real
+[2026-09-19T14:34:03Z] pass=9 fail=0 skip=0

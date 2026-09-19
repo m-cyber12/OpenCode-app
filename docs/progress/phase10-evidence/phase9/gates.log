@@ -1,30 +1,30 @@
-[2026-09-18T19:35:21Z] === P9 stage 1: provider selection (the carried defect, reproduced then fixed) ===
-[2026-09-18T19:35:44Z] === am instrument ai.opencode.android.client.ProviderSelectionGatesTest ===
-[2026-09-18T19:36:02Z] instrument rc=0 (provsel)
+[2026-09-19T14:39:15Z] === P9 stage 1: provider selection (the carried defect, reproduced then fixed) ===
+[2026-09-19T14:39:39Z] === am instrument ai.opencode.android.client.ProviderSelectionGatesTest ===
+[2026-09-19T14:39:53Z] instrument rc=0 (provsel)
 
 ai.opencode.android.client.ProviderSelectionGatesTest:....
 
-Time: 16.461
+Time: 13.544
 
 OK (4 tests)
 
 
-[2026-09-18T19:36:02Z] P9_PROVSEL_STALE PASS :: :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
-[2026-09-18T19:36:02Z] P9_PROVSEL_REBUILT PASS :: :: after POST /global/dispose: connected=true instanceSource=api models=371 (was instanceSource=custom before the dispose)
-[2026-09-18T19:36:02Z] P9_PROVSEL_TURN PASS :: :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode d
-[2026-09-18T19:36:02Z] P9_PROVSEL_CLEANUP PASS :: :: dummy credential removed: connected=false
+[2026-09-19T14:39:54Z] P9_PROVSEL_STALE PASS :: :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
+[2026-09-19T14:39:54Z] P9_PROVSEL_REBUILT PASS :: :: after POST /global/dispose: connected=true instanceSource=api models=372 (was instanceSource=custom before the dispose)
+[2026-09-19T14:39:54Z] P9_PROVSEL_TURN PASS :: :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode d
+[2026-09-19T14:39:54Z] P9_PROVSEL_CLEANUP PASS :: :: dummy credential removed: connected=false
 P9_PROVSEL_BASELINE p
 P9_PROVSEL_SERVERLOG selected=[llm.
-[2026-09-18T19:36:02Z] === P9 stage 2: runtime version string + plugin install ===
-[2026-09-18T19:36:24Z] P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
-[2026-09-18T19:36:26Z] npm registry probe from the app uid: REG200
-[2026-09-18T19:39:01Z] P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
-[2026-09-18T19:39:01Z] === P9 stage 3: versions.lock == manifest == RuntimeVersion.kt == APK ===
-OK lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=8f1250060da8131f 
-[2026-09-18T19:39:01Z] P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=8f1250060da8131f 
-[2026-09-18T19:39:01Z] === evidence pull ===
-[2026-09-18T19:39:01Z] === P9 SUMMARY ===
-P9_SUMMARY 2026-09-18T19:39:01Z
+[2026-09-19T14:39:54Z] === P9 stage 2: runtime version string + plugin install ===
+[2026-09-19T14:40:10Z] P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
+[2026-09-19T14:40:10Z] npm registry probe from the app uid: none
+[2026-09-19T14:42:44Z] P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
+[2026-09-19T14:42:44Z] === P9 stage 3: versions.lock == manifest == RuntimeVersion.kt == APK ===
+OK lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=0df83cff8eb23972 
+[2026-09-19T14:42:44Z] P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=0df83cff8eb23972 
+[2026-09-19T14:42:44Z] === evidence pull ===
+[2026-09-19T14:42:44Z] === P9 SUMMARY ===
+P9_SUMMARY 2026-09-19T14:42:44Z
 gates_pass=7 gates_fail=0 gates_skip=0
 device_abi=x86_64
 android_sdk=34
