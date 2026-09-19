@@ -41,7 +41,8 @@ full_description: |
 
   YOUR PROJECTS, YOUR DEVICE
   - Create a project folder in the app, or import one from your device.
-  - Everything stays in the app's private storage until you export or share it.
+  - Browse the agent's files inside the app, save a copy, or publish the folder
+    wherever you like - nothing is uploaded, and nothing is locked away.
   - Choose what the agent may do without asking: shell commands, file edits,
     reads, page fetches, working outside the project folder.
 

@@ -25,19 +25,34 @@ describing the shipped behaviour.
 
 ## What the app stores on your device
 
-Everything below stays in the app's private storage (`/data/data/…`, unreadable to
-other apps) unless you explicitly export or share it:
+Everything below stays inside the app's own storage on your device unless you
+explicitly export, publish or share it. Two locations are involved, and the
+difference matters only for who can reach the files:
+
+* **app-private storage** (`/data/data/…`) holds the runtime, the configurations,
+  the logs and the encrypted keys - unreadable to other apps AND to a connected PC;
+* **the app's own folder on shared storage**
+  (`/storage/emulated/0/Android/data/<app>/files/workspaces/…`) holds your project
+  folders. It is readable by `adb` / a connected computer on a stock, non-rooted
+  phone (which is the point: the files are yours and should not be locked inside an
+  app). On Android 11 and newer, no other *app* can browse it; on Android 10, an
+  app that holds the legacy storage permission technically can, which is why this
+  policy names the path rather than promising more than the platform does. The
+  app's file browser, "Save a copy" and "Publish to a folder" all read from there.
 
 | Data | Why | Where |
 |---|---|---|
-| Project folders and their files | the agent works in a folder you create or import | app-private storage |
+| Project folders and their files | the agent works in a folder you create or import | the app's own folder on shared storage (see above; on Android 11+ other apps cannot read it, on Android 10 an app holding the legacy storage permission can) |
 | Conversations (messages, tool calls, results) | your history and session continuity | app-private storage |
 | Agent instruction files (project and global "memory") | the agent reads them into every conversation | app-private storage |
 | Settings (theme, permission policy, chosen model, MCP configuration) | to keep your choices | app-private storage |
 | Provider API keys | to call the model provider you chose | encrypted files (see below) |
 | Runtime logs (`runtime.log`, server log) | so a failure can be diagnosed locally | app-private storage |
 
-Uninstalling the app (or "Clear data") deletes all of it. Android backups are
+Uninstalling the app deletes all of it, including the project folders. This is
+worth reading twice: a project lives inside the app's storage, so removing the app
+removes the files too - use **Export** or **Publish to a folder** for anything you
+want to keep outside it. Android backups are
 disabled (`allowBackup="false"`), so this data is not copied into a cloud backup
 by the system. **Export is user-initiated**: when you export a project or share
 diagnostics, the app hands the data to the Android system share/save sheet, and

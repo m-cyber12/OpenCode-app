@@ -38,7 +38,11 @@ The rules it implements, in one line each:
 | `scripts/60-store-assets.sh` | validates the screenshots against Play's rules and installs them into `docs/store/screenshots/` |
 | `check-release-invariants.py --require-store-assets` | the same strict answer as the listing checklist: 512 icon + 1024x500 graphic + at least two real screenshots. The pipeline runs it after the screenshot stage as `P10_STORE_ASSETS` |
 | `scripts/sign-release-local.sh` | **the human signing step**, scripted: aligns, signs, verifies, prints the certificate fingerprint, and refuses a keystore inside the repository |
-| `scripts/90-real-device-signed.sh` | verifies the **signed** build on a real arm64 phone through the UI (first run, screenshots, a live turn, footprint, crash/obfuscation sweep) and writes a verdict bundle |
+| `scripts/90-real-device-signed.sh` | verifies the **signed** build on a real arm64 phone through the UI (wake/unlock preflight, first run, the in-app file browser, screenshots at every step, a live turn, non-root file visibility, footprint, crash/obfuscation sweep) and writes a verdict bundle with a `DIAGNOSIS.txt` whenever a step fails |
+| `scripts/p10d-ui.py` | reads a uiautomator dump for that driver (tap targets by Compose test tag / resource id / text, disabled states, "what is on screen" diagnostics). Self-tested by `test-p10d-ui.py` |
+| `scripts/p10d-png.py` | decides whether a screenshot is a real screen or a black/off/unpainted frame (the v1 driver counted files and could not tell). Self-tested by `test-p10d-png.py` |
+| `scripts/92-workspace-visibility.sh` | can anything OTHER than the app read the agent's files? Non-root `adb shell` listing/reading of the project root, plus the baseline that `/data/data/<pkg>` is NOT readable |
+| `scripts/93-workspace-gates.sh` | the Phase 7 isolation class (W1-W3) re-run against the new project root, plus the W4 storage-location gate, then the external visibility check above |
 
 ## Running it
 
@@ -55,8 +59,10 @@ bash phase10/scripts/sign-release-local.sh --apk <unsigned apk> --aab <aab> \
 bash phase10/scripts/90-real-device-signed.sh --apk phase10/signing/app-release-signed.apk
 ```
 
-Iteration knobs (never for a verdict run): `P10_GRADLE_ONLY=1`,
-`P10_SKIP_SMOKE=1`, `P10_SKIP_P9GATES=1`, `P10_SKIP_SHOTS=1`.
+Iteration knobs (never for a verdict run): `P10_GRADLE_ONLY=1` (also
+`phase10/CI_GRADLE_ONLY` containing `1`), `P10_SKIP_SMOKE=1`,
+`P10_SKIP_P9GATES=1`, `P10_SKIP_SHOTS=1`. The device script takes
+`--skip-live`, `--timeout-scale N` and `--apk PATH`.
 
 ## Evidence
 
