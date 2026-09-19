@@ -140,24 +140,29 @@ class LiveChatUiGatesTest {
         rule.waitForIdle()
         var best = writeScreenshotWithInk(shotDir, name) { rule.onRoot().captureToImage() }
         var via = "compose"
-        // Too little ink to be a screen with content on it: go straight to a real
-        // screen photograph, which cannot be a stale composition frame.
         if (best.second in 0.0..MIN_INK) {
-            val device = deviceScreenshot(shotDir, name)
-            if (device.second > best.second) {
-                best = device
-                via = "device"
+            // Retake after a settle. captureToImage() reads the last *presented* frame
+            // and this emulator can hold one that is minutes old: run #14's
+            // 30-live-chat-reply.png was byte-identical to the June base commit's file
+            // while the gate read four message rows out of the semantics tree.
+            Thread.sleep(1500)
+            rule.waitForIdle()
+            val again = writeScreenshotWithInk(shotDir, name) { rule.onRoot().captureToImage() }
+            if (again.second > best.second) {
+                best = again
+                via = "compose-retake"
             }
-            // Still nothing? Let the composition settle and try Compose once more.
-            if (best.second in 0.0..MIN_INK) {
-                Thread.sleep(1500)
-                rule.waitForIdle()
-                val again = writeScreenshotWithInk(shotDir, name) { rule.onRoot().captureToImage() }
-                if (again.second > best.second) {
-                    best = again
-                    via = "compose-retake"
-                }
-            }
+        }
+        if (best.second in 0.0..MIN_INK) {
+            // Still blank. Photograph the screen, but as a SECOND file: the device
+            // frame can be a screen that is not this app at all (run #15's fallback
+            // captured the launcher with the IME open), and replacing app-shaped
+            // evidence with that would be worse than a flagged empty picture. The
+            // verdict line carries both numbers and says the main shot is low-ink.
+            val side = name.replace(".png", "-device.png")
+            val device = deviceScreenshot(shotDir, side)
+            return "bytes=${best.first} ink=${"%.3f".format(best.second)} via=$via lowInk=true " +
+                "deviceShot=$side deviceBytes=${device.first} deviceInk=${"%.3f".format(device.second)}"
         }
         return "bytes=${best.first} ink=${"%.3f".format(best.second)} via=$via"
     }

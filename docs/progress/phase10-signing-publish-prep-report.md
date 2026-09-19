@@ -1180,6 +1180,40 @@ P6_L2 PASS :: tool=bash status=completed partId=prt_0ba9bcec4001R97YeSrlZOgVyO c
 ```
 
 The `ink=0.023 via=compose` on the L1 shot is the finding above: the verdict is sound,
-the picture was not, which is what the ink floor now catches. Run #15
-(`3545…` on the ink-floor commit) is the one that has to show a screenshot at a real ink
-share with `via=device` for that step; the line is quoted here once it exists.
+the picture was not.
+
+### A.12.1 Run #15 — green, and one honest correction about CI's pictures
+
+Run #15 (`35457139209` on `e4f77db`) is green: **103 verdict lines, 0 FAIL**,
+`phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0`, and L1 now decides on the
+screen:
+
+```
+P6_L1 PASS :: ... newScreenLines=9 messageRows=4 emptyConversation=false
+              screenCatchUpMs=120000 ... screenshot[bytes=62924 ink=0.103 via=device] reply='Blue.'
+P6_L2 PASS :: ... screenshots[bytes=73112 ink=0.090 via=compose | bytes=84872 ink=0.235 via=compose]
+```
+
+But `via=device` on that L1 line was **my mistake, and it is now reverted**: with the ink
+floor at 0.06 the step replaced the Compose capture with a device photograph, and that
+photograph is the **launcher with the keyboard open**, not the app. Writing a picture of
+another screen over app-shaped evidence is worse than an empty-but-flagged one, so
+`shot()` no longer substitutes:
+
+* the main file always stays the Compose capture (app-shaped, deterministic);
+* if its ink is below the floor it is retaken after a settle, and if it is *still* below
+  the floor the device frame is written beside it (`<name>-device.png`) and the verdict
+  line says so explicitly: `via=compose lowInk=true deviceShot=… deviceBytes=… deviceInk=…`;
+* the ink floor (0.06, calibrated in §A.12) therefore only ever *labels* a picture.
+
+Two facts worth keeping, because they bound what CI evidence can claim here:
+
+1. The renderer's capture path for this one step is unreliable **in this emulator** and
+   was so before this session: the June base commit's `30-live-chat-reply.png` is the
+   same 22406 bytes as run #12's and run #14's, i.e. a PASSING run shipped the same
+   empty picture. It is not an app defect — the same run's L2 captures show the
+   conversation correctly, and the app's own semantics tree reports the rows.
+2. Therefore the trustworthy screenshots of the app come from the **device script on a
+   real phone** (§A.4), not from CI's per-step pictures. CI's verdicts (the gate lines)
+   are the evidence; CI's PNGs for this step are indicative only, and the line now says
+   which kind a reader is looking at.
