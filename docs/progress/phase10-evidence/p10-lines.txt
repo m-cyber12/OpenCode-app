@@ -23,13 +23,13 @@ P10_SMOKE_UI_F1 PASS :: firstScreen=welcome stages=[extracting, starting, health
 P10_SMOKE_UI_F2 PASS :: status=HEALTHY
 P10_SMOKE_UI_F2 PASS :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=true,chat=false) leakedTokens=[] screenshot=40276
 P10_SMOKE_UI_F3 PASS :: p
-P10_SMOKE_UI_F3 PASS :: projectsEmptyState=true typedName=true createdThroughUi=true chatScreen=true composerEnabled=true projectNameShown=true leakedTokens=[] screenshots=projects:40276,chat:37516
+P10_SMOKE_UI_F3 PASS :: projectsEmptyState=true typedName=true createdThroughUi=true chatScreen=true composerEnabled=true projectNameShown=true leakedTokens=[] screenshots=projects:40276,chat:50607
 P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=t
-P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=34350, 02-first-run-ready.png=40276, 03-first-run-projects.png=40276, 04-first-run-chat.png=37516]
-P10_SMOKE_UI_L1 FAIL :: p
-P10_SMOKE_UI_L1 FAIL :: promptSent=true userPromptShown=false serverReplyChars=5 replyShownInUi=false(needle='Blue') newScreenLines=2 busyIndicator=true streamingDots=false errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot=22406 reply='Blue.'
+P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=34350, 02-first-run-ready.png=40276, 03-first-run-projects.png=40276, 04-first-run-chat.png=50607]
+P10_SMOKE_UI_L1 PASS :: p
+P10_SMOKE_UI_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=12 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot
 P10_SMOKE_UI_L2 PASS :: tool=bash status=completed pa
-P10_SMOKE_UI_L2 PASS :: tool=bash status=completed partId=prt_0ba41962e001SYKGgHuQF9No5c cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0 marker=P6LIVE251179 screenshots=73036,84258
-P10_SMOKE_UI FAIL :: pass=13 fail=1 skip=0 - a gate that passes on debug and fails here is a RELEASE-SHAPE finding (see p10-smoke-ui.log)
+P10_SMOKE_UI_L2 PASS :: tool=bash status=completed partId=prt_0ba9bcec4001R97YeSrlZOgVyO cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0 marker=P6LIVE164107 screenshots[bytes=71917 ink=0.076 via=
+P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0 on the release-shaped build (identical gates to the debug run)
 P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
 P10_STORE_ASSETS PASS :: 512 icon + 1024x500 feature graphic + 4 screenshots at a real screen size
