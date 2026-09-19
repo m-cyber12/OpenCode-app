@@ -138,6 +138,27 @@ run_c 900 "bash '$DIR/scripts/30-static-checks.sh'" || record_fatal "static chec
 cp "$OUT/static-checks.log" "$EV/p10-static-checks.log" 2>/dev/null || true
 note_gate "P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, published identity, store package) + apk inspector self-test"
 
+step "1b/9 the real-device driver, run against a fake phone (self-test)"
+# 90-real-device-signed.sh is the one script meant to be run by a human on hardware
+# CI cannot reach, and its failure mode used to be an evening of plugging a phone in
+# plus a bundle that said nothing. So it is RUN here first, against a fake `adb` that
+# models a stock non-rooted Android 14 phone (test-90-real-device.sh): the happy path
+# has to end with every gate PASS/SKIP and exit 0, a locked keyguard has to be
+# reported as a lock (not as an app failure), and a blank screencap has to fail the
+# screenshot gate. Reading the script is not running it: the first run of this
+# self-test found four bugs that would have reached the phone, including a
+# `grep -c || echo 0` that failed three gates on a perfectly good run.
+DSRC=0
+# Keep the transcript AND the exit code: run_c deletes its own temp log, and a pipe
+# into tee would report tee's status instead of the self-test's.
+run_c 900 "bash '$DIR/scripts/test-90-real-device.sh' > '$OUT/driver-selftest.log' 2>&1; rc=\$?; cat '$OUT/driver-selftest.log'; exit \$rc" || DSRC=1
+cp "$OUT/driver-selftest.log" "$EV/p10-driver-selftest.log" 2>/dev/null || true
+if [ "$DSRC" = 0 ]; then
+  note_gate "P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone (happy + locked + blank-screencap scenarios)"
+else
+  note_gate "P10_DRIVER_SELFTEST FAIL: see p10-driver-selftest.log - do NOT hand this driver to a phone"
+fi
+
 step "2/9 compile + JVM unit tests (fast fail before the payload build)"
 run_c 2400 "SKIP_PAYLOAD=1 '$ROOT/gradlew' -p '$ROOT' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace" \
   || record_fatal "kotlin compile or JVM unit tests failed (compiler-errors.txt)"

@@ -140,8 +140,12 @@ def main():
             if not r.get("decoded"):
                 print("%s: NOT DECODED (unsupported PNG shape) - inspect by hand" % r["file"])
             else:
+                # The FULL path, never a shortened one: this line is copied into the
+                # device bundle's screenshots.log, where a trimmed path names a file
+                # that does not exist ([...][-48:] produced exactly that on any path
+                # longer than 48 characters).
                 print("%s: %dx%d mean=%.1f dark=%.3f content=%.3f screen=%s" % (
-                    r["file"][-48:], r["width"], r["height"], r["mean_brightness"],
+                    r["file"], r["width"], r["height"], r["mean_brightness"],
                     r["near_black_fraction"], r["content_fraction"],
                     "yes" if r["looks_like_a_screen"] else "NO (blank/off/locked?)"))
     return 0

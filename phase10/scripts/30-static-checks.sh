@@ -82,6 +82,21 @@ run "screenshot sanity checker self-test (black/blank vs a real screen)" \
 run "uiautomator dump reader self-test (tap targets, disabled states, diagnostics)" \
   python3 "$ROOT/phase10/scripts/test-p10d-ui.py"
 
+# ---- 4b-ii. the fake phone still answers like a phone -----------------------
+# test-90-real-device.sh (the driver's end-to-end self-test) runs in the CI pipeline,
+# where two minutes is affordable. What runs HERE is the 2-second part: if the fake
+# `adb` shim cannot even answer the two questions every run starts with, the driver's
+# self-test would fail in a way that looks like a driver bug. Cheap, and it keeps the
+# shim honest between full runs.
+run "fake-phone shim answers the first two questions of every run" \
+  bash -c 'TMP="$(mktemp -d)"; trap "rm -rf \"$TMP\"" EXIT;
+           python3 "$ROOT/phase10/scripts/test-90-fixtures.py" "$TMP/fx" >/dev/null &&
+           a=$(env P10D_FAKE_ROOT="$TMP" P10D_FAKE_SCENARIO=happy python3 "$ROOT/phase10/scripts/test-90-fake-adb.py" get-state) &&
+           b=$(env P10D_FAKE_ROOT="$TMP" P10D_FAKE_SCENARIO=locked python3 "$ROOT/phase10/scripts/test-90-fake-adb.py" shell dumpsys window) &&
+           c=$(env P10D_FAKE_ROOT="$TMP" P10D_FAKE_SCENARIO=happy python3 "$ROOT/phase10/scripts/test-90-fake-adb.py" exec-out cat /sdcard/p10d-ui.xml) &&
+           [ "$a" = device ] && printf "%s" "$b" | grep -q Keyguard &&
+           printf "%s" "$c" | grep -q welcome_screen'
+
 # ---- 4c. icons: only what material-icons-core actually ships -----------------
 # Advisory (never fails the run): naming the trap here costs a second, while
 # discovering it in a compile step costs a whole pipeline run.

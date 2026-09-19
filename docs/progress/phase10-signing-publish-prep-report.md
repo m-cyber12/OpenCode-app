@@ -1284,3 +1284,55 @@ i.e. CI's Compose capture for this step is *still* the empty-conversation frame 
 emulator (same 22406 bytes, run after run, while the gate reads 4 rows out of the
 semantics tree), which is exactly why the line now says `lowInk=true` and points at the
 side-car photograph instead of pretending the picture is the screen.
+
+## A.13 The device script was audited, and now runs against a fake phone before it runs on yours
+
+`90-real-device-signed.sh` is the one script in this project whose failure costs a human
+an evening (plug in a phone, wait through a 1 GB first run, get a bundle that says
+nothing), and every earlier check of it was by *reading*. So it was run instead, against
+a fake `adb` that models a stock, non-rooted Android 14 phone
+(`phase10/scripts/test-90-real-device.sh` + `test-90-fake-adb.py` + `test-90-fixtures.py`:
+`input tap` hit-tests the current screen's uiautomator dump, `screencap` returns a real
+frame, `ls`/`cat` answer the way an unprivileged shell does, and `/data/data/<pkg>` is
+refused).
+
+**Bugs the audit and the first self-test run found and fixed** (all in the script the
+owner is about to run):
+
+| Bug | What it would have done on a phone |
+|---|---|
+| `SWEEP=$(grep -acE ... \|\| echo 0)` in R9/R10 (three places: the packaging sweep, the crash count, the blank-screenshot count) | `grep -c` prints `0` **and** exits 1, so the fallback appended a second `0` and the value became `"0\n0"`. `P10D_PACKAGING_SWEEP`, `P10D_NO_CRASH` and `P10D_SCREENSHOTS` **failed on a perfect run** - three red gates that would have sent the bundle back for a defect that did not exist |
+| `tap()` accepted `ui find`'s `FOUND_NOT_TAPPABLE enabled=false ...` diagnostic as a coordinate pair | A disabled control (e.g. `key_save`) would be "tapped", `tap()` would return success, and the driver would report the step as done while nothing happened. Now a centre must match `x y` before anything is tapped, and the diagnostic is logged |
+| `wait_for` split its needles on **spaces** as well as `\|` | `"Start a conversation"` became three needles, the first of which (`Start`) matches almost any screen - a wait that reports success for the wrong reason. Now it splits on `\|` only |
+| `rec "P10D_ANR" 1 ...` / `rec "P10D_CRASH_DIALOG" 1 ...` | An ANR or crash dialog was written into `SUMMARY.txt` with the verdict token `1` instead of `FAIL`, so it never counted: a dialog *was* reported but the run still exited 0 |
+| `p10d-png.py` printed `r["file"][-48:]` | On any path longer than 48 characters `screenshots.log` named a file that does not exist (`/drv-dbg/out/...`). For a bundle whose whole purpose is evidence, that is the worst kind of wrong: plausible and unverifiable. It prints the full path now |
+| R7's `diag "visibility: project=… path=…"` ran unconditionally | `DIAGNOSIS.txt` is documented as "written whenever a step fails"; an informational line made a clean run's bundle look like a failing one. It is a log line now, and diagnosis lines are written only for failures |
+| `shot "01-launch"` etc. plus the counter inside `shot()` | `01-01-launch.png` - cosmetic, but the bundle is read by a human |
+| `screen_state`/`local_locked` read `mShowingLockscreen`/`mDreamingLockscreen` only | Android 12+ builds often do not print those fields, so a locked phone could be reported as awake and every later step would blame the app. The focused window is now part of the detection (`keyguard-focused`), and the FAIL text still tells the human to unlock |
+| hard-coded `540 1600 540 900` swipe | On a tablet or a 1440p phone the "scroll once to look for the control" gesture went to the wrong place. Geometry now comes from `wm size` |
+| `read -r MODEL_KEY` with no terminal | A piped/automated run would hang forever with no output. It now checks `[ -t 0 ]` and skips the live turn with the reason recorded |
+| R7 asked for the `P10_VISIBLE_` marker | That marker is written by the *instrumented* W4 gate, which never runs on a phone - so `P10D_VISIBILITY_SHELL_READ` would have failed on the phone even when the file was there. The check now takes a content pattern, and the driver accepts the file its own live turn produces (`p10-live-ok`) |
+| R5/R6 pressed `KEYCODE_BACK` and assumed where it landed | A stray BACK can leave the app entirely, after which every live gate fails for the wrong reason. Both now verify the screen they landed on (`composer_input`), and R6 only presses BACK if Settings is still in front |
+
+**The self-test itself** (`bash phase10/scripts/test-90-real-device.sh`, 35 checks, no
+device, ~2.5 minutes) asserts the driver's *behaviour*, not its text:
+
+* **happy**: exit 0, no `FAIL` line anywhere, `DIAGNOSIS.txt` empty, ≥8 screenshots all
+  validated as real screens, project created through taps+typing, live turn with a tool
+  card, the in-app path equals the shell-visible path, and the file the agent wrote
+  exists on the external storage the shell can read;
+* **locked**: non-zero exit, `P10D_DEVICE_AWAKE FAIL`, the reason tells the human to
+  unlock, and the bundle does **not** say "no working screen" (the v1 failure mode);
+* **blank screencap**: non-zero exit and `P10D_SCREENSHOTS FAIL` saying the frames are
+  blank - instead of counting files that happen to be PNGs.
+
+It runs in the CI pipeline as step 1b with its own verdict line (`P10_DRIVER_SELFTEST`),
+so a change that breaks the driver fails CI before anyone plugs in a phone, and the two
+cheapest answers of the shim are also checked in `30-static-checks.sh`.
+
+**Honesty note.** The self-test proves the *driver* works end to end and fails for the
+right reasons. It does **not** make the phone run unnecessary, and it cannot: the fake
+phone is an app I wrote, so it necessarily agrees with my model of the app. The rows in
+A.9 that say **NOT TESTED** for the signed build on real hardware stay NOT TESTED until
+the owner's run comes back - this section only removes the failures that had nothing to
+do with the phone.

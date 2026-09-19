@@ -111,6 +111,19 @@ adb get-state >/dev/null 2>&1 || { echo "FATAL: no device visible to adb (plug t
 PKG="io.github.mcyber12.opencode"
 SHOT_N=0
 LAST_DUMP=""
+# Swipe geometry, refreshed from `wm size` once the device is reachable. Defaults
+# are a 1080x1920 phone; nothing here is a verdict, it is only how far the driver
+# scrolls when it has to go looking for a control.
+SWIPE_FROM_X=540; SWIPE_FROM_Y=1600; SWIPE_TO_X=540; SWIPE_TO_Y=900
+set_swipe_geometry() {
+  local size w h
+  size=$(adb shell wm size 2>/dev/null | tr -d '\r' | grep -oE '[0-9]+x[0-9]+' | tail -1)
+  [ -n "$size" ] || return 0
+  w=${size%x*}; h=${size#*x}
+  case "$w$h" in *[!0-9]*|"") return 0 ;; esac
+  SWIPE_FROM_X=$(( w / 2 )); SWIPE_TO_X=$(( w / 2 ))
+  SWIPE_FROM_Y=$(( h * 4 / 5 )); SWIPE_TO_Y=$(( h * 9 / 20 ))
+}
 
 # ---------------------------------------------------------------- UI plumbing --
 #
@@ -150,10 +163,18 @@ foreground() {
   echo "${w:-window=?} ; ${a:-activity=?}"
 }
 screen_state() {
-  local f w
+  local f w win focus
   f=$(adb shell dumpsys power 2>/dev/null | tr -d '\r' | grep -m1 'mWakefulness' | sed 's/^ *//')
-  w=$(adb shell dumpsys window 2>/dev/null | tr -d '\r' | grep -m1 -E 'mDreamingLockscreen|mShowingLockscreen' | sed 's/^ *//')
-  echo "${f:-wakefulness=?} ${w:-keyguard=?}"
+  win=$(adb shell dumpsys window 2>/dev/null | tr -d '\r')
+  w=$(printf '%s' "$win" | grep -m1 -E 'mDreamingLockscreen|mShowingLockscreen' | sed 's/^ *//')
+  focus=$(printf '%s' "$win" | grep -m1 -E 'mCurrentFocus|mFocusedApp' | sed 's/^ *//')
+  # Android 12+ dropped mShowingLockscreen from many builds, so the field alone is
+  # not a lock detector any more. The window that HAS FOCUS is: while the keyguard
+  # is up, the focused window is the keyguard (or SystemUI's status bar), not the app.
+  case "$focus" in
+    *Keyguard*|*keyguard*|*StatusBar*|*Systemui*|*SystemUI*) w="${w:-} keyguard-focused" ;;
+  esac
+  echo "${f:-wakefulness=?} ${w:-keyguard=?} ${focus:-focus=?}"
 }
 
 shot() { # $1 = tag ; validates that the png is not a blank/off screen
@@ -176,20 +197,30 @@ shot() { # $1 = tag ; validates that the png is not a blank/off screen
 
 tap_at() { adb shell input tap "$1" "$2" >/dev/null 2>&1; sleep 1; }
 
+# Is this string a coordinate pair from `ui find`, or is it a diagnostic line?
+# This distinction is load-bearing: `ui find` prints "FOUND_NOT_TAPPABLE ..." and
+# exits 1 when the node exists but is disabled, so a driver that only checks for a
+# non-empty string will "tap" a disabled control, report success, and hand the
+# caller a PASS for something that never happened.
+is_centre() { case "$1" in [0-9]*" "[0-9]*) return 0 ;; *) return 1 ;; esac; }
+
 tap() { # $1 = tag|text|label ; tolerant: scrolls once, and says why it could not tap
   local needle="$1" centre state
   ui_dump "tap-$needle" || { diag "tap($needle): no UI dump available"; return 1; }
   centre=$(ui find "$needle")
-  if [ -z "${centre:-}" ]; then
+  if ! is_centre "$centre"; then
     state=$(ui state "$needle")
-    diag "tap($needle): not tappable -> ${state:-not found}"
+    diag "tap($needle): not tappable (${centre:-no matching node}) state=${state:-none}"
     # A real user would scroll towards what they want before giving up.
-    adb shell input swipe 540 1600 540 900 300 >/dev/null 2>&1
+    adb shell input swipe "$SWIPE_FROM_X" "$SWIPE_FROM_Y" "$SWIPE_TO_X" "$SWIPE_TO_Y" 300 >/dev/null 2>&1
     sleep 1
     ui_dump "tap2-$needle" || return 1
     centre=$(ui find "$needle")
+    if ! is_centre "$centre"; then
+      diag "tap($needle): still not tappable after one scroll (${centre:-no matching node})"
+      return 1
+    fi
   fi
-  [ -n "${centre:-}" ] || { diag "tap($needle): still not tappable after one scroll"; return 1; }
   tap_at $centre
   return 0
 }
@@ -207,12 +238,12 @@ handle_interruptions() { # returns 0 when the app is (still) in front
   if ui has "isn't responding" || ui has "is not responding"; then
     diag "ANR dialog on screen: $(ui texts 8 | tr '\n' '|')"
     tap "Wait" >/dev/null 2>&1 || true
-    rec "P10D_ANR" 1 "the app showed an 'isn't responding' dialog during the run"
+    rd ANR 1 "the app showed an 'isn't responding' dialog during the run"
     return 1
   fi
   if ui has "keeps stopping" || ui has "has stopped"; then
     diag "CRASH dialog on screen: $(ui texts 8 | tr '\n' '|')"
-    rec "P10D_CRASH_DIALOG" 1 "Android reported that the app stopped"
+    rd CRASH_DIALOG 1 "Android reported that the app stopped"
     shot "crash-dialog" || true
     return 1
   fi
@@ -237,13 +268,18 @@ wait_for() { # $1 = name, $2 = needle(s) separated by |, $3 = timeout seconds
   while :; do
     ui_dump "wait-$name" >/dev/null 2>&1
     if [ -n "$LAST_DUMP" ]; then
-      for needle in ${needles//|/ }; do
+      # Split on `|` only. `${needles//|/ }` plus word splitting also broke on the
+      # spaces INSIDE a needle, so "Start a conversation" became three needles, the
+      # first of which ("Start") matches almost any screen - a wait that reports
+      # success for the wrong reason.
+      while IFS= read -r needle; do
+        [ -n "$needle" ] || continue
         if ui has "$needle"; then
           elapsed=$(( $(date +%s) - start ))
           log "wait($name): found '$needle' after ${elapsed}s"
           return 0
         fi
-      done
+      done <<< "${needles//|/$'\n'}"
     fi
     elapsed=$(( $(date +%s) - start ))
     if [ "$elapsed" -ge "$timeout" ]; then
@@ -279,7 +315,7 @@ adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
 sleep 1
 # Also switch the display on for devices where KEYCODE_WAKEUP alone is not enough.
 adb shell input keyevent 224 >/dev/null 2>&1 || true
-local_locked() { screen_state | grep -qiE 'DreamingLockscreen=true|mShowingLockscreen=true|mWakefulness=Asleep|mWakefulness=Dozing'; }
+local_locked() { screen_state | grep -qiE 'DreamingLockscreen=true|mShowingLockscreen=true|keyguard-focused|mWakefulness=Asleep|mWakefulness=Dozing'; }
 if local_locked; then
   log "device reports $(screen_state); dismissing the keyguard (a human would swipe up)"
   adb shell wm dismiss-keyguard >/dev/null 2>&1 || true
@@ -309,6 +345,7 @@ fi
 
 # ---- R1: device facts --------------------------------------------------------
 step "R1 device facts"
+set_swipe_geometry
 ABI_NOW=$(adb shell getprop ro.product.cpu.abi | tr -d '\r')
 SDK_NOW=$(adb shell getprop ro.build.version.sdk | tr -d '\r')
 MODEL_NOW=$(adb shell getprop ro.product.model | tr -d '\r')
@@ -346,6 +383,12 @@ log "verifying $APK"
 VNAME=$(grep -E '^[[:space:]]*versionName = "' "$ROOT/app/build.gradle.kts" | head -1 | cut -d'"' -f2)
 VCODE=$(grep -E '^[[:space:]]*versionCode = [0-9]+' "$ROOT/app/build.gradle.kts" | head -1 | grep -oE 'versionCode = [0-9]+' | grep -oE '[0-9]+')
 REPORT="$OUT/artifact-report.txt"
+if [ "${P10D_SKIP_ARTIFACT:-0}" = 1 ]; then
+  # Rehearsal only (and used by phase10/scripts/test-90-real-device.sh): drive the UI
+  # flow without a signed artifact present. Recorded as SKIP, never as PASS, so a
+  # rehearsal can never be mistaken for an artifact verdict.
+  rd ARTIFACT 7 "P10D_SKIP_ARTIFACT=1: the APK's identity/signature were NOT inspected in this run"
+else
 {
   echo "=== check-apk.py (identity, contents, signature presence) ==="
   python3 "$DIR/scripts/check-apk.py" "$APK" \
@@ -358,6 +401,7 @@ if grep -aq '^VERDICT PASS' "$REPORT"; then
   rd ARTIFACT 0 "$(grep -a '^MANIFEST ' "$REPORT" | head -1 | cut -c1-200)"
 else
   rd ARTIFACT 1 "check-apk findings: $(grep -a '^FINDING' "$REPORT" | head -4 | tr '\n' '; ')"
+fi
 fi
 if command -v apksigner >/dev/null 2>&1; then
   if apksigner verify --print-certs --verbose "$APK" > "$OUT/apksigner-verify.txt" 2>&1; then
@@ -402,7 +446,7 @@ step "R4 first run: welcome -> runtime healthy by itself -> a project -> compose
 adb shell am start -W -n "$PKG/ai.opencode.android.MainActivity" 2>&1 | tr -d '\r' | tee -a "$LOG" | grep -E 'Status|LaunchState|TotalTime' || \
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
 T0=$(date +%s)
-shot "01-launch" || true
+shot "launch" || true
 sleep 2
 
 # The state machine, in the order a user meets it. Each entry is
@@ -412,13 +456,13 @@ sleep 2
 FIRST_RUN_OK=0
 if wait_for "app-window" "welcome_screen|continue|Welcome|OpenCode" "$((300 * SCALE))"; then
   handle_interruptions || true
-  shot "02-welcome" || true
+  shot "welcome" || true
   # The welcome screen advances by itself when the supervisor reports HEALTHY
   # (AppRoot's LaunchedEffect). A human who gets impatient taps Continue; do the
   # same, but never make the verdict depend on the tap.
   if wait_for "runtime-or-projects" "projects_screen|project_list|project_name_input|welcome_continue" "$((180 * SCALE))"; then
     tap "welcome_continue" >/dev/null 2>&1 || true
-    shot "03-after-welcome" || true
+    shot "after-welcome" || true
     if wait_for "projects-screen" "project_name_input|project_list|projects_screen" "$((300 * SCALE))"; then
       FIRST_RUN_OK=1
       T1=$(( $(date +%s) - T0 ))
@@ -437,11 +481,11 @@ if [ "$FIRST_RUN_OK" = 1 ]; then
   PROJECT_NAME="p10d-$(date +%H%M%S)"
   if tap "project_name_input"; then
     type_text "$PROJECT_NAME"
-    shot "04-project-name-typed" || true
+    shot "project-name-typed" || true
     if tap "project_create"; then
       sleep 2
       if wait_for "conversation" "composer_input|composer_send|chat_screen|Start a conversation" "$((180 * SCALE))"; then
-        shot "05-chat-ready" || true
+        shot "chat-ready" || true
         rd FIRST_RUN_PROJECT 0 "project '$PROJECT_NAME' created through the UI (taps + typed text) on the signed build; conversation surface reached"
       else
         rd FIRST_RUN_PROJECT 1 "project created but the conversation surface was not reached (see DIAGNOSIS.txt)"
@@ -463,7 +507,7 @@ FILES_PATH=""
 if [ "$FIRST_RUN_OK" = 1 ] && tap "open_files"; then
   sleep 2
   if wait_for "files-screen" "files_list|files_location_path|files_empty" "$((120 * SCALE))"; then
-    shot "06-files-listing" || true
+    shot "files-listing" || true
     ui_dump "files-screen" >/dev/null 2>&1
     FILES_PATH=$(python3 - "$LAST_DUMP" "$PKG" <<'PY'
 import re, sys
@@ -480,6 +524,8 @@ PY
     fi
     adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
     sleep 1
+    wait_for "back-to-chat" "composer_input|chat_screen" "$((60 * SCALE))" >/dev/null 2>&1 || \
+      log "note: after leaving the file browser the composer was not found again (R6 will report it)"
   else
     rd FILES_SCREEN 1 "the file browser did not open (see DIAGNOSIS.txt)"
   fi
@@ -492,10 +538,16 @@ step "R6 live turn through the composer"
 MODEL_AVAILABLE=0
 if [ -n "${P10D_PROVIDER_KEY:-}" ]; then
   MODEL_KEY="$P10D_PROVIDER_KEY"
-else
+elif [ -t 0 ]; then
   printf '\nType a provider API key to run the live-turn gate (typed here, never stored, never logged)'
   printf '\nPress [Enter] to skip if you already added a key in the app or want to skip: '
   read -r MODEL_KEY
+else
+  # No terminal and no P10D_PROVIDER_KEY (e.g. the run was piped or automated):
+  # blocking on `read` would hang forever with no output. Skip the live turn with
+  # the reason on the record instead.
+  MODEL_KEY=""
+  log "no terminal and no P10D_PROVIDER_KEY: skipping the key prompt (the live-turn gate will SKIP)"
 fi
 if [ -n "${MODEL_KEY:-}" ] && [ "$SKIP_LIVE" = 0 ]; then
   # Route it through the app's own UI: Settings -> Provider keys.
@@ -509,7 +561,7 @@ if [ -n "${MODEL_KEY:-}" ] && [ "$SKIP_LIVE" = 0 ]; then
       type_text "$MODEL_KEY"
       if tap "key_save"; then
         sleep 3
-        shot "07-provider-key-saved" || true
+        shot "provider-key-saved" || true
         log "key entered through the app's own Settings screen (it is not in this log)"
       else
         log "the Save-key button never became tappable (it needs both the provider id and the key)"
@@ -521,8 +573,16 @@ if [ -n "${MODEL_KEY:-}" ] && [ "$SKIP_LIVE" = 0 ]; then
     log "could not open Settings to enter the key"
   fi
   unset MODEL_KEY
-  adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
-  sleep 2
+  # Leave Settings only if Settings is still the screen: `Save` does not navigate
+  # (it clears the field), so an unconditional BACK here would be a second back press
+  # on whatever screen we are really on - and if that is the conversation, the app
+  # exits and every live gate downstream would fail for the wrong reason.
+  if ui_dump "post-key-screen" >/dev/null 2>&1 && ui has "key_save"; then
+    adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
+    sleep 1
+  fi
+  wait_for "ready-to-send" "composer_input|chat_screen" "$((90 * SCALE))" >/dev/null 2>&1 || \
+    log "note: the composer was not on screen after the key step - the live turn will report what it sees"
 fi
 MODEL_KEY=""
 
@@ -538,12 +598,12 @@ elif tap "composer_input"; then
   # forwards it through the DEVICE shell, which would treat > & ; | $ as syntax and
   # mangle (or truncate) the prompt.
   type_text "Use the bash tool to write a file named p10-visible.txt that contains the text p10-live-ok, then show me its contents"
-  shot "08-prompt-typed" || true
+  shot "prompt-typed" || true
   tap "composer_send" >/dev/null 2>&1 || adb shell input keyevent KEYCODE_ENTER >/dev/null 2>&1
   log "prompt sent; waiting up to $((300 * SCALE))s for the answer"
   TURN=0
   if wait_for "turn-answer" "p10-visible.txt|p10-live-ok" "$((300 * SCALE))"; then TURN=1; fi
-  shot "09-turn-answer" || true
+  shot "turn-answer" || true
   TOOLCARD=0
   ui_dump "turn-tool" >/dev/null 2>&1 && { ui_has "Shell command" && TOOLCARD=1; }
   if [ "$TURN" = 1 ] && [ "$TOOLCARD" = 1 ]; then
@@ -551,7 +611,7 @@ elif tap "composer_input"; then
     # Expand the card like a user would, then capture the single best listing shot.
     tap "Shell command" >/dev/null 2>&1 || true
     sleep 1
-    shot "10-tool-card-expanded" || true
+    shot "tool-card-expanded" || true
     rd LIVE_TURN 0 "the answer is on screen AND a Shell-command tool card is visible: a real live tool call ran in the SIGNED build (ui/ui-turn-tool.xml)"
   elif [ "$TURN" = 1 ]; then
     MODEL_AVAILABLE=1
@@ -573,7 +633,11 @@ echo "P6_MODEL_AVAILABLE ${MODEL_AVAILABLE:-0} :: signed build, arm64 device, dr
 
 # ---- R7: can anything other than the app read the agent's files? -------------
 step "R7 file visibility from outside the app (non-root adb shell)"
-VIS_ARGS=(--pkg "$PKG" --out "$OUT/visibility")
+# The marker file is whichever one this run produced: R6 asks the model to write
+# p10-visible.txt with "p10-live-ok", while the instrumented W4 gate writes
+# "P10_VISIBLE_<ts>". Accepting either keeps the check honest ("a shell can read a
+# file the app wrote") without inventing a marker the phone run never creates.
+VIS_ARGS=(--pkg "$PKG" --out "$OUT/visibility" --expect-content 'P10_VISIBLE_|p10-live-ok')
 if [ -n "${PROJECT_NAME:-}" ]; then
   VIS_ARGS+=(--project "$PROJECT_NAME" --expect-file "p10-visible.txt")
 fi
@@ -591,7 +655,14 @@ while read -r id verdict rest; do
   esac
 done < <(grep -aE '^P10D_VISIBILITY_[A-Z_]+ (PASS|FAIL|SKIP)' "$OUT/visibility.log" 2>/dev/null)
 log "visibility driver rc=$VIS_RC (verdict lines above; raw output in visibility.log)"
-diag "visibility: project=${PROJECT_NAME:-<none>} path=${FILES_PATH:-<unknown>}"
+log "visibility context: project=${PROJECT_NAME:-<none>} path=${FILES_PATH:-<unknown>}"
+if [ "$VIS_RC" != 0 ]; then
+  # A non-zero rc means at least one visibility verdict FAILed; the first line of
+  # each failure is already in SUMMARY.txt, so point DIAGNOSIS.txt at the raw log
+  # rather than duplicating it (DIAGNOSIS.txt stays empty when everything passes).
+  diag "visibility: one or more verdicts failed (rc=$VIS_RC); raw ls/cat output:"
+  grep -aE '^P10D_VISIBILITY_[A-Z_]+ FAIL' "$OUT/visibility.log" 2>/dev/null | while IFS= read -r l; do diag "  $l"; done
+fi
 if [ "$FILES_SEEN" = 1 ]; then
   rd FILES_APP_AND_SHELL "$( [ "$VIS_RC" = 0 ] && echo 0 || echo 1 )" \
     "in-app browser path=$FILES_PATH; shell visibility rc=$VIS_RC (see visibility.log for the raw ls/cat output)"
@@ -613,7 +684,10 @@ adb logcat -d 2>/dev/null > "$OUT/logcat-raw.txt" || true
 redact < "$OUT/logcat-raw.txt" > "$OUT/logcat.txt" 2>/dev/null || cp "$OUT/logcat-raw.txt" "$OUT/logcat.txt"
 rm -f "$OUT/logcat-raw.txt" 2>/dev/null || true
 grep -aoE 'P6_MODEL_AVAILABLE [01][^\r]*' "$OUT/logcat.txt" 2>/dev/null | sort -u >> "$OUT/p10d-model-lines.txt" || true
-SWEEP=$(grep -acE "FATAL EXCEPTION|ClassNotFoundException|NoSuchMethodError|NoClassDefFoundError|UnsatisfiedLinkError" "$OUT/logcat.txt" 2>/dev/null || echo 0)
+# NOTE: no `|| echo 0` here. `grep -c` already prints 0 and exits 1 on no match,
+# so the fallback appended a SECOND zero and the value became "0\n0" - which made
+# this gate fail on a run with nothing in logcat at all.
+SWEEP=$(grep -acE "FATAL EXCEPTION|ClassNotFoundException|NoSuchMethodError|NoClassDefFoundError|UnsatisfiedLinkError" "$OUT/logcat.txt" 2>/dev/null)
 if [ "${SWEEP:-0}" = 0 ]; then
   rd PACKAGING_SWEEP 0 "no FATAL EXCEPTION / ClassNotFound / NoSuchMethod / NoClassDefFound / UnsatisfiedLink in the session's logcat"
 else
@@ -624,13 +698,13 @@ else
   grep -aE "FATAL EXCEPTION|ClassNotFoundException|NoSuchMethodError|NoClassDefFoundError|UnsatisfiedLinkError" "$OUT/logcat.txt" 2>/dev/null | head -20 | while read -r l; do diag "  $l"; done
   rd PACKAGING_SWEEP 1 "$SWEEP packaging/runtime failure line(s) in logcat.txt (printed above and in SUMMARY.txt) - read them before uploading"
 fi
-CRASHES=$(grep -acE "FATAL EXCEPTION|Process: $PKG" "$OUT/logcat.txt" 2>/dev/null || echo 0)
+CRASHES=$(grep -acE "FATAL EXCEPTION|Process: $PKG" "$OUT/logcat.txt" 2>/dev/null)
 [ "${CRASHES:-0}" = 0 ] && rd NO_CRASH 0 "no app crash in this session" || rd NO_CRASH 1 "$CRASHES crash marker(s) in logcat.txt"
 
 # ---- R10: bundle ------------------------------------------------------------
 step "R10 bundle"
 NSHOTS=$(ls -1 "$OUT/screenshots"/*.png 2>/dev/null | wc -l | tr -d ' ')
-BLANK=$(grep -ac 'screen=NO' "$OUT/screenshots.log" 2>/dev/null || echo 0)
+BLANK=$(grep -ac 'screen=NO' "$OUT/screenshots.log" 2>/dev/null)
 if [ "${NSHOTS:-0}" -ge 6 ] && [ "${BLANK:-0}" = 0 ]; then
   rd SCREENSHOTS 0 "$NSHOTS screenshots captured at every step and every one is a real screen (screenshots/)"
 elif [ "${NSHOTS:-0}" -ge 2 ]; then

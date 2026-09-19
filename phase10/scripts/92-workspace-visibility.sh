@@ -30,22 +30,27 @@
 #
 # Usage:
 #   bash phase10/scripts/92-workspace-visibility.sh [--pkg PKG] [--project NAME]
-#        [--out DIR] [--expect-file RELPATH]
+#        [--out DIR] [--expect-file RELPATH] [--expect-content REGEX]
 #
 # With no --project it uses the newest project directory it can see; with no
-# --expect-file it looks for the W4 marker (p10-visible.txt).
+# --expect-file it looks for the W4 marker (p10-visible.txt). --expect-content is
+# the marker the file must contain to count as "written by the app" (default
+# P10_VISIBLE_, which the instrumented W4 gate writes; the real-device driver passes
+# a pattern that also accepts the file its own live turn produces).
 set -uo pipefail
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "$DIR/.." && pwd)"
 PKG="io.github.mcyber12.opencode"
 PROJECT=""
 EXPECT="p10-visible.txt"
+EXPECT_CONTENT="P10_VISIBLE_"
 OUT=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --pkg) PKG="${2:-}"; shift 2 ;;
     --project) PROJECT="${2:-}"; shift 2 ;;
     --expect-file) EXPECT="${2:-}"; shift 2 ;;
+    --expect-content) EXPECT_CONTENT="${2:-}"; shift 2 ;;
     --out) OUT="${2:-}"; shift 2 ;;
     -h|--help) sed -n '2,40p' "$DIR/scripts/$(basename "$0")"; exit 0 ;;
     *) echo "unknown argument: $1"; exit 2 ;;
@@ -118,8 +123,23 @@ fi
 # ---- V3: can a non-root shell READ a file the server wrote? ------------------
 if [ -n "$WS" ] && [ -n "$EXPECT" ]; then
   CAT=$(sh_dev "cat $WS/$EXPECT 2>&1")
-  if printf '%s' "$CAT" | grep -q 'P10_VISIBLE_'; then
-    rd SHELL_READ 0 "read $EXPECT from outside the app: '$(printf '%s' "$CAT" | head -1)' (P10_VISIBLE marker)"
+  if printf '%s' "$CAT" | grep -qE "$EXPECT_CONTENT"; then
+    rd SHELL_READ 0 "read $EXPECT from outside the app: '$(printf '%s' "$CAT" | head -1)' (matches /$EXPECT_CONTENT/)"
+  elif printf '%s' "$CAT" | grep -qiE 'No such file|does not exist'; then
+    # The file this run expected is not there. That is a different statement from
+    # "the shell cannot read it", so it is reported as one: fall back to whatever
+    # file the app DID write, and say which one was read.
+    NEWEST=$(sh_dev "ls -1t $WS 2>/dev/null | head -1")
+    if [ -n "$NEWEST" ]; then
+      OTHER=$(sh_dev "cat $WS/$NEWEST 2>&1")
+      if printf '%s' "$OTHER" | grep -qiE 'Permission denied|not permitted|No such file'; then
+        rd SHELL_READ 1 "cannot read $WS/$NEWEST from outside the app: $(printf '%s' "$OTHER" | head -1)"
+      else
+        rd SHELL_READ 0 "expected $EXPECT was not in the directory; read $NEWEST instead: '$(printf '%s' "$OTHER" | head -1)'"
+      fi
+    else
+      rd SHELL_READ 7 "$EXPECT is not in $WS and the directory has no files yet (the turn that writes it was skipped)"
+    fi
   else
     rd SHELL_READ 1 "could not read $WS/$EXPECT from outside the app: $(printf '%s' "$CAT" | head -1)"
   fi
@@ -150,7 +170,7 @@ fi
   echo "workspace visibility $(date -u +%FT%TZ) pkg=$PKG android=$REL_NOW api=$SDK_NOW"
   echo "external_root=$EXT_ROOT"
   echo "internal_root=$DATA_ROOT"
-  echo "project=$WS expect=$EXPECT"
+  echo "project=$WS expect=$EXPECT expect_content=$EXPECT_CONTENT"
   echo "pass=$PASS fail=$FAIL skip=$SKIP"
 } >> "$LOG"
 log "pass=$PASS fail=$FAIL skip=$SKIP (log: $LOG)"
