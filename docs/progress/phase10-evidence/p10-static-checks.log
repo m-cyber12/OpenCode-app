@@ -1,7 +1,7 @@
-=== Phase 10 static checks 2026-09-18T19:17:15Z ===
+=== Phase 10 static checks 2026-09-19T14:08:29Z ===
 
 === phase 9 static checks (not weakened) ===
-=== Phase 9 static checks 2026-09-18T19:17:15Z ===
+=== Phase 9 static checks 2026-09-19T14:08:29Z ===
 OK   bash -n on 42 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8/phase9 driver
@@ -9,17 +9,17 @@ note: pre-existing non-ASCII byte in .github/workflows/phase2-spike.yml at line 
 note: pre-existing non-ASCII byte in spike/workflow/phase2-spike.yml at line 22 (not this phase's file)
 check-ascii: 11 phase6 files (strict), 14 pre-existing (note only), 0 findings
 OK   yaml parse phase9/workflow/phase9-release.yml
-FAIL phase9/workflow/phase9-release.yml: triggers on ['arena/01a0a540-opencode-app'] but this session works on arena/01a0b557-opencode-app (the workflow would never run)
+FAIL phase9/workflow/phase9-release.yml: triggers on ['arena/01a0a540-opencode-app'] but this session works on arena/01a0b9d5-opencode-app (the workflow would never run)
 check-workflow-p8: 1 files, pyyaml=True
 NOTE phase9 workflow trigger branch is the Phase 9 session's (expected when read from another session)
 NOTE workflow check rc=1 (see above)
 
 === kotlin nested-block-comment scan (phase5 lesson) ===
-checked 93 kotlin files, 0 with block-comment anomalies
+checked 95 kotlin files, 0 with block-comment anomalies
 OK   kotlin nested-block-comment scan (phase5 lesson)
 
 === kotlin bracket/annotation balance ===
-check-kotlin-balance: 93 files, 0 findings
+check-kotlin-balance: 95 files, 0 findings
 OK   kotlin bracket/annotation balance
 
 === androidTest method names are dex-safe identifiers (D8 rule) ===
@@ -27,22 +27,22 @@ OK   androidTest method names are dex-safe identifiers (D8 rule)
 
 === ui strings + resources ===
 --- check-ui-strings (hardcoded copy + URL literals)
-check-ui-strings: 56 kotlin files, 0 hardcoded-copy findings, 0 url findings
+check-ui-strings: 57 kotlin files, 0 hardcoded-copy findings, 0 url findings
 --- strings.xml sanity: every referenced R.string.* must exist
-strings.xml: 323 defined, 293 referenced, 0 missing, 30 unused (action_close, action_copy, ask_permission_metadata, ask_permission_request, ask_permission_waiting, availability_detail_label, availability_provider_note, chat_attachment_size)
+strings.xml: 347 defined, 317 referenced, 0 missing, 30 unused (action_close, action_copy, ask_permission_metadata, ask_permission_request, ask_permission_waiting, availability_detail_label, availability_provider_note, chat_attachment_size)
 check-ui-strings.sh rc=0
 OK   ui strings + resources
 
 === ui accessibility (contentDescription / labels) ===
-check-ui-a11y: 17 files, 17 icon/image, 51 button, 10 field call sites, 0 findings
+check-ui-a11y: 18 files, 21 icon/image, 56 button, 10 field call sites, 0 findings
 OK   ui accessibility (contentDescription / labels)
 
 === ui lazy lists (no take(8), no eager forEach) ===
-check-ui-lists: 17 files, 4 using LazyColumn, 0 findings
+check-ui-lists: 18 files, 5 using LazyColumn, 0 findings
 OK   ui lazy lists (no take(8), no eager forEach)
 
 === ui purity (screens are functions of state) ===
-check-ui-purity: 17 ui files scanned, 0 findings
+check-ui-purity: 18 ui files scanned, 0 findings
 OK   ui purity (screens are functions of state)
 
 === versions.lock == RuntimeVersion.kt == build.gradle versionName (shipped == pinned) ===
@@ -73,6 +73,35 @@ OK   app/build.gradle.kts static checks (balance, order, run-#6 fix present, ide
 OK   bash -n on the phase10 scripts
 OK   py_compile on the phase10 python
 
+=== screenshot sanity checker self-test (black/blank vs a real screen) ===
+PASS a black frame is rejected (got screen=False (content=0.000 mean=0.0))
+PASS a uniform white frame is rejected (got screen=False (content=0.000 mean=255.0))
+PASS a dark-theme screen with text is accepted (got screen=True (content=0.020 mean=22.4))
+PASS a light-theme screen with text is accepted (got screen=True (content=0.020 mean=247.6))
+PASS a corrupt png is reported as undecoded (decoded=False)
+p10d-png selftest: 5 checks, 0 failed
+SELFTEST PASS
+OK   screenshot sanity checker self-test (black/blank vs a real screen)
+
+=== uiautomator dump reader self-test (tap targets, disabled states, diagnostics) ===
+PASS an enabled clickable control yields tap coordinates (rc=0 out='1020 1740')
+PASS a DISABLED control is refused, and says why (rc=1 out='FOUND_NOT_TAPPABLE enabled=false clickable=true bounds=[20,600][1060,680]')
+PASS a missing tag is reported as missing (rc=1)
+PASS an existing tag (even disabled) is found by has (rc=0)
+PASS matching is case-insensitive and covers content-desc (rc=0)
+PASS the app owning the window is detectable (rc=0)
+PASS a system dialog does NOT look like the app (rc=1)
+PASS an ANR dialog is detectable (rc=0)
+PASS a dump with no text is reported blank (rc=0)
+PASS a real screen is not reported blank (rc=1)
+PASS texts lists what is on screen, in order (out='OpenCode\nContinue\nSend')
+PASS nodes summarises the dump (out='nodes=5 clickable=2 enabled=4 classes=View:4,FrameLayout:1')
+PASS texts-matching lists only what matched (out='')
+PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmp_g5n4vfw/broken.xml')
+p10d-ui selftest: 14 checks, 0 failed
+SELFTEST PASS
+OK   uiautomator dump reader self-test (tap targets, disabled states, diagnostics)
+
 === phase10 workflow template present + no signing secret is pulled in ===
 OK   phase10 workflow template present + no signing secret is pulled in
 
@@ -80,4 +109,4 @@ OK   phase10 workflow template present + no signing secret is pulled in
 OK   no infinite animations in the UI layer (Compose test clock)
 
 === phase 10 static checks summary rc=0 ===
-FAIL phase9/workflow/phase9-release.yml: triggers on ['arena/01a0a540-opencode-app'] but this session works on arena/01a0b557-opencode-app (the workflow would never run)
+FAIL phase9/workflow/phase9-release.yml: triggers on ['arena/01a0a540-opencode-app'] but this session works on arena/01a0b9d5-opencode-app (the workflow would never run)
