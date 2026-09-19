@@ -288,6 +288,14 @@ if local_locked; then
   sleep 2
 fi
 adb shell svc power stayon true >/dev/null 2>&1 || true
+# Animations OFF, and this is load-bearing rather than cosmetic: `uiautomator dump`
+# waits for the window to go idle, and the first-run screen shows an indeterminate
+# CircularProgressIndicator while the runtime comes up. A permanently animating
+# window means the dump either blocks for ~15s or fails with "could not get idle
+# state" - which is indistinguishable, in a log that only records strings, from
+# "the app never showed a screen". CI's own driver has set these to 0 since Phase 4
+# (00-run-phase10.sh); v1 here did not, which is the most likely reason its counts
+# and timings looked nothing like the emulator's.
 adb shell settings put global window_animation_scale 0 >/dev/null 2>&1 || true
 adb shell settings put global transition_animation_scale 0 >/dev/null 2>&1 || true
 adb shell settings put global animator_duration_scale 0 >/dev/null 2>&1 || true
