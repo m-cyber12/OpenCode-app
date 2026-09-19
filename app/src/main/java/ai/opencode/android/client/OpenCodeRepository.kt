@@ -1,5 +1,6 @@
 package ai.opencode.android.client
 
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -116,6 +117,21 @@ class OpenCodeRepository(
         onEvent = { ev ->
             transcript.apply(ev.type, ev.properties)
             publishTranscript("event ${ev.type}")
+            // The transcript is built from live frames, so a frame that was emitted
+            // before this client subscribed is lost for good - and a prompt can be
+            // run within a second of the app starting (the UI gates drive it exactly
+            // that way). A turn that ENDS is therefore also a repair point: fetch the
+            // authoritative messages for the selected session, which is cheap and
+            // bounded (one request per turn, single-flight).
+            if (EventFrame.isSessionIdle(ev.type)) {
+                refreshMessages("turn ended", force = true)
+            } else if (EventFrame.isSessionStatus(ev.type) &&
+                transcript.snapshot().messages.isEmpty()
+            ) {
+                // A status frame arrived for a turn this client is showing but has no
+                // messages for: frames were missed upstream of it, so fetch once.
+                refreshMessages("transcript after status")
+            }
         },
         onStatus = { line -> _state.value = _state.value.copy(streamStatus = line) },
     )
@@ -141,6 +157,44 @@ class OpenCodeRepository(
         workspaceDir = dir
         api.directory = dir
         refresh()
+    }
+
+    @Volatile
+    private var messagesFetchInFlight = false
+
+    /**
+     * Re-read the selected session's messages from the server.
+     *
+     * Normally the transcript is fed by the event stream, which is live and cheap.
+     * This exists for the two cases where the stream cannot be enough:
+     *  - a turn just ended, so the server holds the final state regardless of which
+     *    frames this client was subscribed for ([force] = true, one call per turn);
+     *  - the app believes a turn is running for the selected session but its
+     *    transcript has no messages at all, which means frames were missed.
+     *
+     * Single-flight, and never throws: a repair that fails must not disturb the UI.
+     */
+    private fun refreshMessages(status: String, force: Boolean = false) {
+        val sid = _state.value.selectedSession
+        if (sid.isEmpty()) return
+        if (messagesFetchInFlight) return
+        if (!force && transcript.snapshot().messages.isNotEmpty()) return
+        messagesFetchInFlight = true
+        scope.launch {
+            try {
+                val list = api.messages(sid)
+                if (_state.value.selectedSession == sid) {
+                    transcript.loadMessages(sid, list)
+                    publishTranscript(status)
+                }
+            } catch (t: Throwable) {
+                // Keep it quiet: the stream is the primary path and will report a real
+                // failure on its own. A repair that could not run is not an error.
+                Log.d("OpenCode/repo", "transcript repair failed: ${t.message}")
+            } finally {
+                messagesFetchInFlight = false
+            }
+        }
     }
 
     /** Pull the authoritative lists from the server (never fabricated locally). */
@@ -361,6 +415,12 @@ class OpenCodeRepository(
                     notice = "",
                 )
                 publishTranscript("prompt accepted")
+                // The user's own turn is on the server now; take it from there rather
+                // than waiting for a frame that may have been emitted before this
+                // client subscribed (run #16: the transcript stayed empty for 120s
+                // while the server had the answer, and the screen is what the user
+                // sees).
+                refreshMessages("transcript after prompt", force = true)
             } catch (t: Throwable) {
                 fail("prompt_async", t)
             } finally {

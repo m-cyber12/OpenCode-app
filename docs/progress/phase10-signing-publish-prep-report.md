@@ -1217,3 +1217,48 @@ Two facts worth keeping, because they bound what CI evidence can claim here:
    real phone** (§A.4), not from CI's per-step pictures. CI's verdicts (the gate lines)
    are the evidence; CI's PNGs for this step are indicative only, and the line now says
    which kind a reader is looking at.
+
+### A.12.2 Run #16 — the gate found a real app bug, and it is now fixed
+
+Run #16 (`35460196586` on `6481ab4`) came back red on the same gate, but with a
+completely different and much more useful signature — the same one in both the debug and
+the release-shaped smoke build:
+
+```
+P6_L1 FAIL :: ... userPromptShown=false replyShownInUi=false newScreenLines=2
+              messageRows=0 emptyConversation=true screenCatchUpMs=120000
+              busyIndicator=true streamingDots=false errorBanner=false composerUsableAgain=true
+              screenshot[bytes=22406 ink=0.023 via=compose lowInk=true
+                         deviceShot=30-live-chat-reply-device.png deviceBytes=63289 deviceInk=0.103]
+              reply='Blue.'
+```
+
+The screen was waited on for the full 120 seconds and the conversation **never** got a
+single row, while the server held the reply. That is not the gate being early any more
+(the fix in §A.12 covers that case, and it is why this run's failure is legible) — it is
+the app: `L2`, which ran seconds later with a 420-second budget, saw the whole transcript.
+
+Root cause, from the repository's own code: the transcript is built from live event
+frames, and messages were re-read from the server **only when the selected session
+changed** (`refresh()` → `if (keep.isNotEmpty() && keep != sel)`). A frame emitted before
+this client subscribed is lost with no repair path, and both gates drive the UI fast
+enough to make that likely (project created, prompt sent, all within a second or two of
+the app starting). Symptom the user would see: type a message right after opening the
+app and the conversation can stay blank even though the agent is answering.
+
+Fix (`OpenCodeRepository`):
+
+* `refreshMessages(status, force)`: re-read the selected session's messages from the
+  server, single-flight, silent on failure (the stream stays the primary path).
+* A turn **ending** (`session.idle`) is a repair point with `force = true` — the server
+  holds the final state regardless of which frames this client was subscribed for. One
+  request per turn, bounded by construction.
+* A `session.status` frame arriving for a session whose transcript has **no** messages
+  is the "frames were missed" signal → one repair fetch.
+* After a prompt is accepted, the transcript is seeded from the server instead of waiting
+  for a frame that may never arrive.
+
+This is a real, user-visible robustness fix, found by the improved gate and verified by
+CI (run #17). It is the second thing this session fixed that the old driver could not
+have seen: the old L1 asserted on the screen the instant the *server* answered, so a
+missing transcript was indistinguishable from a slow one.
