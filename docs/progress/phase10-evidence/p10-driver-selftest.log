@@ -1,0 +1,45 @@
+=== 90-real-device-signed.sh self-test (fake phone, no device needed) ===
+
+--- scenario: happy path ---
+  ok   driver exits 0 when every gate passes (rc=0)
+  ok   SUMMARY.txt written
+  ok   at least 15 distinct gates reported (got 22)
+  ok   gate DEVICE_AWAKE PASS/SKIP
+  ok   gate ABI PASS/SKIP
+  ok   gate ANDROID_VERSION PASS/SKIP
+  ok   gate INSTALL PASS/SKIP
+  ok   gate VERSION_ON_DEVICE PASS/SKIP
+  ok   gate FIRST_RUN PASS/SKIP
+  ok   gate FIRST_RUN_PROJECT PASS/SKIP
+  ok   gate FILES_SCREEN PASS/SKIP
+  ok   gate MEMORY PASS/SKIP
+  ok   gate STORAGE PASS/SKIP
+  ok   gate PACKAGING_SWEEP PASS/SKIP
+  ok   gate NO_CRASH PASS/SKIP
+  ok   gate SCREENSHOTS PASS/SKIP
+  ok   gate LIVE_TURN PASS/SKIP
+  ok   gate FILES_APP_AND_SHELL PASS/SKIP
+  ok   no FAIL line anywhere in a clean run
+  ok   DIAGNOSIS.txt stays empty on a clean run
+  ok   screenshots captured at every step (got 10)
+  ok   screenshot validation ran and saw real screens
+  ok   project was created through taps+typing
+  ok   live turn with a tool card
+  ok   in-app browser path == shell-visible path
+  ok   model marker written for the x86_64 carry-forward
+  ok   visibility script reports its own verdicts
+  ok   the agent's file exists on the (fake) external storage
+
+--- scenario: locked device ---
+  ok   a locked device is a non-zero exit (rc=1)
+  ok   DEVICE_AWAKE FAIL reported
+  ok   the reason tells the human what to do (unlock)
+  ok   it does NOT blame the app ('no working screen')
+
+--- scenario: blank screencap ---
+  ok   blank frames are a non-zero exit (rc=1)
+  ok   SCREENSHOTS FAIL reported
+  ok   the reason says the frames are blank/off
+
+=== driver self-test: pass=35 fail=0 ===
+SELFTEST PASS (driver runs clean, and fails for the RIGHT reasons)
