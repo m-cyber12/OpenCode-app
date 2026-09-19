@@ -65,10 +65,20 @@ class LiveChatUiGatesTest {
 
         /**
          * Below this share of non-background pixels a capture cannot be a screen
-         * that carries a conversation, so [shot] retakes it (see the run #12 note
-         * in that function). It only ever costs a retake - never a verdict.
+         * that carries a conversation, so [shot] re-shoots it (see the run #12 note
+         * in that function). It only ever costs a re-shoot - never a verdict.
+         *
+         * Calibrated on run #14's own files (ink measured the same way [shot]
+         * reports it): an empty conversation, chrome only, is 0.023-0.034, while
+         * every screen with content on it is 0.109 and up (chat + streaming dots
+         * 0.109, files listing 0.112, markdown 0.221, tool cards 0.60). 0.06 sits
+         * between them: it cannot call an empty screen "content", and it will not
+         * re-shoot a real one. Run #14 is also why this is not a judgement call -
+         * its `30-live-chat-reply.png` was byte-identical (sha256 4bb5dc9eac27c702…)
+         * to the June base commit's file, i.e. the conversation the gate had just
+         * read out of the semantics tree was still not in the picture.
          */
-        const val MIN_INK = 0.01
+        const val MIN_INK = 0.06
 
         /** How long the screen may lag behind the server before it is a verdict. */
         const val SCREEN_CATCH_UP_MS = 120_000L
@@ -130,19 +140,23 @@ class LiveChatUiGatesTest {
         rule.waitForIdle()
         var best = writeScreenshotWithInk(shotDir, name) { rule.onRoot().captureToImage() }
         var via = "compose"
+        // Too little ink to be a screen with content on it: go straight to a real
+        // screen photograph, which cannot be a stale composition frame.
         if (best.second in 0.0..MIN_INK) {
-            Thread.sleep(1500)
-            rule.waitForIdle()
-            val again = writeScreenshotWithInk(shotDir, name) { rule.onRoot().captureToImage() }
-            if (again.second > best.second) best = again
+            val device = deviceScreenshot(shotDir, name)
+            if (device.second > best.second) {
+                best = device
+                via = "device"
+            }
+            // Still nothing? Let the composition settle and try Compose once more.
             if (best.second in 0.0..MIN_INK) {
-                val device = deviceScreenshot(shotDir, name)
-                if (device.second > best.second) {
-                    best = device
-                    via = "device"
+                Thread.sleep(1500)
+                rule.waitForIdle()
+                val again = writeScreenshotWithInk(shotDir, name) { rule.onRoot().captureToImage() }
+                if (again.second > best.second) {
+                    best = again
+                    via = "compose-retake"
                 }
-            } else {
-                via = "compose-retake"
             }
         }
         return "bytes=${best.first} ink=${"%.3f".format(best.second)} via=$via"
