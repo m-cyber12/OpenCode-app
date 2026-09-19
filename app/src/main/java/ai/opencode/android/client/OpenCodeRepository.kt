@@ -126,7 +126,7 @@ class OpenCodeRepository(
             if (EventFrame.isSessionIdle(ev.type)) {
                 refreshMessages("turn ended", force = true)
             } else if (EventFrame.isSessionStatus(ev.type) &&
-                transcript.snapshot().messages.isEmpty()
+                !hasRows(_state.value.selectedSession)
             ) {
                 // A status frame arrived for a turn this client is showing but has no
                 // messages for: frames were missed upstream of it, so fetch once.
@@ -162,6 +162,10 @@ class OpenCodeRepository(
     @Volatile
     private var messagesFetchInFlight = false
 
+    /** Does the transcript already hold rows for [sid]? (`Snapshot` is per-session.) */
+    private fun hasRows(sid: String): Boolean =
+        _state.value.transcript.session(sid)?.messages?.isNotEmpty() == true
+
     /**
      * Re-read the selected session's messages from the server.
      *
@@ -178,7 +182,7 @@ class OpenCodeRepository(
         val sid = _state.value.selectedSession
         if (sid.isEmpty()) return
         if (messagesFetchInFlight) return
-        if (!force && transcript.snapshot().messages.isNotEmpty()) return
+        if (!force && hasRows(sid)) return
         messagesFetchInFlight = true
         scope.launch {
             try {
