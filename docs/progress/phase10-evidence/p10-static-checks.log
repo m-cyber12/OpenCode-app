@@ -1,7 +1,7 @@
-=== Phase 10 static checks 2026-09-19T14:08:29Z ===
+=== Phase 10 static checks 2026-09-19T14:16:36Z ===
 
 === phase 9 static checks (not weakened) ===
-=== Phase 9 static checks 2026-09-19T14:08:29Z ===
+=== Phase 9 static checks 2026-09-19T14:16:36Z ===
 OK   bash -n on 42 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8/phase9 driver
@@ -29,7 +29,7 @@ OK   androidTest method names are dex-safe identifiers (D8 rule)
 --- check-ui-strings (hardcoded copy + URL literals)
 check-ui-strings: 57 kotlin files, 0 hardcoded-copy findings, 0 url findings
 --- strings.xml sanity: every referenced R.string.* must exist
-strings.xml: 347 defined, 317 referenced, 0 missing, 30 unused (action_close, action_copy, ask_permission_metadata, ask_permission_request, ask_permission_waiting, availability_detail_label, availability_provider_note, chat_attachment_size)
+strings.xml: 347 defined, 316 referenced, 0 missing, 31 unused (action_close, action_copy, ask_permission_metadata, ask_permission_request, ask_permission_waiting, availability_detail_label, availability_provider_note, chat_attachment_size)
 check-ui-strings.sh rc=0
 OK   ui strings + resources
 
@@ -97,10 +97,19 @@ PASS a real screen is not reported blank (rc=1)
 PASS texts lists what is on screen, in order (out='OpenCode\nContinue\nSend')
 PASS nodes summarises the dump (out='nodes=5 clickable=2 enabled=4 classes=View:4,FrameLayout:1')
 PASS texts-matching lists only what matched (out='')
-PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmp_g5n4vfw/broken.xml')
+PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmpizcey0e2/broken.xml')
 p10d-ui selftest: 14 checks, 0 failed
 SELFTEST PASS
 OK   uiautomator dump reader self-test (tap targets, disabled states, diagnostics)
+
+=== compose icon availability (material-icons-core only) ===
+NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:142 Icons.Filled.List (use AutoMirrored.Filled.List)
+NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:553 Icons.Filled.Send (use AutoMirrored.Filled.Send)
+NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:250 Icons.Filled.ArrowBack (use AutoMirrored.Filled.ArrowBack)
+NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:284 Icons.Filled.KeyboardArrowRight (use AutoMirrored.Filled.KeyboardArrowRight)
+NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:327 Icons.Filled.ArrowBack (use AutoMirrored.Filled.ArrowBack)
+check-compose-icons: 57 kotlin files, 0 not-in-core, 5 deprecated references
+OK   compose icon availability (material-icons-core only)
 
 === phase10 workflow template present + no signing secret is pulled in ===
 OK   phase10 workflow template present + no signing secret is pulled in

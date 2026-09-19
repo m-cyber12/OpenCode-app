@@ -1,9 +1,9 @@
-=== PHASE 10 START 2026-09-19T14:08:29Z ===
+=== PHASE 10 START 2026-09-19T14:16:36Z ===
 ########## 1/9 static checks (phase 9 invariants + phase 10 release invariants) ##########
-=== Phase 10 static checks 2026-09-19T14:08:29Z ===
+=== Phase 10 static checks 2026-09-19T14:16:36Z ===
 
 === phase 9 static checks (not weakened) ===
-=== Phase 9 static checks 2026-09-19T14:08:29Z ===
+=== Phase 9 static checks 2026-09-19T14:16:36Z ===
 OK   bash -n on 42 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8/phase9 driver
@@ -31,7 +31,7 @@ OK   androidTest method names are dex-safe identifiers (D8 rule)
 --- check-ui-strings (hardcoded copy + URL literals)
 check-ui-strings: 57 kotlin files, 0 hardcoded-copy findings, 0 url findings
 --- strings.xml sanity: every referenced R.string.* must exist
-strings.xml: 347 defined, 317 referenced, 0 missing, 30 unused (action_close, action_copy, ask_permission_metadata, ask_permission_request, ask_permission_waiting, availability_detail_label, availability_provider_note, chat_attachment_size)
+strings.xml: 347 defined, 316 referenced, 0 missing, 31 unused (action_close, action_copy, ask_permission_metadata, ask_permission_request, ask_permission_waiting, availability_detail_label, availability_provider_note, chat_attachment_size)
 check-ui-strings.sh rc=0
 OK   ui strings + resources
 
@@ -99,10 +99,19 @@ PASS a real screen is not reported blank (rc=1)
 PASS texts lists what is on screen, in order (out='OpenCode\nContinue\nSend')
 PASS nodes summarises the dump (out='nodes=5 clickable=2 enabled=4 classes=View:4,FrameLayout:1')
 PASS texts-matching lists only what matched (out='')
-PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmp_g5n4vfw/broken.xml')
+PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmpizcey0e2/broken.xml')
 p10d-ui selftest: 14 checks, 0 failed
 SELFTEST PASS
 OK   uiautomator dump reader self-test (tap targets, disabled states, diagnostics)
+
+=== compose icon availability (material-icons-core only) ===
+NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:142 Icons.Filled.List (use AutoMirrored.Filled.List)
+NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:553 Icons.Filled.Send (use AutoMirrored.Filled.Send)
+NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:250 Icons.Filled.ArrowBack (use AutoMirrored.Filled.ArrowBack)
+NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:284 Icons.Filled.KeyboardArrowRight (use AutoMirrored.Filled.KeyboardArrowRight)
+NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:327 Icons.Filled.ArrowBack (use AutoMirrored.Filled.ArrowBack)
+check-compose-icons: 57 kotlin files, 0 not-in-core, 5 deprecated references
+OK   compose icon availability (material-icons-core only)
 
 === phase10 workflow template present + no signing secret is pulled in ===
 OK   phase10 workflow template present + no signing secret is pulled in
@@ -146,10 +155,10 @@ PAYLOAD STAGING SKIPPED: compile/test-only run, no APK was produced.
 > Task :app:mapDebugSourceSetPaths
 > Task :app:generateDebugResources
 > Task :app:packageDebugResources
-> Task :app:mergeDebugResources
 > Task :app:createDebugCompatibleScreenManifests
 > Task :app:extractDeepLinksDebug
 > Task :app:parseDebugLocalResources
+> Task :app:mergeDebugResources
 
 > Task :app:processDebugMainManifest
 /home/runner/work/OpenCode-app/OpenCode-app/app/src/main/AndroidManifest.xml:32:9-41 Warning:
@@ -160,295 +169,628 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:preDebugAndroidTestBuild SKIPPED
 > Task :app:javaPreCompileDebug
 > Task :app:processDebugAndroidTestManifest
+> Task :app:processDebugManifestForPackage
 > Task :app:generateDebugAndroidTestBuildConfig
 > Task :app:checkDebugAndroidTestAarMetadata
 > Task :app:generateDebugAndroidTestResValues FROM-CACHE
 > Task :app:mapDebugAndroidTestSourceSetPaths
 > Task :app:generateDebugAndroidTestResources
-> Task :app:processDebugManifestForPackage
-> Task :app:preDebugUnitTestBuild
-> Task :app:javaPreCompileDebugUnitTest FROM-CACHE
 > Task :app:processDebugResources
 > Task :app:mergeDebugAndroidTestResources
+> Task :app:preDebugUnitTestBuild
+> Task :app:javaPreCompileDebugUnitTest FROM-CACHE
 > Task :app:processDebugAndroidTestResources
+> Task :app:compileDebugKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/security/SecretStore.kt:119:54 'getter for isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:142:39 'List: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.List
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:211:5 Parameter 'runtime' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:553:43 'Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:250:56 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:284:56 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:327:52 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:240:5 Parameter 'availability' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:243:9 Variable 'chat' is never used
 
-> Task :app:compileDebugKotlin FAILED
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:35:47 Unresolved reference: Folder
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:142:39 Unresolved reference: Folder
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:25:47 Unresolved reference: Description
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:26:47 Unresolved reference: Folder
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:281:74 Unresolved reference: Folder
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:281:99 Unresolved reference: Description
+> Task :app:compileDebugJavaWithJavac
+> Task :app:processDebugJavaRes
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:bundleDebugClassesToCompileJar
 
-FAILURE: Build failed with an exception.
+> Task :app:compileDebugUnitTestKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/client/OpenCodeApiHttpTest.kt:56:27 Parameter 'rec' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/projects/ProjectStoreLifecycleTest.kt:48:13 Variable 'p' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/projects/ProjectStoreLifecycleTest.kt:80:13 Variable 'p' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractionValidationTest.kt:45:13 Unsafe use of a nullable receiver of type File?
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractionValidationTest.kt:59:9 Unsafe use of a nullable receiver of type File?
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractionValidationTest.kt:117:9 Unsafe use of a nullable receiver of type File?
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractorTest.kt:103:37 Unsafe use of a nullable receiver of type File?
 
-* What went wrong:
-Execution failed for task ':app:compileDebugKotlin'.
-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
-   > Compilation error. See log for more details
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes
 
-* Try:
-> Run with --info or --debug option to get more log output.
-> Run with --scan to get full insights.
-> Get more help at https://help.gradle.org.
+> Task :app:compileDebugAndroidTestKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/client/OpenCodeClientGatesTest.kt:392:39 Type mismatch: inferred type is String? but String was expected
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/FirstRunUiGatesTest.kt:231:32 Variable 'createdThroughUi' initializer is redundant
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/FirstRunUiGatesTest.kt:232:21 Variable 'typed' initializer is redundant
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/StressRecoveryGatesTest.kt:187:45 'getter for isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java
 
-* Exception is:
-org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugKotlin'.
-	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:130)
-	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:293)
-	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:128)
-	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
-	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
-	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
-	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
-	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
-	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
-	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
-	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
-	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
-	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
-	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
-	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
-	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
-	at org.gradle.execution.plan.DefaultPlanExecutor.process(DefaultPlanExecutor.java:111)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.executeWithServices(DefaultTaskExecutionGraph.java:138)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.execute(DefaultTaskExecutionGraph.java:123)
-	at org.gradle.execution.SelectedTaskExecutionAction.execute(SelectedTaskExecutionAction.java:35)
-	at org.gradle.execution.DryRunBuildExecutionAction.execute(DryRunBuildExecutionAction.java:51)
-	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:54)
-	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:43)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor.execute(BuildOperationFiringBuildWorkerExecutor.java:40)
-	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$executeTasks$10(DefaultBuildLifecycleController.java:313)
-	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
-	at org.gradle.internal.model.StateTransitionController.lambda$tryTransition$8(StateTransitionController.java:177)
-	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
-	at org.gradle.internal.model.StateTransitionController.tryTransition(StateTransitionController.java:177)
-	at org.gradle.internal.build.DefaultBuildLifecycleController.executeTasks(DefaultBuildLifecycleController.java:304)
-	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.runWork(DefaultBuildWorkGraphController.java:220)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:267)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:131)
-	at org.gradle.composite.internal.DefaultBuildController.doRun(DefaultBuildController.java:181)
-	at org.gradle.composite.internal.DefaultBuildController.access$000(DefaultBuildController.java:50)
-	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.lambda$run$0(DefaultBuildController.java:198)
-	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
-	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:198)
-	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
-	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
-Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
-	at org.gradle.workers.internal.DefaultWorkerExecutor$WorkItemExecution.waitForCompletion(DefaultWorkerExecutor.java:287)
-	at org.gradle.internal.work.DefaultAsyncWorkTracker.lambda$waitForItemsAndGatherFailures$2(DefaultAsyncWorkTracker.java:130)
-	at org.gradle.internal.Factories$1.create(Factories.java:31)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLocks(DefaultWorkerLeaseService.java:339)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLocks(DefaultWorkerLeaseService.java:322)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLock(DefaultWorkerLeaseService.java:327)
-	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForItemsAndGatherFailures(DefaultAsyncWorkTracker.java:126)
-	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForItemsAndGatherFailures(DefaultAsyncWorkTracker.java:92)
-	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForAll(DefaultAsyncWorkTracker.java:78)
-	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForCompletion(DefaultAsyncWorkTracker.java:66)
-	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:252)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
-	at org.gradle.api.internal.tasks.execution.TaskExecution.executeAction(TaskExecution.java:229)
-	at org.gradle.api.internal.tasks.execution.TaskExecution.executeActions(TaskExecution.java:212)
-	at org.gradle.api.internal.tasks.execution.TaskExecution.executeWithPreviousOutputFiles(TaskExecution.java:195)
-	at org.gradle.api.internal.tasks.execution.TaskExecution.execute(TaskExecution.java:162)
-	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:105)
-	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:44)
-	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:59)
-	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:56)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:56)
-	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:44)
-	at org.gradle.internal.execution.steps.CancelExecutionStep.execute(CancelExecutionStep.java:42)
-	at org.gradle.internal.execution.steps.TimeoutStep.executeWithoutTimeout(TimeoutStep.java:75)
-	at org.gradle.internal.execution.steps.TimeoutStep.execute(TimeoutStep.java:55)
-	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:50)
-	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:28)
-	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:67)
-	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:37)
-	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:61)
-	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:26)
-	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:69)
-	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:46)
-	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:40)
-	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:29)
-	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:189)
-	at org.gradle.internal.execution.steps.BuildCacheStep.executeAndStoreInCache(BuildCacheStep.java:145)
-	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$executeWithCache$4(BuildCacheStep.java:101)
-	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$executeWithCache$5(BuildCacheStep.java:101)
-	at org.gradle.internal.Try$Success.map(Try.java:175)
-	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithCache(BuildCacheStep.java:85)
-	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$0(BuildCacheStep.java:74)
-	at org.gradle.internal.Either$Left.fold(Either.java:115)
-	at org.gradle.internal.execution.caching.CachingState.fold(CachingState.java:62)
-	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:73)
-	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:48)
-	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:46)
-	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:35)
-	at org.gradle.internal.execution.steps.SkipUpToDateStep.executeBecause(SkipUpToDateStep.java:75)
-	at org.gradle.internal.execution.steps.SkipUpToDateStep.lambda$execute$2(SkipUpToDateStep.java:53)
-	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:53)
-	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:35)
-	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
-	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:27)
-	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:49)
-	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:27)
-	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:71)
-	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:39)
-	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:65)
-	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:36)
-	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:105)
-	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:54)
-	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:64)
-	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:43)
-	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.executeWithNonEmptySources(AbstractSkipEmptyWorkStep.java:125)
-	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:61)
-	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:36)
-	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
-	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:36)
-	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:23)
-	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:75)
-	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:41)
-	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.lambda$execute$0(AssignMutableWorkspaceStep.java:35)
-	at org.gradle.api.internal.tasks.execution.TaskExecution$4.withWorkspace(TaskExecution.java:289)
-	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:31)
-	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:22)
-	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:40)
-	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
-	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
-	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
-	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
-	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
-	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
-	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:48)
-	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:35)
-	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:61)
-	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:127)
-	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
-	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
-	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
-	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
-	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
-	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
-	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
-	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
-	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
-	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
-	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
-	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
-	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
-	at org.gradle.execution.plan.DefaultPlanExecutor.process(DefaultPlanExecutor.java:111)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.executeWithServices(DefaultTaskExecutionGraph.java:138)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.execute(DefaultTaskExecutionGraph.java:123)
-	at org.gradle.execution.SelectedTaskExecutionAction.execute(SelectedTaskExecutionAction.java:35)
-	at org.gradle.execution.DryRunBuildExecutionAction.execute(DryRunBuildExecutionAction.java:51)
-	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:54)
-	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:43)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor.execute(BuildOperationFiringBuildWorkerExecutor.java:40)
-	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$executeTasks$10(DefaultBuildLifecycleController.java:313)
-	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
-	at org.gradle.internal.model.StateTransitionController.lambda$tryTransition$8(StateTransitionController.java:177)
-	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
-	at org.gradle.internal.model.StateTransitionController.tryTransition(StateTransitionController.java:177)
-	at org.gradle.internal.build.DefaultBuildLifecycleController.executeTasks(DefaultBuildLifecycleController.java:304)
-	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.runWork(DefaultBuildWorkGraphController.java:220)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:267)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:131)
-	at org.gradle.composite.internal.DefaultBuildController.doRun(DefaultBuildController.java:181)
-	at org.gradle.composite.internal.DefaultBuildController.access$000(DefaultBuildController.java:50)
-	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.lambda$run$0(DefaultBuildController.java:198)
-	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
-	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:198)
-	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
-	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
-Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
-	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:20)
-	at org.jetbrains.kotlin.compilerRunner.GradleKotlinCompilerWork.run(GradleKotlinCompilerWork.kt:141)
-	at org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction.execute(GradleCompilerRunnerWithWorkers.kt:73)
-	at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:63)
-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:66)
-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:62)
-	at org.gradle.internal.classloader.ClassLoaderUtils.executeInClassloader(ClassLoaderUtils.java:100)
-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.lambda$execute$0(NoIsolationWorkerFactory.java:62)
-	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:44)
-	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:41)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-	at org.gradle.workers.internal.AbstractWorker.executeWrappedInBuildOperation(AbstractWorker.java:41)
-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.execute(NoIsolationWorkerFactory.java:59)
-	at org.gradle.workers.internal.DefaultWorkerExecutor.lambda$submitWork$0(DefaultWorkerExecutor.java:174)
-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runExecution(DefaultConditionalExecutionQueue.java:195)
-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.access$700(DefaultConditionalExecutionQueue.java:128)
-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner$1.run(DefaultConditionalExecutionQueue.java:170)
-	at org.gradle.internal.Factories$1.create(Factories.java:31)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:267)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:131)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:136)
-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:165)
-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:134)
-	... 2 more
+> Task :app:testDebugUnitTest
 
+DefaultModelHintTest > nothingConnectedMeansNoHintNotAnArbitraryProvider PASSED
 
-BUILD FAILED in 1m 39s
-27 actionable tasks: 25 executed, 2 from cache
-STEP_FAILED rc=1: SKIP_PAYLOAD=1 '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
-FATAL: kotlin compile or JVM unit tests failed (compiler-errors.txt)
-P10-BUILD FAIL: kotlin compile or JVM unit tests failed (compiler-errors.txt)
-P10_SUMMARY gates not reached (build/environment failure) - see 00-run-phase10.log
-=== PHASE 10 END 2026-09-19T14:10:16Z FATAL: kotlin compile or JVM unit tests failed (compiler-errors.txt) ===
+DefaultModelHintTest > firstCatalogEntryIsNeverChosenWhenNotConnected PASSED
+
+DefaultModelHintTest > aConnectedThirdPartyProviderBeatsTheBundledOne PASSED
+
+DefaultModelHintTest > theJustProvisionedProviderWinsWhenConnected PASSED
+
+DefaultModelHintTest > aConnectedProviderWithoutADefaultModelIsSkipped PASSED
+
+DefaultModelHintTest > aPreferredProviderTheServerDoesNotReportConnectedIsNotForced PASSED
+
+EventFrameTest > derivesLegacyType PASSED
+
+EventFrameTest > sessionIDFoundInNestedShapes PASSED
+
+EventFrameTest > permissionEventsMatchBothSpellings PASSED
+
+EventFrameTest > nullAndUnknownShapesDoNotThrow PASSED
+
+EventFrameTest > stripsDurableVersionSuffix PASSED
+
+LoopbackGuardTest > bindHostname_defaultsToLoopbackWhenUnset PASSED
+
+LoopbackGuardTest > bindHostname_refusesNonLoopbackAndKeepsLoopback PASSED
+
+LoopbackGuardTest > checked_acceptsLoopbackUrlsOnly PASSED
+
+LoopbackGuardTest > isLoopbackLiteral_coversThe127Block PASSED
+
+LoopbackGuardTest > bindHostname_acceptsLoopbackForms PASSED
+
+OpenCodeApiHttpTest > mcpAddPostsNameAndConfig PASSED
+
+OpenCodeApiHttpTest > permissionReplyUsesTheUpstreamRoute PASSED
+
+OpenCodeApiHttpTest > non2xxBecomesTypedError PASSED
+
+OpenCodeApiHttpTest > healthIsGlobalAndCarriesBasicAuth PASSED
+
+OpenCodeApiHttpTest > promptAsyncSendsUpstreamPartShape PASSED
+
+OpenCodeApiHttpTest > authProvisioningUsesProviderIdRoute PASSED
+
+OpenCodeApiHttpTest > patchMethodIsAndroidOnly PASSED
+
+OpenCodeApiHttpTest > sessionCreateIsDirectoryScopedAndPassesTitle PASSED
+
+OpenCodeApiHttpTest > bodylessRequestsDeclareZeroLength PASSED
+
+OpenCodeApiHttpTest > eventStreamParsesFramesAndReconnects PASSED
+
+ProviderSetupTest > nothingStoredAndNothingConnectedIsTheNamedEmptyState PASSED
+
+ProviderSetupTest > anUnknownProviderListIsUnknownEvenWithStoredKeys PASSED
+
+ProviderSetupTest > aStoredKeyWithoutConnectionIsConfiguredNotConnected PASSED
+
+ProviderSetupTest > connectedWinsOverEverything PASSED
+
+SseAccumulatorTest > dispatchesOnBlankLine PASSED
+
+SseAccumulatorTest > joinsMultipleDataLines PASSED
+
+SseAccumulatorTest > ignoresCommentsAndKeepsFrameBoundaries PASSED
+
+SseAccumulatorTest > finishFlushesUnterminatedFrame PASSED
+
+ToolMetaParserTest > readMetadataTruncationIsReported PASSED
+
+ToolMetaParserTest > aMissingExitStaysNullInsteadOfPretendingSuccess PASSED
+
+ToolMetaParserTest > blankGarbageAndNullsNeverThrow PASSED
+
+ToolMetaParserTest > builtinToolNamesMapOntoFamilies PASSED
+
+ToolMetaParserTest > writeAndEditMetadataCarryTheDiffAndItsCounts PASSED
+
+ToolMetaParserTest > shellMetadataCarriesOutputExitAndTruncation PASSED
+
+ToolMetaParserTest > underscoredNamesFromMcpServersAreMcp PASSED
+
+ToolMetaParserTest > matchingIsCaseInsensitiveAndExactBeforePattern PASSED
+
+ToolMetaParserTest > truncatedShellOutputPointsAtTheFullFile PASSED
+
+ToolMetaParserTest > diagnosticsWithoutADiffAreStillCounted PASSED
+
+ToolMetaParserTest > aDiffOnlyInsideFilediffIsStillADiff PASSED
+
+ToolMetaParserTest > anythingUnrecognisedIsOtherAndStillRendered PASSED
+
+ToolMetaParserTest > numbersOfAnyJsonTypeStillParse PASSED
+
+TranscriptPhase6Test > loadedPartsBecomeRenderablePartsInServerOrder PASSED
+
+TranscriptPhase6Test > startingANewTurnClearsThePreviousTurnsError PASSED
+
+TranscriptPhase6Test > anAssistantMessageErrorIsMirroredOntoTheMessageAndTheSession PASSED
+
+TranscriptPhase6Test > aCanonicalPartFrameAfterDeltasOverwritesRatherThanDoubles PASSED
+
+TranscriptPhase6Test > theServersOwnPendingListReplacesWhatTheStreamGuessed PASSED
+
+TranscriptPhase6Test > anUnknownErrorShapeIsKeptRatherThanDiscarded PASSED
+
+TranscriptPhase6Test > aToolPartMovesFromRunningToCompletedInPlace PASSED
+
+TranscriptPhase6Test > aDeltaForAPartThatHasNotArrivedYetIsDroppedNotSynthesised PASSED
+
+TranscriptPhase6Test > anEmptyDeltaChangesNothing PASSED
+
+TranscriptPhase6Test > anEmptyErrorObjectIsNotATurnError PASSED
+
+TranscriptPhase6Test > removedPartsDisappearFromTheMessage PASSED
+
+TranscriptPhase6Test > sessionErrorBecomesTheTurnsTypedError PASSED
+
+TranscriptPhase6Test > loadMessagesDerivesTheLastErrorFromHistory PASSED
+
+TranscriptPhase6Test > retryStatusCarriesTheAttemptNumber PASSED
+
+TranscriptPhase6Test > aDeltaNamingAnUnknownMessageIsIgnored PASSED
+
+TranscriptPhase6Test > aPermissionAskKeepsTheAlwaysScopeAndItsToolCall PASSED
+
+TranscriptPhase6Test > bookkeepingPartsAreMirroredWholeSoTheUiCanDecideToHideThem PASSED
+
+TranscriptPhase6Test > aToolPartKeepsItsStateMetadataAndTiming PASSED
+
+TranscriptPhase6Test > busySessionsLooksAcrossSessions PASSED
+
+TranscriptPhase6Test > deltaAppendsOntoThePartItNames PASSED
+
+TranscriptPhase6Test > aRejectedQuestionIsAlsoRemoved PASSED
+
+TranscriptPhase6Test > questionsAreTrackedAndClearedWhenRepliedTo PASSED
+
+TranscriptPhase6Test > aToolPartInErrorStateKeepsTheErrorText PASSED
+
+TranscriptPhase6Test > aLaterBusyStatusClearsTheRetryState PASSED
+
+TranscriptPhase6Test > anIdThatIsNotAQuestionIsNotInvented PASSED
+
+TranscriptPhase6Test > aFilePartKeepsMimeNameAndUrl PASSED
+
+TranscriptPhase6Test > severalPartsStreamIndependently PASSED
+
+TranscriptPhase6Test > deletingASessionTakesItsMessagesPromptsAndErrorsWithIt PASSED
+
+TranscriptPhase6Test > customDefaultsToTrueWhenUpstreamOmitsIt PASSED
+
+TranscriptPhase6Test > loadMessagesReplacesTheOlderTranscriptRatherThanAppending PASSED
+
+TranscriptPhase6Test > aDeltaOnAnotherFieldDoesNotTouchTheText PASSED
+
+TranscriptPhase6Test > idleClearsRetryAndBusy PASSED
+
+TranscriptPhase6Test > aPermissionReplyRemovesThePrompt PASSED
+
+TranscriptTest > toolPartLifecycleKeepsLatestStatus PASSED
+
+TranscriptTest > sessionDeletedDropsEverything PASSED
+
+TranscriptTest > ignoresForeignAndMalformedFrames PASSED
+
+TranscriptTest > partRemovedDropsThePart PASSED
+
+TranscriptTest > mergesTextPartUpdatesIntoOneMessage PASSED
+
+TranscriptTest > busyFollowsSessionStatusAndIdle PASSED
+
+TranscriptTest > permissionAskThenReplyClears PASSED
+
+UiErrorOfflineTest > apiError5xxIsAProviderReachabilityFailure PASSED
+
+UiErrorOfflineTest > a429WithAuthSoundingTextIsStillUnreachable PASSED
+
+UiErrorOfflineTest > networkTextIsRecognisedFromTheKnownHintVocabulary PASSED
+
+UiErrorOfflineTest > authHintsInTheTextAreRecognisedWhenThereIsNoStatus PASSED
+
+UiErrorOfflineTest > authHintsTakePrecedenceOverNetworkHints PASSED
+
+UiErrorOfflineTest > apiError401IsAProviderAuthFailure PASSED
+
+UiErrorOfflineTest > onlyLocalFailureStatesDisableSending PASSED
+
+UiErrorOfflineTest > runtimeStateNamesMapOntoTheTwoRuntimeBuckets PASSED
+
+UiErrorOfflineTest > aTransportFailureOfTheAppCallIsServerUnreachable PASSED
+
+UiErrorOfflineTest > aNamedProviderErrorWithNoRecognisableTextIsProviderOther PASSED
+
+UiErrorOfflineTest > aRetryableApiErrorIsProviderReachability PASSED
+
+UiErrorOfflineTest > anAbortIsNeverAServerProblem PASSED
+
+UiErrorOfflineTest > structuralFailuresAreNotNetworkProblems PASSED
+
+UiErrorOfflineTest > theRuntimeStateAlwaysWinsOverEverything PASSED
+
+UiErrorOfflineTest > anUnrecognisedNameWithNoTextIsUnknown PASSED
+
+UiErrorOfflineTest > apiError403IsAProviderAuthFailure PASSED
+
+UiErrorOfflineTest > theAppCallStatusesClassifySeparately PASSED
+
+UiErrorOfflineTest > theUpstreamProviderAuthErrorNameAlwaysWins PASSED
+
+UiErrorTest > apiErrorStatusCodesDecideBetweenAuthNetworkAndOther PASSED
+
+UiErrorTest > modelSideLimitsAreProviderFailures PASSED
+
+UiErrorTest > providerAuthErrorIsProviderAuthWhateverTheMessageSays PASSED
+
+UiErrorTest > theMostLocalFailureWins PASSED
+
+UiErrorTest > sendingIsBlockedOnlyByTheLocalAgent PASSED
+
+UiErrorTest > anUnnamedErrorKeepsItsHintsButNeverInventsACause PASSED
+
+UiErrorTest > serverCallClassificationSeparatesTransportFromRefusal PASSED
+
+UiErrorTest > anEmptyErrorIsUnknownRatherThanSomethingInvented PASSED
+
+UiErrorTest > abortIsItsOwnStateAndIsNotAnError PASSED
+
+UiErrorTest > runtimeStatesMapOntoStartingVersusUnavailable PASSED
+
+UiErrorTest > aProviderFailureNeverMakesTheWholeAppLookBroken PASSED
+
+UiErrorTest > retryableApiErrorIsTreatedAsReachabilityNotAsABug PASSED
+
+UiErrorTest > unknownNamesFallBackToMessageHints PASSED
+
+ProjectMemoryTest > projectAndGlobalFilesLiveInTheirOwnScopes PASSED
+
+ProjectMemoryTest > blankWriteRemovesTheFile PASSED
+
+ProjectMemoryTest > contentIsTrimmedOfSurroundingWhitespace PASSED
+
+ProjectMemoryTest > removeDeletesTheFile PASSED
+
+ProjectMemoryTest > readingAMissingFileIsEmptyNotAnError PASSED
+
+ProjectMemoryTest > writeThenReadRoundTrips PASSED
+
+ProjectIoTest > renameRefusesToClobberAnExistingDirectory PASSED
+
+ProjectIoTest > copyTreeEnforcesTheByteCapAndLeavesNothingPartial PASSED
+
+ProjectIoTest > sizeOfSumsAWholeTree PASSED
+
+ProjectIoTest > renameMovesATreeAndKeepsContents PASSED
+
+ProjectIoTest > deleteTreeRemovesRecursively PASSED
+
+ProjectIoTest > copyTreeSkipsSymlinks PASSED
+
+ProjectIoTest > zipTreeRoundTripsFiles PASSED
+
+ProjectIoTest > writeStreamRemovesThePartialFileWhenTheCapIsBreached PASSED
+
+ProjectStoreLifecycleTest > deleteRemovesTheDirectoryAndClearsActiveWhenItWasCurrent PASSED
+
+ProjectStoreLifecycleTest > adoptRegistersAnExistingDirectoryWithoutRenamingIt PASSED
+
+ProjectStoreLifecycleTest > renameMovesTheDirectoryAndKeepsItOpen PASSED
+
+ProjectStoreLifecycleTest > renameOfAMissingProjectReturnsNull PASSED
+
+ProjectStoreLifecycleTest > uniqueNameNeverCollidesWithExistingDirectories PASSED
+
+ProjectStoreLifecycleTest > createSuffixesCollisions PASSED
+
+ProjectStoreLifecycleTest > renameToACollidingNameGetsASuffix PASSED
+
+ProjectStoreMigrationTest > migrationIsIdempotentAndNeverResurrectsDeletedProjects PASSED
+
+ProjectStoreMigrationTest > theUsersPreferenceHistorySurvivesTheMigration PASSED
+
+ProjectStoreMigrationTest > theInternalRootIsUsedWhenExternalStorageIsUnavailable PASSED
+
+ProjectStoreMigrationTest > existingProjectsMoveAcrossFilesystemsAndTheOldRootIsRemoved PASSED
+
+ProjectStoreMigrationTest > aFreshInstallWithNoLegacyRootIsANoOp PASSED
+
+ProjectStoreMigrationTest > externalStorageIsTheProjectRootWhenItIsAvailable PASSED
+
+ProjectStoreMigrationTest > anInstallThatAlreadyHasProjectsIsNotOverwritten PASSED
+
+ProjectStorePersistenceTest > theActiveProjectSurvivesARestart PASSED
+
+ProjectStorePersistenceTest > theProjectListSurvivesARestart PASSED
+
+ProjectStorePersistenceTest > filesystemDiscoveredProjectsWithoutPreferencesStillAppear PASSED
+
+ProjectStorePersistenceTest > timestampsSurviveARestart PASSED
+
+ProjectStorePersistenceTest > aStaleActivePointerWithNoProjectsLeftIsNull PASSED
+
+ProjectStorePersistenceTest > theMostRecentlyOpenedProjectSortsFirst PASSED
+
+ProjectStorePersistenceTest > aStaleActivePointerFallsBackToTheMostRecentlyOpenedProject PASSED
+
+ProjectStoreSanitizeTest > ordinaryNamesAreUnchanged PASSED
+
+ProjectStoreSanitizeTest > aLeadingOrTrailingDotIsDropped PASSED
+
+ProjectStoreSanitizeTest > theResultIsAlwaysAUsableSinglePathComponent PASSED
+
+ProjectStoreSanitizeTest > separatorsBecomeDashesAndRunsCollapse PASSED
+
+ProjectStoreSanitizeTest > nonAsciiLettersAreKeptBecauseTheyAreLegalDirectoryNames PASSED
+
+ProjectStoreSanitizeTest > aCappedNameNeverEndsInADashOrDot PASSED
+
+ProjectStoreSanitizeTest > pathTraversalCannotSurvive PASSED
+
+ProjectStoreSanitizeTest > theDefaultProjectNameIsAlreadySanitized PASSED
+
+ProjectStoreSanitizeTest > lengthIsCapped PASSED
+
+ProjectStoreSanitizeTest > surroundingWhitespaceIsTrimmed PASSED
+
+AbiGateTest > apiBelow29IsRejectedEvenWithArm64 PASSED
+
+AbiGateTest > x86_64IsSupportedForEmulator PASSED
+
+AbiGateTest > arm64IsSupported PASSED
+
+AbiGateTest > x86_32OnlyIsRejected PASSED
+
+AbiGateTest > prefersArm64WhenBothAbisPresent PASSED
+
+AbiGateTest > armeabiV7aOnlyIsRejected PASSED
+
+HealthCheckerTest > aRefusedSocketIsUnhealthyNotAnException PASSED
+
+HealthCheckerTest > waitHealthyTimesOutCleanlyWhenNothingAnswers PASSED
+
+HealthCheckerTest > waitHealthyReturnsOnTheFirstHealthyProbe PASSED
+
+HealthCheckerTest > aTwoHundredThatDoesNotReportHealthyIsNotHealthy PASSED
+
+HealthCheckerTest > aWrongPasswordIsUnhealthyWithTheServersStatus PASSED
+
+HealthCheckerTest > waitHealthyIsBoundedAndReturnsTheLastObservation PASSED
+
+HealthCheckerTest > aHealthyTwoHundredIsReportedHealthy PASSED
+
+LoopbackAuditTest > distinguishesWildcardListenRow PASSED
+
+LoopbackAuditTest > formatsIpv6LoopbackAndWildcard PASSED
+
+LoopbackAuditTest > parsesLoopbackListenRow PASSED
+
+LoopbackAuditTest > udpRowsCarryPortForMdnsDetection PASSED
+
+LoopbackAuditTest > skipsHeaderAndJunk PASSED
+
+LoopbackAuditTest > formatsIpv4LittleEndianWord PASSED
+
+ManifestTest > roundTripsVersionsAndEntries PASSED
+
+ManifestTest > unknownFieldsTolerated PASSED
+
+ManifestTest > rejectsManifestVersionDriftFromLock PASSED
+
+ManifestTest > rejectsUnsafeManifestPaths PASSED
+
+PayloadExtractionValidationTest > aTarEntryThatEscapesTheRootIsRejected PASSED
+
+PayloadExtractionValidationTest > aStaleMarkerVersionIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > aShaMismatchIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > aCompleteValidExtractionReturnsNull PASSED
+
+PayloadExtractionValidationTest > aMissingEntryFileIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > aMissingServerBundleIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > pluginSeedEntriesAreVerifiedAtTheirPromotedLocation PASSED
+
+PayloadExtractionValidationTest > sha256MatchesTheJdkDigest PASSED
+
+PayloadExtractionValidationTest > unpackRestoresFilesAndDirectories PASSED
+
+PayloadExtractionValidationTest > aMissingMarkerMeansFirstRunOrWipe PASSED
+
+PayloadExtractionValidationTest > aSizeMismatchIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > anUnsafeManifestEntryIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > anUnreadableMarkerIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > aMissingLauncherIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > aTruncatedTarEntryIsRejected PASSED
+
+PayloadExtractorTest > verifyDetectsCorruptedContent PASSED
+
+PayloadExtractorTest > unpackTarExtractsFilesAndNestedDirs PASSED
+
+PayloadExtractorTest > verifyDetectsMissingMarker PASSED
+
+PayloadExtractorTest > unpackTarRejectsPathEscape PASSED
+
+RestartBackoffTest > delayIsNeverBelowTheFloorNorAboveTheCap PASSED
+
+RestartBackoffTest > totalWorstCaseBackoffBudgetIsBounded PASSED
+
+RestartBackoffTest > delayGrowsExponentiallyUntilTheCap PASSED
+
+RestartBackoffTest > firstRetryLandsBetweenHalfAndOneAndAHalfSeconds PASSED
+
+RestartBackoffTest > supervisorGivesUpAfterEightAttempts PASSED
+
+RestartBackoffTest > attemptsAreOneBasedAndInvalidInputIsRejected PASSED
+
+RestartBackoffTest > jitterBandIsHalfToOneAndAHalfOfTheExponentialStep PASSED
+
+RuntimeEnvTest > buildCarriesTheServerAuthAndIdentity PASSED
+
+RuntimeEnvTest > buildPointsEveryWritablePathAtAppPrivateStorage PASSED
+
+RuntimeEnvTest > portAndUserAreFixedAndValid PASSED
+
+RuntimeEnvTest > buildHonoursALoopbackHostnameOverrideButNothingElse PASSED
+
+RuntimeEnvTest > buildPutstheBundledToolsFirstOnThePath PASSED
+
+RuntimeEnvTest > hostnameAcceptsTheFullLoopbackSet PASSED
+
+RuntimeEnvTest > hostnameIsFailClosedForEveryNonLoopbackRequest PASSED
+
+RuntimeStateMachineTest > coldStartPathIsLegal PASSED
+
+RuntimeStateMachineTest > everyStatusKnowsItsLegalTargets PASSED
+
+RuntimeStateMachineTest > noStateSkipsExtractionOnReentry PASSED
+
+RuntimeStateMachineTest > aCrashCanOnlyReachHealthyThroughStarting PASSED
+
+RuntimeStateMachineTest > userStopIsLegalFromEveryActiveState PASSED
+
+RuntimeStateMachineTest > reEntryFromDeadEndsGoesThroughExtraction PASSED
+
+RuntimeStateMachineTest > impossibleTransitionsAreRejected PASSED
+
+RuntimeStateMachineTest > crashRestartCycleIsLegal PASSED
+
+RuntimeStateMachineTest > theWholeTableIsClosedAndSelfConsistent PASSED
+
+RuntimeStateMachineTest > giveUpIsLegalFromEveryActiveState PASSED
+
+RuntimeStateMachineTest > retryWithinOneStartAttemptIsLegal PASSED
+
+RuntimeVersionTest > aWrongOpencodeVersionIsRejected PASSED
+
+RuntimeVersionTest > thePinsMatchTheLockfileContract PASSED
+
+RuntimeVersionTest > aWrongRipgrepVersionIsRejected PASSED
+
+RuntimeVersionTest > everyMismatchIsReportedTogether PASSED
+
+RuntimeVersionTest > safeRelativePathsAreAccepted PASSED
+
+RuntimeVersionTest > aWrongBunVersionIsRejected PASSED
+
+RuntimeVersionTest > aWrongOpencodeCommitIsRejected PASSED
+
+RuntimeVersionTest > aManifestWithoutFilesIsRefusedOnParse PASSED
+
+RuntimeVersionTest > aWrongPayloadVersionIsRejected PASSED
+
+RuntimeVersionTest > aMatchingManifestIsValid PASSED
+
+RuntimeVersionTest > unsafePathsAreRejected PASSED
+
+RuntimeVersionTest > aManifestWithAnUnsafePathIsRefusedOnParse PASSED
+
+RuntimeVersionTest > manifestJsonRoundTrips PASSED
+
+RuntimeVersionTest > aWrongGitVersionIsRejected PASSED
+
+SecretNamesTest > rejectsPathTraversalAndJunk PASSED
+
+SecretNamesTest > blobFileNameIsContained PASSED
+
+SecretNamesTest > acceptsProviderStyleNames PASSED
+
+SecretNamesTest > providerIdRoundTrip PASSED
+
+CodeHighlightTest > emptyAndWhitespaceInputsAreLossless PASSED
+
+CodeHighlightTest > shellVariablesAndCommands PASSED
+
+CodeHighlightTest > capitalisedIdentifiersAreTypes PASSED
+
+CodeHighlightTest > javascriptTemplateLiteralIsAString PASSED
+
+CodeHighlightTest > kotlinKeywordsNumbersAndCalls PASSED
+
+CodeHighlightTest > realFixturesStayByteExact PASSED
+
+CodeHighlightTest > unknownLanguageStillTokenisesStringsAndNumbers PASSED
+
+CodeHighlightTest > supportedLanguagesAreReportedHonestly PASSED
+
+CodeHighlightTest > jsonKeysAreTypesAndLiteralsAreKeywords PASSED
+
+CodeHighlightTest > lineAndBlockComments PASSED
+
+CodeHighlightTest > punctuationRunsMerge PASSED
+
+CodeHighlightTest > stringsKeepTheirEscapes PASSED
+
+CodeHighlightTest > unterminatedStringStopsAtTheNewline PASSED
+
+CodeHighlightTest > pythonTripleQuotedStringIsOneSpan PASSED
+
+CodeHighlightTest > commentDoesNotSwallowTheNextLine PASSED
+
+CodeHighlightTest > diffLinesAreColouredBySign PASSED
+
+CodeHighlightTest > languageAliasesResolve PASSED
+
+MarkdownTest > inlineSpanTextAlwaysConcatenatesBackToTheVisibleText PASSED
+
+MarkdownTest > emptyInputProducesNoBlocks PASSED
+
+MarkdownTest > fencedCodeBlockKeepsLanguageAndByteExactSource PASSED
+
+MarkdownTest > blockquoteAndRule PASSED
+
+MarkdownTest > pipeTableSplitsCells PASSED
+
+MarkdownTest > crlfIsNormalised PASSED
+
+MarkdownTest > underscoreInsideAWordIsNotEmphasis PASSED
+
+MarkdownTest > listsCarryDepthMarkerAndOrdering PASSED
+
+MarkdownTest > linksCarryLabelAndUrl PASSED
+
+MarkdownTest > unterminatedFenceIsStillCodeBecauseTheRestHasNotArrived PASSED
+
+MarkdownTest > indentedContinuationJoinsThePreviousItem PASSED
+
+MarkdownTest > backslashEscapesAreLiteral PASSED
+
+MarkdownTest > boldItalicStrikeAndInlineCode PASSED
+
+MarkdownTest > paragraphIsOneBlockAndKeepsSoftLineBreaks PASSED
+
+MarkdownTest > unterminatedEmphasisStaysLiteralWhileStreaming PASSED
+
+MarkdownTest > strongUsesDoubleMarkersAndNestsEmphasis PASSED
+
+MarkdownTest > languageNormalisationIsLowercaseAndAliasFree PASSED
+
+MarkdownTest > blankLineSeparatesParagraphs PASSED
+
+MarkdownTest > tildeFenceAndInfoStringAttributes PASSED
+
+MarkdownTest > atxHeadingsCarryTheirLevel PASSED
+
+MarkdownTest > unterminatedLinkStaysLiteralWhileStreaming PASSED
+
+BUILD SUCCESSFUL in 2m 11s
+35 actionable tasks: 33 executed, 2 from cache
+P10-UNIT PASS: JVM tests=286 failures=0 errors=0 skipped=0 (unit tests are NOT runtime evidence - the device gates below are)
+P10 MODE gradle-only: no payload, no emulator, no device verdicts, no artifacts in this run
