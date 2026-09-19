@@ -32,7 +32,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
@@ -139,7 +139,7 @@ fun ChatScreen(
                     onClick = onOpenFiles,
                     modifier = Modifier.semantics { testTag = "open_files" },
                 ) {
-                    Icon(Icons.Filled.Folder, contentDescription = filesLabel)
+                    Icon(Icons.Filled.List, contentDescription = filesLabel)
                 }
                 IconButton(
                     onClick = onOpenSessions,

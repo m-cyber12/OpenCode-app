@@ -82,6 +82,12 @@ run "screenshot sanity checker self-test (black/blank vs a real screen)" \
 run "uiautomator dump reader self-test (tap targets, disabled states, diagnostics)" \
   python3 "$ROOT/phase10/scripts/test-p10d-ui.py"
 
+# ---- 4c. icons: only what material-icons-core actually ships -----------------
+# Advisory (never fails the run): naming the trap here costs a second, while
+# discovering it in a compile step costs a whole pipeline run.
+run "compose icon availability (material-icons-core only)" \
+  python3 "$ROOT/phase10/scripts/check-compose-icons.py"
+
 # ---- 5. the Phase 10 workflow exists in the tree and cannot sign ------------
 # The workflow is REQUIRED to explain which secrets must never be added (and its
 # own guard step checks that they are absent), so NAMING them is fine. What must

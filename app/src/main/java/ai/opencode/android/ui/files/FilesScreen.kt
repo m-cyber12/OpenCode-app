@@ -22,8 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -277,14 +276,19 @@ private fun Listing(
                         .semantics { testTag = if (node.isDirectory) "files_dir" else "files_file" },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        imageVector = if (node.isDirectory) Icons.Filled.Folder else Icons.Filled.Description,
-                        contentDescription = stringResource(
-                            if (node.isDirectory) R.string.files_dir_description else R.string.files_file_description,
-                        ),
-                        tint = if (node.isDirectory) chat.attention else chat.muted,
-                    )
-                    Spacer(Modifier.width(12.dp))
+                    // A folder gets the "opens into something" affordance; a file
+                    // row is just its name (an icon that says nothing would be
+                    // noise). Both carry an accessible name either way.
+                    if (node.isDirectory) {
+                        Icon(
+                            imageVector = Icons.Filled.KeyboardArrowRight,
+                            contentDescription = stringResource(R.string.files_dir_description),
+                            tint = chat.attention,
+                        )
+                        Spacer(Modifier.width(12.dp))
+                    } else {
+                        Spacer(Modifier.width(12.dp))
+                    }
                     Text(
                         text = node.name,
                         style = MaterialTheme.typography.bodyMedium,
