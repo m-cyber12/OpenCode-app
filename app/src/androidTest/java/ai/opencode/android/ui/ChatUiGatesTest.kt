@@ -99,6 +99,17 @@ class ChatUiGatesTest {
 
     private companion object {
         const val SES = "ses_gate1"
+
+        /**
+         * The project path the FILES fixture renders. The U9 gate asserts that the
+         * screen shows exactly this string AND that "Copy path" hands it back, so
+         * both sides must read one constant: the first version hard-coded the path
+         * twice with different applicationIds (`.opencode` in the assertion,
+         * `.opencode.debug` in the surface) and the gate failed on its own fixture
+         * while the screen was correct.
+         */
+        const val FILES_FIXTURE_PATH =
+            "/storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces/gates"
     }
 
     // ---- recorded callbacks -------------------------------------------------
@@ -426,7 +437,7 @@ class ChatUiGatesTest {
     private fun FilesSurface() {
         FilesScreen(
             projectName = "gates",
-            projectPath = "/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/workspaces/gates",
+            projectPath = FILES_FIXTURE_PATH,
             locationIsExternal = true,
             currentPath = filesPath.value,
             nodes = filesNodes.toList(),
@@ -1445,7 +1456,7 @@ class ChatUiGatesTest {
      */
     @Test
     fun u9_fileBrowserListsOpensAndOffersAWayOut() {
-        val rootPath = "/storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces/gates"
+        val rootPath = FILES_FIXTURE_PATH
         renderFiles(
             path = "",
             nodes = listOf(
