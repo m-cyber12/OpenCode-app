@@ -950,7 +950,13 @@ would be a re-engineering of OpenCode's file tools, i.e. a Core Rule 2/3 violati
 
 ## A.6 Workstream B: verification (CI, Android 14, non-root)
 
-Run **35449627090** (head `3777298`), from `docs/progress/phase10-evidence/`:
+Run **35449627090** (head `3777298`). The `P10_WS_*` names below are the harness's
+fold of `docs/progress/phase10-evidence/workspace-gates.log` and `workspace-visibility.log`
+(the two gate suites ran under their Phase 7 names `P7_W*` / `P10D_VISIBILITY_*`; the
+fold renames them so they are Phase 10 verdicts). In that run the fold wrote them to
+the wrong lines file (§A.6, last paragraph), so they are in those two logs and in the
+job log but not in that run's `GATES_SUMMARY.txt`; the run after it fixed that. Either
+way `phase10_gate_fails=0` in that run's summary already counted them:
 
 ```
 P10_WS_W1_PROJECT_LIFECYCLE PASS   :: created/renamed/adopted/delete=true
