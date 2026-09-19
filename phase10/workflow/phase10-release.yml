@@ -53,6 +53,7 @@ on:
     branches:
       - "arena/01a0b15e-opencode-app"
       - "arena/01a0b557-opencode-app"
+      - "arena/01a0b9d5-opencode-app"
     paths-ignore:
       - "docs/progress/phase10-evidence/**"
       - "docs/progress/phase9-evidence/**"
@@ -67,6 +68,15 @@ on:
         description: "compile + JVM tests only (no emulator, no artifacts)"
         required: false
         default: "false"
+
+# ONE PIPELINE AT A TIME per branch. Two overlapping runs rewrite the same generated
+# evidence files and race to push them on the same branch; on 2026-09-19 that lost a
+# whole run's GATES_SUMMARY (see appendix A of the phase 10 report). cancel-in-progress
+# is deliberately false: an in-flight run is the only thing that produces gate evidence,
+# so the newest push waits rather than throwing away an almost-finished verdict run.
+concurrency:
+  group: phase10-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   phase10-release:
