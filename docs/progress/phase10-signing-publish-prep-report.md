@@ -652,3 +652,444 @@ python3 phase10/scripts/test-check-apk.py               # SELFTEST PASS (17 chec
   `docs/SECURITY.md`, `versions.lock`, `.gitignore`.
 * **Not changed**: any runtime, client, protocol or packaging behaviour. Phase 10
   packages and verifies; it does not re-engineer.
+
+---
+
+# Appendix A — 2026-09-19: signed-build first-run diagnosis + workspace file visibility
+
+Branch `arena/01a0b9d5-opencode-app` (base `0e6b222`, the merge of the Phase 10
+session). Everything above is unchanged; this appendix is appended (the honesty
+table in §0 is not rewritten, per the Phase 1 correction pattern).
+
+Two problems were reported from manual testing of the signed build, and they are
+different in kind:
+
+* **A** — `90-real-device-signed.sh` (v1) reported `P10D_FIRST_RUN FAIL :: no working
+  screen after 941s` on the signed release build, with 0 screenshots, 3
+  packaging/runtime lines in logcat and no composer — while the owner then installed
+  the same APK by hand and used it normally (real answers, a real tool call, the
+  configured OpenRouter model selected). A gate that fails a build a human is using
+  is worse than no gate: it teaches everyone to ignore red.
+* **B** — a real product defect the human found while testing: the agent's files
+  landed in `/data/data/<pkg>/files/workspaces/<project>`, i.e. app-private storage
+  that no file manager, no MTP/USB browse and no non-root `adb shell` can read. The
+  app was a sealed black box even though the agent really was writing files.
+
+## A.0 Status at the end of this session
+
+| Item | Status |
+|---|---|
+| A: v1 driver diagnosed, rewritten, and its helpers self-tested | **DONE** (§A.2, §A.3) |
+| A: the rewritten driver run against the *signed* build on the owner's phone | **NOT TESTED** — needs the owner's phone + signed APK (§A.4); the script is ready and the exact command is in §A.4 |
+| B: projects moved out of app-private storage into the app's own directory on shared storage | **IMPLEMENTED + TESTED** in CI on Android 14, from a non-root shell (§A.6) |
+| B: in-app file browser (OpenCode's own file API) + SAF "Save a copy" / "Publish to a folder" | **IMPLEMENTED + TESTED** in CI (§A.6, gate `P6_U9`) |
+| B: verified reachable, on a phone, by a file manager | **NOT TESTED, and partly impossible**: on Android 11+ no app may browse another app's `Android/data` (platform rule). The paths that *are* verified: `adb`/PC without root (CI, §A.6) and SAF publish into a folder the user picks. The owner's phone test must confirm both on real hardware (§A.4) |
+| Phase 7 W1–W3 re-verified against the new root | **TESTED** in CI (§A.7) |
+| Core Rule 5 report for the storage move | in §A.8 |
+
+The CI evidence for this appendix is run **35449627090** (job `phase10-release`,
+head `3777298`): **90 PASS verdict lines, 0 FAIL**, `phase6_ui_fails=0
+phase10_gate_fails=0 phase9_gate_fails=0`, JVM tests 286/0/0/0. The run before it
+(35448416605) is the one that caught the two gate-level bugs this appendix records
+(§A.6 last paragraph).
+
+## A.1 What this session changed, in one list
+
+* **New**: `app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt` (the file
+  browser), `phase10/scripts/p10d-ui.py` + `test-p10d-ui.py`,
+  `phase10/scripts/p10d-png.py` + `test-p10d-png.py`,
+  `phase10/scripts/92-workspace-visibility.sh`,
+  `phase10/scripts/93-workspace-gates.sh`,
+  `phase10/scripts/check-compose-icons.py`,
+  `app/src/test/java/ai/opencode/android/projects/ProjectStoreMigrationTest.kt`
+  (7 JVM tests), the `W4` gate in `WorkspaceIsolationGatesTest`, the `U9` gate in
+  `ChatUiGatesTest`.
+* **Rewritten**: `phase10/scripts/90-real-device-signed.sh` (v2 — same file name, so
+  the owner's command does not change).
+* **Changed**: `runtime/RuntimePaths.kt` (project root resolution + legacy root),
+  `projects/ProjectStore.kt` (migration + new root), `projects/SafProjectTransfer.kt`
+  (`publishTree`, `saveFileCopy`), `ui/AppRoot.kt` (files route, loaders, SAF
+  launchers), `ui/chat/ChatScreen.kt` + `ui/projects/ProjectsScreen.kt` (entry
+  points), `MainActivity.kt` (Compose test tags exposed as resource ids),
+  `res/values/strings.xml`, `phase10/scripts/00-run-phase10.sh` (stage 5b + verdict
+  fold), `phase10/scripts/30-static-checks.sh` (three new self-tests/checks),
+  `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, `docs/CAPABILITY-MATRIX.md`,
+  `docs/PRIVACY-POLICY.md`, `docs/STORE-LISTING.md`, `phase10/README.md`.
+* **Deliberately untouched**: signing, the store listing package (except the one
+  storage sentence that became false), branding, the emulator gate suite's
+  semantics.
+
+## A.2 Workstream A: why v1 failed a build that worked
+
+### A.2.1 What v1 actually did
+
+Re-reading v1 (`git show 0e6b222:phase10/scripts/90-real-device-signed.sh`) gives its
+first-run verdict in eight lines:
+
+```bash
+adb shell am start -n "$PKG/ai.opencode.android.MainActivity" ...
+T0=$(date +%s)
+HEALTH=0
+for i in $(seq 1 60); do          # up to 5 minutes: first run extracts ~1 GB
+  if uia_has "Ready" || uia_has "Continue" || uia_has "Start a conversation" || uia_has "Projects"; then HEALTH=1; break; fi
+  sleep 5
+done
+T1=$(( $(date +%s) - T0 ))
+... rd FIRST_RUN 1 "no working screen after ${T1}s (see p10d-ui.xml, run.log; ...)"
+```
+
+with `uia_dump()` as
+
+```bash
+adb shell uiautomator dump /sdcard/p10d-ui.xml >/dev/null 2>&1 || return 1
+adb shell cat /sdcard/p10d-ui.xml 2>/dev/null > "$OUT/p10d-ui.xml"
+```
+
+That is the whole readiness test. Four defects follow directly from it, and only the
+first is a matter of degree:
+
+1. **`uiautomator dump` waits for the window to become idle, and this app's first-run
+   screen never does.** The welcome screen shows an indeterminate
+   `CircularProgressIndicator` while the payload is extracted and the server starts
+   (`ui/welcome/WelcomeScreen.kt`, `StageIndicator`). Two facts combine:
+   * v1 never disabled animations. CI's own driver has set
+     `settings put global window_animation_scale 0` (and the transition/animator
+     scales) since Phase 4 — `phase10/scripts/00-run-phase10.sh`, §4 "fresh emulator";
+     v1 has no such line.
+   * uiautomator's default `waitForIdleTimeout` is 10 s; a window that never goes idle
+     makes the dump take that timeout and then fail with `ERROR: could not get idle
+     state`, leaving `/sdcard/p10d-ui.xml` absent or stale.
+   The arithmetic fits that reading exactly: 941 s over 60 iterations is **15.7 s per
+   iteration**, versus the 5 s the loop intends (60 × 5 = 300 s). The extra ~10 s per
+   iteration is the idle timeout. A dump that fails leaves nothing to grep, so all
+   four needles miss, every iteration, and the loop can only ever print "no working
+   screen".
+2. **The loop threw away the one string that would have explained it.**
+   `uia_dump` redirects uiautomator's stderr to `/dev/null`; the verdict therefore
+   cannot distinguish "the app is broken" from "the dump never happened" from "the
+   keyguard was in front".
+3. **No preflight and no foreground check.** v1 never woke the device, never
+   dismissed the keyguard, and never asked which window had focus. On a phone that
+   had gone to sleep during the (long) install-and-launch step, every dump is a
+   lock-screen dump with none of the four needles — indistinguishable from an app
+   failure.
+4. **No screenshots until stage R5.** The bundle's `screenshots/` directory is filled
+   by `70-device-screenshots.sh`, which runs *after* the first-run verdict. So when
+   R4 failed there were zero images of the failure — consistent with the reported
+   "0 screenshots".
+
+A fifth defect is separate, specific and certain (it can be read off the code, no
+inference): **the live-turn gate could never have worked.** v1 typed the key into the
+settings field but never filled the provider-id field:
+
+```bash
+if uia_tap "Settings" ...; then
+    c=$(uia_center "Paste the key" ...); adb shell input text "$MODEL_KEY"; uia_tap "Save key"
+```
+
+while `SettingsScreen.kt` enables Save only when *both* are non-blank
+(`enabled = providerId.isNotBlank() && apiKey.isNotBlank()`, `key_save`). Save stayed
+disabled, no credential reached the server, and the live gate would have reported "no
+model served the turn" — the reason the owner's manual test (key entered in the app)
+succeeded where the script could not.
+
+### A.2.2 The manual success is the corroboration
+
+The owner's manual run of the same signed APK — open by hand, send messages, get real
+answers, a real file-write tool card — is independent evidence that the artifact was
+fine. Together with the mechanism above, the honest statement is:
+
+* **Proven from code**: defects 2–5 (no dump diagnostics; no wake/unlock/foreground
+  preflight; no screenshots before the verdict; the provider-id field never filled).
+* **Leading cause for "no working screen after 941s", not yet proven line-by-line**:
+  defect 1 (uiautomator never idle because animations were left on, with the ~15.7 s
+  per-iteration timing as the supporting measurement). The decisive confirmation is
+  the `run.log`/`p10d-ui.xml` from that v1 run. **The v1 bundle was requested and had
+  not been supplied when this appendix was written** — if it arrives, §A.2.3 is where
+  its lines go; if the dump turns out to have been *present* and simply lacked the
+  needles, then the cause is defect 3 or 4 (a screen the driver did not recognise)
+  and the v2 driver still covers it, because v2 does not depend on recognising a
+  string: it reports what is on screen at every step.
+
+### A.2.3 What the raw v1 bundle would settle (fill-in slot)
+
+| Line to look for | What it proves |
+|---|---|
+| `ls -l p10d-ui.xml` → 0 bytes / missing | the dump never produced a tree → defect 1 (idle timeout) or a locked device |
+| `p10d-ui.xml` present and containing a lock screen (`com.android.systemui`, "Swipe up") | defect 3: the phone was asleep/locked |
+| `p10d-ui.xml` present with app text that v1 did not look for | defect 4: a real screen with the wrong needles |
+| `screenshots.log`/`SUMMARY.txt` | confirms the "0 screenshots / composer never found" half |
+
+## A.3 What the rewritten driver does differently
+
+`phase10/scripts/90-real-device-signed.sh` v2 keeps the same interface (same flags,
+same `p10d-out/` bundle, same `P10D_<GATE> PASS|FAIL|SKIP :: detail` verdict lines)
+and replaces the readiness test with a state machine that can explain itself. Every
+defect above maps to a change:
+
+| v1 defect | v2 |
+|---|---|
+| animations left on → `uiautomator` never idle (A.2.1 #1) | **R0** switches the three animation scales off before anything else, with the reason written in the script; if the device still reports a locked screen after wake + `wm dismiss-keyguard`, the run says `P10D_DEVICE_AWAKE FAIL :: ... unlock the phone ... and re-run`, i.e. blames the right thing |
+| dumps fail silently (#2) | `ui_dump` retries three times, keeps uiautomator's own message, and writes it to `DIAGNOSIS.txt`; `wait_for` on timeout prints the device screen state, the focused window, the node histogram and the visible text, and takes a screenshot named after the step (`screenshots/*-timeout-*.png`) |
+| no preflight / no foreground check (#3) | R0 wakes, dismisses the keyguard, keeps the screen on; `foreground()` and `screen_state()` run on every wait tick; `handle_interruptions()` recognises the ANR dialog, the crash dialog and the notification-permission dialog and answers them like a user would (the notification dialog is the one a human dismisses without thinking — and the one that can cover the app on a fresh install) |
+| no screenshots before the verdict (#4) | a screenshot is taken after **every** meaningful action (launch, welcome, each transition, prompt typed, answer, tool card, files screen), plus every 60 s during each wait; stage R10 requires ≥6 screenshots and zero of them blank |
+| "the file exists" was the only screenshot check | `p10d-png.py` decodes each PNG and reports mean brightness, near-black fraction and content fraction; a uniformly-colored frame (black *or* white — an off screen, a locked screen, an unpainted surface) is rejected. Its self-test asserts exactly that: black and uniform-white frames rejected, light- and dark-theme screens with text accepted |
+| `grep`-based taps matched disabled controls | `p10d-ui.py` refuses a non-clickable or disabled node and prints `FOUND_NOT_TAPPABLE enabled=false clickable=...`; matching is by Compose test tag exposed as an Android resource id (`welcome_continue`, `composer_send`, `files_publish`, …) with text/description as a fallback. Self-tested by `test-p10d-ui.py` (14 checks) |
+| the provider-id field was never filled (#5) | R6 taps `key_provider`, types the provider (default `openrouter`, override with `P10D_PROVIDER`), then `key_value`, then `key_save`, and logs when Save never became tappable |
+| the prompt could be mangled by the device shell | the prompt is typed with `%s` for spaces and contains **no** shell metacharacters (`>`, `&&`, `|`), because `adb shell input text` forwards the string through the device's shell |
+| "no model served it" was indistinguishable from "it broke" | live-turn outcomes are split: PASS (answer + tool card), FAIL (answer but no card = the model echoed instead of running), SKIP with the app's own reason (`key was rejected` / `credit` / `unreachable` / `not running`) |
+| the file-visibility question did not exist | **R7** runs `92-workspace-visibility.sh` against the project path the app itself displayed in **R5**, so the app's claim and an external observer's check are compared on the same string |
+
+Why the tags exist at all: on a `debuggable=false` build there is no `run-as`, so the
+only window onto the app from a desktop is uiautomator's view of the real window.
+`MainActivity` now wraps the composition in
+`Box(Modifier.semantics { testTagsAsResourceId = true })`, which exposes Compose test
+tags as resource ids and changes nothing else — the U7 semantics audit still passes
+(`interactive` counts unchanged for every screen, `unnamed=0`), because a resource id
+is not read by TalkBack.
+
+## A.4 Workstream A: running the rewritten driver (the owner's step)
+
+```bash
+# on your machine, phone plugged in, USB debugging on, phone UNLOCKED:
+bash phase10/scripts/90-real-device-signed.sh --apk phase10/signing/<your-signed>.apk
+```
+
+The script auto-finds `phase10/signing/*.apk` when `--apk` is omitted. Useful extras:
+`--cert-sha256 <fingerprint>` (proves it is your key), `--skip-live` (no model turn),
+`--timeout-scale 2` (double every wait on a slow device).
+
+The run prints the phone's screen state before it starts; if the keyguard cannot be
+dismissed (a PIN lock), it says so explicitly instead of reporting an app failure.
+Keep the whole `p10d-out/` directory — `SUMMARY.txt` is the verdict list,
+`screenshots/` is the step-by-step image trail, `ui/` holds the accessibility dump of
+every step, and `DIAGNOSIS.txt` is written whenever a step fails.
+
+**Verification status of the rewritten driver itself** (Core Rule 4, honestly):
+
+* its two helpers are tested in CI on every run (`test-p10d-png.py`: 5 checks;
+  `test-p10d-ui.py`: 14 checks — both wired into `30-static-checks.sh`);
+* the driver's *flow* is the same flow CI drives on the emulator every run (first run,
+  project creation, composer, live turn, screenshots) — but that is a different script
+  against a different build;
+* the driver has **not** been run against the signed APK on a phone in this session
+  (**NOT TESTED**). It cannot be: no device is attached to the authoring environment.
+  Until it runs, the honest statement about the signed build stays what §2 of this
+  report says — the owner has used it successfully by hand.
+
+## A.5 Workstream B: the decision, and why
+
+### A.5.1 What the platform actually allows (checked, not assumed)
+
+| Location | Other apps | `adb` / PC, no root | POSIX runtime can `open()`/`write()` |
+|---|---|---|---|
+| `/data/data/<pkg>/files` (app-private; where projects *were*) | no | **no** (no `run-as` on a release build) | yes |
+| `/storage/emulated/0/Android/data/<pkg>/files` (app-specific external; where projects *are* now) | **no on Android 11+** (platform blocks browsing any app's `Android/data`); on Android 10 an app with the legacy storage permission can | **yes** — verified in CI on Android 14: a non-root shell listed the directory and `cat`-ed a file the OpenCode server itself wrote | yes |
+| A folder the user picks through SAF (`Documents/…`) | yes | yes | **no** — SAF gives URI access to the *framework*, not real paths to a bundled POSIX process. Writing there by path needs `MANAGE_EXTERNAL_STORAGE`, which Play restricts to a narrow set of app types (file managers, backup apps, …); this app does not qualify and shipping it would risk the submission |
+
+Sources: the Android storage-behaviour changes for 10/11 (`Android/data` restrictions,
+scoped storage) and Play's All-files-access policy. The claim used here is deliberately
+the narrow one the CI evidence supports.
+
+### A.5.2 The decision
+
+**Both options were implemented, in the order that makes each one honest:**
+
+1. **Move the live project root** to `<externalFilesDir>/workspaces/<project>`
+   ("Option 2" in the task). This is the product fix: the agent's files are now in a
+   real, `adb`-reachable location with no permission on any supported API level, and
+   the app keeps working (falling back to the old internal root) on a device where
+   external storage is not mounted.
+2. **Add the in-app file browser + SAF publication** ("Option 1", plus one extra
+   action). This is what makes the fix *actually* usable on a modern phone, because
+   Android 11+ stops a file manager from opening `Android/data`. The browser reads
+   through OpenCode's own `GET /file` / `GET /file/content` — the same layer the
+   agent's tools use, so the user sees the agent's workspace and not a parallel
+   copy — and "Publish to a folder" mirrors the project into a folder the user picks
+   with the system picker, where **every** file manager can see it.
+
+The rejected alternative is the third row of the table above: putting the live project
+directly in a user-visible folder via SAF. It is the closest match to "feels like the
+real terminal OpenCode", and it is not shippable in this architecture without
+`MANAGE_EXTERNAL_STORAGE` (policy risk) or a full VFS layer inside the runtime (which
+would be a re-engineering of OpenCode's file tools, i.e. a Core Rule 2/3 violation).
+
+### A.5.3 What was implemented, precisely
+
+* `RuntimePaths` now carries `filesDir`, the legacy internal root
+  (`internalWorkspaces`) and the external root (`externalWorkspaces`), and resolves
+  `workspaces` to the external one when it exists. `Context.getExternalFilesDir(null)`
+  both creates the directory and returns null when the volume is not mounted — the
+  availability check *is* the null check.
+* `ProjectStore.get()` builds on that root and passes the legacy root as a migration
+  source. `ProjectStore.ensureMigrated()` runs once per process start and:
+  * does nothing when there is nothing to migrate (fresh install, no legacy root, or
+    the legacy root *is* the root);
+  * does nothing when the new root already holds a project — so a project the user
+    deleted is never resurrected by a later start;
+  * moves each project (rename first, copy+delete as the fallback, since the two
+    locations are usually different filesystems), then removes the legacy directory
+    only once it is empty;
+  * leaves the originals in place if a move fails.
+  7 JVM tests cover resolution, cross-filesystem moves, idempotence, the
+  never-resurrect rule, the non-empty-target rule and preference history surviving the
+  move (`ProjectStoreMigrationTest`, part of the 286 tests CI ran).
+* `FilesScreen` (a pure function of the state it is handed, like every other screen —
+  the Phase 6 purity check enforces it) shows: the exact on-device path, whether it is
+  the external or the fallback location, the directory listing, an in-place file
+  viewer with a size/truncation note, `Copy path`, `Save a copy` (SAF `CreateDocument`)
+  and `Publish to a folder` (SAF `OpenDocumentTree`).
+* `SafProjectTransfer.publishTree()` mirrors a project into the picked folder
+  (overwrite-in-place, symlinks skipped, returns a file/byte count);
+  `saveFileCopy()` writes one file. Published copies are exports, not syncs — a file
+  deleted in the project is not deleted from an earlier publish, and the report says
+  so rather than implying a two-way sync.
+* Entry points: a files action in the chat top bar, and a `Files` item in each project
+  row's menu (which selects that project first, so the browser cannot show one
+  project's files under another project's name).
+
+## A.6 Workstream B: verification (CI, Android 14, non-root)
+
+Run **35449627090** (head `3777298`), from `docs/progress/phase10-evidence/`:
+
+```
+P10_WS_W1_PROJECT_LIFECYCLE PASS   :: created/renamed/adopted/delete=true
+P10_WS_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false
+                                      readOwnA=true readOwnB=true escapeRefused=true
+P10_WS_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: projectFile=<external root>/p7-memory-.../AGENTS.md
+                                      globalFile=/data/user/0/<pkg>/files/xdg/config/opencode/AGENTS.md
+P10_WS_W4_WORKSPACE_VISIBLE PASS   :: root=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/workspaces
+                                      external=true underData=false legacyRoot=/data/user/0/<pkg>/files/workspaces
+                                      serverWrote=true readBack=true marker=P10_VISIBLE_... shellStatus=200 dirOnDisk=true size=26
+P10_WS_VISIBILITY_LOCATION PASS    :: the app-specific external root exists and holds 2 project(s) (Android 14)
+P10_WS_VISIBILITY_SHELL_LIST PASS  :: a non-root shell lists the project directory (.../workspaces/w4-storage-...): 4 lines
+P10_WS_VISIBILITY_SHELL_READ PASS  :: read p10-visible.txt from outside the app: 'P10_VISIBLE_...'
+P10_WS_VISIBILITY_OLD_ROOT_EMPTY PASS :: the old app-private root is not readable from a shell at all:
+                                      ls: /data/data/<pkg>/files/workspaces: Permission denied
+P10_WS_VISIBILITY_SHELL_BASELINE PASS :: an unprivileged shell cannot read /data/data/<pkg> at all, so the PASSs above are real
+P6_U9 PASS  :: listed=true pathShown=true locationCopy=true openedDir=true upShown=true upWorks=true
+               openedFile=true viewer=true body=true saveCopy=true/true closed=true publish=true/true
+               copyPath=true empty=true
+P10_SMOKE_UI_U9 PASS :: (the same gate against the release-shaped build)
+P10-UNIT PASS :: JVM tests=286 failures=0 errors=0 skipped=0
+phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0
+```
+
+Notes on what these actually prove, and what they do not:
+
+* `SHELL_LIST`/`SHELL_READ` are executed by the **host** against the path the app
+  printed; the shell user reaches the directory through the `ext_data_rw` group on the
+  app's own external directory (`ls -la` output is in
+  `docs/progress/phase10-evidence/workspace-visibility.log`). This is the same vantage
+  point `adb pull` and a desktop file browser use. The `SHELL_BASELINE` check exists so
+  a PASS cannot be an artifact of a device where *everything* is readable: the same
+  shell is refused `/data/data/<pkg>`.
+* `W4` is the app's own claim (root resolved outside `/data/data`, and a shell command
+  run through OpenCode's `/session/:id/shell` wrote and read back a marker file);
+  `V*` is the external observer. Neither is sufficient alone — that is why both exist.
+* The emulator is **Android 14**, the same major version as the owner's phone, but an
+  emulator is still an emulator: the phone run is the remaining evidence (§A.4).
+* The two gate failures this stage caught in its first CI run, both now fixed and
+  pinned by a test: (1) the folded verdict lines were written to `p10-lines.txt`, which
+  the *smoke* stage truncates a stage later, so real PASSes never reached
+  `GATES_SUMMARY.txt` — they now go to their own `p10-workspace-lines.txt`; (2) the U9
+  gate compared the screen against a fixture path with a different applicationId than
+  the surface under test was rendering — the screen was right, the assertion was wrong.
+
+## A.7 Phase 7's W1–W3 against the new storage location (the requested confirmation)
+
+**They still pass, unmodified, on the new root.** The W2 mechanism is unchanged and
+was re-checked rather than assumed: the server still scopes `/file` by the instance
+directory (`?directory=`) and still refuses an escaping read through upstream's own
+`FSUtil.contains` guard (`escapeRefused=true`, upstream's generic error body in the
+detail line). W3 shows the project `AGENTS.md` now living at
+`/storage/emulated/0/Android/data/<pkg>/files/workspaces/<project>/AGENTS.md` while the
+*global* `AGENTS.md` stays in app-private XDG config — the same split as before, with
+only the project half moved. W1 (create → rename → adopt → delete) passes on the new
+filesystem, including the rename path that now crosses a filesystem boundary on some
+devices (the JVM migration test covers the copy+delete fallback).
+
+Isolation is therefore a property of the *resolved project root*, not of the old
+location: nothing in the isolation logic keyed off `filesDir`, and the W4 gate adds the
+missing assertion that the root is deliberately outside the sandbox.
+
+## A.8 Core Rule 5 report (architecture-change rule) for the storage move
+
+1. **Which requirement changes**: not a core requirement — the core requirement
+   (real OpenCode running locally in one APK, no Termux/PC/server) is untouched. What
+   changes is a *storage-location* decision that Phase 7 had recorded as "app-private
+   is the point" (`docs/SECURITY.md` before this session). The product requirement it
+   conflicted with is the one the owner hit: the user must be able to see and take
+   their files.
+2. **Why**: `/data/data` is unreadable from every vantage point a non-root user has
+   (no file manager, no MTP, no non-root `adb`), so the agent's output was invisible
+   outside the app.
+3. **Evidence**: the CI verdict lines in §A.6 (`SHELL_LIST`, `SHELL_READ`) plus the
+   baseline that the same shell cannot read `/data/data/<pkg>`; the app-side W4 gate;
+   and the owner's original observation from manual testing (this appendix's premise).
+4. **Alternatives investigated**: (a) in-app browser only — rejected as insufficient
+   alone, because it leaves the files unreachable from outside the app *and* from a
+   file manager; kept as a complement; (b) SAF-chosen project folder as the live root —
+   rejected, `MANAGE_EXTERNAL_STORAGE`/VFS implications (§A.5.1/.2); (c) do nothing and
+   document the limitation — rejected by the owner's own product judgement.
+5. **What is lost**: the guarantee that project files are unreadable to *any* other
+   process on the device. On Android 11+ they remain unreadable by other apps; on
+   Android 10 an app holding the legacy storage permission can read them, and a
+   connected PC with debugging enabled can read them. That trade is stated in
+   `docs/PRIVACY-POLICY.md` (with the exact path, the Android-10 caveat, and the
+   "uninstalling deletes your projects — export first" warning) and in
+   `docs/SECURITY.md`. Runtime internals, credentials, XDG state and logs stay in
+   app-private storage.
+
+## A.9 Honesty table for this appendix
+
+| Claim | Label | Evidence |
+|---|---|---|
+| v1's readiness loop could not distinguish "no dump" from "no app", never woke or unlocked the device, took no screenshot before the verdict, and could never fill the provider-id field | **PROVEN FROM CODE** | §A.2.1; the v1 script at `0e6b222` and `SettingsScreen.kt`'s `key_save` enablement rule |
+| the leading cause of "no working screen after 941s" is uiautomator's idle-wait against a never-idle welcome screen (animations left on) | **INFERRED, strongly supported** — timing arithmetic (941 s / 60 ≈ 15.7 s vs 5 s intended), the spinner on the first-run screen, and CI disabling animations where v1 did not | §A.2.1; needs the raw v1 bundle to close (§A.2.3) |
+| the rewritten driver's helpers work as specified (black/blank screens rejected, disabled controls refused, ANR dialogs detected) | **TESTED** (CI + local) | `test-p10d-png.py` 5 checks, `test-p10d-ui.py` 14 checks, wired into `30-static-checks.sh` on every run |
+| the rewritten driver runs end-to-end against the signed build on a phone | **NOT TESTED** | needs the owner's phone (§A.4) |
+| projects now live under the app-specific external directory and are migrated once from the old root | **IMPLEMENTED + TESTED** (CI Android 14; JVM) | `P10_WS_W4_WORKSPACE_VISIBLE`, `ProjectStoreMigrationTest` (7 tests) |
+| a non-root shell can list and read what the OpenCode server wrote there, while `/data/data/<pkg>` stays unreadable | **TESTED** (CI Android 14) | `P10_WS_VISIBILITY_SHELL_LIST/SHELL_READ/OLD_ROOT_EMPTY/SHELL_BASELINE` |
+| the in-app file browser lists, opens, offers Save-a-copy/Publish/Copy-path and has an accessible name for every control | **TESTED** (CI, debug + release-shaped builds) | `P6_U9 PASS`, `P10_SMOKE_UI_U9 PASS`, `P6_U7` (`files=6`, `unnamed=0`) |
+| a *file manager* on a modern phone can browse the project directory | **NOT POSSIBLE on Android 11+ by platform rule**; the verified substitutes are `adb`/PC (CI) and SAF publish | §A.5.1; `files_location_external` string states this in the app itself |
+| Phase 7 W1–W3 still hold on the new root | **TESTED** (CI) | §A.7 |
+| the device-side visibility check works against the signed build | **NOT TESTED** | runs as R7 of the rewritten driver (§A.4) |
+
+## A.10 Reproduce the CI layer in seconds
+
+```bash
+bash phase10/scripts/30-static-checks.sh          # rc=0; now also runs the two helpers' self-tests
+python3 phase10/scripts/test-p10d-ui.py           # 14 checks
+python3 phase10/scripts/test-p10d-png.py          # 5 checks
+python3 phase10/scripts/check-compose-icons.py    # 0 not-in-core (advisory)
+python3 phase6/scripts/30-static-checks.sh        # UI purity/a11y/strings/lists, 0 findings
+```
+
+Full pipeline: `bash phase10/scripts/00-run-phase10.sh` (CI: static → unit → payload →
+emulator → debug UI gates → **new: workspace location + visibility** → smoke gates →
+screenshots → release APK/AAB inspection → Phase 9 gates → `GATES_SUMMARY.txt`).
+
+On the owner's machine, the two new scripts are useful on their own — the second one is
+the fastest way to answer "can anything else read my files?":
+
+```bash
+bash phase10/scripts/92-workspace-visibility.sh --pkg io.github.mcyber12.opencode
+```
+
+## A.11 Owner action list (replaces §8 items 5–6; the rest still stand)
+
+1. **Re-run the device script** on the signed build (the command in §A.4). Expect the
+   first run to take a few minutes of extraction; the script will say what it is
+   waiting for the whole time, and will leave a screenshot of every step.
+2. Send back `p10d-out/` — `SUMMARY.txt`, `screenshots/`, `ui/`, `DIAGNOSIS.txt` and
+   `visibility.log`. That is what turns §A.4 and §A.9's last rows from NOT TESTED into
+   TESTED (or into a diagnosis that can be trusted).
+3. If §A.2.3's bundle from the v1 run still exists, send it too (it closes the last
+   inferred line in this appendix).
+4. **Re-sign CI's newer artifacts before installing**: the fix in §A.5 lives in the
+   app code, so the APK from before this appendix does not contain it. Order:
+   CI uploads `opencode-android-unsigned-release` → `sign-release-local.sh` →
+   `90-real-device-signed.sh`.
+5. Then the store screenshots (from a phone, with the file browser in the set) and the
+   Play Console submission per §8 steps 6–8.
