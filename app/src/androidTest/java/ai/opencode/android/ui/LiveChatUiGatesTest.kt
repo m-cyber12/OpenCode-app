@@ -63,6 +63,16 @@ class LiveChatUiGatesTest {
     private companion object {
         const val PROJECT = "live-gates"
 
+        /**
+         * Below this share of non-background pixels a capture cannot be a screen
+         * that carries a conversation, so [shot] retakes it (see the run #12 note
+         * in that function). It only ever costs a retake - never a verdict.
+         */
+        const val MIN_INK = 0.01
+
+        /** How long the screen may lag behind the server before it is a verdict. */
+        const val SCREEN_CATCH_UP_MS = 120_000L
+
         /** Shared across the two test methods (JUnit makes a new instance per method). */
         @Volatile
         var modelServed = false
@@ -100,7 +110,43 @@ class LiveChatUiGatesTest {
         return found.isNotEmpty() && isEnabledNode(found.first())
     }
 
-    private fun shot(name: String) = writeScreenshot(shotDir, name) { rule.onRoot().captureToImage() }
+    /**
+     * Capture a step and report what the capture actually contains.
+     *
+     * `captureToImage()` reads the last *presented* frame, so a capture taken in the
+     * moment a recomposition lands can be the frame from before the content. That
+     * is not hypothetical: run #12's `30-live-chat-reply.png` is an empty
+     * conversation, byte-identical to a passing run's file, while the same gate read
+     * the prompt and the reply out of the semantics tree. The verdict was never the
+     * problem there - the *evidence* was, which is worse, because the picture is what
+     * a reader trusts.
+     *
+     * So every shot now carries its ink share, is retaken once after a settle if that
+     * share is too low to be a screen with content on it, and falls back to a real
+     * screen photograph (`UiAutomation`, independent of the composition's frame
+     * cache) if the retake is still blank.
+     */
+    private fun shot(name: String): String {
+        rule.waitForIdle()
+        var best = writeScreenshotWithInk(shotDir, name) { rule.onRoot().captureToImage() }
+        var via = "compose"
+        if (best.second in 0.0..MIN_INK) {
+            Thread.sleep(1500)
+            rule.waitForIdle()
+            val again = writeScreenshotWithInk(shotDir, name) { rule.onRoot().captureToImage() }
+            if (again.second > best.second) best = again
+            if (best.second in 0.0..MIN_INK) {
+                val device = deviceScreenshot(shotDir, name)
+                if (device.second > best.second) {
+                    best = device
+                    via = "device"
+                }
+            } else {
+                via = "compose-retake"
+            }
+        }
+        return "bytes=${best.first} ink=${"%.3f".format(best.second)} via=$via"
+    }
 
     private fun waitFor(timeoutMs: Long, condition: () -> Boolean): Boolean {
         val deadline = System.currentTimeMillis() + timeoutMs
@@ -289,11 +335,33 @@ class LiveChatUiGatesTest {
         // word survives markdown rendering; punctuation and formatting do not.
         val needle = reply.split(Regex("[^A-Za-z0-9]+")).filter { it.length >= 4 }
             .maxByOrNull { it.length }?.take(24) ?: reply.take(24)
-        val shownInUi = needle.isNotBlank() && allText().contains(needle, ignoreCase = true)
-        val userPromptShown = allText().contains("clear sky at noon", ignoreCase = true)
+        // The reply is known to exist *on the server* at this point. The screen is a
+        // separate question, and Run #12 answered it exactly: `replyInNew()` polls
+        // every third iteration, so the server's answer is seen within ~3s of it
+        // existing, while an SSE frame still has to arrive and the transcript still
+        // has to repaint - and the gate asserted on that instant. `newScreenLines=2`
+        // was the socket indicator and the round dot, i.e. nothing had arrived yet.
+        // L2 in the same run (30s later, and it waits for `tool_card_*` to appear
+        // before asserting) saw the full transcript. So: wait for the screen to catch
+        // up with the server, with a named expectation, and only call it a UI failure
+        // when the budget is spent and the surface is still empty.
+        val shown = waitFor(SCREEN_CATCH_UP_MS) {
+            allText().contains(needle, ignoreCase = true) ||
+                allText().contains("clear sky at noon", ignoreCase = true)
+        }
+        // Re-read everything after that settle: the point of these three values is
+        // what the screen says once it has caught up, not what it said mid-turn.
+        val screenText = allText()
+        val shownInUi = shown && needle.isNotBlank() && screenText.contains(needle, ignoreCase = true)
+        val userPromptShown = screenText.contains("clear sky at noon", ignoreCase = true)
+        // "no conversation on screen" is measured against the tags the transcript
+        // actually uses (`message_<id>`, ChatComponents.kt) rather than against a
+        // guess about which strings should be visible.
+        val messageRows = rule.onAllNodes(tagPrefixMatcher("message_")).fetchSemanticsNodes().size
+        val emptyConversation = messageRows == 0
         val composerUsableAgain = waitFor(60_000) { enabled(TAG_COMPOSER_INPUT) && !exists("busy_bar") }
         val freshLines = (allLines() - chrome).size
-        val bytes = shot("30-live-chat-reply.png")
+        val shotDetail = shot("30-live-chat-reply.png")
 
         if (!answered || reply.isEmpty()) {
             // Open the failure's own disclosure first, so the reason carries the
@@ -333,15 +401,18 @@ class LiveChatUiGatesTest {
         printMarker("MODEL_AVAILABLE", "1 :: replyChars=${reply.length} asksAnswered=$asksAnswered")
 
         // From here the model has done its part: anything missing is a UI verdict.
-        val ok = shownInUi && userPromptShown && composerUsableAgain && !sawErrorBanner
+        val ok = shownInUi && userPromptShown && composerUsableAgain && !sawErrorBanner &&
+            messageRows > 0
         gate(
             "L1",
             ok,
             "promptSent=true userPromptShown=$userPromptShown serverReplyChars=${reply.length} " +
                 "replyShownInUi=$shownInUi(needle='$needle') newScreenLines=$freshLines " +
+                "messageRows=$messageRows emptyConversation=$emptyConversation " +
+                "screenCatchUpMs=$SCREEN_CATCH_UP_MS " +
                 "busyIndicator=$sawBusy streamingDots=$sawStreaming errorBanner=$sawErrorBanner " +
                 "asksAnswered=$asksAnswered composerUsableAgain=$composerUsableAgain " +
-                "screenshot=$bytes reply='${reply.take(90)}'",
+                "screenshot[$shotDetail] reply='${reply.take(90)}'",
         )
     }
 
@@ -427,7 +498,7 @@ class LiveChatUiGatesTest {
                 "collapsedBeforeTap=$collapsedBeforeTap headline=$headlineShown expandedByTap=$tapped " +
                 "outputRendered=$outputShown markerInServerOutput=$serverOutputHasMarker " +
                 "markerOnScreen=$uiOutputHasMarker asksAnswered=$asksAnswered marker=$marker " +
-                "screenshots=$collapsedShot,$expandedShot",
+                "screenshots[$collapsedShot | $expandedShot]",
         )
     }
 }

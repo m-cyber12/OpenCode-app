@@ -10,6 +10,7 @@ import android.graphics.Bitmap
 import android.util.Log
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
@@ -204,6 +205,96 @@ internal fun writeScreenshot(dir: File, name: String, capture: () -> ImageBitmap
         Log.w(GATE_TAG, "screenshot $name failed: ${it.javaClass.simpleName}: ${it.message}")
     }.getOrDefault(-1L)
 }
+
+/**
+ * Share of pixels that are not the frame's dominant (background) colour.
+ *
+ * The point is to let a gate check its own screenshot against the state it is
+ * asserting: `captureToImage()` reads the last *presented* frame, so a capture
+ * taken in the moment a recomposition lands can be the frame from before the
+ * content was painted (run #12's `30-live-chat-reply.png` was an empty
+ * conversation while the same gate read prompt and reply out of the semantics
+ * tree, and it was byte-identical to a passing run's - i.e. the picture, not the
+ * assertion, was the thing that was wrong). A conversation with a bubble, a tool
+ * card and a composer is several percent ink; a frame that was captured too early
+ * is a fraction of a percent.
+ *
+ * Sampled on a coarse grid (every 4th pixel, colours quantised to 5 bits per
+ * channel) so the cost stays in the low milliseconds on a 1080x1920 frame.
+ */
+internal fun inkFraction(image: ImageBitmap): Double = runCatching {
+    val source = image.asAndroidBitmap()
+    // getPixel() throws on a HARDWARE bitmap, and the config is up to the capture
+    // path, so copy into a readable config first when needed.
+    val bitmap = if (source.config == Bitmap.Config.HARDWARE) {
+        source.copy(Bitmap.Config.ARGB_8888, false) ?: source
+    } else {
+        source
+    }
+    val width = bitmap.width
+    val height = bitmap.height
+    if (width <= 0 || height <= 0) return@runCatching -1.0
+    val step = 4
+    val counts = HashMap<Int, Int>()
+    var n = 0
+    var y = 0
+    while (y < height) {
+        var x = 0
+        while (x < width) {
+            val c = bitmap.getPixel(x, y)
+            val key = ((c shr 19 and 0x1F) shl 10) or ((c shr 11 and 0x1F) shl 5) or (c shr 3 and 0x1F)
+            counts[key] = (counts[key] ?: 0) + 1
+            n++
+            x += step
+        }
+        y += step
+    }
+    if (n == 0) return@runCatching -1.0
+    val background = counts.maxByOrNull { it.value }?.value ?: 0
+    (n - background).toDouble() / n
+}.onFailure {
+    Log.w(GATE_TAG, "ink fraction failed: ${it.javaClass.simpleName}: ${it.message}")
+}.getOrDefault(-1.0)
+
+/**
+ * [writeScreenshot], plus the ink share of what was captured, so the verdict line
+ * can carry both the size of the evidence and whether the frame actually has the
+ * content the gate is talking about.
+ */
+internal fun writeScreenshotWithInk(
+    dir: File,
+    name: String,
+    capture: () -> ImageBitmap,
+): Pair<Long, Double> {
+    return runCatching {
+        dir.mkdirs()
+        val bitmap = capture().asAndroidBitmap()
+        val out = File(dir, name)
+        out.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        // Measured after the file is on disk: a measurement that fails must cost the
+        // ink number, never the evidence.
+        out.length() to inkFraction(bitmap.asImageBitmap())
+    }.onFailure {
+        Log.w(GATE_TAG, "screenshot $name failed: ${it.javaClass.simpleName}: ${it.message}")
+    }.getOrDefault(-1L to -1.0)
+}
+
+/**
+ * A screenshot of the real screen, taken by the instrumentation (`UiAutomation`),
+ * not by Compose. Independent of the composition's frame cache, so it is the
+ * fallback when the Compose capture does not show what the tree says is on screen.
+ */
+internal fun deviceScreenshot(dir: File, name: String): Pair<Long, Double> = runCatching {
+    val automation = androidx.test.platform.app.InstrumentationRegistry
+        .getInstrumentation().uiAutomation
+    val bitmap = automation.takeScreenshot() ?: return@runCatching (-1L to -1.0)
+    dir.mkdirs()
+    val out = File(dir, name)
+    out.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    out.length() to inkFraction(bitmap.asImageBitmap())
+}.onFailure {
+    Log.w(GATE_TAG, "device screenshot $name failed: ${it.javaClass.simpleName}: ${it.message}")
+}.getOrDefault(-1L to -1.0)
 
 /**
  * Matches every node in the tree. `SemanticsMatcher`'s own companion does not
