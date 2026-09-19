@@ -99,8 +99,24 @@ push_evidence() {
   git -C "$ROOT" diff --cached --quiet && { echo "no evidence changes to commit"; return 0; }
   git -C "$ROOT" -c user.name="arena-ai-coding-agent[bot]" -c user.email="arena-ai-coding-agent[bot]@users.noreply.github.com" \
     commit -m "phase10: signing/store-prep gate evidence (auto)" >/dev/null 2>&1 || true
-  timeout 180 git -C "$ROOT" pull --rebase origin "$DEST" >/dev/null 2>&1 || true
-  timeout 240 git -C "$ROOT" push origin "HEAD:$DEST" > "$OUT/push.out" 2>&1 || echo "PUSH_FAILED dest=$DEST"
+  # Two runs can overlap on one branch (run #12/#13 of this session did: the second
+  # push started a pipeline while the first was still on its emulator). Both then
+  # rewrite the same generated files, the rebase conflicts, and the loser's evidence
+  # is simply gone - which is what happened to run #13's GATES_SUMMARY. So: retry,
+  # and resolve a conflict in favour of the copy already on the branch, because that
+  # copy comes from the newest run and this run's files are the same generated paths.
+  for attempt in 1 2 3; do
+    timeout 180 git -C "$ROOT" pull --rebase --strategy=recursive --strategy-option=theirs \
+      origin "$DEST" >/dev/null 2>&1 || git -C "$ROOT" rebase --abort >/dev/null 2>&1 || true
+    if timeout 240 git -C "$ROOT" push origin "HEAD:$DEST" > "$OUT/push.out" 2>&1; then
+      echo "evidence pushed (attempt $attempt)" >> "$OUT/push.out"
+      return 0
+    fi
+    echo "PUSH_RETRY attempt=$attempt dest=$DEST" >> "$OUT/push.out"
+    sleep 20
+  done
+  echo "PUSH_FAILED dest=$DEST (3 attempts; see push.out)" >> "$OUT/push.out"
+  echo "PUSH_FAILED dest=$DEST"
 }
 
 record_fatal() {
