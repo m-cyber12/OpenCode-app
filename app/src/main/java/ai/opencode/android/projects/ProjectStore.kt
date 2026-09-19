@@ -7,12 +7,20 @@ import java.io.File
 /**
  * The list of on-device project directories the agent can work in.
  *
- * A "project" is nothing more than a directory under the app's own
- * `files/workspaces` root that is used as the OpenCode instance directory
+ * A "project" is nothing more than a directory under the app's own project root
+ * (`getExternalFilesDir(null)/workspaces` since the Phase 10 continuation -
+ * `files/workspaces`, app-private, before it) that is used as the OpenCode
+ * instance directory
  * (`OpenCodeApi.directory`, which upstream resolves per request). The server
  * owns everything else about a session; this store only remembers which
  * directories exist and which one the user last opened, because the choice has
  * to survive a process restart and the user must never be asked for a path.
+ *
+ * Location, precisely: the app-specific EXTERNAL directory needs no permission on
+ * any supported API level and is reachable by `adb shell`/`adb pull` on a
+ * non-rooted device, which is what the move buys. See [RuntimePaths] for what it
+ * does not buy (Android 11+ blocks *apps* from browsing `Android/data`), and
+ * [ensureMigrated] for what happens to projects written by an older install.
  *
  * Phase 6 kept this to list, create, open. Phase 7 adds the rest of workspace
  * management - rename, delete, and adopt (register a tree that an import copied
@@ -34,6 +42,12 @@ data class Project(
 class ProjectStore internal constructor(
     private val root: File,
     private val prefs: SharedPreferences,
+    /**
+     * Pre-Phase-10 project root, when the resolved root is the external one.
+     * Null when there is nothing to migrate (fresh install, or external storage
+     * unavailable so the legacy root *is* the root).
+     */
+    private val legacyRoot: File? = null,
 ) {
 
     /**
@@ -197,6 +211,50 @@ class ProjectStore internal constructor(
     /** The absolute path of the workspace root (for the repository's session cleanup). */
     fun rootPath(): String = root.absolutePath
 
+    /**
+     * Move projects written by a pre-Phase-10 install into the new root.
+     *
+     * Phase 10's continuation moved projects from `files/workspaces` (app-private,
+     * unreachable from any file manager, MTP browse or non-root `adb shell`) to the
+     * app-specific external directory. An install that predates that change has its
+     * projects in the old place, so this runs once, is idempotent, and is safe to
+     * call on every start:
+     *
+     *   * it does nothing when there is no legacy root, when the legacy root is the
+     *     root (external storage unavailable), or when the new root already holds a
+     *     project — a user who deleted a project must not see it come back;
+     *   * it moves each project directory (rename first, copy+delete as the
+     *     fallback, because the two locations are usually different filesystems);
+     *   * it deletes the legacy directory only once it is empty, so a partial or
+     *     failed move leaves the originals in place rather than losing them.
+     *
+     * @return the number of project directories moved.
+     */
+    fun ensureMigrated(): Int {
+        val legacy = legacyRoot ?: return 0
+        if (legacy.absolutePath == root.absolutePath) return 0
+        if (!legacy.isDirectory) return 0
+        val legacyDirs = legacy.listFiles { f -> f.isDirectory }?.toList() ?: return 0
+        if (legacyDirs.isEmpty()) {
+            // Left-over empty directory from an earlier run: nothing to save.
+            ProjectIo.deleteTree(legacy)
+            return 0
+        }
+        if (projects().isNotEmpty()) return 0
+        root.mkdirs()
+        var moved = 0
+        for (dir in legacyDirs.sortedBy { it.name }) {
+            val target = File(root, dir.name)
+            if (target.exists()) continue
+            if (ProjectIo.renameDir(dir, target)) moved += 1
+        }
+        if (legacy.listFiles()?.isEmpty() != false) ProjectIo.deleteTree(legacy)
+        return moved
+    }
+
+    /** Where the projects live, as the app would show it (diagnostics + the file browser). */
+    fun locationLabel(): String = root.absolutePath
+
     private fun createdKey(name: String) = "created:$name"
     private fun openedKey(name: String) = "opened:$name"
 
@@ -225,10 +283,18 @@ class ProjectStore internal constructor(
 
         fun get(context: Context): ProjectStore =
             instance ?: synchronized(this) {
-                instance ?: ProjectStore(
-                    root = File(context.filesDir, "workspaces"),
-                    prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE),
-                ).also { instance = it }
+                instance ?: run {
+                    val paths = ai.opencode.android.runtime.RuntimePaths.get(context)
+                    ProjectStore(
+                        root = paths.workspaces,
+                        prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE),
+                        // Only a *different* internal root is a migration source; when
+                        // external storage is unavailable the two are the same object.
+                        legacyRoot = paths.internalWorkspaces.takeIf {
+                            it.absolutePath != paths.workspaces.absolutePath
+                        },
+                    )
+                }.also { instance = it }
             }
     }
 }

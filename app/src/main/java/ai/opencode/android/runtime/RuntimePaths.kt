@@ -4,20 +4,47 @@ import android.content.Context
 import java.io.File
 
 /**
- * Filesystem layout for the embedded runtime. Everything lives in app-private
- * storage — nothing user-visible, nothing requiring manual setup.
+ * Filesystem layout for the embedded runtime. Runtime internals live in
+ * app-private storage — nothing user-visible, nothing requiring manual setup.
  *
  *   filesDir/
  *     bin/                 symlinks bun/git/rg -> nativeLibraryDir (exec-allowed)
  *     runtime/             extraction marker and host metadata
  *     runtime/.extracted   extraction marker (payload version + manifest sha)
  *     launcher.js          bun entrypoint that imports the server bundle
- *     workspaces/          user projects (the agent's cwd roots)
+ *     workspaces/          LEGACY project root (pre-Phase-10 installs); migrated
  *     log/runtime.log      supervisor lifecycle + stdout/stderr of the server
  *     log/crashes/         one file per unexpected server death
  *     diagnostics/         collected diagnostic bundles (shareable)
  *     secrets/server-password, secrets/openrouter-api-key
  *   (XDG dirs live under filesDir/xdg/ so config/data/cache/state are app-private)
+ *
+ * PHASE 10 CONTINUATION — where the user's projects live:
+ *
+ * `workspaces` is NOT under filesDir any more unless external storage is
+ * unavailable. Projects move to the app-specific *external* directory:
+ *
+ *   /storage/emulated/0/Android/data/<applicationId>/files/workspaces/<project>
+ *
+ * Why: `filesDir` is `/data/data/<applicationId>/files`, which no file manager,
+ * no MTP/USB browse and no non-root `adb shell` can see at all — the app looked
+ * like a sealed black box even though the agent really was writing files. The
+ * app-specific external directory needs no permission on any supported API
+ * level, is readable by `adb shell`/`adb pull` on a stock non-rooted device, and
+ * is where a user (or a desktop tool) expects an app's files to be. It is still
+ * private to the app in the sense that matters for Phase 7's isolation: the
+ * agent can only ever reach the project directories the app hands it, and
+ * upstream's own `FSUtil.contains` guard still refuses `../` escapes (W1-W3
+ * re-verified against this root by the Phase 10 device gates).
+ *
+ * What it does NOT give you (recorded here so nobody re-discovers it): on
+ * Android 11+ the platform blocks *apps* from browsing `Android/data` of other
+ * apps, so a file manager cannot open this directory on a modern phone. That is
+ * why the app also offers an in-app file browser and a SAF "publish to a folder
+ * you choose" action; see docs/progress/phase10-signing-publish-prep-report.md.
+ *
+ * `internalWorkspaces` is the pre-Phase-10 location, kept as the migration
+ * source only.
  *
  * Executables do NOT live under filesDir: on API 29+ the app home dir is
  * mounted no-exec (W^X). They ship as JNI libs and are executed from
@@ -26,10 +53,34 @@ import java.io.File
 class RuntimePaths private constructor(
     filesDir: File,
     nativeLibraryDir: File,
+    externalFilesDir: File?,
 ) {
 
     val filesDir: File = filesDir
     val nativeLibraryDir: File = nativeLibraryDir
+
+    /** The pre-Phase-10 project root. Read only, to migrate an existing install. */
+    val internalWorkspaces: File = File(filesDir, WORKSPACES_NAME)
+
+    /**
+     * The app-specific external root, when the device has usable external
+     * storage. `Context.getExternalFilesDir(null)` already creates the directory
+     * and returns null when the volume is not mounted, so the null check is the
+     * availability check.
+     */
+    val externalFilesDir: File? = externalFilesDir
+    val externalWorkspaces: File? = externalFilesDir?.let { File(it, WORKSPACES_NAME) }
+
+    /**
+     * Where projects really live. External when available (the Phase 10
+     * continuation change), internal otherwise — a device with no mounted
+     * external storage still gets a working app, it just gets the old,
+     * harder-to-reach location.
+     */
+    val workspaces: File = externalWorkspaces ?: internalWorkspaces
+
+    /** True when [workspaces] is the user-visible (adb/PC-reachable) location. */
+    val workspacesAreExternal: Boolean = externalWorkspaces != null
 
     val binDir: File = File(filesDir, "bin")
     // The payload is extracted FLAT into filesDir (matching the proven Phase 3
@@ -50,7 +101,6 @@ class RuntimePaths private constructor(
     val xdgCache: File = File(filesDir, "xdg/cache")
     val tmp: File = File(filesDir, "xdg/tmp")
     val home: File = File(filesDir, "home")
-    val workspaces: File = File(filesDir, "workspaces")
 
     val logDir: File = File(filesDir, "log")
     val runtimeLog: File = File(logDir, "runtime.log")
@@ -122,6 +172,9 @@ class RuntimePaths private constructor(
     }
 
     companion object {
+        /** Directory name used for the project root under both layouts. */
+        const val WORKSPACES_NAME = "workspaces"
+
         @Volatile
         private var instance: RuntimePaths? = null
 
@@ -130,6 +183,9 @@ class RuntimePaths private constructor(
                 instance ?: RuntimePaths(
                     context.filesDir,
                     File(context.applicationInfo.nativeLibraryDir),
+                    // Creates the directory when the volume is mounted, null when
+                    // it is not: the availability probe the layout keys off.
+                    runCatching { context.getExternalFilesDir(null) }.getOrNull(),
                 ).also { instance = it }
             }
 
@@ -137,8 +193,14 @@ class RuntimePaths private constructor(
          * Test-only constructor for JVM unit tests (Phase 8: environment
          * construction is a unit-test matrix item). Production code always goes
          * through [get]; this never registers the singleton.
+         *
+         * [externalFilesDir] defaults to null, i.e. "no external storage" — the
+         * pre-Phase-10 layout, which is what the Phase 8 environment tests assert.
          */
-        fun forTesting(filesDir: File, nativeLibraryDir: File): RuntimePaths =
-            RuntimePaths(filesDir, nativeLibraryDir)
+        fun forTesting(
+            filesDir: File,
+            nativeLibraryDir: File,
+            externalFilesDir: File? = null,
+        ): RuntimePaths = RuntimePaths(filesDir, nativeLibraryDir, externalFilesDir)
     }
 }

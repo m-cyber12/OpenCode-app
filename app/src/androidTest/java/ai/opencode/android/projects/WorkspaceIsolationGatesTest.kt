@@ -251,4 +251,83 @@ class WorkspaceIsolationGatesTest {
             store.delete(project.name)
         }
     }
+
+    // ---- W4: the workspace is OUTSIDE the sandbox, and the server agrees -----
+
+    /**
+     * Phase 10 continuation. W1-W3 prove the boundary is enforced; W4 proves the
+     * location is not a black box.
+     *
+     * Two halves, both of which have to hold, and both of which a "the app writes
+     * files somewhere" claim can fail:
+     *
+     *  1. **Where** — the resolved project root is under the app-specific EXTERNAL
+     *     directory (`/storage/emulated/0/Android/data/<pkg>/files/...`) and NOT
+     *     under `/data/data` or `/data/user/0`. That is what makes the files
+     *     reachable by `adb shell`, `adb pull` and a desktop file browser without
+     *     root. The host script then repeats the claim from outside the app
+     *     (`phase10/scripts/92-workspace-visibility.sh`) on the absolute path this
+     *     gate prints — an app asserting its own path is not evidence that anyone
+     *     else can read it.
+     *
+     *  2. **Through the server** — a shell command run through OpenCode's own
+     *     `/session/:id/shell` endpoint (the same path the agent's shell tool uses)
+     *     executes with its working directory inside that root and the file it
+     *     writes is readable there. This is model-free and deterministic on
+     *     purpose: whether an LLM decides to call a tool is not something to bet a
+     *     storage claim on (the Phase 6 lesson).
+     *
+     * The gate deletes nothing it did not create; the marker file is left in place
+     * for the host script to read, then removed by it.
+     */
+    @Test
+    fun w4_workspaceLivesOutsideTheAppSandboxAndTheServerWritesThere() {
+        val store = ProjectStore.get(context)
+        val root = File(store.rootPath())
+        val external = context.getExternalFilesDir(null)
+        val internalRoot = File(context.filesDir, "workspaces").absolutePath
+
+        val inExternal = external != null && root.absolutePath.startsWith(external.absolutePath + File.separator)
+        val inInternalData = root.absolutePath.startsWith("/data/data/") ||
+            root.absolutePath.startsWith("/data/user/0/")
+        val locationOk = inExternal && !inInternalData
+
+        // Part 2 needs the server; without it the LOCATION half is still a verdict
+        // (the location is a filesystem fact), so the gate reports what it saw
+        // rather than SKIPping the whole thing.
+        val project = store.create("w4-storage-${System.currentTimeMillis()}")
+        val dir = File(store.rootPath(), project.name)
+        val marker = "P10_VISIBLE_${System.currentTimeMillis()}"
+        var serverWrote = false
+        var shellOutput = ""
+        var serverDetail = "server not answering /global/health"
+        try {
+            if (ensureServer()) {
+                val api = api(dir.absolutePath)
+                val sid = api.createSession("w4-visibility").id
+                val cmd = "echo $marker > p10-visible.txt && pwd && ls -l p10-visible.txt"
+                val status = api.shell(sid, cmd, "build")
+                serverDetail = "shellStatus=$status"
+                val written = File(dir, "p10-visible.txt")
+                serverWrote = written.isFile && written.readText().contains(marker)
+                shellOutput = runCatching { api.fileContent("p10-visible.txt") }.getOrDefault("")
+                serverDetail += " dirOnDisk=${written.isFile} size=${if (written.isFile) written.length() else -1}"
+                runCatching { api.deleteSession(sid) }
+            }
+        } finally {
+            // The project directory itself is left for the host script (it needs the
+            // real path to `adb shell cat` the marker); the host script removes it.
+        }
+
+        val detail = "root=${root.absolutePath} external=$inExternal underData=$inInternalData " +
+            "legacyRoot=$internalRoot serverWrote=$serverWrote readBack=${shellOutput.contains(marker)} " +
+            "marker=$marker project=${project.name} $serverDetail"
+        if (locationOk && serverWrote) {
+            gate("W4_WORKSPACE_VISIBLE", true, detail)
+        } else {
+            // Never a silent pass: a wrong location or an unwritable root is a FAIL
+            // with the paths in the message, which is the whole point of the gate.
+            gate("W4_WORKSPACE_VISIBLE", false, detail)
+        }
+    }
 }

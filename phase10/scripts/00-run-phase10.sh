@@ -210,6 +210,23 @@ else
   note_gate "P6-UI FAIL: the Phase 6 driver produced no summary (rc=$P6RC)"
 fi
 
+step "5b/9 workspace location + visibility (Phase 10 continuation: files must not be a black box)"
+# Phase 7's isolation class (W1-W3) re-run against the NEW project root, plus the
+# new W4 gate (root is outside /data/data) and the host-side check that a non-root
+# `adb shell` can actually list and read what the OpenCode server wrote there. The
+# storage move is a Phase 7 guarantee's blast radius, so Phase 7's gates are part
+# of this stage rather than a footnote.
+WSRC=0
+run_c 3600 "bash '$DIR/scripts/93-workspace-gates.sh' --out '$OUT/workspace'" || WSRC=1
+cp "$OUT/workspace/workspace-gates.log" "$EV/workspace-gates.log" 2>/dev/null || true
+cp "$OUT/workspace/visibility/workspace-visibility.log" "$EV/workspace-visibility.log" 2>/dev/null || true
+# Renamed into the P10_ namespace so the phase-10 verdict fold (which counts
+# ^P10_[A-Z0-9_]+) sees them: a Phase 7 gate re-run on the new root is a Phase 10
+# verdict, and an invisible PASS would be worse than no gate at all (run #6).
+grep -ahE '^(P7_W[0-9]_[A-Z_]+|P10D_VISIBILITY_[A-Z_]+) (PASS|FAIL|SKIP)' "$OUT/workspace/workspace-gates.log" 2>/dev/null \
+  | sed -e 's/^P7_/P10_WS_/' -e 's/^P10D_VISIBILITY_/P10_WS_VISIBILITY_/' | cut -c1-400 >> "$EV/p10-lines.txt"
+[ "${WSRC:-0}" = 0 ] || note_gate "P10-WORKSPACE note: driver rc=$WSRC (the verdict lines above are the record)"
+
 step "6/9 release-shaped SMOKE build (release applicationId + packaging, debug-key signed)"
 SMOKERC=0
 if [ "${P10_SKIP_SMOKE:-0}" = "1" ]; then
@@ -297,6 +314,7 @@ FINAL_RC=0
 [ "${SMOKERC:-0}" = "0" ] || FINAL_RC=1
 [ "${SHOTRC:-0}" = "0" ] || FINAL_RC=1
 [ "$P9F" = "0" ] || FINAL_RC=1
+[ "${WSRC:-0}" = "0" ] || FINAL_RC=1
 echo "=== PHASE 10 END $(date -u +%FT%TZ) rc=$FINAL_RC ===" | tee -a "$MAINLOG"
 push_evidence
 exit "$FINAL_RC"

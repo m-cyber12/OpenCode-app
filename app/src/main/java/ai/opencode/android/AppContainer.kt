@@ -46,6 +46,14 @@ class AppContainer private constructor(private val context: Context) {
     fun workspacesRoot(): java.io.File = paths.workspaces
 
     /**
+     * True when projects live in the app-specific external directory (the Phase 10
+     * continuation change) rather than in app-private `filesDir`. The UI states
+     * where the files are; on Android 11+ neither location is browsable by a file
+     * manager, so the honest label differs from "the user can open this in Files".
+     */
+    fun workspacesAreVisibleToOtherTools(): Boolean = paths.workspacesAreExternal
+
+    /**
      * OpenCode's own persistent-memory files: a per-project `AGENTS.md` at the
      * workspace root, and the global `AGENTS.md` in OpenCode's global config dir.
      * The app reads/writes these exact files (upstream `session/instruction.ts`
