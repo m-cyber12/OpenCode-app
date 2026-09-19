@@ -1099,3 +1099,87 @@ bash phase10/scripts/92-workspace-visibility.sh --pkg io.github.mcyber12.opencod
    `90-real-device-signed.sh`.
 5. Then the store screenshots (from a phone, with the file browser in the set) and the
    Play Console submission per §8 steps 6–8.
+
+## A.12 Follow-up: the two red runs, and what they turned out to be
+
+Runs #12 and #13 (`35450781510` on `414a275`, `35450712913` on `346695c`) both came back
+red. They were not two independent findings, and neither was an app defect.
+
+**What CI does not give you when two runs overlap.** Run #13 ran 23 minutes and failed,
+and left no usable evidence: its `docs/progress/phase10-evidence` commit lost a race with
+run #12's (both rewrite the same generated files on the same branch, the rebase
+conflicted, the push was rejected and the script treated that as non-fatal), and its
+uploaded artifact and job log could not be downloaded from this sandbox either
+(`gh run view --log`, `gh api .../actions/runs/:id/logs` and `gh run download` all ended in
+`EOF` after repeated attempts with 60-second backoff). Its code state differs from run
+#12's only by documentation commits, and run #12's evidence names exactly one failing
+gate, so the honest statement is: **run #13 is attributed, not directly evidenced.**
+
+**Run #12's failure was the gate, not the app.** `P6_L1` / `P10_SMOKE_UI_L1` failed with
+the server holding the reply (`reply='Blue.'`, 5 chars) while the conversation surface had
+no message rows on it. The mechanism is in the gate's own poll loop: it asks the server
+every third iteration, so it sees the reply within a few seconds of the server having it,
+then asserted on the screen at that same instant — before the SSE frame arrived and the
+transcript repainted. `newScreenLines=2` is the socket indicator and the round dot, i.e.
+chrome. L2 in the same run, 30 seconds later and waiting for `tool_card_*` to appear
+before asserting anything, saw the full transcript (screenshot in
+`docs/progress/phase10-evidence/phase6/screenshots/32-live-tool-card-expanded.png`).
+
+**The worse find was the evidence, not the verdict.** `30-live-chat-reply.png` from the
+failing run is an empty conversation — and it is byte-identical, 22406 bytes,
+sha256 `4bb5dc9eac27c702…`, to the file a *passing* run produced at the June base commit.
+The gate's own screenshots were never the screen the gate was describing:
+`captureToImage()` reads the last *presented* frame, so a capture taken as a
+recomposition lands can be the frame from before the content. A verdict can be argued
+with; a picture is what a reader trusts, so this had to be fixed first.
+
+**The screenshot fix needed a second pass, and run #14 is why.** With L1 waiting for
+the screen, run #14 (`35455909445`) passed every gate (103 PASS, 0 FAIL) and reported
+the catch-up values it should: `messageRows=4 emptyConversation=false`. But its
+`30-live-chat-reply.png` was *still* byte-identical to the June base file
+(`sha256 4bb5dc9eac27c702…`, ink 0.023) — the Compose capture for this screen is not
+just stale by a frame, it is deterministic and carries no conversation at all. So the
+threshold that decides "this capture is too empty to be evidence" was calibrated against
+the run's own files (empty conversation 0.023-0.034; every screen with content
+0.109-0.60) and now sits at 0.06, with a real device screenshot as the fallback.
+
+**What changed** (commits `phase6 gates: L1 waits for the screen instead of the server…`
+and `phase6 gates: calibrate the ink floor…`):
+
+* L1 now waits, with a named expectation and a 120-second budget, for the prompt text and
+  a word from the reply to be **on screen**, then re-reads the screen and only then
+  judges. Its verdict line carries `messageRows=`, `emptyConversation=` and
+  `screenCatchUpMs=`, so a screen that never catches up is reported as exactly that.
+* Every screenshot now reports `bytes=` **and** `ink=` (the share of non-background
+  pixels) and the path it was taken by: a Compose capture, a retake after a settle, or a
+  real device screenshot through `UiAutomation` when the Compose frame stays blank. The
+  ink measurement is wrapped so that a failure to measure can only cost the number,
+  never the picture.
+* The harness's evidence push retries and resolves a rebase conflict in favour of the
+  copy already on the branch, instead of dropping the run's evidence on the floor.
+* `phase10/workflow/phase10-release.yml` (the template) carries a one-run-per-branch
+  `concurrency:` group. **It is not installed**: the automation's token cannot write
+  `.github/workflows/**`, so until the owner copies the template over the installed file
+  (the file header documents that step), overlapping runs are still possible and the
+  retry above is what keeps their evidence.
+
+**Verdict.** Run #14 (`35455909445` on `3a2621d`) is green on the fix for the failure
+itself: 103 verdict lines, 0 FAIL, `phase6_ui_fails=0 phase10_gate_fails=0
+phase9_gate_fails=0`, JVM tests 286/0/0/0, and L1 on both the debug and the
+release-shaped smoke build passed with the screen (not the server) deciding:
+
+```
+P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue')
+              newScreenLines=12 messageRows=4 emptyConversation=false screenCatchUpMs=120000
+              busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0
+              composerUsableAgain=true screenshot[bytes=22406 ink=0.023 via=compose] reply='Blue.'
+P6_L2 PASS :: tool=bash status=completed partId=prt_0ba9bcec4001R97YeSrlZOgVyO cardShown=true
+              collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true
+              markerInServerOutput=true markerOnScreen=true marker=P6LIVE164107
+              screenshots[bytes=71917 ink=0.076 via=compose | bytes=92858 ink=0.235 via=compose]
+```
+
+The `ink=0.023 via=compose` on the L1 shot is the finding above: the verdict is sound,
+the picture was not, which is what the ink floor now catches. Run #15
+(`3545…` on the ink-floor commit) is the one that has to show a screenshot at a real ink
+share with `via=device` for that step; the line is quoted here once it exists.
