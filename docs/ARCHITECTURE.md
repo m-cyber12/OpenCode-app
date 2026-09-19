@@ -36,7 +36,7 @@ model provider is the only remote party.
 |---|---|
 | `runtime/` | `RuntimeService` (foreground service, type `specialUse`) owns `RuntimeManager`, the supervisor state machine (`RuntimeStateMachine`, 17 legal transitions: `IDLE -> CHECKING_ABI -> EXTRACTING -> STARTING -> HEALTHY -> (CRASHED_RESTARTING | STOPPING) -> ...`). `AbiGate` refuses 32-bit ABIs with a message; `PayloadExtractor` extracts + sha256-verifies the payload; `RuntimeProcess` spawns Bun through the exec shim; `HealthChecker` polls `GET /global/health` with Basic auth (readiness = HTTP 2xx + body "healthy", never "process launched"); `RestartBackoff` 1 s..30 s, max 8 attempts, then `FATAL`. `RuntimeEnv` builds the child's environment (app-private `HOME`, XDG dirs, `PATH`, `OPENCODE_SERVER_PORT`, shim paths). `Secrets`/`security/SecretStore` hold the per-install server password. |
 | `client/` | `OpenCodeApi` (blocking HttpURLConnection client for the upstream routes actually used: health, sessions, messages, prompt, providers, auth, files, shell, permissions, config), `OpenCodeEventStream` + `SseAccumulator` (the `/event` SSE stream to typed `EventFrame`s), `Transcript` (message/part reducer), `OpenCodeRepository` (the single state owner behind the UI: runtime state, sessions, live transcript, providers, permissions, errors), `UiError` (offline/auth/network classifier), `LoopbackGuard` (refuses any non-loopback base URL), `DefaultModelHint` (Phase 9: default model must come from a *connected* provider). |
-| `projects/`, `memory/` | project (workspace) store under `files/workspaces/<id>`, SAF import/export, `AGENTS.md`-based project memory (OpenCode's own mechanism). |
+| `projects/`, `memory/` | project (workspace) store under the app-specific external root `<externalFilesDir>/workspaces/<id>` (app-private `files/workspaces/<id>` before the Phase 10 continuation, migrated on first start), SAF import/export/publish, in-app file browser, `AGENTS.md`-based project memory (OpenCode's own mechanism). |
 | `ui/` | Compose screens: welcome/ABI/runtime states, projects, chat (streaming transcript, tool cards, permission sheet), settings (providers, models, permission policy, diagnostics). Screens are pure functions of repository state (enforced by a static check). |
 
 ### Embedded runtime (`phase4/scripts/10-build-payload.sh` -> `phase4/out/engine`)
@@ -49,7 +49,7 @@ model provider is the only remote party.
 | `runtime-payload.tar.gz` | asset | `opencode/dist/node/node.js` (Bun.build of upstream `packages/opencode`, target `bun`, defines `OPENCODE_VERSION="1.18.23"`, `OPENCODE_CHANNEL="android"`), `*.wasm` (tree-sitter, photon), `node_modules` needed at runtime, `launcher.js`. |
 | `runtime-manifest.json` | asset | pins (`opencodeCommit/opencodeVersion/bunVersion/gitVersion/rgVersion/payloadVersion`), per-file sha256 + size, tarball sha256. Extraction is refused on mismatch; `payloadVersion` bump forces re-extraction. |
 
-### Data layout (app-private, `/data/data/io.github.mcyber12.opencode/files`)
+### Data layout (runtime app-private; projects app-specific external)
 
 *(Phase 10 renamed the published applicationId from `ai.opencode.android` to
 `io.github.mcyber12.opencode`; the Kotlin namespace - the source package - is
@@ -62,10 +62,35 @@ runtime/.extracted-v6               extraction marker (payloadVersion)
 bin/{bun,git,rg} -> nativeLibraryDir/lib{bun,git,rg}.so
 home/                               HOME for the server
 xdg/{data,config,state,cache,tmp}/  XDG_* dirs (OpenCode's auth.json, config, sqlite, logs)
-workspaces/<project-id>/            one directory per project (= one OpenCode instance each)
 secrets/<name>.enc                  AES-256-GCM blobs (server password, provider keys) under AndroidKeyStore
 log/runtime.log, log/crashes/       supervisor log + crash captures
 ```
+
+Everything above stays app-private (`/data/data/io.github.mcyber12.opencode/files`,
+mode 0700) - it is machinery, not the user's work.
+
+**Project files are the exception, and deliberately so** (Phase 10 continuation):
+
+```
+/storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces/<project-id>/
+                                    one directory per project (= one OpenCode instance each)
+```
+
+Before that change a project lived at `files/workspaces/<project-id>`, which no
+file manager, no MTP/USB browse and no non-root `adb shell` can read - the agent
+wrote real files into a sealed box, which contradicted the product's own premise.
+The move to the app-specific *external* directory needs no permission on any
+supported API level (it is the app's own directory on shared storage), and it is
+what makes `adb shell`, `adb pull` and desktop tools able to read the agent's
+output on a stock, non-rooted phone.
+
+What it does not do, stated here so it is not re-discovered: on Android 11+ the
+platform blocks other *apps* from browsing any app's `Android/data` directory, so a
+phone file manager still cannot open it. That is why the app also ships an in-app
+file browser (reading through OpenCode's own `/file` API) and SAF
+"Save a copy" / "Publish to a folder" actions that write real files into a folder
+the user picks. On an install that predates the change, `ProjectStore.ensureMigrated`
+moves existing projects once, and only into an empty new root.
 
 ## Request flow (one turn)
 
