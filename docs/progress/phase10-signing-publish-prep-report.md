@@ -1258,7 +1258,29 @@ Fix (`OpenCodeRepository`):
 * After a prompt is accepted, the transcript is seeded from the server instead of waiting
   for a frame that may never arrive.
 
-This is a real, user-visible robustness fix, found by the improved gate and verified by
-CI (run #17). It is the second thing this session fixed that the old driver could not
-have seen: the old L1 asserted on the screen the instant the *server* answered, so a
-missing transcript was indistinguishable from a slow one.
+This is a real, user-visible robustness fix, found by the improved gate. The old L1
+asserted on the screen the instant the *server* answered, so a missing transcript was
+indistinguishable from a slow one — and the gate's own picture was an empty screen with
+no way to tell that apart from "the app is fine, the capture is not".
+
+**Verified by run #17** (`35461786500` on `b23daf9`): **103 verdict lines, 0 FAIL**,
+`phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0`, JVM 286/0/0/0, and L1 now
+passes on *both* builds with the rows on screen:
+
+```
+P6_L1 PASS :: ... newScreenLines=11 messageRows=4 emptyConversation=false
+              screenCatchUpMs=120000 busyIndicator=true streamingDots=true ... reply='Blue.'
+P10_SMOKE_UI_L1 PASS :: ... newScreenLines=11 messageRows=4 emptyConversation=false ...
+```
+
+with the screenshot honestly labelled rather than silently wrong:
+
+```
+screenshot[bytes=22406 ink=0.023 via=compose lowInk=true
+           deviceShot=30-live-chat-reply-device.png deviceBytes=63208 deviceInk=0.103]
+```
+
+i.e. CI's Compose capture for this step is *still* the empty-conversation frame in this
+emulator (same 22406 bytes, run after run, while the gate reads 4 rows out of the
+semantics tree), which is exactly why the line now says `lowInk=true` and points at the
+side-car photograph instead of pretending the picture is the screen.
