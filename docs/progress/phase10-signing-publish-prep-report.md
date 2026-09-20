@@ -1371,7 +1371,10 @@ do with the phone.
 * Driver self-test extended to **9 scenarios / 68 checks**, re-run on this commit:
   **pass=68 fail=0** (~6 minutes; `phase10/scripts/test-90-real-device.sh`). One of the
   nine scenarios is the owner's bundle reproduced byte for byte (§B.4).
-* **CI run `35520695055` on the code in this appendix (commit `8d32fed`): SUCCESS** (29m39s, all 11 steps green). Every
+* **CI on the code in this appendix: SUCCESS** — most recently run `35534807555` on this
+  appendix's own tree (commit `9921645`), whose log ends `=== PHASE 10 END … rc=0 ===` with
+  `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0`. The run list, including one
+  red run I could not explain, is in §B.9. Detail for the first green run (commit `8d32fed`): SUCCESS** (29m39s, all 11 steps green). Every
   gate ran and passed: `P10-STATIC PASS`, `P10_DRIVER_SELFTEST PASS` (the 9 scenarios),
   `P10-UNIT PASS` (JVM tests=305 failures=0 errors=0 skipped=0), `P10-PAYLOAD PASS`,
   `P10-DEVICE PASS` (fresh AVD, Android 14), the Phase 6 UI gates
@@ -1752,3 +1755,24 @@ publish step, **W1–W3 still pass**, and the script's verdicts match what you s
 The three gates that skipped in your last bundle — `P10D_FIRST_RUN_PROJECT`,
 `P10D_FILES_SCREEN`, `P10D_LIVE_TURN` — should execute this time; a genuine PASS or an
 honest device-side FAIL with a real cause both satisfy the brief, a SKIP does not.
+
+## B.9 The CI runs behind this appendix, including one I could not explain
+
+| Run | Commit | Result |
+|---|---|---|
+| `35515429924` | `c96a92a` (the owner's `p10d-out/` upload) | SUCCESS, 24m08s — the v2-era tree |
+| `35520014972` | v3 storage + driver, first compile | **FAIL: 3 Kotlin errors** (returns in `StorageChoice`'s expression body; `FilesScreen`'s `accent`), fixed in `8d32fed` |
+| `35520695055` | `8d32fed` | SUCCESS, 29m40s: every gate, `phase10_gate_fails=0`, W1–W4 + the outside-the-app checks |
+| `35534807555` | `9921645` (this appendix's tree) | SUCCESS, 29m21s: `=== PHASE 10 END … rc=0 ===`, `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
+
+**One red run whose cause I could not read.** `35534543455` (commit `1ca3c49` — the same tree
+as `9921645` apart from two documentation lines) failed at the pipeline step. Its job log and
+its artifact are both **unreadable from the authoring environment** (GitHub returns EOF for
+the log zip and for the artifact blob), and no evidence from it reached the branch: the two
+bot commits at the tip are two snapshots of the *passing* run's log — one taken mid-run by the
+script's own `push_evidence`, one taken after it by the workflow's commit step — which is why
+the branch records only `rc=0`. So the run is red, the reason is unknown from here, and the
+same tree passed four minutes later. It is written down because a red run I cannot explain is
+neither evidence of a defect nor evidence of its absence; if it recurs, the job log is the
+first thing to fetch (and the environment's inability to download GitHub blobs is itself worth
+knowing).
