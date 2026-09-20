@@ -1,9 +1,9 @@
-=== PHASE 10 START 2026-09-20T20:12:51Z ===
+=== PHASE 10 START 2026-09-20T20:49:38Z ===
 ########## 1/9 static checks (phase 9 invariants + phase 10 release invariants) ##########
-=== Phase 10 static checks 2026-09-20T20:12:51Z ===
+=== Phase 10 static checks 2026-09-20T20:49:38Z ===
 
 === phase 9 static checks (not weakened) ===
-=== Phase 9 static checks 2026-09-20T20:12:51Z ===
+=== Phase 9 static checks 2026-09-20T20:49:38Z ===
 OK   bash -n on 42 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8/phase9 driver
@@ -105,7 +105,7 @@ PASS a visible match is not flagged (rc=0) (rc=0 out='1020 1740')
 PASS has still finds an off-screen node (a tag being present is news) (rc=0)
 PASS a device that marks everything not-shown does not blind the reader (rc=0)
 PASS attrs reports the attribute set and the hidden count (rc=0 out='nodes=4 2 node(s) marked shown=false\nbounds:4 class:4 clickable:4 content-desc:4 enabled:4 index:4 package:4 resource-id:4 shown:4 text:4')
-PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmp1s5hgq6x/broken.xml')
+PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmpsd4dyyvu/broken.xml')
 p10d-ui selftest: 20 checks, 0 failed
 SELFTEST PASS
 OK   uiautomator dump reader self-test (tap targets, disabled states, diagnostics)
@@ -161,7 +161,7 @@ P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, 
   ok   in-app browser path == shell-visible path
   ok   model marker written for the x86_64 carry-forward
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-201307/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-204953/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
 
@@ -256,10 +256,10 @@ PAYLOAD STAGING SKIPPED: compile/test-only run, no APK was produced.
 > Task :app:mapDebugSourceSetPaths
 > Task :app:generateDebugResources
 > Task :app:packageDebugResources
+> Task :app:mergeDebugResources
 > Task :app:createDebugCompatibleScreenManifests
 > Task :app:extractDeepLinksDebug
 > Task :app:parseDebugLocalResources
-> Task :app:mergeDebugResources
 
 > Task :app:processDebugMainManifest
 /home/runner/work/OpenCode-app/OpenCode-app/app/src/main/AndroidManifest.xml:68:9-41 Warning:
@@ -929,7 +929,7 @@ MarkdownTest > atxHeadingsCarryTheirLevel PASSED
 
 MarkdownTest > unterminatedLinkStaysLiteralWhileStreaming PASSED
 
-BUILD SUCCESSFUL in 2m 21s
+BUILD SUCCESSFUL in 2m 29s
 35 actionable tasks: 33 executed, 2 from cache
 P10-UNIT PASS: JVM tests=305 failures=0 errors=0 skipped=0 (unit tests are NOT runtime evidence - the device gates below are)
 ########## 3/9 embedded runtime payload (pinned upstream; reused by every build below) ##########
@@ -1013,8 +1013,49 @@ git source: f93ff170b93a1782659637824b25923245ac9dd1
 GIT_VERSION=2.48.1
     * new build flags
     GEN hook-list.h
+    CC builtin/bundle.o
     * new prefix flags
     * new link flags
+    CC builtin/cat-file.o
+    CC builtin/check-attr.o
+    CC builtin/check-ignore.o
+    CC builtin/check-mailmap.o
+    CC builtin/check-ref-format.o
+    CC builtin/checkout--worker.o
+    CC builtin/checkout-index.o
+    CC builtin/checkout.o
+    CC builtin/clean.o
+    CC builtin/clone.o
+    CC builtin/column.o
+    CC builtin/commit-graph.o
+    CC builtin/commit-tree.o
+    CC builtin/commit.o
+    CC builtin/config.o
+    CC builtin/count-objects.o
+    CC builtin/credential-cache--daemon.o
+    CC builtin/credential-cache.o
+    CC builtin/credential-store.o
+    CC builtin/credential.o
+    CC builtin/describe.o
+    CC builtin/diagnose.o
+    CC builtin/diff-files.o
+    CC builtin/diff-index.o
+    CC builtin/diff-tree.o
+    CC builtin/diff.o
+    CC builtin/difftool.o
+    CC builtin/fast-export.o
+    CC builtin/fast-import.o
+    CC builtin/fetch-pack.o
+    CC builtin/fetch.o
+    CC builtin/fmt-merge-msg.o
+    CC builtin/for-each-ref.o
+    CC builtin/for-each-repo.o
+    CC builtin/fsck.o
+    CC builtin/fsmonitor--daemon.o
+    CC builtin/gc.o
+    CC builtin/get-tar-commit-id.o
+    CC builtin/grep.o
+    CC builtin/hash-object.o
     GEN config-list.h
     CC builtin/hook.o
     CC builtin/index-pack.o
@@ -1375,47 +1416,6 @@ GIT_VERSION=2.48.1
     CC builtin/blame.o
     CC builtin/branch.o
     CC builtin/bugreport.o
-    CC builtin/bundle.o
-    CC builtin/cat-file.o
-    CC builtin/check-attr.o
-    CC builtin/check-ignore.o
-    CC builtin/check-mailmap.o
-    CC builtin/check-ref-format.o
-    CC builtin/checkout--worker.o
-    CC builtin/checkout-index.o
-    CC builtin/checkout.o
-    CC builtin/clean.o
-    CC builtin/clone.o
-    CC builtin/column.o
-    CC builtin/commit-graph.o
-    CC builtin/commit-tree.o
-    CC builtin/commit.o
-    CC builtin/config.o
-    CC builtin/count-objects.o
-    CC builtin/credential-cache--daemon.o
-    CC builtin/credential-cache.o
-    CC builtin/credential-store.o
-    CC builtin/credential.o
-    CC builtin/describe.o
-    CC builtin/diagnose.o
-    CC builtin/diff-files.o
-    CC builtin/diff-index.o
-    CC builtin/diff-tree.o
-    CC builtin/diff.o
-    CC builtin/difftool.o
-    CC builtin/fast-export.o
-    CC builtin/fast-import.o
-    CC builtin/fetch-pack.o
-    CC builtin/fetch.o
-    CC builtin/fmt-merge-msg.o
-    CC builtin/for-each-ref.o
-    CC builtin/for-each-repo.o
-    CC builtin/fsck.o
-    CC builtin/fsmonitor--daemon.o
-    CC builtin/gc.o
-    CC builtin/get-tar-commit-id.o
-    CC builtin/grep.o
-    CC builtin/hash-object.o
     CC builtin/help.o
     CC help.o
     GEN version-def.h
@@ -1429,49 +1429,8 @@ arm64-v8a Android Git built (cross-ABI host execution skipped)
 GIT_VERSION=2.48.1
     * new build flags
     GEN hook-list.h
-    * new prefix flags
-    CC builtin/bundle.o
-    CC builtin/cat-file.o
     * new link flags
-    CC builtin/check-attr.o
-    CC builtin/check-ignore.o
-    CC builtin/check-mailmap.o
-    CC builtin/check-ref-format.o
-    CC builtin/checkout--worker.o
-    CC builtin/checkout-index.o
-    CC builtin/checkout.o
-    CC builtin/clean.o
-    CC builtin/clone.o
-    CC builtin/column.o
-    CC builtin/commit-graph.o
-    CC builtin/commit-tree.o
-    CC builtin/commit.o
-    CC builtin/config.o
-    CC builtin/count-objects.o
-    CC builtin/credential-cache--daemon.o
-    CC builtin/credential-cache.o
-    CC builtin/credential-store.o
-    CC builtin/credential.o
-    CC builtin/describe.o
-    CC builtin/diagnose.o
-    CC builtin/diff-files.o
-    CC builtin/diff-index.o
-    CC builtin/diff-tree.o
-    CC builtin/diff.o
-    CC builtin/difftool.o
-    CC builtin/fast-export.o
-    CC builtin/fast-import.o
-    CC builtin/fetch-pack.o
-    CC builtin/fetch.o
-    CC builtin/fmt-merge-msg.o
-    CC builtin/for-each-ref.o
-    CC builtin/for-each-repo.o
-    CC builtin/fsck.o
-    CC builtin/fsmonitor--daemon.o
-    CC builtin/gc.o
-    CC builtin/get-tar-commit-id.o
-    CC builtin/grep.o
-    CC builtin/hash-object.o
+    * new prefix flags
     GEN config-list.h
     CC builtin/hook.o
     CC builtin/index-pack.o
@@ -1540,8 +1499,8 @@ GIT_VERSION=2.48.1
     CC builtin/update-server-info.o
     CC builtin/upload-archive.o
     CC builtin/upload-pack.o
-    CC builtin/var.o
     CC builtin/verify-commit.o
+    CC builtin/var.o
     CC builtin/verify-pack.o
     CC builtin/verify-tag.o
     CC builtin/worktree.o
@@ -1767,8 +1726,8 @@ GIT_VERSION=2.48.1
     CC trace2/tr2_tgt_normal.o
     CC trace2/tr2_tgt_perf.o
     CC trace2/tr2_tls.o
-    CC trace2/tr2_tmr.o
     CC trailer.o
+    CC trace2/tr2_tmr.o
     CC transport-helper.o
     CC transport.o
     CC tree-diff.o
@@ -1832,6 +1791,47 @@ GIT_VERSION=2.48.1
     CC builtin/blame.o
     CC builtin/branch.o
     CC builtin/bugreport.o
+    CC builtin/bundle.o
+    CC builtin/cat-file.o
+    CC builtin/check-attr.o
+    CC builtin/check-ignore.o
+    CC builtin/check-mailmap.o
+    CC builtin/check-ref-format.o
+    CC builtin/checkout--worker.o
+    CC builtin/checkout-index.o
+    CC builtin/checkout.o
+    CC builtin/clean.o
+    CC builtin/clone.o
+    CC builtin/column.o
+    CC builtin/commit-graph.o
+    CC builtin/commit-tree.o
+    CC builtin/commit.o
+    CC builtin/config.o
+    CC builtin/count-objects.o
+    CC builtin/credential-cache--daemon.o
+    CC builtin/credential-cache.o
+    CC builtin/credential-store.o
+    CC builtin/credential.o
+    CC builtin/describe.o
+    CC builtin/diagnose.o
+    CC builtin/diff-files.o
+    CC builtin/diff-index.o
+    CC builtin/diff-tree.o
+    CC builtin/diff.o
+    CC builtin/difftool.o
+    CC builtin/fast-export.o
+    CC builtin/fast-import.o
+    CC builtin/fetch-pack.o
+    CC builtin/fetch.o
+    CC builtin/fmt-merge-msg.o
+    CC builtin/for-each-ref.o
+    CC builtin/for-each-repo.o
+    CC builtin/fsck.o
+    CC builtin/fsmonitor--daemon.o
+    CC builtin/gc.o
+    CC builtin/get-tar-commit-id.o
+    CC builtin/grep.o
+    CC builtin/hash-object.o
     CC builtin/help.o
     CC help.o
     GEN version-def.h
@@ -1864,81 +1864,81 @@ Turn off this advice by setting config variable advice.detachedHead to false
 
     Updating crates.io index
  Downloading crates ...
-  Downloaded crossbeam-deque v0.8.6
-  Downloaded encoding_rs_io v0.1.7
-  Downloaded jobserver v0.1.34
-  Downloaded itoa v1.0.15
   Downloaded cfg-if v1.0.4
   Downloaded anyhow v1.0.100
-  Downloaded find-msvc-tools v0.1.4
+  Downloaded itoa v1.0.15
   Downloaded same-file v1.0.6
-  Downloaded crossbeam-epoch v0.9.18
-  Downloaded lexopt v0.3.1
-  Downloaded walkdir v2.5.0
-  Downloaded shlex v1.3.0
-  Downloaded termcolor v1.4.1
-  Downloaded pcre2 v0.2.11
-  Downloaded cc v1.2.41
-  Downloaded crossbeam-utils v0.8.21
-  Downloaded log v0.4.28
   Downloaded pkg-config v0.3.32
+  Downloaded shlex v1.3.0
+  Downloaded jobserver v0.1.34
+  Downloaded pcre2 v0.2.11
+  Downloaded find-msvc-tools v0.1.4
+  Downloaded walkdir v2.5.0
+  Downloaded lexopt v0.3.1
+  Downloaded termcolor v1.4.1
+  Downloaded encoding_rs_io v0.1.7
+  Downloaded crossbeam-utils v0.8.21
+  Downloaded crossbeam-deque v0.8.6
+  Downloaded memmap2 v0.9.9
+  Downloaded ryu v1.0.20
+  Downloaded crossbeam-epoch v0.9.18
+  Downloaded cc v1.2.41
+  Downloaded log v0.4.28
   Downloaded serde_core v1.0.228
   Downloaded textwrap v0.16.2
-  Downloaded ryu v1.0.20
-  Downloaded memmap2 v0.9.9
   Downloaded serde v1.0.228
-  Downloaded memchr v2.7.6
   Downloaded aho-corasick v1.1.3
+  Downloaded memchr v2.7.6
   Downloaded serde_json v1.0.145
   Downloaded bstr v1.12.0
   Downloaded regex-syntax v0.8.8
   Downloaded regex-automata v0.4.13
-  Downloaded libc v0.2.177
   Downloaded pcre2-sys v0.2.10
+  Downloaded libc v0.2.177
   Downloaded encoding_rs v0.8.35
    Compiling libc v0.2.177
    Compiling memchr v2.7.6
    Compiling log v0.4.28
    Compiling regex-syntax v0.8.8
    Compiling aho-corasick v1.1.3
+   Compiling shlex v1.3.0
+   Compiling find-msvc-tools v0.1.4
+   Compiling pkg-config v0.3.32
    Compiling regex-automata v0.4.13
    Compiling jobserver v0.1.34
-   Compiling find-msvc-tools v0.1.4
-   Compiling shlex v1.3.0
    Compiling cc v1.2.41
-   Compiling pkg-config v0.3.32
    Compiling bstr v1.12.0
    Compiling serde_core v1.0.228
    Compiling pcre2-sys v0.2.10
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.W16GYTpCXi/rg-src/crates/matcher)
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.QGcVri4jta/rg-src/crates/matcher)
    Compiling cfg-if v1.0.4
    Compiling crossbeam-utils v0.8.21
    Compiling encoding_rs v0.8.35
    Compiling serde v1.0.228
    Compiling serde_json v1.0.145
    Compiling encoding_rs_io v0.1.7
-   Compiling globset v0.4.18 (/tmp/tmp.W16GYTpCXi/rg-src/crates/globset)
+   Compiling globset v0.4.18 (/tmp/tmp.QGcVri4jta/rg-src/crates/globset)
    Compiling memmap2 v0.9.9
-   Compiling ryu v1.0.20
    Compiling termcolor v1.4.1
+   Compiling ryu v1.0.20
    Compiling itoa v1.0.15
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.W16GYTpCXi/rg-src/crates/searcher)
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.QGcVri4jta/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
-   Compiling same-file v1.0.6
    Compiling anyhow v1.0.100
+   Compiling same-file v1.0.6
    Compiling walkdir v2.5.0
-   Compiling grep-printer v0.3.1 (/tmp/tmp.W16GYTpCXi/rg-src/crates/printer)
+   Compiling grep-printer v0.3.1 (/tmp/tmp.QGcVri4jta/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-cli v0.1.12 (/tmp/tmp.W16GYTpCXi/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.W16GYTpCXi/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.W16GYTpCXi/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.W16GYTpCXi/rg-src/crates/ignore)
+   Compiling grep-cli v0.1.12 (/tmp/tmp.QGcVri4jta/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.QGcVri4jta/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.QGcVri4jta/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.QGcVri4jta/rg-src/crates/ignore)
    Compiling pcre2 v0.2.11
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.W16GYTpCXi/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.W16GYTpCXi/rg-src/crates/grep)
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.QGcVri4jta/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.QGcVri4jta/rg-src/crates/grep)
    Compiling textwrap v0.16.2
    Compiling lexopt v0.3.1
-    Finished `release` profile [optimized + debuginfo] target(s) in 38.13s
+    Finished `release` profile [optimized + debuginfo] target(s) in 40.57s
 arm64-v8a Android ripgrep OK:  ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 --- Android ripgrep (x86_64, target=x86_64-linux-android) ---
 info: downloading component rust-std
@@ -1969,40 +1969,40 @@ Turn off this advice by setting config variable advice.detachedHead to false
    Compiling jobserver v0.1.34
    Compiling shlex v1.3.0
    Compiling cc v1.2.41
-   Compiling serde_core v1.0.228
    Compiling pkg-config v0.3.32
    Compiling regex-automata v0.4.13
+   Compiling serde_core v1.0.228
    Compiling pcre2-sys v0.2.10
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.W16GYTpCXi/rg-src/crates/matcher)
-   Compiling cfg-if v1.0.4
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.QGcVri4jta/rg-src/crates/matcher)
    Compiling crossbeam-utils v0.8.21
+   Compiling cfg-if v1.0.4
    Compiling encoding_rs v0.8.35
    Compiling bstr v1.12.0
-   Compiling serde_json v1.0.145
    Compiling serde v1.0.228
-   Compiling globset v0.4.18 (/tmp/tmp.W16GYTpCXi/rg-src/crates/globset)
+   Compiling serde_json v1.0.145
+   Compiling globset v0.4.18 (/tmp/tmp.QGcVri4jta/rg-src/crates/globset)
    Compiling encoding_rs_io v0.1.7
    Compiling memmap2 v0.9.9
-   Compiling termcolor v1.4.1
-   Compiling itoa v1.0.15
    Compiling ryu v1.0.20
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.W16GYTpCXi/rg-src/crates/searcher)
+   Compiling itoa v1.0.15
+   Compiling termcolor v1.4.1
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.QGcVri4jta/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
    Compiling anyhow v1.0.100
    Compiling same-file v1.0.6
    Compiling walkdir v2.5.0
-   Compiling grep-printer v0.3.1 (/tmp/tmp.W16GYTpCXi/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-cli v0.1.12 (/tmp/tmp.W16GYTpCXi/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.W16GYTpCXi/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.W16GYTpCXi/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.W16GYTpCXi/rg-src/crates/ignore)
-   Compiling textwrap v0.16.2
+   Compiling grep-printer v0.3.1 (/tmp/tmp.QGcVri4jta/rg-src/crates/printer)
+   Compiling grep-cli v0.1.12 (/tmp/tmp.QGcVri4jta/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.QGcVri4jta/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.QGcVri4jta/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.QGcVri4jta/rg-src/crates/ignore)
    Compiling lexopt v0.3.1
+   Compiling textwrap v0.16.2
    Compiling pcre2 v0.2.11
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.W16GYTpCXi/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.W16GYTpCXi/rg-src/crates/grep)
-    Finished `release` profile [optimized + debuginfo] target(s) in 38.40s
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.QGcVri4jta/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.QGcVri4jta/rg-src/crates/grep)
+    Finished `release` profile [optimized + debuginfo] target(s) in 37.32s
 x86_64 Android ripgrep OK:  ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 === [5/6] OpenCode server bundle @ 05ea5073be967c779d326929b2de6228dda4159d (pinned, fail-loud) ===
 upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
@@ -2010,30 +2010,30 @@ bundle build complete
 === [6/6] stage payload, compute manifest ===
 === plugin seed: @opencode-ai/plugin@1.18.23 ===
 plugin seed: 1032 files, 18376 KB, plugin 1.18.23
-payload tarball: 19968174 bytes sha256=7278b37fe31021cf55a413969578e86ade0f2b39b6e77e5055708697a6f7ed50
+payload tarball: 19967791 bytes sha256=d6ba07ddd2674e8919ebc70be1e6a11fc4e5faca16aade2fd6470284d08fc8e3
 manifest: 1062 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/assets/runtime-manifest.json
 === engine layout ===
 11464 ./build.status
 41 ./git.upstream.commit.txt
 187351 ./assets/runtime-manifest.json
-19968174 ./assets/runtime-payload.tar.gz
+19967791 ./assets/runtime-payload.tar.gz
 8184 ./jniLibs/arm64-v8a/libchildshim.so
-35136040 ./jniLibs/arm64-v8a/librg.so
+35135904 ./jniLibs/arm64-v8a/librg.so
 6744 ./jniLibs/arm64-v8a/libseccompshim.so
 89796776 ./jniLibs/arm64-v8a/libbun.so
 7592 ./jniLibs/arm64-v8a/libexecshim.so
 4132208 ./jniLibs/arm64-v8a/libgit.so
 7584 ./jniLibs/x86_64/libchildshim.so
-36771576 ./jniLibs/x86_64/librg.so
+36771608 ./jniLibs/x86_64/librg.so
 7608 ./jniLibs/x86_64/libseccompshim.so
 91788816 ./jniLibs/x86_64/libbun.so
 7864 ./jniLibs/x86_64/libexecshim.so
 4258048 ./jniLibs/x86_64/libgit.so
 PAYLOAD_READY
-P10-PAYLOAD PASS: payloadVersion=7 opencode=1.18.23@05ea5073be96 bun=1.3.14 git=v2.48.1 rg=15.1.0 sha256=7278b37fe31021cf files=1062
+P10-PAYLOAD PASS: payloadVersion=7 opencode=1.18.23@05ea5073be96 bun=1.3.14 git=v2.48.1 rg=15.1.0 sha256=d6ba07ddd2674e89 files=1062
 ########## 4/9 fresh emulator at a phone-sized screen (1080x1920 @ 420dpi) ##########
 --- downloading cmdline-tools
--rw-r--r-- 1 runner runner 153607504 Sep 20 20:24 cmdtools.zip
+-rw-r--r-- 1 runner runner 153607504 Sep 20 21:01 cmdtools.zip
 /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
 /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
 --- sdkmanager licenses
@@ -2051,7 +2051,7 @@ accel:
 KVM (version 12) is installed and usable.
 accel
 --- starting emulator (headless)
-emulator pid=18317
+emulator pid=17591
 * daemon not running; starting now at tcp:5037
 * daemon started successfully
 BOOT_COMPLETED after ~48s
@@ -2079,9 +2079,9 @@ RELEASE SIGNING: not configured -> release artifacts are UNSIGNED (CI behavior; 
 
 > Task :app:verifyAndStagePayload
 PAYLOAD STAGING: -PskipPayload=null SKIP_PAYLOAD=null
-PAYLOAD_SOURCE runtime-payload.tar.gz=19968174B runtime-manifest.json=187351B
+PAYLOAD_SOURCE runtime-payload.tar.gz=19967791B runtime-manifest.json=187351B
 Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/assets / /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/jniLibs
-STAGED_ASSETS n=2 runtime-manifest.json(187351B), runtime-payload.tar.gz(19968174B)
+STAGED_ASSETS n=2 runtime-manifest.json(187351B), runtime-payload.tar.gz(19967791B)
 STAGED_JNILIBS n=12 arm64-v8a/libbun.so, x86_64/libbun.so, arm64-v8a/libchildshim.so, x86_64/libchildshim.so, arm64-v8a/libexecshim.so, x86_64/libexecshim.so, arm64-v8a/libgit.so, x86_64/libgit.so, arm64-v8a/librg.so, x86_64/librg.so, arm64-v8a/libseccompshim.so, x86_64/libseccompshim.so
 
 > Task :app:preBuild
@@ -2140,6 +2140,7 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:processDebugAndroidTestResources UP-TO-DATE
 > Task :app:compileDebugAndroidTestKotlin UP-TO-DATE
 > Task :app:javaPreCompileDebugAndroidTest FROM-CACHE
+> Task :app:mergeExtDexDebug
 > Task :app:compileDebugAndroidTestJavaWithJavac
 > Task :app:mergeDebugAndroidTestShaders
 > Task :app:compileDebugAndroidTestShaders NO-SOURCE
@@ -2147,7 +2148,6 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:mergeDebugAndroidTestAssets
 > Task :app:compressDebugAndroidTestAssets
 > Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
-> Task :app:mergeExtDexDebug
 > Task :app:dexBuilderDebugAndroidTest
 > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
 > Task :app:processDebugAndroidTestJavaRes
@@ -2168,50 +2168,50 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:createDebugAndroidTestApkListingFileRedirect
 > Task :app:assembleDebugAndroidTest
 
-BUILD SUCCESSFUL in 1m 48s
+BUILD SUCCESSFUL in 1m 38s
 69 actionable tasks: 37 executed, 4 from cache, 28 up-to-date
-[2026-09-20T20:28:17Z] === stage A: deterministic chat UI gates (no runtime, no model, no key) ===
-[2026-09-20T20:28:17Z] uninstalling io.github.mcyber12.opencode.debug / io.github.mcyber12.opencode.debug.test so the next gate really is a first run
+[2026-09-20T21:05:31Z] === stage A: deterministic chat UI gates (no runtime, no model, no key) ===
+[2026-09-20T21:05:31Z] uninstalling io.github.mcyber12.opencode.debug / io.github.mcyber12.opencode.debug.test so the next gate really is a first run
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-09-20T20:28:24Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
-[2026-09-20T20:29:13Z] instrument rc=0 (chat-ui)
-[2026-09-20T20:29:14Z] chat-ui runner trailer: OK
-[2026-09-20T20:29:15Z] screenshots pulled: 12
-[2026-09-20T20:29:15Z] P6-U1 PASS :: :: rows=602 composedAtBottom=25 composedAtTop=23 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
-[2026-09-20T20:29:15Z] P6-U2 PASS :: :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true
-[2026-09-20T20:29:15Z] P6-U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
-[2026-09-20T20:29:15Z] P6-U4 PASS :: :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=true,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
-[2026-09-20T20:29:15Z] P6-U5 PASS :: :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true retryBanner=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true 
-[2026-09-20T20:29:15Z] P6-U6 PASS :: :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
-[2026-09-20T20:29:15Z] P6-U7 PASS :: :: interactive={chat=24, sessions=11, projects=6, welcome=2, welcome-unsupported=2, settings=26, files=7} total=78 unnamed=0
-[2026-09-20T20:29:15Z] P6-U8 PASS :: :: rowsComposedBefore=23 after=23 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true rever
-[2026-09-20T20:29:15Z] === stage B: first-run experience on a freshly installed APK ===
-[2026-09-20T20:29:15Z] uninstalling io.github.mcyber12.opencode.debug / io.github.mcyber12.opencode.debug.test so the next gate really is a first run
+[2026-09-20T21:05:38Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
+[2026-09-20T21:06:26Z] instrument rc=0 (chat-ui)
+[2026-09-20T21:06:27Z] chat-ui runner trailer: OK
+[2026-09-20T21:06:28Z] screenshots pulled: 12
+[2026-09-20T21:06:28Z] P6-U1 PASS :: :: rows=602 composedAtBottom=25 composedAtTop=23 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
+[2026-09-20T21:06:28Z] P6-U2 PASS :: :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true
+[2026-09-20T21:06:28Z] P6-U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
+[2026-09-20T21:06:28Z] P6-U4 PASS :: :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=true,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
+[2026-09-20T21:06:28Z] P6-U5 PASS :: :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true retryBanner=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true 
+[2026-09-20T21:06:28Z] P6-U6 PASS :: :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
+[2026-09-20T21:06:28Z] P6-U7 PASS :: :: interactive={chat=24, sessions=24, projects=24, welcome=2, welcome-unsupported=2, settings=26, files=26} total=128 unnamed=0
+[2026-09-20T21:06:28Z] P6-U8 PASS :: :: rowsComposedBefore=23 after=23 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true rever
+[2026-09-20T21:06:28Z] === stage B: first-run experience on a freshly installed APK ===
+[2026-09-20T21:06:28Z] uninstalling io.github.mcyber12.opencode.debug / io.github.mcyber12.opencode.debug.test so the next gate really is a first run
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-09-20T20:29:21Z] === am instrument ai.opencode.android.ui.FirstRunUiGatesTest ===
-[2026-09-20T20:29:52Z] instrument rc=0 (first-run)
-[2026-09-20T20:29:53Z] first-run runner trailer: OK
-[2026-09-20T20:29:53Z] screenshots pulled: 4
-[2026-09-20T20:29:53Z] P6-F1 PASS :: :: firstScreen=welcome stages=[extracting, starting, healthy] welcomeCopy=4/4 sampledLines=20 leakedTokens=[] continueBecameEnabled=false advancedToProjects=true advancedToChat=false supervisor=HEALTHY(restarts=0) screen
-[2026-09-20T20:29:53Z] P6-F2 PASS :: :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=true,chat=false) leakedTokens=[] screenshot=40276
-[2026-09-20T20:29:53Z] P6-F3 PASS :: :: projectsEmptyState=true typedName=true createdThroughUi=true chatScreen=true composerEnabled=true projectNameShown=true leakedTokens=[] screenshots=projects:40276,chat:50607
-[2026-09-20T20:29:53Z] P6-F4 PASS :: :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=34350, 02-first-run-ready.png=40276, 03-first-run-projects.png=40276, 04-first-run-chat.png=50607]
-[2026-09-20T20:29:53Z] === stage C: live turn through the UI (key-free default model) ===
-[2026-09-20T20:29:53Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
-[2026-09-20T20:30:36Z] instrument rc=0 (live-chat)
-[2026-09-20T20:30:37Z] live-chat runner trailer: OK
-[2026-09-20T20:30:37Z] screenshots pulled: 8
-[2026-09-20T20:30:37Z] P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=11 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBann
-[2026-09-20T20:30:37Z] P6-L2 PASS :: :: tool=bash status=completed partId=prt_0c0836acb001XgA1sd3r2u02dh cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0
-[2026-09-20T20:30:37Z] === evidence pull ===
-[2026-09-20T20:30:39Z] === SUMMARY ===
-P6_SUMMARY 2026-09-20T20:30:39Z
+[2026-09-20T21:06:36Z] === am instrument ai.opencode.android.ui.FirstRunUiGatesTest ===
+[2026-09-20T21:07:01Z] instrument rc=0 (first-run)
+[2026-09-20T21:07:02Z] first-run runner trailer: OK
+[2026-09-20T21:07:02Z] screenshots pulled: 4
+[2026-09-20T21:07:02Z] P6-F1 PASS :: :: firstScreen=welcome stages=[extracting, starting, healthy] welcomeCopy=4/4 sampledLines=20 leakedTokens=[] continueBecameEnabled=false advancedToProjects=true advancedToChat=false supervisor=HEALTHY(restarts=0) screen
+[2026-09-20T21:07:02Z] P6-F2 PASS :: :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=true,chat=false) leakedTokens=[] screenshot=40276
+[2026-09-20T21:07:02Z] P6-F3 PASS :: :: projectsEmptyState=true typedName=true createdThroughUi=true chatScreen=true composerEnabled=true projectNameShown=true leakedTokens=[] screenshots=projects:40276,chat:37516
+[2026-09-20T21:07:02Z] P6-F4 PASS :: :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=34350, 02-first-run-ready.png=40276, 03-first-run-projects.png=40276, 04-first-run-chat.png=37516]
+[2026-09-20T21:07:02Z] === stage C: live turn through the UI (key-free default model) ===
+[2026-09-20T21:07:02Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
+[2026-09-20T21:07:41Z] instrument rc=0 (live-chat)
+[2026-09-20T21:07:42Z] live-chat runner trailer: OK
+[2026-09-20T21:07:42Z] screenshots pulled: 8
+[2026-09-20T21:07:42Z] P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=12 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBann
+[2026-09-20T21:07:42Z] P6-L2 PASS :: :: tool=bash status=completed partId=prt_0c0a55d15001mc7K47R3tsded6 cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0
+[2026-09-20T21:07:42Z] === evidence pull ===
+[2026-09-20T21:07:44Z] === SUMMARY ===
+P6_SUMMARY 2026-09-20T21:07:44Z
 ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0
 chat_ui_instrument_rc=0 first_run_instrument_rc=0 live_chat_instrument_rc=0
 screenshots=21
@@ -2220,57 +2220,58 @@ device_abi=x86_64
 android_sdk=34
 phase6 UI gates rc=0
 ########## 5b/9 workspace location + visibility (Phase 10 continuation: files must not be a black box) ##########
-[2026-09-20T20:30:39Z] installing io.github.mcyber12.opencode.debug + its test APK (keeps data: the runtime the gates talk to is already up)
-[2026-09-20T20:30:42Z] appops MANAGE_EXTERNAL_STORAGE: MANAGE_EXTERNAL_STORAGE: allow
-[2026-09-20T20:30:42Z] shared-storage default: ls: /storage/emulated/0/Documents/OpenCode: No such file or directory
-[2026-09-20T20:30:42Z] === am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest (W1-W4) ===
-[2026-09-20T20:30:51Z] instrument rc=0
-[2026-09-20T20:30:51Z] --- verdict lines ---
+[2026-09-20T21:07:44Z] installing io.github.mcyber12.opencode.debug + its test APK (keeps data: the runtime the gates talk to is already up)
+[2026-09-20T21:07:47Z] appops MANAGE_EXTERNAL_STORAGE: MANAGE_EXTERNAL_STORAGE: allow
+[2026-09-20T21:07:47Z] shared-storage default: ls: /storage/emulated/0/Documents/OpenCode: No such file or directory
+[2026-09-20T21:07:47Z] === am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest (W1-W4) ===
+[2026-09-20T21:07:57Z] instrument rc=0
+[2026-09-20T21:07:58Z] --- verdict lines ---
 P7_W1_PROJECT_LIFECYCLE PASS :: c
-P7_W1_PROJECT_LIFECYCLE PASS :: created=p7-life-1789936250610 renamed=p7-renamed-1789936250610 adopted=p7-adopted-1789936250610 delete=true
+P7_W1_PROJECT_LIFECYCLE PASS :: created=p7-life-1789938476518 renamed=p7-renamed-1789938476518 adopted=p7-adopted-1789938476518 delete=true
 P7_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=t
-P7_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_ffc06ba6"}'
+P7_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_6d84eb32"}'
 P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: p
-P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1789936250648/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
+P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1789938476588/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
 P7_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/sto
-P7_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces serverWrote=true readBack=true marker=P10_VISIBLE_1789936242901 project=w4-storage-1789936242885 shellStatus=200 dirOnDisk=true size=26
-W1_PROJECT_LIFECYCLE PASS :: :: created=p7-life-1789936250610 renamed=p7-renamed-1789936250610 adopted=p7-adopted-1789936250610 delete=true
-W2_WORKSPACE_ISOLATION PASS :: :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_ffc06ba6"}'
-W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1789936250648/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
-W4_WORKSPACE_VISIBLE PASS :: :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces serverWrote=true readBack=true marker=P10_VISIBLE_1789936242901 project=w4-storage-1789936242885 shellStatus=200 dirOnDisk=true size=26
-[2026-09-20T20:30:51Z] === visibility from outside the app (non-root adb shell), project='w4-storage-1789936242885' root='/storage/emulated/0/Documents/OpenCode' ===
-[2026-09-20T20:30:53Z] pass=11 fail=0 skip=1
+P7_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces serverWrote=true readBack=true marker=P10_VISIBLE_1789938468012 project=w4-storage-1789938468003 shellStatus=200 dirOnDisk=true size=26
+W1_PROJECT_LIFECYCLE PASS :: :: created=p7-life-1789938476518 renamed=p7-renamed-1789938476518 adopted=p7-adopted-1789938476518 delete=true
+W2_WORKSPACE_ISOLATION PASS :: :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_6d84eb32"}'
+W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1789938476588/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
+W4_WORKSPACE_VISIBLE PASS :: :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces serverWrote=true readBack=true marker=P10_VISIBLE_1789938468012 project=w4-storage-1789938468003 shellStatus=200 dirOnDisk=true size=26
+[2026-09-20T21:07:58Z] === visibility from outside the app (non-root adb shell), project='w4-storage-1789938468003' root='/storage/emulated/0/Documents/OpenCode' ===
+[2026-09-20T21:07:59Z] pass=11 fail=0 skip=1
 ########## 6/9 release-shaped SMOKE build (release applicationId + packaging, debug-key signed) ##########
-[2026-09-20T20:30:53Z] === building the smoke variant (release configuration, debug-key signed) ===
-[2026-09-20T20:32:21Z] smoke apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/smoke/app-smoke.apk
-[2026-09-20T20:32:21Z] smoke testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/smoke/app-smoke-androidTest.apk
-[2026-09-20T20:32:21Z] === inspecting the smoke APK (identity, payload, abis, signing) ===
+[2026-09-20T21:07:59Z] === building the smoke variant (release configuration, debug-key signed) ===
+[2026-09-20T21:09:23Z] smoke apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/smoke/app-smoke.apk
+[2026-09-20T21:09:23Z] smoke testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/smoke/app-smoke-androidTest.apk
+[2026-09-20T21:09:24Z] === inspecting the smoke APK (identity, payload, abis, signing) ===
 P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=True
-[2026-09-20T20:32:21Z] P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=True
+[2026-09-20T21:09:24Z] P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=True
 P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
-[2026-09-20T20:32:21Z] P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
-[2026-09-20T20:32:21Z] === installing the smoke build (fresh) ===
+[2026-09-20T21:09:24Z] P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
+[2026-09-20T21:09:24Z] === installing the smoke build (fresh) ===
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-09-20T20:32:23Z] === Phase 6 UI gates against the SMOKE build (P6_PKG=io.github.mcyber12.opencode) ===
-P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0 on the release-shaped build (identical gates to the debug run)
-[2026-09-20T20:34:42Z] P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0 on the release-shaped build (identical gates to the debug run)
+[2026-09-20T21:09:26Z] === Phase 6 UI gates against the SMOKE build (P6_PKG=io.github.mcyber12.opencode) ===
+P10_SMOKE_UI FAIL :: pass=13 fail=1 skip=0 - a gate that passes on debug and fails here is a RELEASE-SHAPE finding (see p10-smoke-ui.log)
+[2026-09-20T21:11:17Z] P10_SMOKE_UI FAIL :: pass=13 fail=1 skip=0 - a gate that passes on debug and fails here is a RELEASE-SHAPE finding (see p10-smoke-ui.log)
 P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
-[2026-09-20T20:34:42Z] P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
+[2026-09-20T21:11:17Z] P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
 
-P10_SMOKE_SUMMARY pass=4 fail=0 skip=0
+P10_SMOKE_SUMMARY pass=3 fail=1 skip=0
+STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase10/scripts/50-smoke-gates.sh'
 ########## 7/9 store screenshots from the real app on a phone-sized screen ##########
-[2026-09-20T20:34:42Z] === launching io.github.mcyber12.opencode ===
-[2026-09-20T20:34:48Z] captured 01-welcome.png (1080x1920)
-[2026-09-20T20:34:50Z] tapping 'Continue' at 540 326 (welcome action)
-[2026-09-20T20:34:57Z] captured 02-projects.png (1080x1920)
-[2026-09-20T20:34:59Z] could not find 'New project' on screen (projects action)
-[2026-09-20T20:35:01Z] tapping 'Settings' at 1052 52 (settings action)
-[2026-09-20T20:35:07Z] captured 05-settings.png (1080x1920)
-[2026-09-20T20:35:11Z] captured 06-settings-open-source.png (1080x1920)
-[2026-09-20T20:35:11Z] captured=4
+[2026-09-20T21:11:17Z] === launching io.github.mcyber12.opencode ===
+[2026-09-20T21:11:23Z] captured 01-welcome.png (1080x1920)
+[2026-09-20T21:11:25Z] tapping 'Continue' at 540 326 (welcome action)
+[2026-09-20T21:11:32Z] captured 02-projects.png (1080x1920)
+[2026-09-20T21:11:34Z] could not find 'New project' on screen (projects action)
+[2026-09-20T21:11:37Z] tapping 'Settings' at 1052 52 (settings action)
+[2026-09-20T21:11:42Z] captured 05-settings.png (1080x1920)
+[2026-09-20T21:11:46Z] captured 06-settings-open-source.png (1080x1920)
+[2026-09-20T21:11:46Z] captured=4
 P10_SHOTS PASS: captured=4 screenshots into /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/screenshots (validated by 60-store-assets.sh)
 sources:
   /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/screenshots (4 png)
@@ -2285,156 +2286,43 @@ STORE-ASSETS PASS: 4 screenshots in /home/runner/work/OpenCode-app/OpenCode-app/
 NOTE: these files are store assets, not evidence. The gate verdicts that
       produced them are in docs/progress/phase10-evidence/.
 ########## 8/9 release APK + AAB (CI produces them UNSIGNED) + byte-level inspection ##########
-[2026-09-20T20:35:11Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=1.18.23-phase10 versionCode=8
-[2026-09-20T20:35:11Z] === gradle :app:assembleRelease :app:bundleRelease ===
-[2026-09-20T20:37:50Z] apk=app-release-unsigned.apk (131048785 bytes)
-[2026-09-20T20:37:50Z] aab=app-release.aab (119147093 bytes)
+[2026-09-20T21:11:47Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=1.18.23-phase10 versionCode=8
+[2026-09-20T21:11:47Z] === gradle :app:assembleRelease :app:bundleRelease ===
+[2026-09-20T21:14:12Z] apk=app-release-unsigned.apk (131048525 bytes)
+[2026-09-20T21:14:12Z] aab=app-release.aab (119146831 bytes)
 P10_RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
-[2026-09-20T20:37:50Z] RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
+[2026-09-20T21:14:13Z] RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
 P10_RELEASE_APK_DETAIL PASS :: CONTENTS entries=169 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
-[2026-09-20T20:37:50Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=169 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
+[2026-09-20T21:14:13Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=169 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
 P10_UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
-[2026-09-20T20:37:50Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
+[2026-09-20T21:14:13Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
 P10_RELEASE_AAB PASS :: CONTENTS entries=174 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
-[2026-09-20T20:37:50Z] RELEASE_AAB PASS :: CONTENTS entries=174 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
-[2026-09-20T20:37:50Z] sha256:
-89a051852ad4fd509ad51370c8782e5b922b14f223afab117ce0e99950fac11f  ./app-release-unsigned.apk
-2b4493c46a5b8d7aedb1929a82310b7d30a67666d8b4f05777b4d1767542ad68  ./app-release.aab
+[2026-09-20T21:14:13Z] RELEASE_AAB PASS :: CONTENTS entries=174 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
+[2026-09-20T21:14:13Z] sha256:
+51de669275ce029a4be8768be0f7d37dba3577b1ce3c4a8b28566086dd525afb  ./app-release-unsigned.apk
+6da71682051c05545c6fee697f29d5807ab69f760e4299bad4fa5e79cee9fe95  ./app-release.aab
 
 P10_RELEASE_SUMMARY pass=4 fail=0
 ########## 9/9 Phase 9 gates on the same device (provider selection, plugin seed, version, lock) ##########
 p9 preamble: removing the smoke build so port 4111 belongs to the debug runtime again
-[2026-09-20T20:37:54Z] === P9 stage 1: provider selection (the carried defect, reproduced then fixed) ===
-[2026-09-20T20:38:17Z] === am instrument ai.opencode.android.client.ProviderSelectionGatesTest ===
-[2026-09-20T20:38:34Z] instrument rc=0 (provsel)
-[2026-09-20T20:38:34Z] P9_PROVSEL_STALE PASS :: :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
-[2026-09-20T20:38:34Z] P9_PROVSEL_REBUILT PASS :: :: after POST /global/dispose: connected=true instanceSource=api models=371 (was instanceSource=custom before the dispose)
-[2026-09-20T20:38:34Z] P9_PROVSEL_TURN PASS :: :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode d
-[2026-09-20T20:38:34Z] P9_PROVSEL_CLEANUP PASS :: :: dummy credential removed: connected=false
-[2026-09-20T20:38:34Z] === P9 stage 2: runtime version string + plugin install ===
-[2026-09-20T20:38:57Z] P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
-[2026-09-20T20:38:57Z] npm registry probe from the app uid: none
-[2026-09-20T20:41:33Z] P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
-[2026-09-20T20:41:33Z] === P9 stage 3: versions.lock == manifest == RuntimeVersion.kt == APK ===
-OK lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=7278b37fe31021cf 
-[2026-09-20T20:41:33Z] P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=7278b37fe31021cf 
-[2026-09-20T20:41:33Z] === evidence pull ===
-[2026-09-20T20:41:33Z] === P9 SUMMARY ===
-P9_SUMMARY 2026-09-20T20:41:33Z
+[2026-09-20T21:14:17Z] === P9 stage 1: provider selection (the carried defect, reproduced then fixed) ===
+[2026-09-20T21:14:41Z] === am instrument ai.opencode.android.client.ProviderSelectionGatesTest ===
+[2026-09-20T21:14:59Z] instrument rc=0 (provsel)
+[2026-09-20T21:14:59Z] P9_PROVSEL_STALE PASS :: :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
+[2026-09-20T21:14:59Z] P9_PROVSEL_REBUILT PASS :: :: after POST /global/dispose: connected=true instanceSource=api models=371 (was instanceSource=custom before the dispose)
+[2026-09-20T21:14:59Z] P9_PROVSEL_TURN PASS :: :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode d
+[2026-09-20T21:14:59Z] P9_PROVSEL_CLEANUP PASS :: :: dummy credential removed: connected=false
+[2026-09-20T21:14:59Z] === P9 stage 2: runtime version string + plugin install ===
+[2026-09-20T21:15:23Z] P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
+[2026-09-20T21:15:23Z] npm registry probe from the app uid: none
+[2026-09-20T21:17:58Z] P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
+[2026-09-20T21:17:58Z] === P9 stage 3: versions.lock == manifest == RuntimeVersion.kt == APK ===
+OK lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=d6ba07ddd2674e89 
+[2026-09-20T21:17:58Z] P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=d6ba07ddd2674e89 
+[2026-09-20T21:17:58Z] === evidence pull ===
+[2026-09-20T21:17:58Z] === P9 SUMMARY ===
+P9_SUMMARY 2026-09-20T21:17:58Z
 gates_pass=7 gates_fail=0 gates_skip=0
 device_abi=x86_64
 android_sdk=34
 ########## summary ##########
-P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, published identity, store package) + apk inspector self-test
-P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone (9 scenarios: happy, locked, blank, tags-gone, shown-hidden, no-grant, dump-unusable, msys-mangled, no-python)
-P10-UNIT PASS: JVM tests=305 failures=0 errors=0 skipped=0 (unit tests are NOT runtime evidence - the device gates below are)
-P10-PAYLOAD PASS: payloadVersion=7 opencode=1.18.23@05ea5073be96 bun=1.3.14 git=v2.48.1 rg=15.1.0 sha256=7278b37fe31021cf files=1062
-P10-DEVICE PASS: fresh AVD on 14 (Physical size: 1080x1920 density=Physical density: 160)
-P6_U1 PASS ::
-P6_U1 PASS :: rows=602 composedAtBottom=25 composedAtTop=23 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
-P6_U2 PASS :: collapsedByDefault=t
-P6_U2 PASS :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true
-P6_U3 PASS :: ask=t
-P6_U3 PASS :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[staging]])] submitEnabledAtTap=true submitClicks=1 scrolledIntoView=true
-P6_U4 PASS ::
-P6_U4 PASS :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=true,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
-P6_U5 PASS :: busyBa
-P6_U5 PASS :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true retryBanner=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true turnErrorKept=true
-P6_U6 PASS :: heading=t
-P6_U6 PASS :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
-P6_U7 PASS :: inte
-P6_U7 PASS :: interactive={chat=24, sessions=11, projects=6, welcome=2, welcome-unsupported=2, settings=26, files=7} total=78 unnamed=0
-P6_U8 PASS ::
-P6_U8 PASS :: rowsComposedBefore=23 after=23 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true revertNote=true emptyState=true/true
-P6_U9 PASS :: listed=t
-P6_U9 PASS :: listed=true pathShown=true locationCopy=true openedDir=true upShown=true upWorks=true openedFile=true viewer=true body=true saveCopy=true/true closed=true publish=true/true copyPath=true empty=true panel=true/true/true/true/true fallback=true/true/true/true/true/true/true chosen=true/t
-P6_F1 PASS :: fi
-P6_F1 PASS :: firstScreen=welcome stages=[extracting, starting, healthy] welcomeCopy=4/4 sampledLines=20 leakedTokens=[] continueBecameEnabled=false advancedToProjects=true advancedToChat=false supervisor=HEALTHY(restarts=0) screenshots=welcome:34350,projects:40276,chat:-1 detailLength=25
-P6_F2 PASS :: status=HEALTHY
-P6_F2 PASS :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=true,chat=false) leakedTokens=[] screenshot=40276
-P6_F3 PASS :: p
-P6_F3 PASS :: projectsEmptyState=true typedName=true createdThroughUi=true chatScreen=true composerEnabled=true projectNameShown=true leakedTokens=[] screenshots=projects:40276,chat:50607
-P6_F4 PASS :: count=4 usable=4 welcome=t
-P6_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=34350, 02-first-run-ready.png=40276, 03-first-run-projects.png=40276, 04-first-run-chat.png=50607]
-P6_L1 PASS :: p
-P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=11 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=224
-P6_L2 PASS :: tool=bash status=completed pa
-P6_L2 PASS :: tool=bash status=completed partId=prt_0c0836acb001XgA1sd3r2u02dh cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0 marker=P6LIVE228292 screenshots[bytes=49168 ink=0.061 via=compose | 
-P6-UI totals: ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0
-P9_PROVSEL_CLEANUP PASS :: dummy c
-P9_PROVSEL_CLEANUP PASS :: dummy credential removed: connected=false
-P9_PROVSEL_REBUILT PASS :: afte
-P9_PROVSEL_REBUILT PASS :: after POST /global/dispose: connected=true instanceSource=api models=371 (was instanceSource=custom before the dispose)
-P9_PROVSEL_STALE PASS :: afte
-P9_PROVSEL_STALE PASS :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
-P9_PROVSEL_TURN PASS :: p
-P9_PROVSEL_TURN PASS :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode default
-P9_PROVSEL_STALE PASS :: :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
-P9_PROVSEL_REBUILT PASS :: :: after POST /global/dispose: connected=true instanceSource=api models=371 (was instanceSource=custom before the dispose)
-P9_PROVSEL_TURN PASS :: :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode d
-P9_PROVSEL_CLEANUP PASS :: :: dummy credential removed: connected=false
-P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
-P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
-P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=7278b37fe31021cf 
-P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
-P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
-P10_RELEASE_AAB PASS :: CONTENTS entries=174 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
-P10_RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
-P10_RELEASE_APK_DETAIL PASS :: CONTENTS entries=169 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
-P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=True
-P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0 on the release-shaped build (identical gates to the debug run)
-P10_SMOKE_UI_F1 PASS :: fi
-P10_SMOKE_UI_F1 PASS :: firstScreen=welcome stages=[extracting, starting, healthy] welcomeCopy=4/4 sampledLines=20 leakedTokens=[] continueBecameEnabled=false advancedToProjects=true advancedToChat=false supervisor=HEALTHY(restarts=0) screenshots=welcome:34350,projects:40276,chat:-1 detailLength=25
-P10_SMOKE_UI_F2 PASS :: status=HEALTHY
-P10_SMOKE_UI_F2 PASS :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=true,chat=false) leakedTokens=[] screenshot=40276
-P10_SMOKE_UI_F3 PASS :: p
-P10_SMOKE_UI_F3 PASS :: projectsEmptyState=true typedName=true createdThroughUi=true chatScreen=true composerEnabled=true projectNameShown=true leakedTokens=[] screenshots=projects:40276,chat:50607
-P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=t
-P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=34350, 02-first-run-ready.png=40276, 03-first-run-projects.png=40276, 04-first-run-chat.png=50607]
-P10_SMOKE_UI_L1 PASS :: p
-P10_SMOKE_UI_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=9 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[
-P10_SMOKE_UI_L2 PASS :: tool=bash status=completed pa
-P10_SMOKE_UI_L2 PASS :: tool=bash status=completed partId=prt_0c08720ed001tDrraOgctX5nAR cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0 marker=P6LIVE471866 screenshots[bytes=72884 ink=0.090 via=
-P10_SMOKE_UI_U1 PASS ::
-P10_SMOKE_UI_U1 PASS :: rows=602 composedAtBottom=25 composedAtTop=23 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
-P10_SMOKE_UI_U2 PASS :: collapsedByDefault=t
-P10_SMOKE_UI_U2 PASS :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true
-P10_SMOKE_UI_U3 PASS :: ask=t
-P10_SMOKE_UI_U3 PASS :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[staging]])] submitEnabledAtTap=true submitClicks=1 scrolledInto
-P10_SMOKE_UI_U4 PASS ::
-P10_SMOKE_UI_U4 PASS :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=true,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
-P10_SMOKE_UI_U5 PASS :: busyBa
-P10_SMOKE_UI_U5 PASS :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true retryBanner=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true turnErrorKept=true
-P10_SMOKE_UI_U6 PASS :: heading=t
-P10_SMOKE_UI_U6 PASS :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
-P10_SMOKE_UI_U7 PASS :: inte
-P10_SMOKE_UI_U7 PASS :: interactive={chat=24, sessions=11, projects=6, welcome=2, welcome-unsupported=2, settings=26, files=7} total=78 unnamed=0
-P10_SMOKE_UI_U8 PASS ::
-P10_SMOKE_UI_U8 PASS :: rowsComposedBefore=23 after=23 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true revertNote=true emptyState=true/true
-P10_SMOKE_UI_U9 PASS :: listed=t
-P10_SMOKE_UI_U9 PASS :: listed=true pathShown=true locationCopy=true openedDir=true upShown=true upWorks=true openedFile=true viewer=true body=true saveCopy=true/true closed=true publish=true/true copyPath=true empty=true panel=true/true/true/true/true fallback=true/true/true/true/true/true/true cho
-P10_STORE_ASSETS PASS :: 512 icon + 1024x500 feature graphic + 4 screenshots at a real screen size
-P10_UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
-P10_WS_VISIBILITY_DOCUMENTS_PROVIDER SKIP :: this device does not let a shell query the Documents provider (Error while accessing provider:com.android.externalstorage.documents)
-P10_WS_VISIBILITY_LOCATION PASS :: the project root exists and holds 1 project(s): /storage/emulated/0/Documents/OpenCode (source: app-reported (W4 gate), Android 14)
-P10_WS_VISIBILITY_PRIVATE_ROOT_NOT_LIVE PASS :: the live project root is outside /data: /storage/emulated/0/Documents/OpenCode
-P10_WS_VISIBILITY_SHARED_ROOT PASS :: the project root is on shared storage and outside Android/data: /storage/emulated/0/Documents/OpenCode (Android 14)
-P10_WS_VISIBILITY_SHELL_BASELINE PASS :: baseline holds: an unprivileged shell cannot read /data/data/io.github.mcyber12.opencode.debug at all, so the PASSs above are real
-P10_WS_VISIBILITY_SHELL_LIST PASS :: a non-root shell lists the project directory (/storage/emulated/0/Documents/OpenCode/w4-storage-1789936242885): 2 lines
-P10_WS_VISIBILITY_SHELL_READ PASS :: read p10-visible.txt from outside the app: 'P10_VISIBLE_1789936242901' (matches /P10_VISIBLE_/)
-P10_WS_VISIBILITY_SHELL_WRITE PASS :: a file written by the non-root shell in /storage/emulated/0/Documents/OpenCode/w4-storage-1789936242885 was readable back: the directory is shared, ordinary storage
-P10_WS_W1_PROJECT_LIFECYCLE PASS :: c
-P10_WS_W1_PROJECT_LIFECYCLE PASS :: created=p7-life-1789936250610 renamed=p7-renamed-1789936250610 adopted=p7-adopted-1789936250610 delete=true
-P10_WS_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=t
-P10_WS_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_ffc06ba6"}'
-P10_WS_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: p
-P10_WS_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1789936250648/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
-P10_WS_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/sto
-P10_WS_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces se
-STORE-ASSETS PASS: 4 screenshots in /home/runner/work/OpenCode-app/OpenCode-app/docs/store/screenshots (0 rejected)
-P10_SUMMARY 2026-09-20T20:41:34Z
-phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0
-NOTE: PASS lines above are real gate executions on the emulator/device. Unit and
-      compile lines are NOT runtime evidence. UNSIGNED release artifacts are
-      expected in CI: signing is the human step (docs/RELEASE.md).
-=== PHASE 10 END 2026-09-20T20:41:34Z rc=0 ===
