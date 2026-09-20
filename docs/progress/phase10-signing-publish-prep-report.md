@@ -1673,7 +1673,7 @@ real hardware: see §B.5's honesty table and §B.6.
 |---|---|---|
 | `adb` on `PATH` and the phone authorised | the script drives the real window through `adb`, and a non-root shell is the outside-the-app evidence | `adb devices` shows the phone as `device` (not `unauthorized`) |
 | a **real** Python 3 on this host | the accessibility reader (`p10d-ui.py`), the screenshot checker and the APK inspector are Python, and this is exactly what the Microsoft Store alias silently breaks | `python3 -c "print(1)"` (or `py -3 -c "print(1)"`) prints `1`; if it opens the Store, install Python from python.org |
-| MSYS/Git Bash: nothing to do | the script now sets `MSYS_NO_PATHCONV=1` / `MSYS2_ARG_CONV_EXCL` itself and records `host shell: windows-msys` | the first screen of output says which host shell it detected |
+| MSYS/Git Bash: nothing to do | the script now sets `MSYS_NO_PATHCONV=1` / `MSYS2_ARG_CONV_EXCL` itself and records `host shell: windows-msys` | watch the `R0.5` preflight line — it prints the host shell and the acquisition mode it proved it can use (`HARNESS_DUMP PASS :: … host shell: windows-msys`) |
 | phone: USB debugging on, screen on, **unlocked** | `adb` can wake the screen and dismiss a swipe keyguard, but it cannot type a PIN | if it can't, you get `P10D_DEVICE_AWAKE FAIL` with that exact sentence — a lock, not an app defect |
 | leave the phone alone while it runs | taps and typing go to whatever is in front; a hand on the phone makes the verdicts meaningless | the run prints a `step` line for every stage, so you can see where it is |
 
