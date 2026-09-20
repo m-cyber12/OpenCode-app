@@ -7,20 +7,36 @@ import java.io.File
 /**
  * The list of on-device project directories the agent can work in.
  *
- * A "project" is nothing more than a directory under the app's own project root
- * (`getExternalFilesDir(null)/workspaces` since the Phase 10 continuation -
- * `files/workspaces`, app-private, before it) that is used as the OpenCode
- * instance directory
- * (`OpenCodeApi.directory`, which upstream resolves per request). The server
- * owns everything else about a session; this store only remembers which
- * directories exist and which one the user last opened, because the choice has
- * to survive a process restart and the user must never be asked for a path.
+ * A "project" is nothing more than a directory under the app's project root that
+ * is used as the OpenCode instance directory (`OpenCodeApi.directory`, which
+ * upstream resolves per request). The server owns everything else about a
+ * session; this store only remembers which directories exist and which one the
+ * user last opened, because the choice has to survive a process restart and the
+ * user must never be asked for a path.
  *
- * Location, precisely: the app-specific EXTERNAL directory needs no permission on
- * any supported API level and is reachable by `adb shell`/`adb pull` on a
- * non-rooted device, which is what the move buys. See [RuntimePaths] for what it
- * does not buy (Android 11+ blocks *apps* from browsing `Android/data`), and
- * [ensureMigrated] for what happens to projects written by an older install.
+ * WHERE THE ROOT IS, and why that is a product question rather than a detail:
+ *
+ *  * **default, Phase 10 continuation v3** — `Documents/OpenCode/<project>` on
+ *    shared storage. Any file manager, the Files app, MTP and `adb` show the
+ *    project files live, from the moment they are created, with no export step.
+ *    Writing there needs All files access (`MANAGE_EXTERNAL_STORAGE`) on
+ *    Android 11+; the app asks for it in its own storage panel and keeps the
+ *    previous root until it is granted. See [StorageChoice] and [RuntimePaths].
+ *  * **chosen** — a folder the user picked through SAF, when it resolves to a real
+ *    path on primary storage (SD cards and cloud providers cannot be handed to a
+ *    POSIX runtime, so they are refused with an explanation rather than accepted
+ *    and silently broken).
+ *  * **fallbacks** — `Android/data/<applicationId>/files/workspaces` (no
+ *    permission, `adb`-visible, but file managers cannot browse it on Android
+ *    11+) and, when there is no usable external storage at all, app-private
+ *    `files/workspaces`.
+ *
+ * The promise that matters to the user is: **the live project directory is a
+ * normal folder they can open**, and where it is lives in [RuntimePaths.mode]
+ * rather than in a comment, so the UI states it and the device gates assert on
+ * it. The fallbacks exist because Android can refuse the permission, and the app
+ * says so plainly instead of pretending the files are reachable when they are
+ * not.
  *
  * Phase 6 kept this to list, create, open. Phase 7 adds the rest of workspace
  * management - rename, delete, and adopt (register a tree that an import copied
@@ -43,12 +59,19 @@ class ProjectStore internal constructor(
     private val root: File,
     private val prefs: SharedPreferences,
     /**
-     * Pre-Phase-10 project root, when the resolved root is the external one.
-     * Null when there is nothing to migrate (fresh install, or external storage
-     * unavailable so the legacy root *is* the root).
+     * Older project roots this install may have used, in preference order (newest
+     * first): `Android/data/<pkg>/files/workspaces` and, before that,
+     * app-private `files/workspaces`. Empty for a fresh install.
+     *
+     * Used only by [ensureMigrated]; a root that is the current root is ignored, so
+     * the caller can pass every candidate without checking.
      */
-    private val legacyRoot: File? = null,
+    private val legacyRoots: List<File> = emptyList(),
 ) {
+
+    /** Convenience for the single-legacy-root case (unit tests, older callers). */
+    internal constructor(root: File, prefs: SharedPreferences, legacyRoot: File?) :
+        this(root, prefs, listOfNotNull(legacyRoot))
 
     /**
      * Every project directory that exists, most recently opened first.
@@ -212,48 +235,51 @@ class ProjectStore internal constructor(
     fun rootPath(): String = root.absolutePath
 
     /**
-     * Move projects written by a pre-Phase-10 install into the new root.
+     * Move projects left behind by an earlier install into the current root.
      *
-     * Phase 10's continuation moved projects from `files/workspaces` (app-private,
-     * unreachable from any file manager, MTP browse or non-root `adb shell`) to the
-     * app-specific external directory. An install that predates that change has its
-     * projects in the old place, so this runs once, is idempotent, and is safe to
-     * call on every start:
+     * This is the AUTOMATIC path, run once per start. It is deliberately the
+     * conservative one, because it moves files the user never asked to move:
      *
-     *   * it does nothing when there is no legacy root, when the legacy root is the
-     *     root (external storage unavailable), or when the new root already holds a
-     *     project — a user who deleted a project must not see it come back;
-     *   * it moves each project directory (rename first, copy+delete as the
-     *     fallback, because the two locations are usually different filesystems);
-     *   * it deletes the legacy directory only once it is empty, so a partial or
-     *     failed move leaves the originals in place rather than losing them.
+     *   * it does nothing when the current root already holds a project — a user
+     *     who deleted a project must not see it come back;
+     *   * it takes the first legacy root that still has projects and stops there,
+     *     rather than merging several old locations into one (a merge is a decision
+     *     the user should make, and [ProjectMigration.moveAll] exposes it as an
+     *     explicit action);
+     *   * it never overwrites a name, and it removes a legacy directory only once
+     *     that directory is empty, so a partial or failed move leaves the originals
+     *     in place instead of losing them.
+     *
+     * Preference history is keyed by project name, so it follows the directories
+     * without being rewritten: the user's active project is still the active one.
      *
      * @return the number of project directories moved.
      */
     fun ensureMigrated(): Int {
-        val legacy = legacyRoot ?: return 0
-        if (legacy.absolutePath == root.absolutePath) return 0
-        if (!legacy.isDirectory) return 0
-        val legacyDirs = legacy.listFiles { f -> f.isDirectory }?.toList() ?: return 0
-        if (legacyDirs.isEmpty()) {
-            // Left-over empty directory from an earlier run: nothing to save.
-            ProjectIo.deleteTree(legacy)
-            return 0
-        }
+        val candidates = legacyRoots.filter { it.absolutePath != root.absolutePath }
+        if (candidates.isEmpty()) return 0
         if (projects().isNotEmpty()) return 0
-        root.mkdirs()
         var moved = 0
-        for (dir in legacyDirs.sortedBy { it.name }) {
-            val target = File(root, dir.name)
-            if (target.exists()) continue
-            if (ProjectIo.renameDir(dir, target)) moved += 1
+        for (legacy in candidates) {
+            if (!legacy.isDirectory) continue
+            val outcome = ProjectMigration.moveAll(legacy, root, allowTargetNonEmpty = false)
+            moved += outcome.movedCount
+            if (outcome.movedCount > 0) break
         }
-        if (legacy.listFiles()?.isEmpty() != false) ProjectIo.deleteTree(legacy)
         return moved
     }
 
     /** Where the projects live, as the app would show it (diagnostics + the file browser). */
     fun locationLabel(): String = root.absolutePath
+
+    /**
+     * Move every project from [from] into this store's root, for the user-facing
+     * "make my projects visible" action after they grant All files access or pick
+     * a folder. Unlike [ensureMigrated] this allows a non-empty destination (the
+     * user asked for the move), and it reports what happened so the UI can say so.
+     */
+    fun moveFrom(from: File): ProjectMigration.Outcome =
+        ProjectMigration.moveAll(from, root, allowTargetNonEmpty = true)
 
     private fun createdKey(name: String) = "created:$name"
     private fun openedKey(name: String) = "opened:$name"
@@ -281,6 +307,15 @@ class ProjectStore internal constructor(
 
         @Volatile private var instance: ProjectStore? = null
 
+        /**
+         * Drop the cached store so the next [get] re-resolves the root. Called when
+         * the storage mode changes at runtime (All files access granted, or a folder
+         * chosen), together with the migration that moves existing projects.
+         */
+        fun refresh() {
+            synchronized(this) { instance = null }
+        }
+
         fun get(context: Context): ProjectStore =
             instance ?: synchronized(this) {
                 instance ?: run {
@@ -288,11 +323,11 @@ class ProjectStore internal constructor(
                     ProjectStore(
                         root = paths.workspaces,
                         prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE),
-                        // Only a *different* internal root is a migration source; when
-                        // external storage is unavailable the two are the same object.
-                        legacyRoot = paths.internalWorkspaces.takeIf {
-                            it.absolutePath != paths.workspaces.absolutePath
-                        },
+                        // Both older locations, newest first. Roots equal to the
+                        // current root are filtered inside ensureMigrated, so this is
+                        // correct for every combination (public / app-external /
+                        // internal) without a branch here.
+                        legacyRoots = listOfNotNull(paths.externalWorkspaces, paths.internalWorkspaces),
                     )
                 }.also { instance = it }
             }

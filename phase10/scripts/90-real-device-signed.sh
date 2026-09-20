@@ -51,8 +51,16 @@
 #   R6  a live turn through the composer, and - if a model can serve it - a real
 #       tool call, read back from the accessibility tree (no root, no run-as).
 #   R7  file visibility from OUTSIDE the app: a non-root `adb shell` listing/reading
-#       the project directory (92-workspace-visibility.sh). This is the check that
-#       the files are not sealed in app-private storage.
+#       the project directory (92-workspace-visibility.sh) at the path the app
+#       itself displayed, plus the v3 checks that the location is on shared storage
+#       and outside Android/data - i.e. that an ordinary file manager can open it,
+#       not only adb. This is the check that the files are not sealed in app-private
+#       storage (or in the Android/data corner that file managers cannot browse).
+#
+# Every wait below matches a screen by CONTENT (its tags AND the app's own words)
+# and counts dumps it could not read (gate UI_DUMP), because the v2 run reported a
+# first-run failure on a phone that was sitting on the projects screen: a verdict
+# has to distinguish "the app is not there" from "the harness could not see".
 #   R8  footprint: memory, storage, cold-start timing
 #   R9  crash / obfuscation sweep: any FATAL EXCEPTION, ClassNotFoundException,
 #       NoSuchMethodError, NoClassDefFoundError or UnsatisfiedLinkError in the
@@ -90,6 +98,11 @@ log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
 step() { echo | tee -a "$LOG"; echo "===== $* =====" | tee -a "$LOG"; }
 
 PASS=0; FAIL=0; SKIP=0
+# Every wait's budget, scaled by --timeout-scale. Kept in one place because the
+# self-test runs whole scenarios with a fractional scale (0.02) to exercise the
+# failure paths in seconds instead of minutes - and `$((300 * 0.02))` is a bash
+# arithmetic error, so the multiplication is done where fractions exist.
+tmo() { awk -v s="$SCALE" -v t="$1" 'BEGIN { v = s * t; if (v < 3) v = 3; printf "%d", v }'; }
 : > "$OUT/SUMMARY.txt"
 : > "$OUT/DIAGNOSIS.txt"
 rec() { echo "$1 $2${3:+ :: $3}" >> "$OUT/SUMMARY.txt"; log "$1 $2${3:+ :: $3}"; }
@@ -111,6 +124,11 @@ adb get-state >/dev/null 2>&1 || { echo "FATAL: no device visible to adb (plug t
 PKG="io.github.mcyber12.opencode"
 SHOT_N=0
 LAST_DUMP=""
+# How many dumps came back unusable. A run where this is non-zero and the app was
+# demonstrably on screen is a harness problem, not a product problem, and the
+# summary has to say which one it was.
+DUMP_FAILURES=0
+LAST_DUMP_MODE=""
 # Swipe geometry, refreshed from `wm size` once the device is reachable. Defaults
 # are a 1080x1920 phone; nothing here is a verdict, it is only how far the driver
 # scrolls when it has to go looking for a control.
@@ -125,6 +143,30 @@ set_swipe_geometry() {
   SWIPE_FROM_Y=$(( h * 4 / 5 )); SWIPE_TO_Y=$(( h * 9 / 20 ))
 }
 
+# ------------------------------------------------- screen identity, by CONTENT --
+#
+# Phase 10 continuation v3. What a screen IS is what it shows, so every wait here
+# matches the app's own words as well as its test tags. Both, not either:
+#
+#  * tags (Compose test tags exposed as resource ids, `testTagsAsResourceId`) are
+#    the stable address, but they are a *platform* feature - an OEM build, a
+#    different Android version or a merged semantics node can omit them, and the
+#    first real-device run failed exactly that way: the phone sat on the projects
+#    screen while every tag-based wait timed out, so R4 reported the first run as
+#    failed and everything downstream skipped. The dump even had the text.
+#  * text can change with a copy edit, which is why the tags are still there.
+#
+# The needles are literal strings from `app/src/main/res/values/strings.xml`, so a
+# rename there has to be reflected here - and a rename is exactly the moment a
+# hard-coded locator should stop matching rather than silently locate the wrong
+# screen.
+NEEDLE_WELCOME='welcome_screen|welcome_continue|Continue|Settings and diagnostics'
+NEEDLE_PROJECTS='projects_screen|project_list|project_name_input|project_create|New project|Create project|Project name'
+NEEDLE_CHAT='chat_screen|composer_input|composer_send|Start a conversation|Message the agent'
+NEEDLE_FILES='files_screen|files_list|files_location|Where these files are|Export a copy|files_storage_mode'
+# The app's own copy is not the only thing on screen (system dialogs, IME, launcher),
+# so these are only ever used as additional needles - never as the sole signal.
+
 # ---------------------------------------------------------------- UI plumbing --
 #
 # Every UI interaction goes through these five functions. They are deliberately
@@ -132,26 +174,58 @@ set_swipe_geometry() {
 # negative answer instead of collapsing them all into "not found".
 
 ui_dump() { # $1 = tag -> $OUT/ui/ui-<tag>.xml ; returns non-zero when unusable
-  local tag="$1" attempt rc out
+  local tag="$1" attempt mode src out rc
+  # Three attempts, and the two things that make `uiautomator dump` fail on a real
+  # phone are both worked around rather than reported as "the screen is not there":
+  #
+  #  * "ERROR: could not get idle state" - the UI never goes idle (a spinner, an
+  #    animation, a Compose recomposition loop). `--compressed` uses a different
+  #    dump path and usually succeeds where the plain one refuses.
+  #  * a dump written but unreadable (scoped storage on /sdcard) - /data/local/tmp
+  #    is the directory the tool itself defaults to and is always writable by the
+  #    shell user.
   for attempt in 1 2 3; do
-    adb shell rm -f /sdcard/p10d-ui.xml >/dev/null 2>&1
-    out=$(adb shell uiautomator dump /sdcard/p10d-ui.xml 2>&1 | tr -d '\r')
-    sleep 0.5
-    if adb exec-out cat /sdcard/p10d-ui.xml > "$OUT/ui/ui-$tag.xml" 2>/dev/null && [ -s "$OUT/ui/ui-$tag.xml" ]; then
-      LAST_DUMP="$OUT/ui/ui-$tag.xml"
-      return 0
-    fi
+    for mode in "" "--compressed"; do
+      for src in /sdcard/p10d-ui.xml /data/local/tmp/p10d-ui.xml; do
+        adb shell rm -f /sdcard/p10d-ui.xml /data/local/tmp/p10d-ui.xml >/dev/null 2>&1
+        out=$(adb shell uiautomator dump $mode "$src" 2>&1 | tr -d '\r')
+        sleep 0.5
+        if adb exec-out cat "$src" > "$OUT/ui/ui-$tag.xml" 2>/dev/null && [ -s "$OUT/ui/ui-$tag.xml" ]; then
+          LAST_DUMP="$OUT/ui/ui-$tag.xml"
+          LAST_DUMP_MODE="$mode${mode:+ }$src"
+          return 0
+        fi
+        out=$(printf '%s' "$out" | grep -vE '^$' | tail -1)
+      done
+    done
     # v1 discarded this string entirely; it is the difference between "no app
     # screen" and "uiautomator could not dump at all".
-    diag "ui_dump($tag) attempt $attempt failed: ${out:-<no output>}"
+    diag "ui_dump($tag) attempt $attempt failed: ${out:-<no output>} (device: $(screen_state))"
     sleep 2
   done
   LAST_DUMP=""
+  DUMP_FAILURES=$((DUMP_FAILURES + 1))
   return 1
 }
 
 ui() { python3 "$DIR/scripts/p10d-ui.py" "$LAST_DUMP" "$@" 2>/dev/null; }
 ui_has() { ui has "$1"; }
+# Any of these on screen: the content fallback for a check that decides what the
+# driver does next (a tag-only check would send a working app down the wrong path
+# on a device whose dumps carry no resource ids - the v3 first-run failure).
+ui_has_any() { local n; for n in "$@"; do ui has "$n" && return 0; done; return 1; }
+
+# The sentence a verdict needs when the accessibility channel - not the app - was the
+# problem. Phase 10 continuation v3: the v2 run reported "the project screen was never
+# reached" on a phone that was displaying it, and nothing in the bundle explained why
+# the evidence disagreed with itself. Any verdict that could be a harness failure
+# carries this note, so a self-contradicting report cannot be produced again.
+dump_caveat() {
+  [ "${DUMP_FAILURES:-0}" = 0 ] && return 0
+  # One line: this is appended to a SUMMARY verdict, and a verdict must stay one
+  # parseable line (the summary is read by machine and by eye).
+  printf ' NOTE: the accessibility dump was unreadable %s time(s) in this run, so the window/activity state above came from dumpsys rather than the screen and this verdict may describe the harness rather than the app (see UI_DUMP, DIAGNOSIS.txt).' "$DUMP_FAILURES"
+}
 ui_texts() { ui texts 12 | tr '\n' '|' | cut -c1-300; }
 ui_nodes() { ui nodes; }
 
@@ -205,9 +279,14 @@ tap_at() { adb shell input tap "$1" "$2" >/dev/null 2>&1; sleep 1; }
 is_centre() { case "$1" in [0-9]*" "[0-9]*) return 0 ;; *) return 1 ;; esac; }
 
 tap() { # $1 = tag|text|label ; tolerant: scrolls once, and says why it could not tap
-  local needle="$1" centre state
+  local needle="$1" centre state rc
   ui_dump "tap-$needle" || { diag "tap($needle): no UI dump available"; return 1; }
   centre=$(ui find "$needle")
+  rc=$?
+  # rc 4 means the only match is marked shown="false" by the platform: usable
+  # coordinates, but the log should say the node was not on screen. The tap is still
+  # made - refusing here is how a driver reports a working app as broken.
+  [ "$rc" = 4 ] && log "tap($needle): the matched node is marked shown=false; tapping its bounds anyway ($centre)"
   if ! is_centre "$centre"; then
     state=$(ui state "$needle")
     diag "tap($needle): not tappable (${centre:-no matching node}) state=${state:-none}"
@@ -223,6 +302,25 @@ tap() { # $1 = tag|text|label ; tolerant: scrolls once, and says why it could no
   fi
   tap_at $centre
   return 0
+}
+
+tap_any() { # $@ = needles, most specific first; taps the first one that is there
+  # A tag can be missing from a dump while the control is plainly on screen, so
+  # every tap has a content fallback. Whichever needle worked is logged: a silent
+  # fallback would hide the day the tags stop being exposed.
+  local needle "worked="
+  for needle in "$@"; do
+    if tap "$needle" 2>/dev/null; then
+      worked="$needle"
+      break
+    fi
+  done
+  if [ -n "$worked" ]; then
+    [ "$worked" = "$1" ] || log "tap_any: '$1' was not tappable; used '$worked' instead"
+    return 0
+  fi
+  diag "tap_any: none of [$*] was tappable (last dump: ${LAST_DUMP:-<none>})"
+  return 1
 }
 
 type_text() { # $1 = text ; %s is a space, as `input text` requires
@@ -288,6 +386,17 @@ wait_for() { # $1 = name, $2 = needle(s) separated by |, $3 = timeout seconds
       diag "  device: $(screen_state)"
       diag "  foreground: $(foreground)"
       diag "  last dump: ${LAST_DUMP:-<none>} $(ui_nodes)"
+      # What the DUMP itself contains, so one line answers the question the v2
+      # failure left open: is this "the app never got there" or "the dump cannot
+      # describe the app"? `attrs` lists which attributes any node carries - a dump
+      # that is this app's screen but has no resource-id is a device where the
+      # Compose tags never reached the accessibility tree (the driver then has to
+      # match on the app's own words, which it does).
+      diag "  dump attrs: $(ui attrs 2>/dev/null | head -1)"
+      if ui package "$PKG" 2>/dev/null; then
+        diag "  the dump IS this app's screen ($PKG nodes present) - so a needle above is"
+        diag "  missing from it, which is a locator problem rather than an app problem"
+      fi
       diag "  on screen: $(ui_texts)"
       shot "timeout-$name" || true
       return 1
@@ -454,37 +563,37 @@ sleep 2
 # (~1 GB of Bun + OpenCode + git + ripgrep) before the runtime can be HEALTHY, so
 # this waits generously - but it reports what it is waiting for the whole time.
 FIRST_RUN_OK=0
-if wait_for "app-window" "welcome_screen|continue|Welcome|OpenCode" "$((300 * SCALE))"; then
+if wait_for "app-window" "$NEEDLE_WELCOME|OpenCode" "$(tmo 300)"; then
   handle_interruptions || true
   shot "welcome" || true
   # The welcome screen advances by itself when the supervisor reports HEALTHY
   # (AppRoot's LaunchedEffect). A human who gets impatient taps Continue; do the
   # same, but never make the verdict depend on the tap.
-  if wait_for "runtime-or-projects" "projects_screen|project_list|project_name_input|welcome_continue" "$((180 * SCALE))"; then
-    tap "welcome_continue" >/dev/null 2>&1 || true
+  if wait_for "runtime-or-projects" "$NEEDLE_WELCOME|$NEEDLE_PROJECTS" "$(tmo 180)"; then
+    tap_any "welcome_continue" "Continue" >/dev/null 2>&1 || true
     shot "after-welcome" || true
-    if wait_for "projects-screen" "project_name_input|project_list|projects_screen" "$((300 * SCALE))"; then
+    if wait_for "projects-screen" "$NEEDLE_PROJECTS" "$(tmo 300)"; then
       FIRST_RUN_OK=1
       T1=$(( $(date +%s) - T0 ))
       rd FIRST_RUN 0 "app reached the projects screen by itself in ${T1}s (payload extracted + agent started, no privileged access); screen: $(screen_state)"
     else
-      rd FIRST_RUN 1 "the app never reached the projects screen (see DIAGNOSIS.txt and the screenshots at each step)"
+      rd FIRST_RUN 1 "the app never reached the projects screen (see DIAGNOSIS.txt and the screenshots at each step).$(dump_caveat)"
     fi
   else
-    rd FIRST_RUN 1 "no welcome/projects surface became usable (see DIAGNOSIS.txt; the app also offers Settings -> Share diagnostics)"
+    rd FIRST_RUN 1 "no welcome/projects surface became usable (see DIAGNOSIS.txt; the app also offers Settings -> Share diagnostics).$(dump_caveat)"
   fi
 else
-  rd FIRST_RUN 1 "the app window never appeared: $(foreground) $(screen_state) - see DIAGNOSIS.txt and 01-launch.png"
+  rd FIRST_RUN 1 "no app surface could be read from the screen: $(foreground) $(screen_state).$(dump_caveat) - see DIAGNOSIS.txt and 01-launch.png"
 fi
 
 if [ "$FIRST_RUN_OK" = 1 ]; then
   PROJECT_NAME="p10d-$(date +%H%M%S)"
-  if tap "project_name_input"; then
+  if tap_any "project_name_input" "Project name"; then
     type_text "$PROJECT_NAME"
     shot "project-name-typed" || true
-    if tap "project_create"; then
+    if tap_any "project_create" "Create project"; then
       sleep 2
-      if wait_for "conversation" "composer_input|composer_send|chat_screen|Start a conversation" "$((180 * SCALE))"; then
+      if wait_for "conversation" "$NEEDLE_CHAT" "$(tmo 180)"; then
         shot "chat-ready" || true
         rd FIRST_RUN_PROJECT 0 "project '$PROJECT_NAME' created through the UI (taps + typed text) on the signed build; conversation surface reached"
       else
@@ -497,34 +606,51 @@ if [ "$FIRST_RUN_OK" = 1 ]; then
     rd FIRST_RUN_PROJECT 1 "could not focus the project-name field (see DIAGNOSIS.txt)"
   fi
 else
-  rd FIRST_RUN_PROJECT 7 "no project could be created because the first run never reached a usable screen"
+  rd FIRST_RUN_PROJECT 7 "no project could be created because the first run never reached a usable screen.$(dump_caveat)"
 fi
 
 # ---- R5: the app's own file browser ------------------------------------------
 step "R5 the in-app file browser (this is how a user sees what the agent wrote)"
 FILES_SEEN=0
 FILES_PATH=""
-if [ "$FIRST_RUN_OK" = 1 ] && tap "open_files"; then
+if [ "$FIRST_RUN_OK" = 1 ] && tap_any "open_files" "Project files"; then
   sleep 2
-  if wait_for "files-screen" "files_list|files_location_path|files_empty" "$((120 * SCALE))"; then
+  if wait_for "files-screen" "$NEEDLE_FILES" "$(tmo 120)"; then
     shot "files-listing" || true
     ui_dump "files-screen" >/dev/null 2>&1
-    FILES_PATH=$(python3 - "$LAST_DUMP" "$PKG" <<'PY'
+    # The path the app prints, wherever it is. The v2 driver looked for
+    # `/Android/data/<pkg>/...` because that was the only root it knew: a locator
+    # that encodes the layout silently stops matching the day the layout changes,
+    # which is exactly what happened here. v3 reads ANY absolute path off the
+    # screen (and refuses /data/data, which no user could act on), then prints the
+    # storage-mode line too, so the verdict says which location the app claims.
+    FILES_PATH=$(python3 - "$LAST_DUMP" <<-PY
 import re, sys
 xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
-m = re.search(r'text="(/[^"]*Android/data/%s/[^"]*)"' % re.escape(sys.argv[2]), xml)
-print(m.group(1) if m else "")
+skip = ("/data/data/", "/data/user/0/")
+usable = [c for c in re.findall(r'(?:text|content-desc)="(/[^"<>]{3,})"', xml)
+          if not any(c.startswith(p) for p in skip)]
+print(usable[0] if usable else "")
+PY
+)
+    FILES_MODE=$(python3 - "$LAST_DUMP" <<-PY
+import sys
+xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+for needle in ("Documents/OpenCode", "Your folder", "App folder (Android/data)", "App-private storage"):
+    if needle in xml:
+        print(needle)
+        break
 PY
 )
     if [ -n "$FILES_PATH" ]; then
       FILES_SEEN=1
-      rd FILES_SCREEN 0 "the app's file browser shows the project at $FILES_PATH (read from the screen, not from the app's internals)"
+      rd FILES_SCREEN 0 "the app's file browser shows the project at $FILES_PATH (storage mode: ${FILES_MODE:-not shown}; read from the screen, not from the app's internals)"
     else
-      rd FILES_SCREEN 1 "the file browser opened but no on-device path was shown on screen (see ui/ui-files-screen.xml)"
+      rd FILES_SCREEN 1 "the file browser opened but no on-device path was shown on screen (storage mode: ${FILES_MODE:-not shown}; see ui/ui-files-screen.xml)"
     fi
     adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
     sleep 1
-    wait_for "back-to-chat" "composer_input|chat_screen" "$((60 * SCALE))" >/dev/null 2>&1 || \
+    wait_for "back-to-chat" "$NEEDLE_CHAT" "$(tmo 60)" >/dev/null 2>&1 || \
       log "note: after leaving the file browser the composer was not found again (R6 will report it)"
   else
     rd FILES_SCREEN 1 "the file browser did not open (see DIAGNOSIS.txt)"
@@ -551,15 +677,15 @@ else
 fi
 if [ -n "${MODEL_KEY:-}" ] && [ "$SKIP_LIVE" = 0 ]; then
   # Route it through the app's own UI: Settings -> Provider keys.
-  if tap "open_settings"; then
+  if tap_any "open_settings" "Settings and diagnostics"; then
     sleep 2
     # The provider id field is empty by default and Save stays disabled without it,
     # which the v1 driver never noticed (it typed only the key, so Save did nothing
     # and the live gate then reported "no model served the turn").
-    tap "key_provider" >/dev/null 2>&1 && type_text "${P10D_PROVIDER:-openrouter}"
-    if tap "key_value"; then
+    tap_any "key_provider" "Provider" >/dev/null 2>&1 && type_text "${P10D_PROVIDER:-openrouter}"
+    if tap_any "key_value" "API key"; then
       type_text "$MODEL_KEY"
-      if tap "key_save"; then
+      if tap_any "key_save" "Save key" "Save"; then
         sleep 3
         shot "provider-key-saved" || true
         log "key entered through the app's own Settings screen (it is not in this log)"
@@ -577,11 +703,11 @@ if [ -n "${MODEL_KEY:-}" ] && [ "$SKIP_LIVE" = 0 ]; then
   # (it clears the field), so an unconditional BACK here would be a second back press
   # on whatever screen we are really on - and if that is the conversation, the app
   # exits and every live gate downstream would fail for the wrong reason.
-  if ui_dump "post-key-screen" >/dev/null 2>&1 && ui has "key_save"; then
+  if ui_dump "post-key-screen" >/dev/null 2>&1 && ui_has_any "key_save" "Save key" "Provider keys"; then
     adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
     sleep 1
   fi
-  wait_for "ready-to-send" "composer_input|chat_screen" "$((90 * SCALE))" >/dev/null 2>&1 || \
+  wait_for "ready-to-send" "$NEEDLE_CHAT" "$(tmo 90)" >/dev/null 2>&1 || \
     log "note: the composer was not on screen after the key step - the live turn will report what it sees"
 fi
 MODEL_KEY=""
@@ -589,8 +715,8 @@ MODEL_KEY=""
 if [ "$SKIP_LIVE" = 1 ]; then
   rd LIVE_TURN 7 "--skip-live was given: no model turn was attempted"
 elif [ "$FIRST_RUN_OK" != 1 ]; then
-  rd LIVE_TURN 7 "no conversation surface existed to send a turn from"
-elif tap "composer_input"; then
+  rd LIVE_TURN 7 "no conversation surface existed to send a turn from.$(dump_caveat)"
+elif tap_any "composer_input" "Message the agent" "Message"; then
   # `adb shell` re-quotes what it forwards, and `input text` takes a single argument
   # in which %s is a space: quotes and literal spaces would be re-parsed by the
   # device shell and the prompt would arrive mangled (or not at all).
@@ -599,17 +725,17 @@ elif tap "composer_input"; then
   # mangle (or truncate) the prompt.
   type_text "Use the bash tool to write a file named p10-visible.txt that contains the text p10-live-ok, then show me its contents"
   shot "prompt-typed" || true
-  tap "composer_send" >/dev/null 2>&1 || adb shell input keyevent KEYCODE_ENTER >/dev/null 2>&1
-  log "prompt sent; waiting up to $((300 * SCALE))s for the answer"
+  tap_any "composer_send" "Send" >/dev/null 2>&1 || adb shell input keyevent KEYCODE_ENTER >/dev/null 2>&1
+  log "prompt sent; waiting up to $(tmo 300)s for the answer"
   TURN=0
-  if wait_for "turn-answer" "p10-visible.txt|p10-live-ok" "$((300 * SCALE))"; then TURN=1; fi
+  if wait_for "turn-answer" "p10-visible.txt|p10-live-ok" "$(tmo 300)"; then TURN=1; fi
   shot "turn-answer" || true
   TOOLCARD=0
-  ui_dump "turn-tool" >/dev/null 2>&1 && { ui_has "Shell command" && TOOLCARD=1; }
+  ui_dump "turn-tool" >/dev/null 2>&1 && { ui_has "Shell command" || ui_has "bash" || ui_has "tool"; } && TOOLCARD=1
   if [ "$TURN" = 1 ] && [ "$TOOLCARD" = 1 ]; then
     MODEL_AVAILABLE=1
     # Expand the card like a user would, then capture the single best listing shot.
-    tap "Shell command" >/dev/null 2>&1 || true
+    tap_any "Shell command" "bash" "Write" >/dev/null 2>&1 || true
     sleep 1
     shot "tool-card-expanded" || true
     rd LIVE_TURN 0 "the answer is on screen AND a Shell-command tool card is visible: a real live tool call ran in the SIGNED build (ui/ui-turn-tool.xml)"
@@ -641,6 +767,17 @@ VIS_ARGS=(--pkg "$PKG" --out "$OUT/visibility" --expect-content 'P10_VISIBLE_|p1
 if [ -n "${PROJECT_NAME:-}" ]; then
   VIS_ARGS+=(--project "$PROJECT_NAME" --expect-file "p10-visible.txt")
 fi
+# The root the app itself displayed in its file browser (R5), with the project name
+# stripped: the external check then verifies the location the app claims rather than
+# a layout this script assumes. Without R5's reading, 92 probes the known candidates
+# and says so in its own log.
+WS_ROOT_GUESS=""
+if [ -n "${PROJECT_NAME:-}" ] && [ -n "${FILES_PATH:-}" ]; then
+  case "$FILES_PATH" in
+    */"$PROJECT_NAME") WS_ROOT_GUESS="${FILES_PATH%/$PROJECT_NAME}" ;;
+  esac
+fi
+[ -n "$WS_ROOT_GUESS" ] && VIS_ARGS+=(--root "$WS_ROOT_GUESS")
 bash "$DIR/scripts/92-workspace-visibility.sh" "${VIS_ARGS[@]}" > "$OUT/visibility.log" 2>&1
 VIS_RC=$?
 grep -aE '^P10D_VISIBILITY_[A-Z_]+ (PASS|FAIL|SKIP)' "$OUT/visibility.log" 2>/dev/null | while read -r id verdict rest; do
@@ -655,7 +792,7 @@ while read -r id verdict rest; do
   esac
 done < <(grep -aE '^P10D_VISIBILITY_[A-Z_]+ (PASS|FAIL|SKIP)' "$OUT/visibility.log" 2>/dev/null)
 log "visibility driver rc=$VIS_RC (verdict lines above; raw output in visibility.log)"
-log "visibility context: project=${PROJECT_NAME:-<none>} path=${FILES_PATH:-<unknown>}"
+log "visibility context: project=${PROJECT_NAME:-<none>} path=${FILES_PATH:-<unknown>} root=${WS_ROOT_GUESS:-<probe>}"
 if [ "$VIS_RC" != 0 ]; then
   # A non-zero rc means at least one visibility verdict FAILed; the first line of
   # each failure is already in SUMMARY.txt, so point DIAGNOSIS.txt at the raw log
@@ -674,9 +811,21 @@ adb shell dumpsys meminfo "$PKG" 2>/dev/null | tr -d '\r' > "$OUT/meminfo.txt" |
 PSS=$(grep -aoE 'TOTAL PSS: *[0-9]+' "$OUT/meminfo.txt" | head -1 | grep -oE '[0-9]+')
 [ -n "$PSS" ] && rd MEMORY 0 "total PSS $((PSS/1024)) MB (see meminfo.txt)" || rd MEMORY 7 "meminfo unavailable"
 # The app-private store is deliberately NOT readable from a shell (that is the
-# point of R7); the external project root is, so the footprint is measured there.
-STORAGE=$(adb shell du -sh "/storage/emulated/0/Android/data/$PKG" 2>/dev/null | tr -d '\r' | awk '{print $1}')
-[ -n "$STORAGE" ] && rd STORAGE 0 "app-specific external storage ${STORAGE} (projects + published copies)" || rd STORAGE 7 "storage unreadable (expected on some OEM builds; see visibility.log)"
+# point of R7); the project root is, so the footprint is measured there. Which root
+# that is depends on the storage mode - the shared default, a folder the user chose,
+# or the app-specific fallback - so the size is read from the location the app
+# reported (R5) and the app-specific directory is measured as well when it exists.
+STORAGE=""
+STORAGE_WHERE=""
+for cand in "$WS_ROOT_GUESS" "/storage/emulated/0/Documents/OpenCode" "/storage/emulated/0/Android/data/$PKG/files/workspaces" "/storage/emulated/0/Android/data/$PKG"; do
+  [ -n "$cand" ] || continue
+  SIZE=$(adb shell du -sh "$cand" 2>/dev/null | tr -d '\r' | awk '{print $1}')
+  if [ -n "$SIZE" ]; then
+    STORAGE="${STORAGE:+$STORAGE }$cand=$SIZE"
+    [ -n "$STORAGE_WHERE" ] || STORAGE_WHERE="$cand"
+  fi
+done
+[ -n "$STORAGE" ] && rd STORAGE 0 "on-device project storage: $STORAGE" || rd STORAGE 7 "storage unreadable (expected on some OEM builds; see visibility.log)"
 
 # ---- R9: crash / obfuscation sweep ------------------------------------------
 step "R9 crash and packaging sweep"
@@ -700,6 +849,29 @@ else
 fi
 CRASHES=$(grep -acE "FATAL EXCEPTION|Process: $PKG" "$OUT/logcat.txt" 2>/dev/null)
 [ "${CRASHES:-0}" = 0 ] && rd NO_CRASH 0 "no app crash in this session" || rd NO_CRASH 1 "$CRASHES crash marker(s) in logcat.txt"
+
+# ---- the accessibility channel itself ----------------------------------------
+# Phase 10 continuation v3. The v2 run reported a first-run FAIL while the phone
+# was sitting on the projects screen, and the only thing that can explain that is
+# the dump channel: every wait in this script is decided by a uiautomator dump, so
+# a dump that comes back unusable (or without the app's tags) turns a working app
+# into a red run with evidence that contradicts itself.
+#
+# This gate makes that failure mode visible instead of leaving it as an inference:
+# it counts dumps that never became readable across all retries (`ui_dump` tries
+# three attempts x two dump modes x two paths). A non-zero count alongside a
+# failed or skipped UI gate is reported as a FAIL whose text says the harness could
+# not see the screen - which is the honest verdict, since nothing was verified. A
+# non-zero count on an otherwise green run is reported as a PASS that names the
+# number, because every verdict in it was still decided by a real dump.
+DUMPS_OK=$(ls -1 "$OUT/ui"/*.xml 2>/dev/null | wc -l | tr -d ' ')
+if [ "${DUMP_FAILURES:-0}" = 0 ]; then
+  rd UI_DUMP 0 "every accessibility dump was readable ($DUMPS_OK dump(s) saved in ui/; last acquisition: ${LAST_DUMP_MODE:-n/a})"
+elif [ "${FAIL:-0}" != 0 ] || [ "${SKIP:-0}" != 0 ]; then
+  rd UI_DUMP 1 "$DUMP_FAILURES dump(s) could not be read at all (after 3 attempts x --compressed x 2 paths) and this run also has failed/skipped UI gates: the screen could not be seen, so those verdicts are unverified rather than disproven (see DIAGNOSIS.txt)"
+else
+  rd UI_DUMP 0 "$DUMP_FAILURES dump(s) needed a retry before they became readable (${DUMPS_OK} usable in ui/) - no verdict below depends on a dump that failed"
+fi
 
 # ---- R10: bundle ------------------------------------------------------------
 step "R10 bundle"

@@ -10,7 +10,10 @@ import ai.opencode.android.memory.MemoryState
 import ai.opencode.android.projects.Project
 import ai.opencode.android.projects.ProjectStore
 import ai.opencode.android.projects.SafProjectTransfer
+import ai.opencode.android.projects.StorageController
 import ai.opencode.android.runtime.RuntimeManager
+import ai.opencode.android.runtime.RuntimePaths
+import ai.opencode.android.runtime.StorageChoice
 import ai.opencode.android.ui.chat.ChatScreen
 import ai.opencode.android.ui.chat.SessionPanel
 import ai.opencode.android.ui.files.FileNode
@@ -23,6 +26,7 @@ import ai.opencode.android.ui.projects.ProjectsScreen
 import ai.opencode.android.ui.settings.SettingsScreen
 import ai.opencode.android.ui.theme.OpenCodeTheme
 import ai.opencode.android.ui.welcome.WelcomeScreen
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -193,9 +197,64 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         if (projectName.isEmpty()) null else File(container.workspacesRoot(), projectName)
     }
 
-    // SAF: save one file, or publish the whole project into a folder the user
-    // picks. Both are the paths to a location a file manager can actually open
-    // (Android 11+ blocks other APPS from browsing Android/data - see FilesScreen).
+    // Where the projects live, and the actions that can change it. The snapshot is
+    // rebuilt from the platform on every entry to the Files screen, so a grant made
+    // in system settings shows up here without the app having to be restarted.
+    val storageController = remember { StorageController.get(context) }
+    var storage by remember { mutableStateOf(storageController.snapshot()) }
+    var storageMessage by remember { mutableStateOf("") }
+
+    /**
+     * Run one storage change off the main thread, then rebuild every singleton that
+     * had resolved the old root. A mode change is followed by a full recomposition
+     * ([Activity.recreate]): the repository, the memory store and the project list
+     * all derive from the project root, and leaving stale instances behind is how
+     * an app ends up showing one location while writing to another.
+     */
+    fun runStorageChange(action: () -> StorageController.ChangeResult) {
+        scope.launch {
+            val before = withContext(Dispatchers.IO) { storageController.snapshot() }
+            val result = withContext(Dispatchers.IO) {
+                runCatching { action() }.getOrElse { t ->
+                    StorageController.ChangeResult(
+                        ok = false,
+                        messageKey = StorageController.MessageKey.FOLDER_UNUSABLE,
+                        detail = t.message ?: t.javaClass.simpleName,
+                    )
+                }
+            }
+            RuntimePaths.refresh()
+            ProjectStore.refresh()
+            StorageController.refresh()
+            AppContainer.refresh()
+            storageMessage = storageMessageOf(context, result)
+            val after = withContext(Dispatchers.IO) { StorageController.get(context).snapshot() }
+            storage = after
+            if (after.mode != before.mode || after.rootPath != before.rootPath) {
+                (context as? Activity)?.recreate()
+            } else {
+                projects = withContext(Dispatchers.IO) { ProjectStore.get(context).projects() }
+            }
+        }
+    }
+
+    // The system folder picker, for a project root the user chooses themselves.
+    // Folders that cannot be handed to a POSIX runtime (SD card, cloud provider) are
+    // refused with the reason - see StorageChoice.realPathOf.
+    val chosenFolderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            runStorageChange { storageController.useChosenFolder(uri) }
+        }
+    }
+    // All files access is granted in system settings, not by a dialog, so the app
+    // sends the user there and re-checks when the screen comes back.
+    val allFilesAccessLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { runStorageChange { storageController.activateAllFilesAccess() } }
+
+    // SAF: save one file, or export the whole project into a folder the user
+    // picks. Export is a convenience now (the live project folder is already
+    // visible); it is what a user reaches for when they want a snapshot elsewhere.
     var saveCopyTarget by remember { mutableStateOf<File?>(null) }
     var publishTarget by remember { mutableStateOf<File?>(null) }
     val saveCopyPicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
@@ -301,6 +360,22 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         }
     }
 
+    // Startup storage pass: if this build resolves a different default root than the
+    // previous install did, the projects in the old location are moved (once, only
+    // into an empty root, never overwriting - see ProjectStore.ensureMigrated). The
+    // result is reported on the Files screen rather than happening silently.
+    LaunchedEffect(Unit) {
+        val migrated = withContext(Dispatchers.IO) {
+            runCatching { storageController.migrateOnStart() }.getOrDefault(0)
+        }
+        if (migrated > 0) {
+            projects = withContext(Dispatchers.IO) { ProjectStore.get(context).projects() }
+            val now = RuntimePaths.get(context)
+            storageMessage = context.getString(R.string.files_storage_moved_on_start, migrated, storageLabel(now))
+        }
+        storage = withContext(Dispatchers.IO) { storageController.snapshot() }
+    }
+
     // The stream is the only source of live progress; it starts once the supervisor
     // says the server is healthy and is re-asserted when the project changes.
     LaunchedEffect(summary.ready, repository) {
@@ -322,6 +397,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         if (route == ROUTE_FILES) {
             // Reset the viewer on entry so the screen always opens on the listing.
             openFile = null
+            // Re-read the platform (a grant may have been made in system settings
+            // while the app was in the background) before showing the panel.
+            storage = withContext(Dispatchers.IO) { storageController.snapshot() }
             if (filesPath.isEmpty()) loadFiles("")
         }
         if (route == ROUTE_SETTINGS) {
@@ -481,7 +559,14 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 ROUTE_FILES -> FilesScreen(
                     projectName = projectName.ifEmpty { stringResource(R.string.projects_title) },
                     projectPath = projectDir?.absolutePath.orEmpty(),
-                    locationIsExternal = container.workspacesAreVisibleToOtherTools(),
+                    storageMode = storage.mode,
+                    storageVisibleToFileManagers = storage.visibleToFileManagers,
+                    storageAppFolderBrowsableByFileManagers = storage.appFolderBrowsableByFileManagers,
+                    storageCanGrantAllFilesAccess = storage.canGrantAllFilesAccess,
+                    storageCanChooseFolder = storage.canChooseFolder,
+                    storageHasChosenFolder = storage.hasChosenFolder,
+                    storagePendingMove = storage.pendingProjects,
+                    storageMessage = storageMessage,
                     currentPath = filesPath,
                     nodes = filesNodes,
                     loading = filesLoading,
@@ -514,6 +599,16 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                             publishTarget = source
                             publishPicker.launch(null)
                         }
+                    },
+                    onRequestAllFilesAccess = {
+                        val intent = StorageChoice.allFilesAccessIntent(context)
+                        if (intent != null) allFilesAccessLauncher.launch(intent)
+                    },
+                    onChooseStorageFolder = { chosenFolderPicker.launch(null) },
+                    onUseDefaultStorage = { runStorageChange { storageController.useDefaultLocation() } },
+                    onMoveProjects = {
+                        filesError = ""
+                        runStorageChange { storageController.moveProjectsIntoPlace() }
                     },
                     onBack = { route = ROUTE_CHAT },
                 )
@@ -651,6 +746,33 @@ private const val ANY_CONTENT = "*/*"
  * handed to one Text composable and stutter the UI. "Save a copy" gives the whole
  * file.
  */
+/**
+ * Turn a storage action's outcome into one sentence the user can act on. Every
+ * branch says what happened to their projects - a move is never silent, and a
+ * partial move never reads as success.
+ */
+private fun storageMessageOf(context: Context, result: StorageController.ChangeResult): String =
+    when (result.messageKey) {
+        StorageController.MessageKey.MOVED ->
+            context.getString(R.string.files_storage_moved, result.moved, result.from, result.to)
+        StorageController.MessageKey.MOVED_SOME_FAILED ->
+            context.getString(R.string.files_storage_move_failed, result.moved, result.failed)
+        StorageController.MessageKey.NOTHING_TO_MOVE ->
+            context.getString(R.string.files_storage_nothing_to_move)
+        StorageController.MessageKey.FOLDER_UNUSABLE ->
+            context.getString(R.string.files_storage_choose_failed, result.detail)
+        StorageController.MessageKey.GRANT_NOT_APPLIED ->
+            context.getString(R.string.files_storage_grant_not_applied)
+    }
+
+/** The active location, named the way the storage panel names it. */
+private fun storageLabel(paths: RuntimePaths): String = when (paths.mode) {
+    ai.opencode.android.runtime.StorageMode.PUBLIC -> RuntimePaths.PUBLIC_PROJECTS_DIR
+    ai.opencode.android.runtime.StorageMode.CHOSEN -> paths.workspaces.absolutePath
+    ai.opencode.android.runtime.StorageMode.APP_EXTERNAL,
+    ai.opencode.android.runtime.StorageMode.INTERNAL -> paths.workspaces.absolutePath
+}
+
 private const val FILE_VIEW_LIMIT = 200_000
 
 /** Copy diagnostics to the clipboard without leaving the composable tree. */

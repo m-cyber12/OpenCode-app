@@ -23,6 +23,42 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- MANAGE_EXTERNAL_STORAGE ("All files access"): the deliberately chosen
+         trade of Phase 10 continuation v3. Project files must be ordinary,
+         user-visible files — a real folder that any file manager, the Files app,
+         MTP and a non-root `adb shell` can open while the agent is working.
+
+         Why nothing narrower works, rather than an argument for the broad one:
+         the previous answers were (a) app-private storage, invisible to
+         everything, and (b) the app-specific external directory, which `adb`/MTP
+         can reach but *file managers cannot on Android 11+*, because the
+         platform blocks one app from browsing another's Android/data. A
+         Storage Access Framework tree would put the copy outside the sandbox,
+         but its `content://` grant is not a POSIX path, and the embedded
+         OpenCode runtime is a real process (git, bun, ripgrep, its own bash
+         tool) that needs a path to `chdir` into; a SAF-only root would mean
+         either re-engineering the runtime's file layer (out of scope, and it
+         would diverge from upstream) or handing the agent a directory it cannot
+         actually write to.
+
+         What this permission is used FOR, exactly: read/write/rename/delete
+         inside Documents/OpenCode (the default project root), plus the
+         user-chosen folder if they pick one with the system picker. Nothing
+         else is walked, and no media outside the project roots is read. The
+         in-app panel offers the narrower alternatives (choose a folder /
+         keep everything in the app folder) for users who do not want to grant
+         it, and says plainly what each one costs in visibility.
+
+         Scope note: this is a Play policy matter, not just a manifest line —
+         the release ships with the "All files access" declaration and the
+         in-app reason above (see docs/progress/, Phase 10 continuation v3).
+
+         maxSdkVersion is deliberately ABSENT: the permission is the default
+         mechanism on every supported version >= 30, and on API 29 and below the
+         app does not need it at all (the app-specific external directory is
+         itself file-manager-visible there, so the fallback is not a downgrade). -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+
     <application
         android:allowBackup="false"
         android:label="@string/app_name"

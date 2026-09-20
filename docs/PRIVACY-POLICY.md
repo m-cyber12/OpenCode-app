@@ -25,34 +25,44 @@ describing the shipped behaviour.
 
 ## What the app stores on your device
 
-Everything below stays inside the app's own storage on your device unless you
-explicitly export, publish or share it. Two locations are involved, and the
-difference matters only for who can reach the files:
+Everything below stays on your device and is sent nowhere unless you explicitly
+export or share it. Two locations are involved, and the difference matters for who
+can reach the files:
 
 * **app-private storage** (`/data/data/…`) holds the runtime, the configurations,
-  the logs and the encrypted keys - unreadable to other apps AND to a connected PC;
-* **the app's own folder on shared storage**
-  (`/storage/emulated/0/Android/data/<app>/files/workspaces/…`) holds your project
-  folders. It is readable by `adb` / a connected computer on a stock, non-rooted
-  phone (which is the point: the files are yours and should not be locked inside an
-  app). On Android 11 and newer, no other *app* can browse it; on Android 10, an
-  app that holds the legacy storage permission technically can, which is why this
-  policy names the path rather than promising more than the platform does. The
-  app's file browser, "Save a copy" and "Publish to a folder" all read from there.
+  the conversations, the logs and the encrypted keys - unreadable to other apps AND
+  to a connected PC;
+* **`Documents/OpenCode/…` on shared storage** holds your project folders. This is
+  the point of the design: your work is an ordinary folder, so the Files app, any
+  file manager, a USB connection and `adb` can open it while the agent works. On
+  Android 11 and newer, writing there is what the app asks the **"All files
+  access"** permission for (`MANAGE_EXTERNAL_STORAGE`) - a special permission you
+  grant in system settings, which the app requests from its storage panel and
+  explains there. The app uses it to read, write, rename and delete inside
+  `Documents/OpenCode` and, if you pick one, the folder you choose; it does not
+  scan or read anything else on your storage, and nothing leaves your device
+  because of it. If you decline it, projects stay in the app's own
+  `Android/data/<app>/files/workspaces` folder instead: usable, but file managers
+  cannot open it on Android 11+, and the app says so on the screen where it shows
+  the path. The in-app file browser and "Export a copy..." read from wherever the
+  projects are.
 
 | Data | Why | Where |
 |---|---|---|
-| Project folders and their files | the agent works in a folder you create or import | the app's own folder on shared storage (see above; on Android 11+ other apps cannot read it, on Android 10 an app holding the legacy storage permission can) |
+| Project folders and their files | the agent works in a folder you create or import | `Documents/OpenCode/…` on shared storage (see above; readable by file managers and a connected PC by design), or the app's own `Android/data` folder if you declined All files access |
 | Conversations (messages, tool calls, results) | your history and session continuity | app-private storage |
 | Agent instruction files (project and global "memory") | the agent reads them into every conversation | app-private storage |
 | Settings (theme, permission policy, chosen model, MCP configuration) | to keep your choices | app-private storage |
 | Provider API keys | to call the model provider you chose | encrypted files (see below) |
 | Runtime logs (`runtime.log`, server log) | so a failure can be diagnosed locally | app-private storage |
 
-Uninstalling the app deletes all of it, including the project folders. This is
-worth reading twice: a project lives inside the app's storage, so removing the app
-removes the files too - use **Export** or **Publish to a folder** for anything you
-want to keep outside it. Android backups are
+Uninstalling the app deletes its app-private storage: conversations, settings,
+logs, keys and the runtime. Project folders are different now: they live in
+`Documents/OpenCode` on shared storage, which belongs to you, so uninstalling the
+app does **not** delete them - open that folder with any file manager to see them.
+(If the app is running without All files access, its projects live inside
+`Android/data/<app>`, and Android removes that folder when the app is uninstalled -
+use **Export a copy...** for anything you want to keep.) Android backups are
 disabled (`allowBackup="false"`), so this data is not copied into a cloud backup
 by the system. **Export is user-initiated**: when you export a project or share
 diagnostics, the app hands the data to the Android system share/save sheet, and

@@ -39,6 +39,12 @@ class AppContainer private constructor(private val context: Context) {
         repo
     }
 
+    /** Stop the cached repository's event stream and forget it (storage change). */
+    private fun releaseCaches() {
+        cached?.let { runCatching { it.second.stopStream() } }
+        cached = null
+    }
+
     /** True once the supervisor has a Keystore-held password (i.e. runtime usable). */
     fun serverPasswordAvailable(): Boolean =
         runCatching { secrets.get(SECRET_PASSWORD) }.getOrNull()?.isNotEmpty() == true
@@ -46,12 +52,20 @@ class AppContainer private constructor(private val context: Context) {
     fun workspacesRoot(): java.io.File = paths.workspaces
 
     /**
-     * True when projects live in the app-specific external directory (the Phase 10
-     * continuation change) rather than in app-private `filesDir`. The UI states
-     * where the files are; on Android 11+ neither location is browsable by a file
-     * manager, so the honest label differs from "the user can open this in Files".
+     * Can a file manager (Files app, third-party, MTP folder browse) open the live
+     * project folder right now? Phase 10 continuation v3 makes this the default
+     * answer rather than a caveat: projects live in `Documents/OpenCode` and are
+     * visible from creation. It is still derived from the platform (the All files
+     * access grant, the chosen folder) instead of assumed, because the fallback
+     * locations genuinely are not visible and the UI must not claim otherwise.
      */
-    fun workspacesAreVisibleToOtherTools(): Boolean = paths.workspacesAreExternal
+    fun workspacesVisibleToFileManagers(): Boolean = paths.fileManagerVisible
+
+    /** Which of the storage locations is in effect, for the UI's storage panel. */
+    fun storageMode(): ai.opencode.android.runtime.StorageMode = paths.mode
+
+    /** Where projects live, in the app's own words (diagnostics also use this). */
+    fun workspacesLocationLabel(): String = paths.workspaces.absolutePath
 
     /**
      * OpenCode's own persistent-memory files: a per-project `AGENTS.md` at the
@@ -83,5 +97,18 @@ class AppContainer private constructor(private val context: Context) {
             instance ?: synchronized(this) {
                 instance ?: AppContainer(context.applicationContext).also { instance = it }
             }
+
+        /**
+         * Drop the cached container and its cached repository, because it resolved
+         * the project root at construction time. Called when the storage mode changes
+         * (All files access granted, folder chosen) - otherwise the app would keep
+         * handing the server the old root while the UI showed the new one.
+         */
+        fun refresh() {
+            synchronized(this) {
+                instance?.releaseCaches()
+                instance = null
+            }
+        }
     }
 }

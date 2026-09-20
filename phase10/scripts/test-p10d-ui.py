@@ -48,6 +48,35 @@ BLANK_XML = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 """
 
 
+# A dump from an Android build that emits the `shown` attribute (Phase 10
+# continuation v3). The first node matching `composer_send` is off screen
+# (`shown="false"`) and sits at the top of the document; the visible one is second.
+# Tapping the first one's bounds would press whatever is really at those
+# coordinates, so the visible node has to win.
+SHOWN_XML = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<hierarchy rotation="0">
+<node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="io.github.mcyber12.opencode" content-desc="" clickable="false" enabled="true" shown="true" bounds="[0,0][1080,1920]">
+ <node index="0" text="Send" resource-id="composer_send" class="android.view.View" package="io.github.mcyber12.opencode" content-desc="" clickable="true" enabled="true" shown="false" bounds="[10,10][90,60]" />
+ <node index="1" text="Send" resource-id="composer_send" class="android.view.View" package="io.github.mcyber12.opencode" content-desc="" clickable="true" enabled="true" shown="true" bounds="[980,1700][1060,1780]" />
+ <node index="2" text="Project files" resource-id="open_files" class="android.view.View" package="io.github.mcyber12.opencode" content-desc="" clickable="true" enabled="true" shown="false" bounds="[10,90][200,140]" />
+</node>
+</hierarchy>
+"""
+
+# Same device, but the app's own screen is entirely marked not-shown (what a driver
+# sees when the platform reports a stale hierarchy). Matching must still work: a
+# device that marks everything hidden must not turn into "nothing is ever found",
+# which would be the false-FAIL this whole change exists to remove.
+ALL_HIDDEN_XML = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<hierarchy rotation="0">
+<node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="io.github.mcyber12.opencode" content-desc="" clickable="false" enabled="true" shown="false" bounds="[0,0][1080,1920]">
+ <node index="0" text="Projects" resource-id="projects_screen" class="android.view.View" package="io.github.mcyber12.opencode" content-desc="" clickable="false" enabled="true" shown="false" bounds="[40,200][400,260]" />
+ <node index="1" text="New project" resource-id="projects_new" class="android.view.View" package="io.github.mcyber12.opencode" content-desc="" clickable="true" enabled="true" shown="false" bounds="[20,600][1060,680]" />
+</node>
+</hierarchy>
+"""
+
+
 def run(path, *args):
     proc = subprocess.run([sys.executable, READER, path] + list(args),
                           capture_output=True, text=True)
@@ -108,6 +137,41 @@ def main():
         checks.append(("texts-matching lists only what matched",
                        out == "" or all("android" in l.lower() for l in out.splitlines()),
                        "out=%r" % out))
+
+        shown = os.path.join(tmp, "shown.xml")
+        hidden = os.path.join(tmp, "all-hidden.xml")
+        for path, text in ((shown, SHOWN_XML), (hidden, ALL_HIDDEN_XML)):
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(text)
+
+        rc, out = run(shown, "find", "composer_send")
+        checks.append(("a node the platform marks not-shown does not win over a visible one",
+                       rc == 0 and out == "1020 1740", "rc=%s out=%r" % (rc, out)))
+
+        # A visible match wins, but a hidden-only match is still returned: a device
+        # that marks its whole hierarchy not-shown must not turn into "nothing is
+        # ever found" (that false FAIL is what this change exists to remove). The
+        # state readout is where the caller learns it was a hidden match.
+        rc, out = run(shown, "find", "open_files")
+        checks.append(("a shown=false-only match still yields coordinates, flagged rc=4 (no new blind spot)",
+                       rc == 4 and out == "105 115", "rc=%s out=%r" % (rc, out)))
+
+        rc, out = run(shown, "find", "composer_send")
+        checks.append(("a visible match is not flagged (rc=0)",
+                       rc == 0, "rc=%s out=%r" % (rc, out)))
+
+        rc, out = run(shown, "has", "open_files")
+        checks.append(("has still finds an off-screen node (a tag being present is news)",
+                       rc == 0, "rc=%s" % rc))
+
+        rc, out = run(hidden, "has", "projects_screen")
+        checks.append(("a device that marks everything not-shown does not blind the reader",
+                       rc == 0, "rc=%s" % rc))
+
+        rc, out = run(shown, "attrs")
+        checks.append(("attrs reports the attribute set and the hidden count",
+                       rc == 0 and "shown=true" not in out and "2 node(s) marked shown=false" in out
+                       and "resource-id:4" in out, "rc=%s out=%r" % (rc, out)))
 
         broken = os.path.join(tmp, "broken.xml")
         with open(broken, "w", encoding="utf-8") as fh:

@@ -12,6 +12,7 @@ import ai.opencode.android.ui.chat.ChatScreen
 import ai.opencode.android.ui.files.FileNode
 import ai.opencode.android.ui.files.FilesScreen
 import ai.opencode.android.ui.files.OpenFile
+import ai.opencode.android.runtime.StorageMode
 import ai.opencode.android.ui.chat.SessionPanel
 import ai.opencode.android.ui.chat.TAG_COMPOSER_INPUT
 import ai.opencode.android.ui.chat.TAG_COMPOSER_SEND
@@ -151,7 +152,18 @@ class ChatUiGatesTest {
     private var closedFiles = 0
     private var publishes = 0
     private var filesBack = 0
+    private var allFilesRequests = 0
+    private var folderChoices = 0
+    private var defaultStorageClicks = 0
+    private var projectMoves = 0
     private val publishedLabel = mutableStateOf("")
+    private val storageMessage = mutableStateOf("")
+    private val storageMode = mutableStateOf(StorageMode.PUBLIC)
+    private val storageVisible = mutableStateOf(true)
+    private val storageCanGrant = mutableStateOf(false)
+    private val storageCanChoose = mutableStateOf(true)
+    private val storageChosen = mutableStateOf(false)
+    private val storagePending = mutableStateOf(0)
 
     // ---- fabrication helpers ------------------------------------------------
 
@@ -438,7 +450,14 @@ class ChatUiGatesTest {
         FilesScreen(
             projectName = "gates",
             projectPath = FILES_FIXTURE_PATH,
-            locationIsExternal = true,
+            storageMode = storageMode.value,
+            storageVisibleToFileManagers = storageVisible.value,
+            storageAppFolderBrowsableByFileManagers = storageVisible.value,
+            storageCanGrantAllFilesAccess = storageCanGrant.value,
+            storageCanChooseFolder = storageCanChoose.value,
+            storageHasChosenFolder = storageChosen.value,
+            storagePendingMove = storagePending.value,
+            storageMessage = storageMessage.value,
             currentPath = filesPath.value,
             nodes = filesNodes.toList(),
             loading = filesLoading.value,
@@ -452,6 +471,10 @@ class ChatUiGatesTest {
             onCopyPath = { copiedPaths.add(it) },
             onSaveCopy = { savedCopies.add(it) },
             onPublish = { publishes++ },
+            onRequestAllFilesAccess = { allFilesRequests++ },
+            onChooseStorageFolder = { folderChoices++ },
+            onUseDefaultStorage = { defaultStorageClicks++ },
+            onMoveProjects = { projectMoves++ },
             onBack = { filesBack++ },
         )
     }
@@ -1526,16 +1549,78 @@ class ChatUiGatesTest {
         // the empty state is a real state, not a blank screen
         renderFiles(path = "", nodes = emptyList())
         val emptyShown = exists("files_empty")
+
+        // ---- storage panel (Phase 10 continuation v3) --------------------------
+        // In the good case the panel names the real location and offers the two
+        // optional routes (pick a folder, export a copy) without nagging about a
+        // permission the user does not need.
+        renderFiles(path = "", nodes = emptyList())
+        val goodPanelVisible = exists("files_storage_mode") && onScreenText()
+            .contains(context.getString(R.string.files_storage_mode_public))
+        val goodExplanation = onScreenText().contains(context.getString(R.string.files_location_public))
+        val goodNoGrant = !exists("files_storage_grant")
+        val goodHasChoose = exists("files_storage_choose")
+        val goodHasExport = exists("files_publish")
+
+        // In the fallback case the panel says what is wrong, offers the grant AND
+        // the folder picker, and reports pending projects with a move action.
+        storageMode.value = StorageMode.APP_EXTERNAL
+        storageVisible.value = false
+        storageCanGrant.value = true
+        storagePending.value = 3
+        rule.waitForIdle()
+        val fallbackVisible = onScreenText().contains(context.getString(R.string.files_storage_mode_app_external))
+        val fallbackExplained = onScreenText().contains(context.getString(R.string.files_location_app_external))
+        val pendingShown = exists("files_storage_pending") &&
+            onScreenText().contains(context.getString(R.string.files_storage_pending, 3))
+        val grantShown = exists("files_storage_grant")
+        rule.onAllNodesWithTag("files_storage_grant")[0].performClick()
+        rule.waitForIdle()
+        val grantWired = allFilesRequests == 1
+        rule.onAllNodesWithTag("files_storage_choose")[0].performClick()
+        rule.waitForIdle()
+        val chooseWired = folderChoices == 1
+        rule.onAllNodesWithTag("files_storage_move")[0].performClick()
+        rule.waitForIdle()
+        val moveWired = projectMoves == 1
+        shot("22-files-storage-panel.png")
+
+        // With a chosen folder in effect the panel offers a way back to the default.
+        storageMode.value = StorageMode.CHOSEN
+        storageVisible.value = true
+        storageCanGrant.value = false
+        storagePending.value = 0
+        storageChosen.value = true
+        storageMessage.value = "moved 2"
+        rule.waitForIdle()
+        val chosenVisible = onScreenText().contains(context.getString(R.string.files_storage_mode_chosen))
+        val messageShown = onScreenText().contains("moved 2")
+        rule.onAllNodesWithTag("files_storage_default")[0].performClick()
+        rule.waitForIdle()
+        val defaultWired = defaultStorageClicks == 1
+        // back to the default state so the remaining assertions see a clean panel
+        storageMode.value = StorageMode.PUBLIC
+        storageChosen.value = false
+        storageMessage.value = ""
+        storageCanGrant.value = false
+        renderFiles(path = "", nodes = emptyList())
+
         val ok = listed && pathShown && locationCopy && openedDir && upShown && upWorks && openedFile &&
             viewer && bodyText && saveCopyShown && saveCopyWired && closed && publishShown && publishWired &&
-            copyWired && emptyShown
+            copyWired && emptyShown &&
+            goodPanelVisible && goodExplanation && goodNoGrant && goodHasChoose && goodHasExport &&
+            fallbackVisible && fallbackExplained && pendingShown && grantShown && grantWired && chooseWired &&
+            moveWired && chosenVisible && messageShown && defaultWired
         gate(
             "U9",
             ok,
             "listed=$listed pathShown=$pathShown locationCopy=$locationCopy openedDir=$openedDir " +
                 "upShown=$upShown upWorks=$upWorks openedFile=$openedFile viewer=$viewer body=$bodyText " +
                 "saveCopy=$saveCopyShown/$saveCopyWired closed=$closed publish=$publishShown/$publishWired " +
-                "copyPath=$copyWired empty=$emptyShown",
+                "copyPath=$copyWired empty=$emptyShown " +
+                "panel=$goodPanelVisible/$goodExplanation/$goodNoGrant/$goodHasChoose/$goodHasExport " +
+                "fallback=$fallbackVisible/$fallbackExplained/$pendingShown/$grantShown/$grantWired/" +
+                "$chooseWired/$moveWired chosen=$chosenVisible/$messageShown/$defaultWired",
         )
     }
 }

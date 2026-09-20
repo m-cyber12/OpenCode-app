@@ -104,6 +104,8 @@ if python3 "$DIR/scripts/check-apk.py" "$APK" \
      --expect-native-abi arm64-v8a --expect-native-abi x86_64 \
      --expect-permission android.permission.INTERNET \
      --expect-permission android.permission.FOREGROUND_SERVICE \
+     --expect-permission android.permission.MANAGE_EXTERNAL_STORAGE \
+     --expect-no-permission android.permission.READ_EXTERNAL_STORAGE \
      --json "$EV/p10-smoke-apk.json" > "$INSPECT" 2>&1; then
   p10 SMOKE_APK 0 "$(grep -a '^MANIFEST ' "$INSPECT" | head -1 | cut -c1-200)"
 else

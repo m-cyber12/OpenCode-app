@@ -87,6 +87,13 @@ fun ProjectsScreen(
     onFiles: (String) -> Unit = {},
     importing: Boolean = false,
     importError: String = "",
+    /**
+     * Something the user should know about the project *location* (Phase 10
+     * continuation v3: a storage change moved their projects, or could not). Shown
+     * on this screen, not only on the Files screen, because this is the screen the
+     * app opens on - a move the user never sees is a move that looks like data loss.
+     */
+    notice: String = "",
     sessionCounts: Map<String, Int> = emptyMap(),
     modifier: Modifier = Modifier,
     now: Long = System.currentTimeMillis(),
@@ -108,6 +115,17 @@ fun ProjectsScreen(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp),
+            )
+        }
+        if (notice.isNotBlank()) {
+            Text(
+                text = notice,
+                style = MaterialTheme.typography.labelSmall,
+                color = ChatTheme.chat.attention,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 2.dp)
+                    .semantics { testTag = "projects_notice" },
             )
         }
         LazyColumn(

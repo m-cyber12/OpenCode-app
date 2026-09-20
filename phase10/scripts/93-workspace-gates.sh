@@ -16,6 +16,14 @@
 # artifact for the *layout* claim is the app's own W4 gate, which the signed-build
 # device script re-runs on the signed release build.
 #
+# Phase 10 continuation v3: the default root is `Documents/OpenCode` on shared
+# storage, which needs All files access. This script GRANTS it the way the user
+# does - `appops set MANAGE_EXTERNAL_STORAGE allow`, no root - BEFORE the gates
+# run, so W1-W4 and the external visibility check are exercised against the
+# shipping default and not against the fallback. `P10_WS_NO_GRANT=1` runs the same
+# gates without the grant on purpose: that pass proves the app states the fallback
+# honestly instead of claiming visibility it does not have.
+#
 # Usage: bash phase10/scripts/93-workspace-gates.sh [--pkg PKG] [--out DIR]
 set -uo pipefail
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -74,6 +82,24 @@ adb shell "rm -f $EXT_VERDICTS" >/dev/null 2>&1 || true
 adb logcat -G 8M >/dev/null 2>&1 || true
 adb logcat -c >/dev/null 2>&1 || true
 
+# ---- the storage grant, exactly as the app asks the user for it --------------
+# appops is the shell-side equivalent of the user tapping through
+# Settings -> Special access -> All files access; a real user grant and this one
+# produce the same platform state (`Environment.isExternalStorageManager()==true`),
+# which is what the app reads. A release build would additionally need the
+# MANAGE_EXTERNAL_STORAGE manifest declaration, which check-apk.py enforces.
+if [ "${P10_WS_NO_GRANT:-0}" = "1" ]; then
+  log "P10_WS_NO_GRANT=1: leaving All files access ungranted (this pass checks the FALLBACK is reported honestly)"
+  adb shell appops set "$PKG" MANAGE_EXTERNAL_STORAGE deny >/dev/null 2>&1 || true
+else
+  adb shell appops set "$PKG" MANAGE_EXTERNAL_STORAGE allow >/dev/null 2>&1 || true
+fi
+GRANT_LINE=$(adb shell appops get "$PKG" MANAGE_EXTERNAL_STORAGE 2>&1 | tr -d '\r' | head -1)
+log "appops MANAGE_EXTERNAL_STORAGE: ${GRANT_LINE:-<no output>}"
+# The path the app will resolve, so the log names it even when the gates fail.
+SHARED_PROBE=$(adb shell "ls -ld /storage/emulated/0/Documents/OpenCode 2>&1" | tr -d '\r' | head -1)
+log "shared-storage default: ${SHARED_PROBE:-<absent>}"
+
 log "=== am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest (W1-W4) ==="
 ISO_RC=0
 timeout -k 30 3600 adb shell am instrument -w \
@@ -104,9 +130,13 @@ emit "W4_WORKSPACE_VISIBLE"
 # ---- the external vantage point ---------------------------------------------
 W4_LINE=$(grep -aE '^P7_W4_WORKSPACE_VISIBLE ' "$VERDICTS" | tail -1)
 WS_PROJECT=$(printf '%s' "$W4_LINE" | grep -oE 'project=[A-Za-z0-9._-]+' | head -1 | cut -d= -f2)
-log "=== visibility from outside the app (non-root adb shell), project='${WS_PROJECT:-<none>}' ==="
+# The app reports its resolved root as `wsRoot=...`; the external check verifies
+# that path instead of assuming a layout. If the gate never ran, 92 probes.
+WS_ROOT=$(printf '%s' "$W4_LINE" | grep -oE 'wsRoot=[^ ]+' | head -1 | cut -d= -f2-)
+log "=== visibility from outside the app (non-root adb shell), project='${WS_PROJECT:-<none>}' root='${WS_ROOT:-<probe>}' ==="
 VIS_ARGS=(--pkg "$PKG" --out "$OUT/visibility")
 [ -n "${WS_PROJECT:-}" ] && VIS_ARGS+=(--project "$WS_PROJECT")
+[ -n "${WS_ROOT:-}" ] && VIS_ARGS+=(--root "$WS_ROOT")
 bash "$DIR/scripts/92-workspace-visibility.sh" "${VIS_ARGS[@]}" > "$OUT/visibility.log" 2>&1
 VIS_RC=$?
 grep -aE '^P10D_VISIBILITY_[A-Z_]+ (PASS|FAIL|SKIP)' "$OUT/visibility.log" 2>/dev/null | tee -a "$LOG" >/dev/null
@@ -125,7 +155,16 @@ done < <(grep -aE '^P10D_VISIBILITY_[A-Z_]+ (PASS|FAIL|SKIP)' "$OUT/visibility.l
 # The W4 project directory is a gate fixture, not a user project: remove it so the
 # next run starts clean (only when the visibility check has already read it).
 if [ -n "${WS_PROJECT:-}" ]; then
-  case "$WS_PROJECT" in w4-storage-*) adb shell "rm -rf '/storage/emulated/0/Android/data/$PKG/files/workspaces/$WS_PROJECT'" >/dev/null 2>&1 || true ;; esac
+  case "$WS_PROJECT" in
+    w4-storage-*)
+      # Remove the fixture from whichever root the app reported (and from both
+      # fallbacks, in case a run moved it), so the next run starts clean.
+      for r in "${WS_ROOT:-}" "/storage/emulated/0/Documents/OpenCode" "/storage/emulated/0/Android/data/$PKG/files/workspaces"; do
+        [ -n "$r" ] || continue
+        adb shell "rm -rf '$r/$WS_PROJECT'" >/dev/null 2>&1 || true
+      done
+      ;;
+  esac
 fi
 
 cat >> "$OUT/GATES_SUMMARY.txt" <<EOF

@@ -71,6 +71,15 @@ log "apk=$(basename "$APK") ($(stat -c%s "$APK") bytes)"
 log "aab=$(basename "$AAB") ($(stat -c%s "$AAB") bytes)"
 
 # ---- APK: identity, payload, permissions, signature state --------------------
+#
+# MANAGE_EXTERNAL_STORAGE is REQUIRED, not incidental (Phase 10 continuation v3):
+# the product promise is that project files are ordinary user-visible files in
+# Documents/OpenCode, readable by any file manager while the agent works, with no
+# export step. Nothing narrower reaches that folder by path, and the runtime needs
+# a real path (see the manifest comment and docs/ARCHITECTURE.md). The check is
+# two-sided on purpose: the legacy READ/WRITE_EXTERNAL_STORAGE permissions must NOT
+# come back - they are dead on API 29+ and would mean the storage story regressed
+# to the pre-scoped-storage model.
 APK_REPORT="$EV/p10-release-apk-report.txt"
 APK_ARGS=(--expect-package "$APPID" --expect-version-name "$VNAME" --expect-version-code "$VCODE"
           --expect-not-debuggable --expect-icon --expect-payload
@@ -80,7 +89,9 @@ APK_ARGS=(--expect-package "$APPID" --expect-version-name "$VNAME" --expect-vers
           --expect-permission android.permission.FOREGROUND_SERVICE
           --expect-permission android.permission.FOREGROUND_SERVICE_SPECIAL_USE
           --expect-permission android.permission.POST_NOTIFICATIONS
+          --expect-permission android.permission.MANAGE_EXTERNAL_STORAGE
           --expect-no-permission android.permission.READ_EXTERNAL_STORAGE
+          --expect-no-permission android.permission.WRITE_EXTERNAL_STORAGE
           --expect-no-permission android.permission.ACCESS_FINE_LOCATION
           --json "$EV/p10-release-apk.json")
 if python3 "$DIR/scripts/check-apk.py" "$APK" "${APK_ARGS[@]}" > "$APK_REPORT" 2>&1; then

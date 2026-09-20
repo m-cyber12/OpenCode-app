@@ -69,28 +69,64 @@ log/runtime.log, log/crashes/       supervisor log + crash captures
 Everything above stays app-private (`/data/data/io.github.mcyber12.opencode/files`,
 mode 0700) - it is machinery, not the user's work.
 
-**Project files are the exception, and deliberately so** (Phase 10 continuation):
+**Project files are the exception, and deliberately so** (Phase 10 continuation v3):
 
 ```
-/storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces/<project-id>/
-                                    one directory per project (= one OpenCode instance each)
+/storage/emulated/0/Documents/OpenCode/<project-id>/
+                    one directory per project (= one OpenCode instance each)
 ```
 
-Before that change a project lived at `files/workspaces/<project-id>`, which no
-file manager, no MTP/USB browse and no non-root `adb shell` can read - the agent
-wrote real files into a sealed box, which contradicted the product's own premise.
-The move to the app-specific *external* directory needs no permission on any
-supported API level (it is the app's own directory on shared storage), and it is
-what makes `adb shell`, `adb pull` and desktop tools able to read the agent's
-output on a stock, non-rooted phone.
+This is the default, and it is the product decision the whole storage story now
+turns on: a project is an ordinary folder on shared storage, so the Files app, any
+file manager, MTP/USB and a non-root `adb shell` can open the agent's output while
+it is being written, with no export or publish step. Two earlier layouts were
+rejected on evidence rather than taste:
 
-What it does not do, stated here so it is not re-discovered: on Android 11+ the
-platform blocks other *apps* from browsing any app's `Android/data` directory, so a
-phone file manager still cannot open it. That is why the app also ships an in-app
-file browser (reading through OpenCode's own `/file` API) and SAF
-"Save a copy" / "Publish to a folder" actions that write real files into a folder
-the user picks. On an install that predates the change, `ProjectStore.ensureMigrated`
-moves existing projects once, and only into an empty new root.
+* `files/workspaces/<project-id>` (app-private) — no file manager, no MTP browse
+  and no `adb shell` can read it. The agent wrote real files into a sealed box,
+  which contradicted the product's own premise;
+* `Android/data/<applicationId>/files/workspaces/<project-id>` — reachable by
+  `adb`/MTP, but on Android 11+ the platform blocks *apps* (including every file
+  manager) from browsing another app's `Android/data`, so the files were still not
+  user-visible on the phone.
+
+Writing to `Documents/OpenCode` needs All files access (`MANAGE_EXTERNAL_STORAGE`)
+on Android 11+, which the app asks for in its own storage panel with the reason
+attached. Nothing narrower reaches that folder *by path*, and the runtime needs a
+path: OpenCode is a POSIX process (git, bun, ripgrep, its own `bash` tool) that
+`chdir`s into the project directory. A SAF tree gives a `content://` grant, not a
+path, so a SAF-only root would mean either re-engineering the runtime's file layer
+(diverging from upstream, out of scope) or handing the agent a directory it cannot
+write to. A SAF folder is accepted as the live root only when it RESOLVES to a real
+path on primary storage (verified by writing a probe file); SD cards and cloud
+providers are refused with the reason shown, not silently accepted.
+
+The fallbacks, and what each one costs:
+
+| Mode | Location | File manager | adb / PC | When |
+|---|---|---|---|---|
+| `PUBLIC` | `Documents/OpenCode` | yes | yes | default, once All files access is granted |
+| `CHOSEN` | a folder the user picked (SAF, primary volume) | yes | yes | the user wants a specific folder |
+| `APP_EXTERNAL` | `Android/data/<applicationId>/files/workspaces` | Android 10 only | yes | All files access refused |
+| `INTERNAL` | `files/workspaces` (app-private) | no | no | no usable external storage at all |
+
+`RuntimePaths` decides the mode from the platform (not from a preference), the
+Files screen renders it as data and never invents a visibility claim, and the
+device gates assert it per mode. An install that predates the change has its
+projects moved once — only into an empty new root, never overwriting a name, and
+only removing a source directory that is provably empty (`ProjectMigration`); the
+user's active project pointer is keyed by name, so it follows the move.
+
+One more honest note: with All files access held, the app can technically reach
+shared storage broadly. It reads and writes only inside the project root it
+manages (plus a folder the user chooses), and that is stated in the manifest
+comment, the in-app storage panel and `PRIVACY-POLICY.md` — the permission is not
+free, and this is what it is used for.
+
+The in-app file browser (reading through OpenCode's own `/file` API) and the
+`Export a copy...` action (SAF `OpenDocumentTree`) remain: the first shows exactly
+what the agent sees, the second is how a user takes a snapshot somewhere else
+entirely.
 
 ## Request flow (one turn)
 

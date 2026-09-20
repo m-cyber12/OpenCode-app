@@ -15,7 +15,8 @@ diagnostic as a coordinate, a needle split that made a wait pass on the wrong wo
 and an ANR dialog recorded with a verdict token of "1"). Reading is not running, so
 the driver now runs here first.
 
-Environment: P10D_FAKE_ROOT (fixtures + state), P10D_FAKE_SCENARIO (happy|locked|blank).
+Environment: P10D_FAKE_ROOT (fixtures + state), P10D_FAKE_SCENARIO
+(happy|locked|blank|tags-gone|shown-hidden|dump-unusable).
 """
 import os
 import re
@@ -26,6 +27,12 @@ ROOT = os.environ.get("P10D_FAKE_ROOT", "")
 SCENARIO = os.environ.get("P10D_FAKE_SCENARIO", "happy")
 PKG = "io.github.mcyber12.opencode"
 EXT_PREFIX = "/storage/emulated/0/Android/data/%s" % PKG
+# Phase 10 continuation v3: the shipping default root is shared storage. The fake
+# phone serves that path from the fixture filesystem exactly like the app-specific
+# one, so the driver's external checks (92-workspace-visibility.sh) run for real
+# against a root that is NOT under Android/data - which is the case that used to be
+# impossible to test without a phone in the room.
+SHARED_PREFIX = "/storage/emulated/0/Documents/OpenCode"
 
 DEV = os.path.join(ROOT, "dev")
 FX = os.path.join(ROOT, "fx")
@@ -99,12 +106,28 @@ def hit(x, y, name):
         x1, y1, x2, y2 = (int(m.group(i)) for i in range(1, 5))
         if x1 <= x <= x2 and y1 <= y <= y2:
             if n["clickable"] and n["enabled"]:
-                return n["id"]
+                # A node is identified by its tag when the scenario serves one, and by
+                # its visible text when the dump has no tags - which is the real-device
+                # case this self-test exists to reproduce (a phone where the Compose
+                # tags never reached the accessibility tree and the driver had to drive
+                # by content).
+                return n["id"] or n["text"]
     return ""
 
 
 def ext_dir():
+    """The app-specific external fallback (Android/data/<pkg>/files/workspaces)."""
     return os.path.join(DEV, "ext", PKG, "files", "workspaces")
+
+
+def shared_dir():
+    """The shared-storage default (Documents/OpenCode): the v3 live root."""
+    return os.path.join(DEV, "shared", "Documents", "OpenCode")
+
+
+def live_dir():
+    """Where the fake phone says the projects are, per scenario."""
+    return ext_dir() if SCENARIO == "no-grant" else shared_dir()
 
 
 def transition(node_id):
@@ -114,7 +137,7 @@ def transition(node_id):
         put("screen", "projects")
     elif here == "projects" and node_id == "project_create":
         name = state("typed", "p10d-proj")
-        os.makedirs(os.path.join(ext_dir(), name), exist_ok=True)
+        os.makedirs(os.path.join(live_dir(), name), exist_ok=True)
         put("project", name)
         put("typed", "")
         put("screen", "chat")
@@ -126,7 +149,7 @@ def transition(node_id):
         # The model does its work: a file the server writes into the project
         # directory. This is the file R7 then reads from outside the app.
         project = state("project", "p10d-proj")
-        target = os.path.join(ext_dir(), project)
+        target = os.path.join(live_dir(), project)
         os.makedirs(target, exist_ok=True)
         with open(os.path.join(target, "p10-visible.txt"), "w", encoding="utf-8") as fh:
             fh.write("p10-live-ok\n")
@@ -152,9 +175,15 @@ def shell(command):
         return (0, table[prop] + "\n")
 
     if cmd.startswith("uiautomator dump"):
+        if SCENARIO == "dump-unusable":
+            # What a real phone says when the UI never goes idle. The driver retries
+            # with --compressed and with a different output path, and the scenario
+            # makes every one of those fail - so the run has to report "the screen
+            # could not be seen" rather than inventing an app-side reason.
+            return (1, "ERROR: could not get idle state.\n")
         return (0, "UI hierchary dumped to: /sdcard/p10d-ui.xml\n")
 
-    if cmd.startswith("rm -f /sdcard/p10d-ui.xml"):
+    if cmd.startswith("rm -f "):
         return (0, "")
 
     if cmd.startswith("input text "):
@@ -226,10 +255,29 @@ def shell(command):
         path = re.search(r"(/data/data/%s\S*)" % re.escape(PKG), cmd)
         return (0, "ls: %s: Permission denied\n" % (path.group(1) if path else "/data/data/%s" % PKG))
 
-    if EXT_PREFIX in cmd:
-        # The app-specific external directory, mapped onto the fixture filesystem and
-        # executed for real, so `ls`/`cat`/`wc`/`du` behave like they do on a phone.
-        real = cmd.replace(EXT_PREFIX, os.path.join(DEV, "ext", PKG))
+    if "content query" in cmd and "externalstorage.documents" in cmd:
+        # The system Documents provider. The driver treats "the provider answered" as
+        # evidence a file manager can open the folder and "the provider refused" as a
+        # SKIP, so the fake answers like a device whose shell may query it.
+        if SCENARIO in ("happy", "tags-gone", "shown-hidden"):
+            return (0, "Row: 0 _display_name=OpenCode\n")
+        return (1, "Error: Unsupported\n")
+
+    if cmd.startswith("appops ") or " appops " in cmd:
+        # `appops set|get MANAGE_EXTERNAL_STORAGE`: the grant state the driver and the
+        # gates script read and set.
+        if SCENARIO == "no-grant":
+            return (0, "MANAGE_EXTERNAL_STORAGE: deny\n")
+        return (0, "MANAGE_EXTERNAL_STORAGE: allow\n")
+
+    if SHARED_PREFIX in cmd or EXT_PREFIX in cmd:
+        # Shared storage and the app-specific external directory, mapped onto the
+        # fixture filesystem and executed for real, so `ls`/`cat`/`wc`/`du` behave like
+        # they do on a phone. The shared root is served from its own directory: a
+        # v3 run reads the project files THERE, not from Android/data.
+        real = cmd
+        for prefix, mapped in ((SHARED_PREFIX, shared_dir()), (EXT_PREFIX, os.path.join(DEV, "ext", PKG))):
+            real = real.replace(prefix, mapped)
         import subprocess
         proc = subprocess.run(["bash", "-c", real], capture_output=True, text=True)
         return (proc.returncode, proc.stdout + proc.stderr)
@@ -257,9 +305,36 @@ def main(argv):
 
     if head == "exec-out":
         rest = " ".join(args[1:])
-        if rest.startswith("cat /sdcard/p10d-ui.xml"):
+        if rest.startswith("cat /sdcard/p10d-ui.xml") or rest.startswith("cat /data/local/tmp/p10d-ui.xml"):
             path = fixture(screen())
-            sys.stdout.write(open(path, encoding="utf-8").read() if path else EMPTY_DUMP)
+            if path is None or SCENARIO == "dump-unusable":
+                # Nothing to serve: an unreadable/absent dump is what the driver has
+                # to survive (and report) on a real phone.
+                return 1
+            body = open(path, encoding="utf-8").read()
+            if SCENARIO == "tags-gone":
+                # The real-device failure: the app is on screen and its words are in
+                # the dump, but no resource-id survived. Every tag-based wait fails
+                # here, which is exactly why the driver must also match content.
+                body = re.sub(r'resource-id="[^"]*"', 'resource-id=""', body)
+            elif SCENARIO == "no-grant":
+                # The app is running without All files access: what it shows on screen
+                # is the Android/data fallback, and the visibility script must say a
+                # file manager cannot open it (that is V5's whole job).
+                body = body.replace(SHARED_PREFIX, EXT_PREFIX + "/files/workspaces")
+            elif SCENARIO == "shown-hidden":
+                # A platform that marks its whole hierarchy not-shown. The reader must
+                # still find things (a driver that goes blind here reports a working
+                # app as broken); `find` flags such a match with exit code 4.
+                # EVERY node, root and children alike: the point of the scenario is
+                # a platform that marks the whole screen not-shown, and a driver that
+                # then finds nothing would report a working app as broken.
+                body = body.replace("<node ", '<node shown="false" ')
+            # The fixture writes a placeholder project name; the phone serves the name
+            # the driver actually typed, so the path on screen is the real one and the
+            # root the driver derives from it is the root the shell check then verifies.
+            body = body.replace("p10d-proj", state("project", "p10d-proj"))
+            sys.stdout.write(body)
             return 0
         if rest.startswith("screencap"):
             name = state("screencap", "screen")

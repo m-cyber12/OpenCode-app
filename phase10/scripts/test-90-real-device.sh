@@ -9,13 +9,30 @@
 # phone and drives the app's screens through the same taps the driver makes.
 #
 # Scenarios:
-#   happy   a complete run: install, first run, project, file browser, live turn with
-#           a tool card, a file written by the "model" and read back from outside the
-#           app. Every gate must PASS or SKIP, none may FAIL, and the exit code is 0.
-#   locked  the phone is asleep behind the keyguard: the run must say THAT (a FAIL on
-#           DEVICE_AWAKE naming the lock), not "the app never showed a screen".
-#   blank   screencap returns a black frame: the screenshot gate must FAIL and say the
-#           frames are blank, instead of counting files.
+#   happy         a complete run: install, first run, project, file browser, live turn
+#                 with a tool card, a file written by the "model" and read back from
+#                 outside the app - from Documents/OpenCode on SHARED storage, the v3
+#                 default. Every gate must PASS or SKIP, none may FAIL, exit code 0.
+#   locked        the phone is asleep behind the keyguard: the run must say THAT (a
+#                 FAIL on DEVICE_AWAKE naming the lock), not "the app never showed a
+#                 screen".
+#   blank         screencap returns a black frame: the screenshot gate must FAIL and
+#                 say the frames are blank, instead of counting files.
+#   tags-gone     the dumps carry the app's WORDS but none of its resource ids - the
+#                 real first-run failure that made a working app look broken. The run
+#                 must still reach the projects screen, create a project and pass,
+#                 because every wait also matches content.
+#   shown-hidden  the platform marks its whole hierarchy shown="false": the run must
+#                 still drive the app (a reader that goes blind here reports a working
+#                 app as broken), and the log must say the tap was made on a node the
+#                 platform called hidden.
+#   no-grant      All files access is denied: the app falls back to Android/data and
+#                 the visibility check must FAIL SHARED_ROOT - the app is not allowed
+#                 to claim file-manager visibility it does not have.
+#   dump-unusable uiautomator cannot dump at all ("could not get idle state"): the run
+#                 must be red for THAT reason - UI_DUMP FAIL naming the dump channel -
+#                 instead of blaming the app (runs with --timeout-scale 0.02, so the
+#                 failure paths cost seconds instead of minutes).
 #
 # Usage: bash phase10/scripts/test-90-real-device.sh [--keep]
 set -uo pipefail
@@ -61,8 +78,8 @@ EOF
 chmod +x "$TMP/bin/adb"
 
 # ------------------------------------------------------------------ scenarios --
-run_scenario() { # $1 = name, $2.. = extra asserts handled by the caller
-  local name="$1"
+run_scenario() { # $1 = name, $2.. = extra driver arguments
+  local name="$1"; shift
   rm -rf "$TMP/dev" "$TMP/out-$name"
   mkdir -p "$TMP/dev"
   PATH="$TMP/bin:$PATH" \
@@ -70,7 +87,7 @@ run_scenario() { # $1 = name, $2.. = extra asserts handled by the caller
   P10D_SKIP_ARTIFACT=1 \
   P10D_PROVIDER_KEY="sk-or-test-only-not-a-real-key" \
   bash "$DIR/scripts/90-real-device-signed.sh" --apk "$TMP/fake.apk" \
-      --out "$TMP/out-$name" > "$TMP/run-$name.stdout" 2>&1
+      --out "$TMP/out-$name" "$@" > "$TMP/run-$name.stdout" 2>&1
   echo "$?" > "$TMP/rc-$name"
 }
 
@@ -99,9 +116,16 @@ check "$(grep -qa '^P10D_FILES_APP_AND_SHELL PASS' "$OUT/SUMMARY.txt" && echo 0 
 check "$(grep -qa 'P6_MODEL_AVAILABLE 1' "$OUT/p10d-model-lines.txt" && echo 0 || echo 1)" "model marker written for the x86_64 carry-forward"
 check "$(grep -qE '^P10D_VISIBILITY_(LOCATION|SHELL_LIST|SHELL_READ|OLD_ROOT_EMPTY|SHELL_BASELINE) PASS' "$OUT/visibility.log" && echo 0 || echo 1)" "visibility script reports its own verdicts"
 # The file the "model" wrote must be readable from OUTSIDE the app - that is the whole
-# point of R7, so assert on the file, not just on the verdict line.
+# point of R7, so assert on the file, not just on the verdict line. And it must be in
+# the SHARED location (Documents/OpenCode), not the Android/data corner a file manager
+# cannot open on Android 11+: that difference is the v3 product decision.
 PROJ=$(cat "$TMP/dev/project" 2>/dev/null)
-check "$([ -s "$TMP/dev/ext/io.github.mcyber12.opencode/files/workspaces/$PROJ/p10-visible.txt" ] && echo 0 || echo 1)" "the agent's file exists on the (fake) external storage"
+check "$([ -s "$TMP/dev/shared/Documents/OpenCode/$PROJ/p10-visible.txt" ] && echo 0 || echo 1)" \
+  "the agent's file exists on (fake) SHARED storage: Documents/OpenCode/$PROJ/p10-visible.txt"
+check "$([ -e "$TMP/dev/ext/io.github.mcyber12.opencode/files/workspaces/$PROJ/p10-visible.txt" ] && echo 1 || echo 0)" \
+  "and NOT in Android/data (the location file managers cannot browse)"
+check "$(grep -qa '^P10D_FILES_SCREEN PASS.*Documents/OpenCode' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the in-app file browser names the shared location"
 
 echo
 echo "--- scenario: locked device ---"
@@ -119,6 +143,54 @@ RC=$(cat "$TMP/rc-blank"); OUT="$TMP/out-blank"
 check "$([ "$RC" != 0 ] && echo 0 || echo 1)" "blank frames are a non-zero exit (rc=$RC)"
 check "$(grep -qa '^P10D_SCREENSHOTS FAIL' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "SCREENSHOTS FAIL reported"
 check "$(grep -qa 'blank' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "the reason says the frames are blank/off"
+
+echo
+echo "--- scenario: no Compose tags in the dump (the real first-run false FAIL) ---"
+run_scenario tags-gone
+RC=$(cat "$TMP/rc-tags-gone"); OUT="$TMP/out-tags-gone"
+check "$([ "$RC" = 0 ] && echo 0 || echo 1)" "the run passes with tag-less dumps (rc=$RC)"
+check "$(grep -qa '^P10D_FIRST_RUN PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "FIRST_RUN PASS on content alone"
+check "$(grep -qa '^P10D_FIRST_RUN_PROJECT PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "the project was created by content-matched taps"
+check "$(grep -qa '^P10D_LIVE_TURN PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "the live turn ran on content alone"
+check "$(grep -qaE '^P10D_[A-Z_]+ FAIL' "$OUT/SUMMARY.txt" && echo 1 || echo 0)" "no FAIL line anywhere in the tag-less run"
+check "$(! grep -q 'resource-id="[a-z]' "$OUT/ui/ui-files-screen.xml" && echo 0 || echo 1)" \
+  "the fixture really did serve dumps with no tags (evidence, not setup)"
+
+echo
+echo "--- scenario: the platform marks everything shown=false ---"
+run_scenario shown-hidden
+RC=$(cat "$TMP/rc-shown-hidden"); OUT="$TMP/out-shown-hidden"
+check "$([ "$RC" = 0 ] && echo 0 || echo 1)" "the run still passes when the dump says shown=false everywhere (rc=$RC)"
+check "$(grep -qa 'marked shown=false' "$OUT/run.log" && echo 0 || echo 1)" "the driver says it tapped a node the platform called hidden"
+check "$(grep -qa '^P10D_LIVE_TURN PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "the live turn still ran"
+
+echo
+echo "--- scenario: the app has no All files access (fallback must be stated) ---"
+run_scenario no-grant
+RC=$(cat "$TMP/rc-no-grant"); OUT="$TMP/out-no-grant"
+check "$([ "$RC" != 0 ] && echo 0 || echo 1)" "the visibility check fails on the Android/data fallback (rc=$RC)"
+check "$(grep -qa '^P10D_VISIBILITY_SHARED_ROOT FAIL' "$OUT/visibility.log" && echo 0 || echo 1)" \
+  "SHARED_ROOT FAIL names the Android/data location"
+check "$(grep -qa '^P10D_FILES_SCREEN PASS.*Android/data' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the app's own file browser states the fallback honestly"
+
+echo
+echo "--- scenario: the accessibility channel is unavailable (fast, scaled timeouts) ---"
+run_scenario dump-unusable --timeout-scale 0.02
+RC=$(cat "$TMP/rc-dump-unusable"); OUT="$TMP/out-dump-unusable"
+check "$([ "$RC" != 0 ] && echo 0 || echo 1)" "an unreadable dump channel is a non-zero exit (rc=$RC)"
+check "$(grep -qa '^P10D_UI_DUMP FAIL' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "UI_DUMP FAIL is reported"
+check "$(grep -qa 'could not be read at all' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the reason names the dump channel, not the app"
+check "$(grep -qa 'could not get idle state' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
+  "the raw uiautomator error is in DIAGNOSIS.txt"
+check "$(grep -qa '^P10D_DEVICE_AWAKE PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the device itself was fine - the failure is not blamed on the phone"
+# The self-contradiction that started this: a verdict saying the app never appeared
+# while mCurrentFocus is the app. When the dump channel is the problem, the verdict
+# itself has to say so.
+check "$(grep -qa 'accessibility dump was unreadable' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the failing verdict itself names the unreadable dump (no self-contradicting evidence)"
 
 echo
 echo "=== driver self-test: pass=$pass fail=$fail ==="

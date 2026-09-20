@@ -261,14 +261,19 @@ class WorkspaceIsolationGatesTest {
      * Two halves, both of which have to hold, and both of which a "the app writes
      * files somewhere" claim can fail:
      *
-     *  1. **Where** — the resolved project root is under the app-specific EXTERNAL
-     *     directory (`/storage/emulated/0/Android/data/<pkg>/files/...`) and NOT
-     *     under `/data/data` or `/data/user/0`. That is what makes the files
-     *     reachable by `adb shell`, `adb pull` and a desktop file browser without
-     *     root. The host script then repeats the claim from outside the app
+     *  1. **Where** — the resolved project root is on SHARED storage and outside
+     *     `Android/data`, so an ordinary file manager (not just `adb`) can browse
+     *     it. Phase 10 continuation v3 changed the answer from "somewhere adb can
+     *     read" to "somewhere the Files app can read": the default is
+     *     `/storage/emulated/0/Documents/OpenCode`, which needs All files access.
+     *     When the grant is absent the app must NOT claim visibility - it falls
+     *     back to the app-specific external directory and says so, and this gate
+     *     accepts that fallback only while `mode` agrees with it (a mismatch, e.g.
+     *     "granted but still writing to Android/data", is a FAIL). The host script
+     *     then repeats the claim from outside the app
      *     (`phase10/scripts/92-workspace-visibility.sh`) on the absolute path this
-     *     gate prints — an app asserting its own path is not evidence that anyone
-     *     else can read it.
+     *     gate prints as `wsRoot=` - an app asserting its own path is not evidence
+     *     that anyone else can read it.
      *
      *  2. **Through the server** — a shell command run through OpenCode's own
      *     `/session/:id/shell` endpoint (the same path the agent's shell tool uses)
@@ -284,13 +289,40 @@ class WorkspaceIsolationGatesTest {
     fun w4_workspaceLivesOutsideTheAppSandboxAndTheServerWritesThere() {
         val store = ProjectStore.get(context)
         val root = File(store.rootPath())
+        val paths = RuntimePaths.get(context)
         val external = context.getExternalFilesDir(null)
         val internalRoot = File(context.filesDir, "workspaces").absolutePath
+        val sharedVolume = android.os.Environment.getExternalStorageDirectory().absolutePath
+        val granted = runCatching { android.os.Environment.isExternalStorageManager() }.getOrDefault(false)
 
         val inExternal = external != null && root.absolutePath.startsWith(external.absolutePath + File.separator)
+        val inShared = root.absolutePath.startsWith(sharedVolume + File.separator)
+        val underAndroidData = root.absolutePath.contains("/Android/data/")
         val inInternalData = root.absolutePath.startsWith("/data/data/") ||
             root.absolutePath.startsWith("/data/user/0/")
-        val locationOk = inExternal && !inInternalData
+
+        // The v3 rule, per mode. `mode` is the app's own declaration, so each branch
+        // also checks that the declaration matches the path it names - the failure
+        // this guards against is an app that grants itself a good-sounding label
+        // while writing somewhere else.
+        val locationOk = when (paths.mode) {
+            // The shipping default: shared storage, outside Android/data, and the
+            // app says a file manager can open it.
+            ai.opencode.android.runtime.StorageMode.PUBLIC,
+            ai.opencode.android.runtime.StorageMode.CHOSEN ->
+                inShared && !underAndroidData && !inInternalData && paths.fileManagerVisible
+            // The documented fallback (no All files access): adb can reach it, and
+            // the app must admit a file manager cannot.
+            ai.opencode.android.runtime.StorageMode.APP_EXTERNAL ->
+                inExternal && !inInternalData && !paths.fileManagerVisible
+            // Last resort on a device with no usable external storage: nothing
+            // outside the app can see it and the app has to say so.
+            ai.opencode.android.runtime.StorageMode.INTERNAL ->
+                inInternalData && !paths.fileManagerVisible
+        }
+        // A grant that resolves to nothing is a bug, not a configuration.
+        val grantHonoured = !granted || paths.mode == ai.opencode.android.runtime.StorageMode.PUBLIC ||
+            paths.mode == ai.opencode.android.runtime.StorageMode.CHOSEN
 
         // Part 2 needs the server; without it the LOCATION half is still a verdict
         // (the location is a filesystem fact), so the gate reports what it saw
@@ -319,10 +351,12 @@ class WorkspaceIsolationGatesTest {
             // real path to `adb shell cat` the marker); the host script removes it.
         }
 
-        val detail = "root=${root.absolutePath} external=$inExternal underData=$inInternalData " +
-            "legacyRoot=$internalRoot serverWrote=$serverWrote readBack=${shellOutput.contains(marker)} " +
+        val detail = "mode=${paths.mode} wsRoot=${root.absolutePath} fileManagerVisible=${paths.fileManagerVisible} " +
+            "shared=$inShared underAndroidData=$underAndroidData underData=$inInternalData external=$inExternal " +
+            "allFilesAccess=$granted grantHonoured=$grantHonoured legacyRoot=$internalRoot " +
+            "serverWrote=$serverWrote readBack=${shellOutput.contains(marker)} " +
             "marker=$marker project=${project.name} $serverDetail"
-        if (locationOk && serverWrote) {
+        if (locationOk && grantHonoured && serverWrote) {
             gate("W4_WORKSPACE_VISIBLE", true, detail)
         } else {
             // Never a silent pass: a wrong location or an unwritable root is a FAIL

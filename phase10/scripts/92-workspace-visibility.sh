@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 92-workspace-visibility.sh - can something OTHER than the app read the files the
-# agent writes?
+# agent writes? Asked from outside the app, with a non-root shell.
 #
 # Why this exists (Phase 10 continuation): the first signed build worked, but the
 # agent's files landed under /data/data/<pkg>/files/workspaces - app-private
@@ -9,39 +9,42 @@
 # writing files. That is a product defect, not a cosmetic one, so it gets a gate
 # with an external vantage point rather than an assertion from inside the app.
 #
-# WHAT IT CHECKS (each is a named verdict line, PASS/FAIL/SKIP with the raw output):
-#   V1  the app's project root is the app-specific EXTERNAL directory (the layout
-#       the app resolves - reported by the app itself through the W4 gate or by
-#       asking the device for the data directory the platform assigned);
-#   V2  a non-root `adb shell` can LIST the project directory (the vantage point a
-#       desktop file browser / adb pull uses);
-#   V3  a non-root `adb shell` can READ a file the OpenCode server itself wrote;
-#   V4  the same file is NOT readable under /data/data/<pkg> - i.e. the old,
-#       invisible location is not silently still in use;
-#   V5  baseline: /data/data/<pkg> itself IS unreadable by that same shell, so a
+# v3 CHANGED THE EXPECTED ANSWER, not the standard of proof. Projects now live in
+# `Documents/OpenCode` on shared storage (the layout the app resolves and reports
+# through its W4 gate), so the checks are stricter than "adb can read it":
+#
+#   V1  the app-reported project root exists and holds a project;
+#   V2  a non-root `adb shell` can LIST the project directory;
+#   V3  a non-root `adb shell` can READ a file the OpenCode server itself wrote -
+#       live, with no export/publish step of any kind;
+#   V4  the live root is NOT the app-private root (`/data/data/<pkg>/files`), i.e.
+#       the old, invisible location is not silently still in use;
+#   V5  the live root is on shared storage, outside `Android/data` - the property
+#       that makes it browsable by file managers instead of only by adb;
+#   V6  the platform's own Documents provider can see the folder (the same
+#       `com.android.externalstorage.documents` tree every file manager reads
+#       through). SKIP when the provider refuses `content query` on this image;
+#   V7  baseline: a shell write into the project directory is visible to the app's
+#       side of the filesystem (proves the folder is a normal, shared directory and
+#       not a shell-only illusion), then the probe file is removed;
+#   V8  baseline: /data/data/<pkg> itself IS unreadable by that same shell, so a
 #       PASS above cannot be an artifact of a device where everything is readable.
 #
-# The V2/V3 result is device-dependent by design: on Android 11+ the platform
-# blocks *apps* from browsing Android/data, and some OEM builds extend that to the
-# shell. Whichever way it goes, this script prints the raw command output so the
-# verdict can be read rather than assumed - and an in-app file browser plus a SAF
-# "publish to a folder you choose" action exist precisely because the on-device
-# file manager case cannot be relied on.
+# Where the root comes from: the app (W4 prints `wsRoot=<path>`; 93-workspace-gates
+# passes it via --root). An app asserting its own path is not evidence that anyone
+# else can read it - which is exactly why the app only supplies the path and every
+# verdict below is decided by the shell's own output. Without --root the script
+# probes the known candidate roots and says which one it used.
 #
 # Usage:
 #   bash phase10/scripts/92-workspace-visibility.sh [--pkg PKG] [--project NAME]
-#        [--out DIR] [--expect-file RELPATH] [--expect-content REGEX]
-#
-# With no --project it uses the newest project directory it can see; with no
-# --expect-file it looks for the W4 marker (p10-visible.txt). --expect-content is
-# the marker the file must contain to count as "written by the app" (default
-# P10_VISIBLE_, which the instrumented W4 gate writes; the real-device driver passes
-# a pattern that also accepts the file its own live turn produces).
+#        [--root PATH] [--out DIR] [--expect-file RELPATH] [--expect-content REGEX]
 set -uo pipefail
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "$DIR/.." && pwd)"
 PKG="io.github.mcyber12.opencode"
 PROJECT=""
+WS_ROOT=""
 EXPECT="p10-visible.txt"
 EXPECT_CONTENT="P10_VISIBLE_"
 OUT=""
@@ -49,10 +52,11 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --pkg) PKG="${2:-}"; shift 2 ;;
     --project) PROJECT="${2:-}"; shift 2 ;;
+    --root) WS_ROOT="${2:-}"; shift 2 ;;
     --expect-file) EXPECT="${2:-}"; shift 2 ;;
     --expect-content) EXPECT_CONTENT="${2:-}"; shift 2 ;;
     --out) OUT="${2:-}"; shift 2 ;;
-    -h|--help) sed -n '2,40p' "$DIR/scripts/$(basename "$0")"; exit 0 ;;
+    -h|--help) sed -n '2,45p' "$DIR/scripts/$(basename "$0")"; exit 0 ;;
     *) echo "unknown argument: $1"; exit 2 ;;
   esac
 done
@@ -71,39 +75,55 @@ adb get-state >/dev/null 2>&1 || { echo "FATAL: no device visible to adb"; exit 
 sh_dev() { adb shell "$@" 2>&1 | tr -d '\r'; }
 SDK_NOW=$(sh_dev getprop ro.build.version.sdk)
 REL_NOW=$(sh_dev getprop ro.build.version.release)
-
-# ---- V1: where is the project root? ------------------------------------------
-# The app is the only thing that knows for certain (it resolves it from
-# Context.getExternalFilesDir). `dumpsys package` gives us the data dir and the
-# external one is the documented sibling of it on the same volume.
-EXT_ROOT="/storage/emulated/0/Android/data/$PKG/files/workspaces"
+SHARED_ROOT="/storage/emulated/0/Documents/OpenCode"
+APP_EXT_ROOT="/storage/emulated/0/Android/data/$PKG/files/workspaces"
 DATA_ROOT="/data/data/$PKG/files/workspaces"
 log "device: Android $REL_NOW (API $SDK_NOW); package=$PKG"
 
+# ---- which root is live? ------------------------------------------------------
+# Preference: what the app reported (--root). Otherwise probe, and say which
+# candidate answered - a probe result is weaker evidence than the app's own path,
+# so the log records where the path came from.
+ROOT_SOURCE="app-reported (W4 gate)"
+if [ -z "$WS_ROOT" ]; then
+  ROOT_SOURCE="probed"
+  if [ -n "$(sh_dev "ls -1 $SHARED_ROOT 2>/dev/null | head -1")" ]; then
+    WS_ROOT="$SHARED_ROOT"
+  elif [ -n "$(sh_dev "ls -1 $APP_EXT_ROOT 2>/dev/null | head -1")" ]; then
+    WS_ROOT="$APP_EXT_ROOT"
+  else
+    WS_ROOT=""
+  fi
+fi
+log "live project root: ${WS_ROOT:-<none found>} (source: $ROOT_SOURCE)"
+
 if [ -n "$PROJECT" ]; then
-  WS="$EXT_ROOT/$PROJECT"
+  WS="$WS_ROOT/$PROJECT"
+elif [ -n "$WS_ROOT" ]; then
+  NEWEST=$(sh_dev "ls -1t $WS_ROOT 2>/dev/null | head -1")
+  [ -n "$NEWEST" ] && WS="$WS_ROOT/$NEWEST" || WS=""
 else
-  # newest project directory visible to the shell (or "" when the shell cannot
-  # read the external root at all - V2 then reports exactly that)
-  WS=$(sh_dev "ls -1t $EXT_ROOT 2>/dev/null | head -1")
-  [ -n "$WS" ] && WS="$EXT_ROOT/$WS"
+  WS=""
 fi
 
-LIST_EXT=$(sh_dev "ls -la $EXT_ROOT 2>&1")
+LIST_EXT=$(sh_dev "ls -la $WS_ROOT 2>&1")
 INTERNAL_DATA=$(sh_dev "ls -la $DATA_ROOT 2>&1")
-log "--- non-root shell, external project root ---"
+APP_EXT_DATA=$(sh_dev "ls -la $APP_EXT_ROOT 2>&1")
+log "--- non-root shell, live project root ($WS_ROOT) ---"
 printf '%s\n' "$LIST_EXT" | tee -a "$LOG"
-log "--- non-root shell, the OLD internal root ---"
+log "--- non-root shell, the app-private root ---"
 printf '%s\n' "$INTERNAL_DATA" | tee -a "$LOG"
 
-# V1: is the external root populated at all? "ls works" (V2) and "there are
-# projects in it" are different questions, and only the second one proves the app
-# actually moved.
-PROJ_COUNT=$(sh_dev "ls -1 $EXT_ROOT 2>/dev/null | wc -l")
-if [ "${PROJ_COUNT//[!0-9]/}" != "" ] && [ "${PROJ_COUNT//[!0-9]/}" -ge 1 ] 2>/dev/null; then
-  rd LOCATION 0 "the app-specific external root exists and holds $PROJ_COUNT project(s): $EXT_ROOT (Android $REL_NOW)"
+# ---- V1: is the reported root populated? --------------------------------------
+if [ -z "$WS_ROOT" ]; then
+  rd LOCATION 1 "no project root could be found: neither $SHARED_ROOT nor $APP_EXT_ROOT is readable/occupied by a non-root shell"
 else
-  rd LOCATION 1 "no project visible under $EXT_ROOT (output: $(printf '%s' "$LIST_EXT" | head -2 | tr '\n' '; '))"
+  PROJ_COUNT=$(sh_dev "ls -1 $WS_ROOT 2>/dev/null | wc -l")
+  if [ "${PROJ_COUNT//[!0-9]/}" != "" ] && [ "${PROJ_COUNT//[!0-9]/}" -ge 1 ] 2>/dev/null; then
+    rd LOCATION 0 "the project root exists and holds $PROJ_COUNT project(s): $WS_ROOT (source: $ROOT_SOURCE, Android $REL_NOW)"
+  else
+    rd LOCATION 1 "no project visible under $WS_ROOT (output: $(printf '%s' "$LIST_EXT" | head -2 | tr '\n' '; '))"
+  fi
 fi
 
 # ---- V2: can a non-root shell list the project directory? --------------------
@@ -117,7 +137,7 @@ if [ -n "$WS" ]; then
     rd SHELL_LIST 0 "a non-root shell lists the project directory ($WS): $(printf '%s' "$PROJ_LIST" | grep -c . ) lines"
   fi
 else
-  rd SHELL_LIST 7 "no project directory to list (V1 already failed; the external root is unreadable or empty)"
+  rd SHELL_LIST 7 "no project directory to list (V1 already failed: the root is unreadable or empty)"
 fi
 
 # ---- V3: can a non-root shell READ a file the server wrote? ------------------
@@ -147,18 +167,67 @@ else
   rd SHELL_READ 7 "no project/file to read (run the Phase 7 W4 gate first; it writes the marker)"
 fi
 
-# ---- V4: the old invisible location must NOT still hold the projects ---------
-if printf '%s' "$INTERNAL_DATA" | grep -qiE 'Permission denied|not permitted'; then
-  rd OLD_ROOT_EMPTY 0 "the old app-private root is not readable from a shell at all (as designed): $(printf '%s' "$INTERNAL_DATA" | head -1)"
-elif printf '%s' "$INTERNAL_DATA" | grep -qiE 'No such file|does not exist'; then
-  rd OLD_ROOT_EMPTY 0 "the old app-private project root no longer exists on this install - projects were migrated"
-elif [ -n "$(printf '%s' "$INTERNAL_DATA" | grep -vE '^total|^d|^$')" ]; then
-  rd OLD_ROOT_EMPTY 1 "the old app-private root still holds files; the app may still be writing there: $(printf '%s' "$INTERNAL_DATA" | head -3 | tr '\n' '; ')"
+# ---- V4: the live root is not app-private ------------------------------------
+case "${WS_ROOT:-}" in
+  ""|/data/data/*|/data/user/0/*)
+    rd PRIVATE_ROOT_NOT_LIVE 1 "the live project root is app-private (${WS_ROOT:-<none>}): nothing outside the app can browse it"
+    ;;
+  *) rd PRIVATE_ROOT_NOT_LIVE 0 "the live project root is outside /data: $WS_ROOT" ;;
+esac
+
+# ---- V5: the live root is on shared storage, not under Android/data ----------
+# This is the difference between "adb can reach it" (previous continuation) and
+# "an ordinary file manager can reach it" (v3). `Android/data` is unreachable for
+# file managers on Android 11+ by platform rule, so a PASS here is the claim.
+case "${WS_ROOT:-}" in
+  /storage/emulated/0/Android/data/*)
+    rd SHARED_ROOT 1 "the project root is under Android/data ($WS_ROOT): file managers cannot browse that on Android $REL_NOW, only adb can"
+    ;;
+  /storage/emulated/*|/sdcard/*|/storage/*|/mnt/*)
+    rd SHARED_ROOT 0 "the project root is on shared storage and outside Android/data: $WS_ROOT (Android $REL_NOW)"
+    ;;
+  "")
+    rd SHARED_ROOT 1 "no project root to judge"
+    ;;
+  *) rd SHARED_ROOT 1 "the project root is not on shared storage: $WS_ROOT" ;;
+esac
+
+# ---- V6: can the platform's Documents provider see the folder? ---------------
+# File managers read the same `com.android.externalstorage.documents` tree the
+# system picker uses, so a non-root shell query against that provider is as close
+# to "a file manager can open it" as a headless harness gets. Not all images allow
+# the query; SKIP says so instead of guessing.
+if [ -n "$WS_ROOT" ]; then
+  DOC_ID=$(printf '%s' "$WS_ROOT" | sed 's|^/storage/emulated/0/|primary:|; s|/|%2F|g')
+  DOC_URI="content://com.android.externalstorage.documents/document/$DOC_ID"
+  DOC_OUT=$(sh_dev "content query --uri '$DOC_URI' --projection _display_name 2>&1")
+  if printf '%s' "$DOC_OUT" | grep -qiE 'Row: |_display_name'; then
+    rd DOCUMENTS_PROVIDER 0 "the system Documents provider returns the folder: $(printf '%s' "$DOC_OUT" | head -2 | tr '\n' '; ')"
+  elif printf '%s' "$DOC_OUT" | grep -qiE 'Unknown URI|not found|SecurityException|permission|Unsupported'; then
+    rd DOCUMENTS_PROVIDER 7 "this device does not let a shell query the Documents provider ($(printf '%s' "$DOC_OUT" | head -1))"
+  else
+    rd DOCUMENTS_PROVIDER 1 "the system Documents provider could not return the folder: $(printf '%s' "$DOC_OUT" | head -2 | tr '\n' '; ')"
+  fi
 else
-  rd OLD_ROOT_EMPTY 0 "the old app-private root is empty: $(printf '%s' "$INTERNAL_DATA" | head -1)"
+  rd DOCUMENTS_PROVIDER 7 "no project root to query"
 fi
 
-# ---- V5: baseline - the sandbox really is closed ----------------------------
+# ---- V7: a shell-visible write lands in the same real directory ---------------
+if [ -n "$WS" ]; then
+  PROBE=".p10d-shell-probe-$$"
+  sh_dev "echo shell > $WS/$PROBE" >/dev/null 2>&1
+  BACK=$(sh_dev "cat $WS/$PROBE 2>&1")
+  if printf '%s' "$BACK" | grep -q shell; then
+    rd SHELL_WRITE 0 "a file written by the non-root shell in $WS was readable back: the directory is shared, ordinary storage"
+  else
+    rd SHELL_WRITE 1 "a non-root shell could not write into $WS: $(printf '%s' "$BACK" | head -1)"
+  fi
+  sh_dev "rm -f $WS/$PROBE" >/dev/null 2>&1
+else
+  rd SHELL_WRITE 7 "no project directory to write into"
+fi
+
+# ---- V8: baseline - the sandbox really is closed -----------------------------
 BASE=$(sh_dev "ls -la /data/data/$PKG 2>&1")
 if printf '%s' "$BASE" | grep -qiE 'Permission denied|not permitted'; then
   rd SHELL_BASELINE 0 "baseline holds: an unprivileged shell cannot read /data/data/$PKG at all, so the PASSs above are real"
@@ -168,7 +237,10 @@ fi
 
 {
   echo "workspace visibility $(date -u +%FT%TZ) pkg=$PKG android=$REL_NOW api=$SDK_NOW"
-  echo "external_root=$EXT_ROOT"
+  echo "live_root=${WS_ROOT:-<none>} source=$ROOT_SOURCE"
+  echo "shared_storage_candidate=$SHARED_ROOT"
+  echo "app_external_candidate=$APP_EXT_ROOT"
+  echo "app_external_listing=$(printf '%s' "$APP_EXT_DATA" | grep -c . ) lines"
   echo "internal_root=$DATA_ROOT"
   echo "project=$WS expect=$EXPECT expect_content=$EXPECT_CONTENT"
   echo "pass=$PASS fail=$FAIL skip=$SKIP"

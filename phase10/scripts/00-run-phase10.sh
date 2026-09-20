@@ -142,19 +142,27 @@ step "1b/9 the real-device driver, run against a fake phone (self-test)"
 # 90-real-device-signed.sh is the one script meant to be run by a human on hardware
 # CI cannot reach, and its failure mode used to be an evening of plugging a phone in
 # plus a bundle that said nothing. So it is RUN here first, against a fake `adb` that
-# models a stock non-rooted Android 14 phone (test-90-real-device.sh): the happy path
-# has to end with every gate PASS/SKIP and exit 0, a locked keyguard has to be
-# reported as a lock (not as an app failure), and a blank screencap has to fail the
-# screenshot gate. Reading the script is not running it: the first run of this
-# self-test found four bugs that would have reached the phone, including a
-# `grep -c || echo 0` that failed three gates on a perfectly good run.
+# models a stock non-rooted Android 14 phone (test-90-real-device.sh), in seven
+# scenarios: the happy path has to end with every gate PASS/SKIP and exit 0 on the
+# shared Documents/OpenCode root, a locked keyguard has to be reported as a lock (not
+# as an app failure), a blank screencap has to fail the screenshot gate, and the three
+# v3 cases have to behave: tag-less dumps (`tags-gone`) must still produce a green
+# run, a hierarchy marked `shown="false"` must not blind the driver, a refused All
+# files access must FAIL the shared-root visibility check, and an unreadable dump
+# channel must fail the run for THAT reason (UI_DUMP) instead of blaming the app.
+# Reading the script is not running it: the first run of this self-test found four
+# bugs that would have reached the phone, and the v3 first-run failure on real
+# hardware was a fifth.
 DSRC=0
 # Keep the transcript AND the exit code: run_c deletes its own temp log, and a pipe
 # into tee would report tee's status instead of the self-test's.
-run_c 900 "bash '$DIR/scripts/test-90-real-device.sh' > '$OUT/driver-selftest.log' 2>&1; rc=\$?; cat '$OUT/driver-selftest.log'; exit \$rc" || DSRC=1
+# 1800s: seven scenarios, and the `dump-unusable` one deliberately spends its time in
+# retry loops (it is the scenario that proves the driver retries before it blames the
+# app). Measured at ~12 minutes on a CI runner.
+run_c 1800 "bash '$DIR/scripts/test-90-real-device.sh' > '$OUT/driver-selftest.log' 2>&1; rc=\$?; cat '$OUT/driver-selftest.log'; exit \$rc" || DSRC=1
 cp "$OUT/driver-selftest.log" "$EV/p10-driver-selftest.log" 2>/dev/null || true
 if [ "$DSRC" = 0 ]; then
-  note_gate "P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone (happy + locked + blank-screencap scenarios)"
+  note_gate "P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone (happy + locked + blank + tags-gone + shown-hidden + no-grant + dump-unusable scenarios)"
 else
   note_gate "P10_DRIVER_SELFTEST FAIL: see p10-driver-selftest.log - do NOT hand this driver to a phone"
 fi

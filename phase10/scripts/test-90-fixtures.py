@@ -32,9 +32,18 @@ def node(nid, text="", desc="", bounds="[0,0][1,1]", cls="android.widget.Button"
             'bounds="%s" />\n') % (text, nid, cls, pkg, desc, clickable, enabled, bounds)
 
 
-def text_node(text, bounds, pkg=PKG):
-    return node("", text=text, bounds=bounds, cls="android.widget.TextView",
+def text_node(text, bounds, pkg=PKG, desc=""):
+    return node("", text=text, desc=desc, bounds=bounds, cls="android.widget.TextView",
                 clickable="false", pkg=pkg)
+
+
+# The v3 live root, as the app shows it on screen. The real project name is
+# substituted by the fake phone (see test-90-fake-adb.py), so this is the path the
+# driver reads off the files screen and then hands to 92-workspace-visibility.sh as
+# `--root` - i.e. the self-test walks the same "app reports the location, the shell
+# verifies it" chain a phone run does.
+SHARED_WORKSPACE = "/storage/emulated/0/Documents/OpenCode/p10d-proj"
+LEGACY_WORKSPACE = "/storage/emulated/0/Android/data/%s/files/workspaces" % PKG
 
 
 def screen(name, nodes):
@@ -58,15 +67,18 @@ def build(root):
         text_node("Projects", "[40,200][1040,280]"),
         node("project_name_input", text="", desc="Project name", bounds="[40,320][1040,420]",
              cls="android.widget.EditText"),
-        node("project_create", text="Create", bounds="[40,460][1040,560]"),
+        node("project_create", text="Create project", bounds="[40,460][1040,560]"),
     ])
 
     # ---- conversation ---------------------------------------------------------
     def chat(extra=None):
         parts = [
             node("chat_screen", text="", bounds="[0,0][1080,1920]", clickable="false"),
-            node("open_files", text="Files", bounds="[820,120][940,220]"),
-            node("open_settings", text="Settings", bounds="[960,120][1060,220]"),
+            node("open_files", text="Project files", bounds="[820,120][940,220]"),
+            # Deliberately its own rectangle: `hit()` matches the FIRST node whose
+            # bounds contain the tap, so two controls must never overlap or the self
+            # test would drive a different control than the driver aimed at.
+            node("open_settings", text="Settings and diagnostics", bounds="[960,120][1060,220]"),
             text_node("Start a conversation", "[40,300][1040,380]"),
             node("composer_attach", text="Attach a file", bounds="[40,1700][300,1780]"),
             node("composer_input", text="Message the agent", bounds="[320,1690][820,1790]",
@@ -87,20 +99,25 @@ def build(root):
     ])
 
     # ---- the app's own file browser -------------------------------------------
-    workspace_path = "/storage/emulated/0/Android/data/%s/files/workspaces" % PKG
+    # The screen carries the v3 storage panel: the location, the mode label and the
+    # two ways the user can change it. A driver run must find the path here and say
+    # which mode the app claims - and, on a device without the grant, must NOT find a
+    # "Documents/OpenCode" label next to an Android/data path.
     screens_files = screen("files", [
-        text_node(workspace_path, "[40,200][1040,260]"),
-        node("files_list", text="", bounds="[0,280][1080,1700]", clickable="false"),
-        node("files_location_path", text=workspace_path, bounds="[40,260][1040,300]", clickable="false"),
-        node("files_up", text="Up", bounds="[40,300][300,380]"),
-        node("files_dir", text="src", bounds="[40,400][1040,480]"),
-        node("files_file", text="p10-visible.txt", bounds="[40,500][1040,580]"),
+        text_node("Where these files are", "[40,150][1040,200]"),
+        node("files_location_path", text=SHARED_WORKSPACE, bounds="[40,260][1040,300]", clickable="false"),
+        node("files_storage_mode", text="Documents/OpenCode", bounds="[40,300][1040,340]", clickable="false"),
+        node("files_list", text="", bounds="[0,380][1080,1700]", clickable="false"),
+        node("files_up", text="Up", bounds="[40,400][300,480]"),
+        node("files_dir", text="src", bounds="[40,520][1040,600]"),
+        node("files_file", text="p10-visible.txt", bounds="[40,620][1040,700]"),
+        node("files_publish", text="Export a copy...", bounds="[40,720][540,800]"),
     ])
 
     # ---- settings (provider keys) ---------------------------------------------
     screens_settings = screen("settings", [
         text_node("Provider keys", "[40,200][1040,280]"),
-        node("key_provider", text="openrouter", bounds="[40,320][1040,420]",
+        node("key_provider", text="openrouter", desc="Provider", bounds="[40,320][1040,420]",
              cls="android.widget.EditText"),
         node("key_value", text="", desc="API key", bounds="[40,460][1040,560]",
              cls="android.widget.EditText"),
