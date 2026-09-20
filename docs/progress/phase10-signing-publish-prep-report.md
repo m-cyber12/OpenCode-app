@@ -1336,3 +1336,331 @@ phone is an app I wrote, so it necessarily agrees with my model of the app. The 
 A.9 that say **NOT TESTED** for the signed build on real hardware stay NOT TESTED until
 the owner's run comes back - this section only removes the failures that had nothing to
 do with the phone.
+
+# Appendix B — 2026-09-20: the projects are in a folder you can open, and the script stops blaming the app
+
+## B.0 Status at the end of this session
+
+* Projects are created **live** in `/storage/emulated/0/Documents/OpenCode/<project>` —
+  ordinary shared-storage files, visible from the Files app, any file manager, MTP/USB
+  and a non-root `adb shell` **while the agent works**, with no publish or export step.
+* That location needs **All files access** (`MANAGE_EXTERNAL_STORAGE`). The app asks for
+  it in its own storage panel, with the reason attached, and states honestly what the
+  current location is visible to when the answer is "not much" (`StorageMode`).
+* **Isolation was not weakened.** W1 (project lifecycle), W2 (workspace isolation through
+  OpenCode's own file layer) and W3 (memory inspectable/removable) are the same gates,
+  unmodified, re-run against the new root — plus W4 (the root really is the shared one)
+  and the outside-the-app checks V1–V8 (§B.2 for the evidence and its status).
+* The **Publish button is repurposed, not removed**: it is now `Export a copy...` (SAF
+  folder picker). Publishing's old job — getting files out of app-private storage — no
+  longer exists; "put a snapshot somewhere else entirely" still does (§B.3).
+* **Older projects are migrated once, never silently.** A project that cannot be moved
+  stays where it is and is named on screen; nothing is overwritten, nothing is deleted
+  unless the source directory is provably empty (§B.3).
+* The false `P10D_FIRST_RUN FAIL` is **root-caused from the owner's own bundle**, not
+  guessed: the run happened in **Git Bash on Windows**, MSYS rewrote the device path
+  `/sdcard/p10d-ui.xml` into `C:/Program Files/Git/sdcard/p10d-ui.xml`, every
+  accessibility dump was a 72-byte `cat:` error message, nothing could ever match, and
+  the driver said "the app window never appeared" while `dumpsys` showed `MainActivity`
+  in front. The same host damage silenced the APK inspector (Windows Store `python`
+  stub) and the visibility stage (`rc=127`), which is where the empty ARTIFACT findings,
+  the "STORAGE skip" and the "0 blank" screenshot line came from (§B.4).
+* The driver now **stops before it can blame the app**: `HARNESS_PYTHON` and
+  `HARNESS_DUMP` run before any UI verdict, and a host that cannot read the screen ends
+  the run with `rc=3`, a named cause, and **no app verdict at all**.
+* Driver self-test extended to **9 scenarios / 68 checks**, re-run on this commit:
+  **pass=68 fail=0** (~6 minutes; `phase10/scripts/test-90-real-device.sh`). One of the
+  nine scenarios is the owner's bundle reproduced byte for byte (§B.4).
+* **CI run `35520695055` on the code in this appendix (commit `8d32fed`): SUCCESS** (29m39s, all 11 steps green). Every
+  gate ran and passed: `P10-STATIC PASS`, `P10_DRIVER_SELFTEST PASS` (the 9 scenarios),
+  `P10-UNIT PASS` (JVM tests=305 failures=0 errors=0 skipped=0), `P10-PAYLOAD PASS`,
+  `P10-DEVICE PASS` (fresh AVD, Android 14), the Phase 6 UI gates
+  (`ui_gates_pass=14 ui_gates_fail=0`), the same gates again on the release-shaped build,
+  `P10-STORE_ASSETS PASS`, and `P10_SUMMARY … phase6_ui_fails=0 phase10_gate_fails=0
+  phase9_gate_fails=0`. The compile failure that stopped the previous run is gone, and the
+  JVM tests that could not even be compiled in that run (including
+  `ProjectStoreMigrationTest`) ran and passed. Evidence is committed on the branch under
+  `docs/progress/phase10-evidence/`.
+
+## B.1 Workstream A: where a project lives now, and why (deliverable part 1)
+
+### B.1.1 The decision
+
+**Public folder + All files access.** The live project root is
+`/storage/emulated/0/Documents/OpenCode/<project>` whenever the app holds
+`MANAGE_EXTERNAL_STORAGE`; the app asks for the grant in its own storage panel
+("Put projects where file managers can see them"), explains why, and falls back — with
+the fallback stated on screen, never hidden — when the user declines.
+
+`RuntimePaths` resolves the mode from the platform, in this order:
+
+| Mode | Location | File manager | adb / PC | When it is used |
+|---|---|---|---|---|
+| `CHOSEN` | a folder the user picked (SAF, primary volume) | yes | yes | the user wants a specific folder |
+| `PUBLIC` | `/storage/emulated/0/Documents/OpenCode` | yes | yes | **default**, once All files access is held |
+| `APP_EXTERNAL` | `Android/data/<applicationId>/files/workspaces` | Android 10 only | yes | All files access refused/not granted |
+| `INTERNAL` | `filesDir/workspaces` (app-private) | no | no | no usable external storage at all |
+
+`StorageMode` carries `fileManagerVisible` as data (`true` for `CHOSEN`/`PUBLIC`, `true`
+for `APP_EXTERNAL` only below API 30, `false` for `INTERNAL`), the Files screen renders
+what the current mode actually means, and the device gates assert it per mode — so the
+app can never claim a visibility it does not have. A SAF folder is accepted as the live
+root **only when it resolves to a real path on the primary volume**, proved by writing a
+probe file; an SD card or a cloud provider is refused with the reason shown, because
+those give a `content://` grant with no path.
+
+### B.1.2 Why this and not the alternatives
+
+1. **Why the app-private root could not stay.** `/data/data/<pkg>/files` is invisible to
+   every vantage point a non-root user has: no file manager, no MTP browse, no `adb
+   shell`. The agent was writing real files into a sealed box. That is the defect this
+   whole workstream exists for.
+2. **Why `Android/data` was not good enough either** (it was v2's answer). `adb`/MTP can
+   reach it, but on Android 11+ the platform blocks *apps* — including every file manager
+   — from browsing another app's `Android/data`. On the phone itself the files were still
+   unreachable; only a PC and a cable made them visible.
+3. **Why not "ask the user for a folder" (SAF) as the live root.** The embedded OpenCode
+   runtime is a POSIX process (`git`, `bun`, `ripgrep`, its own `bash` tool) that `chdir`s
+   into the project directory. A SAF tree is a `content://` grant, not a path. Making that
+   the live root would mean re-engineering the runtime's file layer — diverging from
+   upstream, which Core Rule 2/3 puts out of scope, and handing the agent a directory it
+   cannot write to by path. SAF stays available as `CHOSEN` **because** it can often be
+   resolved back to a real path on the primary volume, which the app verifies before
+   trusting it.
+4. **Reliability across Android versions.** The path itself is the same on Android 10
+   through 15; the only version-sensitive part is the grant, and the app does not assume
+   it: `StorageChoice.hasAllFilesAccess()` is read from the platform, a write probe
+   decides whether a candidate root is usable at all (`isUsableRoot`), and the resolution
+   table above is derived from what the device reported. The observable trade-offs found
+   while doing this: with the grant held the app can technically reach shared storage
+   broadly (it reads/writes only its project root and a folder the user picks, stated in
+   the manifest comment, the storage panel and `docs/PRIVACY-POLICY.md`); and on
+   **Android 10** an app holding the legacy storage permission can read the project
+   folder, while on 11+ other apps still cannot.
+
+### B.1.3 What is lost (Core Rule 5)
+
+* The guarantee that project files are unreadable to **any** other process on the device.
+  What replaces it, stated in `docs/SECURITY.md` and `docs/PRIVACY-POLICY.md`: other apps
+  still cannot read them on Android 11+; on Android 10 a legacy-permission app can; a
+  connected PC with USB debugging can. Runtime internals, credentials, XDG state and logs
+  stay in app-private storage.
+* The app now holds a **special permission**. Google restricts `MANAGE_EXTERNAL_STORAGE`
+  to a narrow set of app types (file managers, backup, antivirus, …). §A.5.1 of this
+  report rejected exactly this on policy grounds; the owner decided in this session to
+  take that route and declare it in Play Console instead of shipping a black box. That
+  reversal is recorded here deliberately (see §B.6 step 4 for the declaration, and the
+  documented fallback if the declaration is refused: the app keeps working in
+  `Android/data`, saying so on screen).
+
+## B.2 Workstream A evidence: W1–W3 against the new root (deliverable part 2)
+
+**They pass, unmodified, on the new root.** CI run `35520695055`, emulator on Android 14,
+`93-workspace-gates.sh` granting All files access the way a user does (`appops set <pkg>
+MANAGE_EXTERNAL_STORAGE allow`, no root); details as recorded in
+`docs/progress/phase10-evidence/GATES_SUMMARY.txt`:
+
+| Verdict | Detail |
+|---|---|
+| `P10_WS_W1_PROJECT_LIFECYCLE PASS` | `created=p7-life-… renamed=p7-renamed-… adopted=p7-adopted-… delete=true` |
+| `P10_WS_W2_WORKSPACE_ISOLATION PASS` | `listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true` (the escaping read dies in upstream's own `FSUtil.contains` guard) |
+| `P10_WS_W3_MEMORY_INSPECTABLE_REMOVABLE PASS` | `projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-…/AGENTS.md globalFile=/data/user/0/…/files/xdg/config/opencode/AGENTS.md` — the project half moved to shared storage, the *global* half stayed app-private, exactly as designed |
+| `P10_WS_W4_WORKSPACE_VISIBLE PASS` | `mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true` |
+
+The same directory, checked from **outside the app** by a non-root `adb shell`
+(`92-workspace-visibility.sh`, V1–V8): `LOCATION PASS` (the app-reported root holds a
+project), `SHELL_LIST PASS` (2 lines), `SHELL_READ PASS` (`read p10-visible.txt from
+outside the app: 'P10_VISIBLE_1789920392067'`), `SHELL_WRITE PASS` (a file written by that
+shell reads back — the folder is ordinary shared storage, not an adb-only illusion),
+`PRIVATE_ROOT_NOT_LIVE PASS` (the live root is *not* `/data/data/<pkg>/files`),
+`SHARED_ROOT PASS`, and `SHELL_BASELINE PASS` (the same shell cannot read
+`/data/data/<pkg>` at all, so the passes above are real). `DOCUMENTS_PROVIDER` **SKIPs**
+on this emulator image — it refuses a shell `content query` against
+`com.android.externalstorage.documents` — which is the documented SKIP case, not a pass by
+omission. **No gate was removed and no assertion loosened to make this pass**: W4 now
+asserts the mode *and* the shared root, and `92` grew three stricter checks
+(`SHARED_ROOT`, `PRIVATE_ROOT_NOT_LIVE`, `SHELL_WRITE`).
+
+Not covered by this run: the same gates *without* the grant (`P10_WS_NO_GRANT=1`, the
+fallback path) were exercised by the fake-phone scenario `no-grant` and the JVM resolution
+table, not by this emulator pass; and the signed release build's storage mode on real
+hardware is still the owner's run (§B.6).
+
+## B.3 The Publish button, and the projects that already existed (deliverable part 3)
+
+**The button is repurposed, not removed.** It is the same control
+(`testTag = "files_publish"`, `publishTree` through SAF `OpenDocumentTree`, remembered
+folder grant) with a different label and a different purpose: `Export a copy...`
+(`R.string.files_export_copy`). Reasons, in order:
+
+1. **Its original job is gone.** The button existed because the live project was in
+   app-private storage and the only way to get it out was to copy it somewhere a file
+   manager could see. The project is now *already* in such a folder, live. Keeping a
+   "Publish" label would describe a step that no longer exists — the exact kind of
+   stale-but-plausible UI this phase is trying not to ship.
+2. **Removing it would remove a working feature.** "Take a snapshot somewhere else
+   entirely" (an SD card, a cloud provider's folder, a different device folder) is not
+   something the live root can do by design: the runtime needs a real path on the primary
+   volume. Export is the only way to reach those places, so it stays
+   (feature-preservation rule); its failure messages already name the reason
+   (`files_publish_failed`, `files_publish_nothing`, `files_publish_done` → "Exported
+   %1$d file(s) to the folder you picked").
+3. **The docs say so**: `docs/ARCHITECTURE.md` (storage section), `docs/CAPABILITY-MATRIX.md`
+   and `docs/PRIVACY-POLICY.md` now describe the live folder as the primary path and
+   "Export a copy..." as the snapshot path.
+
+**Older projects are migrated once, and the move is never silent.** On startup
+`ProjectStore.ensureMigrated(...)` walks the legacy roots (the pre-Phase-10 app-private
+root and the app-specific external root), and `ProjectMigration.moveAll`:
+
+* moves only into a destination that is either empty (first migration) or has no
+  same-named entry — a name that already exists is a **conflict**, not an overwrite;
+* removes the source directory only when it is provably empty afterwards;
+* reports what it did, and what it could not do, as data.
+
+The Files screen's storage panel shows the pending count
+(`files_storage_pending`) with an explicit "Move them here" action and the result of the
+last move (`files_storage_moved`, `files_storage_move_failed`,
+`files_storage_grant_not_applied`), so a project that cannot be moved is *named* rather
+than quietly left behind or silently unreadable. The JVM tests for the move semantics are
+`ProjectMigrationTest` / `ProjectStoreMigrationTest`; `StorageResolutionTest` covers the
+mode table. CI carries the JVM side of that:
+`P10-UNIT PASS: JVM tests=305 failures=0 errors=0 skipped=0` (run `35520695055`), which is
+also what resolves the open compile risk in `ProjectStoreMigrationTest` — `ProjectStore`
+keeps a single-legacy-root convenience constructor for those callers, so the older test
+sources compile and pass unchanged.
+
+## B.4 The false FAIL, root-caused (deliverable part 4)
+
+### B.4.1 What the bundle actually contained
+
+`p10d-out/` (commit `c96a92a`, the owner's run of driver `d886ee6`) reported
+`pass=8 fail=3 skip=5`, with `P10D_FIRST_RUN FAIL :: the app window never appeared`
+against a phone that was sitting on the project screen. The bundle explains it, and the
+explanation is entirely on the **host**, not the app:
+
+| Artifact in the bundle | What it really says |
+|---|---|
+| `ui/*.xml`, 72 bytes each | `cat: C:/Program Files/Git/sdcard/p10d-ui.xml: No such file or directory` — MSYS path conversion rewrote the *device* path before `adb` ever saw it, so every "dump" was an error message. Nothing the driver looked for could match, and after 304 s of waiting it concluded the window was missing |
+| `dumpsys` in the run log | `topResumedActivity=MainActivity`, `mCurrentFocus` = the app's own window — the app *was* in front. The `shown=false` that looked like contradicting evidence is `dumpsys`' window-surface flag on Android 15, not a statement about the app being up |
+| `artifact-report.txt` | `Python was not found; … Microsoft Store` — the Windows Store `python` alias stub. `check-apk.py` never ran, yet `SUMMARY.txt` carried `P10D_ARTIFACT FAIL :: check-apk findings:` with nothing after it |
+| every wait's `on screen:` line, empty | the same missing python3 also silenced `p10d-ui.py`, which is the component that lists what *is* on screen — so the diagnosis the human needed was printed as an empty string |
+| `visibility.log` | `bash: /p/scripts/92-workspace-visibility.sh: No such file or directory` (`rc=127`) — MSYS had rewritten the script path too, so the outside-the-app check never launched. It was reported as `P10D_STORAGE SKIP :: storage unreadable (expected on some OEM builds)`, i.e. a host bug dressed up as a device quirk |
+| `screenshots.log` | four shots with empty per-shot detail, which the old wording summarised as "0 look blank/off" — a false all-clear on a run that captured nothing usable |
+
+All four of those are **host-side** failures with **device-side conclusions** attached.
+That is the defect worth fixing: not the timeouts, the verdicts.
+
+### B.4.2 What changed in `90-real-device-signed.sh`
+
+* **Path-rewrite immunity**: `MSYS_NO_PATHCONV=1` and `MSYS2_ARG_CONV_EXCL` are exported
+  at the top, the host shell is detected and recorded (`windows-msys` / `posix`), and a
+  dump is accepted only if it really parses as XML (`looks_like_xml`). A 72-byte `cat:`
+  line is not XML, so it can no longer be mistaken for a screen. (A leading-`//`
+  "MSYS-proof path" trick was tried and reverted: it gambles on device-side handling.
+  Canonical paths + explicit opt-outs + validation is the fix.)
+* **Two preflight gates, before any UI verdict**:
+  * `HARNESS_PYTHON` resolves a *working* interpreter (`python3` → `python` → `py -3`,
+    each verified by running it) and every call site uses it. With none, the run ends
+    `rc=3` naming the Microsoft Store stub, and **no** APK or first-run verdict is
+    invented — the ARTIFACT FAIL with empty findings cannot happen again.
+  * `HARNESS_DUMP` proves the screen can actually be read (3 acquisition paths × 2
+    modes) and, on failure, ends the run `rc=3` with the host-side cause
+    (mangled path / never written / refused) — *no* app verdict at all, plus a footer so
+    the bundle is self-explanatory.
+* **Waits match the app's own words, not only its tags** (`NEEDLE_*` / `ui_has_any`): a
+  dump without resource-ids — which is what a Compose surface often produces — no longer
+  reads as "no app". The `tags-gone` scenario in the self-test reproduces the reported
+  false FAIL from the other direction, and `shown-hidden` makes the platform mark
+  everything `shown="false"`: both must still drive the app to a passing run.
+* **Failures carry the harness caveat** (`dump_caveat`, one line) instead of an
+  unqualified claim, a timed-out wait prints the dump's shape (`dump attrs:`), and a
+  visibility stage that never launched is a red `HARNESS`/`VISIBILITY_HARNESS`, never an
+  "OEM quirk" skip.
+* **The screenshot verdict no longer congratulates a run that captured nothing**: it says
+  "fewer than the 6 a complete run captures, because the run did not reach every step".
+
+### B.4.3 The self-test that locks this in
+
+`bash phase10/scripts/test-90-real-device.sh` now runs **9 scenarios / 68 checks** against
+a fake `adb` that models a stock, non-rooted Android 14 phone, and passes in CI as step 1b
+(`P10_DRIVER_SELFTEST`). The two scenarios that matter for this appendix:
+
+* `msys-mangled` — the owner's bundle, byte for byte: the shim returns
+  `cat: C:/Program Files/Git/sdcard/p10d-ui.xml: No such file or directory`. Required
+  outcome: `rc=3`, `HARNESS_DUMP FAIL`, the words "HOST shell rewrote the device path" and
+  the raw `Program Files/Git/sdcard` evidence in `DIAGNOSIS.txt`, **no** first-run verdict,
+  and no resource-id in `SUMMARY.txt`.
+* `no-python` — the Windows Store stub on `PATH` for `python3`, `python` and `py`:
+  `rc=3`, `HARNESS_PYTHON FAIL`, zero ARTIFACT/FIRST_RUN verdicts, and a diagnosis that
+  explains the Store stub to the reader.
+
+Both were verified in this session's run of the self-test (68/68), and both are wired into
+the CI pipeline so a change that reintroduces either failure mode fails CI before a phone
+is ever plugged in.
+
+### B.4.4 What this does and does not prove
+
+The driver now fails for the right reasons on a host that mangles paths or lacks python.
+That is a property of the harness, proved against a fake phone I wrote — a fake phone
+necessarily agrees with my model of the app. It does **not** replace the owner's run on
+real hardware: see §B.5's honesty table and §B.6.
+
+## B.5 Honesty table for this appendix
+
+| Claim | Label | Evidence |
+|---|---|---|
+| Projects are created in `Documents/OpenCode` on shared storage and are visible to file managers / `adb` while the agent works | **IMPLEMENTED + TESTED** (device gates) | `P10_WS_W4_WORKSPACE_VISIBLE` (mode-aware) and `92-workspace-visibility.sh` V1–V8 on the CI emulator; app-reported root checked from outside the app |
+| A folder the user picks is used only when it resolves to a real path on primary storage; SD/cloud is refused with a reason | **IMPLEMENTED**, probe path covered by unit test | `StorageChoice.resolvePickedTree` + `isUsableRoot`, `StorageResolutionTest`, `files_storage_choose_failed` |
+| W1–W3 still pass on the new root | **TESTED** (CI emulator, Android 14, run `35520695055`) | §B.2 |
+| Old projects are moved once, never overwritten, never deleted when non-empty, and named when they cannot move | **IMPLEMENTED + TESTED** (`P10-UNIT` 305/0, run `35520695055`) | `ProjectMigration`, `ProjectStore.ensureMigrated`, `ProjectMigrationTest`, `ProjectStoreMigrationTest` |
+| The Publish button's old purpose is gone and its replacement is documented | **DONE** | §B.3; `docs/ARCHITECTURE.md`, `docs/CAPABILITY-MATRIX.md`, `docs/PRIVACY-POLICY.md` |
+| The storage panel names the live location and offers the fixes, in the default case *and* in the fallback case (mode label, explanation, pending-move count, grant button) | **TESTED** (CI, debug + release-shaped build) | `P6_U9 PASS` / `P10_SMOKE_UI_U9 PASS` in run `35520695055` (the storage-panel half of the gate asserts the exact mode strings and the pending count) |
+| The false `P10D_FIRST_RUN FAIL` was caused by MSYS path rewriting on the owner's Windows host (not the app) | **PROVEN FROM THE OWNER'S BUNDLE** | §B.4.1: the 72-byte `ui/*.xml`, `dumpsys` showing `MainActivity` in front, `rc=127` visibility log, Store-python stub |
+| The driver can no longer produce an app verdict from an unreadable screen or a host without python | **TESTED** (fake phone, 9 scenarios / 68 checks) | §B.4.3; `P10_DRIVER_SELFTEST` in CI |
+| The signed build drives first-run → project → files → live turn on the owner's phone with the v3 storage layout | **NOT TESTED** | needs the owner's run (§B.6); the v2-era bundle predates both fixes |
+| All files access is an acceptable trade for this app's distribution | **OWNER DECISION, RECORDED** | §B.1.3; §A.5.1 argued the opposite and is superseded |
+
+## B.6 Owner action list for v3
+
+1. **Build/sign fresh** (the storage change is in the app, so any APK from before this
+   appendix does not contain it):
+   download the `opencode-android-unsigned-release` artifact from the latest green run of
+   `phase10-release`, then
+   `bash phase10/scripts/sign-release-local.sh --apk <unsigned apk> --aab <aab>`.
+2. **Run the device script** on the phone (USB debugging on, phone unlocked, keep the
+   whole output directory):
+   `bash phase10/scripts/90-real-device-signed.sh --apk phase10/signing/<your-signed>.apk`
+   In Git Bash the script now sets the MSYS opt-outs itself and records `host shell:
+   windows-msys` in `SUMMARY.txt`. If the host still rewrites the device path you will
+   get `HARNESS_DUMP FAIL` in seconds with `rc=3` and **no** app verdicts — that is the
+   harness telling you about the host, and it is safe to re-run after fixing the host.
+3. **Send back `p10d-out/`** (`SUMMARY.txt`, `screenshots/`, `ui/`, `DIAGNOSIS.txt`,
+   `visibility.log`). The three gates that skipped in your last bundle —
+   `P10D_FIRST_RUN_PROJECT`, `P10D_FILES_SCREEN`, `P10D_LIVE_TURN` — should execute this
+   time; a genuine PASS or an honest FAIL with a device-side reason are both acceptable
+   outcomes, a SKIP is not.
+4. **Play Console**: alongside the existing submission steps (§8 step 7), the
+   **All files access declaration** is now required (`MANAGE_EXTERNAL_STORAGE`). Fill it
+   in with the storage panel's own wording (project folders the user can open in any file
+   manager). If Play refuses it, the app must ship on the documented fallback: the mode
+   table in §B.1.1 stays true, and the storage panel says which one is in effect.
+5. **Store screenshots**: take the set on the phone that now contains the storage panel
+   (the Files screen shows the real path), then §8 step 6 as before.
+
+## B.7 Corrections to earlier appendices
+
+* §A.13's "35 checks" is stale: the driver self-test is **68 checks in 9 scenarios** now
+  (`phase10/README.md` lists them). The audit findings in that table all still stand.
+* §A.5 / §A.9's storage rows describe the **app-specific external** root as the answer and
+  treat `MANAGE_EXTERNAL_STORAGE` as a submission risk. Both are superseded by §B.1: the
+  owner chose the public folder plus the grant, and the risk is handled by the declaration
+  in §B.6 step 4 instead of by avoiding the permission. This includes A.9's row that says
+  a file manager on a modern phone can **not** browse the project directory: that was true
+  of the app-specific root and is false of the current default
+  (`Documents/OpenCode`, on the shared volume a file manager reads through the platform's
+  own Documents provider). The platform rule itself — apps cannot browse another app's
+  `Android/data` on Android 11+ — is unchanged, and so is the row's consequence for the
+  fallback: decline the grant and you are back on the path that row describes.
+* §A.9's rows that say **NOT TESTED** for the signed build on real hardware still say it:
+  nothing in this appendix changes that, and §B.5 repeats it.
