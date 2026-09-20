@@ -473,9 +473,9 @@ class LiveChatUiGatesTest {
             toolParts.any { it.tool.isNotEmpty() }
         }
         if (toolParts.isEmpty()) toolParts = toolPartsInNew(known)
-        val part = toolParts.firstOrNull { it.tool.isNotEmpty() }
+        val started = toolParts.firstOrNull { it.tool.isNotEmpty() }
 
-        if (!toolCallHappened || part == null) {
+        if (!toolCallHappened || started == null) {
             val reply = replyInNew(known)
             skip(
                 "L2",
@@ -483,6 +483,26 @@ class LiveChatUiGatesTest {
                     "replyChars=${reply.length}); screen='${allText().take(140)}'",
             )
             return
+        }
+
+        // The snapshot above is taken the moment the tool STARTS: the part exists, its
+        // status is usually still "running" and its output is empty - and that snapshot
+        // never updates. Judging `output.contains(marker)` from it is a race, and the
+        // runner loses it when the machine is busy: CI run 35536768156 failed exactly
+        // that way (`tool=bash status=running ... markerInServerOutput=false
+        // markerOnScreen=true`, on a commit whose code was identical to the run that
+        // passed 30 minutes earlier). So re-read the SAME part id until the tool reaches
+        // a terminal state. Every assertion below is unchanged and the wait is bounded,
+        // so a call that really never finishes still fails the gate - with the status it
+        // was stuck in, in the detail line.
+        var part = started
+        if (part.status != "completed") {
+            val toolPartId = part.id
+            waitFor(180_000) {
+                val fresh = toolPartsInNew(known).firstOrNull { it.id == toolPartId }
+                if (fresh != null) part = fresh
+                fresh?.status == "completed"
+            }
         }
 
         // Wait for the UI to catch up with the server, then assert on the card that

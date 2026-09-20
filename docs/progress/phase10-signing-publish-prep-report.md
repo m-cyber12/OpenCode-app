@@ -1371,10 +1371,12 @@ do with the phone.
 * Driver self-test extended to **9 scenarios / 68 checks**, re-run on this commit:
   **pass=68 fail=0** (~6 minutes; `phase10/scripts/test-90-real-device.sh`). One of the
   nine scenarios is the owner's bundle reproduced byte for byte (§B.4).
-* **CI on the code in this appendix: SUCCESS** — most recently run `35534807555` on this
-  appendix's own tree (commit `9921645`), whose log ends `=== PHASE 10 END … rc=0 ===` with
-  `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0`. The run list, including one
-  red run I could not explain, is in §B.9. Detail for the first green run (commit `8d32fed`): SUCCESS** (29m39s, all 11 steps green). Every
+* **CI on the code in this appendix: SUCCESS** — run `35534807555` on this appendix's tree
+  (commit `9921645`), whose log ends `=== PHASE 10 END … rc=0 ===` with
+  `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0`. The run list is in §B.9,
+  together with two later red runs on documentation-only commits: one whose cause could not be
+  read, and one traced to a **race in the Phase 6 live-tool gate** (not the product) that is
+  fixed in §B.9.1. Detail for the first green run (commit `8d32fed`): SUCCESS** (29m39s, all 11 steps green). Every
   gate ran and passed: `P10-STATIC PASS`, `P10_DRIVER_SELFTEST PASS` (the 9 scenarios),
   `P10-UNIT PASS` (JVM tests=305 failures=0 errors=0 skipped=0), `P10-PAYLOAD PASS`,
   `P10-DEVICE PASS` (fresh AVD, Android 14), the Phase 6 UI gates
@@ -1776,3 +1778,42 @@ same tree passed four minutes later. It is written down because a red run I cann
 neither evidence of a defect nor evidence of its absence; if it recurs, the job log is the
 first thing to fetch (and the environment's inability to download GitHub blobs is itself worth
 knowing).
+
+### B.9.1 The next red run: cause found, and it is a race in the gate, not in the app
+
+Run `35536768156` (commit `8ab3c0d` — again documentation only) failed the same pipeline
+step, and this time its evidence reached the branch. The failing lines, verbatim:
+
+```
+P10_SMOKE_UI_L2 FAIL :: tool=bash status=running partId=prt_0c0a89930001P6vSSCho7WfhkP
+  cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true
+  markerInServerOutput=false markerOnScreen=true …
+P10_SMOKE_UI FAIL :: pass=13 fail=1 skip=0 - a gate that passes on debug and fails here is a
+  RELEASE-SHAPE finding (see p10-smoke-ui.log)
+phase6_ui_fails=1 phase10_gate_fails=3 phase9_gate_fails=0
+```
+
+Everything else in that run passed — the whole workspace class (`W1`…`W4`, the shared root,
+the shell checks), the unit tests, the payload, the release APK/AAB inspection, and the same
+live-tool gate on the **debug** build (`P6_L2 PASS :: tool=bash status=completed`), minutes
+earlier on the same emulator.
+
+The cause is in the gate, not the product: the tool **ran** (its card is on screen with the
+marker in it — `markerOnScreen=true`), but `LiveChatUiGatesTest`'s L2 kept the *first* server
+snapshot that carried a tool part — taken the moment the tool started, `status=running` with
+empty output — and then asserted `part.output.contains(marker)` against that stale snapshot.
+On a loaded runner the tool has not finished by then, and the gate reports a working turn as
+a failure. That is exactly the false-FAIL pattern this whole appendix is about, one layer
+further down.
+
+**Fixed** in `app/src/androidTest/java/ai/opencode/android/ui/LiveChatUiGatesTest.kt`: after
+finding the part, the gate re-reads that same part id until it reaches a terminal status
+(bounded at 180 s) before judging. No assertion changed — it still requires the finished
+status, the marker in the server's own output, the marker on screen and tap-to-expand — and a
+call that genuinely never finishes still fails, printing the status it was stuck in. Static
+checks re-run green after the edit (`phase10/scripts/30-static-checks.sh` rc=0,
+`phase6/scripts/30-static-checks.sh` rc=0, Kotlin balance 101/0).
+
+It is plausible that the earlier unreadable red run (`35534543455`) was the same race — same
+stage, same tree, same 29-minute duration — but no evidence of it survives, so it stays
+unexplained rather than assumed.

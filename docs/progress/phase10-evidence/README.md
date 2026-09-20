@@ -16,9 +16,21 @@ build; it proves nothing about the app at runtime.
 
 `GATES_SUMMARY.txt` is the file that decides the job (its last line is the
 verdict). The rest are the gate lines, the inspected artifacts as JSON
-(`p10-*-apk.json`, `p10-release-aab.json`), device facts, and the Phase 6 and
-Phase 9 evidence captured on the same device during the same run.
+(`p10-*-apk.json`), device facts, and the Phase 6 and Phase 9 evidence captured on
+the same device during the same run. `00-run-phase10.log` is the pipeline's own
+log (stages 1/9 … 9/9, then the summary), and `p10-driver-selftest.log` is the
+driver self-test: nine fake-phone scenarios, 68 checks, run as step 1b.
 
 The signed-build device bundle is **not** here: `90-real-device-signed.sh` writes
 to `p10d-out/` on the owner's machine, because it contains their phone's UI dumps
 and must be read (and redacted) before it is committed anywhere.
+
+## `v3-driver-selftest/` — kept by hand, and labelled as such
+
+The owner's bundle showed four host-side faults reported as device verdicts
+(Appendix B, §B.4). The bundles under `v3-driver-selftest/` are the driver
+self-test's own output from one `--keep` run: `happy/` (the three gates that
+skipped in the owner's bundle all PASSing), `msys-mangled/` (the owner's 72-byte
+`cat:` line, byte-identical), `no-python/`, `no-grant/`, `locked/`. Its README
+states the limit plainly — the phone there is a shim I wrote, so it is
+behavioural evidence for the **driver**, never device evidence for the app.
