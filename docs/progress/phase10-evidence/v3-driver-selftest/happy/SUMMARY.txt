@@ -1,0 +1,28 @@
+P10D_DEVICE_AWAKE PASS :: screen awake and unlocked before any UI step: mWakefulness=Awake mShowingLockscreen=false mCurrentFocus=Window{1a2 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}
+P10D_HARNESS_PYTHON PASS :: Python interpreter: python3 (3.11.2)
+P10D_HARNESS_DUMP PASS :: the accessibility dump is readable from this host (nodes=4 clickable=1 enabled=4 classes=Button:2,TextView:2; acquisition: /sdcard/p10d-ui.xml; host shell: posix)
+P10D_ABI PASS :: arm64-v8a device (the ABI this app ships to users)
+P10D_ANDROID_VERSION PASS :: API 34 (minSdk 29)
+P10D_ARTIFACT SKIP :: P10D_SKIP_ARTIFACT=1: the APK's identity/signature were NOT inspected in this run
+P10D_SIGNATURE SKIP :: apksigner not on PATH: signature checked for PRESENCE by check-apk.py only. Install build-tools and re-run for the cryptographic verdict (docs/RELEASE.md s5)
+P10D_INSTALL PASS :: adb install of the signed release APK succeeded (this is the artifact a user would sideload)
+P10D_VERSION_ON_DEVICE PASS :: installed versionName=1.18.23-phase10 code=8
+P10D_FIRST_RUN PASS :: app reached the projects screen by itself in 7s (payload extracted + agent started, no privileged access); screen: mWakefulness=Awake mShowingLockscreen=false mCurrentFocus=Window{1a2 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}
+P10D_FIRST_RUN_PROJECT PASS :: project 'p10d-195937' created through the UI (taps + typed text) on the signed build; conversation surface reached
+P10D_FILES_SCREEN PASS :: the app's file browser shows the project at /storage/emulated/0/Documents/OpenCode/p10d-195937 (storage mode: Documents/OpenCode; read from the screen, not from the app's internals)
+P10D_LIVE_TURN PASS :: the answer is on screen AND a Shell-command tool card is visible: a real live tool call ran in the SIGNED build (ui/ui-turn-tool.xml)
+P10D_VISIBILITY_LOCATION PASS :: :: the project root exists and holds 1 project(s): /storage/emulated/0/Documents/OpenCode (source: app-reported (W4 gate), Android 14)
+P10D_VISIBILITY_SHELL_LIST PASS :: :: a non-root shell lists the project directory (/storage/emulated/0/Documents/OpenCode/p10d-195937): 4 lines
+P10D_VISIBILITY_SHELL_READ PASS :: :: read p10-visible.txt from outside the app: 'p10-live-ok' (matches /P10_VISIBLE_|p10-live-ok/)
+P10D_VISIBILITY_PRIVATE_ROOT_NOT_LIVE PASS :: :: the live project root is outside /data: /storage/emulated/0/Documents/OpenCode
+P10D_VISIBILITY_SHARED_ROOT PASS :: :: the project root is on shared storage and outside Android/data: /storage/emulated/0/Documents/OpenCode (Android 14)
+P10D_VISIBILITY_DOCUMENTS_PROVIDER PASS :: :: the system Documents provider returns the folder: Row: 0 _display_name=OpenCode
+P10D_VISIBILITY_SHELL_WRITE PASS :: :: a file written by the non-root shell in /storage/emulated/0/Documents/OpenCode/p10d-195937 was readable back: the directory is shared, ordinary storage
+P10D_VISIBILITY_SHELL_BASELINE PASS :: :: baseline holds: an unprivileged shell cannot read /data/data/io.github.mcyber12.opencode at all, so the PASSs above are real
+P10D_FILES_APP_AND_SHELL PASS :: in-app browser path=/storage/emulated/0/Documents/OpenCode/p10d-195937; shell visibility rc=0 (see visibility.log for the raw ls/cat output)
+P10D_MEMORY PASS :: total PSS 120 MB (see meminfo.txt)
+P10D_STORAGE PASS :: on-device project storage: /storage/emulated/0/Documents/OpenCode=12M /storage/emulated/0/Documents/OpenCode=12M /storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces=12M /storage/emulated/0/Android/data/io.github.mcyber12.opencode=12M
+P10D_PACKAGING_SWEEP PASS :: no FATAL EXCEPTION / ClassNotFound / NoSuchMethod / NoClassDefFound / UnsatisfiedLink in the session's logcat
+P10D_NO_CRASH PASS :: no app crash in this session
+P10D_UI_DUMP PASS :: every accessibility dump was readable (24 dump(s) saved in ui/; last acquisition: /sdcard/p10d-ui.xml)
+P10D_SCREENSHOTS PASS :: 10 screenshots captured at every step and every one is a real screen (screenshots/)

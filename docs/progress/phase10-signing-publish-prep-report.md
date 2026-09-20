@@ -1481,10 +1481,18 @@ omission. **No gate was removed and no assertion loosened to make this pass**: W
 asserts the mode *and* the shared root, and `92` grew three stricter checks
 (`SHARED_ROOT`, `PRIVATE_ROOT_NOT_LIVE`, `SHELL_WRITE`).
 
+The same three gates that skipped in the owner's v2 bundle execute in the v3 driver's own
+end-to-end run: in the kept `happy` bundle, `P10D_FIRST_RUN_PROJECT PASS` (project created
+through taps and typed text), `P10D_FILES_SCREEN PASS` showing
+`/storage/emulated/0/Documents/OpenCode/p10d-…`, and `P10D_LIVE_TURN PASS` with a real
+tool card. That run is against the **fake phone**, so it proves the driver reaches those
+gates and the storage path it sees — not that the signed APK behaves that way on hardware.
+
 Not covered by this run: the same gates *without* the grant (`P10_WS_NO_GRANT=1`, the
-fallback path) were exercised by the fake-phone scenario `no-grant` and the JVM resolution
-table, not by this emulator pass; and the signed release build's storage mode on real
-hardware is still the owner's run (§B.6).
+fallback path) were exercised by the fake-phone scenario `no-grant` (which FAILs
+`SHARED_ROOT` on purpose, because `Android/data` is exactly the location a file manager
+cannot browse) and by the JVM resolution table, not by this emulator pass; and the signed
+release build's storage mode on real hardware is still the owner's run (§B.6).
 
 ## B.3 The Publish button, and the projects that already existed (deliverable part 3)
 
@@ -1597,7 +1605,11 @@ a fake `adb` that models a stock, non-rooted Android 14 phone, and passes in CI 
 
 Both were verified in this session's run of the self-test (68/68), and both are wired into
 the CI pipeline so a change that reintroduces either failure mode fails CI before a phone
-is ever plugged in.
+is ever plugged in. The bundles from that run are kept in the repository so the claim can
+be read rather than believed:
+`docs/progress/phase10-evidence/v3-driver-selftest/` (`happy/` with all three previously
+skipped gates PASSing, `msys-mangled/` whose `ui/ui-harness-preflight.xml` is the owner's
+72-byte `cat:` line, `no-python/`, `no-grant/`, `locked/`, and the full self-test log).
 
 ### B.4.4 What this does and does not prove
 

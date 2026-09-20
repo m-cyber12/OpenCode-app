@@ -1,0 +1,23 @@
+[2026-09-20T20:00:16Z] device: Android 14 (API 34); package=io.github.mcyber12.opencode
+[2026-09-20T20:00:16Z] live project root: /storage/emulated/0/Documents/OpenCode (source: app-reported (W4 gate))
+[2026-09-20T20:00:16Z] --- non-root shell, live project root (/storage/emulated/0/Documents/OpenCode) ---
+total 0
+drwxr-xr-x 3 user user 60 Sep 20 19:59 .
+drwxr-xr-x 3 user user 60 Sep 20 19:59 ..
+drwxr-xr-x 2 user user 60 Sep 20 20:00 p10d-195937
+[2026-09-20T20:00:16Z] --- non-root shell, the app-private root ---
+ls: /data/data/io.github.mcyber12.opencode/files/workspaces: Permission denied
+P10D_VISIBILITY_LOCATION PASS :: the project root exists and holds 1 project(s): /storage/emulated/0/Documents/OpenCode (source: app-reported (W4 gate), Android 14)
+[2026-09-20T20:00:16Z] --- project listing (/storage/emulated/0/Documents/OpenCode/p10d-195937) ---
+total 1
+drwxr-xr-x 2 user user 60 Sep 20 20:00 .
+drwxr-xr-x 3 user user 60 Sep 20 19:59 ..
+-rw-r--r-- 1 user user 12 Sep 20 20:00 p10-visible.txt
+P10D_VISIBILITY_SHELL_LIST PASS :: a non-root shell lists the project directory (/storage/emulated/0/Documents/OpenCode/p10d-195937): 4 lines
+P10D_VISIBILITY_SHELL_READ PASS :: read p10-visible.txt from outside the app: 'p10-live-ok' (matches /P10_VISIBLE_|p10-live-ok/)
+P10D_VISIBILITY_PRIVATE_ROOT_NOT_LIVE PASS :: the live project root is outside /data: /storage/emulated/0/Documents/OpenCode
+P10D_VISIBILITY_SHARED_ROOT PASS :: the project root is on shared storage and outside Android/data: /storage/emulated/0/Documents/OpenCode (Android 14)
+P10D_VISIBILITY_DOCUMENTS_PROVIDER PASS :: the system Documents provider returns the folder: Row: 0 _display_name=OpenCode
+P10D_VISIBILITY_SHELL_WRITE PASS :: a file written by the non-root shell in /storage/emulated/0/Documents/OpenCode/p10d-195937 was readable back: the directory is shared, ordinary storage
+P10D_VISIBILITY_SHELL_BASELINE PASS :: baseline holds: an unprivileged shell cannot read /data/data/io.github.mcyber12.opencode at all, so the PASSs above are real
+[2026-09-20T20:00:16Z] pass=8 fail=0 skip=0 (log: /tmp/tmp.9afjpAKfNq/out-happy/visibility/workspace-visibility.log)

@@ -1,0 +1,23 @@
+[2026-09-20T20:04:46Z] device: Android 14 (API 34); package=io.github.mcyber12.opencode
+[2026-09-20T20:04:46Z] live project root: /storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces (source: app-reported (W4 gate))
+[2026-09-20T20:04:46Z] --- non-root shell, live project root (/storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces) ---
+total 0
+drwxr-xr-x 3 user user 60 Sep 20 20:04 .
+drwxr-xr-x 3 user user 60 Sep 20 20:04 ..
+drwxr-xr-x 2 user user 60 Sep 20 20:04 p10d-200407
+[2026-09-20T20:04:46Z] --- non-root shell, the app-private root ---
+ls: /data/data/io.github.mcyber12.opencode/files/workspaces: Permission denied
+P10D_VISIBILITY_LOCATION PASS :: the project root exists and holds 1 project(s): /storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces (source: app-reported (W4 gate), Android 14)
+[2026-09-20T20:04:46Z] --- project listing (/storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces/p10d-200407) ---
+total 1
+drwxr-xr-x 2 user user 60 Sep 20 20:04 .
+drwxr-xr-x 3 user user 60 Sep 20 20:04 ..
+-rw-r--r-- 1 user user 12 Sep 20 20:04 p10-visible.txt
+P10D_VISIBILITY_SHELL_LIST PASS :: a non-root shell lists the project directory (/storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces/p10d-200407): 4 lines
+P10D_VISIBILITY_SHELL_READ PASS :: read p10-visible.txt from outside the app: 'p10-live-ok' (matches /P10_VISIBLE_|p10-live-ok/)
+P10D_VISIBILITY_PRIVATE_ROOT_NOT_LIVE PASS :: the live project root is outside /data: /storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces
+P10D_VISIBILITY_SHARED_ROOT FAIL :: the project root is under Android/data (/storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces): file managers cannot browse that on Android 14, only adb can
+P10D_VISIBILITY_DOCUMENTS_PROVIDER SKIP :: this device does not let a shell query the Documents provider (Error: Unsupported)
+P10D_VISIBILITY_SHELL_WRITE PASS :: a file written by the non-root shell in /storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces/p10d-200407 was readable back: the directory is shared, ordinary storage
+P10D_VISIBILITY_SHELL_BASELINE PASS :: baseline holds: an unprivileged shell cannot read /data/data/io.github.mcyber12.opencode at all, so the PASSs above are real
+[2026-09-20T20:04:46Z] pass=6 fail=1 skip=1 (log: /tmp/tmp.9afjpAKfNq/out-no-grant/visibility/workspace-visibility.log)
