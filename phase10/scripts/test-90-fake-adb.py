@@ -306,6 +306,15 @@ def main(argv):
     if head == "exec-out":
         rest = " ".join(args[1:])
         if rest.startswith("cat /sdcard/p10d-ui.xml") or rest.startswith("cat /data/local/tmp/p10d-ui.xml"):
+            if SCENARIO == "msys-mangled":
+                # THE v2 FALSE FAIL, byte for byte (p10d-out/ui/ui-wait-app-window.xml):
+                # the host shell rewrote the device path into a Windows path, so what
+                # the driver "cat"-ed was the device's complaint about a path that does
+                # not exist there. The app is fine; the harness is mangling arguments.
+                # The driver must say THAT, in seconds, and never blame the app.
+                sys.stdout.write(
+                    "cat: C:/Program Files/Git/sdcard/p10d-ui.xml: No such file or directory\n")
+                return 0
             path = fixture(screen())
             if path is None or SCENARIO == "dump-unusable":
                 # Nothing to serve: an unreadable/absent dump is what the driver has

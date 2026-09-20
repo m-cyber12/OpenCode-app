@@ -30,9 +30,18 @@
 #                 the visibility check must FAIL SHARED_ROOT - the app is not allowed
 #                 to claim file-manager visibility it does not have.
 #   dump-unusable uiautomator cannot dump at all ("could not get idle state"): the run
-#                 must be red for THAT reason - UI_DUMP FAIL naming the dump channel -
-#                 instead of blaming the app (runs with --timeout-scale 0.02, so the
-#                 failure paths cost seconds instead of minutes).
+#                 must be red for THAT reason - HARNESS_DUMP FAIL, naming the dump
+#                 channel - and must stop there, before any app verdict is produced
+#                 (runs with --timeout-scale 0.02, so the failure paths cost seconds
+#                 instead of minutes).
+#   msys-mangled  THE v2 FALSE FAIL, reproduced byte for byte: what the driver reads
+#                 back as a "dump" is the Windows-mangled device path
+#                 ("cat: C:/Program Files/Git/sdcard/p10d-ui.xml: No such file or
+#                 directory"), exactly as it appeared in the owner's bundle. The run
+#                 must stop in seconds (rc=3), name the host-side cause, and produce
+#                 NO app verdict - in v2 this same input produced a six-minute timeout
+#                 and "the app window never appeared" on a phone that was showing the
+#                 app's projects screen.
 #
 # Usage: bash phase10/scripts/test-90-real-device.sh [--keep]
 set -uo pipefail
@@ -70,14 +79,33 @@ done
 : > "$TMP/fake.apk"
 
 mkdir -p "$TMP/bin"
+# Absolute interpreter on purpose: one scenario deliberately puts Windows-style
+# `python3` stubs first on PATH to reproduce the owner's host, and the FAKE PHONE
+# still has to work in that run - otherwise the scenario would measure the shim
+# breaking instead of the driver's own preflight.
+REAL_PY="$(command -v python3 || command -v python)"
 cat > "$TMP/bin/adb" <<EOF
 #!/usr/bin/env bash
 exec env P10D_FAKE_ROOT="$TMP" P10D_FAKE_SCENARIO="\${P10D_FAKE_SCENARIO:-happy}" \\
-  python3 "$DIR/scripts/test-90-fake-adb.py" "\$@"
+  "$REAL_PY" "$DIR/scripts/test-90-fake-adb.py" "\$@"
 EOF
 chmod +x "$TMP/bin/adb"
 
 # ------------------------------------------------------------------ scenarios --
+# The stubs a Windows host really has: `python3`/`python` exist on PATH, print the
+# Store message and exit non-zero. Both the APK inspector and the accessibility
+# reader are Python, so v2 produced "check-apk findings: " (empty) and an empty
+# "on screen:" at every wait - then blamed the app.
+mkdir -p "$TMP/nopython"
+for stub in python3 python py; do
+  cat > "$TMP/nopython/$stub" <<'STUB'
+#!/bin/sh
+echo "Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases."
+exit 9009
+STUB
+  chmod +x "$TMP/nopython/$stub"
+done
+
 run_scenario() { # $1 = name, $2.. = extra driver arguments
   local name="$1"; shift
   rm -rf "$TMP/dev" "$TMP/out-$name"
@@ -179,18 +207,66 @@ echo "--- scenario: the accessibility channel is unavailable (fast, scaled timeo
 run_scenario dump-unusable --timeout-scale 0.02
 RC=$(cat "$TMP/rc-dump-unusable"); OUT="$TMP/out-dump-unusable"
 check "$([ "$RC" != 0 ] && echo 0 || echo 1)" "an unreadable dump channel is a non-zero exit (rc=$RC)"
-check "$(grep -qa '^P10D_UI_DUMP FAIL' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "UI_DUMP FAIL is reported"
-check "$(grep -qa 'could not be read at all' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
-  "the reason names the dump channel, not the app"
-check "$(grep -qa 'could not get idle state' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
-  "the raw uiautomator error is in DIAGNOSIS.txt"
+# v3 stops at R0.5 instead of spending six minutes timing out: the first dump is
+# the harness's own test, and if the harness cannot read the screen then no verdict
+# below it is a statement about the app.
+check "$(grep -qa '^P10D_HARNESS_DUMP FAIL' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "HARNESS_DUMP FAIL is the verdict that names the problem"
 check "$(grep -qa '^P10D_DEVICE_AWAKE PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
   "the device itself was fine - the failure is not blamed on the phone"
-# The self-contradiction that started this: a verdict saying the app never appeared
-# while mCurrentFocus is the app. When the dump channel is the problem, the verdict
-# itself has to say so.
-check "$(grep -qa 'accessibility dump was unreadable' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
-  "the failing verdict itself names the unreadable dump (no self-contradicting evidence)"
+check "$(grep -qa 'could not get idle state' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
+  "the raw uiautomator error is in DIAGNOSIS.txt"
+check "$(grep -qa 'nothing came back at all' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
+  "the reason names the device-side cause (nothing was written)"
+check "$(grep -qa 'why: ' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
+  "every failed attempt carries a 'why' line the reader can act on"
+# The self-contradiction that started all of this: a verdict saying the app never
+# appeared while mCurrentFocus is the app. Nothing may claim that any more.
+check "$(grep -qaE '^P10D_(FIRST_RUN|FILES_SCREEN|LIVE_TURN) ' "$OUT/SUMMARY.txt" && echo 1 || echo 0)" \
+  "no app verdict is produced at all (the run stopped before it could guess)"
+
+echo
+echo "--- scenario: the v2 false FAIL, byte for byte (a Windows host mangled the device path) ---"
+# p10d-out/ui/ui-wait-app-window.xml contained exactly the line this scenario
+# serves. v2 read it as an empty screen, timed out for six minutes and reported
+# "the app window never appeared"; the app was showing its projects screen.
+run_scenario msys-mangled
+RC=$(cat "$TMP/rc-msys-mangled"); OUT="$TMP/out-msys-mangled"
+check "$([ "$RC" = 3 ] && echo 0 || echo 1)" "the run stops early (rc=$RC) instead of timing out for minutes"
+check "$(grep -qa '^P10D_HARNESS_DUMP FAIL' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "HARNESS_DUMP FAIL names the unreadable dump"
+check "$(grep -qa 'HOST shell rewrote the device path' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the verdict names Git-Bash/MSYS path conversion as the cause"
+check "$(grep -qa '^P10D_FIRST_RUN ' "$OUT/SUMMARY.txt" && echo 1 || echo 0)" \
+  "the app is never blamed (no FIRST_RUN verdict in a run that could not see)"
+check "$(grep -qa 'Program Files/Git/sdcard' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
+  "the raw mangled path is in DIAGNOSIS.txt for the reader to recognize"
+check "$(grep -qa 'host shell: .*' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
+  "the diagnosis records which host shell ran it"
+check "$(! grep -q 'resource-id=' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "nothing else in the summary pretends to be screen evidence"
+
+echo
+echo "--- scenario: a Windows host with no working python3 (the other half of the v2 false FAIL) ---"
+rm -rf "$TMP/dev" "$TMP/out-no-python"
+mkdir -p "$TMP/dev"
+PATH="$TMP/bin:$TMP/nopython:$PATH" \
+P10D_FAKE_SCENARIO=happy \
+P10D_SKIP_ARTIFACT=1 \
+P10D_PROVIDER_KEY="sk-or-test-only-not-a-real-key" \
+bash "$DIR/scripts/90-real-device-signed.sh" --apk "$TMP/fake.apk" \
+    --out "$TMP/out-no-python" > "$TMP/run-no-python.stdout" 2>&1
+echo "$?" > "$TMP/rc-no-python"
+RC=$(cat "$TMP/rc-no-python"); OUT="$TMP/out-no-python"
+check "$([ "$RC" = 3 ] && echo 0 || echo 1)" "the run stops early (rc=$RC) instead of reporting an app failure"
+check "$(grep -qa '^P10D_HARNESS_PYTHON FAIL' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "HARNESS_PYTHON FAIL names the missing interpreter"
+check "$(grep -qa '^P10D_ARTIFACT ' "$OUT/SUMMARY.txt" && echo 1 || echo 0)" \
+  "no APK verdict is invented from an inspector that never ran"
+check "$(grep -qa '^P10D_FIRST_RUN ' "$OUT/SUMMARY.txt" && echo 1 || echo 0)" \
+  "no first-run verdict is invented either"
+check "$(grep -qa 'Store stub' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
+  "the diagnosis explains the Windows Store stub to the reader"
 
 echo
 echo "=== driver self-test: pass=$pass fail=$fail ==="

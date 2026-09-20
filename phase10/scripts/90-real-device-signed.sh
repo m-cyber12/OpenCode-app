@@ -73,6 +73,32 @@
 # Usage: bash phase10/scripts/90-real-device-signed.sh [--apk PATH] [--out DIR]
 #          [--cert-sha256 HEX] [--skip-live] [--timeout-scale N]
 set -uo pipefail
+
+# WINDOWS / GIT BASH - the failure that produced the v2 "the app window never
+# appeared" verdict on a phone that was showing the app.
+#
+# MSYS (Git for Windows) rewrites arguments that look like POSIX paths when it
+# hands them to a native binary. `adb` is a native binary, so
+#     adb shell uiautomator dump /sdcard/p10d-ui.xml
+# became
+#     adb shell uiautomator dump 'C:/Program Files/Git/sdcard/p10d-ui.xml'
+# on the device side, and the dump the driver then `cat`-ed was the device's
+# "No such file or directory" text. Every UI wait timed out, and the run reported
+# the app as broken while dumpsys showed the app's window in front. The bundle the
+# owner sent contained exactly that (p10d-out/ui/*.xml, 72 bytes each).
+#
+# Both variables are the documented opt-outs and are inert on Linux/macOS:
+#   MSYS_NO_PATHCONV   Git for Windows
+#   MSYS2_ARG_CONV_EXCL  MSYS2/Cygwin (and Git Bash in some versions)
+export MSYS_NO_PATHCONV=1
+export MSYS2_ARG_CONV_EXCL='*'
+case "$(uname -s 2>/dev/null)" in
+  MINGW*|MSYS*|CYGWIN*)
+    HOST_SHELL="windows-msys"
+    ;;
+  *) HOST_SHELL="posix" ;;
+esac
+
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "$DIR/.." && pwd)"
 OUT="p10d-out"
@@ -109,6 +135,30 @@ rec() { echo "$1 $2${3:+ :: $3}" >> "$OUT/SUMMARY.txt"; log "$1 $2${3:+ :: $3}";
 rd() { case "$2" in 0) PASS=$((PASS+1)); rec "P10D_$1" PASS "$3";; 7) SKIP=$((SKIP+1)); rec "P10D_$1" SKIP "$3";; *) FAIL=$((FAIL+1)); rec "P10D_$1" FAIL "$3";; esac; }
 diag() { echo "$1" | tee -a "$OUT/DIAGNOSIS.txt" >> "$LOG"; }
 
+write_footer() { # $1 = screenshots count, $2 = blank count ("" for an early stop)
+  {
+    echo "phase10 real-device verification of the SIGNED build $(date -u +%FT%TZ)"
+    echo "screenshots=${1:-0} blank=${2:-0}"
+    echo "-- model availability marker (closes the x86_64-only live-tool-call carry-forward when 1)"
+    cat "$OUT/p10d-model-lines.txt" 2>/dev/null || true
+    echo "apk=$(basename "$APK") sha256=$(sha256sum "$APK" 2>/dev/null | awk '{print $1}')"
+    echo "pass=$PASS fail=$FAIL skip=$SKIP"
+  } >> "$OUT/SUMMARY.txt"
+}
+
+# Stop early - but with a bundle, not with a half-written one. Used when the
+# harness itself cannot see the screen (see R0.5): continuing would produce a pile
+# of "the app never ..." verdicts that are really the harness talking.
+bail() { # $1 = one-line reason
+  echo
+  echo "STOPPING: $1"
+  echo "See $OUT/DIAGNOSIS.txt; the bundle is complete enough to act on."
+  write_footer "${NSHOTS:-0}" "${BLANK:-0}"
+  cat "$OUT/SUMMARY.txt" | tee -a "$LOG"
+  echo "Bundle: $OUT/  (stopped early: $1)"
+  exit 3
+}
+
 # Credentials never reach the bundle: this filter runs over everything written to
 # p10d-out, the same rule the Phase 8 suite adopted after a key was published.
 redact() {
@@ -118,6 +168,23 @@ redact() {
          -e 's/sk-or-[A-Za-z0-9_-]{10,}/sk-or-<REDACTED>/g' \
          -e 's/(Bearer )[A-Za-z0-9._-]{12,}/\1<REDACTED>/g'
 }
+
+# Python is load-bearing: the accessibility reader (p10d-ui.py) is what turns a dump
+# into "what is on screen", the screenshot checker decides whether a frame is a real
+# screen, and check-apk.py inspects the APK. On Windows `python3` is often the
+# Microsoft Store STUB: it exists on PATH, prints "Python was not found" and exits
+# non-zero - so `command -v python3` is not a test of anything. The v2 bundle shows
+# the consequence: `P10D_ARTIFACT FAIL :: check-apk findings: ` (empty, because the
+# inspector never ran) and an empty "on screen:" at every wait, because the reader
+# never ran either. Resolve an interpreter that ANSWERS, or say so and stop.
+PY=""
+for cand in python3 python py; do
+  command -v "$cand" >/dev/null 2>&1 || continue
+  if [ "$cand" = "py" ]; then
+    "$cand" -3 -c 'print(1)' >/dev/null 2>&1 && { PY="$cand -3"; break; } || continue
+  fi
+  "$cand" -c 'print(1)' >/dev/null 2>&1 && { PY="$cand"; break; }
+done
 
 command -v adb >/dev/null 2>&1 || { echo "FATAL: adb not on PATH (install platform-tools)"; exit 2; }
 adb get-state >/dev/null 2>&1 || { echo "FATAL: no device visible to adb (plug the phone in, enable USB debugging, accept the prompt)"; exit 2; }
@@ -173,6 +240,37 @@ NEEDLE_FILES='files_screen|files_list|files_location|Where these files are|Expor
 # chatty: each one can explain itself, and the driver logs the reason for every
 # negative answer instead of collapsing them all into "not found".
 
+# Is this file actually an accessibility dump? `adb exec-out cat` of a path the
+# device does not have returns a one-line error instead, and a "dump" that is an
+# error message is the worst possible evidence: it parses as nothing, every wait
+# times out, and the run blames the app. v2 wrote exactly that file into the
+# bundle (p10d-out/ui/*.xml, 72 bytes of "No such file or directory").
+looks_like_xml() {
+  local f="${1:-}"
+  [ -s "$f" ] || return 1
+  head -c 5 "$f" 2>/dev/null | grep -q '<?xml' && return 0
+  return 1
+}
+
+# Turn "the dump could not be read" into a sentence that names the cause, because
+# the two causes have nothing in common: the DEVICE could not be dumped (its
+# problem) or the HOST shell mangled the device path (ours). Only the second one
+# produced the v2 bundle.
+dump_failure_reason() {
+  local f="${1:-}" first
+  [ -s "$f" ] || { echo "nothing came back at all: uiautomator wrote no dump on the device (its own error is logged above) and the host read an empty file"; return 0; }
+  first=$(head -c 200 "$f" | tr -d '\r' | head -1)
+  case "$first" in
+    *"Program Files"*|*"Git/sdcard"*|*[A-Za-z]:/*)
+      echo "the HOST shell rewrote the device path into a Windows path ('$first') - this is the Git-Bash/MSYS path conversion, not the phone. Re-run from a POSIX shell, or use the bundled MSYS_NO_PATHCONV=1 guard this script sets for itself." ;;
+    *"No such file or directory"*)
+      echo "the device never had that file: uiautomator did not write the dump ('$first')" ;;
+    *"Permission denied"*)
+      echo "the device refused to read the dump path ('$first')" ;;
+    *) echo "unrecognized dump output ('$first')" ;;
+  esac
+}
+
 ui_dump() { # $1 = tag -> $OUT/ui/ui-<tag>.xml ; returns non-zero when unusable
   local tag="$1" attempt mode src out rc
   # Three attempts, and the two things that make `uiautomator dump` fail on a real
@@ -187,10 +285,10 @@ ui_dump() { # $1 = tag -> $OUT/ui/ui-<tag>.xml ; returns non-zero when unusable
   for attempt in 1 2 3; do
     for mode in "" "--compressed"; do
       for src in /sdcard/p10d-ui.xml /data/local/tmp/p10d-ui.xml; do
-        adb shell rm -f /sdcard/p10d-ui.xml /data/local/tmp/p10d-ui.xml >/dev/null 2>&1
+        adb shell rm -f "$src" >/dev/null 2>&1
         out=$(adb shell uiautomator dump $mode "$src" 2>&1 | tr -d '\r')
         sleep 0.5
-        if adb exec-out cat "$src" > "$OUT/ui/ui-$tag.xml" 2>/dev/null && [ -s "$OUT/ui/ui-$tag.xml" ]; then
+        if adb exec-out cat "$src" > "$OUT/ui/ui-$tag.xml" 2>/dev/null && looks_like_xml "$OUT/ui/ui-$tag.xml"; then
           LAST_DUMP="$OUT/ui/ui-$tag.xml"
           LAST_DUMP_MODE="$mode${mode:+ }$src"
           return 0
@@ -201,6 +299,7 @@ ui_dump() { # $1 = tag -> $OUT/ui/ui-<tag>.xml ; returns non-zero when unusable
     # v1 discarded this string entirely; it is the difference between "no app
     # screen" and "uiautomator could not dump at all".
     diag "ui_dump($tag) attempt $attempt failed: ${out:-<no output>} (device: $(screen_state))"
+    diag "  why: $(dump_failure_reason "$OUT/ui/ui-$tag.xml")"
     sleep 2
   done
   LAST_DUMP=""
@@ -208,7 +307,8 @@ ui_dump() { # $1 = tag -> $OUT/ui/ui-<tag>.xml ; returns non-zero when unusable
   return 1
 }
 
-ui() { python3 "$DIR/scripts/p10d-ui.py" "$LAST_DUMP" "$@" 2>/dev/null; }
+ui() { # shellcheck disable=SC2086
+  $PY "$DIR/scripts/p10d-ui.py" "$LAST_DUMP" "$@" 2>/dev/null; }
 ui_has() { ui has "$1"; }
 # Any of these on screen: the content fallback for a check that decides what the
 # driver does next (a tag-only check would send a working app down the wrong path
@@ -261,7 +361,7 @@ shot() { # $1 = tag ; validates that the png is not a blank/off screen
     return 1
   fi
   local verdict
-  verdict=$(python3 "$DIR/scripts/p10d-png.py" "$OUT/screenshots/$name" 2>/dev/null | tail -1)
+  verdict=$($PY "$DIR/scripts/p10d-png.py" "$OUT/screenshots/$name" 2>/dev/null | tail -1)
   echo "$(date -u +%FT%TZ) $name :: $verdict" >> "$OUT/screenshots.log"
   case "$verdict" in
     *"screen=NO"*) diag "screenshot $name looks blank/off: $verdict"; return 1 ;;
@@ -452,6 +552,43 @@ else
   rd DEVICE_AWAKE 0 "screen awake and unlocked before any UI step: $(screen_state)"
 fi
 
+# ---- R0.5: can this HOST read the screen at all? -----------------------------
+# One dump, before a single UI verdict. If it cannot be read, nothing below can be
+# a statement about the app - and the v2 run proved how expensive that is: every
+# wait timed out for 6 minutes and the bundle ended with "the app window never
+# appeared" on a phone that was showing the app. Whatever the reason (a host shell
+# that rewrote the device path, uiautomator refusing, scoped storage), say it once,
+# in the place where a human will see it, and stop.
+step "R0.5 the harness can read this phone's screen"
+# Two host-side prerequisites, checked before any UI work. Both failed silently in
+# v2 on Windows, and both made the app look broken:
+#   * no working python3 (the Store stub "exists" and prints an error) - then the
+#     accessibility reader never runs, so NOTHING can ever be found on screen;
+#   * a host shell that rewrites device paths (MSYS) - then the dump is an error
+#     message instead of XML.
+if [ -z "$PY" ]; then
+  diag "harness preflight: no working Python interpreter (tried python3, python, py -3)."
+  diag "  On Windows, 'python3' is often a Microsoft Store stub that prints"
+  diag "  \"Python was not found\" and exits non-zero; install Python 3, or use the"
+  diag "  'py -3' launcher, then re-run. Without it the readers this script drives"
+  diag "  (p10d-ui.py, p10d-png.py, check-apk.py) cannot run at all."
+  rd HARNESS_PYTHON 1 "no working Python interpreter on this host, so the accessibility reader, the screenshot checker and the APK inspector cannot run (tried python3, python, py -3) - this is a host setup problem, not an app problem"
+  bail "no working Python interpreter on this host (see HARNESS_PYTHON)"
+else
+  rd HARNESS_PYTHON 0 "Python interpreter: $PY ($($PY -c 'import sys; print(sys.version.split()[0])' 2>/dev/null))"
+fi
+if ui_dump "harness-preflight"; then
+  rd HARNESS_DUMP 0 "the accessibility dump is readable from this host ($(ui_nodes); acquisition: ${LAST_DUMP_MODE:-?}; host shell: ${HOST_SHELL})"
+else
+  WHY=$(dump_failure_reason "$OUT/ui/ui-harness-preflight.xml")
+  diag "harness preflight: the first accessibility dump could not be read."
+  diag "  reason: $WHY"
+  diag "  host shell: ${HOST_SHELL} (uname=$(uname -s 2>/dev/null)); script dir: $DIR"
+  diag "  acquisition attempt: ${LAST_DUMP_MODE:-<none>}; raw output kept in ui/ui-harness-preflight.xml"
+  rd HARNESS_DUMP 1 "this host cannot read the phone's screen: $WHY - no app verdict can be produced from an unreadable dump, so the run stops HERE and does not blame the app"
+  bail "the accessibility channel is unusable from this host (see HARNESS_DUMP)"
+fi
+
 # ---- R1: device facts --------------------------------------------------------
 step "R1 device facts"
 set_swipe_geometry
@@ -500,7 +637,7 @@ if [ "${P10D_SKIP_ARTIFACT:-0}" = 1 ]; then
 else
 {
   echo "=== check-apk.py (identity, contents, signature presence) ==="
-  python3 "$DIR/scripts/check-apk.py" "$APK" \
+  $PY "$DIR/scripts/check-apk.py" "$APK" \
     --expect-signed --expect-not-debuggable --expect-icon --expect-payload \
     --expect-package "$PKG" --expect-version-name "$VNAME" --expect-version-code "$VCODE" \
     --expect-native-abi arm64-v8a --expect-min-sdk 29 \
@@ -508,6 +645,12 @@ else
 } > "$REPORT" 2>&1
 if grep -aq '^VERDICT PASS' "$REPORT"; then
   rd ARTIFACT 0 "$(grep -a '^MANIFEST ' "$REPORT" | head -1 | cut -c1-200)"
+elif [ -z "$PY" ] || grep -aqiE 'Python was not found|command not found|not recognized as an internal' "$REPORT"; then
+  # The inspector never ran: on Windows a missing `python3` is answered by the
+  # Store stub, which prints exactly that and exits non-zero. An empty finding list
+  # with a FAIL verdict (the v2 bundle: "check-apk findings: ") reads as "the APK is
+  # broken" - it has to read as "this host cannot inspect an APK".
+  rd ARTIFACT 7 "could not inspect the APK on this host: $(head -1 "$REPORT" | cut -c1-160) - the APK was NOT judged (install Python 3, or read $REPORT)"
 else
   rd ARTIFACT 1 "check-apk findings: $(grep -a '^FINDING' "$REPORT" | head -4 | tr '\n' '; ')"
 fi
@@ -624,7 +767,7 @@ if [ "$FIRST_RUN_OK" = 1 ] && tap_any "open_files" "Project files"; then
     # which is exactly what happened here. v3 reads ANY absolute path off the
     # screen (and refuses /data/data, which no user could act on), then prints the
     # storage-mode line too, so the verdict says which location the app claims.
-    FILES_PATH=$(python3 - "$LAST_DUMP" <<-PY
+    FILES_PATH=$($PY - "$LAST_DUMP" <<-PY
 import re, sys
 xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
 skip = ("/data/data/", "/data/user/0/")
@@ -633,7 +776,7 @@ usable = [c for c in re.findall(r'(?:text|content-desc)="(/[^"<>]{3,})"', xml)
 print(usable[0] if usable else "")
 PY
 )
-    FILES_MODE=$(python3 - "$LAST_DUMP" <<-PY
+    FILES_MODE=$($PY - "$LAST_DUMP" <<-PY
 import sys
 xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
 for needle in ("Documents/OpenCode", "Your folder", "App folder (Android/data)", "App-private storage"):
@@ -791,7 +934,21 @@ while read -r id verdict rest; do
     *) FAIL=$((FAIL+1)) ;;
   esac
 done < <(grep -aE '^P10D_VISIBILITY_[A-Z_]+ (PASS|FAIL|SKIP)' "$OUT/visibility.log" 2>/dev/null)
-log "visibility driver rc=$VIS_RC (verdict lines above; raw output in visibility.log)"
+VIS_VERDICTS=$(grep -acE '^P10D_VISIBILITY_[A-Z_]+ (PASS|FAIL|SKIP)' "$OUT/visibility.log" 2>/dev/null | head -1)
+log "visibility driver rc=$VIS_RC verdicts=${VIS_VERDICTS:-0} (verdict lines above; raw output in visibility.log)"
+if [ "${VIS_VERDICTS:-0}" = "0" ]; then
+  # The check produced NO verdicts, so nothing about visibility was verified. v2
+  # reported that as "P10D_STORAGE SKIP :: storage unreadable (expected on some OEM
+  # builds)" - a guess that turned a harness failure (the bundle: "bash:
+  # /p/scripts/92-workspace-visibility.sh: No such file or directory", rc=127) into
+  # what looked like a phone quirk. It is a red verdict with the reason, not a skip.
+  VIS_HARNESS=1
+  rd VISIBILITY_HARNESS 1 "the visibility check did not run, so nothing about file visibility was verified on this path (rc=$VIS_RC): $(head -1 "$OUT/visibility.log" 2>/dev/null | cut -c1-200)"
+  diag "visibility stage did not launch (rc=$VIS_RC). First lines of visibility.log:"
+  head -3 "$OUT/visibility.log" 2>/dev/null | while IFS= read -r l; do diag "  $l"; done
+else
+  VIS_HARNESS=0
+fi
 log "visibility context: project=${PROJECT_NAME:-<none>} path=${FILES_PATH:-<unknown>} root=${WS_ROOT_GUESS:-<probe>}"
 if [ "$VIS_RC" != 0 ]; then
   # A non-zero rc means at least one visibility verdict FAILed; the first line of
@@ -801,8 +958,12 @@ if [ "$VIS_RC" != 0 ]; then
   grep -aE '^P10D_VISIBILITY_[A-Z_]+ FAIL' "$OUT/visibility.log" 2>/dev/null | while IFS= read -r l; do diag "  $l"; done
 fi
 if [ "$FILES_SEEN" = 1 ]; then
-  rd FILES_APP_AND_SHELL "$( [ "$VIS_RC" = 0 ] && echo 0 || echo 1 )" \
-    "in-app browser path=$FILES_PATH; shell visibility rc=$VIS_RC (see visibility.log for the raw ls/cat output)"
+  if [ "$VIS_HARNESS" = 1 ]; then
+    rd FILES_APP_AND_SHELL 7 "in-app browser path=$FILES_PATH; the outside-the-app check did not run (see VISIBILITY_HARNESS), so the path could not be confirmed from a shell"
+  else
+    rd FILES_APP_AND_SHELL "$( [ "$VIS_RC" = 0 ] && echo 0 || echo 1 )" \
+      "in-app browser path=$FILES_PATH; shell visibility rc=$VIS_RC (see visibility.log for the raw ls/cat output)"
+  fi
 fi
 
 # ---- R8: footprint ----------------------------------------------------------
@@ -825,7 +986,13 @@ for cand in "$WS_ROOT_GUESS" "/storage/emulated/0/Documents/OpenCode" "/storage/
     [ -n "$STORAGE_WHERE" ] || STORAGE_WHERE="$cand"
   fi
 done
-[ -n "$STORAGE" ] && rd STORAGE 0 "on-device project storage: $STORAGE" || rd STORAGE 7 "storage unreadable (expected on some OEM builds; see visibility.log)"
+if [ -n "$STORAGE" ]; then
+  rd STORAGE 0 "on-device project storage: $STORAGE"
+elif [ "${VIS_HARNESS:-0}" = 1 ]; then
+  rd STORAGE 7 "not measured: the visibility stage never ran on this host (VISIBILITY_HARNESS names why) - this is NOT an OEM/storage verdict"
+else
+  rd STORAGE 7 "neither the app-reported root nor the known candidate roots could be measured with du (see visibility.log; every one of them was tried)"
+fi
 
 # ---- R9: crash / obfuscation sweep ------------------------------------------
 step "R9 crash and packaging sweep"
@@ -880,18 +1047,15 @@ BLANK=$(grep -ac 'screen=NO' "$OUT/screenshots.log" 2>/dev/null)
 if [ "${NSHOTS:-0}" -ge 6 ] && [ "${BLANK:-0}" = 0 ]; then
   rd SCREENSHOTS 0 "$NSHOTS screenshots captured at every step and every one is a real screen (screenshots/)"
 elif [ "${NSHOTS:-0}" -ge 2 ]; then
-  rd SCREENSHOTS 1 "$NSHOTS screenshots, of which $BLANK look blank/off (screenshots.log lists each)"
+  # Not a blank-frame problem: there are simply fewer captures than the six a run
+  # that reaches every step produces. v2's wording ("4 screenshots, of which 0 look
+  # blank/off") read as a contradiction because the verdict was about the missing
+  # steps, not about the frames.
+  rd SCREENSHOTS 1 "$NSHOTS screenshots (blank/off frames: $BLANK): fewer than the 6 a complete run captures, because the run did not reach every step (see DIAGNOSIS.txt for where it stopped)"
 else
   rd SCREENSHOTS 1 "only ${NSHOTS:-0} screenshots captured - there is nothing to look at (screenshots.log)"
 fi
-{
-  echo "phase10 real-device verification of the SIGNED build $(date -u +%FT%TZ)"
-  echo "screenshots=$NSHOTS blank=$BLANK"
-  echo "-- model availability marker (closes the x86_64-only live-tool-call carry-forward when 1)"
-  cat "$OUT/p10d-model-lines.txt" 2>/dev/null || true
-  echo "apk=$(basename "$APK") sha256=$(sha256sum "$APK" 2>/dev/null | awk '{print $1}')"
-  echo "pass=$PASS fail=$FAIL skip=$SKIP"
-} >> "$OUT/SUMMARY.txt"
+
 echo | tee -a "$LOG"
 cat "$OUT/SUMMARY.txt" | tee -a "$LOG"
 echo
