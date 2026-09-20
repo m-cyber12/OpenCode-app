@@ -83,14 +83,22 @@ object StorageChoice {
      * by asking: a SAF grant, a mounted card or a root-owned directory can all look
      * plausible and still fail on the first write the runtime attempts.
      */
-    fun isUsableRoot(dir: File): Boolean = try {
-        if (!dir.isDirectory && !dir.mkdirs()) return false
-        val probe = File(dir, PROBE)
-        if (!probe.exists() && !probe.createNewFile()) return false
-        probe.delete()
-        true
-    } catch (_: Throwable) {
-        false
+    fun isUsableRoot(dir: File): Boolean {
+        return try {
+            if (!dir.isDirectory && !dir.mkdirs()) {
+                false
+            } else {
+                val probe = File(dir, PROBE)
+                // Create it if it is not there, then REMOVE it: both halves matter.
+                // A directory that accepts a new file but refuses deletion is not one
+                // the runtime can work in, and a probe left behind would be litter in
+                // the user's folder.
+                val created = probe.exists() || probe.createNewFile()
+                created && probe.delete()
+            }
+        } catch (_: Throwable) {
+            false
+        }
     }
 
     /**

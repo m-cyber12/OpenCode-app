@@ -177,7 +177,7 @@ fun FilesScreen(
                 Text(
                     text = stringResource(storageModeLabel(storageMode)),
                     style = MaterialTheme.typography.labelMedium,
-                    color = chat.accent,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.semantics { testTag = "files_storage_mode" },
                 )
                 Spacer(Modifier.height(6.dp))
