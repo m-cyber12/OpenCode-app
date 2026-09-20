@@ -1371,12 +1371,15 @@ do with the phone.
 * Driver self-test extended to **9 scenarios / 68 checks**, re-run on this commit:
   **pass=68 fail=0** (~6 minutes; `phase10/scripts/test-90-real-device.sh`). One of the
   nine scenarios is the owner's bundle reproduced byte for byte (§B.4).
-* **CI on the code in this appendix: SUCCESS** — run `35534807555` on this appendix's tree
-  (commit `9921645`), whose log ends `=== PHASE 10 END … rc=0 ===` with
-  `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0`. The run list is in §B.9,
-  together with two later red runs on documentation-only commits: one whose cause could not be
-  read, and one traced to a **race in the Phase 6 live-tool gate** (not the product) that is
-  fixed in §B.9.1. Detail for the first green run (commit `8d32fed`): SUCCESS** (29m39s, all 11 steps green). Every
+* **CI: green on this appendix's own code.** Run `35534807555` (commit `9921645`) ends
+  `=== PHASE 10 END … rc=0 ===` with `phase6_ui_fails=0 phase10_gate_fails=0
+  phase9_gate_fails=0`; and run `35539788484` (commit `00ea9d9`, the live-tool-gate fix in
+  §B.9.1) is green too — `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, from `pass=13 fail=1`
+  before the fix. Three runs in between came back red, and all three are recorded in §B.9:
+  two on **documentation-only** commits (one whose log could not be read from the authoring
+  environment, one traced to a **race in the Phase 6 live-tool gate** rather than the
+  product), and one carrying the fix's first form, which **did not compile** — Kotlin refuses
+  a smart cast on a local captured by a changing closure — and was rewritten. Detail for the first green run (commit `8d32fed`): SUCCESS** (29m39s, all 11 steps green). Every
   gate ran and passed: `P10-STATIC PASS`, `P10_DRIVER_SELFTEST PASS` (the 9 scenarios),
   `P10-UNIT PASS` (JVM tests=305 failures=0 errors=0 skipped=0), `P10-PAYLOAD PASS`,
   `P10-DEVICE PASS` (fresh AVD, Android 14), the Phase 6 UI gates
@@ -1768,6 +1771,7 @@ honest device-side FAIL with a real cause both satisfy the brief, a SKIP does no
 | `35534807555` | `9921645` (this appendix's tree) | SUCCESS, 29m21s: `=== PHASE 10 END … rc=0 ===`, `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
 | `35536768156` | `8ab3c0d` | FAIL, 29m: the live-tool smoke gate's race (§B.9.1) — the legacy `p10-smoke-ui` shape |
 | `35538457964` | `dcca507` | FAIL, 8m17s: the fix's first form did not compile (`smart cast … captured by a changing closure`, 8 errors in `compileDebugAndroidTestKotlin`) — §B.9.1 |
+| `35539788484` | `00ea9d9` | **SUCCESS**, 31m: `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0`; `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0` and `P6-L2 PASS :: tool=bash status=completed` — the gate now judges the finished call (§B.9.1) |
 
 **One red run whose cause I could not read.** `35534543455` (commit `1ca3c49` — the same tree
 as `9921645` apart from two documentation lines) failed at the pipeline step. Its job log and
@@ -1828,3 +1832,9 @@ and 17 seconds (the job log is unreachable from the authoring environment as usu
 bot's `compiler-errors.txt` is not). The shipped form keeps `part` a `val`: it waits on the
 part id, then re-reads and binds the finished part once. The assertion set is byte-for-byte
 the same as before the race was fixed.
+
+**And the fix is verified, not just committed**: run `35539788484` on the fixed tree is green —
+the release-shaped smoke stage reports `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0` (it was
+`pass=13 fail=1`) with `P6-L2 PASS :: tool=bash status=completed …`, the debug stage is 14/0,
+and every other gate in that run is unchanged and passing (workspace class, visibility, unit
+tests, artifact inspection, store assets).
