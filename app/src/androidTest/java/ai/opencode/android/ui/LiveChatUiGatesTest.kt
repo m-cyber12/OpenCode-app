@@ -495,14 +495,19 @@ class LiveChatUiGatesTest {
         // a terminal state. Every assertion below is unchanged and the wait is bounded,
         // so a call that really never finishes still fails the gate - with the status it
         // was stuck in, in the detail line.
-        var part = started
-        if (part.status != "completed") {
-            val toolPartId = part.id
+        // (Kotlin note, from a real compile failure: `part` stays a `val`. Making it a
+        // `var` assigned inside the lambda kills the smart cast on every `part.x` below -
+        // "smart cast is impossible, because 'part' is a local variable that is captured
+        // by a changing closure" - so the finished part is re-read and bound once.)
+        val part = if (started.status == "completed") {
+            started
+        } else {
+            val toolPartId = started.id
             waitFor(180_000) {
-                val fresh = toolPartsInNew(known).firstOrNull { it.id == toolPartId }
-                if (fresh != null) part = fresh
-                fresh?.status == "completed"
+                toolPartsInNew(known).firstOrNull { it.id == toolPartId }?.status == "completed"
             }
+            // Judge the finished call, not the snapshot the loop happened to see last.
+            toolPartsInNew(known).firstOrNull { it.id == toolPartId } ?: started
         }
 
         // Wait for the UI to catch up with the server, then assert on the card that

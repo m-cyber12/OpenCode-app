@@ -1766,6 +1766,8 @@ honest device-side FAIL with a real cause both satisfy the brief, a SKIP does no
 | `35520014972` | v3 storage + driver, first compile | **FAIL: 3 Kotlin errors** (returns in `StorageChoice`'s expression body; `FilesScreen`'s `accent`), fixed in `8d32fed` |
 | `35520695055` | `8d32fed` | SUCCESS, 29m40s: every gate, `phase10_gate_fails=0`, W1–W4 + the outside-the-app checks |
 | `35534807555` | `9921645` (this appendix's tree) | SUCCESS, 29m21s: `=== PHASE 10 END … rc=0 ===`, `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
+| `35536768156` | `8ab3c0d` | FAIL, 29m: the live-tool smoke gate's race (§B.9.1) — the legacy `p10-smoke-ui` shape |
+| `35538457964` | `dcca507` | FAIL, 8m17s: the fix's first form did not compile (`smart cast … captured by a changing closure`, 8 errors in `compileDebugAndroidTestKotlin`) — §B.9.1 |
 
 **One red run whose cause I could not read.** `35534543455` (commit `1ca3c49` — the same tree
 as `9921645` apart from two documentation lines) failed at the pipeline step. Its job log and
@@ -1817,3 +1819,12 @@ checks re-run green after the edit (`phase10/scripts/30-static-checks.sh` rc=0,
 It is plausible that the earlier unreadable red run (`35534543455`) was the same race — same
 stage, same tree, same 29-minute duration — but no evidence of it survives, so it stays
 unexplained rather than assumed.
+
+**The fix's first form did not compile, and that is on the record too.** It was written with
+`var part` reassigned inside the wait lambda; Kotlin refuses that — *"Smart cast to
+'ServerPart' is impossible, because 'part' is a local variable that is captured by a changing
+closure"*, eight errors, `compileDebugAndroidTestKotlin`, run `35538457964` red in 8 minutes
+and 17 seconds (the job log is unreachable from the authoring environment as usual, but the
+bot's `compiler-errors.txt` is not). The shipped form keeps `part` a `val`: it waits on the
+part id, then re-reads and binds the finished part once. The assertion set is byte-for-byte
+the same as before the race was fixed.
