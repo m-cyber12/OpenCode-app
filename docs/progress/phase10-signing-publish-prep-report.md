@@ -1702,8 +1702,10 @@ run Python → `R1` device facts → `R2` artifact/signature → `R3` clean inst
 `R4` first run (welcome → runtime healthy by itself → project → composer) →
 `R5` the in-app file browser → `R6` live turn → `R7` the outside-the-app visibility check →
 `R8` memory/storage/timing → `R9` crash and packaging sweep → `R10` the bundle.
-Every stage leaves a screenshot in `screenshots/` and a dump in `ui/`, and the run ends by
-printing `SUMMARY.txt` and the bundle path.
+The UI stages leave a screenshot in `screenshots/` and a dump in `ui/` as they go (a complete
+run captures at least six, and each one is checked for being a real screen rather than a black
+or locked frame — that is the `SCREENSHOTS` verdict), and the run ends by printing `SUMMARY.txt`
+and the bundle path.
 
 ### B.8.4 Verdict triage — what FAIL actually means, and what to do
 
@@ -1717,7 +1719,7 @@ printing `SUMMARY.txt` and the bundle path.
 | `FIRST_RUN`, `FIRST_RUN_PROJECT` | the app reached its own welcome/projects surface and a project was created **through the UI** | with the new harness this FAIL now comes with `dump attrs:` and the real reason in `DIAGNOSIS.txt`; the old "window never appeared" text can no longer be produced by a host that cannot see the screen |
 | `FILES_SCREEN`, `FILES_APP_AND_SHELL` | the in-app browser opened and the path it showed matches what a shell sees | if the app showed a path but the shell disagrees, that is a real defect worth reporting — send `ui/ui-files-screen.xml` and `visibility.log` |
 | `VISIBILITY_HARNESS` | the outside-the-app check ran at all | red means the check never launched (e.g. a mangled script path), **not** an OEM quirk; the cause is named |
-| `LOCATION`, `SHELL_LIST`, `SHELL_READ`, `SHELL_WRITE`, `SHARED_ROOT`, `PRIVATE_ROOT_NOT_LIVE`, `SHELL_BASELINE` | projects are in `Documents/OpenCode`, a non-root shell lists/reads/writes there, `/data/data/<pkg>` is unreadable, and the folder is ordinary shared storage | `DOCUMENTS_PROVIDER` legitimately SKIPs when the image refuses a shell `content query`; the others failing means file visibility is **not** established — that is the opposite of the v2 bundle's failure and worth sending back as-is |
+| the `P10D_VISIBILITY_*` checks: `LOCATION`, `SHELL_LIST`, `SHELL_READ`, `SHELL_WRITE`, `SHARED_ROOT`, `PRIVATE_ROOT_NOT_LIVE`, `SHELL_BASELINE` | projects are in `Documents/OpenCode`, a non-root shell lists/reads/writes there, `/data/data/<pkg>` is unreadable, and the folder is ordinary shared storage | `DOCUMENTS_PROVIDER` legitimately SKIPs when the image refuses a shell `content query`; the others failing means file visibility is **not** established — that is the opposite of the v2 bundle's failure and worth sending back as-is |
 | `LIVE_TURN` | a model turn ran through the composer and the tool card shows the write | SKIP is expected with `--skip-live`, without a key in the app, or on a non-terminal stdin; `P6_MODEL_AVAILABLE 1` in the footer records that a turn really ran |
 | `MEMORY`, `STORAGE`, `PACKAGING_SWEEP`, `NO_CRASH` | footprint, no fatal exceptions, no ANR/crash dialogs | `STORAGE` SKIP is only ever printed with the reason it could not be measured |
 | `UI_DUMP` | every dump was readable (says how many needed a retry) | a count above zero means some waits were blind — read `DIAGNOSIS.txt` before trusting the UI verdicts |
