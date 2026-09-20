@@ -1664,3 +1664,72 @@ real hardware: see §B.5's honesty table and §B.6.
   fallback: decline the grant and you are back on the path that row describes.
 * §A.9's rows that say **NOT TESTED** for the signed build on real hardware still say it:
   nothing in this appendix changes that, and §B.5 repeats it.
+
+## B.8 Device-run handout (the one page to read before you plug the phone in)
+
+### B.8.1 Five minutes of preparation, once
+
+| Check | Why | How |
+|---|---|---|
+| `adb` on `PATH` and the phone authorised | the script drives the real window through `adb`, and a non-root shell is the outside-the-app evidence | `adb devices` shows the phone as `device` (not `unauthorized`) |
+| a **real** Python 3 on this host | the accessibility reader (`p10d-ui.py`), the screenshot checker and the APK inspector are Python, and this is exactly what the Microsoft Store alias silently breaks | `python3 -c "print(1)"` (or `py -3 -c "print(1)"`) prints `1`; if it opens the Store, install Python from python.org |
+| MSYS/Git Bash: nothing to do | the script now sets `MSYS_NO_PATHCONV=1` / `MSYS2_ARG_CONV_EXCL` itself and records `host shell: windows-msys` | the first screen of output says which host shell it detected |
+| phone: USB debugging on, screen on, **unlocked** | `adb` can wake the screen and dismiss a swipe keyguard, but it cannot type a PIN | if it can't, you get `P10D_DEVICE_AWAKE FAIL` with that exact sentence — a lock, not an app defect |
+| leave the phone alone while it runs | taps and typing go to whatever is in front; a hand on the phone makes the verdicts meaningless | the run prints a `step` line for every stage, so you can see where it is |
+
+### B.8.2 The two commands
+
+```bash
+# on your machine — sign CI's unsigned artifact with your key (never rebuilt):
+bash phase10/scripts/sign-release-local.sh --apk <unsigned apk> --aab <aab>
+
+# phone plugged in, unlocked; keep the whole p10d-out/ directory afterwards:
+bash phase10/scripts/90-real-device-signed.sh --apk phase10/signing/<your-signed>.apk
+```
+
+Useful flags: `--cert-sha256 <fingerprint>` (proves the APK is signed with your key),
+`--skip-live` (no model turn), `--timeout-scale 2` (slower device), and
+`P10D_SKIP_ARTIFACT=1` (skip only the APK inspection — a rehearsal knob, not a verdict
+run). The live-turn stage (R6) asks for a provider API key on the terminal: it is typed
+into the app's own Settings screen, never written to the bundle, and pressing **Enter**
+skips the stage instead of failing it. Adding the key in the app beforehand and pressing
+Enter at the prompt is the fastest path.
+
+### B.8.3 What a healthy run looks like, stage by stage
+
+`R0` device awake and unlocked → `R0.5` the harness proves it can read the screen **and**
+run Python → `R1` device facts → `R2` artifact/signature → `R3` clean install →
+`R4` first run (welcome → runtime healthy by itself → project → composer) →
+`R5` the in-app file browser → `R6` live turn → `R7` the outside-the-app visibility check →
+`R8` memory/storage/timing → `R9` crash and packaging sweep → `R10` the bundle.
+Every stage leaves a screenshot in `screenshots/` and a dump in `ui/`, and the run ends by
+printing `SUMMARY.txt` and the bundle path.
+
+### B.8.4 Verdict triage — what FAIL actually means, and what to do
+
+| Verdict | PASS means | If it FAILs / SKIPs, do this |
+|---|---|---|
+| `HARNESS_PYTHON`, `HARNESS_DUMP` | the host can run Python and read the phone's screen (both printed with the evidence) | **the run stops (`rc=3`) by design and blames nothing on the app.** Fix the host (install Python; if MSYS still rewrites paths, the message says so) and re-run — do not send this bundle as an app result |
+| `DEVICE_AWAKE` | screen on, keyguard gone | unlock the phone and re-run; a PIN keyguard cannot be dismissed by `adb` |
+| `ARTIFACT` | `check-apk.py` read the APK's identity, icon, permissions and payload | read the printed `FINDING` lines; `P10D_SKIP_ARTIFACT=1` makes it SKIP on purpose |
+| `SIGNATURE`, `CERT_MATCH` | signed, and with the fingerprint you passed | SKIP means `apksigner` is not on `PATH` — install build-tools for the cryptographic verdict |
+| `INSTALL`, `VERSION_ON_DEVICE` | the signed APK installed and the phone runs the version you built | a signing/ABI/minSdk mismatch shows here before anything else |
+| `FIRST_RUN`, `FIRST_RUN_PROJECT` | the app reached its own welcome/projects surface and a project was created **through the UI** | with the new harness this FAIL now comes with `dump attrs:` and the real reason in `DIAGNOSIS.txt`; the old "window never appeared" text can no longer be produced by a host that cannot see the screen |
+| `FILES_SCREEN`, `FILES_APP_AND_SHELL` | the in-app browser opened and the path it showed matches what a shell sees | if the app showed a path but the shell disagrees, that is a real defect worth reporting — send `ui/ui-files-screen.xml` and `visibility.log` |
+| `VISIBILITY_HARNESS` | the outside-the-app check ran at all | red means the check never launched (e.g. a mangled script path), **not** an OEM quirk; the cause is named |
+| `LOCATION`, `SHELL_LIST`, `SHELL_READ`, `SHELL_WRITE`, `SHARED_ROOT`, `PRIVATE_ROOT_NOT_LIVE`, `SHELL_BASELINE` | projects are in `Documents/OpenCode`, a non-root shell lists/reads/writes there, `/data/data/<pkg>` is unreadable, and the folder is ordinary shared storage | `DOCUMENTS_PROVIDER` legitimately SKIPs when the image refuses a shell `content query`; the others failing means file visibility is **not** established — that is the opposite of the v2 bundle's failure and worth sending back as-is |
+| `LIVE_TURN` | a model turn ran through the composer and the tool card shows the write | SKIP is expected with `--skip-live`, without a key in the app, or on a non-terminal stdin; `P6_MODEL_AVAILABLE 1` in the footer records that a turn really ran |
+| `MEMORY`, `STORAGE`, `PACKAGING_SWEEP`, `NO_CRASH` | footprint, no fatal exceptions, no ANR/crash dialogs | `STORAGE` SKIP is only ever printed with the reason it could not be measured |
+| `UI_DUMP` | every dump was readable (says how many needed a retry) | a count above zero means some waits were blind — read `DIAGNOSIS.txt` before trusting the UI verdicts |
+| `SCREENSHOTS` | six real screens captured, none blank or locked | the failure text now distinguishes "blank frames" from "fewer captures because the run stopped early" |
+
+### B.8.5 What to send back, and what the stop condition is
+
+Send the whole `p10d-out/` directory (`SUMMARY.txt`, `screenshots/`, `ui/`,
+`DIAGNOSIS.txt`, `visibility.log`, plus `run.log` and `meminfo.txt` if present). The v3
+brief's stop condition is met when the bundle shows, from the phone: the project folder
+exists on shared storage and a shell (or a file manager) can open it with no root and no
+publish step, **W1–W3 still pass**, and the script's verdicts match what you saw by hand.
+The three gates that skipped in your last bundle — `P10D_FIRST_RUN_PROJECT`,
+`P10D_FILES_SCREEN`, `P10D_LIVE_TURN` — should execute this time; a genuine PASS or an
+honest device-side FAIL with a real cause both satisfy the brief, a SKIP does not.
