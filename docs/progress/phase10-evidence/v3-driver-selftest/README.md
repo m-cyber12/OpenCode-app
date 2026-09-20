@@ -25,7 +25,8 @@ storage is not what the product promises.
 | `happy/DIAGNOSIS.txt` | empty, 0 bytes — a clean run writes no diagnosis (the file exists to prove that) |
 | `happy/visibility.log` | the outside-the-app check's raw `ls`/`cat` output for the shared root: `V1–V8`, with `DOCUMENTS_PROVIDER PASS` (the fake phone's provider answers; the real emulator's does not — that SKIP is expected there) |
 | `happy/ui/ui-files-screen.xml`, `ui-turn-tool.xml` | the accessibility dumps the `FILES_SCREEN` and `LIVE_TURN` verdicts were decided from |
-| `msys-mangled/` | the owner's v2 failure mode reproduced byte for byte: the host rewrites `/sdcard/p10d-ui.xml` into `C:/Program Files/Git/sdcard/…`, so the "dump" is a 72-byte `cat:` error (`ui/ui-harness-preflight.xml` is exactly 72 bytes, like the owner's `ui/*.xml`). Result: `HARNESS_DUMP FAIL` naming MSYS, **no app verdict at all**, rc=3 |
+| `msys-mangled/` | the owner's v2 failure mode reproduced byte for byte: the host rewrites `/sdcard/p10d-ui.xml` into `C:/Program Files/Git/sdcard/…`, so the "dump" is a 72-byte `cat:` error (`ui/ui-harness-preflight.xml` is exactly 72 bytes, like the owner's `ui/*.xml`). Result: `HARNESS_DUMP FAIL` naming MSYS, **no app verdict at all**, rc=3. `cmp` against
+`p10d-out/ui/ui-wait-app-window.xml` from the owner's bundle returns identical (72 bytes) |
 | `no-python/` | a Windows host whose `python3` is the Microsoft Store stub: `HARNESS_PYTHON FAIL`, diagnosis names the stub, **no APK and no first-run verdict invented** (the v2 bundle's empty `ARTIFACT FAIL` came from exactly this) |
 | `no-grant/` | All files access refused: the app correctly falls back to `Android/data/…`, the shell can still read it, and the check **FAILs `SHARED_ROOT`** rather than claiming file-manager visibility — the fallback is stated, not hidden |
 | `locked/` | device locked: `DEVICE_AWAKE FAIL` exists and says to unlock, and the bundle does **not** claim "no working screen" (the v1 failure mode) |

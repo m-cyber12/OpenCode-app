@@ -1606,7 +1606,10 @@ a fake `adb` that models a stock, non-rooted Android 14 phone, and passes in CI 
 Both were verified in this session's run of the self-test (68/68), and both are wired into
 the CI pipeline so a change that reintroduces either failure mode fails CI before a phone
 is ever plugged in. The bundles from that run are kept in the repository so the claim can
-be read rather than believed:
+be read rather than believed — including the byte-for-byte link between the owner's bundle
+and the reproduction (`cmp p10d-out/ui/ui-wait-app-window.xml
+docs/progress/phase10-evidence/v3-driver-selftest/msys-mangled/ui/ui-harness-preflight.xml`
+returns identical: both 72 bytes, both the same `cat: C:/Program Files/Git/sdcard/…` line):
 `docs/progress/phase10-evidence/v3-driver-selftest/` (`happy/` with all three previously
 skipped gates PASSing, `msys-mangled/` whose `ui/ui-harness-preflight.xml` is the owner's
 72-byte `cat:` line, `no-python/`, `no-grant/`, `locked/`, and the full self-test log).
