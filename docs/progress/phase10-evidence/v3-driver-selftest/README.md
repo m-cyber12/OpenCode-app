@@ -1,10 +1,19 @@
 # v3 driver self-test bundles (fake phone) — evidence for Appendix B
 
-**What this is.** The output of `bash phase10/scripts/test-90-real-device.sh --keep` on
-2026-09-20, i.e. the real device driver (`90-real-device-signed.sh`) run end to end
-against the **fake phone** (`test-90-fake-adb.py` + `test-90-fixtures.py`), nine
-scenarios, **pass=68 fail=0** (`driver-selftest.log`). The same nine scenarios run in CI
-on every push as step 1b, verdict `P10_DRIVER_SELFTEST`.
+**What this is.** The output of `bash phase10/scripts/test-90-real-device.sh --keep`, i.e.
+the real device driver (`90-real-device-signed.sh`) run end to end against the **fake
+phone** (`test-90-fake-adb.py` + `test-90-fixtures.py`). Two runs are kept:
+
+| Log | When | Scenarios | Result |
+|---|---|---|---|
+| `driver-selftest.log` | 2026-09-20 | nine | **pass=68 fail=0** |
+| `driver-selftest-87.log` | 2026-09-21 | twelve | **pass=87 fail=0** |
+
+The twelve scenarios run in CI on every push as step 1b, verdict `P10_DRIVER_SELFTEST`.
+The three added on 2026-09-21 all come from the owner's second device bundle (§B.10): the
+reader dying on a POSIX-absolute script path (`reader-dead`), the same host **with** the
+Windows path conversion (`winhost`, must run green), and a relative `--out` used from
+another directory (`relout`).
 
 **What this is NOT.** This is not device evidence. The phone in these runs is a shim I
 wrote, so it necessarily agrees with my model of the app; the screenshots it serves are
@@ -31,5 +40,14 @@ storage is not what the product promises.
 | `no-grant/` | All files access refused: the app correctly falls back to `Android/data/…`, the shell can still read it, and the check **FAILs `SHARED_ROOT`** rather than claiming file-manager visibility — the fallback is stated, not hidden |
 | `locked/` | device locked: `DEVICE_AWAKE FAIL` exists and says to unlock, and the bundle does **not** claim "no working screen" (the v1 failure mode) |
 
-Reproduce: `bash phase10/scripts/test-90-real-device.sh` (~6 minutes, no device needed;
+The 2026-09-21 scenarios (all in `driver-selftest-87.log`; the bundles themselves are not
+kept again, to avoid duplicating megabytes of fixed-frame screenshots):
+
+| Scenario | What it locks in |
+|---|---|
+| `reader-dead` | the owner's exact failure: a host whose Python cannot open a POSIX-absolute script path. The run must stop at R0.5 with `HARNESS_READER FAIL`, quote the reader's real error (which v3 discarded), print `HARNESS_DUMP PASS` **without** the empty `(; acquisition: …)` node count, and produce **no app verdict** and **no multi-minute timeout** — v3 produced a 300 s timeout and "the app never showed a screen" on a phone showing its projects screen |
+| `winhost` | the same host **with** `host_path()` doing the conversion: the run must be green end to end, `HARNESS_READER PASS` must print the converted path it used, and `FIRST_RUN` / `LIVE_TURN` must pass |
+| `relout` | the owner's invocation shape (relative `--out`, run from the repo root): the bundle must land under the caller's cwd, `visibility.log` must be inside it, and the child's `cd` into `phase10/` must not leave an `p10d-out-…/` behind |
+
+Reproduce: `bash phase10/scripts/test-90-real-device.sh` (~8 minutes, no device needed;
 `--keep` leaves the bundles in `$TMPDIR`).

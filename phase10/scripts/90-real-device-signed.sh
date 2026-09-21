@@ -98,9 +98,48 @@ case "$(uname -s 2>/dev/null)" in
     ;;
   *) HOST_SHELL="posix" ;;
 esac
+# Self-test seam, used only by phase10/scripts/test-90-real-device.sh: on a POSIX host
+# the Windows branch of host_path() can never run, and that branch is exactly where the
+# owner's run died. Forcing it here lets the self-test exercise it with a cygpath stub;
+# nothing sets this variable unless a test exports it.
+case "${P10D_FORCE_HOST_SHELL:-}" in
+  windows-msys|posix) HOST_SHELL="$P10D_FORCE_HOST_SHELL" ;;
+esac
 
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "$DIR/.." && pwd)"
+
+# ---- host paths handed to NATIVE binaries (python) ---------------------------
+#
+# THE 2026-09-21 OWNER FAILURE. On Git Bash the repo lives at a POSIX path
+# (/p/OpenCodeGUI/...), and that is what $DIR is. Native Windows Python does not
+# understand it: a leading "/" means "root of the CURRENT DRIVE", so the reader was
+# invoked as
+#     python.exe  /p/OpenCodeGUI/phase10/scripts/p10d-ui.py ...
+# and Windows Python looked for
+#     P:\p\OpenCodeGUI\phase10\scripts\p10d-ui.py
+# which does not exist. In that run:
+#   * check-apk.py died loudly (its stderr was kept): artifact-report.txt shows
+#     "can't open file 'P:/p/OpenCodeGUI/phase10/scripts/check-apk.py'";
+#   * p10d-ui.py died SILENTLY, because ui() piped its stderr to /dev/null - so every
+#     "on screen:" came back empty, no needle ever matched, the welcome wait timed out
+#     for 300s on a phone that was showing its welcome screen, and the run blamed the
+#     app while the run's own screenshots proved otherwise.
+#
+# Every HOST path handed to Python is converted first. cygpath is the accurate
+# converter and ships with Git Bash; the sed fallback covers the /<drive>/ mount form
+# for hosts that lack it. DEVICE paths are never touched - they stay POSIX for adb,
+# and MSYS_NO_PATHCONV (above) stops MSYS from rewriting those.
+host_path() {
+  case "${HOST_SHELL:-}" in
+    windows-msys)
+      if command -v cygpath >/dev/null 2>&1; then cygpath -w -- "$1"
+      else printf '%s' "$1" | sed -E 's#^/([A-Za-z])/#\1:/#'
+      fi ;;
+    *) printf '%s' "$1" ;;
+  esac
+}
+
 OUT="p10d-out"
 APK=""
 CERT_EXPECT=""
@@ -118,6 +157,11 @@ while [ $# -gt 0 ]; do
   esac
 done
 mkdir -p "$OUT" "$OUT/screenshots" "$OUT/ui"
+# The absolute form, because two things are handed to a CHILD process that may run in
+# another directory: the visibility driver (invoked after a `cd` to $DIR, so a relative
+# --out would land inside phase10/) and anything Python opens by path. Relative paths
+# are still used for the driver's own files, which stay relative to the caller's cwd.
+OUT_ABS="$(cd "$OUT" && pwd)"
 LOG="$OUT/run.log"
 : > "$LOG"
 log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
@@ -168,6 +212,11 @@ redact() {
          -e 's/sk-or-[A-Za-z0-9_-]{10,}/sk-or-<REDACTED>/g' \
          -e 's/(Bearer )[A-Za-z0-9._-]{12,}/\1<REDACTED>/g'
 }
+
+# The three helpers are resolved once and converted once (see host_path above).
+UI_PY="$(host_path "$DIR/scripts/p10d-ui.py")"
+PNG_PY="$(host_path "$DIR/scripts/p10d-png.py")"
+APK_PY="$(host_path "$DIR/scripts/check-apk.py")"
 
 # Python is load-bearing: the accessibility reader (p10d-ui.py) is what turns a dump
 # into "what is on screen", the screenshot checker decides whether a frame is a real
@@ -307,8 +356,23 @@ ui_dump() { # $1 = tag -> $OUT/ui/ui-<tag>.xml ; returns non-zero when unusable
   return 1
 }
 
+# The reader's stderr used to go to /dev/null, which is why the owner's run could not
+# be explained from its own bundle: the one line that said WHY nothing was on screen
+# was thrown away. It is kept now (first write wins, so the file stays short and holds
+# the first failure), counted, and quoted by the harness gates below.
+READER_ERR="$OUT/reader-stderr.txt"
+READER_FAILURES=0
 ui() { # shellcheck disable=SC2086
-  $PY "$DIR/scripts/p10d-ui.py" "$LAST_DUMP" "$@" 2>/dev/null; }
+  local out rc
+  out=$($PY "$UI_PY" "$(host_path "$LAST_DUMP")" "$@" 2>>"$READER_ERR"); rc=$?
+  # A reader FAILURE is "the reader could not answer": exit >= 2 with nothing on
+  # stdout (2 = the interpreter could not open the script, 3 = the dump would not
+  # parse). Exit 1 is a normal "not found" - `ui has` prints nothing on purpose and
+  # must not be counted as a broken reader, and neither must any other lookup that
+  # legitimately finds nothing.
+  if [ -z "$out" ] && [ "${rc:-0}" -ge 2 ]; then READER_FAILURES=$((READER_FAILURES + 1)); fi
+  printf '%s' "$out"
+  return $rc; }
 ui_has() { ui has "$1"; }
 # Any of these on screen: the content fallback for a check that decides what the
 # driver does next (a tag-only check would send a working app down the wrong path
@@ -321,10 +385,14 @@ ui_has_any() { local n; for n in "$@"; do ui has "$n" && return 0; done; return 
 # the evidence disagreed with itself. Any verdict that could be a harness failure
 # carries this note, so a self-contradicting report cannot be produced again.
 dump_caveat() {
-  [ "${DUMP_FAILURES:-0}" = 0 ] && return 0
+  [ "${DUMP_FAILURES:-0}" = 0 ] && [ "${READER_FAILURES:-0}" = 0 ] && return 0
   # One line: this is appended to a SUMMARY verdict, and a verdict must stay one
   # parseable line (the summary is read by machine and by eye).
-  printf ' NOTE: the accessibility dump was unreadable %s time(s) in this run, so the window/activity state above came from dumpsys rather than the screen and this verdict may describe the harness rather than the app (see UI_DUMP, DIAGNOSIS.txt).' "$DUMP_FAILURES"
+  if [ "${DUMP_FAILURES:-0}" != 0 ]; then
+    printf ' NOTE: the accessibility dump was unreadable %s time(s) in this run, so the window/activity state above came from dumpsys rather than the screen and this verdict may describe the harness rather than the app (see UI_DUMP, DIAGNOSIS.txt).' "$DUMP_FAILURES"
+  else
+    printf ' NOTE: the accessibility reader returned nothing %s time(s) in this run, so a screen that really was on the phone may have read as empty - check reader-stderr.txt before believing this verdict.' "$READER_FAILURES"
+  fi
 }
 ui_texts() { ui texts 12 | tr '\n' '|' | cut -c1-300; }
 ui_nodes() { ui nodes; }
@@ -361,7 +429,7 @@ shot() { # $1 = tag ; validates that the png is not a blank/off screen
     return 1
   fi
   local verdict
-  verdict=$($PY "$DIR/scripts/p10d-png.py" "$OUT/screenshots/$name" 2>/dev/null | tail -1)
+  verdict=$($PY "$PNG_PY" "$(host_path "$OUT/screenshots/$name")" 2>/dev/null | tail -1)
   echo "$(date -u +%FT%TZ) $name :: $verdict" >> "$OUT/screenshots.log"
   case "$verdict" in
     *"screen=NO"*) diag "screenshot $name looks blank/off: $verdict"; return 1 ;;
@@ -578,7 +646,35 @@ else
   rd HARNESS_PYTHON 0 "Python interpreter: $PY ($($PY -c 'import sys; print(sys.version.split()[0])' 2>/dev/null))"
 fi
 if ui_dump "harness-preflight"; then
-  rd HARNESS_DUMP 0 "the accessibility dump is readable from this host ($(ui_nodes); acquisition: ${LAST_DUMP_MODE:-?}; host shell: ${HOST_SHELL})"
+  # TWO different things have to work, and v3 gated only the first one:
+  #   1. adb can write and read back a dump  -> the bytes are XML (checked by ui_dump);
+  #   2. the READER can turn that XML into "what is on screen".
+  # The owner's 2026-09-21 bundle proves why both need a gate: adb was fine, the reader
+  # was dead (Windows Python could not open /p/.../p10d-ui.py), and this line printed
+  #     PASS :: the accessibility dump is readable from this host (; acquisition: ...)
+  # with an EMPTY node count in the parentheses, then let the run continue for six
+  # minutes producing "the app never showed a screen" verdicts about an app that was on
+  # screen the whole time. An empty reading is a FAILURE here, never a PASS.
+  PRE_NODES=$(ui_nodes)
+  if [ -z "$PRE_NODES" ] || [ "$PRE_NODES" = "0" ]; then
+    PRE_ERR=$(head -2 "$READER_ERR" 2>/dev/null | tr -d '\r' | tr '\n' ' ' | cut -c1-200)
+    diag "harness preflight: the dump was written and read back, but the READER produced nothing."
+    diag "  reader: $PY $UI_PY"
+    diag "  reader stderr: ${PRE_ERR:-<empty>}"
+    diag "  dump: $(wc -c < "$OUT/ui/ui-harness-preflight.xml" | tr -d ' ') bytes of XML from ${LAST_DUMP_MODE:-?}"
+    diag "  host shell: ${HOST_SHELL}; script dir: $DIR; cwd: $(pwd)"
+    diag "  If the reader path above contains a POSIX path (/p/...) on a Windows host,"
+    diag "  Windows Python reads the leading slash as the current DRIVE's root - that is a"
+    diag "  host path-translation problem, NOT the app failing to show a screen."
+    # Two separate facts, recorded separately: the dump WAS written and read back
+    # (that is HARNESS_DUMP), and the reader could not answer what is in it (that is
+    # HARNESS_READER). The owner's bundle collapsed them into one misleading PASS.
+    rd HARNESS_DUMP 0 "the dump was written and read back as XML ($(wc -c < "$OUT/ui/ui-harness-preflight.xml" | tr -d ' ') bytes, acquisition ${LAST_DUMP_MODE:-?}) - but see HARNESS_READER: the reader could not be asked what is in it"
+    rd HARNESS_READER 1 "the accessibility reader produced no output although the dump is readable (${PRE_ERR:-no stderr}) - every UI verdict after this point would describe the harness, not the app, so the run stops HERE (reader: $PY $UI_PY)"
+    bail "the accessibility reader cannot read this phone's screen (see HARNESS_READER)"
+  fi
+  rd HARNESS_READER 0 "the accessibility reader parsed the dump: $PRE_NODES node(s) via $UI_PY"
+  rd HARNESS_DUMP 0 "the accessibility dump is readable from this host: $PRE_NODES node(s), acquisition ${LAST_DUMP_MODE:-?}; host shell: ${HOST_SHELL}"
 else
   WHY=$(dump_failure_reason "$OUT/ui/ui-harness-preflight.xml")
   diag "harness preflight: the first accessibility dump could not be read."
@@ -637,7 +733,7 @@ if [ "${P10D_SKIP_ARTIFACT:-0}" = 1 ]; then
 else
 {
   echo "=== check-apk.py (identity, contents, signature presence) ==="
-  $PY "$DIR/scripts/check-apk.py" "$APK" \
+  $PY "$APK_PY" "$(host_path "$APK")" \
     --expect-signed --expect-not-debuggable --expect-icon --expect-payload \
     --expect-package "$PKG" --expect-version-name "$VNAME" --expect-version-code "$VCODE" \
     --expect-native-abi arm64-v8a --expect-min-sdk 29 \
@@ -645,6 +741,14 @@ else
 } > "$REPORT" 2>&1
 if grep -aq '^VERDICT PASS' "$REPORT"; then
   rd ARTIFACT 0 "$(grep -a '^MANIFEST ' "$REPORT" | head -1 | cut -c1-200)"
+elif ! grep -aqE '^(VERDICT|MANIFEST|FINDING|CONTENTS) ' "$REPORT"; then
+  # The inspector produced NOTHING that looks like a verdict. In the owner's
+  # 2026-09-21 bundle this read as "P10D_ARTIFACT FAIL :: check-apk findings: " (empty)
+  # which scans as "the APK is broken"; what it actually said, one line further down in
+  # artifact-report.txt, was that Windows Python could not open the script itself:
+  #   can't open file 'P:\p\OpenCodeGUI\phase10\scripts\check-apk.py': [Errno 2]
+  # The APK is NOT judged here, and the verdict has to say so.
+  rd ARTIFACT 7 "the APK inspector produced no verdict, so the APK was NOT judged: $(grep -av '^===' "$REPORT" | head -1 | cut -c1-200) (see $REPORT)"
 elif [ -z "$PY" ] || grep -aqiE 'Python was not found|command not found|not recognized as an internal' "$REPORT"; then
   # The inspector never ran: on Windows a missing `python3` is answered by the
   # Store stub, which prints exactly that and exits non-zero. An empty finding list
@@ -767,7 +871,7 @@ if [ "$FIRST_RUN_OK" = 1 ] && tap_any "open_files" "Project files"; then
     # which is exactly what happened here. v3 reads ANY absolute path off the
     # screen (and refuses /data/data, which no user could act on), then prints the
     # storage-mode line too, so the verdict says which location the app claims.
-    FILES_PATH=$($PY - "$LAST_DUMP" <<-PY
+    FILES_PATH=$($PY - "$(host_path "$LAST_DUMP")" <<-PY
 import re, sys
 xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
 skip = ("/data/data/", "/data/user/0/")
@@ -776,7 +880,7 @@ usable = [c for c in re.findall(r'(?:text|content-desc)="(/[^"<>]{3,})"', xml)
 print(usable[0] if usable else "")
 PY
 )
-    FILES_MODE=$($PY - "$LAST_DUMP" <<-PY
+    FILES_MODE=$($PY - "$(host_path "$LAST_DUMP")" <<-PY
 import sys
 xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
 for needle in ("Documents/OpenCode", "Your folder", "App folder (Android/data)", "App-private storage"):
@@ -906,7 +1010,7 @@ step "R7 file visibility from outside the app (non-root adb shell)"
 # p10-visible.txt with "p10-live-ok", while the instrumented W4 gate writes
 # "P10_VISIBLE_<ts>". Accepting either keeps the check honest ("a shell can read a
 # file the app wrote") without inventing a marker the phone run never creates.
-VIS_ARGS=(--pkg "$PKG" --out "$OUT/visibility" --expect-content 'P10_VISIBLE_|p10-live-ok')
+VIS_ARGS=(--pkg "$PKG" --out "$OUT_ABS/visibility" --expect-content 'P10_VISIBLE_|p10-live-ok')
 if [ -n "${PROJECT_NAME:-}" ]; then
   VIS_ARGS+=(--project "$PROJECT_NAME" --expect-file "p10-visible.txt")
 fi
@@ -921,7 +1025,14 @@ if [ -n "${PROJECT_NAME:-}" ] && [ -n "${FILES_PATH:-}" ]; then
   esac
 fi
 [ -n "$WS_ROOT_GUESS" ] && VIS_ARGS+=(--root "$WS_ROOT_GUESS")
-bash "$DIR/scripts/92-workspace-visibility.sh" "${VIS_ARGS[@]}" > "$OUT/visibility.log" 2>&1
+# Run it as a RELATIVE path from its own directory: a leading "/" is exactly what
+# MSYS drives (and what killed this stage in the owner's bundle - rc=127
+# "bash: /p/OpenCodeGUI/phase10/scripts/92-workspace-visibility.sh: No such file or
+# directory", on a checkout where the file is present). A relative path is resolved by
+# the child's own cwd, so it works for every bash flavour; args keep POSIX form because
+# bash, adb and the coreutils here are all MSYS-side. $OUT is made absolute first so the
+# redirect does not depend on the cd.
+( cd "$DIR" && bash scripts/92-workspace-visibility.sh "${VIS_ARGS[@]}" ) > "$OUT_ABS/visibility.log" 2>&1
 VIS_RC=$?
 grep -aE '^P10D_VISIBILITY_[A-Z_]+ (PASS|FAIL|SKIP)' "$OUT/visibility.log" 2>/dev/null | while read -r id verdict rest; do
   rec "$id" "$verdict" "$rest"
@@ -1033,7 +1144,14 @@ CRASHES=$(grep -acE "FATAL EXCEPTION|Process: $PKG" "$OUT/logcat.txt" 2>/dev/nul
 # number, because every verdict in it was still decided by a real dump.
 DUMPS_OK=$(ls -1 "$OUT/ui"/*.xml 2>/dev/null | wc -l | tr -d ' ')
 if [ "${DUMP_FAILURES:-0}" = 0 ]; then
-  rd UI_DUMP 0 "every accessibility dump was readable ($DUMPS_OK dump(s) saved in ui/; last acquisition: ${LAST_DUMP_MODE:-n/a})"
+  if [ "${READER_FAILURES:-0}" != 0 ]; then
+    # The dumps were fine; the READER came back empty some of the time. That is the
+    # harness being partly blind, and the owner's bundle shows a run can look clean
+    # while every screen read is empty (stderr was discarded then - it is kept now).
+    rd UI_DUMP 1 "$DUMPS_OK dump(s) were readable but the reader returned nothing ${READER_FAILURES} time(s): some waits read a screen that may have been on the phone as empty (first failure in reader-stderr.txt, DIAGNOSIS.txt)"
+  else
+    rd UI_DUMP 0 "every accessibility dump was readable ($DUMPS_OK dump(s) saved in ui/; last acquisition: ${LAST_DUMP_MODE:-n/a})"
+  fi
 elif [ "${FAIL:-0}" != 0 ] || [ "${SKIP:-0}" != 0 ]; then
   rd UI_DUMP 1 "$DUMP_FAILURES dump(s) could not be read at all (after 3 attempts x --compressed x 2 paths) and this run also has failed/skipped UI gates: the screen could not be seen, so those verdicts are unverified rather than disproven (see DIAGNOSIS.txt)"
 else

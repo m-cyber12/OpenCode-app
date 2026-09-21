@@ -1644,7 +1644,10 @@ real hardware: see §B.5's honesty table and §B.6.
 | The Publish button's old purpose is gone and its replacement is documented | **DONE** | §B.3; `docs/ARCHITECTURE.md`, `docs/CAPABILITY-MATRIX.md`, `docs/PRIVACY-POLICY.md` |
 | The storage panel names the live location and offers the fixes, in the default case *and* in the fallback case (mode label, explanation, pending-move count, grant button) | **TESTED** (CI, debug + release-shaped build) | `P6_U9 PASS` / `P10_SMOKE_UI_U9 PASS` in run `35520695055` (the storage-panel half of the gate asserts the exact mode strings and the pending count) |
 | The false `P10D_FIRST_RUN FAIL` was caused by MSYS path rewriting on the owner's Windows host (not the app) | **PROVEN FROM THE OWNER'S BUNDLE** | §B.4.1: the 72-byte `ui/*.xml`, `dumpsys` showing `MainActivity` in front, `rc=127` visibility log, Store-python stub |
-| The driver can no longer produce an app verdict from an unreadable screen or a host without python | **TESTED** (fake phone, 9 scenarios / 68 checks) | §B.4.3; `P10_DRIVER_SELFTEST` in CI; the bundles themselves in `docs/progress/phase10-evidence/v3-driver-selftest/` |
+| The driver can no longer produce an app verdict from an unreadable screen or a host without python | **TESTED** (fake phone, 12 scenarios / 87 checks) | §B.4.3, §B.10.4; `P10_DRIVER_SELFTEST` in CI; the bundles themselves in `docs/progress/phase10-evidence/v3-driver-selftest/` |
+| The driver can no longer report a visible app as unreachable when the host cannot open the reader script (the owner's 2026-09-21 run) | **TESTED** (fake host: `reader-dead` must stop with `HARNESS_READER FAIL`; `winhost` must run green) | §B.10.4; `docs/progress/phase10-evidence/v3-driver-selftest/driver-selftest-87.log` |
+| That same fix, on the owner's real phone | **NOT TESTED** | §B.10.4 (last paragraph); needs one more run of `90-real-device-signed.sh --apk …` on the realme |
+| The app's own screens on the realme during the 2026-09-21 run (welcome → projects, no crash, no exception) | **TESTED** (the run's screenshots + logcat + the 10,802-byte dump) | §B.10.1 |
 | The three gates that SKIPped in the owner's v2 bundle (`FIRST_RUN_PROJECT`, `FILES_SCREEN`, `LIVE_TURN`) execute and pass with the v3 driver against the v3 storage layout | **TESTED (fake phone only)** — the phone run is still owed | `v3-driver-selftest/happy/SUMMARY.txt` (project created through the UI, in-app path `/storage/emulated/0/Documents/OpenCode/p10d-…`, live tool card); §B.2 |
 | When All files access is refused, the app states the fallback instead of claiming file-manager visibility | **TESTED** (fake phone, `no-grant` scenario) | `v3-driver-selftest/no-grant/`: `SHARED_ROOT FAIL` on the `Android/data` root, shell read/write still PASS |
 | The signed build drives first-run → project → files → live turn on the owner's phone with the v3 storage layout | **NOT TESTED** | needs the owner's run (§B.6); the v2-era bundle predates both fixes |
@@ -1852,3 +1855,151 @@ the release-shaped smoke stage reports `P10_SMOKE_UI PASS :: pass=14 fail=0 skip
 `pass=13 fail=1`) with `P6-L2 PASS :: tool=bash status=completed …`, the debug stage is 14/0,
 and every other gate in that run is unchanged and passing (workspace class, visibility, unit
 tests, artifact inspection, store assets).
+
+## B.10 Second device run, 2026-09-21 — the app was never stuck, the driver was blind
+
+The owner's second bundle is on the branch at `p10d-out/` (commit `a03cb75`, uploaded
+2026-09-21). Phone: realme RMX3830, Android 15 / API 35, arm64-v8a, 720x1600 @320 — the same
+device as the first run, now with the **signed** v3 build installed
+(`versionName=1.18.23-phase10`, `code=8`). The owner's own words: *"it stuck in project page
+again"*, and *"in phase 8 script it was not a problem like this."* Both statements turned out
+to be exactly right, and both are explained below.
+
+### B.10.1 What the bundle says, and what the phone was doing at the time
+
+Verdicts: **12 PASS, 4 FAIL, 4 SKIP** — and the three gates the brief wanted executed
+(`FIRST_RUN_PROJECT`, `FILES_SCREEN`, `LIVE_TURN`) skipped again, because `FIRST_RUN` failed
+first.
+
+```
+P10D_HARNESS_DUMP PASS :: the accessibility dump is readable from this host
+                          (; acquisition: /sdcard/p10d-ui.xml; host shell: windows-msys)
+P10D_FIRST_RUN   FAIL :: no app surface could be read from the screen:
+                          mCurrentFocus=Window{… io.github.mcyber12.opencode/…MainActivity}
+P10D_ARTIFACT    FAIL :: check-apk findings:            <- empty
+P10D_VISIBILITY_HARNESS FAIL :: rc=127  bash: /p/OpenCodeGUI/phase10/scripts/92-workspace-visibility.sh: No such file or directory
+wait(app-window) TIMED OUT after 304s   (waiting for: welcome_screen|welcome_continue|Continue|Settings and diagnostics|OpenCode)
+  dump attrs:      <- empty
+  on screen:       <- empty
+```
+
+The run's **own screenshots contradict the verdict**, and so does the run's own dump:
+
+| Evidence | What it shows |
+|---|---|
+| `ui/ui-wait-app-window.xml` — **10,802 bytes of real XML** | the app's own projects screen: `resource-id="projects_screen"`, `project_name_input`, `project_create`, and the text `Projects`, `New project`, `Create project`, `No projects yet`, `OpenCode 1.18.23` |
+| `screenshots/01-launch.png` | the welcome screen — OpenCode, "Starting the agent", Continue, `OpenCode 1.18.23` |
+| `screenshots/02-wait-app-window-60s.png` and `03…-122s.png`, `04…-182s.png` | the **Projects** screen, fully drawn, with the New-project panel and "No projects yet" |
+| `artifact-report.txt` | `can't open file 'P:\\p\\OpenCodeGUI\\…\\check-apk.py': [Errno 2] No such file or directory` |
+| `visibility.log` | `bash: /p/OpenCodeGUI/phase10/scripts/92-workspace-visibility.sh: No such file or directory` (rc=127) |
+| logcat | no exception, no crash — the app started, launched its runtime service and drew its screens |
+
+So the answer to *"why did it stick in project page"* is: **it did not stick.** The app reached
+its own projects screen inside a minute (well before the 60-second screenshot) and sat there
+waiting for a human, which is what that screen is for. The driver was unable to read a single
+word off it, waited the full 300 s for a welcome screen that had already been superseded, and
+reported the app as unreachable. *"Stuck on the projects page"* and *"the script says the app
+never appeared"* are the same event seen from the two sides of the cable — and the fix has to
+be on this side of it.
+
+### B.10.2 The cause: Windows Python cannot open a POSIX-absolute script path
+
+The owner's checkout is `P:\p\OpenCodeGUI` and Git Bash reports it as `/p/OpenCodeGUI`. That
+POSIX path is what the driver holds in `$DIR`, and it handed it straight to native Windows
+Python:
+
+```
+python.exe  /p/OpenCodeGUI/phase10/scripts/p10d-ui.py  <dump>  texts
+```
+
+Windows has no `/p/...` mount: a leading slash means **root of the current drive**, so Python
+resolved the script to `P:\p\OpenCodeGUI\...`, which does not exist. Two consequences, and the
+difference between them is why this took a second device run to see:
+
+* `check-apk.py` died **loudly** — its stderr was kept, so `artifact-report.txt` shows the
+  error, while the verdict printed an empty `check-apk findings:` that reads as "the APK is
+  broken" (`P10D_ARTIFACT FAIL`);
+* `p10d-ui.py` died **silently** — `ui()` piped its stderr to `/dev/null`. Every screen read
+  came back empty, every needle missed, and the run produced six minutes of "the app never
+  showed a screen" about an app that was on screen the whole time.
+
+`92-workspace-visibility.sh` failed for the same family of reason: it was invoked as
+`bash /p/OpenCodeGUI/…`, and in that invocation MSYS's own conversion turned the path into
+something the child bash could not open (rc=127) — the file is present in the checkout.
+
+**Not the same cause as the first bundle, and worth saying so explicitly.** The first bundle
+(2026-09-20, `a03cb75^`) shows the identical *symptoms* — six 72-byte dumps, an empty
+`check-apk findings:` — from a **different** pair of causes: MSYS rewrote the *device* path
+(`cat: C:/Program Files/Git/sdcard/p10d-ui.xml: No such file or directory`) and `python3` was
+the Microsoft Store stub (`Python was not found …`). Both were fixed and are locked by the
+`msys-mangled` and `no-python` scenarios. This run is the *next* layer: the MSYS opt-outs
+worked (real 10,802-byte dumps), a real Python 3.14.7 was found (`HARNESS_PYTHON PASS`), and
+the reader still could not run — because of the path it was *given*. Same class of host
+defect, one step further along, which is exactly why each layer needs its own gate.
+
+**Why the v3 preflight did not catch it.** The gate was
+`P10D_HARNESS_DUMP PASS :: … ($(ui_nodes); acquisition: …)`, and `ui_nodes` was empty because
+the reader was dead. The verdict still said PASS — and the empty parentheses it printed are the
+tell that was sitting in the bundle: a PASS whose own evidence field is blank. That is the same
+false-PASS shape as Part B of the brief, one layer down again, and it is what the new
+`HARNESS_READER` gate exists to make unrepresentable.
+
+**Why Phase 8 never showed this.** The Phase 8 device suite (`phase8/scripts/90-real-device-suite.sh`)
+drives the phone, but its UI evidence comes from **device-side instrumentation read back
+through logcat** (`P8_*` markers) — it never parses a host-side accessibility dump with a host
+Python, so a broken host-Python-to-script path cannot appear in it. Different mechanism, not a
+different app; that is why the same phone and the same kind of shell were fine there.
+
+### B.10.3 The fix (driver only — no app code, no gate was weakened)
+
+| # | Change | Why |
+|---|---|---|
+| 1 | `host_path()` converts every **host** path handed to Python (`cygpath -w`, with a `sed` fallback for `/c/...` mounts); device paths are untouched | the direct cause. Applied to the reader, the screenshot checker, the APK inspector and the two heredoc readers |
+| 2 | **`HARNESS_READER`** gate: at R0.5 the reader must return a non-empty reading, or the run **stops (rc=3)** naming the reader | the false PASS. An empty reading is now a failure, never a PASS |
+| 3 | The reader's stderr is **kept** (`reader-stderr.txt`) and quoted by that gate | it was the discarded half of the diagnosis; the bundle now explains itself |
+| 4 | Reader failures are counted separately from unreadable dumps, and `UI_DUMP` is red if the reader returned nothing while a run otherwise looks clean | a run can be blind without a single dump failing |
+| 5 | The visibility driver runs as a **relative** path from its own directory, with `--out` made absolute first | rc=127 in both bundles. A relative invocation cannot be mangled by MSYS, on any host |
+| 6 | `P10D_ARTIFACT` reports **the inspector's own error as SKIP** when no verdict line was produced | "check-apk findings: " must never read as "the APK is broken" |
+| 7 | `HARNESS_DUMP` (the dump was written and read back) and `HARNESS_READER` (the reader parsed it) are **two separate verdicts** | a readable dump says nothing about whether anyone could read *what is in it* — the owner's bundle collapsed both into a single PASS |
+
+Nothing about the app, the storage model, W1–W4 or the visibility gates changed. No assertion
+was removed: a driver that cannot read the screen now fails **earlier, for a named reason, and
+without blaming the product**.
+
+### B.10.4 Verification of the fix (this part is TESTED)
+
+The driver self-test grew from nine scenarios / 68 checks to **twelve / 87**, and the three new
+ones are the owner's failure and its fix:
+
+| New scenario | What it proves | Result |
+|---|---|---|
+| `reader-dead` | a host whose Python cannot open a POSIX-absolute script path — the owner's run. Must stop at R0.5 with `HARNESS_READER FAIL`, quote the reader's real error, keep `HARNESS_DUMP` PASS as a separate fact, produce **no app verdict** and **no 300 s timeout** | 8/8 checks |
+| `winhost` | the same host **with** the conversion: the whole run must be green, `HARNESS_READER PASS` must print the converted path it used, and `FIRST_RUN` + `LIVE_TURN` must pass | 6/6 checks |
+| `relout` | the owner's invocation shape (relative `--out`, run from the repo root): the bundle lands under the caller's cwd, `visibility.log` is inside it, and the child's `cd` leaves nothing behind in `phase10/` | 5/5 checks |
+
+```
+=== driver self-test: pass=87 fail=0 ===
+SELFTEST PASS (driver runs clean, and fails for the RIGHT reasons)
+```
+
+Full log: `docs/progress/phase10-evidence/v3-driver-selftest/driver-selftest-87.log` (kept
+alongside the 2026-09-20 `driver-selftest.log`). CI runs the same twelve scenarios on every
+push as `P10_DRIVER_SELFTEST`.
+
+**Still NOT TESTED, and it is the honest edge of this section:** the fixed driver has not yet
+run on the realme. Everything above proves the harness reacts correctly to the owner's host
+shape (a simulated Windows host in the self-test); it does not prove the projects screen is
+reachable *on that phone* until the owner re-runs it. Until then the on-hardware row in §B.5
+stays **NOT TESTED**.
+
+### B.10.5 Two things the bundle cannot answer, stated rather than guessed
+
+1. **`P10D_STORAGE PASS :: /storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces=7.0K`**
+   is a `du` over the candidate roots that exist on the device — it is not a storage-mode
+   verdict. Because R5 never ran, the bundle contains **no statement about which root the app
+   uses**; the mode line (`mode=PUBLIC … allFilesAccess=true`) comes from the in-app file
+   browser, and from CI's W4 gate, neither of which executed here. It is not evidence that the
+   app fell back to `Android/data`, and it is not evidence that it did not.
+2. **The Play "All files access" state on this phone** cannot be read from the bundle: R5/R7
+   (the stages that report it) never ran. CI's W4 gate reports `allFilesAccess=true
+   grantHonoured=true` on the emulator; the phone's own state is still unverified.

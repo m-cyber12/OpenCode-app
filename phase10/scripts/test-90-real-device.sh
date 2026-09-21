@@ -106,6 +106,54 @@ STUB
   chmod +x "$TMP/nopython/$stub"
 done
 
+# -------------------------------------------------------------------------------
+# The 2026-09-21 owner failure: Windows Python cannot open a POSIX-absolute script
+# path. On Git Bash the repo is /p/OpenCodeGUI/..., and `python /p/.../p10d-ui.py`
+# makes Windows Python look for P:\p\OpenCodeGUI\... - so the READER died (its stderr
+# was thrown away) and every screen read came back empty while the phone was showing
+# the app's screens. Two stubs reproduce that on a POSIX test host:
+#   winpython  accepts everything EXCEPT a POSIX-absolute path argument - exactly what
+#              Windows Python does with "/p/..." (drive-relative), and
+#   cygpath    the Git Bash converter, faked as "prepend C:" so host_path()'s output can
+#              be checked on a machine that has no MSYS.
+mkdir -p "$TMP/winhost"
+cat > "$TMP/winhost/python3" <<EOF
+#!/bin/sh
+# Windows Python's one behaviour that broke the owner's run: a POSIX-absolute path
+# argument is read as "<drive>:\<path>" - which does not exist. Every OTHER argument
+# (flags, subcommands, relative paths, the code string of -c) is passed through
+# untouched, so this stub behaves like the real interpreter right up to the failure.
+# $REAL_PY replaces a C:/... path with its POSIX form so the real reader still runs.
+n=\$#
+i=0
+while [ \$i -lt \$n ]; do
+  i=\$((i+1)); a="\$1"; shift
+  case "\$a" in
+    /*) printf "can't open file 'C:%%s': [Errno 2] No such file or directory\\n" "\$a" >&2; exit 2 ;;
+    C:/*) a="\${a#C:}" ;;
+  esac
+  set -- "\$@" "\$a"
+done
+exec "$REAL_PY" "\$@"
+EOF
+chmod +x "$TMP/winhost/python3"
+cat > "$TMP/winhost/cygpath" <<'STUB'
+#!/bin/sh
+# -w / --windows => Windows form, "--" ends the options (both as in the real cygpath).
+# Only the "prepend the drive" rule is needed to stand in for MSYS's /<drive>/ mounts.
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -w|--windows) ;;
+    --) shift; break ;;
+    -*) ;;
+    *) break ;;
+  esac
+  shift
+done
+case "$1" in /*) printf 'C:%s\n' "$1" ;; *) printf '%s\n' "$1" ;; esac
+STUB
+chmod +x "$TMP/winhost/cygpath"
+
 run_scenario() { # $1 = name, $2.. = extra driver arguments
   local name="$1"; shift
   rm -rf "$TMP/dev" "$TMP/out-$name"
@@ -267,6 +315,89 @@ check "$(grep -qa '^P10D_FIRST_RUN ' "$OUT/SUMMARY.txt" && echo 1 || echo 0)" \
   "no first-run verdict is invented either"
 check "$(grep -qa 'Store stub' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
   "the diagnosis explains the Windows Store stub to the reader"
+
+echo
+echo "--- scenario: the reader cannot open its own script (the owner's 2026-09-21 run) ---"
+# Same fake host as above, WITHOUT the HOST_SHELL seam: nothing converts, so the reader
+# dies the way it really died. What must happen now: the harness notices at R0.5, names
+# the reader as the problem, stops (rc=3) and produces NO app verdict - instead of the
+# six-minute timeout and the empty "(; acquisition: ...)" PASS the owner's bundle has.
+rm -rf "$TMP/dev" "$TMP/out-reader-dead"
+mkdir -p "$TMP/dev"
+PATH="$TMP/bin:$TMP/winhost:$PATH" \
+P10D_FAKE_SCENARIO=happy \
+P10D_SKIP_ARTIFACT=1 \
+P10D_PROVIDER_KEY="sk-or-test-only-not-a-real-key" \
+bash "$DIR/scripts/90-real-device-signed.sh" --apk "$TMP/fake.apk" \
+    --out "$TMP/out-reader-dead" > "$TMP/run-reader-dead.stdout" 2>&1
+echo "$?" > "$TMP/rc-reader-dead"
+RC=$(cat "$TMP/rc-reader-dead"); OUT="$TMP/out-reader-dead"
+check "$([ "$RC" = 3 ] && echo 0 || echo 1)" "the run stops at the preflight (rc=$RC) instead of waiting 300s on a visible screen"
+check "$(grep -qa '^P10D_HARNESS_READER FAIL' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "HARNESS_READER FAIL names the reader (a gate v3 did not have)"
+check "$(grep -qa '^P10D_HARNESS_DUMP PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the dump itself is still reported as readable - the two are separate facts"
+check "$(! grep -qa '; acquisition' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "no verdict prints an empty node count (the tell the owner's bundle had)"
+check "$(grep -qa "can't open file" "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
+  "DIAGNOSIS.txt quotes the reader's real error, which used to be discarded"
+check "$(grep -qa 'host path-translation problem' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
+  "the diagnosis names the cause instead of leaving it to the reader"
+check "$(grep -qaE '^P10D_(FIRST_RUN|FIRST_RUN_PROJECT|FILES_SCREEN|LIVE_TURN) ' "$OUT/SUMMARY.txt" && echo 1 || echo 0)" \
+  "no app verdict is invented from a reader that never ran"
+check "$(! grep -qa 'TIMED OUT' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
+  "nothing times out for minutes - the failure is immediate"
+
+echo
+echo "--- scenario: the same host WITH the Windows path conversion (the fix) ---"
+# HOST_SHELL forced to windows-msys so host_path() takes the Windows branch (with the
+# cygpath stub converting, and winpython accepting the converted C:/... path). Everything
+# else is the owner's host shape. This is the run that must come back GREEN.
+rm -rf "$TMP/dev" "$TMP/out-winhost"
+mkdir -p "$TMP/dev"
+PATH="$TMP/bin:$TMP/winhost:$PATH" \
+P10D_FORCE_HOST_SHELL=windows-msys \
+P10D_FAKE_SCENARIO=happy \
+P10D_SKIP_ARTIFACT=1 \
+P10D_PROVIDER_KEY="sk-or-test-only-not-a-real-key" \
+bash "$DIR/scripts/90-real-device-signed.sh" --apk "$TMP/fake.apk" \
+    --out "$TMP/out-winhost" > "$TMP/run-winhost.stdout" 2>&1
+echo "$?" > "$TMP/rc-winhost"
+RC=$(cat "$TMP/rc-winhost"); OUT="$TMP/out-winhost"
+check "$([ "$RC" = 0 ] && echo 0 || echo 1)" "a Windows host with path conversion now runs green (rc=$RC)"
+check "$(grep -qa '^P10D_HARNESS_READER PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "HARNESS_READER PASS - the reader really parsed the dump"
+check "$(grep -qa '^P10D_DEVICE_AWAKE PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the run got past the preflight and drove the app"
+check "$(grep -qaE '^P10D_HARNESS_READER PASS.*C:/' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the verdict shows the converted path it used (evidence of the conversion)"
+check "$(grep -qa '^P10D_FIRST_RUN PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the first-run screens were read on the converted path"
+check "$(grep -qa '^P10D_LIVE_TURN PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the live turn ran - the whole run is usable on a simulated Windows host"
+
+echo
+echo "--- scenario: a relative --out, run from another directory (the owner's shape) ---"
+# The owner runs `bash phase10/scripts/90-real-device-signed.sh --apk ...` from the repo
+# root, so OUT is the RELATIVE default "p10d-out". The visibility driver is now invoked
+# after a `cd` to its own directory, so a relative --out handed to it would land inside
+# phase10/. This scenario runs the driver from an unrelated cwd with a relative --out and
+# checks the bundle lands next to the caller and nowhere else.
+rm -rf "$TMP/dev" "$TMP/relcwd" "$DIR/p10d-out-relative-test"
+mkdir -p "$TMP/dev" "$TMP/relcwd"
+( cd "$TMP/relcwd" && PATH="$TMP/bin:$PATH" \
+  P10D_FAKE_SCENARIO=happy P10D_SKIP_ARTIFACT=1 \
+  P10D_PROVIDER_KEY="sk-or-test-only-not-a-real-key" \
+  bash "$DIR/scripts/90-real-device-signed.sh" --apk "$TMP/fake.apk" \
+      --out p10d-out-relative-test > "$TMP/run-relout.stdout" 2>&1; echo "$?" > "$TMP/rc-relout" )
+RC=$(cat "$TMP/rc-relout"); OUT="$TMP/relcwd/p10d-out-relative-test"
+check "$([ "$RC" = 0 ] && echo 0 || echo 1)" "a relative --out run is green (rc=$RC)"
+check "$([ -s "$OUT/SUMMARY.txt" ] && echo 0 || echo 1)" "the bundle landed under the caller's cwd"
+check "$([ -f "$OUT/visibility.log" ] && echo 0 || echo 1)" "visibility.log is in that bundle"
+check "$(grep -qa '^P10D_VISIBILITY_SHARED_ROOT PASS' "$OUT/visibility.log" && echo 0 || echo 1)" \
+  "the visibility driver ran and passed with a relative --out"
+check "$([ ! -d "$DIR/p10d-out-relative-test" ] && echo 0 || echo 1)" \
+  "and nothing was written into phase10/ by the child's cd"
 
 echo
 echo "=== driver self-test: pass=$pass fail=$fail ==="
