@@ -3,7 +3,7 @@
 --- scenario: happy path ---
   ok   driver exits 0 when every gate passes (rc=0)
   ok   SUMMARY.txt written
-  ok   at least 15 distinct gates reported (got 28)
+  ok   at least 15 distinct gates reported (got 29)
   ok   gate DEVICE_AWAKE PASS/SKIP
   ok   gate ABI PASS/SKIP
   ok   gate ANDROID_VERSION PASS/SKIP
@@ -28,7 +28,7 @@
   ok   in-app browser path == shell-visible path
   ok   model marker written for the x86_64 carry-forward
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-103539/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-111539/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
 
@@ -86,5 +86,30 @@
   ok   no first-run verdict is invented either
   ok   the diagnosis explains the Windows Store stub to the reader
 
-=== driver self-test: pass=68 fail=0 ===
+--- scenario: the reader cannot open its own script (the owner's 2026-09-21 run) ---
+  ok   the run stops at the preflight (rc=3) instead of waiting 300s on a visible screen
+  ok   HARNESS_READER FAIL names the reader (a gate v3 did not have)
+  ok   the dump itself is still reported as readable - the two are separate facts
+  ok   no verdict prints an empty node count (the tell the owner's bundle had)
+  ok   DIAGNOSIS.txt quotes the reader's real error, which used to be discarded
+  ok   the diagnosis names the cause instead of leaving it to the reader
+  ok   no app verdict is invented from a reader that never ran
+  ok   nothing times out for minutes - the failure is immediate
+
+--- scenario: the same host WITH the Windows path conversion (the fix) ---
+  ok   a Windows host with path conversion now runs green (rc=0)
+  ok   HARNESS_READER PASS - the reader really parsed the dump
+  ok   the run got past the preflight and drove the app
+  ok   the verdict shows the converted path it used (evidence of the conversion)
+  ok   the first-run screens were read on the converted path
+  ok   the live turn ran - the whole run is usable on a simulated Windows host
+
+--- scenario: a relative --out, run from another directory (the owner's shape) ---
+  ok   a relative --out run is green (rc=0)
+  ok   the bundle landed under the caller's cwd
+  ok   visibility.log is in that bundle
+  ok   the visibility driver ran and passed with a relative --out
+  ok   and nothing was written into phase10/ by the child's cd
+
+=== driver self-test: pass=87 fail=0 ===
 SELFTEST PASS (driver runs clean, and fails for the RIGHT reasons)
