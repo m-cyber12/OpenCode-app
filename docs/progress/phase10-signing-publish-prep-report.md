@@ -2155,9 +2155,13 @@ behaviour; the phone in the self-test is a shim. The next run decides between tw
 
 For the record, the honest edges of this section: the probe order is a heuristic (POSIX first,
 then `-m`, then `-w`, then temp-dir) — it cannot prove that a *different* form would not also
-have worked, only that the one it reports did; and the temp-dir fallback copies the reader and
-the dump (a few KB) but the APK copy in that mode is only attempted at R2, so a temp-dir host
-is expected to SKIP the artifact gate rather than fail it.
+have worked, only that the one it reports did. And the fallback's cost is not zero: in
+`MAP_MODE=tmp` the reader and every dump are copied (kilobytes), and at R2 the APK is copied
+too, so the artifact gate still runs but pays a ~123 MB copy; if that copy fails, the gate
+reports the inspector's own error instead of inventing a verdict (the branch that turns an
+empty inspector output into a SKIP-with-reason, §B.11.2). Corrected here after checking the
+code path — the first version of this paragraph said a temp-dir host should expect a SKIP,
+which is not what the driver does.
 
 **Nothing about the app, the storage model (`Documents/OpenCode` + All files access), the
 Publish-as-export decision, W1–W4 isolation or the visibility gates changed in this round.**
