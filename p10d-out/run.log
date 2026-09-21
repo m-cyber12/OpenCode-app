@@ -1,7 +1,11 @@
 
 ===== R0 preflight: device awake, unlocked, and the app able to be driven =====
-[2026-09-20T13:16:16Z] screen: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{552da99 u0 com.android.launcher3/com.android.searchlauncher.SearchLauncher}, [type=1, isChildWindow=false]-[Surface(name=*Title#4717)/@0x8822cac, shown=false, windowType=1] (  mState=ACTIVE mLightState=ACTIVE)
-[2026-09-20T13:16:17Z] P10D_DEVICE_AWAKE PASS :: screen awake and unlocked before any UI step: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{552da99 u0 com.android.launcher3/com.android.searchlauncher.SearchLauncher}, [type=1, isChildWindow=false]-[Surface(name=*Title#4717)/@0x8822cac, shown=false, windowType=1]
+[2026-09-21T10:21:11Z] screen: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{915f04c u0 com.android.launcher3/com.android.searchlauncher.SearchLauncher}, [type=1, isChildWindow=false]-[Surface(name=*Title#10247)/@0x2c671a4, shown=false, windowType=1] (  mState=ACTIVE mLightState=ACTIVE)
+[2026-09-21T10:21:13Z] P10D_DEVICE_AWAKE PASS :: screen awake and unlocked before any UI step: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{915f04c u0 com.android.launcher3/com.android.searchlauncher.SearchLauncher}, [type=1, isChildWindow=false]-[Surface(name=*Title#10247)/@0x2c671a4, shown=false, windowType=1]
+
+===== R0.5 the harness can read this phone's screen =====
+[2026-09-21T10:21:14Z] P10D_HARNESS_PYTHON PASS :: Python interpreter: python3 (3.14.7)
+[2026-09-21T10:21:18Z] P10D_HARNESS_DUMP PASS :: the accessibility dump is readable from this host (; acquisition: /sdcard/p10d-ui.xml; host shell: windows-msys)
 
 ===== R1 device facts =====
 device=RMX3830
@@ -9,101 +13,91 @@ manufacturer=realme
 android=15 (API 35)
 abi=arm64-v8a
 screen=Physical size: 720x1600 Physical density: 320
-screen_state=mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{552da99 u0 com.android.launcher3/com.android.searchlauncher.SearchLauncher}, [type=1, isChildWindow=false]-[Surface(name=*Title#4717)/@0x8822cac, shown=false, windowType=1]
-[2026-09-20T13:16:20Z] P10D_ABI PASS :: arm64-v8a device (the ABI this app ships to users)
-[2026-09-20T13:16:20Z] P10D_ANDROID_VERSION PASS :: API 35 (minSdk 29)
+screen_state=mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{915f04c u0 com.android.launcher3/com.android.searchlauncher.SearchLauncher}, [type=1, isChildWindow=false]-[Surface(name=*Title#10247)/@0x2c671a4, shown=false, windowType=1]
+[2026-09-21T10:21:21Z] P10D_ABI PASS :: arm64-v8a device (the ABI this app ships to users)
+[2026-09-21T10:21:21Z] P10D_ANDROID_VERSION PASS :: API 35 (minSdk 29)
 
 ===== R2 artifact verification =====
-[2026-09-20T13:16:21Z] verifying app-release-signed.apk
-[2026-09-20T13:16:29Z] P10D_ARTIFACT FAIL :: check-apk findings: 
-[2026-09-20T13:16:29Z] P10D_SIGNATURE SKIP :: apksigner not on PATH: signature checked for PRESENCE by check-apk.py only. Install build-tools and re-run for the cryptographic verdict (docs/RELEASE.md s5)
+[2026-09-21T10:21:21Z] verifying app-release-signed.apk
+[2026-09-21T10:21:22Z] P10D_ARTIFACT FAIL :: check-apk findings: 
+[2026-09-21T10:21:22Z] P10D_SIGNATURE SKIP :: apksigner not on PATH: signature checked for PRESENCE by check-apk.py only. Install build-tools and re-run for the cryptographic verdict (docs/RELEASE.md s5)
 
 ===== R3 clean install of the signed artifact =====
-[2026-09-20T13:16:30Z] uninstalling any previous install so this is a genuine first run
+[2026-09-21T10:21:22Z] uninstalling any previous install so this is a genuine first run
 Performing Streamed Install
 Success
-[2026-09-20T13:16:45Z] P10D_INSTALL PASS :: adb install of the signed release APK succeeded (this is the artifact a user would sideload)
-[2026-09-20T13:16:46Z] P10D_VERSION_ON_DEVICE PASS :: installed versionName=1.18.23-phase10 code=8
+[2026-09-21T10:21:47Z] P10D_INSTALL PASS :: adb install of the signed release APK succeeded (this is the artifact a user would sideload)
+[2026-09-21T10:21:50Z] P10D_VERSION_ON_DEVICE PASS :: installed versionName=1.18.23-phase10 code=8
 
 ===== R4 first run: welcome -> runtime healthy by itself -> a project -> composer =====
 Starting: Intent { cmp=io.github.mcyber12.opencode/ai.opencode.android.MainActivity }
 Status: ok
 LaunchState: COLD
 Activity: io.github.mcyber12.opencode/ai.opencode.android.MainActivity
-TotalTime: 2080
-WaitTime: 2086
+TotalTime: 3052
+WaitTime: 3060
 Complete
-[2026-09-20T13:17:12Z] wait(app-window): 15s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1]; on screen: 
-[2026-09-20T13:17:44Z] wait(app-window): 46s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1]; on screen: 
-[2026-09-20T13:18:14Z] wait(app-window): 77s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1]; on screen: 
-[2026-09-20T13:18:44Z] wait(app-window): 107s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1]; on screen: 
-[2026-09-20T13:19:27Z] wait(app-window): 150s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1]; on screen: 
-[2026-09-20T13:19:58Z] wait(app-window): 181s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1]; on screen: 
-[2026-09-20T13:20:29Z] wait(app-window): 212s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1]; on screen: 
-[2026-09-20T13:21:12Z] wait(app-window): 255s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1]; on screen: 
-[2026-09-20T13:21:43Z] wait(app-window): 285s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1]; on screen: 
+[2026-09-21T10:22:51Z] wait(app-window): 47s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1]; on screen: 
+[2026-09-21T10:23:04Z] wait(app-window): 60s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1]; on screen: 
+[2026-09-21T10:24:06Z] wait(app-window): 122s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1]; on screen: 
+[2026-09-21T10:24:20Z] wait(app-window): 136s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1]; on screen: 
+[2026-09-21T10:25:06Z] wait(app-window): 182s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1]; on screen: 
+[2026-09-21T10:25:20Z] wait(app-window): 196s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1]; on screen: 
+[2026-09-21T10:25:36Z] wait(app-window): 211s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1]; on screen: 
+[2026-09-21T10:26:35Z] wait(app-window): 271s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1]; on screen: 
 wait(app-window) TIMED OUT after 304s
-  waiting for: welcome_screen|continue|Welcome|OpenCode
-  device: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1]
-  foreground: mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1] ; topResumedActivity=ActivityRecord{c085be3 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity t66 d0}
+  waiting for: welcome_screen|welcome_continue|Continue|Settings and diagnostics|OpenCode
+  device: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1]
+  foreground: mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1] ; topResumedActivity=ActivityRecord{4d92d03 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity t124 d0}
   last dump: p10d-out/ui/ui-wait-app-window.xml 
+  dump attrs: 
   on screen: 
-[2026-09-20T13:22:04Z] P10D_FIRST_RUN FAIL :: the app window never appeared: mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1] ; topResumedActivity=ActivityRecord{c085be3 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity t66 d0} mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1] - see DIAGNOSIS.txt and 01-launch.png
-[2026-09-20T13:22:04Z] P10D_FIRST_RUN_PROJECT SKIP :: no project could be created because the first run never reached a usable screen
+[2026-09-21T10:27:13Z] P10D_FIRST_RUN FAIL :: no app surface could be read from the screen: mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1] ; topResumedActivity=ActivityRecord{4d92d03 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity t124 d0} mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1]. - see DIAGNOSIS.txt and 01-launch.png
+[2026-09-21T10:27:13Z] P10D_FIRST_RUN_PROJECT SKIP :: no project could be created because the first run never reached a usable screen.
 
 ===== R5 the in-app file browser (this is how a user sees what the agent wrote) =====
-[2026-09-20T13:22:05Z] P10D_FILES_SCREEN SKIP :: no project open, so there was nothing to browse
+[2026-09-21T10:27:13Z] P10D_FILES_SCREEN SKIP :: no project open, so there was nothing to browse
 
 ===== R6 live turn through the composer =====
-tap(open_settings): not tappable (no matching node) state=none
-tap(open_settings): still not tappable after one scroll (no matching node)
-[2026-09-20T13:28:08Z] could not open Settings to enter the key
-[2026-09-20T13:28:29Z] wait(ready-to-send): 16s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1]; on screen: 
-[2026-09-20T13:28:57Z] wait(ready-to-send): 45s; mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1]; on screen: 
-wait(ready-to-send) TIMED OUT after 91s
-  waiting for: composer_input|chat_screen
-  device: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1]
-  foreground: mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1] ; topResumedActivity=ActivityRecord{c085be3 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity t66 d0}
-  last dump: p10d-out/ui/ui-wait-ready-to-send.xml 
-  on screen: 
-[2026-09-20T13:29:46Z] note: the composer was not on screen after the key step - the live turn will report what it sees
-[2026-09-20T13:29:46Z] P10D_LIVE_TURN SKIP :: no conversation surface existed to send a turn from
+[2026-09-21T10:28:17Z] P10D_LIVE_TURN SKIP :: no conversation surface existed to send a turn from.
 
 ===== R7 file visibility from outside the app (non-root adb shell) =====
-[2026-09-20T13:29:46Z] visibility driver rc=127 (verdict lines above; raw output in visibility.log)
-[2026-09-20T13:29:46Z] visibility context: project=<none> path=<unknown>
+[2026-09-21T10:28:17Z] visibility driver rc=127 verdicts=0 (verdict lines above; raw output in visibility.log)
+[2026-09-21T10:28:17Z] P10D_VISIBILITY_HARNESS FAIL :: the visibility check did not run, so nothing about file visibility was verified on this path (rc=127): bash: /p/OpenCodeGUI/phase10/scripts/92-workspace-visibility.sh: No such file or directory
+visibility stage did not launch (rc=127). First lines of visibility.log:
+  bash: /p/OpenCodeGUI/phase10/scripts/92-workspace-visibility.sh: No such file or directory
+[2026-09-21T10:28:18Z] visibility context: project=<none> path=<unknown> root=<probe>
 visibility: one or more verdicts failed (rc=127); raw ls/cat output:
 
 ===== R8 footprint =====
-[2026-09-20T13:29:47Z] P10D_MEMORY PASS :: total PSS 103 MB (see meminfo.txt)
-[2026-09-20T13:29:47Z] P10D_STORAGE SKIP :: storage unreadable (expected on some OEM builds; see visibility.log)
+[2026-09-21T10:28:19Z] P10D_MEMORY PASS :: total PSS 154 MB (see meminfo.txt)
+[2026-09-21T10:28:20Z] P10D_STORAGE PASS :: on-device project storage: /storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces=7.0K /storage/emulated/0/Android/data/io.github.mcyber12.opencode=14K
 
 ===== R9 crash and packaging sweep =====
-[2026-09-20T13:29:48Z] P10D_PACKAGING_SWEEP PASS :: no FATAL EXCEPTION / ClassNotFound / NoSuchMethod / NoClassDefFound / UnsatisfiedLink in the session's logcat
-[2026-09-20T13:29:48Z] P10D_NO_CRASH PASS :: no app crash in this session
+[2026-09-21T10:28:21Z] P10D_PACKAGING_SWEEP PASS :: no FATAL EXCEPTION / ClassNotFound / NoSuchMethod / NoClassDefFound / UnsatisfiedLink in the session's logcat
+[2026-09-21T10:28:21Z] P10D_NO_CRASH PASS :: no app crash in this session
+[2026-09-21T10:28:21Z] P10D_UI_DUMP PASS :: every accessibility dump was readable (3 dump(s) saved in ui/; last acquisition: /sdcard/p10d-ui.xml)
 
 ===== R10 bundle =====
-[2026-09-20T13:29:49Z] P10D_SCREENSHOTS FAIL :: 4 screenshots, of which 0 look blank/off (screenshots.log lists each)
+[2026-09-21T10:28:22Z] P10D_SCREENSHOTS FAIL :: 5 screenshots (blank/off frames: 0): fewer than the 6 a complete run captures, because the run did not reach every step (see DIAGNOSIS.txt for where it stopped)
 
-P10D_DEVICE_AWAKE PASS :: screen awake and unlocked before any UI step: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{552da99 u0 com.android.launcher3/com.android.searchlauncher.SearchLauncher}, [type=1, isChildWindow=false]-[Surface(name=*Title#4717)/@0x8822cac, shown=false, windowType=1]
+P10D_DEVICE_AWAKE PASS :: screen awake and unlocked before any UI step: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{915f04c u0 com.android.launcher3/com.android.searchlauncher.SearchLauncher}, [type=1, isChildWindow=false]-[Surface(name=*Title#10247)/@0x2c671a4, shown=false, windowType=1]
+P10D_HARNESS_PYTHON PASS :: Python interpreter: python3 (3.14.7)
+P10D_HARNESS_DUMP PASS :: the accessibility dump is readable from this host (; acquisition: /sdcard/p10d-ui.xml; host shell: windows-msys)
 P10D_ABI PASS :: arm64-v8a device (the ABI this app ships to users)
 P10D_ANDROID_VERSION PASS :: API 35 (minSdk 29)
 P10D_ARTIFACT FAIL :: check-apk findings: 
 P10D_SIGNATURE SKIP :: apksigner not on PATH: signature checked for PRESENCE by check-apk.py only. Install build-tools and re-run for the cryptographic verdict (docs/RELEASE.md s5)
 P10D_INSTALL PASS :: adb install of the signed release APK succeeded (this is the artifact a user would sideload)
 P10D_VERSION_ON_DEVICE PASS :: installed versionName=1.18.23-phase10 code=8
-P10D_FIRST_RUN FAIL :: the app window never appeared: mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1] ; topResumedActivity=ActivityRecord{c085be3 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity t66 d0} mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1] - see DIAGNOSIS.txt and 01-launch.png
-P10D_FIRST_RUN_PROJECT SKIP :: no project could be created because the first run never reached a usable screen
+P10D_FIRST_RUN FAIL :: no app surface could be read from the screen: mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1] ; topResumedActivity=ActivityRecord{4d92d03 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity t124 d0} mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1]. - see DIAGNOSIS.txt and 01-launch.png
+P10D_FIRST_RUN_PROJECT SKIP :: no project could be created because the first run never reached a usable screen.
 P10D_FILES_SCREEN SKIP :: no project open, so there was nothing to browse
-P10D_LIVE_TURN SKIP :: no conversation surface existed to send a turn from
-P10D_MEMORY PASS :: total PSS 103 MB (see meminfo.txt)
-P10D_STORAGE SKIP :: storage unreadable (expected on some OEM builds; see visibility.log)
+P10D_LIVE_TURN SKIP :: no conversation surface existed to send a turn from.
+P10D_VISIBILITY_HARNESS FAIL :: the visibility check did not run, so nothing about file visibility was verified on this path (rc=127): bash: /p/OpenCodeGUI/phase10/scripts/92-workspace-visibility.sh: No such file or directory
+P10D_MEMORY PASS :: total PSS 154 MB (see meminfo.txt)
+P10D_STORAGE PASS :: on-device project storage: /storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces=7.0K /storage/emulated/0/Android/data/io.github.mcyber12.opencode=14K
 P10D_PACKAGING_SWEEP PASS :: no FATAL EXCEPTION / ClassNotFound / NoSuchMethod / NoClassDefFound / UnsatisfiedLink in the session's logcat
 P10D_NO_CRASH PASS :: no app crash in this session
-P10D_SCREENSHOTS FAIL :: 4 screenshots, of which 0 look blank/off (screenshots.log lists each)
-phase10 real-device verification of the SIGNED build 2026-09-20T13:29:49Z
-screenshots=4 blank=0
--- model availability marker (closes the x86_64-only live-tool-call carry-forward when 1)
-P6_MODEL_AVAILABLE 0 :: signed build, arm64 device, driven through the composer
-apk=app-release-signed.apk sha256=5060c629fdb3c976c1b7422ab1f419abebca546535b50fc900a14c98089fe470
-pass=8 fail=3 skip=5
+P10D_UI_DUMP PASS :: every accessibility dump was readable (3 dump(s) saved in ui/; last acquisition: /sdcard/p10d-ui.xml)
+P10D_SCREENSHOTS FAIL :: 5 screenshots (blank/off frames: 0): fewer than the 6 a complete run captures, because the run did not reach every step (see DIAGNOSIS.txt for where it stopped)

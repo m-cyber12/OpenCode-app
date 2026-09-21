@@ -1,22 +1,20 @@
-P10D_DEVICE_AWAKE PASS :: screen awake and unlocked before any UI step: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{552da99 u0 com.android.launcher3/com.android.searchlauncher.SearchLauncher}, [type=1, isChildWindow=false]-[Surface(name=*Title#4717)/@0x8822cac, shown=false, windowType=1]
+P10D_DEVICE_AWAKE PASS :: screen awake and unlocked before any UI step: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{915f04c u0 com.android.launcher3/com.android.searchlauncher.SearchLauncher}, [type=1, isChildWindow=false]-[Surface(name=*Title#10247)/@0x2c671a4, shown=false, windowType=1]
+P10D_HARNESS_PYTHON PASS :: Python interpreter: python3 (3.14.7)
+P10D_HARNESS_DUMP PASS :: the accessibility dump is readable from this host (; acquisition: /sdcard/p10d-ui.xml; host shell: windows-msys)
 P10D_ABI PASS :: arm64-v8a device (the ABI this app ships to users)
 P10D_ANDROID_VERSION PASS :: API 35 (minSdk 29)
 P10D_ARTIFACT FAIL :: check-apk findings: 
 P10D_SIGNATURE SKIP :: apksigner not on PATH: signature checked for PRESENCE by check-apk.py only. Install build-tools and re-run for the cryptographic verdict (docs/RELEASE.md s5)
 P10D_INSTALL PASS :: adb install of the signed release APK succeeded (this is the artifact a user would sideload)
 P10D_VERSION_ON_DEVICE PASS :: installed versionName=1.18.23-phase10 code=8
-P10D_FIRST_RUN FAIL :: the app window never appeared: mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1] ; topResumedActivity=ActivityRecord{c085be3 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity t66 d0} mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{fd9621b u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#4764)/@0xa937e7c, shown=false, windowType=1] - see DIAGNOSIS.txt and 01-launch.png
-P10D_FIRST_RUN_PROJECT SKIP :: no project could be created because the first run never reached a usable screen
+P10D_FIRST_RUN FAIL :: no app surface could be read from the screen: mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1] ; topResumedActivity=ActivityRecord{4d92d03 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity t124 d0} mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1]. - see DIAGNOSIS.txt and 01-launch.png
+P10D_FIRST_RUN_PROJECT SKIP :: no project could be created because the first run never reached a usable screen.
 P10D_FILES_SCREEN SKIP :: no project open, so there was nothing to browse
-P10D_LIVE_TURN SKIP :: no conversation surface existed to send a turn from
-P10D_MEMORY PASS :: total PSS 103 MB (see meminfo.txt)
-P10D_STORAGE SKIP :: storage unreadable (expected on some OEM builds; see visibility.log)
+P10D_LIVE_TURN SKIP :: no conversation surface existed to send a turn from.
+P10D_VISIBILITY_HARNESS FAIL :: the visibility check did not run, so nothing about file visibility was verified on this path (rc=127): bash: /p/OpenCodeGUI/phase10/scripts/92-workspace-visibility.sh: No such file or directory
+P10D_MEMORY PASS :: total PSS 154 MB (see meminfo.txt)
+P10D_STORAGE PASS :: on-device project storage: /storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces=7.0K /storage/emulated/0/Android/data/io.github.mcyber12.opencode=14K
 P10D_PACKAGING_SWEEP PASS :: no FATAL EXCEPTION / ClassNotFound / NoSuchMethod / NoClassDefFound / UnsatisfiedLink in the session's logcat
 P10D_NO_CRASH PASS :: no app crash in this session
-P10D_SCREENSHOTS FAIL :: 4 screenshots, of which 0 look blank/off (screenshots.log lists each)
-phase10 real-device verification of the SIGNED build 2026-09-20T13:29:49Z
-screenshots=4 blank=0
--- model availability marker (closes the x86_64-only live-tool-call carry-forward when 1)
-P6_MODEL_AVAILABLE 0 :: signed build, arm64 device, driven through the composer
-apk=app-release-signed.apk sha256=5060c629fdb3c976c1b7422ab1f419abebca546535b50fc900a14c98089fe470
-pass=8 fail=3 skip=5
+P10D_UI_DUMP PASS :: every accessibility dump was readable (3 dump(s) saved in ui/; last acquisition: /sdcard/p10d-ui.xml)
+P10D_SCREENSHOTS FAIL :: 5 screenshots (blank/off frames: 0): fewer than the 6 a complete run captures, because the run did not reach every step (see DIAGNOSIS.txt for where it stopped)
