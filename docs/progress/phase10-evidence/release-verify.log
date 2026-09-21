@@ -1,5 +1,5 @@
-[2026-09-21T07:35:42Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=1.18.23-phase10 versionCode=8
-[2026-09-21T07:35:42Z] === gradle :app:assembleRelease :app:bundleRelease ===
+[2026-09-21T08:12:07Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=1.18.23-phase10 versionCode=8
+[2026-09-21T08:12:07Z] === gradle :app:assembleRelease :app:bundleRelease ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
@@ -11,9 +11,9 @@ RELEASE SIGNING: not configured -> release artifacts are UNSIGNED (CI behavior; 
 
 > Task :app:verifyAndStagePayload
 PAYLOAD STAGING: -PskipPayload=null SKIP_PAYLOAD=null
-PAYLOAD_SOURCE runtime-payload.tar.gz=19967872B runtime-manifest.json=187351B
+PAYLOAD_SOURCE runtime-payload.tar.gz=19967973B runtime-manifest.json=187351B
 Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/assets / /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/jniLibs
-STAGED_ASSETS n=2 runtime-manifest.json(187351B), runtime-payload.tar.gz(19967872B)
+STAGED_ASSETS n=2 runtime-manifest.json(187351B), runtime-payload.tar.gz(19967973B)
 STAGED_JNILIBS n=12 arm64-v8a/libbun.so, x86_64/libbun.so, arm64-v8a/libchildshim.so, x86_64/libchildshim.so, arm64-v8a/libexecshim.so, x86_64/libexecshim.so, arm64-v8a/libgit.so, x86_64/libgit.so, arm64-v8a/librg.so, x86_64/librg.so, arm64-v8a/libseccompshim.so, x86_64/libseccompshim.so
 
 > Task :app:preBuild
@@ -42,8 +42,8 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:checkReleaseDuplicateClasses
 > Task :app:desugarReleaseFileDependencies
 > Task :app:mergeReleaseStartupProfile
-> Task :app:mergeReleaseNativeLibs
 > Task :app:processReleaseResources
+> Task :app:mergeReleaseNativeLibs
 > Task :app:mergeExtDexRelease
 > Task :app:mergeReleaseArtProfile
 > Task :app:mergeReleaseShaders
@@ -87,8 +87,8 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 > Task :app:processReleaseJavaRes
 > Task :app:mergeReleaseJavaResource
 > Task :app:mergeDexRelease
-> Task :app:buildReleasePreBundle
 > Task :app:compileReleaseArtProfile
+> Task :app:buildReleasePreBundle
 > Task :app:packageReleaseBundle
 > Task :app:lintVitalAnalyzeRelease
 > Task :app:packageRelease
@@ -103,12 +103,12 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 
 BUILD SUCCESSFUL in 2m 30s
 60 actionable tasks: 56 executed, 4 from cache
-[2026-09-21T07:38:13Z] apk=app-release-unsigned.apk (131048725 bytes)
-[2026-09-21T07:38:13Z] aab=app-release.aab (119147034 bytes)
-[2026-09-21T07:38:13Z] RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
-[2026-09-21T07:38:13Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=169 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
-[2026-09-21T07:38:13Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
-[2026-09-21T07:38:13Z] RELEASE_AAB PASS :: CONTENTS entries=174 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
-[2026-09-21T07:38:13Z] sha256:
-e10c3a854edc6fee1ef14382d1d726b01ba34b87e41204e853dca415a15db6a5  ./app-release-unsigned.apk
-4351685b45b3cfc9fcac46cdb6b42b71cb40d973ca18210827cbd4bb5c6d8c23  ./app-release.aab
+[2026-09-21T08:14:38Z] apk=app-release-unsigned.apk (131048809 bytes)
+[2026-09-21T08:14:38Z] aab=app-release.aab (119147118 bytes)
+[2026-09-21T08:14:38Z] RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
+[2026-09-21T08:14:38Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=169 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
+[2026-09-21T08:14:38Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
+[2026-09-21T08:14:38Z] RELEASE_AAB PASS :: CONTENTS entries=174 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
+[2026-09-21T08:14:39Z] sha256:
+edc716d80b34b9ff6e94d98ab4ad1fd37846c18893b76aa5bf0c396e0a4bbbe9  ./app-release-unsigned.apk
+89faebf7e5ba18b64672c4c1180e3ebd1d7c9f7bc7ff2c3f3492fc9c13fba600  ./app-release.aab
