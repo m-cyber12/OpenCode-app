@@ -1372,14 +1372,13 @@ do with the phone.
   **pass=68 fail=0** (~6 minutes; `phase10/scripts/test-90-real-device.sh`). One of the
   nine scenarios is the owner's bundle reproduced byte for byte (§B.4).
 * **CI: every run on this appendix's tree is green.** Since the live-tool-gate race was fixed
-  (§B.9.1), each revision of this text has been pushed and run, and each came back with the
-  whole board passing — the most recent six, `35534807555`/`9921645`,
-  `35539788484`/`00ea9d9` (the fix itself: `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, from
-  `pass=13 fail=1` before it), `35541416618`/`c26cbee`, `35552251746`/`3e229c2`,
-  `35554245133`/`9ca9978` and `35571950861`/`8fa9830`, all in the 29–31 minute band with
-  `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0`. That is stated as a pattern
-  rather than a list to be extended by hand: the runs are re-verified, the sentence is not
-  re-edited for each one. §B.9 still holds the reds in between — two on
+  (§B.9.1), each revision of this text has been pushed and run, and each run came back with
+  the whole board passing — including `35539788484`/`00ea9d9`, the fix itself
+  (`P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, from `pass=13 fail=1` before it). Every one
+  of them lands in the same 29–31 minute band and ends `phase6_ui_fails=0 phase10_gate_fails=0
+  phase9_gate_fails=0`, and §B.9's table is the per-run record up to the revision this text was
+  last edited — a document cannot list runs that start after it is written, and pretending
+  otherwise is how the previous enumeration went stale. §B.9 still holds the reds in between — two on
   **documentation-only** commits (one whose log could not be read from the authoring
   environment, one traced to a **race in the Phase 6 live-tool gate** rather than the product)
   and one carrying the fix's first form, which **did not compile** — Kotlin refuses a smart
@@ -1768,6 +1767,11 @@ honest device-side FAIL with a real cause both satisfy the brief, a SKIP does no
 
 ## B.9 The CI runs behind this appendix, including one I could not explain
 
+The run series as of the revision this appendix was last edited: every run named here was read
+from its own committed evidence (`docs/progress/phase10-evidence/`), not from the workflow's
+verdict alone — a red step and a red gate are different things, and the table says which one
+each run hit.
+
 | Run | Commit | Result |
 |---|---|---|
 | `35515429924` | `c96a92a` (the owner's `p10d-out/` upload) | SUCCESS, 24m08s — the v2-era tree |
@@ -1781,6 +1785,7 @@ honest device-side FAIL with a real cause both satisfy the brief, a SKIP does no
 | `35552251746` | `3e229c2` | **SUCCESS**, 29m: `P10-STATIC`, `P10_DRIVER_SELFTEST`, `P10-UNIT` 305/0, `P10-DEVICE` (fresh AVD 14), `P6-UI totals: pass=14 fail=0 skip=0`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1–W4 + visibility all PASS, `P10_SUMMARY` `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
 | `35554245133` | `9ca9978` | **SUCCESS**, 29m: the same full board — `P10-STATIC`, `P10_DRIVER_SELFTEST` (9 scenarios), `P10-UNIT` 305/0, `P10-PAYLOAD`, `P10-DEVICE` (fresh AVD 14), `P6-UI totals: ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1–W4 + the outside-the-app visibility/shell class, `P10_UNSIGNED PASS`, `P10_SUMMARY … phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
 | `35571950861` | `8fa9830` | **SUCCESS**, 29m: the same board on the revision that fixed the citations — `P10-STATIC`, `P10_DRIVER_SELFTEST` (9 scenarios), `P10-UNIT` 305/0, `P10-DEVICE` (fresh AVD 14), `P6-UI totals: ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0` with `P6_L2 PASS :: tool=bash status=completed`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1/W2/W4 + `SHELL_READ`/`SHELL_WRITE` PASS, `P10_UNSIGNED PASS`, `P10_SUMMARY 2026-09-21T07:41:54Z` |
+| `35574869085` | `69d222e` | **SUCCESS**, 29m: the same board on the revision that made the green-run claim a pattern — `P6-UI totals: ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0` with `P6_L2 PASS :: tool=bash status=completed`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1–W4 + `SHELL_LIST`/`SHELL_READ`/`SHELL_WRITE`/`SHELL_BASELINE` PASS, `P10_SUMMARY 2026-09-21T08:19:01Z` |
 
 **One red run whose cause I could not read.** `35534543455` (commit `1ca3c49` — the same tree
 as `9921645` apart from two documentation lines) failed at the pipeline step. Its job log and
