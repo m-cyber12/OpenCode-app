@@ -26,10 +26,6 @@ P10_SMOKE_UI_F3 PASS :: p
 P10_SMOKE_UI_F3 PASS :: projectsEmptyState=true typedName=true createdThroughUi=true chatScreen=true composerEnabled=true projectNameShown=true leakedTokens=[] screenshots=projects:40276,chat:50607
 P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=t
 P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=34350, 02-first-run-ready.png=40276, 03-first-run-projects.png=40276, 04-first-run-chat.png=50607]
-P10_SMOKE_UI_L1 PASS :: p
-P10_SMOKE_UI_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=12 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot
-P10_SMOKE_UI_L2 PASS :: tool=bash status=completed pa
-P10_SMOKE_UI_L2 PASS :: tool=bash status=completed partId=prt_0c3521c000012UM88VS6NU0Wrg cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0 marker=P6LIVE328741 screenshots[bytes=65044 ink=0.075 via=
-P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0 on the release-shaped build (identical gates to the debug run)
+P10_SMOKE_UI FAIL :: pass=12 fail=2 skip=0 - a gate that passes on debug and fails here is a RELEASE-SHAPE finding (see p10-smoke-ui.log)
 P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
 P10_STORE_ASSETS PASS :: 512 icon + 1024x500 feature graphic + 4 screenshots at a real screen size
