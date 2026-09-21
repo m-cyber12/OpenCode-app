@@ -1,10 +1,8 @@
-wait(app-window) TIMED OUT after 304s
-  waiting for: welcome_screen|welcome_continue|Continue|Settings and diagnostics|OpenCode
-  device: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1]
-  foreground: mCurrentFocus=Window{940d65 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#10307)/@0x999b80f, shown=false, windowType=1] ; topResumedActivity=ActivityRecord{4d92d03 u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity t124 d0}
-  last dump: p10d-out/ui/ui-wait-app-window.xml 
-  dump attrs: 
-  on screen: 
-visibility stage did not launch (rc=127). First lines of visibility.log:
-  bash: /p/OpenCodeGUI/phase10/scripts/92-workspace-visibility.sh: No such file or directory
-visibility: one or more verdicts failed (rc=127); raw ls/cat output:
+harness preflight: the dump was written and read back, but the READER produced nothing.
+  reader: python3 P:\OPEN APP\phase10\scripts\p10d-ui.py
+  reader stderr: C:\Users\MH\AppData\Local\Python\pythoncore-3.14-64\python.exe: can't open file 'P:\\OPEN APP\\phase10\\scripts\\p10d-ui.py': [Errno 2] No such file or directory C:\Users\MH\AppData\Local\Python\pytho
+  dump: 19963 bytes of XML from /sdcard/p10d-ui.xml
+  host shell: windows-msys; script dir: /p/OPEN APP/phase10; cwd: /p/OPEN APP
+  If the reader path above contains a POSIX path (/p/...) on a Windows host,
+  Windows Python reads the leading slash as the current DRIVE's root - that is a
+  host path-translation problem, NOT the app failing to show a screen.
