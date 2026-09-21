@@ -29,7 +29,7 @@
   ok   model marker written for the x86_64 carry-forward
   ok   a POSIX host says so, instead of leaving the path question open
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-153655/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-192028/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
 
@@ -106,6 +106,7 @@
   ok   the verdict names the file that is missing
   ok   the diagnosis tells the reader how to get a complete checkout
   ok   no verdict about the phone is produced from a checkout that cannot read it
+  ok   the footer names an unreadable APK instead of printing an empty hash (the third bundle's empty field)
 
 --- scenario: the same host WITH the Windows path conversion (the fix) ---
   ok   a Windows host with path conversion now runs green (rc=0)
@@ -133,5 +134,5 @@
   ok   the screenshot validator ran on copies in that same directory
   ok   and the whole run reached the live turn
 
-=== driver self-test: pass=105 fail=0 ===
+=== driver self-test: pass=106 fail=0 ===
 SELFTEST PASS (driver runs clean, and fails for the RIGHT reasons)
