@@ -1375,8 +1375,9 @@ do with the phone.
   `9921645`) ends `=== PHASE 10 END … rc=0 ===` with `phase6_ui_fails=0
   phase10_gate_fails=0 phase9_gate_fails=0`; `35539788484` (commit `00ea9d9`, the
   live-tool-gate fix in §B.9.1) is green too — `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`,
-  from `pass=13 fail=1` before the fix; and `35541416618` (commit `c26cbee`, the revision of
-  this appendix) passes with the same full board. The runs in between that came back red are
+  from `pass=13 fail=1` before the fix; and `35541416618` (commit `c26cbee`) and
+  `35552251746` (commit `3e229c2`, the revision of this appendix that is on the branch)
+  both pass with the same full board. The runs in between that came back red are
   all recorded in §B.9: two on **documentation-only** commits (one whose log could not be read
   from the authoring environment, one traced to a **race in the Phase 6 live-tool gate**
   rather than the product) and one carrying the fix's first form, which **did not compile** —
@@ -1774,7 +1775,8 @@ honest device-side FAIL with a real cause both satisfy the brief, a SKIP does no
 | `35536768156` | `8ab3c0d` | FAIL, 29m: the live-tool smoke gate's race (§B.9.1) — the legacy `p10-smoke-ui` shape |
 | `35538457964` | `dcca507` | FAIL, 8m17s: the fix's first form did not compile (`smart cast … captured by a changing closure`, 8 errors in `compileDebugAndroidTestKotlin`) — §B.9.1 |
 | `35539788484` | `00ea9d9` | **SUCCESS**, 31m: `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0`; `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0` and `P6-L2 PASS :: tool=bash status=completed` — the gate now judges the finished call (§B.9.1) |
-| `35541416618` | `c26cbee` (this appendix, final revision) | **SUCCESS**, 29m: the full board again — `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
+| `35541416618` | `c26cbee` | SUCCESS, 29m: the full board again — `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
+| `35552251746` | `3e229c2` (this appendix's tree) | **SUCCESS**, 29m: `P10-STATIC`, `P10_DRIVER_SELFTEST`, `P10-UNIT` 305/0, `P10-DEVICE` (fresh AVD 14), `P6-UI totals: pass=14 fail=0 skip=0`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1–W4 + visibility all PASS, `P10_SUMMARY` `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
 
 **One red run whose cause I could not read.** `35534543455` (commit `1ca3c49` — the same tree
 as `9921645` apart from two documentation lines) failed at the pipeline step. Its job log and
