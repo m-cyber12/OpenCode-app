@@ -1,5 +1,5 @@
-[2026-09-21T02:14:46Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=1.18.23-phase10 versionCode=8
-[2026-09-21T02:14:46Z] === gradle :app:assembleRelease :app:bundleRelease ===
+[2026-09-21T02:49:49Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=1.18.23-phase10 versionCode=8
+[2026-09-21T02:49:49Z] === gradle :app:assembleRelease :app:bundleRelease ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
@@ -38,12 +38,12 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:extractProguardFiles
 > Task :app:mergeReleaseResources
 > Task :app:mergeReleaseJniLibFolders
+> Task :app:desugarReleaseFileDependencies
 > Task :app:processReleaseManifestForPackage
 > Task :app:checkReleaseDuplicateClasses
-> Task :app:desugarReleaseFileDependencies
 > Task :app:mergeReleaseStartupProfile
-> Task :app:processReleaseResources
 > Task :app:mergeReleaseNativeLibs
+> Task :app:processReleaseResources
 > Task :app:mergeExtDexRelease
 > Task :app:mergeReleaseArtProfile
 > Task :app:mergeReleaseShaders
@@ -87,12 +87,12 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 > Task :app:processReleaseJavaRes
 > Task :app:mergeReleaseJavaResource
 > Task :app:mergeDexRelease
-> Task :app:buildReleasePreBundle
 > Task :app:compileReleaseArtProfile
+> Task :app:buildReleasePreBundle
 > Task :app:packageReleaseBundle
+> Task :app:lintVitalAnalyzeRelease
 > Task :app:packageRelease
 > Task :app:createReleaseApkListingFileRedirect
-> Task :app:lintVitalAnalyzeRelease
 > Task :app:signReleaseBundle
 > Task :app:produceReleaseBundleIdeListingFile
 > Task :app:createReleaseBundleListingFileRedirect
@@ -101,14 +101,14 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 > Task :app:lintVitalRelease
 > Task :app:assembleRelease
 
-BUILD SUCCESSFUL in 2m 19s
+BUILD SUCCESSFUL in 2m 40s
 60 actionable tasks: 56 executed, 4 from cache
-[2026-09-21T02:17:06Z] apk=app-release-unsigned.apk (131048641 bytes)
-[2026-09-21T02:17:06Z] aab=app-release.aab (119146947 bytes)
-[2026-09-21T02:17:06Z] RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
-[2026-09-21T02:17:06Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=169 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
-[2026-09-21T02:17:06Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
-[2026-09-21T02:17:06Z] RELEASE_AAB PASS :: CONTENTS entries=174 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
-[2026-09-21T02:17:06Z] sha256:
-c143e906f128c158652e815420e7d206f312b0f5407571d68e736b760b015b56  ./app-release-unsigned.apk
-f3ad8dac806055b06c081a8dd257e50a68b7abf9985427358667d58919236624  ./app-release.aab
+[2026-09-21T02:52:30Z] apk=app-release-unsigned.apk (131048521 bytes)
+[2026-09-21T02:52:30Z] aab=app-release.aab (119146828 bytes)
+[2026-09-21T02:52:30Z] RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
+[2026-09-21T02:52:30Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=169 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
+[2026-09-21T02:52:30Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
+[2026-09-21T02:52:30Z] RELEASE_AAB PASS :: CONTENTS entries=174 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
+[2026-09-21T02:52:31Z] sha256:
+e2c50bd9ceb3b25e13d39c4cd30162032939c5e36db4e5ec7b7c36c487280478  ./app-release-unsigned.apk
+5011e120dd2ab9c452d5f00ae691cd290cce883247845734ba6e55e811270df1  ./app-release.aab
