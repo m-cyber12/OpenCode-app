@@ -27,8 +27,9 @@
   ok   live turn with a tool card
   ok   in-app browser path == shell-visible path
   ok   model marker written for the x86_64 carry-forward
+  ok   a POSIX host says so, instead of leaving the path question open
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-143917/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-153655/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
 
@@ -93,14 +94,27 @@
   ok   no verdict prints an empty node count (the tell the owner's bundle had)
   ok   DIAGNOSIS.txt quotes the reader's real error, which used to be discarded
   ok   the diagnosis names the cause instead of leaving it to the reader
+  ok   the diagnosis lists every path form that was tried, so the next host is not a guess
+  ok   the reader FAIL points at the per-form probe log kept in the bundle
+  ok   the probe log is in the bundle (evidence, not a claim)
   ok   no app verdict is invented from a reader that never ran
   ok   nothing times out for minutes - the failure is immediate
+
+--- scenario: a checkout missing its helpers (the file-by-file download) ---
+  ok   the run stops before the phone (rc=3)
+  ok   HARNESS_CHECKOUT FAIL names the incomplete checkout
+  ok   the verdict names the file that is missing
+  ok   the diagnosis tells the reader how to get a complete checkout
+  ok   no verdict about the phone is produced from a checkout that cannot read it
 
 --- scenario: the same host WITH the Windows path conversion (the fix) ---
   ok   a Windows host with path conversion now runs green (rc=0)
   ok   HARNESS_READER PASS - the reader really parsed the dump
   ok   the run got past the preflight and drove the app
   ok   the verdict shows the converted path it used (evidence of the conversion)
+  ok   the run says which path form every Python tool is being handed
+  ok   the screenshot validator ran through that form too (not just the reader)
+  ok   and no capture is reported as unvalidated on this host
   ok   the first-run screens were read on the converted path
   ok   the live turn ran - the whole run is usable on a simulated Windows host
 
@@ -111,5 +125,13 @@
   ok   the visibility driver ran and passed with a relative --out
   ok   and nothing was written into phase10/ by the child's cd
 
-=== driver self-test: pass=87 fail=0 ===
+--- scenario: a host where only a temp-dir copy opens (the fallback) ---
+  ok   the run is green through the temp-dir fallback (rc=0)
+  ok   HARNESS_READER PASS through the temp-dir copy
+  ok   run.log says the whole run is on the temp-dir path form
+  ok   the inline dump script read the screen too (this gate said 'no path shown' when the dump path was handed over unconverted)
+  ok   the screenshot validator ran on copies in that same directory
+  ok   and the whole run reached the live turn
+
+=== driver self-test: pass=105 fail=0 ===
 SELFTEST PASS (driver runs clean, and fails for the RIGHT reasons)
