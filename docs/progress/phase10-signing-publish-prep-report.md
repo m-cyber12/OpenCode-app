@@ -1371,18 +1371,19 @@ do with the phone.
 * Driver self-test extended to **9 scenarios / 68 checks**, re-run on this commit:
   **pass=68 fail=0** (~6 minutes; `phase10/scripts/test-90-real-device.sh`). One of the
   nine scenarios is the owner's bundle reproduced byte for byte (§B.4).
-* **CI: green on this appendix's own code.** Five runs carry it. `35534807555` (commit
-  `9921645`) ends `=== PHASE 10 END … rc=0 ===` with `phase6_ui_fails=0
-  phase10_gate_fails=0 phase9_gate_fails=0`; `35539788484` (commit `00ea9d9`, the
-  live-tool-gate fix in §B.9.1) is green too — `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`,
-  from `pass=13 fail=1` before the fix. The revisions after that one are green too —
-  `35541416618` (`c26cbee`), `35552251746` (`3e229c2`) and `35554245133` (`9ca9978`) — each
-  with the same full board, so the text below has been through the pipeline as often as it
-  has been edited. The runs in between that came back red are
-  all recorded in §B.9: two on **documentation-only** commits (one whose log could not be read
-  from the authoring environment, one traced to a **race in the Phase 6 live-tool gate**
-  rather than the product) and one carrying the fix's first form, which **did not compile** —
-  Kotlin refuses a smart cast on a local captured by a changing closure — and was rewritten.
+* **CI: every run on this appendix's tree is green.** Since the live-tool-gate race was fixed
+  (§B.9.1), each revision of this text has been pushed and run, and each came back with the
+  whole board passing — the most recent six, `35534807555`/`9921645`,
+  `35539788484`/`00ea9d9` (the fix itself: `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, from
+  `pass=13 fail=1` before it), `35541416618`/`c26cbee`, `35552251746`/`3e229c2`,
+  `35554245133`/`9ca9978` and `35571950861`/`8fa9830`, all in the 29–31 minute band with
+  `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0`. That is stated as a pattern
+  rather than a list to be extended by hand: the runs are re-verified, the sentence is not
+  re-edited for each one. §B.9 still holds the reds in between — two on
+  **documentation-only** commits (one whose log could not be read from the authoring
+  environment, one traced to a **race in the Phase 6 live-tool gate** rather than the product)
+  and one carrying the fix's first form, which **did not compile** — Kotlin refuses a smart
+  cast on a local captured by a changing closure — and was rewritten.
   The gates themselves, from the first green v3 run (`8d32fed`, 29m39s, all eleven steps):
   every gate ran and passed — `P10-STATIC PASS`, `P10_DRIVER_SELFTEST PASS` (the 9 scenarios),
   `P10-UNIT PASS` (JVM tests=305 failures=0 errors=0 skipped=0), `P10-PAYLOAD PASS`,
@@ -1779,6 +1780,7 @@ honest device-side FAIL with a real cause both satisfy the brief, a SKIP does no
 | `35541416618` | `c26cbee` | SUCCESS, 29m: the full board again — `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
 | `35552251746` | `3e229c2` | **SUCCESS**, 29m: `P10-STATIC`, `P10_DRIVER_SELFTEST`, `P10-UNIT` 305/0, `P10-DEVICE` (fresh AVD 14), `P6-UI totals: pass=14 fail=0 skip=0`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1–W4 + visibility all PASS, `P10_SUMMARY` `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
 | `35554245133` | `9ca9978` | **SUCCESS**, 29m: the same full board — `P10-STATIC`, `P10_DRIVER_SELFTEST` (9 scenarios), `P10-UNIT` 305/0, `P10-PAYLOAD`, `P10-DEVICE` (fresh AVD 14), `P6-UI totals: ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1–W4 + the outside-the-app visibility/shell class, `P10_UNSIGNED PASS`, `P10_SUMMARY … phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
+| `35571950861` | `8fa9830` | **SUCCESS**, 29m: the same board on the revision that fixed the citations — `P10-STATIC`, `P10_DRIVER_SELFTEST` (9 scenarios), `P10-UNIT` 305/0, `P10-DEVICE` (fresh AVD 14), `P6-UI totals: ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0` with `P6_L2 PASS :: tool=bash status=completed`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1/W2/W4 + `SHELL_READ`/`SHELL_WRITE` PASS, `P10_UNSIGNED PASS`, `P10_SUMMARY 2026-09-21T07:41:54Z` |
 
 **One red run whose cause I could not read.** `35534543455` (commit `1ca3c49` — the same tree
 as `9921645` apart from two documentation lines) failed at the pipeline step. Its job log and
