@@ -130,12 +130,48 @@ ROOT="$(cd "$DIR/.." && pwd)"
 # converter and ships with Git Bash; the sed fallback covers the /<drive>/ mount form
 # for hosts that lack it. DEVICE paths are never touched - they stay POSIX for adb,
 # and MSYS_NO_PATHCONV (above) stops MSYS from rewriting those.
-host_path() {
+# Two forms, because neither is right everywhere:
+#   -m (mixed: P:/open/app/...) has FORWARD slashes, which Windows accepts and which
+#      no shell layer can turn into an escape sequence or a UNC prefix;
+#   -w (P:\open\app\...) is the form some Windows-only tools print and expect.
+# The 2026-09-21 bundle (run 3) shows why this is not academic: with -w the reader was
+# handed P:\OPEN APP\phase10\scripts\p10d-ui.py and Python answered "No such file or
+# directory" - a path that looks right in the log and is not the file Python opens.
+# So the driver does not guess: it PROBES (see choose_reader) and keeps what works.
+win_path() { # $1 = POSIX host path, $2 = cygpath flag
   case "${HOST_SHELL:-}" in
     windows-msys)
-      if command -v cygpath >/dev/null 2>&1; then cygpath -w -- "$1"
+      if command -v cygpath >/dev/null 2>&1; then cygpath "$2" -- "$1"
       else printf '%s' "$1" | sed -E 's#^/([A-Za-z])/#\1:/#'
       fi ;;
+    *) printf '%s' "$1" ;;
+  esac
+}
+host_path_m() { win_path "$1" -m; }
+host_path_w() { win_path "$1" -w; }
+# Compatibility: everything that used host_path() wants a path Python can open, and
+# the mixed form is the safer default on Windows.
+host_path() { host_path_m "$1"; }
+
+# A path typed by a human in a Windows shell ("P:\OPEN APP\phase10\signing\x.apk",
+# or one with backslashes and no drive) must be turned into the POSIX form before this
+# script uses it: `[ -f ]`, sha256sum and every other MSYS tool read the POSIX form,
+# while adb.exe would take either. Without this the footer prints "sha256=" (empty)
+# and the APK "is not found" although the human can see it in Explorer.
+norm_host_arg() {
+  case "${HOST_SHELL:-}" in
+    windows-msys)
+      case "$1" in
+        [A-Za-z]:[\\/]*)
+          if command -v cygpath >/dev/null 2>&1; then cygpath -u -- "$1"
+          else
+            d=$(printf '%s' "$1" | cut -c1 | tr 'A-Z' 'a-z')
+            rest=$(printf '%s' "$1" | cut -c3- | tr '\\' '/')
+            printf '/%s/%s' "$d" "${rest#/}"
+          fi ;;
+        *\\*) printf '%s' "$1" | tr '\\' '/' ;;
+        *) printf '%s' "$1" ;;
+      esac ;;
     *) printf '%s' "$1" ;;
   esac
 }
@@ -147,9 +183,9 @@ SKIP_LIVE=0
 SCALE=1
 while [ $# -gt 0 ]; do
   case "$1" in
-    --apk) APK="${2:-}"; shift 2 ;;
+    --apk) APK="$(norm_host_arg "${2:-}")"; shift 2 ;;
     --cert-sha256) CERT_EXPECT="$(printf '%s' "${2:-}" | tr -d ' :' | tr 'A-Z' 'a-z')"; shift 2 ;;
-    --out) OUT="${2:-}"; shift 2 ;;
+    --out) OUT="$(norm_host_arg "${2:-}")"; shift 2 ;;
     --skip-live) SKIP_LIVE=1; shift ;;
     --timeout-scale) SCALE="${2:-1}"; shift 2 ;;
     -h|--help) sed -n '2,60p' "$DIR/scripts/$(basename "$0")"; exit 0 ;;
@@ -239,6 +275,7 @@ command -v adb >/dev/null 2>&1 || { echo "FATAL: adb not on PATH (install platfo
 adb get-state >/dev/null 2>&1 || { echo "FATAL: no device visible to adb (plug the phone in, enable USB debugging, accept the prompt)"; exit 2; }
 PKG="io.github.mcyber12.opencode"
 SHOT_N=0
+SHOT_UNVERIFIED=0
 LAST_DUMP=""
 # How many dumps came back unusable. A run where this is non-zero and the app was
 # demonstrably on screen is a harness problem, not a product problem, and the
@@ -358,18 +395,78 @@ ui_dump() { # $1 = tag -> $OUT/ui/ui-<tag>.xml ; returns non-zero when unusable
 
 # The reader's stderr used to go to /dev/null, which is why the owner's run could not
 # be explained from its own bundle: the one line that said WHY nothing was on screen
-# was thrown away. It is kept now (first write wins, so the file stays short and holds
-# the first failure), counted, and quoted by the harness gates below.
+# was thrown away. It is kept now, counted, and quoted by the harness gates.
 READER_ERR="$OUT/reader-stderr.txt"
 READER_FAILURES=0
+# Filled in by choose_reader() at R0.5: which way of handing paths to Python actually
+# works on THIS host, and what to pass as the reader script.
+READER_CMD=""
+READER_VIA=""
+MAP_MODE="posix"
+TMP_READER=""
+TMP_READER_WIN=""
+TMP_DUMP=""
+TMP_DUMP_WIN=""
+TMP_DIR=""
+TMP_DIR_WIN=""
+MAP_SEQ=0
+
+# EVERYTHING the interpreter is handed - not just the reader - has to use the form the
+# probe proved works. The screenshot validator and the APK inspector are Python too, and
+# on the owner's host a wrong form made them silent: an empty verdict from p10d-png.py
+# counted as "not blank" (so the screenshots gate went green with nothing verified) and
+# an empty check-apk output read like "the APK is broken". Both now take their paths from
+# the same decision.
+py_script() { # $1 = POSIX path of a script -> as $PY must receive it
+  case "$MAP_MODE" in
+    posix) printf '%s' "$1" ;;
+    m) host_path_m "$1" ;;
+    w) host_path_w "$1" ;;
+    tmp)
+      # This interpreter could not open the checkout, but it did open the copy the probe
+      # made, so every script it runs is a copy in that same directory.
+      local b; b="$(basename "$1")"
+      cp -f "$1" "$TMP_DIR/$b" 2>/dev/null || true
+      printf '%s' "$TMP_DIR_WIN/$b" ;;
+    *) printf '%s' "$1" ;;
+  esac
+}
+map_file() { # $1 = POSIX path of a data file -> as $PY must receive it
+  case "$MAP_MODE" in
+    posix) printf '%s' "$1" ;;
+    m) host_path_m "$1" ;;
+    w) host_path_w "$1" ;;
+    tmp)
+      local b; MAP_SEQ=$((MAP_SEQ+1)); b="$(printf '%03d-%s' "$MAP_SEQ" "$(basename "$1")")"
+      cp -f "$1" "$TMP_DIR/$b" 2>/dev/null || true
+      printf '%s' "$TMP_DIR_WIN/$b" ;;
+    *) printf '%s' "$1" ;;
+  esac
+}
+
+map_dump() { # $1 = POSIX host path of the dump -> the form THIS host's Python opens
+  case "$MAP_MODE" in
+    posix) printf '%s' "$1" ;;
+    m) host_path_m "$1" ;;
+    w) host_path_w "$1" ;;
+    tmp) printf '%s' "$TMP_DUMP_WIN" ;;
+    *) printf '%s' "$1" ;;
+  esac
+}
+
 ui() { # shellcheck disable=SC2086
-  local out rc
-  out=$($PY "$UI_PY" "$(host_path "$LAST_DUMP")" "$@" 2>>"$READER_ERR"); rc=$?
+  local out rc d
+  if [ "$MAP_MODE" = tmp ]; then
+    cp -f "$LAST_DUMP" "$TMP_DUMP" 2>/dev/null || true
+    d="$TMP_DUMP_WIN"
+  else
+    d="$(map_dump "$LAST_DUMP")"
+  fi
+  out=$($PY "$READER_CMD" "$d" "$@" 2>>"$READER_ERR"); rc=$?
   # A reader FAILURE is "the reader could not answer": exit >= 2 with nothing on
   # stdout (2 = the interpreter could not open the script, 3 = the dump would not
   # parse). Exit 1 is a normal "not found" - `ui has` prints nothing on purpose and
-  # must not be counted as a broken reader, and neither must any other lookup that
-  # legitimately finds nothing.
+  # must not be counted as a broken reader.
   if [ -z "$out" ] && [ "${rc:-0}" -ge 2 ]; then READER_FAILURES=$((READER_FAILURES + 1)); fi
   printf '%s' "$out"
   return $rc; }
@@ -429,10 +526,16 @@ shot() { # $1 = tag ; validates that the png is not a blank/off screen
     return 1
   fi
   local verdict
-  verdict=$($PY "$PNG_PY" "$(host_path "$OUT/screenshots/$name")" 2>/dev/null | tail -1)
+  verdict=$($PY "$PNG_PY" "$(map_file "$OUT/screenshots/$name")" 2>/dev/null | tail -1)
   echo "$(date -u +%FT%TZ) $name :: $verdict" >> "$OUT/screenshots.log"
   case "$verdict" in
     *"screen=NO"*) diag "screenshot $name looks blank/off: $verdict"; return 1 ;;
+    "") # The validator said nothing at all. That is not "the screen is fine": it is the
+        # validator not running (a wrong path form would do exactly this), so it is named
+        # here and counted in the screenshots gate, never silently counted as a pass.
+       SHOT_UNVERIFIED=$((SHOT_UNVERIFIED+1))
+       diag "screenshot $name could not be validated (p10d-png.py returned nothing; see python path mode in run.log) - NOT counted as a real screenshot"
+       return 1 ;;
   esac
   return 0
 }
@@ -620,6 +723,98 @@ else
   rd DEVICE_AWAKE 0 "screen awake and unlocked before any UI step: $(screen_state)"
 fi
 
+# ---- the host's own checkout, and how to hand paths to its Python --------------
+#
+# R0.4 (below) exists because of the owner's third bundle (2026-09-21, "OPEN APP"):
+# the run reported
+#     can't open file 'P:\OPEN APP\phase10\scripts\p10d-ui.py': [Errno 2]
+# for a reader that is committed next to this script - while bash, running the very
+# same directory, was fine. A checkout assembled file by file (the GitHub web UI
+# leaves the helpers behind) has that signature, and it is indistinguishable from a
+# path bug unless the driver checks the files it needs with the tools it has.
+#
+# R0.5 then PROBES the ways of giving Python a path, instead of assuming one:
+#   posix  the POSIX path (right when the host's Python is an MSYS/Cygwin one)
+#   -m     P:/open/app/...    (forward slashes - no escaping, no UNC surprise)
+#   -w     P:\open\app\...   (what Windows tools print)
+#   tmp    reader + dump copied to the host temp dir: answers "is it the path or the
+#          file?" and rescues a checkout on a drive Python cannot follow
+# The first form that returns a node count wins, and the run says which one it used.
+HELPER_FILES="scripts/p10d-ui.py scripts/p10d-png.py scripts/check-apk.py scripts/92-workspace-visibility.sh"
+
+missing_helpers() { # prints the missing ones, one per line, empty when complete
+  local rel
+  for rel in $HELPER_FILES; do
+    [ -f "$DIR/$rel" ] || printf 'phase10/%s\n' "$rel"
+  done
+}
+
+PROBE_LOG=""
+PROBE_TRIED=""
+probe_reader() { # $1 = label, $2 = script as handed to python, $3 = dump as handed
+  local out rc
+  PROBE_TRIED="${PROBE_TRIED:+$PROBE_TRIED, }$1"
+  out=$($PY "$2" "$3" nodes 2>"$OUT/reader-probe-err.txt"); rc=$?
+  if [ "$rc" = 0 ] && [ -n "$out" ]; then
+    PROBE_LOG="$PROBE_LOG  probe $1: OK ($out)
+"
+    printf '%s' "$PROBE_LOG" >> "$OUT/reader-probe.txt"
+    return 0
+  fi
+  PROBE_LOG="$PROBE_LOG  probe $1: rc=$rc out='$(printf '%s' "$out" | head -c 60)' err='$(head -1 "$OUT/reader-probe-err.txt" 2>/dev/null | tr -d '\r' | head -c 200)'
+"
+  return 1
+}
+
+choose_reader() { # sets READER_CMD / MAP_MODE / READER_VIA; returns 1 if nothing works
+  local dump="$LAST_DUMP"
+  PROBE_TRIED=""; PROBE_LOG=""
+  : > "$OUT/reader-probe.txt"
+  # 1. POSIX, exactly as the script holds it
+  if probe_reader "POSIX path" "$UI_PY" "$dump"; then
+    READER_CMD="$UI_PY"; MAP_MODE=posix
+    READER_VIA="the POSIX path (this host's Python understands it)"
+    return 0
+  fi
+  # 2. / 3. the two Windows forms
+  if command -v cygpath >/dev/null 2>&1; then
+    if probe_reader "cygpath -m" "$(host_path_m "$UI_PY")" "$(host_path_m "$dump")"; then
+      READER_CMD="$(host_path_m "$UI_PY")"; MAP_MODE=m
+      READER_VIA="cygpath -m (forward-slash Windows path)"
+      return 0
+    fi
+    if probe_reader "cygpath -w" "$(host_path_w "$UI_PY")" "$(host_path_w "$dump")"; then
+      READER_CMD="$(host_path_w "$UI_PY")"; MAP_MODE=w
+      READER_VIA="cygpath -w (backslash Windows path)"
+      return 0
+    fi
+  else
+    PROBE_TRIED="$PROBE_TRIED, cygpath -m/-w (not installed)"
+  fi
+  # 4. copies in the host temp dir - the last resort, and the one that tells a path
+  #    problem apart from a missing file.
+  local tdir="${TMPDIR:-/tmp}/p10d-harness-$$"
+  if mkdir -p "$tdir" 2>/dev/null && cp -f "$UI_PY" "$tdir/p10d-ui.py" 2>/dev/null && cp -f "$dump" "$tdir/dump.xml" 2>/dev/null; then
+    TMP_READER="$tdir/p10d-ui.py"; TMP_DUMP="$tdir/dump.xml"
+    case "${HOST_SHELL:-}" in
+      windows-msys)
+        TMP_READER_WIN="$(host_path_m "$TMP_READER")"; TMP_DUMP_WIN="$(host_path_m "$TMP_DUMP")"
+        TMP_DIR="$tdir"; TMP_DIR_WIN="$(host_path_m "$tdir")" ;;
+      *) TMP_READER_WIN="$TMP_READER"; TMP_DUMP_WIN="$TMP_DUMP"
+        TMP_DIR="$tdir"; TMP_DIR_WIN="$tdir" ;;
+    esac
+    if probe_reader "temp-dir copy" "$TMP_READER_WIN" "$TMP_DUMP_WIN"; then
+      READER_CMD="$TMP_READER_WIN"; MAP_MODE=tmp
+      READER_VIA="a copy in the host temp dir ($TMP_READER_WIN) - the checkout's own location is not reachable from this Python"
+      return 0
+    fi
+  else
+    PROBE_TRIED="$PROBE_TRIED, temp-dir copy (could not copy into $tdir)"
+  fi
+  printf '%s' "$PROBE_LOG" >> "$OUT/reader-probe.txt"
+  return 1
+}
+
 # ---- R0.5: can this HOST read the screen at all? -----------------------------
 # One dump, before a single UI verdict. If it cannot be read, nothing below can be
 # a statement about the app - and the v2 run proved how expensive that is: every
@@ -645,36 +840,68 @@ if [ -z "$PY" ]; then
 else
   rd HARNESS_PYTHON 0 "Python interpreter: $PY ($($PY -c 'import sys; print(sys.version.split()[0])' 2>/dev/null))"
 fi
+
+# ---- R0.4: are the helpers this driver drives actually IN this checkout? -------
+# Cheapest check first, and the one that answers the owner's third bundle. A checkout
+# assembled file-by-file (or an old ZIP with a new script dropped into it) produces a
+# run that looks like a path bug and is really a missing file.
+MISSING_HELPERS="$(missing_helpers | tr '\n' ' ' | sed 's/ *$//')"
+if [ -n "$MISSING_HELPERS" ]; then
+  diag "the harness is INCOMPLETE: these committed files are not in this checkout."
+  diag "  missing: $MISSING_HELPERS"
+  diag "  checked against: $DIR"
+  diag "  bash reads this directory to run this script, so these are files that are"
+  diag "  absent - not a path-format problem. Downloading individual files from the"
+  diag "  GitHub web UI leaves the helpers behind; take the whole branch instead:"
+  diag "    git clone https://github.com/m-cyber12/OpenCode-app.git"
+  diag "    cd OpenCode-app && git checkout arena/01a0b9d5-opencode-app"
+  diag "  (or: Code -> Download ZIP on that branch). Then re-run this script."
+  rd HARNESS_CHECKOUT 1 "this checkout is missing committed helper file(s): $MISSING_HELPERS - the run cannot read the phone's screen without them. bash can see the directory ($DIR), so this is an incomplete download rather than a path problem; get the whole branch: git clone https://github.com/m-cyber12/OpenCode-app.git && git checkout arena/01a0b9d5-opencode-app"
+  bail "the checkout is incomplete (see HARNESS_CHECKOUT)"
+fi
+
+# The dump gate: adb writes the phone's screen to /sdcard and reads it back. If the
+# bytes are not XML, nothing below can speak about the app (the v2 bundle's dumps were
+# 72 bytes of MSYS-rewritten nonsense and the run blamed the app for six minutes).
 if ui_dump "harness-preflight"; then
-  # TWO different things have to work, and v3 gated only the first one:
-  #   1. adb can write and read back a dump  -> the bytes are XML (checked by ui_dump);
-  #   2. the READER can turn that XML into "what is on screen".
-  # The owner's 2026-09-21 bundle proves why both need a gate: adb was fine, the reader
-  # was dead (Windows Python could not open /p/.../p10d-ui.py), and this line printed
-  #     PASS :: the accessibility dump is readable from this host (; acquisition: ...)
-  # with an EMPTY node count in the parentheses, then let the run continue for six
-  # minutes producing "the app never showed a screen" verdicts about an app that was on
-  # screen the whole time. An empty reading is a FAILURE here, never a PASS.
-  PRE_NODES=$(ui_nodes)
-  if [ -z "$PRE_NODES" ] || [ "$PRE_NODES" = "0" ]; then
+  if choose_reader; then
+    # The probe talks to run.log on a green run: which forms failed is only interesting
+    # when every form fails (then it goes to DIAGNOSIS.txt below). DIAGNOSIS.txt has to
+    # stay empty on a clean run - a bundle whose diagnosis file has text in it is read as
+    # "something went wrong here", and it has to mean that.
+    printf '%s' "$PROBE_LOG" >> "$LOG"
+    # The screenshot validator and the APK inspector run through the same decision: the
+    # form that opened the reader is the form they get too.
+    PNG_PY="$(py_script "$DIR/scripts/p10d-png.py")"
+    APK_PY="$(py_script "$DIR/scripts/check-apk.py")"
+    log "python path mode: $MAP_MODE - $PY gets scripts and files as $( [ "$MAP_MODE" = posix ] && printf 'POSIX paths' || printf '%s' "${READER_CMD%/*}/..." ) ($READER_VIA)"
+    PRE_NODES=$(ui_nodes)
+    rd HARNESS_READER 0 "the accessibility reader parsed the dump: $PRE_NODES node(s), reader=$READER_CMD (via $READER_VIA)"
+    rd HARNESS_DUMP 0 "the accessibility dump is readable from this host: $PRE_NODES node(s), acquisition ${LAST_DUMP_MODE:-?}; host shell: ${HOST_SHELL}"
+  else
+    # Files present, four path forms, no way in: this is the harness's own blindness, and
+    # the two facts must stay separate - adb DID get the screen, this host's Python could
+    # not open the reader that reads it.
+    printf '%s' "$PROBE_LOG" | while IFS= read -r l; do diag "$l"; done
+    PRE_BYTES=$(wc -c < "$OUT/ui/ui-harness-preflight.xml" 2>/dev/null | tr -d ' ')
     PRE_ERR=$(head -2 "$READER_ERR" 2>/dev/null | tr -d '\r' | tr '\n' ' ' | cut -c1-200)
-    diag "harness preflight: the dump was written and read back, but the READER produced nothing."
-    diag "  reader: $PY $UI_PY"
-    diag "  reader stderr: ${PRE_ERR:-<empty>}"
-    diag "  dump: $(wc -c < "$OUT/ui/ui-harness-preflight.xml" | tr -d ' ') bytes of XML from ${LAST_DUMP_MODE:-?}"
+    diag "harness preflight: the dump was written and read back, but the READER could not"
+    diag "  be made to read it in any of the path forms this driver knows."
+    diag "  this is a host path-translation problem, not a missing file: all $((1+$(printf '%s\n' $HELPER_FILES | wc -l | tr -d ' '))) files are present in $DIR"
+    diag "  (bash lists them; the interpreter below could not open one of them by any form)"
+    diag "  reader script: $UI_PY ($(wc -c < "$UI_PY" 2>/dev/null | tr -d ' ') bytes)"
+    diag "  interpreter:   $PY"
+    diag "  forms tried:   ${PROBE_TRIED:-none}"
+    diag "  dump:          $PRE_BYTES bytes of XML, from ${LAST_DUMP_MODE:-?} (device path /sdcard/p10d-ui.xml)"
     diag "  host shell: ${HOST_SHELL}; script dir: $DIR; cwd: $(pwd)"
-    diag "  If the reader path above contains a POSIX path (/p/...) on a Windows host,"
-    diag "  Windows Python reads the leading slash as the current DRIVE's root - that is a"
-    diag "  host path-translation problem, NOT the app failing to show a screen."
-    # Two separate facts, recorded separately: the dump WAS written and read back
-    # (that is HARNESS_DUMP), and the reader could not answer what is in it (that is
-    # HARNESS_READER). The owner's bundle collapsed them into one misleading PASS.
-    rd HARNESS_DUMP 0 "the dump was written and read back as XML ($(wc -c < "$OUT/ui/ui-harness-preflight.xml" | tr -d ' ') bytes, acquisition ${LAST_DUMP_MODE:-?}) - but see HARNESS_READER: the reader could not be asked what is in it"
-    rd HARNESS_READER 1 "the accessibility reader produced no output although the dump is readable (${PRE_ERR:-no stderr}) - every UI verdict after this point would describe the harness, not the app, so the run stops HERE (reader: $PY $UI_PY)"
-    bail "the accessibility reader cannot read this phone's screen (see HARNESS_READER)"
+    diag "  reader stderr (first lines): ${PRE_ERR:-<empty>}"
+    diag "  if this is Git Bash on Windows: the checkout directory is not reachable from"
+    diag "  this Python. Move the checkout somewhere short and ASCII (e.g. C:/src/OpenCode-app),"
+    diag "  or run the driver from WSL/Linux, and re-run."
+    rd HARNESS_READER 1 "the accessibility reader could not read the dump by any path form this driver knows - every UI verdict after this point would describe the harness, not the app, so the run stops HERE. forms tried: ${PROBE_TRIED}. reader: $PY $UI_PY; interpreter ${PY##*/}; per-form errors in reader-probe.txt and DIAGNOSIS.txt"
+    rd HARNESS_DUMP 0 "the accessibility dump itself was fine: $((PRE_BYTES+0)) bytes of XML written by adb and read back (${LAST_DUMP_MODE:-?}) - the reader above, not the phone, is what failed this run"
+    bail "the accessibility reader cannot read this phone's screen on this host (see HARNESS_READER)"
   fi
-  rd HARNESS_READER 0 "the accessibility reader parsed the dump: $PRE_NODES node(s) via $UI_PY"
-  rd HARNESS_DUMP 0 "the accessibility dump is readable from this host: $PRE_NODES node(s), acquisition ${LAST_DUMP_MODE:-?}; host shell: ${HOST_SHELL}"
 else
   WHY=$(dump_failure_reason "$OUT/ui/ui-harness-preflight.xml")
   diag "harness preflight: the first accessibility dump could not be read."
@@ -733,7 +960,7 @@ if [ "${P10D_SKIP_ARTIFACT:-0}" = 1 ]; then
 else
 {
   echo "=== check-apk.py (identity, contents, signature presence) ==="
-  $PY "$APK_PY" "$(host_path "$APK")" \
+  $PY "$APK_PY" "$(map_file "$APK")" \
     --expect-signed --expect-not-debuggable --expect-icon --expect-payload \
     --expect-package "$PKG" --expect-version-name "$VNAME" --expect-version-code "$VCODE" \
     --expect-native-abi arm64-v8a --expect-min-sdk 29 \
@@ -1162,7 +1389,12 @@ fi
 step "R10 bundle"
 NSHOTS=$(ls -1 "$OUT/screenshots"/*.png 2>/dev/null | wc -l | tr -d ' ')
 BLANK=$(grep -ac 'screen=NO' "$OUT/screenshots.log" 2>/dev/null)
-if [ "${NSHOTS:-0}" -ge 6 ] && [ "${BLANK:-0}" = 0 ]; then
+if [ "${SHOT_UNVERIFIED:-0}" != 0 ]; then
+  # A capture whose validator said nothing is not evidence of a screen. Naming it here
+  # matters: on a host where the validator cannot open its own script, an empty verdict
+  # used to count as a good frame and this gate went green with nothing checked.
+  rd SCREENSHOTS 1 "$NSHOTS screenshots, but ${SHOT_UNVERIFIED} of them could not be VALIDATED (p10d-png.py returned nothing - a host path problem, not a blank screen; see DIAGNOSIS.txt) - the frames are in screenshots/ but nothing here proves what they show"
+elif [ "${NSHOTS:-0}" -ge 6 ] && [ "${BLANK:-0}" = 0 ]; then
   rd SCREENSHOTS 0 "$NSHOTS screenshots captured at every step and every one is a real screen (screenshots/)"
 elif [ "${NSHOTS:-0}" -ge 2 ]; then
   # Not a blank-frame problem: there are simply fewer captures than the six a run

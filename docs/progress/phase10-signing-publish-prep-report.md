@@ -1787,6 +1787,7 @@ each run hit.
 | `35541416618` | `c26cbee` | SUCCESS, 29m: the full board again — `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
 | `35552251746` | `3e229c2` | **SUCCESS**, 29m: `P10-STATIC`, `P10_DRIVER_SELFTEST`, `P10-UNIT` 305/0, `P10-DEVICE` (fresh AVD 14), `P6-UI totals: pass=14 fail=0 skip=0`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1–W4 + visibility all PASS, `P10_SUMMARY` `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
 | `35554245133` | `9ca9978` | **SUCCESS**, 29m: the same full board — `P10-STATIC`, `P10_DRIVER_SELFTEST` (9 scenarios), `P10-UNIT` 305/0, `P10-PAYLOAD`, `P10-DEVICE` (fresh AVD 14), `P6-UI totals: ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1–W4 + the outside-the-app visibility/shell class, `P10_UNSIGNED PASS`, `P10_SUMMARY … phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
+| `35593075862` | `4ea61aa` | **SUCCESS**, 30m29s, all eleven steps: the run that carries the §B.10 driver fix — `P10-STATIC`, `P10_DRIVER_SELFTEST` (twelve scenarios), `P10-UNIT` 305/0, `P10-DEVICE` (fresh AVD 14), `P6-UI totals: ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0` with `P6_L2 PASS :: tool=bash status=completed`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1/W2/W4 + `SHELL_READ`/`SHELL_WRITE` PASS, `P10_UNSIGNED PASS`, `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
 | `35571950861` | `8fa9830` | **SUCCESS**, 29m: the same board on the revision that fixed the citations — `P10-STATIC`, `P10_DRIVER_SELFTEST` (9 scenarios), `P10-UNIT` 305/0, `P10-DEVICE` (fresh AVD 14), `P6-UI totals: ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0` with `P6_L2 PASS :: tool=bash status=completed`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1/W2/W4 + `SHELL_READ`/`SHELL_WRITE` PASS, `P10_UNSIGNED PASS`, `P10_SUMMARY 2026-09-21T07:41:54Z` |
 | `35574869085` | `69d222e` | **SUCCESS**, 29m: the same board on the revision that made the green-run claim a pattern — `P6-UI totals: ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0` with `P6_L2 PASS :: tool=bash status=completed`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1–W4 + `SHELL_LIST`/`SHELL_READ`/`SHELL_WRITE`/`SHELL_BASELINE` PASS, `P10_SUMMARY 2026-09-21T08:19:01Z` |
 
@@ -2003,3 +2004,146 @@ stays **NOT TESTED**.
 2. **The Play "All files access" state on this phone** cannot be read from the bundle: R5/R7
    (the stages that report it) never ran. CI's W4 gate reports `allFilesAccess=true
    grantHonoured=true` on the emulator; the phone's own state is still unverified.
+
+### B.10.6 What the next phone run should look like (same two commands)
+
+The fix changes nothing about how the run is invoked — same sign step, same
+`90-real-device-signed.sh --apk …`, same `p10d-out/` bundle. What should be different, in
+order:
+
+| Stage | Before (2026-09-21) | What to expect now |
+|---|---|---|
+| R0.5 | `HARNESS_DUMP PASS :: … (; acquisition: …)` — a PASS with an empty node count | `HARNESS_READER PASS :: the accessibility reader parsed the dump: 47 node(s) via …`, then `HARNESS_DUMP PASS` with the same count. If the reader cannot run, the run **stops here (rc=3)** with `HARNESS_READER FAIL` quoting the error — it will not spend five minutes blaming the app |
+| R2 | `ARTIFACT FAIL :: check-apk findings:` (empty) | `ARTIFACT PASS` with the APK's manifest line, or — if the host genuinely cannot inspect it — a **SKIP** carrying the inspector's own error |
+| R4 | `FIRST_RUN FAIL` after a 304 s wait, screenshots showing the projects screen | `FIRST_RUN PASS … reached the projects screen by itself in Ns`. The app auto-advances past welcome, so seeing the projects screen on the phone is the expected, healthy state |
+| R5–R6 | `FILES_SCREEN SKIP`, `LIVE_TURN SKIP` | `FILES_SCREEN PASS` naming the on-device path, then `LIVE_TURN` — add the provider key in the app's Settings first and press Enter at the prompt, or it will SKIP |
+| R7 | `VISIBILITY_HARNESS FAIL … rc=127 /p/OpenCodeGUI/…` | the visibility verdicts (`LOCATION`, `SHELL_LIST`, `SHELL_READ`, `SHELL_WRITE`, `SHARED_ROOT`, `SHELL_BASELINE`) executing and reporting the root the app actually uses (`DOCUMENTS_PROVIDER` may legitimately SKIP on this image) |
+
+Expected end state: `P10D_SCREENSHOTS` PASS (≥6 real screens) and either all green, or a
+device-side FAIL whose reason is a real one. Either satisfies the brief's stop condition; a
+SKIP on `FIRST_RUN_PROJECT`/`FILES_SCREEN`/`LIVE_TURN` still does not.
+
+---
+
+## B.11 Third device run (2026-09-21, signed build): the harness stops early by design, and the path question stops being a guess
+
+**What this section answers.** The owner's third bundle (`p10d-out/`, upload `0eac698`, run
+timestamp `2026-09-21T14:32:31Z`, `.git` tip `0eac698`) reported `pass=3 fail=1 skip=0` and
+stopped before installing anything. Between a stop that says "the harness cannot read this
+phone's screen" and a stop that says "the app never showed a screen" there is the whole point
+of the last two rounds of work; this section records which one happened, why, and what is
+different in the driver now.
+
+### B.11.1 What the third bundle says
+
+| Verdict | Line | Reading |
+|---|---|---|
+| `P10D_DEVICE_AWAKE` | PASS — `mWakefulness=Awake mShowingLockscreen=false mCurrentFocus=…/MainActivity` | the phone was on and unlocked, with the app's activity resumed |
+| `P10D_HARNESS_PYTHON` | PASS — `python3 3.14.7` | a real interpreter, not the Store stub |
+| `P10D_HARNESS_DUMP` | PASS — 19,963 B `/sdcard/p10d-ui.xml` | adb wrote the screen to the device and read it back |
+| `P10D_HARNESS_READER` | **FAIL** — `python.exe: can't open file 'P:\\OPEN APP\\phase10\\scripts\\p10d-ui.py': [Errno 2]` (twice, in `reader-stderr.txt`) | the interpreter the driver drives cannot open the reader the driver ships |
+| everything else | not reached | `bail()` — by design, no INSTALL, no ARTIFACT, no `FIRST_RUN` verdict, no screenshot |
+
+So: **the app was never tested in this run, and it was never blamed either.** The brief's
+"it could not even install the app" is this stop: R0.5 fires before R3's `adb install`. The
+gate that fix #1 added did its job — three honest PASSes, one honest FAIL, in seconds, with
+the reader's own error kept in the bundle instead of discarded (v3 threw that stderr away;
+that is why the first bundle could not be explained from its own evidence).
+
+Two secondary observations from the same bundle, both consistent with the same cause:
+`sha256=` is empty in the footer (the run stopped before R2 read the APK; the footer prints
+the hash only once the artifact stage has run), and the host printed `script dir: /p/OPEN APP/phase10`
+with `host shell: windows-msys`.
+
+### B.11.2 Why "convert the path with cygpath" was not a fix, and what is
+
+Fix #1 converted host paths with `cygpath -w` on a `windows-msys` host. Run 3 had that
+conversion **and still failed**, which rules out the assumption underneath it: that one
+conversion is right for every Windows host. (A local experiment on this host also closed a
+red herring: CPython *doubles backslashes when printing* a missing path, so the doubled
+backslashes in the bundle are not evidence that MSYS mangled the argument — Python received
+`P:\OPEN APP\…` exactly. The path the message names is the path Python was given.)
+
+The driver no longer assumes. At R0.5 it now **probes** four ways of handing a path to this
+host's interpreter and keeps the first one that returns a node count:
+
+| Probe | What it covers |
+|---|---|
+| the POSIX path, unchanged | Git Bash with an MSYS/Cygwin Python, Linux, macOS, WSL |
+| `cygpath -m` (`P:/OPEN APP/...`) | Windows Python: forward slashes, no escaping, no UNC surprise |
+| `cygpath -w` (`P:\OPEN APP\...`) | Windows-only tools that print and expect this form |
+| a copy of the reader + the dump in the host temp dir | the case that is *not* a path-format problem at all: an interpreter that cannot reach the checkout's drive/location |
+
+and it now says **which form won** in both the verdict and `run.log`
+(`python path mode: posix|m|w|tmp`). Every other Python tool the run drives — the screenshot
+validator (`p10d-png.py`) and the APK inspector (`check-apk.py`) — is re-pointed at the same
+decision, so the run cannot be green because the reader worked while the validator silently
+compared nothing. A screenshot whose validator returns *nothing* is no longer counted as a
+real screen: it is named as unvalidated, and `P10D_SCREENSHOTS` FAILs with that wording,
+because "the validator could not run" and "the frame is blank" are different facts. (Before
+this, an empty verdict fell through the "is it blank?" test and passed.)
+
+Two more things changed at the same stage, both because the third bundle could equally have
+been caused by something else:
+
+1. **R0.4, the checkout inventory (new gate).** The driver checks the four committed helpers
+   it drives (`p10d-ui.py`, `p10d-png.py`, `check-apk.py`, `92-workspace-visibility.sh`) with
+   `[ -f ]` before touching Python at all. If one is missing — the signature of a branch
+   assembled by downloading individual files from the GitHub web UI — the run stops with
+   `P10D_HARNESS_CHECKOUT FAIL` naming the file and the command to get the whole branch. That
+   is a *different* failure from a path-format problem, and the bundle now says which one it
+   is instead of printing the same `[Errno 2]`.
+2. **`norm_host_arg` for human-typed arguments.** `--apk 'P:\OPEN APP\phase10\signing\app-release-signed.apk'`
+   (and the same for `--out`) is normalized to the POSIX form MSYS tools read, so the footer's
+   `sha256=` cannot be empty for that reason, and `[ -f ]` can find a file the human can see
+   in Explorer.
+
+### B.11.3 Verification (TESTED here, with the numbers)
+
+The driver self-test runs the real driver against a fake phone; it now covers thirteen
+scenarios / **99 checks**, 0 failures:
+
+```
+=== driver self-test: pass=99 fail=0 ===
+SELFTEST PASS (driver runs clean, and fails for the RIGHT reasons)
+```
+
+Log kept at `docs/progress/phase10-evidence/v3-driver-selftest/driver-selftest-99.log`
+(alongside the 9-scenario / 68-check and 12-scenario / 87-check runs).
+
+| Scenario | What this run added or changed | Result |
+|---|---|---|
+| `reader-dead` (rewritten) | the host where **no** path form works: the driver must list the forms it tried, keep `HARNESS_DUMP PASS` as a separate fact, write `reader-probe.txt` into the bundle, stop with rc=3 and produce no app verdict | 11/11 checks |
+| `incomplete` (new) | the file-by-file checkout: `HARNESS_CHECKOUT FAIL` names `p10d-ui.py`, the diagnosis gives the `git clone` line, and **no** verdict about the phone is produced | 5/5 checks |
+| `winhost` | the probe finds `cygpath -m`: the run is green end to end, the verdict prints the converted reader path, `run.log` states `python path mode: m`, and the screenshot validator runs through the same form | 9/9 checks |
+| `happy` | unchanged product path, plus the new `python path mode: posix` statement | 31 checks (was 30) |
+
+Both new gates are *pre-flight* gates: they can only ever add an early, named stop before any
+app verdict. No existing assertion was weakened or removed — the `dump-unusable`,
+`msys-mangled`, `no-python`, `tags-gone`, `shown-hidden` and `no-grant` scenarios all still
+FAIL for their original reasons, which is what keeps the self-test honest.
+
+### B.11.4 What is still NOT TESTED, and the one thing that decides it
+
+**The fixed driver has still not run on the owner's phone.** Everything above is host-side
+behaviour; the phone in the self-test is a shim. The next run decides between two outcomes:
+
+* the probe finds a working form (most likely `cygpath -m`, or the temp-dir copy) → the run
+  proceeds to R2/R3/R4 and the brief's part-B gates (`FIRST_RUN_PROJECT`, `FILES_SCREEN`,
+  `LIVE_TURN`) execute for the first time on real hardware; or
+* no form works → the run stops at R0.5 again (rc=3), but the bundle now names every form it
+  tried, the exact bytes of the dump, and the two host-side remedies worth trying (a short
+  ASCII checkout path such as `C:/src/OpenCode-app`, or running the driver from WSL). That is
+  a harness verdict, not an app verdict — and the brief's stop condition stays **NOT TESTED**
+  until a run reaches the storage/visibility stages.
+
+For the record, the honest edges of this section: the probe order is a heuristic (POSIX first,
+then `-m`, then `-w`, then temp-dir) — it cannot prove that a *different* form would not also
+have worked, only that the one it reports did; and the temp-dir fallback copies the reader and
+the dump (a few KB) but the APK copy in that mode is only attempted at R2, so a temp-dir host
+is expected to SKIP the artifact gate rather than fail it.
+
+**Nothing about the app, the storage model (`Documents/OpenCode` + All files access), the
+Publish-as-export decision, W1–W4 isolation or the visibility gates changed in this round.**
+This round is entirely "when the harness cannot see, say why — do not run a five-minute
+verdict about the product on top of it".

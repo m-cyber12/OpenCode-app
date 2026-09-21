@@ -159,13 +159,15 @@ step "1b/9 the real-device driver, run against a fake phone (self-test)"
 DSRC=0
 # Keep the transcript AND the exit code: run_c deletes its own temp log, and a pipe
 # into tee would report tee's status instead of the self-test's.
-# 1800s: seven scenarios, and the `dump-unusable` one deliberately spends its time in
-# retry loops (it is the scenario that proves the driver retries before it blames the
-# app). Measured at ~12 minutes on a CI runner.
-run_c 1800 "bash '$DIR/scripts/test-90-real-device.sh' > '$OUT/driver-selftest.log' 2>&1; rc=\$?; cat '$OUT/driver-selftest.log'; exit \$rc" || DSRC=1
+# 2400s: thirteen scenarios, and two of them (`dump-unusable`, `reader-dead`) deliberately
+# spend their time in retry loops - they are the scenarios that prove the driver retries
+# before it blames the app. Four of the thirteen drive the whole happy path. Measured at
+# ~8 minutes locally and ~17 minutes for twelve scenarios on a CI runner; the budget is
+# generous on purpose, because a TIMEOUT here would read as a driver failure.
+run_c 2400 "bash '$DIR/scripts/test-90-real-device.sh' > '$OUT/driver-selftest.log' 2>&1; rc=\$?; cat '$OUT/driver-selftest.log'; exit \$rc" || DSRC=1
 cp "$OUT/driver-selftest.log" "$EV/p10-driver-selftest.log" 2>/dev/null || true
 if [ "$DSRC" = 0 ]; then
-  note_gate "P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone (9 scenarios: happy, locked, blank, tags-gone, shown-hidden, no-grant, dump-unusable, msys-mangled, no-python)"
+  note_gate "P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone (13 scenarios: happy, locked, blank, tags-gone, shown-hidden, no-grant, dump-unusable, msys-mangled, no-python, reader-dead, winhost, relout, incomplete)"
 else
   note_gate "P10_DRIVER_SELFTEST FAIL: see p10-driver-selftest.log - do NOT hand this driver to a phone"
 fi

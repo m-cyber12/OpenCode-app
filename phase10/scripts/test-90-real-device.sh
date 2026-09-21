@@ -34,6 +34,13 @@
 #                 channel - and must stop there, before any app verdict is produced
 #                 (runs with --timeout-scale 0.02, so the failure paths cost seconds
 #                 instead of minutes).
+#   reader-dead  Windows Python cannot open the reader by ANY path form (the owner's
+#                 third bundle): the run must stop at the preflight (rc=3), keep the
+#                 dump's own PASS separate from the reader's FAIL, list the forms it
+#                 tried, and produce no app verdict at all.
+#   incomplete   a checkout assembled file by file (script present, helpers missing):
+#                 the run must say WHICH helper is missing and how to get the whole
+#                 branch, before it touches the phone - not look like a path bug.
 #   msys-mangled  THE v2 FALSE FAIL, reproduced byte for byte: what the driver reads
 #                 back as a "dump" is the Windows-mangled device path
 #                 ("cat: C:/Program Files/Git/sdcard/p10d-ui.xml: No such file or
@@ -129,7 +136,7 @@ i=0
 while [ \$i -lt \$n ]; do
   i=\$((i+1)); a="\$1"; shift
   case "\$a" in
-    /*) printf "can't open file 'C:%%s': [Errno 2] No such file or directory\\n" "\$a" >&2; exit 2 ;;
+    /*) printf "can't open file 'C:%s': [Errno 2] No such file or directory\\n" "\$a" >&2; exit 2 ;;
     C:/*) a="\${a#C:}" ;;
   esac
   set -- "\$@" "\$a"
@@ -190,6 +197,7 @@ check "$(grep -qa '^P10D_FIRST_RUN_PROJECT PASS' "$OUT/SUMMARY.txt" && echo 0 ||
 check "$(grep -qa '^P10D_LIVE_TURN PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "live turn with a tool card"
 check "$(grep -qa '^P10D_FILES_APP_AND_SHELL PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "in-app browser path == shell-visible path"
 check "$(grep -qa 'P6_MODEL_AVAILABLE 1' "$OUT/p10d-model-lines.txt" && echo 0 || echo 1)" "model marker written for the x86_64 carry-forward"
+check "$(grep -qa 'python path mode: posix' "$OUT/run.log" && echo 0 || echo 1)" "a POSIX host says so, instead of leaving the path question open"
 check "$(grep -qE '^P10D_VISIBILITY_(LOCATION|SHELL_LIST|SHELL_READ|OLD_ROOT_EMPTY|SHELL_BASELINE) PASS' "$OUT/visibility.log" && echo 0 || echo 1)" "visibility script reports its own verdicts"
 # The file the "model" wrote must be readable from OUTSIDE the app - that is the whole
 # point of R7, so assert on the file, not just on the verdict line. And it must be in
@@ -318,13 +326,35 @@ check "$(grep -qa 'Store stub' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
 
 echo
 echo "--- scenario: the reader cannot open its own script (the owner's 2026-09-21 run) ---"
-# Same fake host as above, WITHOUT the HOST_SHELL seam: nothing converts, so the reader
-# dies the way it really died. What must happen now: the harness notices at R0.5, names
-# the reader as the problem, stops (rc=3) and produces NO app verdict - instead of the
-# six-minute timeout and the empty "(; acquisition: ...)" PASS the owner's bundle has.
+# THE THIRD BUNDLE. Windows Python cannot open the reader the driver is driving, so every
+# "what is on screen" comes back empty while the phone shows the app. v3's fix converts
+# the path (the next scenario proves the conversion works); this scenario is the other
+# half - the host where NO form works, which is what the owner's third bundle still did
+# after the -w conversion. The stub refuses a POSIX-absolute path AND a drive-letter path
+# (exactly the two forms cygpath can produce), and cygpath is NOT on PATH here, so all
+# four probe forms fail. What must happen now: the harness notices at R0.5, names the
+# reader as the problem, keeps the dump's own verdict separate, stops (rc=3) and produces
+# NO app verdict - instead of the six-minute timeout and the empty "(; acquisition: ...)"
+# PASS the owner's bundle has.
+mkdir -p "$TMP/deadhost"
+cat > "$TMP/deadhost/python3" <<EOF
+#!/bin/sh
+# An interpreter that cannot reach the checkout by ANY path form the driver can hand it.
+n=\$#
+i=0
+while [ \$i -lt \$n ]; do
+  i=\$((i+1)); a="\$1"; shift
+  case "\$a" in
+    /*|[A-Za-z]:[\\/]*) printf "can't open file '%s': [Errno 2] No such file or directory\\n" "\$a" >&2; exit 2 ;;
+  esac
+  set -- "\$@" "\$a"
+done
+exec "$REAL_PY" "\$@"
+EOF
+chmod +x "$TMP/deadhost/python3"
 rm -rf "$TMP/dev" "$TMP/out-reader-dead"
 mkdir -p "$TMP/dev"
-PATH="$TMP/bin:$TMP/winhost:$PATH" \
+PATH="$TMP/bin:$TMP/deadhost:$PATH" \
 P10D_FAKE_SCENARIO=happy \
 P10D_SKIP_ARTIFACT=1 \
 P10D_PROVIDER_KEY="sk-or-test-only-not-a-real-key" \
@@ -343,10 +373,44 @@ check "$(grep -qa "can't open file" "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
   "DIAGNOSIS.txt quotes the reader's real error, which used to be discarded"
 check "$(grep -qa 'host path-translation problem' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
   "the diagnosis names the cause instead of leaving it to the reader"
+check "$(grep -qa 'forms tried:.*POSIX path' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
+  "the diagnosis lists every path form that was tried, so the next host is not a guess"
+check "$(grep -qa 'reader-probe.txt' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the reader FAIL points at the per-form probe log kept in the bundle"
+check "$([ -s "$OUT/reader-probe.txt" ] && echo 0 || echo 1)" \
+  "the probe log is in the bundle (evidence, not a claim)"
 check "$(grep -qaE '^P10D_(FIRST_RUN|FIRST_RUN_PROJECT|FILES_SCREEN|LIVE_TURN) ' "$OUT/SUMMARY.txt" && echo 1 || echo 0)" \
   "no app verdict is invented from a reader that never ran"
 check "$(! grep -qa 'TIMED OUT' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
   "nothing times out for minutes - the failure is immediate"
+
+echo
+echo "--- scenario: a checkout missing its helpers (the file-by-file download) ---"
+# The other way this run can die before it ever sees the phone: the branch was assembled
+# by downloading individual files from the GitHub web UI, so the script is present and the
+# programs it drives are not. Before this gate the run looked like a path bug; now it says
+# what is missing and how to get it, and it does so BEFORE the dump, so no gate can report
+# anything about the app.
+mkdir -p "$TMP/incomplete/phase10/scripts"
+cp "$DIR/scripts/90-real-device-signed.sh" "$TMP/incomplete/phase10/scripts/"
+rm -rf "$TMP/out-incomplete"
+PATH="$TMP/bin:$PATH" \
+P10D_FAKE_SCENARIO=happy \
+P10D_SKIP_ARTIFACT=1 \
+P10D_PROVIDER_KEY="sk-or-test-only-not-a-real-key" \
+bash "$TMP/incomplete/phase10/scripts/90-real-device-signed.sh" --apk "$TMP/fake.apk" \
+    --out "$TMP/out-incomplete" > "$TMP/run-incomplete.stdout" 2>&1
+echo "$?" > "$TMP/rc-incomplete"
+RC=$(cat "$TMP/rc-incomplete"); OUT="$TMP/out-incomplete"
+check "$([ "$RC" = 3 ] && echo 0 || echo 1)" "the run stops before the phone (rc=$RC)"
+check "$(grep -qa '^P10D_HARNESS_CHECKOUT FAIL' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "HARNESS_CHECKOUT FAIL names the incomplete checkout"
+check "$(grep -qa 'p10d-ui.py' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the verdict names the file that is missing"
+check "$(grep -qa 'git clone https://github.com/m-cyber12/OpenCode-app.git' "$OUT/DIAGNOSIS.txt" && echo 0 || echo 1)" \
+  "the diagnosis tells the reader how to get a complete checkout"
+check "$(! grep -qaE '^P10D_(HARNESS_DUMP|HARNESS_READER|INSTALL|FIRST_RUN) ' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "no verdict about the phone is produced from a checkout that cannot read it"
 
 echo
 echo "--- scenario: the same host WITH the Windows path conversion (the fix) ---"
@@ -371,6 +435,12 @@ check "$(grep -qa '^P10D_DEVICE_AWAKE PASS' "$OUT/SUMMARY.txt" && echo 0 || echo
   "the run got past the preflight and drove the app"
 check "$(grep -qaE '^P10D_HARNESS_READER PASS.*C:/' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
   "the verdict shows the converted path it used (evidence of the conversion)"
+check "$(grep -qa 'python path mode: m' "$OUT/run.log" && echo 0 || echo 1)" \
+  "the run says which path form every Python tool is being handed"
+check "$(grep -qa 'screen=yes' "$OUT/screenshots.log" && echo 0 || echo 1)" \
+  "the screenshot validator ran through that form too (not just the reader)"
+check "$(! grep -qai 'could not be VALIDATED' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "and no capture is reported as unvalidated on this host"
 check "$(grep -qa '^P10D_FIRST_RUN PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
   "the first-run screens were read on the converted path"
 check "$(grep -qa '^P10D_LIVE_TURN PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
