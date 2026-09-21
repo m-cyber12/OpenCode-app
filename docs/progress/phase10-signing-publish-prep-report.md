@@ -1644,7 +1644,7 @@ real hardware: see §B.5's honesty table and §B.6.
 | The Publish button's old purpose is gone and its replacement is documented | **DONE** | §B.3; `docs/ARCHITECTURE.md`, `docs/CAPABILITY-MATRIX.md`, `docs/PRIVACY-POLICY.md` |
 | The storage panel names the live location and offers the fixes, in the default case *and* in the fallback case (mode label, explanation, pending-move count, grant button) | **TESTED** (CI, debug + release-shaped build) | `P6_U9 PASS` / `P10_SMOKE_UI_U9 PASS` in run `35520695055` (the storage-panel half of the gate asserts the exact mode strings and the pending count) |
 | The false `P10D_FIRST_RUN FAIL` was caused by MSYS path rewriting on the owner's Windows host (not the app) | **PROVEN FROM THE OWNER'S BUNDLE** | §B.4.1: the 72-byte `ui/*.xml`, `dumpsys` showing `MainActivity` in front, `rc=127` visibility log, Store-python stub |
-| The driver can no longer produce an app verdict from an unreadable screen or a host without python | **TESTED** (fake phone, 12 scenarios / 87 checks) | §B.4.3, §B.10.4; `P10_DRIVER_SELFTEST` in CI; the bundles themselves in `docs/progress/phase10-evidence/v3-driver-selftest/` |
+| The driver can no longer produce an app verdict from an unreadable screen or a host without python | **TESTED** (fake phone, 14 scenarios / 105 checks, on the authoring host **and** on the CI runner) | §B.4.3, §B.10.4, §B.11.3; `P10_DRIVER_SELFTEST` in CI; the logs in `docs/progress/phase10-evidence/v3-driver-selftest/` and the runner's own `docs/progress/phase10-evidence/p10-driver-selftest.log` |
 | The driver can no longer report a visible app as unreachable when the host cannot open the reader script (the owner's 2026-09-21 run) | **TESTED** (fake host: `reader-dead` must stop with `HARNESS_READER FAIL`; `winhost` must run green) | §B.10.4; `docs/progress/phase10-evidence/v3-driver-selftest/driver-selftest-87.log` |
 | That same fix, on the owner's real phone | **NOT TESTED** | §B.10.4 (last paragraph); needs one more run of `90-real-device-signed.sh --apk …` on the realme |
 | The app's own screens on the realme during the 2026-09-21 run (welcome → projects, no crash, no exception) | **TESTED** (the run's screenshots + logcat + the 10,802-byte dump) | §B.10.1 |
@@ -1790,6 +1790,8 @@ each run hit.
 | `35593075862` | `4ea61aa` | **SUCCESS**, 30m29s, all eleven steps: the run that carries the §B.10 driver fix — `P10-STATIC`, `P10_DRIVER_SELFTEST` (twelve scenarios), `P10-UNIT` 305/0, `P10-DEVICE` (fresh AVD 14), `P6-UI totals: ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0` with `P6_L2 PASS :: tool=bash status=completed`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1/W2/W4 + `SHELL_READ`/`SHELL_WRITE` PASS, `P10_UNSIGNED PASS`, `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` |
 | `35571950861` | `8fa9830` | **SUCCESS**, 29m: the same board on the revision that fixed the citations — `P10-STATIC`, `P10_DRIVER_SELFTEST` (9 scenarios), `P10-UNIT` 305/0, `P10-DEVICE` (fresh AVD 14), `P6-UI totals: ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0` with `P6_L2 PASS :: tool=bash status=completed`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1/W2/W4 + `SHELL_READ`/`SHELL_WRITE` PASS, `P10_UNSIGNED PASS`, `P10_SUMMARY 2026-09-21T07:41:54Z` |
 | `35574869085` | `69d222e` | **SUCCESS**, 29m: the same board on the revision that made the green-run claim a pattern — `P6-UI totals: ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0` with `P6_L2 PASS :: tool=bash status=completed`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, W1–W4 + `SHELL_LIST`/`SHELL_READ`/`SHELL_WRITE`/`SHELL_BASELINE` PASS, `P10_SUMMARY 2026-09-21T08:19:01Z` |
+| `35618615436` | `d49a2ad` (§B.11 path-form fix) | **SUCCESS**, 31m21s, 15:23:33Z → 15:54:54Z — **and this row is the workflow verdict only, unlike every other row in this table.** The next push (`657e41a`, one minute later) started a new run before this one reached its evidence-commit step, so no board from it is in the repository (checked: no commit in the last twenty carries a thirteen-scenario board), and its job log is not downloadable from the authoring environment (0 bytes, the same blob-fetch limit §B.9's red run hit). It is recorded because "the fix ran green on a runner" should not rest on a run whose evidence I cannot show; the board that *is* readable is the next row's |
+| `35620098408` | `657e41a` (§B.11 fallback fix, the current tip's driver) | **SUCCESS**, 31m51s, 15:36:33Z → 16:08:24Z: `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0`, `=== PHASE 10 END 2026-09-21T16:07:55Z rc=0 ===`, `P10_DRIVER_SELFTEST PASS` naming **fourteen** scenarios, `P10-UNIT` 305/0, `P6-UI totals: ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0`, `P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0`, `P10_UNSIGNED PASS`, and W1–W4 + the outside-the-app class all PASS, including `P10_WS_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false allFilesAccess=true grantHonoured=true` |
 
 **One red run whose cause I could not read.** `35534543455` (commit `1ca3c49` — the same tree
 as `9921645` apart from two documentation lines) failed at the pipeline step. Its job log and
@@ -2112,6 +2114,17 @@ Log kept at `docs/progress/phase10-evidence/v3-driver-selftest/driver-selftest-1
 (alongside the 9-scenario / 68-check and 12-scenario / 87-check runs, and the intermediate
 13-scenario / 99-check run that this one supersedes — see §B.11.5 for what the difference
 between those two runs found).
+
+It also ran on the CI runner, on the pushed revision, and the runner committed its own copy:
+`docs/progress/phase10-evidence/p10-driver-selftest.log` ends in
+`=== driver self-test: pass=105 fail=0 ===` / `SELFTEST PASS`, and the board line reads
+`P10_DRIVER_SELFTEST PASS: … (14 scenarios: happy, locked, blank, tags-gone, shown-hidden,
+no-grant, dump-unusable, msys-mangled, no-python, reader-dead, winhost, relout, incomplete,
+readertmp)`. That matters for a different reason than the fix itself: the CI runner is a
+**POSIX host with a clean checkout**, so this is also the evidence that the probing code did
+not break the ordinary case while being made to survive the Windows ones.
+Run `35620098408` (commit `657e41a`) is the one at the current tip; `35618615436` (`d49a2ad`)
+is its predecessor, also green — both are in the §B.9 table.
 
 | Scenario | What this run added or changed | Result |
 |---|---|---|
