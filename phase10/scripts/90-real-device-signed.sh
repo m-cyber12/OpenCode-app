@@ -221,7 +221,14 @@ write_footer() { # $1 = screenshots count, $2 = blank count ("" for an early sto
     echo "screenshots=${1:-0} blank=${2:-0}"
     echo "-- model availability marker (closes the x86_64-only live-tool-call carry-forward when 1)"
     cat "$OUT/p10d-model-lines.txt" 2>/dev/null || true
-    echo "apk=$(basename "$APK") sha256=$(sha256sum "$APK" 2>/dev/null | awk '{print $1}')"
+    # The third bundle printed `apk=app-release-signed.apk sha256=` - an EMPTY field, which
+    # reads as "this file has no hash" and is really "the host could not read that path"
+    # (a Windows-form --apk the MSYS tools cannot open, or a file that is not there). An
+    # empty value in a bundle is the kind of self-contradicting evidence this whole section
+    # is about, so it says which it is; norm_host_arg() above already removes the first
+    # cause for arguments a human typed.
+    APK_SHA="$(sha256sum "$APK" 2>/dev/null | awk '{print $1}')"
+    echo "apk=$(basename "$APK") sha256=${APK_SHA:-<unreadable at $APK>}"
     echo "pass=$PASS fail=$FAIL skip=$SKIP"
   } >> "$OUT/SUMMARY.txt"
 }

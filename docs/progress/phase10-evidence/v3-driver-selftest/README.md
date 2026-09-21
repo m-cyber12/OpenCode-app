@@ -10,6 +10,7 @@ phone** (`test-90-fake-adb.py` + `test-90-fixtures.py`). Three runs are kept:
 | `driver-selftest-87.log` | 2026-09-21 | twelve | **pass=87 fail=0** |
 | `driver-selftest-99.log` | 2026-09-21 | thirteen | **pass=99 fail=0** |
 | `driver-selftest-105.log` | 2026-09-21 | fourteen | **pass=105 fail=0** |
+| `driver-selftest-106.log` | 2026-09-21 | fourteen | **pass=106 fail=0** |
 
 The fourteen scenarios run in CI on every push as step 1b, verdict `P10_DRIVER_SELFTEST`.
 The three added on 2026-09-21 after the owner's second device bundle (§B.10) were the

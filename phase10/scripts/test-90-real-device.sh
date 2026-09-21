@@ -401,7 +401,10 @@ PATH="$TMP/bin:$PATH" \
 P10D_FAKE_SCENARIO=happy \
 P10D_SKIP_ARTIFACT=1 \
 P10D_PROVIDER_KEY="sk-or-test-only-not-a-real-key" \
-bash "$TMP/incomplete/phase10/scripts/90-real-device-signed.sh" --apk "$TMP/fake.apk" \
+# The APK is deliberately a path that does not exist: this run tests the footer's honesty
+# as well (the third bundle's empty `sha256=` field), and it cannot affect the verdicts -
+# R0.4 stops the run long before the artifact stage.
+bash "$TMP/incomplete/phase10/scripts/90-real-device-signed.sh" --apk "$TMP/not-here.apk" \
     --out "$TMP/out-incomplete" > "$TMP/run-incomplete.stdout" 2>&1
 echo "$?" > "$TMP/rc-incomplete"
 RC=$(cat "$TMP/rc-incomplete"); OUT="$TMP/out-incomplete"
@@ -414,6 +417,8 @@ check "$(grep -qa 'git clone https://github.com/m-cyber12/OpenCode-app.git' "$OU
   "the diagnosis tells the reader how to get a complete checkout"
 check "$(! grep -qaE '^P10D_(HARNESS_DUMP|HARNESS_READER|INSTALL|FIRST_RUN) ' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
   "no verdict about the phone is produced from a checkout that cannot read it"
+check "$(grep -qa '^apk=not-here.apk sha256=<unreadable at ' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the footer names an unreadable APK instead of printing an empty hash (the third bundle's empty field)"
 
 echo
 echo "--- scenario: the same host WITH the Windows path conversion (the fix) ---"

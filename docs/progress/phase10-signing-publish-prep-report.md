@@ -1644,7 +1644,7 @@ real hardware: see §B.5's honesty table and §B.6.
 | The Publish button's old purpose is gone and its replacement is documented | **DONE** | §B.3; `docs/ARCHITECTURE.md`, `docs/CAPABILITY-MATRIX.md`, `docs/PRIVACY-POLICY.md` |
 | The storage panel names the live location and offers the fixes, in the default case *and* in the fallback case (mode label, explanation, pending-move count, grant button) | **TESTED** (CI, debug + release-shaped build) | `P6_U9 PASS` / `P10_SMOKE_UI_U9 PASS` in run `35520695055` (the storage-panel half of the gate asserts the exact mode strings and the pending count) |
 | The false `P10D_FIRST_RUN FAIL` was caused by MSYS path rewriting on the owner's Windows host (not the app) | **PROVEN FROM THE OWNER'S BUNDLE** | §B.4.1: the 72-byte `ui/*.xml`, `dumpsys` showing `MainActivity` in front, `rc=127` visibility log, Store-python stub |
-| The driver can no longer produce an app verdict from an unreadable screen or a host without python | **TESTED** (fake phone, 14 scenarios / 105 checks, on the authoring host **and** on the CI runner) | §B.4.3, §B.10.4, §B.11.3; `P10_DRIVER_SELFTEST` in CI; the logs in `docs/progress/phase10-evidence/v3-driver-selftest/` and the runner's own `docs/progress/phase10-evidence/p10-driver-selftest.log` |
+| The driver can no longer produce an app verdict from an unreadable screen or a host without python | **TESTED** (fake phone, 14 scenarios / 106 checks, on the authoring host **and** on the CI runner) | §B.4.3, §B.10.4, §B.11.3; `P10_DRIVER_SELFTEST` in CI; the logs in `docs/progress/phase10-evidence/v3-driver-selftest/` and the runner's own `docs/progress/phase10-evidence/p10-driver-selftest.log` |
 | The driver can no longer report a visible app as unreachable when the host cannot open the reader script (the owner's 2026-09-21 run) | **TESTED** (fake host: `reader-dead` must stop with `HARNESS_READER FAIL`; `winhost` must run green) | §B.10.4; `docs/progress/phase10-evidence/v3-driver-selftest/driver-selftest-87.log` |
 | That same fix, on the owner's real phone | **NOT TESTED** | §B.10.4 (last paragraph); needs one more run of `90-real-device-signed.sh --apk …` on the realme |
 | The app's own screens on the realme during the 2026-09-21 run (welcome → projects, no crash, no exception) | **TESTED** (the run's screenshots + logcat + the 10,802-byte dump) | §B.10.1 |
@@ -2052,10 +2052,20 @@ gate that fix #1 added did its job — three honest PASSes, one honest FAIL, in 
 the reader's own error kept in the bundle instead of discarded (v3 threw that stderr away;
 that is why the first bundle could not be explained from its own evidence).
 
-Two secondary observations from the same bundle, both consistent with the same cause:
-`sha256=` is empty in the footer (the run stopped before R2 read the APK; the footer prints
-the hash only once the artifact stage has run), and the host printed `script dir: /p/OPEN APP/phase10`
-with `host shell: windows-msys`.
+Two secondary observations, and the second one matters more than it looked at first:
+
+* `sha256=` is empty in the footer. The first version of this paragraph said "the footer
+  prints the hash only once the artifact stage has run", and **that was wrong**: the footer
+  runs `sha256sum "$APK"` itself, at whatever point the run stops. Empty therefore means the
+  host could not read that path — a Windows-form `--apk` the MSYS tools cannot open, or a file
+  that is not there — which is exactly the class of ambiguity this section is about. Corrected
+  in the driver rather than only in prose (§B.11.2): an unreadable APK now prints
+  `sha256=<unreadable at P:\...>` instead of an empty field, and is asserted by the self-test.
+* the bundle's own DIAGNOSIS.txt records the reader invocation as
+  **`python3 P:\OPEN APP\phase10\scripts\p10d-ui.py`** — the `cygpath -w` form, applied by
+  fix #1. So the conversion was in place and Windows Python still answered `[Errno 2]`. That
+  is the fact that rules out "convert the path and it will work", and it leaves two candidate
+  causes the next run separates for us (below).
 
 ### B.11.2 Why "convert the path with cygpath" was not a fix, and what is
 
@@ -2085,6 +2095,24 @@ real screen: it is named as unvalidated, and `P10D_SCREENSHOTS` FAILs with that 
 because "the validator could not run" and "the frame is blank" are different facts. (Before
 this, an empty verdict fell through the "is it blank?" test and passed.)
 
+**What the third bundle cannot tell us, and which check now will.** With the `-w` form in the
+log, the file was still not opened by Python. There are two candidates, and they need
+different actions from the owner:
+
+1. **`p10d-ui.py` is not in that checkout** (the branch assembled file by file — the owner has
+   downloaded individual files from the GitHub web UI before). Nothing in the old bundle could
+   see this: it never checked the files it drives, and an absent file and an unreachable file
+   produce the same `[Errno 2]`. → the new **R0.4 inventory** names the missing helper and
+   prints the `git clone` line.
+2. **The file is there and that interpreter cannot reach it** — the reader is a
+   `%LOCALAPPDATA%\Python\pythoncore-3.14-64` install and the checkout is on drive `P:`;
+   an interpreter that cannot follow that drive (a `subst`/mapped volume, an app-container
+   restriction, or a policy) would behave exactly like this, and would also explain why the
+   conversion made no difference. → the new **R0.5 probe** tries POSIX, `-m`, `-w` **and a copy
+   in the host temp dir** (inside the user profile, which that interpreter demonstrably can
+   read, since it lives there). This candidate is the reason the temp-dir fallback exists:
+   it is the one form that does not depend on the checkout's location at all.
+
 Two more things changed at the same stage, both because the third bundle could equally have
 been caused by something else:
 
@@ -2103,21 +2131,23 @@ been caused by something else:
 ### B.11.3 Verification (TESTED here, with the numbers)
 
 The driver self-test runs the real driver against a fake phone; it now covers fourteen
-scenarios / **105 checks**, 0 failures:
+scenarios / **106 checks**, 0 failures:
 
 ```
-=== driver self-test: pass=105 fail=0 ===
+=== driver self-test: pass=106 fail=0 ===
 SELFTEST PASS (driver runs clean, and fails for the RIGHT reasons)
 ```
 
-Log kept at `docs/progress/phase10-evidence/v3-driver-selftest/driver-selftest-105.log`
+Log kept at `docs/progress/phase10-evidence/v3-driver-selftest/driver-selftest-106.log`
+(`driver-selftest-105.log` is the same fourteen scenarios one check earlier, before the
+footer correction below; both are kept and neither was rewritten)
 (alongside the 9-scenario / 68-check and 12-scenario / 87-check runs, and the intermediate
 13-scenario / 99-check run that this one supersedes — see §B.11.5 for what the difference
 between those two runs found).
 
 It also ran on the CI runner, on the pushed revision, and the runner committed its own copy:
 `docs/progress/phase10-evidence/p10-driver-selftest.log` ends in
-`=== driver self-test: pass=105 fail=0 ===` / `SELFTEST PASS`, and the board line reads
+`=== driver self-test: pass=105 fail=0 ===` (the 105-check revision of the same scenarios) / `SELFTEST PASS`, and the board line reads
 `P10_DRIVER_SELFTEST PASS: … (14 scenarios: happy, locked, blank, tags-gone, shown-hidden,
 no-grant, dump-unusable, msys-mangled, no-python, reader-dead, winhost, relout, incomplete,
 readertmp)`. That matters for a different reason than the fix itself: the CI runner is a
@@ -2133,6 +2163,7 @@ is its predecessor, also green — both are in the §B.9 table.
 | `winhost` | the probe finds `cygpath -m`: the run is green end to end, the verdict prints the converted reader path, `run.log` states `python path mode: m`, and the screenshot validator runs through the same form | 9/9 checks |
 | `happy` | unchanged product path, plus the new `python path mode: posix` statement | 31 checks (was 30) |
 | `readertmp` (new, and the one that matters) | the fallback itself: an interpreter that can only open files under the driver's temp dir. The whole run must go green **through that form** — reader, every dump, the inline dump scripts that read the storage path off the screen, and the screenshot validator | 6/6 checks |
+| `incomplete` (+1) | also asserts the footer's honesty: an `--apk` that cannot be read now prints `sha256=<unreadable at …>` instead of the empty field the third bundle carried | 6/6 checks |
 
 Both new gates are *pre-flight* gates: they can only ever add an early, named stop before any
 app verdict. No existing assertion was weakened or removed — the `dump-unusable`,
