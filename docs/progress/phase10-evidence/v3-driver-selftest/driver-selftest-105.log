@@ -1,0 +1,137 @@
+=== 90-real-device-signed.sh self-test (fake phone, no device needed) ===
+
+--- scenario: happy path ---
+  ok   driver exits 0 when every gate passes (rc=0)
+  ok   SUMMARY.txt written
+  ok   at least 15 distinct gates reported (got 29)
+  ok   gate DEVICE_AWAKE PASS/SKIP
+  ok   gate ABI PASS/SKIP
+  ok   gate ANDROID_VERSION PASS/SKIP
+  ok   gate INSTALL PASS/SKIP
+  ok   gate VERSION_ON_DEVICE PASS/SKIP
+  ok   gate FIRST_RUN PASS/SKIP
+  ok   gate FIRST_RUN_PROJECT PASS/SKIP
+  ok   gate FILES_SCREEN PASS/SKIP
+  ok   gate MEMORY PASS/SKIP
+  ok   gate STORAGE PASS/SKIP
+  ok   gate PACKAGING_SWEEP PASS/SKIP
+  ok   gate NO_CRASH PASS/SKIP
+  ok   gate SCREENSHOTS PASS/SKIP
+  ok   gate LIVE_TURN PASS/SKIP
+  ok   gate FILES_APP_AND_SHELL PASS/SKIP
+  ok   no FAIL line anywhere in a clean run
+  ok   DIAGNOSIS.txt stays empty on a clean run
+  ok   screenshots captured at every step (got 10)
+  ok   screenshot validation ran and saw real screens
+  ok   project was created through taps+typing
+  ok   live turn with a tool card
+  ok   in-app browser path == shell-visible path
+  ok   model marker written for the x86_64 carry-forward
+  ok   a POSIX host says so, instead of leaving the path question open
+  ok   visibility script reports its own verdicts
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-152744/p10-visible.txt
+  ok   and NOT in Android/data (the location file managers cannot browse)
+  ok   the in-app file browser names the shared location
+
+--- scenario: locked device ---
+  ok   a locked device is a non-zero exit (rc=1)
+  ok   DEVICE_AWAKE FAIL reported
+  ok   the reason tells the human what to do (unlock)
+  ok   it does NOT blame the app ('no working screen')
+
+--- scenario: blank screencap ---
+  ok   blank frames are a non-zero exit (rc=1)
+  ok   SCREENSHOTS FAIL reported
+  ok   the reason says the frames are blank/off
+
+--- scenario: no Compose tags in the dump (the real first-run false FAIL) ---
+  ok   the run passes with tag-less dumps (rc=0)
+  ok   FIRST_RUN PASS on content alone
+  ok   the project was created by content-matched taps
+  ok   the live turn ran on content alone
+  ok   no FAIL line anywhere in the tag-less run
+  ok   the fixture really did serve dumps with no tags (evidence, not setup)
+
+--- scenario: the platform marks everything shown=false ---
+  ok   the run still passes when the dump says shown=false everywhere (rc=0)
+  ok   the driver says it tapped a node the platform called hidden
+  ok   the live turn still ran
+
+--- scenario: the app has no All files access (fallback must be stated) ---
+  ok   the visibility check fails on the Android/data fallback (rc=1)
+  ok   SHARED_ROOT FAIL names the Android/data location
+  ok   the app's own file browser states the fallback honestly
+
+--- scenario: the accessibility channel is unavailable (fast, scaled timeouts) ---
+  ok   an unreadable dump channel is a non-zero exit (rc=3)
+  ok   HARNESS_DUMP FAIL is the verdict that names the problem
+  ok   the device itself was fine - the failure is not blamed on the phone
+  ok   the raw uiautomator error is in DIAGNOSIS.txt
+  ok   the reason names the device-side cause (nothing was written)
+  ok   every failed attempt carries a 'why' line the reader can act on
+  ok   no app verdict is produced at all (the run stopped before it could guess)
+
+--- scenario: the v2 false FAIL, byte for byte (a Windows host mangled the device path) ---
+  ok   the run stops early (rc=3) instead of timing out for minutes
+  ok   HARNESS_DUMP FAIL names the unreadable dump
+  ok   the verdict names Git-Bash/MSYS path conversion as the cause
+  ok   the app is never blamed (no FIRST_RUN verdict in a run that could not see)
+  ok   the raw mangled path is in DIAGNOSIS.txt for the reader to recognize
+  ok   the diagnosis records which host shell ran it
+  ok   nothing else in the summary pretends to be screen evidence
+
+--- scenario: a Windows host with no working python3 (the other half of the v2 false FAIL) ---
+  ok   the run stops early (rc=3) instead of reporting an app failure
+  ok   HARNESS_PYTHON FAIL names the missing interpreter
+  ok   no APK verdict is invented from an inspector that never ran
+  ok   no first-run verdict is invented either
+  ok   the diagnosis explains the Windows Store stub to the reader
+
+--- scenario: the reader cannot open its own script (the owner's 2026-09-21 run) ---
+  ok   the run stops at the preflight (rc=3) instead of waiting 300s on a visible screen
+  ok   HARNESS_READER FAIL names the reader (a gate v3 did not have)
+  ok   the dump itself is still reported as readable - the two are separate facts
+  ok   no verdict prints an empty node count (the tell the owner's bundle had)
+  ok   DIAGNOSIS.txt quotes the reader's real error, which used to be discarded
+  ok   the diagnosis names the cause instead of leaving it to the reader
+  ok   the diagnosis lists every path form that was tried, so the next host is not a guess
+  ok   the reader FAIL points at the per-form probe log kept in the bundle
+  ok   the probe log is in the bundle (evidence, not a claim)
+  ok   no app verdict is invented from a reader that never ran
+  ok   nothing times out for minutes - the failure is immediate
+
+--- scenario: a checkout missing its helpers (the file-by-file download) ---
+  ok   the run stops before the phone (rc=3)
+  ok   HARNESS_CHECKOUT FAIL names the incomplete checkout
+  ok   the verdict names the file that is missing
+  ok   the diagnosis tells the reader how to get a complete checkout
+  ok   no verdict about the phone is produced from a checkout that cannot read it
+
+--- scenario: the same host WITH the Windows path conversion (the fix) ---
+  ok   a Windows host with path conversion now runs green (rc=0)
+  ok   HARNESS_READER PASS - the reader really parsed the dump
+  ok   the run got past the preflight and drove the app
+  ok   the verdict shows the converted path it used (evidence of the conversion)
+  ok   the run says which path form every Python tool is being handed
+  ok   the screenshot validator ran through that form too (not just the reader)
+  ok   and no capture is reported as unvalidated on this host
+  ok   the first-run screens were read on the converted path
+  ok   the live turn ran - the whole run is usable on a simulated Windows host
+
+--- scenario: a relative --out, run from another directory (the owner's shape) ---
+  ok   a relative --out run is green (rc=0)
+  ok   the bundle landed under the caller's cwd
+  ok   visibility.log is in that bundle
+  ok   the visibility driver ran and passed with a relative --out
+  ok   and nothing was written into phase10/ by the child's cd
+
+--- scenario: a host where only a temp-dir copy opens (the fallback) ---
+  ok   the run is green through the temp-dir fallback (rc=0)
+  ok   HARNESS_READER PASS through the temp-dir copy
+  ok   run.log says the whole run is on the temp-dir path form
+  ok   the inline dump script read the screen too (this gate said 'no path shown' when the dump path was handed over unconverted)
+  ok   the screenshot validator ran on copies in that same directory
+  ok   and the whole run reached the live turn
+
+=== driver self-test: pass=105 fail=0 ===
+SELFTEST PASS (driver runs clean, and fails for the RIGHT reasons)

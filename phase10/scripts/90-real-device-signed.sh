@@ -249,10 +249,19 @@ redact() {
          -e 's/(Bearer )[A-Za-z0-9._-]{12,}/\1<REDACTED>/g'
 }
 
-# The three helpers are resolved once and converted once (see host_path above).
-UI_PY="$(host_path "$DIR/scripts/p10d-ui.py")"
-PNG_PY="$(host_path "$DIR/scripts/p10d-png.py")"
-APK_PY="$(host_path "$DIR/scripts/check-apk.py")"
+# The three helpers, in BOTH forms. The _SRC names are the real files as this script
+# holds them (POSIX, what bash and cp can open); the bare names are what gets handed to
+# Python, and they start as the converted form because that is the safer default on
+# Windows. R0.5 then replaces them with the form that actually opened (choose_reader):
+# handing a pre-converted path to a probe would test the wrong thing twice and, worse,
+# would make the POSIX probe "succeed" through the converted form and then leave every
+# later read on the unconverted one.
+UI_PY_SRC="$DIR/scripts/p10d-ui.py"
+PNG_PY_SRC="$DIR/scripts/p10d-png.py"
+APK_PY_SRC="$DIR/scripts/check-apk.py"
+UI_PY="$(host_path "$UI_PY_SRC")"
+PNG_PY="$(host_path "$PNG_PY_SRC")"
+APK_PY="$(host_path "$APK_PY_SRC")"
 
 # Python is load-bearing: the accessibility reader (p10d-ui.py) is what turns a dump
 # into "what is on screen", the screenshot checker decides whether a frame is a real
@@ -770,21 +779,21 @@ choose_reader() { # sets READER_CMD / MAP_MODE / READER_VIA; returns 1 if nothin
   local dump="$LAST_DUMP"
   PROBE_TRIED=""; PROBE_LOG=""
   : > "$OUT/reader-probe.txt"
-  # 1. POSIX, exactly as the script holds it
-  if probe_reader "POSIX path" "$UI_PY" "$dump"; then
-    READER_CMD="$UI_PY"; MAP_MODE=posix
+  # 1. POSIX, exactly as the script holds it (the _SRC path, never a converted one)
+  if probe_reader "POSIX path" "$UI_PY_SRC" "$dump"; then
+    READER_CMD="$UI_PY_SRC"; MAP_MODE=posix
     READER_VIA="the POSIX path (this host's Python understands it)"
     return 0
   fi
   # 2. / 3. the two Windows forms
   if command -v cygpath >/dev/null 2>&1; then
-    if probe_reader "cygpath -m" "$(host_path_m "$UI_PY")" "$(host_path_m "$dump")"; then
-      READER_CMD="$(host_path_m "$UI_PY")"; MAP_MODE=m
+    if probe_reader "cygpath -m" "$(host_path_m "$UI_PY_SRC")" "$(host_path_m "$dump")"; then
+      READER_CMD="$(host_path_m "$UI_PY_SRC")"; MAP_MODE=m
       READER_VIA="cygpath -m (forward-slash Windows path)"
       return 0
     fi
-    if probe_reader "cygpath -w" "$(host_path_w "$UI_PY")" "$(host_path_w "$dump")"; then
-      READER_CMD="$(host_path_w "$UI_PY")"; MAP_MODE=w
+    if probe_reader "cygpath -w" "$(host_path_w "$UI_PY_SRC")" "$(host_path_w "$dump")"; then
+      READER_CMD="$(host_path_w "$UI_PY_SRC")"; MAP_MODE=w
       READER_VIA="cygpath -w (backslash Windows path)"
       return 0
     fi
@@ -794,7 +803,7 @@ choose_reader() { # sets READER_CMD / MAP_MODE / READER_VIA; returns 1 if nothin
   # 4. copies in the host temp dir - the last resort, and the one that tells a path
   #    problem apart from a missing file.
   local tdir="${TMPDIR:-/tmp}/p10d-harness-$$"
-  if mkdir -p "$tdir" 2>/dev/null && cp -f "$UI_PY" "$tdir/p10d-ui.py" 2>/dev/null && cp -f "$dump" "$tdir/dump.xml" 2>/dev/null; then
+  if mkdir -p "$tdir" 2>/dev/null && cp -f "$UI_PY_SRC" "$tdir/p10d-ui.py" 2>/dev/null && cp -f "$dump" "$tdir/dump.xml" 2>/dev/null; then
     TMP_READER="$tdir/p10d-ui.py"; TMP_DUMP="$tdir/dump.xml"
     case "${HOST_SHELL:-}" in
       windows-msys)
@@ -872,8 +881,9 @@ if ui_dump "harness-preflight"; then
     printf '%s' "$PROBE_LOG" >> "$LOG"
     # The screenshot validator and the APK inspector run through the same decision: the
     # form that opened the reader is the form they get too.
-    PNG_PY="$(py_script "$DIR/scripts/p10d-png.py")"
-    APK_PY="$(py_script "$DIR/scripts/check-apk.py")"
+    UI_PY="$READER_CMD"
+    PNG_PY="$(py_script "$PNG_PY_SRC")"
+    APK_PY="$(py_script "$APK_PY_SRC")"
     log "python path mode: $MAP_MODE - $PY gets scripts and files as $( [ "$MAP_MODE" = posix ] && printf 'POSIX paths' || printf '%s' "${READER_CMD%/*}/..." ) ($READER_VIA)"
     PRE_NODES=$(ui_nodes)
     rd HARNESS_READER 0 "the accessibility reader parsed the dump: $PRE_NODES node(s), reader=$READER_CMD (via $READER_VIA)"
@@ -889,7 +899,7 @@ if ui_dump "harness-preflight"; then
     diag "  be made to read it in any of the path forms this driver knows."
     diag "  this is a host path-translation problem, not a missing file: all $((1+$(printf '%s\n' $HELPER_FILES | wc -l | tr -d ' '))) files are present in $DIR"
     diag "  (bash lists them; the interpreter below could not open one of them by any form)"
-    diag "  reader script: $UI_PY ($(wc -c < "$UI_PY" 2>/dev/null | tr -d ' ') bytes)"
+    diag "  reader script: $UI_PY_SRC ($(wc -c < "$UI_PY_SRC" 2>/dev/null | tr -d ' ') bytes, present and readable by bash)"
     diag "  interpreter:   $PY"
     diag "  forms tried:   ${PROBE_TRIED:-none}"
     diag "  dump:          $PRE_BYTES bytes of XML, from ${LAST_DUMP_MODE:-?} (device path /sdcard/p10d-ui.xml)"
@@ -898,7 +908,7 @@ if ui_dump "harness-preflight"; then
     diag "  if this is Git Bash on Windows: the checkout directory is not reachable from"
     diag "  this Python. Move the checkout somewhere short and ASCII (e.g. C:/src/OpenCode-app),"
     diag "  or run the driver from WSL/Linux, and re-run."
-    rd HARNESS_READER 1 "the accessibility reader could not read the dump by any path form this driver knows - every UI verdict after this point would describe the harness, not the app, so the run stops HERE. forms tried: ${PROBE_TRIED}. reader: $PY $UI_PY; interpreter ${PY##*/}; per-form errors in reader-probe.txt and DIAGNOSIS.txt"
+    rd HARNESS_READER 1 "the accessibility reader could not read the dump by any path form this driver knows - every UI verdict after this point would describe the harness, not the app, so the run stops HERE. forms tried: ${PROBE_TRIED}. reader: $PY $UI_PY_SRC; interpreter ${PY##*/}; per-form errors in reader-probe.txt and DIAGNOSIS.txt"
     rd HARNESS_DUMP 0 "the accessibility dump itself was fine: $((PRE_BYTES+0)) bytes of XML written by adb and read back (${LAST_DUMP_MODE:-?}) - the reader above, not the phone, is what failed this run"
     bail "the accessibility reader cannot read this phone's screen on this host (see HARNESS_READER)"
   fi
@@ -1098,7 +1108,11 @@ if [ "$FIRST_RUN_OK" = 1 ] && tap_any "open_files" "Project files"; then
     # which is exactly what happened here. v3 reads ANY absolute path off the
     # screen (and refuses /data/data, which no user could act on), then prints the
     # storage-mode line too, so the verdict says which location the app claims.
-    FILES_PATH=$($PY - "$(host_path "$LAST_DUMP")" <<-PY
+    # The dump path goes through map_dump for the same reason every other Python
+    # argument does: on a host where only the temp-dir copy opens, handing this inline
+    # script the converted path made it read nothing, and the file browser looked like
+    # it "showed no path" when the reader simply could not open the file.
+    FILES_PATH=$($PY - "$(map_dump "$LAST_DUMP")" <<-PY
 import re, sys
 xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
 skip = ("/data/data/", "/data/user/0/")
@@ -1107,7 +1121,7 @@ usable = [c for c in re.findall(r'(?:text|content-desc)="(/[^"<>]{3,})"', xml)
 print(usable[0] if usable else "")
 PY
 )
-    FILES_MODE=$($PY - "$(host_path "$LAST_DUMP")" <<-PY
+    FILES_MODE=$($PY - "$(map_dump "$LAST_DUMP")" <<-PY
 import sys
 xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
 for needle in ("Documents/OpenCode", "Your folder", "App folder (Android/data)", "App-private storage"):

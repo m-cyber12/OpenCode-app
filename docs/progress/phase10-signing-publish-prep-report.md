@@ -2100,16 +2100,18 @@ been caused by something else:
 
 ### B.11.3 Verification (TESTED here, with the numbers)
 
-The driver self-test runs the real driver against a fake phone; it now covers thirteen
-scenarios / **99 checks**, 0 failures:
+The driver self-test runs the real driver against a fake phone; it now covers fourteen
+scenarios / **105 checks**, 0 failures:
 
 ```
-=== driver self-test: pass=99 fail=0 ===
+=== driver self-test: pass=105 fail=0 ===
 SELFTEST PASS (driver runs clean, and fails for the RIGHT reasons)
 ```
 
-Log kept at `docs/progress/phase10-evidence/v3-driver-selftest/driver-selftest-99.log`
-(alongside the 9-scenario / 68-check and 12-scenario / 87-check runs).
+Log kept at `docs/progress/phase10-evidence/v3-driver-selftest/driver-selftest-105.log`
+(alongside the 9-scenario / 68-check and 12-scenario / 87-check runs, and the intermediate
+13-scenario / 99-check run that this one supersedes — see §B.11.5 for what the difference
+between those two runs found).
 
 | Scenario | What this run added or changed | Result |
 |---|---|---|
@@ -2117,6 +2119,7 @@ Log kept at `docs/progress/phase10-evidence/v3-driver-selftest/driver-selftest-9
 | `incomplete` (new) | the file-by-file checkout: `HARNESS_CHECKOUT FAIL` names `p10d-ui.py`, the diagnosis gives the `git clone` line, and **no** verdict about the phone is produced | 5/5 checks |
 | `winhost` | the probe finds `cygpath -m`: the run is green end to end, the verdict prints the converted reader path, `run.log` states `python path mode: m`, and the screenshot validator runs through the same form | 9/9 checks |
 | `happy` | unchanged product path, plus the new `python path mode: posix` statement | 31 checks (was 30) |
+| `readertmp` (new, and the one that matters) | the fallback itself: an interpreter that can only open files under the driver's temp dir. The whole run must go green **through that form** — reader, every dump, the inline dump scripts that read the storage path off the screen, and the screenshot validator | 6/6 checks |
 
 Both new gates are *pre-flight* gates: they can only ever add an early, named stop before any
 app verdict. No existing assertion was weakened or removed — the `dump-unusable`,
@@ -2147,3 +2150,26 @@ is expected to SKIP the artifact gate rather than fail it.
 Publish-as-export decision, W1–W4 isolation or the visibility gates changed in this round.**
 This round is entirely "when the harness cannot see, say why — do not run a five-minute
 verdict about the product on top of it".
+
+### B.11.5 What the fallback scenario found (two defects, found by hand before the phone could find them)
+
+The temp-dir fallback was the one probe no self-test scenario covered when it was written,
+so I exercised it by hand on a simulated host (an interpreter that refuses every path except
+the driver's own temp dir). It did not work, in two ways that the reader alone would have
+hidden:
+
+| Defect | What it did | Fix |
+|---|---|---|
+| the three helpers were resolved **once, pre-converted** (`UI_PY=$(host_path …)`) and the probe treated that value as "the POSIX path" | on a Windows host the "POSIX" probe was really a second `-m` probe (so the POSIX form was never tested), and if it had succeeded the run would have been marked `posix` while every later read used the converted form — an inverted copy of the very bug this section is about | the `*_SRC` paths are kept as the real files, every probe form and every copy is derived from them, and `UI_PY`/`PNG_PY`/`APK_PY` follow the winning form |
+| the two inline dump scripts (the ones that read the **storage path and mode** off the screen) still took `host_path "$LAST_DUMP"` | in fallback mode they opened nothing, so `P10D_FILES_SCREEN` FAILed with *"the file browser opened but no on-device path was shown on screen"* — a false FAIL about the app, produced by the harness, on a run that was otherwise green (10/10 screenshots, `LIVE_TURN`, all seven `VISIBILITY_*` gates PASS) | both go through `map_dump`, the same decision the reader uses |
+
+Both defects were invisible in the POSIX and `-m` scenarios and in every CI run so far
+(because the *first* probe that succeeds stops the search), which is the general lesson worth
+keeping: a fallback is only a fallback once something has run through it. Hence `readertmp`,
+which now runs the entire driver on the weakest host shape on every push.
+
+Two smaller honesty notes about these numbers. The 99-check run was already pushed (commit
+before this one) when the fallback scenario was added; its log is kept so the sequence is
+readable rather than rewritten, and §B.11.3's table reports the final run. And the fallback
+still copies the APK only at R2 — on a temp-dir host the artifact gate is expected to SKIP
+rather than PASS, which the verdict text says.

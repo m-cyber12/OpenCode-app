@@ -38,6 +38,9 @@
 #                 third bundle): the run must stop at the preflight (rc=3), keep the
 #                 dump's own PASS separate from the reader's FAIL, list the forms it
 #                 tried, and produce no app verdict at all.
+#   readertmp    a host whose interpreter can only open files under the driver's own
+#                temp dir: choose_reader's last resort must carry the whole run (reader,
+#                dumps, inline dump scripts, screenshot validator), not just the reader.
 #   incomplete   a checkout assembled file by file (script present, helpers missing):
 #                 the run must say WHICH helper is missing and how to get the whole
 #                 branch, before it touches the phone - not look like a path bug.
@@ -468,6 +471,60 @@ check "$(grep -qa '^P10D_VISIBILITY_SHARED_ROOT PASS' "$OUT/visibility.log" && e
   "the visibility driver ran and passed with a relative --out"
 check "$([ ! -d "$DIR/p10d-out-relative-test" ] && echo 0 || echo 1)" \
   "and nothing was written into phase10/ by the child's cd"
+
+echo
+echo "--- scenario: a host where only a temp-dir copy opens (the fallback) ---"
+# The last resort in choose_reader, and the one that has to be more than a label: an
+# interpreter that cannot reach the checkout at all, but CAN open files under the
+# driver's own temp dir. Everything - the reader, every dump, every screenshot, the
+# inline dump scripts and the APK inspector - has to go through that decision, or the
+# run comes back green-looking with unread screens ("the file browser showed no path"
+# was how this failed the first time it was exercised by hand).
+mkdir -p "$TMP/tmphost"
+cat > "$TMP/tmphost/python3" <<EOF
+#!/bin/sh
+# Windows Python whose checkout is unreachable: C:/... is accepted and stripped (as
+# cygpath -m output would be), and every other absolute path is refused - except the
+# driver's temp dir, which is exactly what the fallback copies into.
+n=\$#
+i=0
+while [ \$i -lt \$n ]; do
+  i=\$((i+1)); a="\$1"; shift
+  case "\$a" in C:/*) a="\${a#C:}" ;; esac
+  case "\$a" in
+    /*) case "\$a" in
+          *p10d-harness-*) : ;;
+          *) printf "can't open file '%s': [Errno 2] No such file or directory\\n" "\$a" >&2; exit 2 ;;
+        esac ;;
+  esac
+  set -- "\$@" "\$a"
+done
+exec "$REAL_PY" "\$@"
+EOF
+chmod +x "$TMP/tmphost/python3"
+cp "$TMP/winhost/cygpath" "$TMP/tmphost/cygpath"
+rm -rf "$TMP/dev" "$TMP/out-readertmp"
+mkdir -p "$TMP/dev"
+PATH="$TMP/bin:$TMP/tmphost:$PATH" \
+P10D_FORCE_HOST_SHELL=windows-msys \
+P10D_FAKE_SCENARIO=happy \
+P10D_SKIP_ARTIFACT=1 \
+P10D_PROVIDER_KEY="sk-or-test-only-not-a-real-key" \
+bash "$DIR/scripts/90-real-device-signed.sh" --apk "$TMP/fake.apk" \
+    --out "$TMP/out-readertmp" > "$TMP/run-readertmp.stdout" 2>&1
+echo "$?" > "$TMP/rc-readertmp"
+RC=$(cat "$TMP/rc-readertmp"); OUT="$TMP/out-readertmp"
+check "$([ "$RC" = 0 ] && echo 0 || echo 1)" "the run is green through the temp-dir fallback (rc=$RC)"
+check "$(grep -qa '^P10D_HARNESS_READER PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "HARNESS_READER PASS through the temp-dir copy"
+check "$(grep -qa 'python path mode: tmp' "$OUT/run.log" && echo 0 || echo 1)" \
+  "run.log says the whole run is on the temp-dir path form"
+check "$(grep -qa '^P10D_FILES_SCREEN PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the inline dump script read the screen too (this gate said 'no path shown' when the dump path was handed over unconverted)"
+check "$(grep -qa 'screen=yes' "$OUT/screenshots.log" && echo 0 || echo 1)" \
+  "the screenshot validator ran on copies in that same directory"
+check "$(grep -qa '^P10D_LIVE_TURN PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "and the whole run reached the live turn"
 
 echo
 echo "=== driver self-test: pass=$pass fail=$fail ==="
