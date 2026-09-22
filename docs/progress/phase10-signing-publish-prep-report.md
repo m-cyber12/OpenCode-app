@@ -2529,3 +2529,34 @@ is no JDK and no Android SDK, so **nothing written here is compiled until CI com
 report should keep saying which of the two is meant. The cost of getting that wrong is one red
 run and two commits - cheap only because the compiler errors were in the first stage of the
 pipeline and the self-test failures named the exact stage.
+
+**The second run (`35773565124`) found three more, and one of them is a real harness bug.**
+Main sources compiled clean this time; the failures were in the instrumented gates and in
+the temp-dir scenario:
+
+| What | Where | Cause | Fix |
+|---|---|---|---|
+| `None of the following functions can be called with the arguments supplied` | `WorkspaceIsolationGatesTest.kt:429` (W6) | `File(backRoot, created.name, "survives.txt")` - there is no three-argument `File` constructor | `File(File(backRoot, created.name), "survives.txt")` |
+| `inferred type is UiState but RuntimeSummary was expected` ×2 | `ChatUiGatesTest.kt:1733,1854` | the two v4 rows called `renderSettings(uiState(...))` positionally, but `renderSettings` takes `runtime` first | both call sites name the parameter (`state = …`) |
+| **`readertmp`: the whole run red (rc=1) with `PROVIDER_SEARCH`, `PROVIDER_KEY_ONLY` and `MODEL_QUICK_SWITCH` failing - and they were failing on the HOST, not in the app** | `map_dump()` in `90-real-device-signed.sh` | in the temp-dir host shape a dump is handed to Python as a **path** (`$TMP_DIR/dump.xml`), and `map_dump` returned that path *without copying the current dump into it*. `ui()` made the copy itself, so every read that went through `ui()` was fresh; `screen_label()` and the inline dump scripts map the path directly, so they read the bytes of an **earlier screen**. On a POSIX host nothing is copied and all of this passes, which is exactly why only one scenario could see it | `map_dump` copies the current dump on every call, and `ui()` now goes through the same function instead of keeping its own copy: one place turns a dump path into a form this host's Python can open |
+
+The symptom is worth writing down because it looked like an app defect in the verdict text:
+`MODEL_QUICK_SWITCH FAIL :: the quick-switch menu ('<none>') did not list the starred model
+'gpt-4o-mini'` - while `ui-r5b.xml` in the same bundle showed `Starred models`,
+`gpt-4o-mini`, and `Choose models in Settings` on screen (that file was written by a later
+read). Two smaller things came out of the same investigation and are permanent now:
+
+* the v4 stages **wait for the text they are about to read** (`wait_for` on
+  `No provider matches`, `OpenRouter`, `API key for`, `Starred models`) instead of a single
+  read after a fixed sleep - on a phone the list filters under the keyboard, and one read can
+  catch the screen mid-change;
+* both v4 FAIL paths **take the dump their own message points at** (`ui/ui-v4-provider-search.xml`,
+  `ui/ui-v4-quick-switch.xml`). Before this, a red verdict named an evidence file that the
+  bundle did not contain, which is the same "unexplainable red" the earlier sections exist to
+  eliminate.
+
+Verification of the fixes: the two driver checks that failed in the first run
+(`onboarding`: "the driver logged the single action it used"; `tags-gone`: "the live turn ran
+on content alone") both **PASS** on the next run, so the bounded
+`return_to_conversation` and the R4a label log did what they were written to do. The
+temp-dir scenario is re-run with the `map_dump` fix and its result is recorded in §B.12.8.
