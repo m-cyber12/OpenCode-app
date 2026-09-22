@@ -274,6 +274,21 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
      * in it, which is what "lands in chat" means (the project is the folder, the chat
      * is an OpenCode session in it; no folder is created for the chat).
      */
+
+    // The system folder picker, for a project root the user chooses themselves.
+    // Folders that cannot be handed to a POSIX runtime (SD card, cloud provider) are
+    // refused with the reason - see StorageChoice.realPathOf.
+    val chosenFolderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            runStorageChange { storageController.useChosenFolder(uri) }
+        }
+    }
+    // All files access is granted in system settings, not by a dialog, so the app
+    // sends the user there and re-checks when the screen comes back.
+    val allFilesAccessLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { runStorageChange { storageController.activateAllFilesAccess() } }
+
     fun confirmWorkspace() {
         scope.launch {
             val root = withContext(Dispatchers.IO) { RuntimePaths.get(context).workspaces }
@@ -310,20 +325,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         }
     }
 
-    // The system folder picker, for a project root the user chooses themselves.
-    // Folders that cannot be handed to a POSIX runtime (SD card, cloud provider) are
-    // refused with the reason - see StorageChoice.realPathOf.
-    val chosenFolderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-        if (uri != null) {
-            runStorageChange { storageController.useChosenFolder(uri) }
-        }
-    }
-    // All files access is granted in system settings, not by a dialog, so the app
-    // sends the user there and re-checks when the screen comes back.
-    val allFilesAccessLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { runStorageChange { storageController.activateAllFilesAccess() } }
-
     // SAF: save one file out of the viewer. Whole-project export went away in v4
     // together with the storage screen it lived on - the live project folder is a
     // normal, file-manager-visible folder since v3, so "export a copy" was a second
@@ -341,7 +342,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     runCatching { SafProjectTransfer(context, container.workspacesRoot()).saveFileCopy(source, uri) }
                 }
                 result.onSuccess { bytes ->
-                    publishLabel = context.getString(R.string.files_save_copy_done, source.name, bytes)
+                    // v4: the panel this label used to feed is gone with the copy/export
+                    // controls; the singular "Save a copy" outcome is reported through the
+                    // same storage channel the file screen already shows.
+                    filesError = ""
+                    storageMessage = context.getString(R.string.files_save_copy_done, source.name, bytes)
                 }.onFailure { t ->
                     filesError = context.getString(R.string.files_save_copy_failed, t.message ?: t.javaClass.simpleName)
                 }

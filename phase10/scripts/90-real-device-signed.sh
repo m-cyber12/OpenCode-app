@@ -616,6 +616,34 @@ tap_any() { # $@ = needles, most specific first; taps the first one that is ther
   return 1
 }
 
+return_to_conversation() { # bounded: press BACK until a conversation surface is visible
+  # One BACK press is not enough, and the reason is v4: entering a provider key can
+  # go Settings -> the provider dialog -> (Save) back to Settings, so a single press
+  # lands two levels short and every later wait then fails on the wrong screen. The
+  # fake phone's own transition table (settings-key -> settings-openr -> chat) is the
+  # proof that the depth is real, not hypothetical.
+  #
+  # The loop stops as soon as the CONVERSATION is on screen, so it never presses BACK
+  # on the screen the run needs to be on (the v3 bug that turned an otherwise clean run
+  # into a FAIL: an unconditional BACK on the chat exits the app).
+  local i
+  for i in 1 2 3; do
+    ui_dump "return-to-chat-$i" >/dev/null 2>&1
+    if ui_has_any "chat_screen" "composer_input" "Start a conversation" "Message the agent"; then
+      [ "$i" = 1 ] || log "return_to_conversation: back on the conversation surface after $i BACK presses"
+      return 0
+    fi
+    adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
+    sleep 1
+  done
+  ui_dump "return-to-chat-final" >/dev/null 2>&1
+  if ui_has_any "chat_screen" "composer_input" "Start a conversation" "Message the agent"; then
+    return 0
+  fi
+  diag "return_to_conversation: the conversation was not reachable after 3 BACK presses (see ui/ui-leave-settings-final.xml)"
+  return 1
+}
+
 type_text() { # $1 = text ; %s is a space, as `input text` requires
   local escaped
   escaped=$(printf '%s' "$1" | sed 's/ /%s/g')
@@ -1137,6 +1165,10 @@ print("|".join(extra)[:200])
 PY
 )
   if [ -n "$FOLDER_SHOWN" ] && [ "$PICKER_SHOWN" = 1 ] && [ "$ACTION_SHOWN" = 1 ] && [ -z "$REMOVED_HITS" ]; then
+    # The label the action carries is logged, not just matched: the self-test checks
+    # this line, and tomorrow's bundle should answer "what did the button say?" without
+    # reading the driver.
+    log "workspace step: the single action is labelled 'Use this folder as workspace' (tag onboarding_workspace_use); the picker is 'Choose folder' (tag onboarding_workspace_pick)"
     rd WORKSPACE_STEP 0 "the workspace step shows the folder ($FOLDER_SHOWN), one picker and one action; removed controls absent; other controls: ${OTHER_BUTTONS:-none}"
   else
     rd WORKSPACE_STEP 1 "workspace step incomplete: folder='${FOLDER_SHOWN:-<none>}' picker=$PICKER_SHOWN action=$ACTION_SHOWN removedPresent='${REMOVED_HITS:-none}' other='${OTHER_BUTTONS:-none}' (see ui/ui-workspace-step.xml)"
@@ -1254,9 +1286,10 @@ PY
     else
       rd FILES_SCREEN 1 "the file browser opened but no on-device path was shown on screen (storage mode: ${FILES_MODE:-not shown}; see ui/ui-files-screen.xml)"
     fi
-    adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
-    sleep 1
-    wait_for "back-to-chat" "$NEEDLE_CHAT" "$(tmo 60)" >/dev/null 2>&1 || \
+    # The file browser can be more than one press deep (a folder listing, then the
+    # viewer): the bounded loop gets back to the conversation and only diagnoses when
+    # it cannot, instead of leaving the next stage waiting on the wrong screen.
+    return_to_conversation >/dev/null 2>&1 || \
       log "note: after leaving the file browser the composer was not found again (R6 will report it)"
   else
     rd FILES_SCREEN 1 "the file browser did not open (see DIAGNOSIS.txt)"
@@ -1305,8 +1338,7 @@ PY
     else
       rd FILES_SIMPLIFIED 1 "the file browser still shows removed controls: $FILES_REMOVED (see ui/ui-v4-files.xml)"
     fi
-    adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
-    sleep 1
+    return_to_conversation >/dev/null 2>&1 || true
   else
     rd FILES_SIMPLIFIED 1 "the file browser did not open (see DIAGNOSIS.txt)"
   fi
@@ -1417,7 +1449,7 @@ PY
     shot "v4-star" || true
     if tap_any "in the chat quick switch" >/dev/null 2>&1; then
       sleep 1
-      adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
+      return_to_conversation >/dev/null 2>&1 || true
       sleep 2
       if wait_for "chat-after-settings" "$NEEDLE_CHAT" "$(tmo 90)"; then
         QS_BEFORE=$(screen_label "Model:")
@@ -1448,13 +1480,10 @@ PY
   else
     rd MODEL_QUICK_SWITCH 7 "no expandable provider row with a star control was reachable in Settings"
   fi
-  # Leave Settings so R6 starts from the conversation. Only when the app is not
-  # already there: a failed tap on a control that does not exist would put a line in
-  # DIAGNOSIS.txt and make a clean run look like it needed a human.
-  if ! ui_has_any "chat_screen" "composer_input" "Start a conversation"; then
-    adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
-    sleep 1
-  fi
+  # Leave Settings so R6 starts from the conversation, at whatever depth the v4
+  # screens put this stage (Settings, the provider search, the key dialog): one press
+  # is only right for one of those, so the bounded loop decides.
+  return_to_conversation >/dev/null 2>&1 || true
 else
   rd WORKSPACE_SECTION 7 "Settings could not be opened"
   rd PROVIDER_SEARCH 7 "Settings could not be opened"
@@ -1506,10 +1535,10 @@ if [ -n "${MODEL_KEY:-}" ] && [ "$SKIP_LIVE" = 0 ]; then
   # (it clears the field), so an unconditional BACK here would be a second back press
   # on whatever screen we are really on - and if that is the conversation, the app
   # exits and every live gate downstream would fail for the wrong reason.
-  if ui_dump "post-key-screen" >/dev/null 2>&1 && ui_has_any "key_save" "Save key" "Provider keys"; then
-    adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
-    sleep 1
-  fi
+  # Whatever depth the key flow reached (Settings, the search screen, the v4 provider
+  # dialog), the run has to come back to the conversation: return_to_conversation presses
+  # BACK until it is there and says so when it cannot.
+  return_to_conversation >/dev/null 2>&1 || true
   wait_for "ready-to-send" "$NEEDLE_CHAT" "$(tmo 90)" >/dev/null 2>&1 || \
     log "note: the composer was not on screen after the key step - the live turn will report what it sees"
 fi

@@ -822,7 +822,11 @@ class OpenCodeRepository(
      * same value instead of each keeping its own copy of the shortlist.
      */
     fun setStarred(ref: OpenCodeApi.ModelRef, starred: Boolean) {
-        val list = runCatching { modelPreference?.setStarred(ref, starred) }.getOrDefault(emptyList())
+        // `runCatching` over the nullable store infers Result<List<ModelRef>?>, so the
+        // fallback has to be the state we already publish (a Keystore/prefs failure must
+        // not wipe the shortlist on screen).
+        val list = runCatching { modelPreference?.setStarred(ref, starred) }
+            .getOrNull() ?: _state.value.starredModels
         _state.value = _state.value.copy(starredModels = list)
     }
 
