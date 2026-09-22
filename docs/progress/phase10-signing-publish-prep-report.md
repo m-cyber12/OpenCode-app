@@ -2559,4 +2559,41 @@ Verification of the fixes: the two driver checks that failed in the first run
 (`onboarding`: "the driver logged the single action it used"; `tags-gone`: "the live turn ran
 on content alone") both **PASS** on the next run, so the bounded
 `return_to_conversation` and the R4a label log did what they were written to do. The
-temp-dir scenario is re-run with the `map_dump` fix and its result is recorded in §B.12.8.
+temp-dir scenario is green again after the `map_dump` fix; the full run, and the fixture defect
+that fix uncovered, are in §B.12.8.
+
+### B.12.8 The third run: the self-test is green, and the harness lint earned its place
+
+The driver self-test now runs **15 scenarios / 120 checks, 0 failures**
+(`docs/progress/phase10-evidence/v4-driver-selftest/driver-selftest-120-tail.log`,
+`SELFTEST PASS`). The two checks that failed before now pass, and the temp-dir scenario is
+green again - but the way it went green is the interesting part, because the first attempt at
+a fix was wrong in a way that would have been easy to accept.
+
+Chasing the two new failures (`DIAGNOSIS.txt stays empty on a clean run`, and the same for the
+first-run scenario) led to the 20-second `wait(provider-no-match) TIMED OUT` those runs had
+started producing, and then to the dump that wait had been reading: **the nomatch fixture
+wrote the app's own copy verbatim - `No provider matches "zzzqq".` - into a double-quoted XML
+attribute.** Unescaped quotes make the whole dump unparsable, so the reader reported
+`UI_DUMP_UNREADABLE`, the wait could never succeed, and the stage still **passed** through a
+stale read. Every gate in the chain behaved correctly: the driver reports an unreadable dump
+rather than crashing on it, and the stage's own verdict happened to be satisfied by the
+previous screen. That is precisely the shape of a green that is not evidence.
+
+The fix is in three parts, and the third is the one that matters:
+
+1. `test-90-fixtures.py` escapes `&`, `<`, `>` and `"` in every attribute (`esc()`), because a
+   fixture is a dump and a dump has to be valid XML;
+2. the added v4 expected-text waits stay - with the fixture fixed they succeed immediately, and
+   they are what makes the reads robust on a phone where the list filters under the keyboard;
+3. `test-90-selfcheck.py` gained two checks: every fixture parses as XML with nodes in it, and
+   **the driver's own `p10d-ui.py` parses every fixture** (a screen the reader rejects is a
+   screen the driver can never see). Both would have caught this in under a second, and the
+   second one would have caught it *without the driver running at all*.
+
+That is the third time this round that the harness, not the app, was the thing that was wrong -
+the stale fixture, the stale temp-dir copy, and now an unparsable fixture - and the third time
+the honest fix was to make the harness say what it actually saw. The app-side changes in this
+round have not been executed on hardware: the single combined device pass is still the thing
+that decides them, and every new verdict is written so that a FAIL names its own evidence file
+(§B.12.7's second point).
