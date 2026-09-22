@@ -1730,7 +1730,7 @@ class ChatUiGatesTest {
             ),
         )
         renderSettings(
-            uiState(
+            state = uiState(
                 model = OpenCodeApi.ModelRef("opencode", "big-pickle"),
                 starred = listOf(OpenCodeApi.ModelRef("openrouter", "openai/gpt-4o-mini")),
             ),
@@ -1851,7 +1851,7 @@ class ChatUiGatesTest {
 
         // Settings carries the switch: the picker, the repair for a lost grant, the
         // move for projects left behind, and the honest note about what switching hides
-        renderSettings(uiState())
+        renderSettings(state = uiState())
         storageCanGrant.value = true
         storagePending.value = 2
         rule.waitForIdle()

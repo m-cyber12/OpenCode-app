@@ -426,7 +426,7 @@ class WorkspaceIsolationGatesTest {
             val moved = controller.moveProjectsIntoPlace()
             val backRoot = RuntimePaths.get(context).workspaces
             val backNames = storeNow().projects().map { it.name }
-            val contentKept = runCatching { File(backRoot, created.name, "survives.txt").readText() }
+            val contentKept = runCatching { File(File(backRoot, created.name), "survives.txt").readText() }
                 .getOrDefault("") == MARKER
 
             gate(

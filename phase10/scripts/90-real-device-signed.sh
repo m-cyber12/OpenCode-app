@@ -467,23 +467,29 @@ map_file() { # $1 = POSIX path of a data file -> as $PY must receive it
 }
 
 map_dump() { # $1 = POSIX host path of the dump -> the form THIS host's Python opens
+  # tmp mode is a PATH, not the file: `$TMP_DIR/dump.xml`. A copy made once would hand
+  # every later caller the bytes of whatever screen was current at that moment, which
+  # is not a theory - it is what the v4 stages did on the temp-dir host while passing
+  # everywhere else. `screen_label` and the inline dump scripts used to map the path
+  # without copying, so they read a stale screen and reported things like "the quick
+  # switch lists nothing" about a menu that was on screen with the model in it. The
+  # copy belongs here, in the one function that turns a path into the form this host's
+  # Python can open, so no caller has to remember it.
   case "$MAP_MODE" in
     posix) printf '%s' "$1" ;;
     m) host_path_m "$1" ;;
     w) host_path_w "$1" ;;
-    tmp) printf '%s' "$TMP_DUMP_WIN" ;;
+    tmp)
+      cp -f "$1" "$TMP_DUMP" 2>/dev/null || true
+      printf '%s' "$TMP_DUMP_WIN" ;;
     *) printf '%s' "$1" ;;
   esac
 }
 
 ui() { # shellcheck disable=SC2086
   local out rc d
-  if [ "$MAP_MODE" = tmp ]; then
-    cp -f "$LAST_DUMP" "$TMP_DUMP" 2>/dev/null || true
-    d="$TMP_DUMP_WIN"
-  else
-    d="$(map_dump "$LAST_DUMP")"
-  fi
+  # One mapping, always fresh: see map_dump.
+  d="$(map_dump "$LAST_DUMP")"
   out=$($PY "$READER_CMD" "$d" "$@" 2>>"$READER_ERR"); rc=$?
   # A reader FAILURE is "the reader could not answer": exit >= 2 with nothing on
   # stdout (2 = the interpreter could not open the script, 3 = the dump would not
@@ -1384,7 +1390,9 @@ if [ "$SETTINGS_REACHED" = 1 ]; then
   if [ -n "$SEARCH_FIELD" ] && tap_any "Search providers" >/dev/null 2>&1; then
     # something nothing can match: the screen must say so rather than show everything
     adb shell input text "zzzqq" >/dev/null 2>&1
-    sleep 2
+    # Wait for the copy, then read it: on a phone the list filters under the keyboard,
+    # and a single read can catch the screen mid-change.
+    wait_for "provider-no-match" "No provider matches" "$(tmo 20)" >/dev/null 2>&1
     NO_MATCH=$(screen_label "No provider matches")
     # then a real provider: the list narrows to it and offers the key action
     k=0
@@ -1393,8 +1401,11 @@ if [ "$SETTINGS_REACHED" = 1 ]; then
       k=$((k + 1))
     done
     adb shell input text "openr" >/dev/null 2>&1
-    sleep 2
+    wait_for "provider-match" "OpenRouter" "$(tmo 20)" >/dev/null 2>&1
     shot "v4-provider-search" || true
+    # The dump the verdict points at is taken whether or not the gate passes: a FAIL
+    # whose evidence file does not exist is a FAIL nobody can triage.
+    ui_dump "v4-provider-search" >/dev/null 2>&1
     MATCH=$(screen_label "OpenRouter")
     if [ -n "$NO_MATCH" ] && [ -n "$MATCH" ]; then
       PROVIDER_SEARCH=1
@@ -1407,7 +1418,7 @@ if [ "$SETTINGS_REACHED" = 1 ]; then
     # dialog that asks for the key and nothing else (base URL / models are the
     # catalog's business), and it is dismissed without storing anything.
     if tap_any "Save key" >/dev/null 2>&1; then
-      sleep 2
+      wait_for "provider-key-dialog" "API key for" "$(tmo 20)" >/dev/null 2>&1
       shot "v4-provider-key" || true
       ui_dump "v4-provider-key" >/dev/null 2>&1
       DIALOG_TITLE=$(screen_label "API key for")
@@ -1453,9 +1464,12 @@ PY
       sleep 2
       if wait_for "chat-after-settings" "$NEEDLE_CHAT" "$(tmo 90)"; then
         QS_BEFORE=$(screen_label "Model:")
+        # (the header label is read the same way on both sides of the pick, so the
+        # verdict compares like with like)
         if tap_any "Model:" >/dev/null 2>&1; then
-          sleep 1
+          wait_for "quick-switch-menu" "Starred models" "$(tmo 20)" >/dev/null 2>&1
           shot "v4-quick-switch" || true
+          ui_dump "v4-quick-switch" >/dev/null 2>&1
           MENU_TITLE=$(screen_label "Starred models")
           if [ -n "$MENU_TITLE" ] && tap_any "$STAR_NAME" >/dev/null 2>&1; then
             sleep 2
