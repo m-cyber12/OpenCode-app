@@ -2318,12 +2318,12 @@ change it, it names the mechanism honestly.
 |---|---|---|
 | `phase6/scripts/30-static-checks.sh` | copy/URL literals, resources, a11y names, lazy lists, UI purity (screens stay pure functions), icon availability | **rc=0** (20 UI files scanned, 0 findings each; 399 strings defined, 0 referenced-but-missing) |
 | `phase10/scripts/30-static-checks.sh` | the driver's reader self-test (20 checks), the fake-phone shim, Compose icon availability, workflow template, no infinite animations | **rc=0** |
-| `test-90-real-device.sh` | the real device driver run against the fake phone — now including the v4 stages | see §B.12.6 (numbers below) |
+| `test-90-real-device.sh` | the real device driver run against the fake phone — now including the v4 stages | **15 scenarios / 120 checks, 0 failures** (§B.12.8) |
 | `ChatUiGatesTest` U9 (rewritten) | the storage screen offers **none** of the removed controls, still reports location/mode/honesty, still repairs a revoked grant and still moves projects | pending CI |
 | `ChatUiGatesTest` U10, U11, U12 (new) | quick switch lists only starred models and picks in place; provider search filters and reports no-match; the key dialog asks for the key only; the custom-provider path exists; the workspace step has one folder and one action; Settings owns the switch | pending CI |
 | `FirstRunUiGatesTest` F1–F3 (updated) | the first run may stop at the workspace step, and F3 walks it: one tap → first project → chat | pending CI |
 | `WorkspaceIsolationGatesTest` W1–W4 | unchanged, re-run as before | pending CI |
-| `WorkspaceIsolationGatesTest` W5 (new) | sibling confinement one level deeper (see §B.12.4) | pending CI |
+| `WorkspaceIsolationGatesTest` W5 (new) | sibling confinement one level deeper (see §B.12.4) | pending CI (§B.12.7 records the two red runs that got it this far) |
 | `WorkspaceIsolationGatesTest` W6 (new) | a workspace switch hides the old projects, deletes nothing, and offers them back (see §B.12.6) | pending CI |
 | `test-90-selfcheck.py` (new) | the harness/app contract, offline: fixtures match the app, needles match the fixtures, gates match the tags (see §B.12.6) | rc=0, and it reproduces the original incident on purpose |
 | JVM unit tests `ModelPreferenceTest`, `ProviderCatalogTest` (new) | the persistence decision, the codec (a model id containing a slash), the ranking, and the custom-provider config document | pending CI |
@@ -2474,8 +2474,8 @@ Verification status of this sub-section, stated plainly: the contract check and 
 static stage are **rc=0 on this revision** (with the incident reproduced on purpose, above), W6's
 gate and the pending-root change are **written but not yet executed on a device** - they run in
 the workspace gate stage of the same CI pass as everything else, and the full self-test run with
-the v4 driver scenarios was still in flight when this section was written (its numbers are
-recorded in §B.12.7).
+the v4 driver scenarios is green (15 scenarios / 120 checks, §B.12.8), after the fixture defect
+that run uncovered was found and fixed.
 
 One more thing in the same spirit, small but load-bearing: the first-run destination was
 written out twice (an automatic advance when the runtime came up, and the Welcome screen's own
