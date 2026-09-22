@@ -104,6 +104,8 @@ fun ChatScreen(
     onOpenProjects: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenFiles: () -> Unit = {},
+    /** v4 item 3: pick one of the starred models without a trip to Settings. */
+    onPickModel: (String, String) -> Unit = { _, _ -> },
     onPermissionReply: (String, String) -> Unit,
     onQuestionSubmit: (String, List<List<String>>) -> Unit,
     onQuestionSkip: (String) -> Unit,
@@ -160,6 +162,15 @@ fun ChatScreen(
                     Icon(Icons.Filled.Settings, contentDescription = settingsLabel)
                 }
             },
+        )
+
+        // The quick switch sits directly under the bar: it is a property of the
+        // conversation the user is looking at (which model answers), not a setting.
+        ModelQuickSwitch(
+            current = state.model,
+            starred = state.starredModels,
+            onPick = onPickModel,
+            onOpenSettings = onOpenSettings,
         )
 
         StatusArea(state = state, runtime = runtime, availability = availability, onDismissBanner = onDismissBanner)

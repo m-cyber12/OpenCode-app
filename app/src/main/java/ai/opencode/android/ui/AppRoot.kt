@@ -3,6 +3,8 @@ package ai.opencode.android.ui
 import ai.opencode.android.AppContainer
 import ai.opencode.android.R
 import ai.opencode.android.client.AgentAvailability
+import ai.opencode.android.client.CustomProviderConfig
+import ai.opencode.android.client.OpenCodeApi
 import ai.opencode.android.client.OpenCodeRepository
 import ai.opencode.android.client.ProviderSetupClassifier
 import ai.opencode.android.client.UiError
@@ -22,6 +24,7 @@ import ai.opencode.android.ui.files.OpenFile
 import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.ui.common.ThemeChoice
 import ai.opencode.android.ui.common.toSummary
+import ai.opencode.android.ui.onboarding.WorkspaceOnboardingScreen
 import ai.opencode.android.ui.projects.ProjectsScreen
 import ai.opencode.android.ui.settings.SettingsScreen
 import ai.opencode.android.ui.theme.OpenCodeTheme
@@ -69,8 +72,10 @@ import java.io.File
  * Flow of a first run (what the Phase 6 first-run gate walks):
  *   install -> open -> WELCOME (the activity already started the runtime service,
  *   which extracts the payload and starts the server by itself) -> the supervisor
- *   reports HEALTHY -> PROJECTS (nothing exists yet) -> create a project -> CHAT.
- * A returning user with a project goes WELCOME -> CHAT.
+ *   reports HEALTHY -> WORKSPACE (v4: one folder, one action) -> the first project
+ *   is created and its first chat opens -> CHAT.
+ * A returning user with a project goes WELCOME -> CHAT; a user who removed every
+ * project goes WELCOME -> PROJECTS, because the workspace step already ran.
  */
 
 private const val ROUTE_WELCOME = "welcome"
@@ -79,6 +84,15 @@ private const val ROUTE_CHAT = "chat"
 private const val ROUTE_SESSIONS = "sessions"
 private const val ROUTE_SETTINGS = "settings"
 private const val ROUTE_FILES = "files"
+
+/**
+ * Phase 10 continuation v4, item 4: the first-run workspace step. It is a route of
+ * its own rather than part of WELCOME because it appears only after the runtime is
+ * actually up (the folder that will be used is resolved from the platform, and
+ * asking before the agent can run would be asking about a location nothing can
+ * write to yet).
+ */
+private const val ROUTE_WORKSPACE = "workspace"
 
 @Composable
 fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
@@ -181,6 +195,18 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         exportTarget = null
     }
 
+    // ---- Phase 10 continuation v4: the first-run workspace step -----------------
+    //
+    // Three pieces of state, and the split matters: whether the step still has to
+    // run is persisted ([StorageChoice.workspaceConfirmed], set when the user
+    // confirms a folder), whether a confirm is waiting for the system grant screen
+    // survives the Activity recreate a storage change triggers (rememberSaveable),
+    // and the one-shot guard stops a loop when the user comes back without granting.
+    var workspaceConfirmed by remember { mutableStateOf(StorageChoice.workspaceConfirmed(context)) }
+    var onboardingMessage by rememberSaveable { mutableStateOf("") }
+    var pendingOnboarding by rememberSaveable { mutableStateOf(false) }
+    var grantLaunched by rememberSaveable { mutableStateOf(false) }
+
     // ---- Phase 10 continuation: the project's files, in the app ---------------
     //
     // The lists come from OpenCode's own file API (the layer the agent's tools
@@ -192,7 +218,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     var filesLoading by remember { mutableStateOf(false) }
     var filesError by remember { mutableStateOf("") }
     var openFile by remember { mutableStateOf<OpenFile?>(null) }
-    var publishLabel by remember { mutableStateOf("") }
     val projectDir = remember(projectName) {
         if (projectName.isEmpty()) null else File(container.workspacesRoot(), projectName)
     }
@@ -238,6 +263,53 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         }
     }
 
+    /**
+     * v4 item 4, the single action: confirm the shown folder as the workspace.
+     *
+     * Order matters. The folder is probed by writing into it ([StorageChoice.isUsableRoot])
+     * before anything is created; when the probe fails because the app lacks All files
+     * access, the SAME action opens that system screen and remembers that a confirm is
+     * waiting, so the user comes back to a project rather than to the same question.
+     * Only after a successful probe is the first project created - and a chat opened
+     * in it, which is what "lands in chat" means (the project is the folder, the chat
+     * is an OpenCode session in it; no folder is created for the chat).
+     */
+    fun confirmWorkspace() {
+        scope.launch {
+            val root = withContext(Dispatchers.IO) { RuntimePaths.get(context).workspaces }
+            val usable = withContext(Dispatchers.IO) { StorageChoice.isUsableRoot(root) }
+            if (!usable) {
+                val intent = StorageChoice.allFilesAccessIntent(context)
+                if (intent != null && !grantLaunched) {
+                    grantLaunched = true
+                    pendingOnboarding = true
+                    onboardingMessage = context.getString(
+                        R.string.onboarding_workspace_needs_access,
+                        root.absolutePath,
+                    )
+                    allFilesAccessLauncher.launch(intent)
+                } else {
+                    pendingOnboarding = false
+                    onboardingMessage = context.getString(
+                        R.string.onboarding_workspace_unusable,
+                        root.absolutePath,
+                    )
+                }
+                return@launch
+            }
+            val created = withContext(Dispatchers.IO) { store.create(ProjectStore.FIRST_PROJECT_NAME) }
+            StorageChoice.markWorkspaceConfirmed(context)
+            workspaceConfirmed = true
+            projectName = created.name
+            projects = store.projects()
+            pendingOnboarding = false
+            onboardingMessage = ""
+            route = ROUTE_CHAT
+            // "Lands in chat": a real OpenCode session in the new project directory.
+            repository.newSession(null)
+        }
+    }
+
     // The system folder picker, for a project root the user chooses themselves.
     // Folders that cannot be handed to a POSIX runtime (SD card, cloud provider) are
     // refused with the reason - see StorageChoice.realPathOf.
@@ -252,11 +324,14 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         ActivityResultContracts.StartActivityForResult(),
     ) { runStorageChange { storageController.activateAllFilesAccess() } }
 
-    // SAF: save one file, or export the whole project into a folder the user
-    // picks. Export is a convenience now (the live project folder is already
-    // visible); it is what a user reaches for when they want a snapshot elsewhere.
+    // SAF: save one file out of the viewer. Whole-project export went away in v4
+    // together with the storage screen it lived on - the live project folder is a
+    // normal, file-manager-visible folder since v3, so "export a copy" was a second
+    // way to reach files the user can already reach, and it was the button that made
+    // the storage panel look like a settings screen. Single-file "Save a copy"
+    // stays: it is how a binary file the viewer refuses to render gets opened
+    // elsewhere.
     var saveCopyTarget by remember { mutableStateOf<File?>(null) }
-    var publishTarget by remember { mutableStateOf<File?>(null) }
     val saveCopyPicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
         val source = saveCopyTarget
         saveCopyTarget = null
@@ -273,36 +348,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             }
         }
     }
-    val publishPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-        val source = publishTarget
-        publishTarget = null
-        if (uri != null && source != null) {
-            // Remember the grant for the folder: the point of publishing is that the
-            // copy is somewhere the user and other apps can reach, and a future
-            // publish to the same folder should not need the picker again.
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(
-                    uri,
-                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
-                )
-            }
-            scope.launch {
-                filesError = ""
-                val result = withContext(Dispatchers.IO) {
-                    runCatching {
-                        SafProjectTransfer(context, container.workspacesRoot())
-                            .publishTree(source, uri, source.name)
-                    }
-                }
-                result.onSuccess { published ->
-                    publishLabel = context.getString(R.string.files_publish_done, published.files)
-                }.onFailure { t ->
-                    publishLabel = context.getString(R.string.files_publish_failed, t.message ?: t.javaClass.simpleName)
-                }
-            }
-        }
-    }
-
     fun loadFiles(relPath: String) {
         filesLoading = true
         filesError = ""
@@ -394,9 +439,14 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     .eachCount()
             }
         }
-        if (route == ROUTE_FILES) {
+        if (route == ROUTE_WORKSPACE || route == ROUTE_FILES) {
             // Reset the viewer on entry so the screen always opens on the listing.
             openFile = null
+            // The first-run step prints the folder the app would use, so it has to
+            // be read from the platform (a grant made a moment ago counts) - and the
+            // persisted answer to "did the workspace step already run" is re-read
+            // here for the same reason.
+            workspaceConfirmed = StorageChoice.workspaceConfirmed(context)
             // Re-read the platform (a grant may have been made in system settings
             // while the app was in the background) before showing the panel.
             storage = withContext(Dispatchers.IO) { storageController.snapshot() }
@@ -419,8 +469,18 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // goes depends on whether a project exists - never on a timer.
     LaunchedEffect(summary.ready, projectName) {
         if (route == ROUTE_WELCOME && summary.ready) {
-            route = if (projectName.isEmpty()) ROUTE_PROJECTS else ROUTE_CHAT
+            route = when {
+                projectName.isNotEmpty() -> ROUTE_CHAT
+                !workspaceConfirmed -> ROUTE_WORKSPACE
+                else -> ROUTE_PROJECTS
+            }
         }
+    }
+    // A confirm that was interrupted by the system grant screen finishes itself when
+    // the app comes back (the storage change recreates the Activity, so the pending
+    // flag has to be saveable for this to survive).
+    LaunchedEffect(route, storage.rootPath, pendingOnboarding) {
+        if (route == ROUTE_WORKSPACE && pendingOnboarding) confirmWorkspace()
     }
 
     val appVersion = remember(context) {
@@ -484,6 +544,17 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         route = if (projectName.isEmpty()) ROUTE_PROJECTS else ROUTE_CHAT
                     },
                     onOpenSettings = { route = ROUTE_SETTINGS },
+                )
+
+                ROUTE_WORKSPACE -> WorkspaceOnboardingScreen(
+                    folderPath = storage.rootPath,
+                    visibleToFileManagers = storage.visibleToFileManagers,
+                    // A refused folder pick is reported by the storage controller, and
+                    // it must be visible on the screen that is asking - a refusal the
+                    // user never sees reads as "the app ignored my choice".
+                    message = onboardingMessage.ifEmpty { storageMessage },
+                    onPickFolder = { chosenFolderPicker.launch(null) },
+                    onUseFolder = { confirmWorkspace() },
                 )
 
                 ROUTE_PROJECTS -> ProjectsScreen(
@@ -563,8 +634,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     storageVisibleToFileManagers = storage.visibleToFileManagers,
                     storageAppFolderBrowsableByFileManagers = storage.appFolderBrowsableByFileManagers,
                     storageCanGrantAllFilesAccess = storage.canGrantAllFilesAccess,
-                    storageCanChooseFolder = storage.canChooseFolder,
-                    storageHasChosenFolder = storage.hasChosenFolder,
                     storagePendingMove = storage.pendingProjects,
                     storageMessage = storageMessage,
                     currentPath = filesPath,
@@ -572,7 +641,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     loading = filesLoading,
                     error = filesError,
                     openFile = openFile,
-                    publishLabel = publishLabel,
                     onOpenDir = { rel -> loadFiles(rel) },
                     onOpenFile = { rel -> openProjectFile(rel) },
                     onUp = {
@@ -580,10 +648,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         loadFiles(parent)
                     },
                     onCloseFile = { openFile = null },
-                    onCopyPath = { path ->
-                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-                        clipboard?.setPrimaryClip(ClipData.newPlainText("path", path))
-                    },
                     onSaveCopy = { rel ->
                         val source = projectDir?.let { File(it, rel) }
                         if (source != null) {
@@ -591,21 +655,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                             saveCopyPicker.launch(rel.substringAfterLast('/'))
                         }
                     },
-                    onPublish = {
-                        val source = projectDir
-                        if (source == null) {
-                            filesError = context.getString(R.string.files_publish_nothing)
-                        } else {
-                            publishTarget = source
-                            publishPicker.launch(null)
-                        }
-                    },
                     onRequestAllFilesAccess = {
                         val intent = StorageChoice.allFilesAccessIntent(context)
                         if (intent != null) allFilesAccessLauncher.launch(intent)
                     },
-                    onChooseStorageFolder = { chosenFolderPicker.launch(null) },
-                    onUseDefaultStorage = { runStorageChange { storageController.useDefaultLocation() } },
                     onMoveProjects = {
                         filesError = ""
                         runStorageChange { storageController.moveProjectsIntoPlace() }
@@ -628,6 +681,26 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onDynamicColorChange = { dynamicColor = it },
                     onSetModel = { providerId, modelId -> repository.setModel(providerId, modelId) },
                     onClearModel = { repository.clearModel() },
+                    onToggleStar = { providerId, modelId, starred ->
+                        repository.setStarred(OpenCodeApi.ModelRef(providerId, modelId), starred)
+                    },
+                    onConnectProvider = { providerId, key -> repository.provisionProvider(providerId, key, secrets) },
+                    onAddCustomProvider = { id, name, baseUrl, models, key ->
+                        repository.addCustomProvider(id, name, baseUrl, CustomProviderConfig.parseModels(models), key, secrets)
+                    },
+                    workspacePath = storage.rootPath,
+                    workspaceVisibleToFileManagers = storage.visibleToFileManagers,
+                    workspaceCanGrantAllFilesAccess = storage.canGrantAllFilesAccess,
+                    workspacePendingMove = storage.pendingProjects,
+                    onPickWorkspace = { chosenFolderPicker.launch(null) },
+                    onGrantAllFilesAccess = {
+                        val intent = StorageChoice.allFilesAccessIntent(context)
+                        if (intent != null) allFilesAccessLauncher.launch(intent)
+                    },
+                    onMoveWorkspaceProjects = {
+                        filesError = ""
+                        runStorageChange { storageController.moveProjectsIntoPlace() }
+                    },
                     onSaveKey = { providerId, key -> repository.provisionProvider(providerId, key, secrets) },
                     onRevokeKey = { providerId -> repository.revokeProvider(providerId, secrets) },
                     onAddMcp = { name, config, persist ->
@@ -725,6 +798,8 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         filesPath = ""
                         route = ROUTE_FILES
                     },
+                    // v4 item 3: pick a starred model without leaving the chat.
+                    onPickModel = { providerId, modelId -> repository.setModel(providerId, modelId) },
                     onPermissionReply = { id, reply -> repository.replyPermission(id, reply) },
                     onQuestionSubmit = { id, answers -> repository.replyQuestion(id, answers) },
                     onQuestionSkip = { id -> repository.rejectQuestion(id) },

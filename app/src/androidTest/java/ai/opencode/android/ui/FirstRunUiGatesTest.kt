@@ -111,13 +111,18 @@ class FirstRunUiGatesTest {
         var sawWelcome = false
         var sawProjects = false
         var sawChat = false
+        // Phase 10 continuation v4, item 4: between the welcome screen and the
+        // project list there is now exactly one step - the folder the files live in.
+        var sawWorkspaceStep = false
         var continueEnabled = false
         var welcomeShot = -1L
         var projectsShot = -1L
         var chatShot = -1L
+        var workspaceShot = -1L
 
         val appeared = waitFor(180_000) {
-            exists("welcome_screen") || exists("projects_screen") || exists("chat_screen")
+            exists("welcome_screen") || exists("onboarding_workspace") ||
+                exists("projects_screen") || exists("chat_screen")
         }
 
         // Sample every screen the first run passes through while the supervisor
@@ -137,6 +142,10 @@ class FirstRunUiGatesTest {
                 if (welcomeShot < 0) welcomeShot = shot("01-first-run-welcome.png")
             }
             if (exists("welcome_continue") && enabled("welcome_continue")) continueEnabled = true
+            if (exists("onboarding_workspace")) {
+                sawWorkspaceStep = true
+                if (workspaceShot < 0) workspaceShot = shot("02b-first-run-workspace.png")
+            }
             if (exists("projects_screen")) {
                 sawProjects = true
                 if (projectsShot < 0) projectsShot = shot("03-first-run-projects.png")
@@ -145,7 +154,14 @@ class FirstRunUiGatesTest {
                 sawChat = true
                 if (chatShot < 0) chatShot = shot("04-first-run-chat.png")
             }
+            // The step is instant on a returning install; on a first run it stays
+            // until the user confirms, so the loop must not wait for it forever.
             if (sawChat || sawProjects) break
+            if (sawWorkspaceStep) {
+                // One screen's worth of sampling is enough for the copy audit; the
+                // step is driven by F3, not by this test.
+                break
+            }
             Thread.sleep(1500)
         }
 
@@ -159,12 +175,14 @@ class FirstRunUiGatesTest {
         val copyShown = welcomeCopy.filter { all.contains(it, ignoreCase = true) }
         val (status, restarts, detail) = supervisor()
 
-        val ok = appeared && sawWelcome && stagesSeen.isNotEmpty() && copyShown.size == welcomeCopy.size &&
-            leaks.isEmpty() && welcomeShot > 8_000
+        val advancedToAScreen = sawProjects || sawChat || sawWorkspaceStep
+        val ok = appeared && sawWelcome && advancedToAScreen && stagesSeen.isNotEmpty() &&
+            copyShown.size == welcomeCopy.size && leaks.isEmpty() && welcomeShot > 8_000
         gate(
             "F1",
             ok,
-            "firstScreen=${if (sawWelcome) "welcome" else "not-welcome"} stages=$stagesSeen " +
+            "firstScreen=${if (sawWelcome) "welcome" else "not-welcome"} workspaceStep=$sawWorkspaceStep " +
+                "stages=$stagesSeen " +
                 "welcomeCopy=${copyShown.size}/${welcomeCopy.size} sampledLines=${lines.size} " +
                 "leakedTokens=$leaks continueBecameEnabled=$continueEnabled " +
                 "advancedToProjects=$sawProjects advancedToChat=$sawChat " +
@@ -198,7 +216,9 @@ class FirstRunUiGatesTest {
             status == RuntimeStatus.HEALTHY.name || exists("projects_screen") || exists("chat_screen")
         }
         val elapsedS = (System.currentTimeMillis() - start) / 1000
-        val advanced = waitFor(120_000) { exists("projects_screen") || exists("chat_screen") }
+        val advanced = waitFor(120_000) {
+            exists("projects_screen") || exists("chat_screen") || exists("onboarding_workspace")
+        }
         val readyShot = shot("02-first-run-ready.png")
         val text = allText()
         val leaks = leakedTokens(text)
@@ -212,7 +232,8 @@ class FirstRunUiGatesTest {
             ok,
             "status=$status restarts=$restarts waitedSeconds=$elapsedS sawWelcome=$sawWelcome " +
                 "readyStageShown=$sawReadyStage continueEnabled=$continueEnabled " +
-                "advancedWithoutATap=$advanced(projects=${exists("projects_screen")},chat=${exists("chat_screen")}) " +
+                "advancedWithoutATap=$advanced(projects=${exists("projects_screen")}," +
+                "chat=${exists("chat_screen")},workspace=${exists("onboarding_workspace")}) " +
                 "leakedTokens=$leaks screenshot=$readyShot",
         )
     }
@@ -221,10 +242,40 @@ class FirstRunUiGatesTest {
 
     @Test
     fun f3_createAProjectAndLandInAConversation() {
-        val reached = waitFor(600_000) { exists("projects_screen") || exists("chat_screen") }
+        val reached = waitFor(600_000) {
+            exists("projects_screen") || exists("chat_screen") || exists("onboarding_workspace")
+        }
         if (!reached) {
             val (status, restarts, _) = supervisor()
             gate("F3", false, "the app never left the welcome screen (supervisor=$status restarts=$restarts)")
+            return
+        }
+
+        // ---- v4 item 4: the first-run workspace step ---------------------------
+        // One folder, one action, and it creates the first project and lands in the
+        // chat. This is the flow the brief describes, walked on a real device: no
+        // copy/export control is involved and no second button is needed.
+        if (exists("onboarding_workspace")) {
+            val folderShown = exists("onboarding_workspace_path") &&
+                allText().contains("/")
+            val pickerShown = exists("onboarding_workspace_pick")
+            val oneAction = exists("onboarding_workspace_use")
+            val removedControls = !exists("files_copy_path") && !exists("files_publish") &&
+                !exists("files_storage_choose") && !exists("files_storage_default")
+            val stepShot = shot("02b-first-run-workspace.png")
+            rule.onNodeWithTag("onboarding_workspace_use").performClick()
+            val landedInChat = waitFor(180_000) { exists("chat_screen") }
+            val afterStep = shot("04-first-run-chat.png")
+            val canType = waitFor(120_000) { enabled("composer_input") }
+            val leaks = leakedTokens(allText())
+            gate(
+                "F3",
+                folderShown && pickerShown && oneAction && removedControls && landedInChat &&
+                    canType && leaks.isEmpty() && stepShot > 8_000 && afterStep > 8_000,
+                "workspaceStep=true folder=$folderShown picker=$pickerShown action=$oneAction " +
+                    "v4Removed=$removedControls landedInChat=$landedInChat composerEnabled=$canType " +
+                    "leakedTokens=$leaks screenshots=step:$stepShot,chat:$afterStep",
+            )
             return
         }
 

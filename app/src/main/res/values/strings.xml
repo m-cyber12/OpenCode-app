@@ -391,10 +391,7 @@
     <string name="files_location_app_external_android10">This folder is browsable by file managers on this Android version, and by adb on any version.</string>
     <string name="files_storage_make_visible">Put projects where file managers can see them</string>
     <string name="files_storage_make_visible_body">Android only allows an app to write to Documents/OpenCode if you grant "All files access". Without it your projects stay in Android/data, which file managers cannot open on Android 11+.</string>
-    <string name="files_storage_choose_folder">Use a folder I choose</string>
-    <string name="files_storage_choose_folder_hint">Pick a folder on internal storage (Documents, Download, ...). Every file manager can open it. Folders on an SD card or in the cloud cannot be used: the agent needs a real filesystem path, which those do not have.</string>
     <string name="files_storage_choose_failed">That folder cannot be used as the project location: %1$s</string>
-    <string name="files_storage_choose_reset">Use the default location again</string>
     <string name="files_storage_pending">%1$d project(s) are still in an older location. Move them to the location above so a file manager can open them.</string>
     <string name="files_storage_moved_on_start">Moved %1$d project(s) into %2$s so a file manager can open them.</string>
     <string name="files_storage_nothing_to_move">There was nothing to move: no project is left in an older location.</string>
@@ -406,8 +403,6 @@
     <string name="files_storage_mode_chosen">Your folder</string>
     <string name="files_storage_mode_app_external">App folder (Android/data)</string>
     <string name="files_storage_mode_internal">App-private storage</string>
-    <string name="files_copy_path">Copy path</string>
-    <string name="files_export_copy">Export a copy...</string>
     <string name="files_loading">Reading the folder</string>
     <string name="files_empty">This folder is empty.</string>
     <string name="files_up">Up one level</string>
@@ -418,10 +413,54 @@
     <string name="files_save_copy">Save a copy</string>
     <string name="files_viewer_binary">This looks like a binary file, so it is not shown here. Save a copy to open it with another app.</string>
     <string name="files_viewer_truncated">Showing the first part of the file; save a copy for the whole thing.</string>
-    <string name="files_publish_failed">Export failed: %1$s</string>
-    <string name="files_publish_nothing">Nothing to export yet.</string>
-    <string name="files_publish_done">Exported %1$d file(s) to the folder you picked</string>
     <string name="files_load_failed">Could not read the project files: %1$s</string>
     <string name="files_save_copy_done">Saved %1$s (%2$d bytes) to the folder you picked</string>
     <string name="files_save_copy_failed">Could not save the copy: %1$s</string>
+    <!-- Phase 10 continuation v4, item 4: the first-run workspace step. One folder
+         picker and one action; nothing else on the screen. -->
+    <string name="onboarding_workspace_title">Where your files will live</string>
+    <string name="onboarding_workspace_body">Pick one folder. Every project is a subfolder of it, and the agent works only inside the project it was given. A chat is a conversation inside a project and creates no folder of its own.</string>
+    <string name="onboarding_workspace_folder">Workspace folder</string>
+    <string name="onboarding_workspace_pick">Choose folder</string>
+    <string name="onboarding_workspace_use">Use this folder as workspace</string>
+    <string name="onboarding_workspace_later">You can change the folder later in Settings.</string>
+    <string name="onboarding_workspace_hidden">The system does not let a file manager open this folder on this Android version. A PC still can.</string>
+    <string name="onboarding_workspace_needs_access">Android needs All files access before the agent can write in %1$s. The system setting is opening now; come back and use this folder.</string>
+    <string name="onboarding_workspace_unusable">Cannot write in %1$s yet, so no project was created. Pick another folder, or grant All files access in system settings.</string>
+
+    <!-- v4, item 4: the workspace switch lives in Settings. -->
+    <string name="settings_section_workspace">Workspace</string>
+    <string name="settings_workspace_body">One folder holds every project. A project is a subfolder of it; a chat never creates a folder.</string>
+    <string name="settings_workspace_current">Workspace folder</string>
+    <string name="settings_workspace_pick">Choose another folder</string>
+    <string name="settings_workspace_switch_note">Switching the workspace hides the projects in the old folder, the way cd changes what a terminal shows. Nothing is deleted; switch back to see them again.</string>
+    <string name="settings_workspace_access_note">Android only lets an app write to a shared folder like this with All files access. Projects stay where they are until it is granted.</string>
+    <string name="settings_workspace_grant">Allow access to this folder</string>
+    <string name="settings_workspace_hidden">The system does not let a file manager open this folder on this Android version. A PC still can.</string>
+
+    <!-- v4, item 2: provider search, one-step activation, and the manual path. -->
+    <string name="settings_providers_search">Search providers</string>
+    <string name="settings_providers_shown">%1$d of %2$d providers shown</string>
+    <string name="settings_providers_no_match">No provider matches \"%1$s\". Use the fields below for an endpoint that is not in the catalog.</string>
+    <string name="settings_provider_connect">Add the key for %1$s</string>
+    <string name="settings_provider_connect_title">API key for %1$s</string>
+    <string name="settings_provider_connect_body">Only the key is asked for here. The base URL and the model list come from the agent provider catalog.</string>
+    <string name="settings_provider_connect_cancel">Not now</string>
+    <string name="settings_model_star_hint">Star a model to put it in the quick switch at the top of the chat. Starred: %1$d.</string>
+    <string name="settings_model_star_on">Show %1$s in the chat quick switch</string>
+    <string name="settings_model_star_off">Remove %1$s from the chat quick switch</string>
+    <string name="settings_custom_title">Provider that is not in the catalog</string>
+    <string name="settings_custom_body">For an OpenAI-compatible endpoint the catalog does not know. The provider block goes into the agent own config and the key into the agent own credential store, exactly like the catalog path.</string>
+    <string name="settings_custom_id">Provider id</string>
+    <string name="settings_custom_name">Display name</string>
+    <string name="settings_custom_baseurl">Base URL</string>
+    <string name="settings_custom_models">Model ids, separated by commas</string>
+    <string name="settings_custom_save">Add provider</string>
+
+    <!-- v4, item 3: the quick switch in the chat header. -->
+    <string name="chat_model_switch">Model: %1$s</string>
+    <string name="chat_model_none">No model</string>
+    <string name="chat_model_starred_title">Starred models</string>
+    <string name="chat_model_empty">No starred model yet. Star models in Settings and they appear here.</string>
+    <string name="chat_model_open_settings">Choose models in Settings</string>
 </resources>

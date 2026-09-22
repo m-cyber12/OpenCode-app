@@ -287,6 +287,14 @@ class ProjectStore internal constructor(
     companion object {
         /** Phase 5's single workspace; adopted rather than migrated. */
         const val DEFAULT_NAME = "mobile"
+
+        /**
+         * Phase 10 continuation v4, item 4: the project the workspace step creates
+         * ("project 1 -> <workspace>/1", the model the brief describes). A plain
+         * number is not a placeholder - it is the folder name on disk, and the user
+         * can rename it from the project list afterwards.
+         */
+        const val FIRST_PROJECT_NAME = "1"
         private const val PREFS = "projects"
         private const val KEY_ACTIVE = "active"
 

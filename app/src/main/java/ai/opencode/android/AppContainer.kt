@@ -34,6 +34,11 @@ class AppContainer private constructor(private val context: Context) {
             username = RuntimeEnv.SERVER_USER,
             password = password,
             workspaceDir = workspaceDir,
+            // The model the user last used and their starred quick-switch list live
+            // in SharedPreferences, so a rebuilt repository (new project, new chat,
+            // app restart) starts from the user's own choice instead of the first
+            // model the server happens to list (v4 item 3).
+            modelPreference = ai.opencode.android.client.PrefsModelPreference.get(context),
         )
         cached = key to repo
         repo

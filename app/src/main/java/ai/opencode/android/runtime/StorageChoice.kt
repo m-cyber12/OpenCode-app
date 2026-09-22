@@ -28,11 +28,36 @@ import java.io.File
  * Every one of these is a documented Android limitation rather than a choice made
  * here; where the app cannot do what was asked it says so in the UI instead of
  * silently writing somewhere else.
+ *
+ * THE v4 QUESTION, ANSWERED HERE: does SAF plus a persisted URI permission make
+ * `MANAGE_EXTERNAL_STORAGE` unnecessary? No - and the reason is structural, not a
+ * missing feature. A SAF tree grant is access to a `content://` URI *for this app's
+ * ContentResolver calls*. The workspace is not accessed that way: the embedded
+ * runtime is a separate process (bun, git, ripgrep, the `bash` tool, the agent's own
+ * file tools) and it opens the project directory as a POSIX path. Nothing the app
+ * holds - a tree URI, a persisted grant, an `openFileDescriptor` on a child - is
+ * visible to that process. So the operations that still require the broad grant are
+ * exactly the ones that go through paths, and none of them can be re-expressed as
+ * URI calls without re-engineering OpenCode's file tools:
+ *
+ *   1. [isUsableRoot]'s probe itself (create + delete a file in the chosen folder);
+ *   2. every write the runtime performs inside a project folder that is not the
+ *      app's own scoped directory;
+ *   3. the migration and lifecycle operations that create, move or delete project
+ *      directories by path (ProjectStore/ProjectMigration).
+ *
+ * The no-permission alternative that does exist is a different WORKSPACE, not a
+ * different access path: the app-specific external directory (mode APP_EXTERNAL,
+ * no permission at all, and file managers cannot open it on Android 11+), with SAF
+ * used only to move copies out. That is the documented fallback, and it is why the
+ * app asks for the grant on the screen that explains it instead of demanding it at
+ * startup.
  */
 object StorageChoice {
 
     private const val PREFS = "storage"
     private const val KEY_ROOT = "root_override"
+    private const val KEY_CONFIRMED = "workspace_confirmed"
     private const val PROBE = ".opencode-write-probe"
 
     /** The folder the user picked, or null when they never picked one. */
@@ -51,6 +76,20 @@ object StorageChoice {
 
     fun clearChosenRoot(context: Context) {
         prefs(context).edit().remove(KEY_ROOT).apply()
+    }
+
+    /**
+     * Phase 10 continuation v4, item 4: has the first-run workspace step been
+     * answered? The step exists to pick the folder and create the first project, so
+     * "answered" is what stops it coming back for a user who later deletes every
+     * project - they get the project list with its create card instead, which is the
+     * same screen the step leads to.
+     */
+    fun workspaceConfirmed(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_CONFIRMED, false)
+
+    fun markWorkspaceConfirmed(context: Context) {
+        prefs(context).edit().putBoolean(KEY_CONFIRMED, true).apply()
     }
 
     private fun prefs(context: Context) =

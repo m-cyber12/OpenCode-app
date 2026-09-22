@@ -24,6 +24,9 @@ import org.junit.runner.RunWith
  * against the real app filesystem and the real OpenCode server - not by looking
  * at the UI.
  *
+ * v4 adds W5: the same boundary at the depth the product uses (a workspace folder
+ * with sibling project subfolders, and a chat that must not create a folder).
+ *
  * W1 and W3 are model-free and deterministic on purpose: the Phase 6 live-tool
  * gate (L2) showed that a model choosing a tool is not something to bet a
  * phase's acceptance on. Isolation (W2) is asserted through OpenCode's own file
@@ -249,6 +252,108 @@ class WorkspaceIsolationGatesTest {
             )
         } finally {
             store.delete(project.name)
+        }
+    }
+
+    // ---- W5: the v4 hierarchy - one workspace, sibling projects, chats inside ----
+
+    /**
+     * Phase 10 continuation v4, item 1: the model is workspace -> project -> chat,
+     * where the project is a direct subfolder of the workspace and a chat is an
+     * OpenCode session inside that project ("no folder of its own").
+     *
+     * W2 already proves the boundary at one level (two projects that are siblings
+     * under the app's root). This gate proves it at the DEPTH THE PRODUCT USES:
+     * a workspace folder holding `1` and `2`, an instance scoped to `1`, and the
+     * three escapes a file manager performs by hand - `../2/...` into the sibling
+     * project, `../workspace-level.txt` into the workspace root itself, and `../../`
+     * out of the workspace entirely. All three must be refused by the server, while
+     * each project still reads its own file with a plain relative name: the boundary
+     * is the PROJECT folder, not the shared workspace root.
+     *
+     * The chat half is asserted the same way - by observing the filesystem and the
+     * server's own session list, not by reading the app's code: creating a session
+     * in project `1` must add no directory anywhere, and the new session must be
+     * visible to project `1`'s instance and invisible to project `2`'s.
+     */
+    @Test
+    fun w5_siblingProjectsUnderOneWorkspaceStayConfined() {
+        if (!ensureServer()) skip("W5_SIBLING_PROJECT_CONFINEMENT", "app-owned OpenCode server not answering /global/health")
+
+        val stamp = System.currentTimeMillis()
+        val wsRoot = File(paths.workspaces, "p10ws-$stamp").apply { mkdirs() }
+        val p1 = File(wsRoot, "1").apply { mkdirs() }
+        val p2 = File(wsRoot, "2").apply { mkdirs() }
+        val marker1 = "P10_WS1_$stamp"
+        val marker2 = "P10_WS2_$stamp"
+        val one = File(p1, "one.txt").apply { writeText(marker1) }
+        val two = File(p2, "two.txt").apply { writeText(marker2) }
+        val workspaceLevel = File(wsRoot, "workspace-level.txt").apply { writeText("P10_ROOT_$stamp") }
+        var createdSession: String? = null
+
+        try {
+            val api1 = api(p1.absolutePath)
+            val api2 = api(p2.absolutePath)
+
+            // 1. A project sees its own file, not the sibling's, not the workspace's.
+            val names1 = api1.fileList("").map { it.path }.toSet()
+            val seesOwn = names1.any { it.endsWith("one.txt") }
+            val seesSiblingProject = names1.any { it.contains("two.txt") }
+            val seesWorkspaceRoot = names1.any { it.contains("workspace-level.txt") }
+
+            // 2. Three escapes, all refused. The status and upstream's own words go
+            //    into the detail line, so "refused" is auditable rather than asserted.
+            fun refusal(path: String): Pair<Boolean, String> {
+                val result = runCatching { api1.fileContent(path) }
+                val exc = result.exceptionOrNull() as? OpenCodeApi.ApiException
+                return (exc != null && exc.status !in 200..299) to (exc?.body.orEmpty())
+            }
+            val (siblingRefused, siblingBody) = refusal("../2/two.txt")
+            val (workspaceRefused, workspaceBody) = refusal("../workspace-level.txt")
+            val (deepRefused, deepBody) = refusal("../../p10-nowhere-$stamp.txt")
+
+            // 3. Each project reads its own file with a relative name: the boundary is
+            //    the project folder, so a project is usable on its own.
+            val readOwn1 = runCatching { api1.fileContent("one.txt") }.getOrNull()?.contains(marker1) == true
+            val readOwn2 = runCatching { api2.fileContent("two.txt") }.getOrNull()?.contains(marker2) == true
+
+            // 4. A chat is a session in the project directory and creates no folder.
+            val filesBefore = p1.listFiles()?.map { it.name }?.sorted() ?: emptyList()
+            val session = runCatching { api1.createSession("v4-w5-$stamp") }.getOrNull()
+            createdSession = session?.id
+            val filesAfter = p1.listFiles()?.map { it.name }?.sorted() ?: emptyList()
+            val noFolderForChat = filesAfter == filesBefore
+            val workspaceChildren = wsRoot.listFiles()?.map { it.name }?.sorted() ?: emptyList()
+            val workspaceShape = workspaceChildren == listOf("1", "2", "workspace-level.txt")
+
+            // 5. The chat belongs to its project: project 1's instance lists it,
+            //    project 2's does not.
+            val ids1 = runCatching { api1.listSessions(limit = 100) }.getOrDefault(emptyList()).map { it.id }
+            val ids2 = runCatching { api2.listSessions(limit = 100) }.getOrDefault(emptyList()).map { it.id }
+            val chatOwned = createdSession != null && ids1.contains(createdSession) && !ids2.contains(createdSession)
+
+            val ok = seesOwn && !seesSiblingProject && !seesWorkspaceRoot &&
+                siblingRefused && workspaceRefused && deepRefused &&
+                readOwn1 && readOwn2 && noFolderForChat && workspaceShape && chatOwned
+            gate(
+                "W5_SIBLING_PROJECT_CONFINEMENT",
+                ok,
+                "wsRoot=${wsRoot.absolutePath} project=${p1.name} " +
+                    "seesOwn=$seesOwn seesSibling=$seesSiblingProject seesWorkspaceFile=$seesWorkspaceRoot " +
+                    "refused=sibling:$siblingRefused,workspace:$workspaceRefused,deep:$deepRefused " +
+                    "readOwn=$readOwn1/$readOwn2 chatNoFolder=$noFolderForChat shape=$workspaceShape " +
+                    "chatOwned=$chatOwned session=${createdSession.orEmpty()} " +
+                    "siblingBody='${siblingBody.take(80)}' workspaceBody='${workspaceBody.take(80)}' " +
+                    "deepBody='${deepBody.take(80)}'",
+            )
+        } finally {
+            runCatching { createdSession?.let { api(p1.absolutePath).deleteSession(it) } }
+            runCatching { one.delete() }
+            runCatching { two.delete() }
+            runCatching { workspaceLevel.delete() }
+            runCatching { p1.delete() }
+            runCatching { p2.delete() }
+            runCatching { wsRoot.delete() }
         }
     }
 

@@ -37,6 +37,16 @@ class OpenCodeRepository(
     private val username: String,
     private val password: String,
     workspaceDir: String?,
+    /**
+     * Where "the model the user last used" and their starred shortlist live.
+     *
+     * Phase 10 continuation v4 (item 3): the repository is rebuilt per project (the
+     * instance directory changes), so anything remembered only in [UiState] is lost
+     * exactly when the user opens a new chat or project - which is the reported
+     * defect. Null is allowed so tests and one-off callers keep the old in-memory
+     * behaviour; the app always passes the real store (AppContainer).
+     */
+    private val modelPreference: ModelPreference? = null,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) {
 
@@ -51,6 +61,12 @@ class OpenCodeRepository(
         val mcp: Map<String, OpenCodeApi.McpEntry> = emptyMap(),
         val providers: OpenCodeApi.ProviderSnapshot? = null,
         val model: OpenCodeApi.ModelRef? = null,
+    /**
+     * Phase 10 continuation v4, item 3: the models the user starred in Settings,
+     * in star order. Only these appear in the chat header's quick switch; the full
+     * catalog stays in Settings.
+     */
+    val starredModels: List<OpenCodeApi.ModelRef> = emptyList(),
         val busy: Boolean = false,
         /** Raw upstream text of the last failed call, verbatim. */
         val error: String = "",
@@ -241,10 +257,15 @@ class OpenCodeRepository(
 
             runCatching { api.providers() }.onSuccess { p ->
                 // OpenCode's own `default` map (providerID -> modelID); used as
-                // the model hint, never invented by the client.
+                // the model hint, never invented by the client. When this client
+                // instance has no choice in memory yet (new chat, new project,
+                // fresh process), the PERSISTED last-used model is the answer -
+                // not "the first connected provider", which is what the user
+                // reported as a bug (Phase 10 continuation v4, item 3).
                 _state.value = _state.value.copy(
                     providers = p,
-                    model = _state.value.model ?: defaultModelHint(p),
+                    model = _state.value.model ?: defaultModelHint(p, persisted = modelPreference?.lastModel()),
+                    starredModels = modelPreference?.starred() ?: _state.value.starredModels,
                 )
             }.onFailure { errors.add("providers: ${it.message}") }
 
@@ -410,7 +431,9 @@ class OpenCodeRepository(
                         selectedSession = sid,
                     )
                 }
-                api.promptAsync(sid, trimmed, _state.value.model, attachments = files)
+                val used = _state.value.model
+                api.promptAsync(sid, trimmed, used, attachments = files)
+                rememberUsedModel(used)
                 _state.value = _state.value.copy(
                     draft = "",
                     attachments = emptyList(),
@@ -502,7 +525,9 @@ class OpenCodeRepository(
                 val files = userFiles(target)
                 _state.value = _state.value.copy(draft = "", attachments = emptyList())
                 if (text.isBlank() && files.isEmpty()) return@launch
-                api.promptAsync(sid, text, _state.value.model, attachments = files)
+                val used = _state.value.model
+                api.promptAsync(sid, text, used, attachments = files)
+                rememberUsedModel(used)
                 refreshSessionList(sid)
                 publishTranscript("retry accepted")
             } catch (t: Throwable) {
@@ -659,6 +684,68 @@ class OpenCodeRepository(
     }
 
     /**
+     * Phase 10 continuation v4, item 2 (manual path): register a provider the
+     * server's catalog does not know - the user's own OpenAI-compatible endpoint.
+     *
+     * Two upstream mechanisms, in this order:
+     *
+     *  1. `PATCH /global/config` writes the `provider.<id>` block (npm, baseURL,
+     *     models) - the same document a hand-written `opencode.json` would carry;
+     *  2. `PUT /auth/:id` stores the key in OpenCode's own auth store (the Keystore
+     *     copy is kept for the app's own listing/revocation, exactly as the
+     *     catalog path does).
+     *
+     * Then the instance is reset and re-read ([applyCredentialChange]), because a
+     * config change - like a credential change - is only visible to the running
+     * instance after upstream rebuilds it.
+     *
+     * The model hint follows the user's own input: the first model id they listed
+     * becomes the current model when they do not have one on this provider. That is
+     * the honest default for a provider the server has no `default` entry for.
+     */
+    fun addCustomProvider(
+        providerID: String,
+        displayName: String,
+        baseUrl: String,
+        models: List<String>,
+        apiKey: String,
+        store: ai.opencode.android.security.SecretStore,
+    ) {
+        scope.launch {
+            try {
+                val patch = CustomProviderConfig.patchFor(providerID, displayName, baseUrl, models)
+                if (patch == null) {
+                    _state.value = _state.value.copy(
+                        error = "custom provider needs a lowercase id (a-z, 0-9, . _ -), an http(s) base URL and at least one model id",
+                        errorKind = AgentAvailability.UNKNOWN,
+                    )
+                    return@launch
+                }
+                val id = providerID.trim()
+                api.patchGlobalConfig(patch)
+                store.put(ai.opencode.android.security.SecretNames.providerSecretName(id), apiKey)
+                api.setProviderAuth(id, apiKey)
+                val p = applyCredentialChange(id)
+                val firstModel = models.firstOrNull()
+                val cur = _state.value.model
+                val next = if (cur?.providerID == id) cur
+                else if (firstModel != null) OpenCodeApi.ModelRef(id, firstModel)
+                else defaultModelHint(p, prefer = id) ?: cur
+                if (next != null) runCatching { modelPreference?.rememberModel(next) }
+                _state.value = _state.value.copy(
+                    providers = p,
+                    model = next,
+                    notice = "custom provider $id stored (config + Keystore); " +
+                        "the agent reports it in the catalog: " + p.allIds.contains(id),
+                    error = "",
+                )
+            } catch (t: Throwable) {
+                fail("custom provider", t)
+            }
+        }
+    }
+
+    /**
      * PHASE 9 FIX (carried Phase 8 defect: "turns silently use the bundled
      * `opencode` provider instead of the configured one").
      *
@@ -690,8 +777,17 @@ class OpenCodeRepository(
         return api.providers()
     }
 
-    private fun defaultModelHint(p: OpenCodeApi.ProviderSnapshot, prefer: String? = null): OpenCodeApi.ModelRef? =
-        DefaultModelHint.pick(p, prefer)
+    /**
+     * The hint the composer sends: the user's remembered model when this snapshot
+     * still knows its provider, otherwise the Phase 9 rule. [persisted] is passed
+     * explicitly by [refresh] (which reads the store once per refresh) and defaults
+     * to the store's own value for the other callers.
+     */
+    private fun defaultModelHint(
+        p: OpenCodeApi.ProviderSnapshot,
+        prefer: String? = null,
+        persisted: OpenCodeApi.ModelRef? = modelPreference?.lastModel(),
+    ): OpenCodeApi.ModelRef? = DefaultModelHint.resolve(persisted, p, prefer)
 
     /**
      * Pin the model the client sends with each prompt. Defaults to OpenCode's
@@ -699,10 +795,35 @@ class OpenCodeRepository(
      * in the request payload - resolution/validation stays server-side.
      */
     fun setModel(providerID: String, modelID: String) {
+        val ref = OpenCodeApi.ModelRef(providerID, modelID)
+        // Persist the choice: this is "the model the user last used", and it has to
+        // survive the repository being rebuilt for another project (item 3).
+        runCatching { modelPreference?.rememberModel(ref) }
         _state.value = _state.value.copy(
-            model = OpenCodeApi.ModelRef(providerID, modelID),
+            model = ref,
             notice = "model -> $providerID/$modelID",
         )
+    }
+
+    /**
+     * Remember the model a turn was actually sent with. Covers the implicit case:
+     * on a first run the hint comes from the heuristic, and once that model has
+     * served a real turn it IS the model the user was using - which is what a new
+     * chat should start from.
+     */
+    private fun rememberUsedModel(ref: OpenCodeApi.ModelRef?) {
+        if (ref == null) return
+        runCatching { modelPreference?.rememberModel(ref) }
+    }
+
+    /**
+     * Star/unstar one model. The result is published in [UiState.starredModels], so
+     * the chat header's quick switch and the Settings list both re-render from the
+     * same value instead of each keeping its own copy of the shortlist.
+     */
+    fun setStarred(ref: OpenCodeApi.ModelRef, starred: Boolean) {
+        val list = runCatching { modelPreference?.setStarred(ref, starred) }.getOrDefault(emptyList())
+        _state.value = _state.value.copy(starredModels = list)
     }
 
     /** Clear the client-side model hint so the server applies its own default. */

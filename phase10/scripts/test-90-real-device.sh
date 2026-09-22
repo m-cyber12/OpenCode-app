@@ -214,6 +214,42 @@ check "$([ -e "$TMP/dev/ext/io.github.mcyber12.opencode/files/workspaces/$PROJ/p
 check "$(grep -qa '^P10D_FILES_SCREEN PASS.*Documents/OpenCode' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
   "the in-app file browser names the shared location"
 
+# ---- Phase 10 continuation v4: the four new surfaces, in the same clean run ----
+check "$(grep -qa '^P10D_FILES_SIMPLIFIED PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "v4: the storage screen no longer shows copy-path, export or the folder choosers"
+check "$(grep -qa '^P10D_WORKSPACE_SECTION PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "v4: the workspace switch is in Settings, with the note about what switching hides"
+check "$(grep -qa '^P10D_PROVIDER_SEARCH PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "v4: the provider catalog is searchable (an impossible query says so, a real one narrows)"
+check "$(grep -qa '^P10D_PROVIDER_KEY_ONLY PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "v4: activating a catalog provider asks for the API key only"
+check "$(grep -qa '^P10D_MODEL_QUICK_SWITCH PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "v4: a starred model is switched from the chat header, without a trip to Settings"
+check "$(grep -qa '^P10D_WORKSPACE_STEP SKIP' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "v4: a returning install reports the workspace step as SKIP (it already ran), not FAIL"
+
+echo
+echo "--- scenario: the v4 first-run workspace step ---"
+# The flow the brief describes, walked end to end on a fake phone that only advances
+# when a tap says so: welcome -> the workspace step (one folder, one action) -> the
+# first project exists on disk and its chat is open.
+run_scenario onboarding
+RC=$(cat "$TMP/rc-onboarding"); OUT="$TMP/out-onboarding"
+check "$([ "$RC" = 0 ] && echo 0 || echo 1)" "the v4 first run passes end to end (rc=$RC)"
+check "$(grep -qa '^P10D_WORKSPACE_STEP PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the workspace step was read off the screen: a folder, one picker, one action, none of the removed controls"
+check "$(grep -qa '^P10D_WORKSPACE_FIRST_PROJECT PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "one tap created project 1 and opened its chat, confirmed from outside the app"
+check "$(grep -qa '^P10D_FIRST_RUN_PROJECT PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the project card still creates a second project after the step"
+check "$(grep -qa 'no workspace step' "$OUT/SUMMARY.txt" && echo 1 || echo 0)" \
+  "and it does NOT report the step as skipped in the flow that shows it"
+check "$(grep -qaE '^P10D_[A-Z_]+ FAIL' "$OUT/SUMMARY.txt" && echo 1 || echo 0)" \
+  "no FAIL line anywhere in the first-run scenario"
+check "$([ -z "$(cat "$OUT/DIAGNOSIS.txt")" ] && echo 0 || echo 1)" "no diagnosis lines in the first-run scenario"
+check "$(grep -qa 'Use this folder as workspace' "$OUT/run.log" && echo 0 || echo 1)" \
+  "the driver logged the single action it used"
+
 echo
 echo "--- scenario: locked device ---"
 run_scenario locked

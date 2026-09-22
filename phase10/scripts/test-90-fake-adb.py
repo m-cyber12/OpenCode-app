@@ -16,7 +16,13 @@ and an ANR dialog recorded with a verdict token of "1"). Reading is not running,
 the driver now runs here first.
 
 Environment: P10D_FAKE_ROOT (fixtures + state), P10D_FAKE_SCENARIO
-(happy|locked|blank|tags-gone|shown-hidden|dump-unusable).
+  (happy|locked|blank|tags-gone|shown-hidden|dump-unusable|reader-dead|readertmp|
+   incomplete|msys-mangled|onboarding).
+
+The `onboarding` scenario is the v4 first-run flow: welcome -> the workspace step
+(one folder, one action) -> the first project appears on disk and its chat opens.
+It exists because the v4 driver has its own verdicts for that step, and a verdict
+that is never exercised by the self-test is a verdict nobody has run.
 """
 import os
 import re
@@ -133,18 +139,56 @@ def live_dir():
 def transition(node_id):
     """Where a tap takes the app. Mirrors the real app's navigation."""
     here = screen()
-    if here == "welcome" and node_id == "welcome_continue":
-        put("screen", "projects")
-    elif here == "projects" and node_id == "project_create":
+    if here == "welcome" and node_id in ("welcome_continue", "Continue"):
+        # Phase 10 continuation v4: a first run asks for the workspace folder before
+        # it shows a project list, but only once per install - the flag is what the
+        # real app persists, so the scenario can be walked exactly once.
+        if SCENARIO == "onboarding" and "onboarded" not in state("flags", ""):
+            put("screen", "workspace")
+        else:
+            put("screen", "projects")
+    elif here == "workspace" and node_id in ("onboarding_workspace_use",
+                                             "Use this folder as workspace"):
+        # One tap: the first project is created and its chat opens. The chat creates
+        # no directory - the project folder is the only thing that appears.
+        project = "1"
+        os.makedirs(os.path.join(live_dir(), project), exist_ok=True)
+        put("project", project)
+        put("flags", "onboarded")
+        put("screen", "chat")
+    elif here == "projects" and node_id in ("project_create", "Create project"):
         name = state("typed", "p10d-proj")
         os.makedirs(os.path.join(live_dir(), name), exist_ok=True)
         put("project", name)
         put("typed", "")
         put("screen", "chat")
-    elif here == "chat" and node_id == "open_files":
+    elif here in ("chat", "answer", "chat-menu") and node_id in ("open_files", "Project files"):
         put("screen", "files")
-    elif here == "chat" and node_id == "open_settings":
+    elif here in ("chat", "answer") and node_id in ("open_settings", "Settings and diagnostics"):
         put("screen", "settings")
+    elif here in ("chat", "answer") and node_id in ("open_projects", "Projects", "Open the project list"):
+        put("screen", "projects")
+    # ---- v4 items 2 and 3: search, the key dialog, the star and the quick switch --
+    elif here in ("settings", "chat", "answer") and node_id in ("provider_search", "Search providers"):
+        # The field is where it is; typing is what changes the screen (see shell()).
+        put("search", "")
+    elif here == "settings" and node_id in ("provider_openrouter", "No key stored"):
+        put("screen", "settings-openr")
+    elif here == "settings-openr" and node_id in ("provider_connect_openrouter", "Save key"):
+        put("screen", "settings-key")
+    elif here == "settings-key" and node_id in ("provider_key_cancel", "Not now"):
+        put("screen", "settings-openr")
+    elif here in ("settings-openr", "settings") and isinstance(node_id, str) and \
+            node_id.startswith("model_star_"):
+        # Starring: recorded so the detail line can say it happened.
+        put("starred", node_id)
+    elif here in ("chat", "answer") and isinstance(node_id, str) and (
+            node_id == "model_quick_switch" or node_id.startswith("Model:")):
+        put("screen", "chat-menu")
+    elif here == "chat-menu" and (node_id in ("model_pick_0", "gpt-4o-mini")):
+        # Picking a starred model: the header now names it.
+        put("model", "openrouter/gpt-4o-mini")
+        put("screen", "chat")
     elif here == "chat" and node_id == "composer_send":
         # The model does its work: a file the server writes into the project
         # directory. This is the file R7 then reads from outside the app.
@@ -189,6 +233,16 @@ def shell(command):
     if cmd.startswith("input text "):
         typed = cmd[len("input text "):].replace("%s", " ")
         put("typed", state("typed", "") + typed)
+        # v4 item 2: a search box that does not filter is the bug this stage exists to
+        # catch, so the fake phone filters the way the app does - a query nothing
+        # matches shows the no-match copy, and a real one narrows the list.
+        if screen() in ("settings", "settings-nomatch", "settings-openr"):
+            query = state("search", "") + typed
+            put("search", query)
+            if "zzzqq" in query:
+                put("screen", "settings-nomatch")
+            elif "openr" in query:
+                put("screen", "settings-openr")
         return (0, "")
 
     if cmd.startswith("input tap "):
@@ -207,8 +261,23 @@ def shell(command):
     if cmd.startswith("input keyevent"):
         key = cmd.split()[-1]
         if key in ("KEYCODE_BACK", "4"):
-            if screen() in ("files", "settings"):
+            if screen() in ("files", "settings", "settings-nomatch", "settings-openr"):
                 put("screen", "chat")
+            elif screen() == "settings-key":
+                put("screen", "settings-openr")
+            elif screen() == "chat-menu":
+                put("screen", "chat")
+        if key in ("KEYCODE_DEL", "67"):
+            # One delete per keyevent, exactly as the platform does it.
+            put("search", state("search", "")[:-1])
+            query = state("search", "")
+            if screen() in ("settings-nomatch", "settings-openr", "settings"):
+                if "zzzqq" in query:
+                    put("screen", "settings-nomatch")
+                elif "openr" in query:
+                    put("screen", "settings-openr")
+                else:
+                    put("screen", "settings")
         return (0, "")
 
     if cmd.startswith("input swipe") or cmd.startswith("svc ") or \
@@ -343,6 +412,10 @@ def main(argv):
             # the driver actually typed, so the path on screen is the real one and the
             # root the driver derives from it is the root the shell check then verifies.
             body = body.replace("p10d-proj", state("project", "p10d-proj"))
+            # v4 item 3: the model the chat header names. It starts on one model and
+            # changes when the quick switch is used, so the driver can observe the
+            # change instead of assuming it.
+            body = body.replace("__MODEL__", state("model", "opencode/zen-1"))
             sys.stdout.write(body)
             return 0
         if rest.startswith("screencap"):

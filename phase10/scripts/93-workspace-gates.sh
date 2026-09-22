@@ -4,7 +4,10 @@
 #
 # It runs the Phase 7 isolation class - W1 project lifecycle, W2 workspace
 # isolation through OpenCode's own file layer, W3 memory inspectable/removable,
-# and the new W4 storage-location + server-writes-there gate - and then hands the
+# W4 storage-location + server-writes-there, and (v4 item 1) W5 sibling-project
+# confinement at the depth the product uses: a workspace folder with projects `1`
+# and `2` inside it, where `../2/...` and `../workspace-level.txt` must be refused
+# and a chat must create no folder - and then hands the
 # absolute path W4 reports to 92-workspace-visibility.sh, which checks the same
 # directory from OUTSIDE the app with a non-root `adb shell`. Neither half is
 # sufficient alone: the app can always say "my files are at /some/path", and a
@@ -100,7 +103,7 @@ log "appops MANAGE_EXTERNAL_STORAGE: ${GRANT_LINE:-<no output>}"
 SHARED_PROBE=$(adb shell "ls -ld /storage/emulated/0/Documents/OpenCode 2>&1" | tr -d '\r' | head -1)
 log "shared-storage default: ${SHARED_PROBE:-<absent>}"
 
-log "=== am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest (W1-W4) ==="
+log "=== am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest (W1-W5) ==="
 ISO_RC=0
 timeout -k 30 3600 adb shell am instrument -w \
   -e class ai.opencode.android.projects.WorkspaceIsolationGatesTest "$RUNNER" \
@@ -126,6 +129,8 @@ emit "W1_PROJECT_LIFECYCLE"
 emit "W2_WORKSPACE_ISOLATION"
 emit "W3_MEMORY_INSPECTABLE_REMOVABLE"
 emit "W4_WORKSPACE_VISIBLE"
+# v4 item 1: the sibling-project half of the same guarantee, one level deeper.
+emit "W5_SIBLING_PROJECT_CONFINEMENT"
 
 # ---- the external vantage point ---------------------------------------------
 W4_LINE=$(grep -aE '^P7_W4_WORKSPACE_VISIBLE ' "$VERDICTS" | tail -1)
@@ -151,6 +156,15 @@ while read -r id verdict rest; do
     *) FAIL=$((FAIL+1)) ;;
   esac
 done < <(grep -aE '^P10D_VISIBILITY_[A-Z_]+ (PASS|FAIL|SKIP)' "$OUT/visibility.log" 2>/dev/null)
+
+# W5's fixture is a whole workspace tree under the app's root in every mode: the
+# gate deletes it itself, and this removes anything a crash left behind, so the
+# next run's project list is clean and the workspace-onboarding step (which only
+# appears when there is no project) is not skipped by a leftover.
+for r in "${WS_ROOT:-}" "/storage/emulated/0/Documents/OpenCode" "/storage/emulated/0/Android/data/$PKG/files/workspaces"; do
+  [ -n "$r" ] || continue
+  adb shell "rm -rf '$r'/p10ws-*" >/dev/null 2>&1 || true
+done
 
 # The W4 project directory is a gate fixture, not a user project: remove it so the
 # next run starts clean (only when the visibility check has already read it).

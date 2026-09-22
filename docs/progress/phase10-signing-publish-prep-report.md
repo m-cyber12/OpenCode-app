@@ -2229,3 +2229,163 @@ before this one) when the fallback scenario was added; its log is kept so the se
 readable rather than rewritten, and §B.11.3's table reports the final run. And the fallback
 still copies the APK only at R2 — on a temp-dir host the artifact gate is expected to SKIP
 rather than PASS, which the verdict text says.
+
+## B.12 Continuation v4 (2026-09-22): workspace → project → chat, provider search, model quick switch, one first-run decision
+
+This round is a deliberate scope expansion: the product/structure changes land while the
+current UI still exists to build and test against, because a UI-from-Figma phase comes next.
+The four items are the ones in the brief; nothing else was pulled in. Signing, branding and
+the store listing were not touched (the Play Console declaration line for All files access is
+still the owner's action, see §B.12.2).
+
+The honest headline, before the details: **every claim in this section is host-side or
+static.** This sandbox has no JDK and no Android SDK (verified again this round: `java`,
+`kotlinc` and `gradle` are absent, `ANDROID_HOME`/`ANDROID_SDK_ROOT` are unset, and there is
+no `native/` payload), so nothing here was compiled locally. Compilation, the JVM unit tests
+and the instrumented gates are verified by CI on the pushed revision (§B.12.6); the phone
+pass that walks the v4 flow on hardware is §B.12.5, and it has **not run yet**.
+
+### B.12.1 What each item became in code
+
+| Item | What changed | Where |
+|---|---|---|
+| 1. workspace → project → chat | One workspace folder holds every project as a direct subfolder (`<workspace>/1`); a chat is an OpenCode session inside the project directory and creates **no** folder; the workspace switch (pick another folder) moved to **Settings → Workspace**, where it is the only such control and carries the note about what switching hides | `AppRoot.kt` (route + `workspaceConfirmed` gate, `ROUTE_WORKSPACE`), `runtime/StorageChoice.kt` (`workspaceConfirmed`/`markWorkspaceConfirmed`), `projects/StorageController.kt` (snapshot reused for the Settings section), `settings/SettingsScreen.kt` (`WorkspaceSection`), `projects/ProjectStore.kt` (`FIRST_PROJECT_NAME = "1"`) |
+| 2. provider search + one-step activation | The catalog is searchable (ranked: exact id, id prefix, name prefix, substring; case-insensitive; bounded to 60 rows), tapping a listed provider opens a dialog that asks for the **API key only** — base URL and model list come from the catalog — and the non-catalog path stays as its own section (id, display name, base URL, model ids, key) written as upstream's own `provider.<id>` config block plus `PUT /auth/:id` | `client/ProviderCatalog.kt` (new: `ProviderCatalog.search`, `CustomProviderConfig`), `client/OpenCodeRepository.kt` (`addCustomProvider`), `ui/settings/SettingsScreen.kt` (`provider_search`, `ProviderKeyDialog`, `provider_connect_<id>`, `custom_provider_*`) |
+| 3a. model persistence (the reported bug) | The model the user last used is persisted (SharedPreferences) and is what a **new chat, a new project and a fresh process** start from; the Phase 9 heuristic is only the fallback when the stored provider has left the server's catalog | `client/ModelPreference.kt` (new), `client/DefaultModelHint.kt` (`resolve`), `client/OpenCodeRepository.kt` (persist on pick and on a turn actually being sent; publish `starredModels` in `UiState`), `AppContainer.kt` (wires the store) |
+| 3b. quick switch | A compact dropdown at the top of the chat lists **only starred models** (plus a link to Settings when the list is empty) and switches the model in place; starring is a checkbox per model in Settings → Model, and starred order is the order the user starred in | `ui/chat/ModelQuickSwitch.kt` (new), `ui/chat/ChatScreen.kt`, `ui/settings/SettingsScreen.kt` (`model_star_<provider>_<model>`), `client/ModelPreference.kt` |
+| 4. first-run simplification | The storage screen lost **Copy path**, **Export a copy**, both folder choosers, and the paragraph explaining them; the first run is now one step: the folder that will be used is shown, with **one picker and one action** ("Use this folder as workspace"). Confirming creates the first project and opens its chat. The switch lives in Settings from then on. The All-files-access repair button stays on the Files screen and in Settings: a user whose grant was revoked in system settings needs a way back to that setting | `ui/onboarding/WorkspaceOnboardingScreen.kt` (new), `ui/files/FilesScreen.kt`, `ui/AppRoot.kt`, `res/values/strings.xml` |
+
+Two decisions inside those items, stated rather than buried:
+
+* **The Publish button is removed, not repurposed.** It existed to get files out of a location
+  a file manager could not open. Since v3 the live project folder *is* a normal, visible
+  folder (that was the point of `Documents/OpenCode`), so "Export a copy" was a second route
+  to files the user can already reach by copying the folder — and it was the button that made
+  the storage panel read like a settings screen. The capability that remains is the
+  single-file **Save a copy** in the viewer, which still matters (a binary file the viewer
+  refuses to render has to go somewhere). Nothing else about the storage panel changed:
+  location, mode, the honest visibility sentence, the grant repair and the "move them here"
+  migration are all still there.
+* **A chat still creates no folder** — this was already true (a session is server-side state
+  in the project's directory), and it is now asserted instead of assumed: W5 checks the
+  workspace listing before and after a session is created (§B.12.4).
+
+### B.12.2 The All files access finding (the one the brief asked for)
+
+**Question:** with SAF plus a persisted URI permission, is `MANAGE_EXTERNAL_STORAGE` still
+needed, or is scoped SAF access to the chosen folder enough for everything the app does
+(read/write in the workspace, browse subfolders)?
+
+**Finding: still needed — and the reason is structural, not a missing feature.**
+
+A SAF tree grant is access to a `content://` URI **for this app's `ContentResolver` calls**.
+The workspace is never accessed that way. The embedded OpenCode runtime is a separate process
+(bun, git, ripgrep, the `bash` tool, the agent's own file tools) and it opens the project
+directory as a **POSIX path**. A tree URI, a persisted grant, or an `openFileDescriptor` on a
+child of that tree is invisible to that process: none of them is an argument it can accept.
+`runtime/StorageChoice.kt` says the same thing at the mechanism it implements (it resolves a
+tree to a real path on the primary volume and then writes a probe file *to that path*,
+precisely because permission and resolution are different questions).
+
+The precise operations that require the broad grant are therefore exactly the ones that go
+through paths:
+
+1. the app's own usability probe of the workspace folder (`isUsableRoot`: create a file in it
+   and delete it again — the probe that decides whether a chosen folder is usable at all);
+2. every write the runtime performs inside a project folder that is not the app's own scoped
+   directory (the agent's file tools, `bash`, git);
+3. the lifecycle and migration operations that create, move or delete project directories by
+   path (create a project folder, move projects when the workspace changes).
+
+None of those can be re-expressed as URI calls without replacing OpenCode's file tools with a
+SAF-backed VFS, which is a re-engineering of upstream (Core Rule 2/3), not a configuration
+change. So the request stays, with the same Play Console consequence as before: the
+`MANAGE_EXTERNAL_STORAGE` declaration and its justification (the app manages the user's own
+project files in a folder the user picks; the files are the product) is still an owner action
+for the listing.
+
+The alternative that needs **no** permission does exist, and it is already implemented and
+documented as the fallback: workspace in the app-specific external directory
+(`Android/data/<pkg>/files/workspaces`, mode `APP_EXTERNAL`), SAF used only to move copies
+out, at the cost that Android 11+ blocks file managers from browsing `Android/data` — so the
+files are no longer visible in a file manager. That trade (visibility vs. permission) is the
+product decision the owner already made in v3 in favour of visibility; this round does not
+change it, it names the mechanism honestly.
+
+### B.12.3 Verification of this round (what is TESTED, and how)
+
+| Gate | What it asserts | Status |
+|---|---|---|
+| `phase6/scripts/30-static-checks.sh` | copy/URL literals, resources, a11y names, lazy lists, UI purity (screens stay pure functions), icon availability | **rc=0** (20 UI files scanned, 0 findings each; 399 strings defined, 0 referenced-but-missing) |
+| `phase10/scripts/30-static-checks.sh` | the driver's reader self-test (20 checks), the fake-phone shim, Compose icon availability, workflow template, no infinite animations | **rc=0** |
+| `test-90-real-device.sh` | the real device driver run against the fake phone — now including the v4 stages | see §B.12.4 (numbers below) |
+| `ChatUiGatesTest` U9 (rewritten) | the storage screen offers **none** of the removed controls, still reports location/mode/honesty, still repairs a revoked grant and still moves projects | pending CI |
+| `ChatUiGatesTest` U10, U11, U12 (new) | quick switch lists only starred models and picks in place; provider search filters and reports no-match; the key dialog asks for the key only; the custom-provider path exists; the workspace step has one folder and one action; Settings owns the switch | pending CI |
+| `FirstRunUiGatesTest` F1–F3 (updated) | the first run may stop at the workspace step, and F3 walks it: one tap → first project → chat | pending CI |
+| `WorkspaceIsolationGatesTest` W1–W4 | unchanged, re-run as before | pending CI |
+| `WorkspaceIsolationGatesTest` W5 (new) | sibling confinement one level deeper (see §B.12.4) | pending CI |
+| JVM unit tests `ModelPreferenceTest`, `ProviderCatalogTest` (new) | the persistence decision, the codec (a model id containing a slash), the ranking, and the custom-provider config document | pending CI |
+| W4/host visibility, smoke, release verify, phase 9 PROVSEL | unchanged stages, re-run on the same revision | pending CI |
+
+### B.12.4 Isolation, re-stated for the new hierarchy (W5)
+
+The brief's isolation requirement did not change, only its depth: a chat must be confined to
+its own project subfolder, and that subfolder is one level below the workspace folder a file
+manager can browse by hand. W2 already asserted the sibling case between two directories under
+the app's root; **W5** (`w5_siblingProjectsUnderOneWorkspaceStayConfined`) asserts it in the
+shape the product now uses, and asserts the chat half as well:
+
+* fixture: a workspace folder `…/p10ws-<stamp>` holding `1/` and `2/`;
+* an instance scoped to `1` sees `one.txt` and neither `2/two.txt` nor the workspace-level
+  `workspace-level.txt`;
+* **three escapes must all be refused** by the server (the same `FSUtil.contains` boundary W2
+  exercises): `../2/two.txt` (the sibling project), `../workspace-level.txt` (the workspace
+  root itself), `../../p10-nowhere-<stamp>.txt` (out of the workspace entirely) — the verdict
+  line carries upstream's own status and message for each;
+* each project still reads its own file with a plain relative name, so "isolation" did not
+  become "unusable";
+* a session created in `1` adds **no** directory (`p1` listing identical before/after, and the
+  workspace listing is exactly `1`, `2`, `workspace-level.txt`), appears in project `1`'s own
+  session list, and is absent from project `2`'s.
+
+W5 is folded into the same stage-5b workspace gate as W1–W4 (`93-workspace-gates.sh` emits
+`P10_WS_W5_SIBLING_PROJECT_CONFINEMENT`, and the host script now also removes a `p10ws-*`
+fixture tree left behind by a crash, so the next run's project list is clean).
+
+### B.12.5 The one phone pass (extended driver — do not run it twice)
+
+Per the brief, no device run happened this session. `phase10/scripts/90-real-device-signed.sh`
+was extended so that **one** pass tomorrow covers v4 *and* the things still pending from v3
+(the reader question, `FIRST_RUN_PROJECT`, `FILES_SCREEN`, `LIVE_TURN`). What is new in it:
+
+| Stage | New verdicts | What they mean |
+|---|---|---|
+| R4 (first run) | `WORKSPACE_STEP`, `WORKSPACE_FIRST_PROJECT` | the workspace step is on screen with a folder, **one** picker and **one** action and none of the removed controls; one tap on that action creates the first project and lands in the chat — and the project folder is then confirmed **from outside the app** (`ls` of the workspace folder shows `1`) |
+| R4b (project card) | `FIRST_RUN_PROJECT` (unchanged) | the create-project card still works for a second project, as before |
+| R5 (file browser) | `FILES_SIMPLIFIED` | the signed build's storage screen carries no copy-path, no export and no folder chooser (read off the screen, not from the app's internals) |
+| R5b (new stage) | `WORKSPACE_SECTION`, `PROVIDER_SEARCH`, `PROVIDER_KEY_ONLY`, `MODEL_QUICK_SWITCH` | Settings holds the workspace switch and the switching note; the catalog search narrows to a real provider and says so when nothing matches; tapping a listed provider opens a dialog that asks for the API key **only** (nothing is saved — the dialog is dismissed); starring a model and picking it from the chat header actually changes the model the header names |
+
+Two things worth knowing before dialling in tomorrow:
+
+* **All files access.** R4 grants it the way the Settings toggle does
+  (`adb shell appops set <pkg> MANAGE_EXTERNAL_STORAGE allow`, no root) and logs that it did;
+  a pass must never depend on a hidden grant. Set `P10D_GRANT_ALL_FILES=0` to run the honesty
+  variant instead: the app must then state that the folder is not visible to file managers and
+  keep working in the `Android/data` fallback.
+* **Nothing is entered that costs money.** The provider dialog is dismissed without saving; a
+  key is typed only if `P10D_PROVIDER_KEY` is set, exactly as before (and it is the same
+  narrowly scoped, short-lived key the standing rules ask for, removed afterwards).
+
+A failure triage, so a red line is read correctly: `WORKSPACE_STEP FAIL` with
+`picker=0`/`action=0` is a UI regression (the step lost a control); with
+`removedPresent=Copy path,…` it is the removal that did not land; `WORKSPACE_FIRST_PROJECT
+FAIL` with a chat on screen but no `1` folder is a real defect (a project that exists only in
+the UI); `PROVIDER_SEARCH FAIL` with `no-match=<none>` means the search does not report an
+empty result (a search that silently shows everything is the bug this stage exists for);
+`MODEL_QUICK_SWITCH FAIL` with the after-label unchanged means the quick switch did not set the
+model.
+
+The pending v3 stop condition is unchanged and still **NOT TESTED**: `FIRST_RUN_PROJECT`,
+`FILES_SCREEN` and `LIVE_TURN` have never executed on hardware. Tomorrow's single pass is what
+changes that, and it now also answers whether the `HARNESS_READER` fix works (R0.4/R0.5) — so
+one run, one bundle, everything.

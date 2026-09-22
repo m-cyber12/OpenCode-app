@@ -109,12 +109,15 @@ fun FilesScreen(
     storageVisibleToFileManagers: Boolean,
     /** True when a file manager can browse `Android/data` on this Android version. */
     storageAppFolderBrowsableByFileManagers: Boolean,
-    /** True when the All-files-access grant is offered and not yet held. */
+    /**
+     * True when the All-files-access grant is offered and not yet held. Kept after
+     * the v4 simplification on purpose: the workspace folder is now chosen in
+     * Settings, so this screen has no picker, but a user whose grant was revoked in
+     * system settings still needs a way back to the setting that fixes it - the
+     * alternative is a screen that says "a file manager cannot open this" with no
+     * way to change that.
+     */
     storageCanGrantAllFilesAccess: Boolean,
-    /** True when the system folder picker can be offered (always, in practice). */
-    storageCanChooseFolder: Boolean,
-    /** True when a folder the user chose is in effect (offers "use the default"). */
-    storageHasChosenFolder: Boolean,
     /** Projects still sitting in an older location, waiting to be moved (0 = none). */
     storagePendingMove: Int,
     /** Result of the last storage action, or "" - shown so a move is never silent. */
@@ -124,17 +127,12 @@ fun FilesScreen(
     loading: Boolean,
     error: String,
     openFile: OpenFile?,
-    publishLabel: String,
     onOpenDir: (String) -> Unit,
     onOpenFile: (String) -> Unit,
     onUp: () -> Unit,
     onCloseFile: () -> Unit,
-    onCopyPath: (String) -> Unit,
     onSaveCopy: (String) -> Unit,
-    onPublish: () -> Unit,
     onRequestAllFilesAccess: () -> Unit,
-    onChooseStorageFolder: () -> Unit,
-    onUseDefaultStorage: () -> Unit,
     onMoveProjects: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -200,21 +198,12 @@ fun FilesScreen(
                         modifier = Modifier.semantics { testTag = "files_storage_pending" },
                     )
                 }
-                if (!storageVisibleToFileManagers && (storageCanGrantAllFilesAccess || storageCanChooseFolder)) {
+                if (!storageVisibleToFileManagers && storageCanGrantAllFilesAccess) {
                     Spacer(Modifier.height(8.dp))
                     Text(
                         text = stringResource(R.string.files_storage_make_visible_body),
                         style = MaterialTheme.typography.bodySmall,
                         color = chat.muted,
-                    )
-                }
-                if (publishLabel.isNotEmpty()) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = publishLabel,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = chat.attention,
-                        modifier = Modifier.semantics { testTag = "files_publish_label" },
                     )
                 }
                 if (storageMessage.isNotEmpty()) {
@@ -226,22 +215,13 @@ fun FilesScreen(
                         modifier = Modifier.semantics { testTag = "files_storage_message" },
                     )
                 }
-                Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    TextButton(
-                        onClick = { onCopyPath(projectPath) },
-                        modifier = Modifier.semantics { testTag = "files_copy_path" },
-                    ) {
-                        Text(stringResource(R.string.files_copy_path))
-                    }
-                    TextButton(
-                        onClick = onPublish,
-                        modifier = Modifier.semantics { testTag = "files_publish" },
-                    ) {
-                        Text(stringResource(R.string.files_export_copy))
-                    }
-                }
-                if (storageCanGrantAllFilesAccess || storageCanChooseFolder) {
+                // The workspace folder itself is chosen in Settings (v4: the switch
+                // action lives where the rest of the configuration does). What stays
+                // here is what only this screen can say: whether a file manager can
+                // open the folder right now, how to fix that if it cannot, and the
+                // one migration that is not a preference change.
+                if (storageCanGrantAllFilesAccess || storagePendingMove > 0) {
+                    Spacer(Modifier.height(6.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         if (storageCanGrantAllFilesAccess) {
                             TextButton(
@@ -251,37 +231,12 @@ fun FilesScreen(
                                 Text(stringResource(R.string.files_storage_make_visible))
                             }
                         }
-                        if (storageCanChooseFolder) {
-                            TextButton(
-                                onClick = onChooseStorageFolder,
-                                modifier = Modifier.semantics { testTag = "files_storage_choose" },
-                            ) {
-                                Text(stringResource(R.string.files_storage_choose_folder))
-                            }
-                        }
-                    }
-                    Text(
-                        text = stringResource(R.string.files_storage_choose_folder_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = chat.muted,
-                    )
-                }
-                if (storagePendingMove > 0 || storageHasChosenFolder) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         if (storagePendingMove > 0) {
                             TextButton(
                                 onClick = onMoveProjects,
                                 modifier = Modifier.semantics { testTag = "files_storage_move" },
                             ) {
                                 Text(stringResource(R.string.files_storage_move_action))
-                            }
-                        }
-                        if (storageHasChosenFolder) {
-                            TextButton(
-                                onClick = onUseDefaultStorage,
-                                modifier = Modifier.semantics { testTag = "files_storage_default" },
-                            ) {
-                                Text(stringResource(R.string.files_storage_choose_reset))
                             }
                         }
                     }

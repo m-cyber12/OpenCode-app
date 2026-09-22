@@ -332,7 +332,13 @@ set_swipe_geometry() {
 NEEDLE_WELCOME='welcome_screen|welcome_continue|Continue|Settings and diagnostics'
 NEEDLE_PROJECTS='projects_screen|project_list|project_name_input|project_create|New project|Create project|Project name'
 NEEDLE_CHAT='chat_screen|composer_input|composer_send|Start a conversation|Message the agent'
-NEEDLE_FILES='files_screen|files_list|files_location|Where these files are|Export a copy|files_storage_mode'
+NEEDLE_FILES='files_screen|files_list|files_location|Where these files are|files_storage_mode'
+# v4 item 4: the first-run workspace step. It is what a first run now reaches
+# instead of the project list, so the driver has to know it by name and by copy.
+NEEDLE_ONBOARDING='onboarding_workspace|Where your files will live|Use this folder as workspace'
+# v4: the Settings sections the v4 items live in (workspace switch, provider search,
+# starred models). Read by text, because that is what a user reads.
+NEEDLE_SETTINGS='settings_screen|settings_list|Agent runtime|Workspace|Model'
 # The app's own copy is not the only thing on screen (system dialogs, IME, launcher),
 # so these are only ever used as additional needles - never as the sole signal.
 
@@ -1042,17 +1048,30 @@ VER_NOW=$(adb shell dumpsys package "$PKG" 2>/dev/null | tr -d '\r' | grep -o 'v
 rd VERSION_ON_DEVICE 0 "installed versionName=$VER_NOW code=$(adb shell dumpsys package "$PKG" 2>/dev/null | tr -d '\r' | grep -o 'versionCode=[0-9]*' | head -1 | cut -d= -f2)"
 
 # ---- R4: first run ----------------------------------------------------------
-step "R4 first run: welcome -> runtime healthy by itself -> a project -> composer"
+step "R4 first run: welcome -> runtime healthy by itself -> the workspace step -> a project -> composer"
+# v4 item 4 makes the workspace folder the first decision the app asks for, and the
+# default folder (Documents/OpenCode) is only writable with All files access. The
+# harness grants it the way the Settings toggle does (`appops set ... allow`, no
+# root) and SAYS SO in the log: a pass that depended on a hidden grant would be the
+# kind of evidence this project does not accept. P10D_GRANT_ALL_FILES=0 skips it -
+# that is the honesty pass, where the app must state the folder is not visible to
+# file managers instead of claiming otherwise.
+if [ "${P10D_GRANT_ALL_FILES:-1}" = "1" ]; then
+  adb shell appops set "$PKG" MANAGE_EXTERNAL_STORAGE allow >/dev/null 2>&1 || true
+  log "All files access: $(adb shell appops get "$PKG" MANAGE_EXTERNAL_STORAGE 2>&1 | tr -d '\r' | head -1)"
+else
+  log "P10D_GRANT_ALL_FILES=0: leaving All files access ungranted on purpose"
+fi
+
 adb shell am start -W -n "$PKG/ai.opencode.android.MainActivity" 2>&1 | tr -d '\r' | tee -a "$LOG" | grep -E 'Status|LaunchState|TotalTime' || \
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true
 T0=$(date +%s)
 shot "launch" || true
 sleep 2
 
-# The state machine, in the order a user meets it. Each entry is
-# "name | needles | what a human would do". The first run extracts the payload
-# (~1 GB of Bun + OpenCode + git + ripgrep) before the runtime can be HEALTHY, so
-# this waits generously - but it reports what it is waiting for the whole time.
+# The state machine, in the order a user meets it. The first run extracts the
+# payload (~1 GB of Bun + OpenCode + git + ripgrep) before the runtime can be
+# HEALTHY, so this waits generously - but it reports what it is waiting for.
 FIRST_RUN_OK=0
 if wait_for "app-window" "$NEEDLE_WELCOME|OpenCode" "$(tmo 300)"; then
   handle_interruptions || true
@@ -1060,15 +1079,15 @@ if wait_for "app-window" "$NEEDLE_WELCOME|OpenCode" "$(tmo 300)"; then
   # The welcome screen advances by itself when the supervisor reports HEALTHY
   # (AppRoot's LaunchedEffect). A human who gets impatient taps Continue; do the
   # same, but never make the verdict depend on the tap.
-  if wait_for "runtime-or-projects" "$NEEDLE_WELCOME|$NEEDLE_PROJECTS" "$(tmo 180)"; then
+  if wait_for "runtime-or-next" "$NEEDLE_WELCOME|$NEEDLE_PROJECTS|$NEEDLE_ONBOARDING" "$(tmo 180)"; then
     tap_any "welcome_continue" "Continue" >/dev/null 2>&1 || true
     shot "after-welcome" || true
-    if wait_for "projects-screen" "$NEEDLE_PROJECTS" "$(tmo 300)"; then
+    if wait_for "workspace-or-projects" "$NEEDLE_PROJECTS|$NEEDLE_ONBOARDING" "$(tmo 300)"; then
       FIRST_RUN_OK=1
       T1=$(( $(date +%s) - T0 ))
-      rd FIRST_RUN 0 "app reached the projects screen by itself in ${T1}s (payload extracted + agent started, no privileged access); screen: $(screen_state)"
+      rd FIRST_RUN 0 "app reached its first-run surface by itself in ${T1}s (payload extracted + agent started, no privileged access); screen: $(screen_state)"
     else
-      rd FIRST_RUN 1 "the app never reached the projects screen (see DIAGNOSIS.txt and the screenshots at each step).$(dump_caveat)"
+      rd FIRST_RUN 1 "the app never reached the workspace step or the projects screen (see DIAGNOSIS.txt and the screenshots at each step).$(dump_caveat)"
     fi
   else
     rd FIRST_RUN 1 "no welcome/projects surface became usable (see DIAGNOSIS.txt; the app also offers Settings -> Share diagnostics).$(dump_caveat)"
@@ -1077,24 +1096,116 @@ else
   rd FIRST_RUN 1 "no app surface could be read from the screen: $(foreground) $(screen_state).$(dump_caveat) - see DIAGNOSIS.txt and 01-launch.png"
 fi
 
-if [ "$FIRST_RUN_OK" = 1 ]; then
-  PROJECT_NAME="p10d-$(date +%H%M%S)"
-  if tap_any "project_name_input" "Project name"; then
-    type_text "$PROJECT_NAME"
-    shot "project-name-typed" || true
-    if tap_any "project_create" "Create project"; then
-      sleep 2
-      if wait_for "conversation" "$NEEDLE_CHAT" "$(tmo 180)"; then
-        shot "chat-ready" || true
-        rd FIRST_RUN_PROJECT 0 "project '$PROJECT_NAME' created through the UI (taps + typed text) on the signed build; conversation surface reached"
+# ---- R4a: the v4 workspace step (item 4) ------------------------------------
+if [ "$FIRST_RUN_OK" = 1 ] && ui_has_any "Where your files will live" "Use this folder as workspace" "onboarding_workspace"; then
+  shot "workspace-step" || true
+  ui_dump "workspace-step" >/dev/null 2>&1
+  FOLDER_SHOWN=$($PY - "$(map_dump "$LAST_DUMP")" <<PY
+import re, sys
+xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+paths = [c for c in re.findall(r'(?:text|content-desc)="(/[^"<>]{3,})"', xml)
+         if not c.startswith(("/data/data/", "/data/user/0/"))]
+print(paths[0] if paths else "")
+PY
+)
+  # The controls the brief removed must be absent from this screen - read off the
+  # screen, so a build that quietly kept one of them fails here.
+  REMOVED_HITS=$($PY - "$(map_dump "$LAST_DUMP")" <<PY
+import sys
+xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+removed = ["Copy path", "Export a copy", "Use a folder I choose", "Use the default location again"]
+print(",".join(r for r in removed if r in xml))
+PY
+)
+  PICKER_SHOWN=0; ui_has "Choose folder" && PICKER_SHOWN=1
+  ACTION_SHOWN=0; ui_has "Use this folder as workspace" && ACTION_SHOWN=1
+  # Anything else that looks like a button is reported: the flow is two controls.
+  OTHER_BUTTONS=$($PY - "$(map_dump "$LAST_DUMP")" <<PY
+import re, sys
+xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+allowed = {"Choose folder", "Use this folder as workspace"}
+known = {"Where your files will live", "Workspace folder",
+         "You can change the folder later in Settings.",
+         "The system does not let a file manager open this folder on this Android version. A PC still can."}
+labels = set(re.findall(r'(?:text|content-desc)="([^"<>]{2,40})"', xml))
+extra = sorted(l for l in labels
+               if l not in allowed and l not in known and not l.startswith("/")
+               and "Pick one folder" not in l and "subfolder of it" not in l
+               and "cannot write in" not in l and "All files access" not in l
+               and "This screen has opened" not in l and "The system does not let" not in l)
+print("|".join(extra)[:200])
+PY
+)
+  if [ -n "$FOLDER_SHOWN" ] && [ "$PICKER_SHOWN" = 1 ] && [ "$ACTION_SHOWN" = 1 ] && [ -z "$REMOVED_HITS" ]; then
+    rd WORKSPACE_STEP 0 "the workspace step shows the folder ($FOLDER_SHOWN), one picker and one action; removed controls absent; other controls: ${OTHER_BUTTONS:-none}"
+  else
+    rd WORKSPACE_STEP 1 "workspace step incomplete: folder='${FOLDER_SHOWN:-<none>}' picker=$PICKER_SHOWN action=$ACTION_SHOWN removedPresent='${REMOVED_HITS:-none}' other='${OTHER_BUTTONS:-none}' (see ui/ui-workspace-step.xml)"
+  fi
+
+  # One tap: the first project is created and the app lands in its chat. The chat is
+  # an OpenCode session in the project directory, so the check is a filesystem check
+  # made from OUTSIDE the app: the folder must exist and hold exactly what a project
+  # folder holds (no extra directory per chat).
+  WS_ROOT_OUT="${FOLDER_SHOWN:-/storage/emulated/0/Documents/OpenCode}"
+  if tap_any "onboarding_workspace_use" "Use this folder as workspace"; then
+    if wait_for "conversation-after-workspace" "$NEEDLE_CHAT" "$(tmo 240)"; then
+      shot "chat-after-workspace" || true
+      # The listing comes back through the host's own shell, so the check reads the
+      # NAMES in the workspace folder (a project folder called `1`), not a path string
+      # this script already knew: the point is that the tap created it.
+      FIRST_PROJECT_LS=$(adb shell "ls -1 '$WS_ROOT_OUT' 2>&1" | tr -d '\r' | tr '\n' ' ' | sed 's/[[:space:]]*$//')
+      FIRST_PROJECT_DIR=$(adb shell "ls -ld '$WS_ROOT_OUT/1' 2>&1" | tr -d '\r' | head -1)
+      PROJECT_ON_DISK=1
+      case " $FIRST_PROJECT_LS " in
+        *" 1 "*) case "$FIRST_PROJECT_DIR" in
+                   *"No such file"*|"") ;;
+                   *) PROJECT_ON_DISK=0 ;;
+                 esac ;;
+      esac
+      if [ "$PROJECT_ON_DISK" = 0 ]; then
+        rd WORKSPACE_FIRST_PROJECT 0 "one tap on the workspace action created the first project and opened its chat; from outside the app '$WS_ROOT_OUT' contains [$FIRST_PROJECT_LS]"
       else
-        rd FIRST_RUN_PROJECT 1 "project created but the conversation surface was not reached (see DIAGNOSIS.txt)"
+        rd WORKSPACE_FIRST_PROJECT 1 "the chat opened but '$WS_ROOT_OUT/1' was not found from outside the app (ls: ${FIRST_PROJECT_DIR:-<empty>}; listing: [$FIRST_PROJECT_LS])"
       fi
     else
-      rd FIRST_RUN_PROJECT 1 "could not tap the create-project button (see ui/ui-tap-project_create.xml)"
+      rd WORKSPACE_FIRST_PROJECT 1 "the workspace action did not lead to a conversation (the system All-files-access screen may be in front; see the screenshots and ui/ui-workspace-step.xml)"
     fi
   else
-    rd FIRST_RUN_PROJECT 1 "could not focus the project-name field (see DIAGNOSIS.txt)"
+    rd WORKSPACE_FIRST_PROJECT 1 "the single workspace action was not tappable (see ui/ui-tap-onboarding_workspace_use.xml)"
+  fi
+else
+  rd WORKSPACE_STEP 7 "no workspace step on screen (a returning install with a project opens its chat directly, which is the documented behaviour)"
+  rd WORKSPACE_FIRST_PROJECT 7 "no workspace step, so nothing to confirm"
+fi
+
+# ---- R4b: the project card still works (a second project, any time) ---------
+PROJECT_NAME=""
+if [ "$FIRST_RUN_OK" = 1 ]; then
+  if ui_has_any "projects_screen" "project_create" "Create project" || tap_any "open_projects" "Projects"; then
+    if wait_for "projects-screen" "$NEEDLE_PROJECTS" "$(tmo 120)"; then
+      PROJECT_NAME="p10d-$(date +%H%M%S)"
+      if tap_any "project_name_input" "Project name"; then
+        type_text "$PROJECT_NAME"
+        shot "project-name-typed" || true
+        if tap_any "project_create" "Create project"; then
+          sleep 2
+          if wait_for "conversation" "$NEEDLE_CHAT" "$(tmo 180)"; then
+            shot "chat-ready" || true
+            rd FIRST_RUN_PROJECT 0 "second project '$PROJECT_NAME' created through the UI (taps + typed text) on the signed build; conversation surface reached"
+          else
+            rd FIRST_RUN_PROJECT 1 "project created but the conversation surface was not reached (see DIAGNOSIS.txt)"
+          fi
+        else
+          rd FIRST_RUN_PROJECT 1 "could not tap the create-project button (see ui/ui-tap-project_create.xml)"
+        fi
+      else
+        rd FIRST_RUN_PROJECT 1 "could not focus the project-name field (see DIAGNOSIS.txt)"
+      fi
+    else
+      rd FIRST_RUN_PROJECT 1 "the project list did not open (see DIAGNOSIS.txt)"
+    fi
+  else
+    rd FIRST_RUN_PROJECT 7 "no project list and no projects control was reachable; the workspace step already created the first project"
   fi
 else
   rd FIRST_RUN_PROJECT 7 "no project could be created because the first run never reached a usable screen.$(dump_caveat)"
@@ -1152,6 +1263,203 @@ PY
   fi
 else
   rd FILES_SCREEN 7 "no project open, so there was nothing to browse"
+fi
+
+# ---- R5b: the v4 surfaces on the signed build (items 1, 2, 3, 4) ------------
+step "R5b v4: simplified storage screen, workspace switch, provider search, model quick switch"
+
+# Helper: dump the current screen and print the first node whose text/content-desc
+# contains a needle (its label only, not its coordinates - the log stays readable).
+screen_label() { # $1 = needle
+  ui_dump "r5b" >/dev/null 2>&1 || { echo ""; return; }
+  $PY - "$(map_dump "$LAST_DUMP")" "$1" <<PY
+import re, sys
+xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+needle = sys.argv[2].lower()
+for m in re.finditer(r'<node[^>]*>', xml):
+    node = m.group(0)
+    txt = " ".join(re.findall(r'(?:text|content-desc)="([^"<>]*)"', node))
+    if needle in txt.lower():
+        print(txt.strip()[:160])
+        break
+PY
+}
+
+# ---- v4 item 4: the storage screen no longer carries copy/export/chooser -----
+FILES_SIMPLIFIED=0
+if tap_any "open_files" "Project files"; then
+  if wait_for "files-screen" "$NEEDLE_FILES" "$(tmo 120)"; then
+    sleep 1
+    shot "v4-files" || true
+    ui_dump "v4-files" >/dev/null 2>&1
+    FILES_REMOVED=$($PY - "$(map_dump "$LAST_DUMP")" <<PY
+import sys
+xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+gone = ["Copy path", "Export a copy", "Use a folder I choose", "Use the default location again"]
+print(",".join(g for g in gone if g in xml))
+PY
+)
+    if [ -z "$FILES_REMOVED" ]; then
+      FILES_SIMPLIFIED=1
+      rd FILES_SIMPLIFIED 0 "the signed build's file browser offers no copy-path, no export and no folder chooser; the storage panel states the location only (see 1?-v4-files.png)"
+    else
+      rd FILES_SIMPLIFIED 1 "the file browser still shows removed controls: $FILES_REMOVED (see ui/ui-v4-files.xml)"
+    fi
+    adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
+    sleep 1
+  else
+    rd FILES_SIMPLIFIED 1 "the file browser did not open (see DIAGNOSIS.txt)"
+  fi
+else
+  rd FILES_SIMPLIFIED 7 "no project open, so the file browser could not be reached"
+fi
+
+# ---- v4 items 2 and 4: Settings - workspace section, provider search, stars --
+SETTINGS_REACHED=0
+if tap_any "open_settings" "Settings and diagnostics"; then
+  if wait_for "settings-screen" "$NEEDLE_SETTINGS" "$(tmo 120)"; then
+    SETTINGS_REACHED=1
+    sleep 1
+    shot "v4-settings" || true
+  fi
+fi
+
+if [ "$SETTINGS_REACHED" = 1 ]; then
+  # The sections are long; a user scrolls. Three swipes bring the workspace and
+  # model sections into view on any phone size this project has been tested on.
+  i=0
+  while [ "$i" -lt 4 ]; do
+    adb shell input swipe "$SWIPE_FROM_X" "$SWIPE_FROM_Y" "$SWIPE_TO_X" "$SWIPE_TO_Y" 300 >/dev/null 2>&1
+    sleep 1
+    i=$((i + 1))
+    ui_has_any "Workspace folder" "Choose another folder" "Search providers" && break
+  done
+  ui_dump "v4-settings-scrolled" >/dev/null 2>&1
+
+  # item 1/4: the workspace switch lives here, with the honest note about switching
+  WS_FOLDER=$(screen_label "Workspace folder")
+  WS_PICK=$(screen_label "Choose another folder")
+  WS_NOTE=$(screen_label "Switching the workspace hides")
+  if [ -n "$WS_PICK" ] && [ -n "$WS_NOTE" ]; then
+    rd WORKSPACE_SECTION 0 "Settings carries the workspace switch ($WS_PICK) and the switching note is on screen; the section names the folder as '${WS_FOLDER:-<label not read>}'"
+  else
+    rd WORKSPACE_SECTION 1 "the Settings workspace section is incomplete: folder='${WS_FOLDER:-<none>}' picker='${WS_PICK:-<none>}' note='${WS_NOTE:-<none>}' (see ui/ui-v4-settings-scrolled.xml)"
+  fi
+
+  # item 2: search over the catalog, then a provider that asks for a key only
+  SEARCH_FIELD=$(screen_label "Search providers")
+  PROVIDER_SEARCH=0
+  if [ -n "$SEARCH_FIELD" ] && tap_any "Search providers" >/dev/null 2>&1; then
+    # something nothing can match: the screen must say so rather than show everything
+    adb shell input text "zzzqq" >/dev/null 2>&1
+    sleep 2
+    NO_MATCH=$(screen_label "No provider matches")
+    # then a real provider: the list narrows to it and offers the key action
+    k=0
+    while [ "$k" -lt 5 ]; do
+      adb shell input keyevent KEYCODE_DEL >/dev/null 2>&1
+      k=$((k + 1))
+    done
+    adb shell input text "openr" >/dev/null 2>&1
+    sleep 2
+    shot "v4-provider-search" || true
+    MATCH=$(screen_label "OpenRouter")
+    if [ -n "$NO_MATCH" ] && [ -n "$MATCH" ]; then
+      PROVIDER_SEARCH=1
+      rd PROVIDER_SEARCH 0 "the catalog is searchable: an impossible query states '$NO_MATCH' and 'openr' narrows the list to '$MATCH'"
+    else
+      rd PROVIDER_SEARCH 1 "the search box did not behave: no-match='${NO_MATCH:-<none>}' match='${MATCH:-<none>}' (see ui/ui-v4-provider-search.xml)"
+    fi
+
+    # the one-step activation: tapping the key action on a listed provider opens a
+    # dialog that asks for the key and nothing else (base URL / models are the
+    # catalog's business), and it is dismissed without storing anything.
+    if tap_any "Save key" >/dev/null 2>&1; then
+      sleep 2
+      shot "v4-provider-key" || true
+      ui_dump "v4-provider-key" >/dev/null 2>&1
+      DIALOG_TITLE=$(screen_label "API key for")
+      ONLY_KEY=$(screen_label "Only the key is asked for here")
+      FIELDS=$($PY - "$(map_dump "$LAST_DUMP")" <<PY
+import re, sys
+xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+print(len(re.findall(r'class="android\.widget\.EditText"', xml)))
+PY
+)
+      if [ -n "$DIALOG_TITLE" ] && [ -n "$ONLY_KEY" ] && [ "$FIELDS" = "1" ]; then
+        rd PROVIDER_KEY_ONLY 0 "tapping the key action on a catalog provider asks for the API key only ('$DIALOG_TITLE'); $FIELDS text field on screen; nothing was saved"
+      else
+        rd PROVIDER_KEY_ONLY 1 "the provider dialog was not the key-only form: title='${DIALOG_TITLE:-<none>}' body='${ONLY_KEY:-<none>}' fields=$FIELDS (see ui/ui-v4-provider-key.xml)"
+      fi
+      tap_any "Not now" "Cancel" >/dev/null 2>&1 || adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
+      sleep 1
+    else
+      rd PROVIDER_KEY_ONLY 7 "no key action was reachable on the searched provider row"
+    fi
+  else
+    rd PROVIDER_SEARCH 1 "the provider search field was not reachable ('${SEARCH_FIELD:-<none>}')"
+    rd PROVIDER_KEY_ONLY 7 "no search field, so no provider to activate"
+  fi
+
+  # item 3: star a model of the CONNECTED provider, then switch to it in the chat
+  STAR_DESC=""
+  i=0
+  while [ "$i" -lt 3 ] && [ -z "$STAR_DESC" ]; do
+    # expand the provider that has a key (or the bundled one): tapping its status
+    # line expands its model list, which is where the star checkboxes live
+    tap_any "Key stored" "No key stored" >/dev/null 2>&1 || true
+    sleep 1
+    STAR_DESC=$(screen_label "in the chat quick switch")
+    i=$((i + 1))
+  done
+  if [ -n "$STAR_DESC" ]; then
+    STAR_NAME=$(printf '%s' "$STAR_DESC" | sed -E 's/^(Show|Remove) //; s/ (in|from) the chat quick switch$//')
+    shot "v4-star" || true
+    if tap_any "in the chat quick switch" >/dev/null 2>&1; then
+      sleep 1
+      adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
+      sleep 2
+      if wait_for "chat-after-settings" "$NEEDLE_CHAT" "$(tmo 90)"; then
+        QS_BEFORE=$(screen_label "Model:")
+        if tap_any "Model:" >/dev/null 2>&1; then
+          sleep 1
+          shot "v4-quick-switch" || true
+          MENU_TITLE=$(screen_label "Starred models")
+          if [ -n "$MENU_TITLE" ] && tap_any "$STAR_NAME" >/dev/null 2>&1; then
+            sleep 2
+            QS_AFTER=$(screen_label "Model:")
+            if [ -n "$QS_AFTER" ] && printf '%s' "$QS_AFTER" | grep -qF "$STAR_NAME"; then
+              rd MODEL_QUICK_SWITCH 0 "starred '$STAR_NAME' in Settings, opened the quick switch in the chat ('$MENU_TITLE') and picked it there: the header went from '${QS_BEFORE:-<none>}' to '$QS_AFTER'"
+            else
+              rd MODEL_QUICK_SWITCH 1 "the quick switch did not set the model: after='${QS_AFTER:-<none>}' expected to contain '$STAR_NAME'"
+            fi
+          else
+            rd MODEL_QUICK_SWITCH 1 "the quick-switch menu ('${MENU_TITLE:-<none>}') did not list the starred model '$STAR_NAME' (see ui/ui-v4-quick-switch.xml)"
+          fi
+        else
+          rd MODEL_QUICK_SWITCH 1 "the chat header has no model control on screen (see ui/ui-r5b.xml)"
+        fi
+      else
+        rd MODEL_QUICK_SWITCH 1 "leaving Settings did not return to the conversation"
+      fi
+    else
+      rd MODEL_QUICK_SWITCH 1 "the star control ('$STAR_DESC') was not tappable (see ui/ui-v4-star.png)"
+    fi
+  else
+    rd MODEL_QUICK_SWITCH 7 "no expandable provider row with a star control was reachable in Settings"
+  fi
+  # Leave Settings so R6 starts from the conversation. Only when the app is not
+  # already there: a failed tap on a control that does not exist would put a line in
+  # DIAGNOSIS.txt and make a clean run look like it needed a human.
+  if ! ui_has_any "chat_screen" "composer_input" "Start a conversation"; then
+    adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
+    sleep 1
+  fi
+else
+  rd WORKSPACE_SECTION 7 "Settings could not be opened"
+  rd PROVIDER_SEARCH 7 "Settings could not be opened"
+  rd PROVIDER_KEY_ONLY 7 "Settings could not be opened"
+  rd MODEL_QUICK_SWITCH 7 "Settings could not be opened"
 fi
 
 # ---- R6: a live turn --------------------------------------------------------

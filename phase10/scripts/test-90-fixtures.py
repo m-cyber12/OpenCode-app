@@ -74,6 +74,14 @@ def build(root):
     def chat(extra=None):
         parts = [
             node("chat_screen", text="", bounds="[0,0][1080,1920]", clickable="false"),
+            # v4 item 3: the quick switch at the top of the chat. The label carries a
+            # token the fake phone substitutes, so the self-test can observe the model
+            # actually changing after a pick (see test-90-fake-adb.py).
+            node("model_quick_switch", text="Model: __MODEL__", desc="Model: __MODEL__",
+                 bounds="[40,240][1040,300]"),
+            # The top bar's project affordance (the app opens the project list from it).
+            node("open_projects", text="Projects", desc="Open the project list",
+                 bounds="[40,120][400,220]"),
             node("open_files", text="Project files", bounds="[820,120][940,220]"),
             # Deliberately its own rectangle: `hit()` matches the FIRST node whose
             # bounds contain the tap, so two controls must never overlap or the self
@@ -99,10 +107,11 @@ def build(root):
     ])
 
     # ---- the app's own file browser -------------------------------------------
-    # The screen carries the v3 storage panel: the location, the mode label and the
-    # two ways the user can change it. A driver run must find the path here and say
-    # which mode the app claims - and, on a device without the grant, must NOT find a
-    # "Documents/OpenCode" label next to an Android/data path.
+    # The screen carries the v4 storage panel: the location, the mode label and-
+    # when a file manager cannot open the folder - the one repair (the grant). The
+    # copy-path and export controls are gone (v4 item 4): the fixture no longer
+    # serves them, so a build that reintroduced one fails FILES_SIMPLIFIED in the
+    # self-test instead of passing on a stale fixture.
     screens_files = screen("files", [
         text_node("Where these files are", "[40,150][1040,200]"),
         node("files_location_path", text=SHARED_WORKSPACE, bounds="[40,260][1040,300]", clickable="false"),
@@ -111,22 +120,113 @@ def build(root):
         node("files_up", text="Up", bounds="[40,400][300,480]"),
         node("files_dir", text="src", bounds="[40,520][1040,600]"),
         node("files_file", text="p10-visible.txt", bounds="[40,620][1040,700]"),
-        node("files_publish", text="Export a copy...", bounds="[40,720][540,800]"),
     ])
 
-    # ---- settings (provider keys) ---------------------------------------------
+    # ---- settings: workspace switch, provider search, stars, provider keys -----
+    # One screen carrying every section the driver reads in R5b and R6. Bounds never
+    # overlap: the fake phone's hit test matches the first node containing the tap, so
+    # an overlap would drive a different control than the driver aimed at.
     screens_settings = screen("settings", [
-        text_node("Provider keys", "[40,200][1040,280]"),
-        node("key_provider", text="openrouter", desc="Provider", bounds="[40,320][1040,420]",
+        text_node("Agent runtime", "[40,120][1040,180]"),
+        node("settings_screen", text="", bounds="[0,0][1080,3000]", clickable="false"),
+        # v4 item 1/4: the workspace switch, with the honest note about switching.
+        text_node("Workspace folder", "[40,200][1040,260]"),
+        text_node(SHARED_WORKSPACE, "[40,280][1040,330]"),
+        node("settings_workspace_pick", text="Choose another folder", bounds="[40,340][540,440]"),
+        text_node("Switching the workspace hides the projects in the old folder, the way cd "
+                  "changes what a terminal shows. Nothing is deleted; switch back to see them again.",
+                  "[40,460][1040,540]"),
+        # v4 item 2: the search field over the catalog.
+        node("provider_search", text="Search providers", desc="Search providers",
+             bounds="[40,580][1040,680]", cls="android.widget.EditText"),
+        # v4 item 2: one-step activation - the provider row and its key action.
+        node("provider_openrouter", text="No key stored", bounds="[40,700][680,800]"),
+        node("provider_connect_openrouter", text="Save key", bounds="[700,700][1040,800]"),
+        # v3: the manual provider-key path (R6 enters a key here when one is given).
+        text_node("Provider keys", "[40,900][1040,980]"),
+        node("key_provider", text="openrouter", desc="Provider", bounds="[40,1000][1040,1100]",
              cls="android.widget.EditText"),
-        node("key_value", text="", desc="API key", bounds="[40,460][1040,560]",
+        node("key_value", text="", desc="API key", bounds="[40,1120][1040,1220]",
              cls="android.widget.EditText"),
-        node("key_save", text="Save key", bounds="[40,600][540,700]"),
+        node("key_save", text="Save key", bounds="[40,1240][540,1340]"),
+    ])
+
+    # ---- settings, after a search that matches nothing -------------------------
+    screens_settings_nomatch = screen("settings-nomatch", [
+        node("settings_screen", text="", bounds="[0,0][1080,3000]", clickable="false"),
+        node("provider_search", text="zzzqq", desc="Search providers", bounds="[40,580][1040,680]",
+             cls="android.widget.EditText"),
+        text_node("No provider matches \"zzzqq\". Use the fields below for an endpoint that is "
+                  "not in the catalog.", "[40,700][1040,780]"),
+        text_node("Provider keys", "[40,900][1040,980]"),
+        node("key_provider", text="openrouter", desc="Provider", bounds="[40,1000][1040,1100]",
+             cls="android.widget.EditText"),
+        node("key_value", text="", desc="API key", bounds="[40,1120][1040,1220]",
+             cls="android.widget.EditText"),
+        node("key_save", text="Save key", bounds="[40,1240][540,1340]"),
+    ])
+
+    # ---- settings, after a search that matches OpenRouter ----------------------
+    # The provider row is expanded here, which is where the star checkboxes live.
+    screens_settings_openr = screen("settings-openr", [
+        node("settings_screen", text="", bounds="[0,0][1080,3000]", clickable="false"),
+        node("provider_search", text="openr", desc="Search providers", bounds="[40,580][1040,680]",
+             cls="android.widget.EditText"),
+        text_node("1 of 500 providers shown", "[40,700][1040,760]"),
+        node("provider_openrouter", text="No key stored", bounds="[40,780][600,880]"),
+        text_node("OpenRouter", "[40,780][400,880]"),
+        node("model_star_openrouter_gpt-4o-mini", text="",
+             desc="Show gpt-4o-mini in the chat quick switch", bounds="[620,780][860,880]"),
+        node("provider_connect_openrouter", text="Save key", bounds="[880,780][1040,880]"),
+        text_node("Provider keys", "[40,1100][1040,1180]"),
+        node("key_provider", text="openrouter", desc="Provider", bounds="[40,1200][1040,1300]",
+             cls="android.widget.EditText"),
+        node("key_value", text="", desc="API key", bounds="[40,1320][1040,1420]",
+             cls="android.widget.EditText"),
+        node("key_save", text="Save key", bounds="[40,1440][540,1540]"),
+    ])
+
+    # ---- the one-step activation dialog (item 2): the key and nothing else -----
+    screens_settings_key = screen("settings-key", [
+        text_node("API key for OpenRouter", "[40,600][1040,680]"),
+        text_node("Only the key is asked for here. The base URL and the model list come from "
+                  "the agent provider catalog.", "[40,700][1040,780]"),
+        text_node("API key", "[40,820][400,880]"),
+        node("provider_key_value", text="", desc="API key", bounds="[40,900][1040,1000]",
+             cls="android.widget.EditText"),
+        node("provider_key_save", text="Save key", bounds="[700,1040][1040,1140]"),
+        node("provider_key_cancel", text="Not now", bounds="[400,1040][680,1140]"),
+    ])
+
+    # ---- the quick-switch menu (item 3): only the starred models ---------------
+    screens_chat_menu = screen("chat-menu", [
+        text_node("Starred models", "[40,400][1040,460]"),
+        node("model_pick_0", text="gpt-4o-mini", bounds="[40,480][1040,560]"),
+        node("model_quick_switch_settings", text="Choose models in Settings", bounds="[40,580][1040,660]"),
+    ])
+
+    # ---- the v4 first-run workspace step (item 4) ------------------------------
+    # Two controls and nothing else. The removed controls are NOT here: a build that
+    # put one of them back would show up in R4a's own dump check.
+    screens_workspace = screen("workspace", [
+        text_node("Where your files will live", "[40,300][1040,380]"),
+        node("onboarding_workspace", text="", bounds="[0,0][1080,1920]", clickable="false"),
+        text_node("Workspace folder", "[40,420][1040,480]"),
+        node("onboarding_workspace_path", text=SHARED_WORKSPACE.rsplit("/", 1)[0],
+             bounds="[40,500][1040,560]", clickable="false"),
+        node("onboarding_workspace_pick", text="Choose folder", bounds="[40,700][540,800]"),
+        node("onboarding_workspace_use", text="Use this folder as workspace", bounds="[560,700][1040,800]"),
+        text_node("You can change the folder later in Settings.", "[40,820][1040,880]"),
     ])
 
     for name, body in (("welcome", screens_welcome), ("projects", screens_projects),
                        ("chat", screens_chat), ("answer", screens_answer),
-                       ("files", screens_files), ("settings", screens_settings)):
+                       ("files", screens_files), ("settings", screens_settings),
+                       ("settings-nomatch", screens_settings_nomatch),
+                       ("settings-openr", screens_settings_openr),
+                       ("settings-key", screens_settings_key),
+                       ("chat-menu", screens_chat_menu),
+                       ("workspace", screens_workspace)):
         with open(os.path.join(screens, name + ".xml"), "w", encoding="utf-8") as fh:
             fh.write(body)
 
@@ -140,7 +240,8 @@ def build(root):
     shots_dir = os.path.join(root, "shots")
     os.makedirs(shots_dir, exist_ok=True)
     write_screen_png(os.path.join(shots_dir, "blank.png"), blank=True)
-    for name in ("screen", "answer", "files", "projects", "welcome", "settings"):
+    for name in ("screen", "answer", "files", "projects", "welcome", "settings",
+                 "settings-nomatch", "settings-openr", "settings-key", "chat-menu", "workspace"):
         write_screen_png(os.path.join(shots_dir, name + ".png"))
     return screens, shots_dir
 

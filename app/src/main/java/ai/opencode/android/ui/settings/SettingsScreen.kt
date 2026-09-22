@@ -17,6 +17,8 @@ import ai.opencode.android.ui.common.AppTopBar
 import ai.opencode.android.ui.common.availabilityHeadline
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
+import ai.opencode.android.client.ModelRefCodec
+import ai.opencode.android.client.ProviderCatalog
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +43,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -111,6 +115,23 @@ fun SettingsScreen(
     onClearModel: () -> Unit,
     onSaveKey: (String, String) -> Unit,
     onRevokeKey: (String) -> Unit,
+    // ---- Phase 10 continuation v4 -------------------------------------------------
+    // Every addition is defaulted: the Phase 6 UI gates call this screen directly
+    // with the parameters they care about, and a new control must not break them.
+    /** v4 item 3: star/unstar one model for the chat header's quick switch. */
+    onToggleStar: (String, String, Boolean) -> Unit = { _, _, _ -> },
+    /** v4 item 2: one-step activation of a catalog provider (id, API key). */
+    onConnectProvider: (String, String) -> Unit = { _, _ -> },
+    /** v4 item 2, manual path: (id, display name, base URL, model ids, key). */
+    onAddCustomProvider: (String, String, String, String, String) -> Unit = { _, _, _, _, _ -> },
+    /** v4 items 1 and 4: the workspace folder, and the one action that changes it. */
+    workspacePath: String = "",
+    workspaceVisibleToFileManagers: Boolean = true,
+    workspaceCanGrantAllFilesAccess: Boolean = false,
+    workspacePendingMove: Int = 0,
+    onPickWorkspace: () -> Unit = {},
+    onGrantAllFilesAccess: () -> Unit = {},
+    onMoveWorkspaceProjects: () -> Unit = {},
     onAddMcp: (String, String, Boolean) -> Unit,
     onConnectMcp: (String) -> Unit,
     onDisconnectMcp: (String) -> Unit,
@@ -136,10 +157,12 @@ fun SettingsScreen(
     val sections = remember(
         runtime, state, availability, diagnosticsLines, diagnosticsLoading, storedProviderIds,
         hardwareBacked, appVersion, theme, dynamicColor, providerSetup, permissionPolicy, memory,
+        workspacePath, workspaceVisibleToFileManagers, workspaceCanGrantAllFilesAccess, workspacePendingMove,
     ) {
         listOf(
             "runtime",
             "provider",
+            "workspace",
             "diagnostics",
             "model",
             "keys",
@@ -176,6 +199,15 @@ fun SettingsScreen(
                         providerSetup = providerSetup,
                         connectedCount = state.providers?.connected?.size ?: 0,
                     )
+                    "workspace" -> WorkspaceSection(
+                        path = workspacePath,
+                        visibleToFileManagers = workspaceVisibleToFileManagers,
+                        canGrantAllFilesAccess = workspaceCanGrantAllFilesAccess,
+                        pendingMove = workspacePendingMove,
+                        onPick = onPickWorkspace,
+                        onGrant = onGrantAllFilesAccess,
+                        onMove = onMoveWorkspaceProjects,
+                    )
                     "diagnostics" -> DiagnosticsSection(
                         lines = diagnosticsLines,
                         loading = diagnosticsLoading,
@@ -186,8 +218,11 @@ fun SettingsScreen(
                     "model" -> ModelSection(
                         providers = state.providers,
                         model = state.model,
+                        starred = state.starredModels,
                         onSetModel = onSetModel,
                         onClearModel = onClearModel,
+                        onToggleStar = onToggleStar,
+                        onConnectProvider = onConnectProvider,
                     )
                     "keys" -> KeysSection(
                         providers = state.providers,
@@ -195,6 +230,7 @@ fun SettingsScreen(
                         hardwareBacked = hardwareBacked,
                         onSaveKey = onSaveKey,
                         onRevokeKey = onRevokeKey,
+                        onAddCustomProvider = onAddCustomProvider,
                     )
                     "mcp" -> McpSection(
                         entries = state.mcp,
@@ -392,12 +428,20 @@ private fun DiagnosticsBody(text: String) {
 private fun ModelSection(
     providers: OpenCodeApi.ProviderSnapshot?,
     model: OpenCodeApi.ModelRef?,
+    starred: List<OpenCodeApi.ModelRef>,
     onSetModel: (String, String) -> Unit,
     onClearModel: () -> Unit,
+    onToggleStar: (String, String, Boolean) -> Unit,
+    onConnectProvider: (String, String) -> Unit,
 ) {
     val chat = ChatTheme.chat
+    // v4 item 2: the catalog is hundreds of entries, so it is searched, not scrolled.
+    var query by rememberSaveable { mutableStateOf("") }
+    // v4 item 2: tapping a listed provider asks for the key and nothing else.
+    var connectTarget by remember { mutableStateOf<OpenCodeApi.ProviderEntry?>(null) }
+
     SectionCard(title = stringResource(R.string.settings_section_model)) {
-        val current = if (model == null) "" else "${model.providerID}/${model.modelID}"
+        val current = if (model == null) "" else ModelRefCodec.encode(model)
         KeyValueRow(
             label = stringResource(R.string.settings_model_current),
             value = current.ifEmpty { stringResource(R.string.settings_model_none) },
@@ -416,6 +460,12 @@ private fun ModelSection(
             style = MaterialTheme.typography.labelSmall,
             color = chat.muted,
         )
+        Text(
+            text = stringResource(R.string.settings_model_star_hint, starred.size),
+            style = MaterialTheme.typography.labelSmall,
+            color = chat.muted,
+            modifier = Modifier.semantics { testTag = "settings_star_count" },
+        )
         if (model != null) {
             Spacer(Modifier.height(4.dp))
             TextButton(
@@ -426,16 +476,109 @@ private fun ModelSection(
             }
         }
         Spacer(Modifier.height(6.dp))
-        for (provider in providers.entries) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            label = { Text(stringResource(R.string.settings_providers_search)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().semantics { testTag = "provider_search" },
+        )
+        val shown = remember(providers, query) { ProviderCatalog.search(providers.entries, query) }
+        Spacer(Modifier.height(6.dp))
+        if (shown.isEmpty()) {
+            Text(
+                text = stringResource(R.string.settings_providers_no_match, query),
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.muted,
+                modifier = Modifier.semantics { testTag = "provider_search_empty" },
+            )
+        } else if (query.isNotBlank()) {
+            Text(
+                text = stringResource(R.string.settings_providers_shown, shown.size, providers.entries.size),
+                style = MaterialTheme.typography.labelSmall,
+                color = chat.muted,
+                modifier = Modifier.semantics { testTag = "provider_search_count" },
+            )
+        }
+        val starredKeys = remember(starred) { starred.map { ModelRefCodec.encode(it) }.toSet() }
+        for (provider in shown) {
             ProviderRow(
                 provider = provider,
                 connected = providers.connected.contains(provider.id),
                 selectedProvider = model?.providerID ?: "",
                 selectedModel = model?.modelID ?: "",
+                starredKeys = starredKeys,
                 onSetModel = onSetModel,
+                onToggleStar = onToggleStar,
+                onConnect = { connectTarget = provider },
             )
         }
     }
+
+    val target = connectTarget
+    if (target != null) {
+        ProviderKeyDialog(
+            provider = target,
+            onDismiss = { connectTarget = null },
+            onSave = { key ->
+                onConnectProvider(target.id, key)
+                connectTarget = null
+            },
+        )
+    }
+}
+
+/**
+ * The whole of v4 item 2's one-step activation: a provider the catalog knows needs
+ * an API key and nothing else. The base URL and the model list are the catalog's
+ * business (the app never asks the user to retype what the agent already published),
+ * so this dialog has exactly one field - and it is masked and cleared on save.
+ */
+@Composable
+private fun ProviderKeyDialog(
+    provider: OpenCodeApi.ProviderEntry,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+) {
+    var key by rememberSaveable(provider.id) { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_provider_connect_title, provider.name)) },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(R.string.settings_provider_connect_body),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Spacer(Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = key,
+                    onValueChange = { key = it },
+                    label = { Text(stringResource(R.string.settings_keys_field_label)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth().semantics { testTag = "provider_key_value" },
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSave(key.trim()) },
+                enabled = key.isNotBlank(),
+                modifier = Modifier.semantics { testTag = "provider_key_save" },
+            ) {
+                Text(stringResource(R.string.settings_keys_save))
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.semantics { testTag = "provider_key_cancel" },
+            ) {
+                Text(stringResource(R.string.settings_provider_connect_cancel))
+            }
+        },
+    )
 }
 
 @Composable
@@ -444,7 +587,10 @@ private fun ProviderRow(
     connected: Boolean,
     selectedProvider: String,
     selectedModel: String,
+    starredKeys: Set<String> = emptySet(),
     onSetModel: (String, String) -> Unit,
+    onToggleStar: (String, String, Boolean) -> Unit = { _, _, _ -> },
+    onConnect: (OpenCodeApi.ProviderEntry) -> Unit = {},
 ) {
     val chat = ChatTheme.chat
     var open by rememberSaveable(provider.id) { mutableStateOf(false) }
@@ -485,6 +631,22 @@ private fun ProviderRow(
                     )
                 }
                 StatusPill(text = "${provider.models.size}", color = chat.muted)
+                if (!connected) {
+                    Spacer(Modifier.width(6.dp))
+                    // v4 item 2: the key is the only thing asked for, right here.
+                    // The visible word is short ("Save key"); the accessible name says
+                    // which provider, because a row of identical buttons does not.
+                    val connectLabel = stringResource(R.string.settings_provider_connect, provider.name)
+                    TextButton(
+                        onClick = { onConnect(provider) },
+                        modifier = Modifier.height(36.dp).semantics {
+                            testTag = "provider_connect_${provider.id}"
+                            contentDescription = connectLabel
+                        },
+                    ) {
+                        Text(stringResource(R.string.settings_keys_save))
+                    }
+                }
                 Spacer(Modifier.width(6.dp))
                 Icon(
                     imageVector = if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
@@ -498,7 +660,9 @@ private fun ProviderRow(
                 ModelList(
                     provider = provider,
                     selectedModel = if (selectedProvider == provider.id) selectedModel else "",
+                    starredKeys = starredKeys,
                     onSetModel = onSetModel,
+                    onToggleStar = onToggleStar,
                 )
             }
         }
@@ -510,7 +674,9 @@ private fun ProviderRow(
 private fun ModelList(
     provider: OpenCodeApi.ProviderEntry,
     selectedModel: String,
+    starredKeys: Set<String> = emptySet(),
     onSetModel: (String, String) -> Unit,
+    onToggleStar: (String, String, Boolean) -> Unit = { _, _, _ -> },
 ) {
     val chat = ChatTheme.chat
     Column(
@@ -559,6 +725,24 @@ private fun ModelList(
                 if (model.status.isNotBlank()) {
                     StatusPill(text = model.status, color = chat.muted)
                 }
+                // v4 item 3: "starred" is what the chat header's quick switch shows.
+                // It is a checkbox and not a tap on the row because tapping the row
+                // already means "use this model now" - two different decisions that
+                // must not fight over one gesture.
+                val starred = ModelRefCodec.encode(OpenCodeApi.ModelRef(provider.id, model.id)) in starredKeys
+                val starLabel = stringResource(
+                    if (starred) R.string.settings_model_star_off else R.string.settings_model_star_on,
+                    model.name,
+                )
+                Checkbox(
+                    checked = starred,
+                    onCheckedChange = { onToggleStar(provider.id, model.id, it) },
+                    modifier = Modifier
+                        .semantics {
+                            testTag = "model_star_${provider.id}_${model.id}"
+                            contentDescription = starLabel
+                        },
+                )
             }
         }
     }
@@ -573,10 +757,19 @@ private fun KeysSection(
     hardwareBacked: String,
     onSaveKey: (String, String) -> Unit,
     onRevokeKey: (String) -> Unit,
+    onAddCustomProvider: (String, String, String, String, String) -> Unit = { _, _, _, _, _ -> },
 ) {
     val chat = ChatTheme.chat
     var providerId by rememberSaveable { mutableStateOf("") }
     var apiKey by rememberSaveable { mutableStateOf("") }
+    // v4 item 2, the manual half: a provider the catalog does not list. Kept as a
+    // separate path from the one-step activation above, because it is the only case
+    // where the user has to supply a base URL and model ids themselves.
+    var customId by rememberSaveable { mutableStateOf("") }
+    var customName by rememberSaveable { mutableStateOf("") }
+    var customBaseUrl by rememberSaveable { mutableStateOf("") }
+    var customModels by rememberSaveable { mutableStateOf("") }
+    var customKey by rememberSaveable { mutableStateOf("") }
     SectionCard(
         title = stringResource(R.string.settings_section_keys),
         body = stringResource(R.string.settings_keys_body),
@@ -632,6 +825,80 @@ private fun KeysSection(
             ) {
                 Text(stringResource(R.string.settings_keys_revoke))
             }
+        }
+
+        Spacer(Modifier.height(14.dp))
+        HorizontalDivider(thickness = 1.dp, color = chat.toolBorder)
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = stringResource(R.string.settings_custom_title),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = stringResource(R.string.settings_custom_body),
+            style = MaterialTheme.typography.bodySmall,
+            color = chat.muted,
+        )
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
+            value = customId,
+            onValueChange = { customId = it },
+            label = { Text(stringResource(R.string.settings_custom_id)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().semantics { testTag = "custom_provider_id" },
+        )
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
+            value = customName,
+            onValueChange = { customName = it },
+            label = { Text(stringResource(R.string.settings_custom_name)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().semantics { testTag = "custom_provider_name" },
+        )
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
+            value = customBaseUrl,
+            onValueChange = { customBaseUrl = it },
+            label = { Text(stringResource(R.string.settings_custom_baseurl)) },
+            placeholder = { Text(stringResource(R.string.settings_custom_baseurl)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().semantics { testTag = "custom_provider_baseurl" },
+        )
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
+            value = customModels,
+            onValueChange = { customModels = it },
+            label = { Text(stringResource(R.string.settings_custom_models)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().semantics { testTag = "custom_provider_models" },
+        )
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
+            value = customKey,
+            onValueChange = { customKey = it },
+            label = { Text(stringResource(R.string.settings_keys_field_label)) },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth().semantics { testTag = "custom_provider_key" },
+        )
+        Spacer(Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = {
+                onAddCustomProvider(
+                    customId.trim(),
+                    customName.trim(),
+                    customBaseUrl.trim(),
+                    customModels,
+                    customKey.trim(),
+                )
+                customKey = ""
+            },
+            enabled = customId.isNotBlank() && customBaseUrl.isNotBlank() &&
+                customModels.isNotBlank() && customKey.isNotBlank(),
+            modifier = Modifier.height(46.dp).fillMaxWidth().semantics { testTag = "custom_provider_save" },
+        ) {
+            Text(stringResource(R.string.settings_custom_save))
         }
     }
 }
@@ -864,6 +1131,96 @@ private fun ProviderSection(providerSetup: ProviderSetup, connectedCount: Int) {
 
 /** The permission kinds this screen edits; anything else is left to "ask". */
 private val PERMISSION_KEYS = listOf("bash", "edit", "read", "webfetch", "external_directory")
+
+// ---- workspace (v4 items 1 and 4) ------------------------------------------
+
+/**
+ * The one place the workspace folder is chosen after the first run.
+ *
+ * It is here and not on the Files screen because changing it is a configuration
+ * decision with a consequence the user has to be told about: the projects in the
+ * old folder stop being listed (the app behaves like a terminal that changed
+ * directory). Nothing is moved or deleted by the switch itself - [onPick] resolves
+ * and probes the folder first, and the move, when the user asks for it, is the
+ * explicit "move them" action below.
+ */
+@Composable
+private fun WorkspaceSection(
+    path: String,
+    visibleToFileManagers: Boolean,
+    canGrantAllFilesAccess: Boolean,
+    pendingMove: Int,
+    onPick: () -> Unit,
+    onGrant: () -> Unit,
+    onMove: () -> Unit,
+) {
+    val chat = ChatTheme.chat
+    SectionCard(
+        title = stringResource(R.string.settings_section_workspace),
+        body = stringResource(R.string.settings_workspace_body),
+    ) {
+        KeyValueRow(
+            label = stringResource(R.string.settings_workspace_current),
+            value = path.ifEmpty { stringResource(R.string.settings_model_none) },
+            mono = path.isNotEmpty(),
+        )
+        if (!visibleToFileManagers) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.settings_workspace_hidden),
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.muted,
+                modifier = Modifier.semantics { testTag = "settings_workspace_hidden" },
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(
+                onClick = onPick,
+                modifier = Modifier.height(46.dp).weight(1f).semantics { testTag = "settings_workspace_pick" },
+            ) {
+                Text(stringResource(R.string.settings_workspace_pick))
+            }
+            if (canGrantAllFilesAccess) {
+                OutlinedButton(
+                    onClick = onGrant,
+                    modifier = Modifier.height(46.dp).weight(1f).semantics { testTag = "settings_workspace_grant" },
+                ) {
+                    Text(stringResource(R.string.settings_workspace_grant))
+                }
+            }
+        }
+        if (canGrantAllFilesAccess) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = stringResource(R.string.settings_workspace_access_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.muted,
+            )
+        }
+        if (pendingMove > 0) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = stringResource(R.string.files_storage_pending, pendingMove),
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.attention,
+                modifier = Modifier.semantics { testTag = "settings_workspace_pending" },
+            )
+            TextButton(
+                onClick = onMove,
+                modifier = Modifier.height(44.dp).semantics { testTag = "settings_workspace_move" },
+            ) {
+                Text(stringResource(R.string.files_storage_move_action))
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.settings_workspace_switch_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = chat.muted,
+        )
+    }
+}
 
 @Composable
 private fun PermissionsSection(

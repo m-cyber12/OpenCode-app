@@ -12,6 +12,7 @@ import ai.opencode.android.ui.chat.ChatScreen
 import ai.opencode.android.ui.files.FileNode
 import ai.opencode.android.ui.files.FilesScreen
 import ai.opencode.android.ui.files.OpenFile
+import ai.opencode.android.ui.onboarding.WorkspaceOnboardingScreen
 import ai.opencode.android.runtime.StorageMode
 import ai.opencode.android.ui.chat.SessionPanel
 import ai.opencode.android.ui.chat.TAG_COMPOSER_INPUT
@@ -46,6 +47,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.captureToImage
@@ -111,6 +113,14 @@ class ChatUiGatesTest {
          */
         const val FILES_FIXTURE_PATH =
             "/storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces/gates"
+
+        /**
+         * The folder the v4 workspace step prints and the Settings workspace section
+         * shows. One constant for the same reason FILES_FIXTURE_PATH is one: an
+         * assertion that retypes a path is an assertion that will disagree with the
+         * fixture one day.
+         */
+        const val WORKSPACE_FIXTURE_PATH = "/storage/emulated/0/Documents/OpenCode"
     }
 
     // ---- recorded callbacks -------------------------------------------------
@@ -146,23 +156,25 @@ class ChatUiGatesTest {
     private var welcomeSettings = 0
     private val openedDirs = mutableListOf<String>()
     private val openedFiles = mutableListOf<String>()
-    private val copiedPaths = mutableListOf<String>()
     private val savedCopies = mutableListOf<String>()
     private var upTaps = 0
     private var closedFiles = 0
-    private var publishes = 0
     private var filesBack = 0
     private var allFilesRequests = 0
-    private var folderChoices = 0
-    private var defaultStorageClicks = 0
+    private var workspacePicks = 0
+    private var workspaceUse = 0
+    private val workspacePath = mutableStateOf(WORKSPACE_FIXTURE_PATH)
+    private val onboardingMessage = mutableStateOf("")
+    private var starToggles = 0
+    private var connectCalls = 0
+    private var customProviderCalls = 0
+    private var modelPicks = 0
+    private val pickedModels = mutableListOf<String>()
     private var projectMoves = 0
-    private val publishedLabel = mutableStateOf("")
     private val storageMessage = mutableStateOf("")
     private val storageMode = mutableStateOf(StorageMode.PUBLIC)
     private val storageVisible = mutableStateOf(true)
     private val storageCanGrant = mutableStateOf(false)
-    private val storageCanChoose = mutableStateOf(true)
-    private val storageChosen = mutableStateOf(false)
     private val storagePending = mutableStateOf(0)
 
     // ---- fabrication helpers ------------------------------------------------
@@ -273,6 +285,8 @@ class ChatUiGatesTest {
         serverReachable: Boolean = true,
         draft: String = "",
         attachments: List<OpenCodeApi.Attachment> = emptyList(),
+        model: OpenCodeApi.ModelRef? = null,
+        starred: List<OpenCodeApi.ModelRef> = emptyList(),
     ) = OpenCodeRepository.UiState(
         streaming = true,
         streamStatus = "open",
@@ -286,6 +300,8 @@ class ChatUiGatesTest {
         serverReachable = serverReachable,
         draft = draft,
         attachments = attachments,
+        model = model,
+        starredModels = starred,
     )
 
     // ---- rendering ----------------------------------------------------------
@@ -304,7 +320,7 @@ class ChatUiGatesTest {
      * what the assertions expect - and growing [liveMessages] still recomposes the
      * transcript the way a streaming turn does.
      */
-    private enum class Surface { CHAT, LIVE_CHAT, SESSIONS, PROJECTS, WELCOME, SETTINGS, FILES }
+    private enum class Surface { CHAT, LIVE_CHAT, SESSIONS, PROJECTS, WELCOME, SETTINGS, FILES, ONBOARDING }
 
     private val surface = mutableStateOf(Surface.CHAT)
     private val chatState = mutableStateOf(uiState())
@@ -342,6 +358,7 @@ class ChatUiGatesTest {
                     Surface.WELCOME -> WelcomeSurface()
                     Surface.SETTINGS -> SettingsSurface()
                     Surface.FILES -> FilesSurface()
+                    Surface.ONBOARDING -> OnboardingSurface()
                 }
             }
         }
@@ -371,6 +388,10 @@ class ChatUiGatesTest {
             onOpenSessions = { openSessions++ },
             onOpenProjects = { openProjects++ },
             onOpenSettings = { openSettings++ },
+            onPickModel = { providerId, modelId ->
+                modelPicks++
+                pickedModels.add("$providerId/$modelId")
+            },
             onPermissionReply = { id, response -> replies.add(id to response) },
             onQuestionSubmit = { id, answers -> questionAnswers.add(id to answers) },
             onQuestionSkip = { questionSkips.add(it) },
@@ -401,6 +422,10 @@ class ChatUiGatesTest {
             onOpenSessions = { openSessions++ },
             onOpenProjects = { openProjects++ },
             onOpenSettings = { openSettings++ },
+            onPickModel = { providerId, modelId ->
+                modelPicks++
+                pickedModels.add("$providerId/$modelId")
+            },
             onPermissionReply = { id, response -> replies.add(id to response) },
             onQuestionSubmit = { id, answers -> questionAnswers.add(id to answers) },
             onQuestionSkip = { questionSkips.add(it) },
@@ -446,6 +471,17 @@ class ChatUiGatesTest {
     }
 
     @Composable
+    private fun OnboardingSurface() {
+        WorkspaceOnboardingScreen(
+            folderPath = workspacePath.value,
+            visibleToFileManagers = storageVisible.value,
+            message = onboardingMessage.value,
+            onPickFolder = { workspacePicks++ },
+            onUseFolder = { workspaceUse++ },
+        )
+    }
+
+    @Composable
     private fun FilesSurface() {
         FilesScreen(
             projectName = "gates",
@@ -454,8 +490,6 @@ class ChatUiGatesTest {
             storageVisibleToFileManagers = storageVisible.value,
             storageAppFolderBrowsableByFileManagers = storageVisible.value,
             storageCanGrantAllFilesAccess = storageCanGrant.value,
-            storageCanChooseFolder = storageCanChoose.value,
-            storageHasChosenFolder = storageChosen.value,
             storagePendingMove = storagePending.value,
             storageMessage = storageMessage.value,
             currentPath = filesPath.value,
@@ -463,17 +497,12 @@ class ChatUiGatesTest {
             loading = filesLoading.value,
             error = filesError.value,
             openFile = filesOpen.value,
-            publishLabel = publishedLabel.value,
             onOpenDir = { openedDirs.add(it) },
             onOpenFile = { openedFiles.add(it) },
             onUp = { upTaps++ },
             onCloseFile = { closedFiles++ },
-            onCopyPath = { copiedPaths.add(it) },
             onSaveCopy = { savedCopies.add(it) },
-            onPublish = { publishes++ },
             onRequestAllFilesAccess = { allFilesRequests++ },
-            onChooseStorageFolder = { folderChoices++ },
-            onUseDefaultStorage = { defaultStorageClicks++ },
             onMoveProjects = { projectMoves++ },
             onBack = { filesBack++ },
         )
@@ -485,7 +514,6 @@ class ChatUiGatesTest {
         open: OpenFile? = null,
         loading: Boolean = false,
         error: String = "",
-        publishLabel: String = "",
     ) {
         filesPath.value = path
         filesNodes.clear()
@@ -493,7 +521,6 @@ class ChatUiGatesTest {
         filesOpen.value = open
         filesLoading.value = loading
         filesError.value = error
-        publishedLabel.value = publishLabel
         surface.value = Surface.FILES
         show()
     }
@@ -515,6 +542,16 @@ class ChatUiGatesTest {
             onDynamicColorChange = { },
             onSetModel = { _, _ -> },
             onClearModel = { },
+            onToggleStar = { _, _, _ -> starToggles++ },
+            onConnectProvider = { _, _ -> connectCalls++ },
+            onAddCustomProvider = { _, _, _, _, _ -> customProviderCalls++ },
+            workspacePath = WORKSPACE_FIXTURE_PATH,
+            workspaceVisibleToFileManagers = storageVisible.value,
+            workspaceCanGrantAllFilesAccess = storageCanGrant.value,
+            workspacePendingMove = storagePending.value,
+            onPickWorkspace = { workspacePicks++ },
+            onGrantAllFilesAccess = { allFilesRequests++ },
+            onMoveWorkspaceProjects = { projectMoves++ },
             onSaveKey = { _, _ -> },
             onRevokeKey = { },
             onAddMcp = { _, _, _ -> },
@@ -1358,7 +1395,6 @@ class ChatUiGatesTest {
                 FileNode(name = "main.kt", path = "src/main.kt", isDirectory = false),
                 FileNode(name = "app", path = "src/app", isDirectory = true),
             ),
-            publishLabel = "Published 3 file(s) to the folder you picked",
         )
         audit("files")
         shot("18-settings-a11y.png")
@@ -1537,33 +1573,35 @@ class ChatUiGatesTest {
         rule.waitForIdle()
         val closed = closedFiles == 1
 
-        // publish + copy-path are the ways out to a folder a file manager can open
-        val publishShown = exists("files_publish")
-        rule.onAllNodesWithTag("files_publish")[0].performClick()
-        rule.waitForIdle()
-        val publishWired = publishes == 1
-        rule.onAllNodesWithTag("files_copy_path")[0].performClick()
-        rule.waitForIdle()
-        val copyWired = copiedPaths.contains(rootPath)
+        // ---- v4 items 3 and 4: what the storage screen is NOT --------------------
+        // Every control the brief removed must be gone, not merely hidden: "Copy
+        // path" and "Export a copy" (the workspace folder is a normal folder a file
+        // manager opens since v3, and the export existed to work around a location
+        // the user could not reach), and the "use a folder I choose" / "use the
+        // default location" pair (there is one workspace and it is chosen in
+        // Settings, or on the first-run step).
+        renderFiles(path = "", nodes = emptyList())
+        val noCopyPath = !exists("files_copy_path")
+        val noExport = !exists("files_publish")
+        val noChoose = !exists("files_storage_choose")
+        val noReset = !exists("files_storage_default")
 
         // the empty state is a real state, not a blank screen
         renderFiles(path = "", nodes = emptyList())
         val emptyShown = exists("files_empty")
 
         // ---- storage panel (Phase 10 continuation v3) --------------------------
-        // In the good case the panel names the real location and offers the two
-        // optional routes (pick a folder, export a copy) without nagging about a
+        // In the good case the panel names the real location and does not nag about a
         // permission the user does not need.
         renderFiles(path = "", nodes = emptyList())
         val goodPanelVisible = exists("files_storage_mode") && onScreenText()
             .contains(context.getString(R.string.files_storage_mode_public))
         val goodExplanation = onScreenText().contains(context.getString(R.string.files_location_public))
         val goodNoGrant = !exists("files_storage_grant")
-        val goodHasChoose = exists("files_storage_choose")
-        val goodHasExport = exists("files_publish")
 
-        // In the fallback case the panel says what is wrong, offers the grant AND
-        // the folder picker, and reports pending projects with a move action.
+        // In the fallback case the panel says what is wrong, offers the one repair
+        // that only this screen offers (the grant), and reports pending projects
+        // with the move action.
         storageMode.value = StorageMode.APP_EXTERNAL
         storageVisible.value = false
         storageCanGrant.value = true
@@ -1577,50 +1615,266 @@ class ChatUiGatesTest {
         rule.onAllNodesWithTag("files_storage_grant")[0].performClick()
         rule.waitForIdle()
         val grantWired = allFilesRequests == 1
-        rule.onAllNodesWithTag("files_storage_choose")[0].performClick()
-        rule.waitForIdle()
-        val chooseWired = folderChoices == 1
         rule.onAllNodesWithTag("files_storage_move")[0].performClick()
         rule.waitForIdle()
         val moveWired = projectMoves == 1
         shot("22-files-storage-panel.png")
 
-        // With a chosen folder in effect the panel offers a way back to the default.
+        // With a chosen folder in effect the panel says so and still offers no
+        // way to change it from here: the workspace switch lives in Settings.
         storageMode.value = StorageMode.CHOSEN
         storageVisible.value = true
         storageCanGrant.value = false
         storagePending.value = 0
-        storageChosen.value = true
         storageMessage.value = "moved 2"
         rule.waitForIdle()
         val chosenVisible = onScreenText().contains(context.getString(R.string.files_storage_mode_chosen))
         val messageShown = onScreenText().contains("moved 2")
-        rule.onAllNodesWithTag("files_storage_default")[0].performClick()
-        rule.waitForIdle()
-        val defaultWired = defaultStorageClicks == 1
+        val stillNoChoose = !exists("files_storage_choose")
         // back to the default state so the remaining assertions see a clean panel
         storageMode.value = StorageMode.PUBLIC
-        storageChosen.value = false
         storageMessage.value = ""
         storageCanGrant.value = false
         renderFiles(path = "", nodes = emptyList())
 
         val ok = listed && pathShown && locationCopy && openedDir && upShown && upWorks && openedFile &&
-            viewer && bodyText && saveCopyShown && saveCopyWired && closed && publishShown && publishWired &&
-            copyWired && emptyShown &&
-            goodPanelVisible && goodExplanation && goodNoGrant && goodHasChoose && goodHasExport &&
-            fallbackVisible && fallbackExplained && pendingShown && grantShown && grantWired && chooseWired &&
-            moveWired && chosenVisible && messageShown && defaultWired
+            viewer && bodyText && saveCopyShown && saveCopyWired && closed && emptyShown &&
+            noCopyPath && noExport && noChoose && noReset &&
+            goodPanelVisible && goodExplanation && goodNoGrant &&
+            fallbackVisible && fallbackExplained && pendingShown && grantShown && grantWired &&
+            moveWired && chosenVisible && messageShown && stillNoChoose
         gate(
             "U9",
             ok,
             "listed=$listed pathShown=$pathShown locationCopy=$locationCopy openedDir=$openedDir " +
                 "upShown=$upShown upWorks=$upWorks openedFile=$openedFile viewer=$viewer body=$bodyText " +
-                "saveCopy=$saveCopyShown/$saveCopyWired closed=$closed publish=$publishShown/$publishWired " +
-                "copyPath=$copyWired empty=$emptyShown " +
-                "panel=$goodPanelVisible/$goodExplanation/$goodNoGrant/$goodHasChoose/$goodHasExport " +
+                "saveCopy=$saveCopyShown/$saveCopyWired closed=$closed empty=$emptyShown " +
+                "v4Removed=copyPath:$noCopyPath,export:$noExport,choose:$noChoose,reset:$noReset " +
+                "panel=$goodPanelVisible/$goodExplanation/$goodNoGrant " +
                 "fallback=$fallbackVisible/$fallbackExplained/$pendingShown/$grantShown/$grantWired/" +
-                "$chooseWired/$moveWired chosen=$chosenVisible/$messageShown/$defaultWired",
+                "$moveWired chosen=$chosenVisible/$messageShown/$stillNoChoose",
+        )
+    }
+
+    // ---- U10: the model quick switch (v4 item 3) -----------------------------
+
+    @Test
+    fun u10_quickSwitchOffersOnlyStarredModelsAndPicksInPlace() {
+        val starred = listOf(
+            OpenCodeApi.ModelRef("openrouter", "openai/gpt-4o-mini"),
+            OpenCodeApi.ModelRef("google", "gemini-2.5-flash"),
+        )
+        renderChat(
+            uiState(model = starred[0], starred = starred),
+            AgentAvailability.READY,
+        )
+        val shown = exists("model_quick_switch")
+        val labelNamesCurrent = onScreenText().contains("openrouter/openai/gpt-4o-mini")
+
+        // one tap opens the list: exactly the starred models, no catalog - and the
+        // model id keeps its own slash (openai/gpt-4o-mini is a MODEL id)
+        rule.onAllNodesWithTag("model_quick_switch")[0].performClick()
+        rule.waitForIdle()
+        val menuOpen = exists("model_quick_switch_menu")
+        val listed = countPrefix("model_pick_") == starred.size
+        val idsShown = onScreenText().contains("openai/gpt-4o-mini") &&
+            onScreenText().contains("gemini-2.5-flash")
+        shot("23-model-quick-switch.png")
+
+        // picking one calls back with the two halves, and does NOT require Settings
+        rule.onAllNodesWithTag("model_pick_1")[0].performClick()
+        rule.waitForIdle()
+        val picked = modelPicks == 1 && pickedModels.contains("google/gemini-2.5-flash")
+        val noSettingsTrip = openSettings == 0
+
+        // with nothing starred the menu says what to do and offers the one place
+        // where models are starred
+        renderChat(uiState(model = starred[0], starred = emptyList()), AgentAvailability.READY)
+        rule.onAllNodesWithTag("model_quick_switch")[0].performClick()
+        rule.waitForIdle()
+        val emptyExplained = exists("model_quick_switch_empty") &&
+            onScreenText().contains(context.getString(R.string.chat_model_empty))
+        rule.onAllNodesWithTag("model_quick_switch_settings")[0].performClick()
+        rule.waitForIdle()
+        val settingsOffered = openSettings == 1
+
+        val settled = modelPicks == 1 && pickedModels.size == 1
+        gate(
+            "U10",
+            shown && labelNamesCurrent && menuOpen && listed && idsShown && picked && noSettingsTrip &&
+                emptyExplained && settingsOffered && settled,
+            "shown=$shown label=$labelNamesCurrent menu=$menuOpen listed=$listed/$idsShown " +
+                "picked=$picked/$pickedModels settingsTrip=$noSettingsTrip " +
+                "emptyExplained=$emptyExplained offered=$settingsOffered",
+        )
+    }
+
+    // ---- U11: provider search and the two activation paths (v4 item 2) --------
+
+    @Test
+    fun u11_providerSearchActivatesWithAKeyOnlyAndKeepsTheManualPath() {
+        val providers = OpenCodeApi.ProviderSnapshot(
+            allIds = listOf("openrouter", "openai", "opencode", "anthropic"),
+            connected = listOf("opencode"),
+            defaultModel = mapOf(
+                "openrouter" to "openai/gpt-4o-mini",
+                "openai" to "gpt-4o",
+                "opencode" to "big-pickle",
+                "anthropic" to "claude-sonnet-4",
+            ),
+            entries = listOf(
+                OpenCodeApi.ProviderEntry("openrouter", "OpenRouter", listOf(OpenCodeApi.ModelEntry("openai/gpt-4o-mini", "GPT-4o mini", "" ))),
+                OpenCodeApi.ProviderEntry("openai", "OpenAI", listOf(OpenCodeApi.ModelEntry("gpt-4o", "GPT-4o", "" ))),
+                OpenCodeApi.ProviderEntry("opencode", "OpenCode", listOf(OpenCodeApi.ModelEntry("big-pickle", "Big Pickle", "" ))),
+                OpenCodeApi.ProviderEntry("anthropic", "Anthropic", listOf(OpenCodeApi.ModelEntry("claude-sonnet-4", "Claude Sonnet 4", "" ))),
+            ),
+        )
+        renderSettings(
+            uiState(
+                model = OpenCodeApi.ModelRef("opencode", "big-pickle"),
+                starred = listOf(OpenCodeApi.ModelRef("openrouter", "openai/gpt-4o-mini")),
+            ),
+        )
+        settingsState.value = settingsState.value.copy(providers = providers)
+        rule.waitForIdle()
+
+        rule.onAllNodesWithTag("settings_list")[0].performScrollToNode(hasTestTag("provider_search"))
+        rule.waitForIdle()
+        val searchShown = exists("provider_search")
+
+        // search narrows the catalog: "openr" leaves one of the four providers
+        rule.onAllNodesWithTag("provider_search")[0].performTextInput("openr")
+        rule.waitForIdle()
+        // the two providers that do not match are gone from the list, not just
+        // scrolled away - that is the whole point of the search
+        val filtered = exists("provider_openrouter") && !exists("provider_openai") &&
+            !exists("provider_anthropic")
+        val countLine = onScreenText().contains(context.getString(R.string.settings_providers_shown, 1, 4))
+        shot("24-provider-search.png")
+
+        // tapping the connect action on a listed provider asks for the key only
+        rule.onAllNodesWithTag("provider_connect_openrouter")[0].performScrollTo()
+        rule.waitForIdle()
+        rule.onAllNodesWithTag("provider_connect_openrouter")[0].performClick()
+        rule.waitForIdle()
+        val dialogShown = exists("provider_key_value") && exists("provider_key_save")
+        val onlyKeyAsked = onScreenText()
+            .contains(context.getString(R.string.settings_provider_connect_body))
+        rule.onAllNodesWithTag("provider_key_value")[0].performTextInput("sk-gate")
+        rule.waitForIdle()
+        rule.onAllNodesWithTag("provider_key_save")[0].performClick()
+        rule.waitForIdle()
+        val activated = connectCalls == 1
+
+        // starring: the checkbox reflects the starred list and reports the toggle
+        val starTag = "model_star_openrouter_openai/gpt-4o-mini"
+        val starShown = exists(starTag)
+        val starChecked = starShown &&
+            rule.onAllNodesWithTag(starTag)[0].fetchSemanticsNode()
+                .config.getOrNull(SemanticsProperties.ToggleableState) == ToggleableState.On
+        if (starShown) {
+            rule.onAllNodesWithTag(starTag)[0].performScrollTo()
+            rule.waitForIdle()
+            rule.onAllNodesWithTag(starTag)[0].performClick()
+            rule.waitForIdle()
+        }
+        val starWired = starToggles == 1
+
+        // the manual path for a provider no catalog knows: four fields plus the key
+        rule.onAllNodesWithTag("settings_list")[0].performScrollToNode(hasTestTag("custom_provider_id"))
+        rule.waitForIdle()
+        val customShown = exists("custom_provider_id") && exists("custom_provider_baseurl") &&
+            exists("custom_provider_models") && exists("custom_provider_save")
+        rule.onAllNodesWithTag("custom_provider_id")[0].performTextInput("9router")
+        rule.onAllNodesWithTag("custom_provider_baseurl")[0].performTextInput("http://192.168.1.10:20128/v1")
+        rule.onAllNodesWithTag("custom_provider_models")[0].performTextInput("my-model")
+        rule.onAllNodesWithTag("custom_provider_key")[0].performTextInput("sk-custom")
+        rule.waitForIdle()
+        rule.onAllNodesWithTag("custom_provider_save")[0].performScrollTo()
+        rule.waitForIdle()
+        rule.onAllNodesWithTag("custom_provider_save")[0].performClick()
+        rule.waitForIdle()
+        val customSaved = customProviderCalls == 1
+        shot("25-custom-provider.png")
+
+        gate(
+            "U11",
+            searchShown && filtered && countLine && dialogShown && onlyKeyAsked && activated &&
+                starShown && starChecked && starWired && customShown && customSaved,
+            "search=$searchShown/$filtered/$countLine keyOnly=$dialogShown/$onlyKeyAsked " +
+                "activated=$activated star=$starShown/$starChecked/$starWired " +
+                "custom=$customShown/$customSaved",
+        )
+    }
+
+    // ---- U12: the workspace step and the Settings switch (v4 items 1 and 4) ---
+
+    @Test
+    fun u12_workspaceStepHasOneFolderAndOneActionAndSettingsOwnsTheSwitch() {
+        workspacePath.value = WORKSPACE_FIXTURE_PATH
+        onboardingMessage.value = ""
+        surface.value = Surface.ONBOARDING
+        show()
+
+        val screenShown = exists("onboarding_workspace")
+        val pathShown = onScreenText().contains(WORKSPACE_FIXTURE_PATH)
+        val pickerShown = exists("onboarding_workspace_pick")
+        val oneAction = exists("onboarding_workspace_use")
+        // the controls the brief removed must not exist on this screen either
+        val noCopyPath = !exists("files_copy_path") && !exists("files_publish")
+        val noDefaultPair = !exists("files_storage_choose") && !exists("files_storage_default")
+        shot("26-workspace-onboarding.png")
+
+        rule.onAllNodesWithTag("onboarding_workspace_pick")[0].performClick()
+        rule.waitForIdle()
+        val pickWired = workspacePicks == 1
+        rule.onAllNodesWithTag("onboarding_workspace_use")[0].performClick()
+        rule.waitForIdle()
+        val useWired = workspaceUse == 1
+
+        // a refusal is reported on the screen that asked
+        onboardingMessage.value = context.getString(
+            R.string.onboarding_workspace_unusable,
+            WORKSPACE_FIXTURE_PATH,
+        )
+        rule.waitForIdle()
+        val messageShown = exists("onboarding_workspace_message") &&
+            onScreenText().contains(onboardingMessage.value)
+
+        // the fallback location says so, and the note is not a second action
+        storageVisible.value = false
+        rule.waitForIdle()
+        val hiddenExplained = exists("onboarding_workspace_hidden")
+        val stillTwoControls = countTag("onboarding_workspace_pick") == 1 &&
+            countTag("onboarding_workspace_use") == 1
+        storageVisible.value = true
+
+        // Settings carries the switch: the picker, the repair for a lost grant, the
+        // move for projects left behind, and the honest note about what switching hides
+        renderSettings(uiState())
+        storageCanGrant.value = true
+        storagePending.value = 2
+        rule.waitForIdle()
+        rule.onAllNodesWithTag("settings_list")[0].performScrollToNode(hasTestTag("settings_workspace_pick"))
+        rule.waitForIdle()
+        val settingsHasFolder = onScreenText().contains(WORKSPACE_FIXTURE_PATH)
+        val settingsPicker = exists("settings_workspace_pick")
+        val settingsGrant = exists("settings_workspace_grant")
+        val settingsMove = exists("settings_workspace_move")
+        val switchNote = onScreenText().contains(context.getString(R.string.settings_workspace_switch_note))
+        shot("27-settings-workspace.png")
+        storageCanGrant.value = false
+        storagePending.value = 0
+
+        gate(
+            "U12",
+            screenShown && pathShown && pickerShown && oneAction && noCopyPath && noDefaultPair &&
+                pickWired && useWired && messageShown && hiddenExplained && stillTwoControls &&
+                settingsHasFolder && settingsPicker && settingsGrant && settingsMove && switchNote,
+            "onboarding=$screenShown/$pathShown/$pickerShown/$oneAction " +
+                "v4Removed=$noCopyPath/$noDefaultPair wired=$pickWired/$useWired " +
+                "message=$messageShown hidden=$hiddenExplained controls=$stillTwoControls " +
+                "settings=$settingsHasFolder/$settingsPicker/$settingsGrant/$settingsMove note=$switchNote",
         )
     }
 }
