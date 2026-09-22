@@ -23,13 +23,27 @@ HEAD = ("<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n"
 TAIL = "</hierarchy>\n"
 
 
+def esc(value):
+    """Escape a string the way the platform escapes it inside a dump attribute.
+
+    Not decoration: the app's own copy contains double quotes ("No provider matches
+    \"zzzqq\"."), and a raw quote inside a double-quoted XML attribute makes the whole
+    dump unparsable. The reader then reports UI_DUMP_UNREADABLE and every gate that
+    reads that screen sees nothing - which is how this went unnoticed until the
+    self-check learned to read the fixtures through the same reader the driver uses.
+    """
+    return (value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                 .replace('"', "&quot;"))
+
+
 def node(nid, text="", desc="", bounds="[0,0][1,1]", cls="android.widget.Button",
          clickable="true", enabled="true", pkg=PKG):
     return ('  <node index="0" text="%s" resource-id="%s" class="%s" package="%s" '
             'content-desc="%s" checkable="false" checked="false" clickable="%s" '
             'enabled="%s" focusable="true" focused="false" scrollable="false" '
             'long-clickable="false" password="false" selected="false" '
-            'bounds="%s" />\n') % (text, nid, cls, pkg, desc, clickable, enabled, bounds)
+            'bounds="%s" />\n') % (esc(text), esc(nid), esc(cls), esc(pkg), esc(desc),
+                                    clickable, enabled, bounds)
 
 
 def text_node(text, bounds, pkg=PKG, desc=""):

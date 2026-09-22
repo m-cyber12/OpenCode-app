@@ -31,7 +31,9 @@ import importlib.util
 import os
 import re
 import sys
+import subprocess
 import tempfile
+import xml.etree.ElementTree as xml_mod
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -136,6 +138,43 @@ for name, xml in screens.items():
                 overlaps.append("%s: %s vs %s" % (name, a[4][:60], b[4][:60]))
 check(not overlaps, "fixtures: no overlapping clickable nodes",
       "; ".join(overlaps[:3]) + (" (+%d more)" % (len(overlaps) - 3) if len(overlaps) > 3 else ""))
+
+# ---------------------------------------------------------------------------
+# 3b. every fixture is a dump the READER can parse
+#     (a fixture the reader rejects is a fake phone that lies about the driver: the
+#     provider-search wait timed out for 20s on a screen that was on screen, and the
+#     stage still passed - through a stale read. The cause was a raw double quote in
+#     an attribute: the app's no-match copy contains "zzzqq" in quotes, and unescaped
+#     quotes make the whole dump unparsable.)
+# ---------------------------------------------------------------------------
+unparsable = []
+for name, xml in screens.items():
+    try:
+        root = xml_mod.fromstring(xml)
+    except Exception as exc:  # noqa: BLE001 - the point is to report the fixture
+        unparsable.append("%s: %s" % (name, exc))
+        continue
+    if not list(root.iter("node")):
+        unparsable.append("%s: parses but describes no nodes" % name)
+check(not unparsable, "fixtures: every screen parses as XML with nodes in it",
+      "; ".join(unparsable[:3]))
+
+# And through the READER ITSELF (the one the driver uses), not just an XML parser:
+# the reader is what turns a dump into "what is on screen", so a fixture it rejects
+# is a screen the driver can never see.
+reader = os.path.join(HERE, "p10d-ui.py")
+if os.path.exists(reader):
+    reader_bad = []
+    for name in sorted(screens):
+        path = os.path.join(tmp, "screens", name + ".xml")
+        proc = subprocess.run([sys.executable, reader, path, "nodes"],
+                              capture_output=True, text=True)
+        if proc.returncode != 0 or "UI_DUMP_UNREADABLE" in proc.stdout:
+            reader_bad.append("%s (rc=%d)" % (name, proc.returncode))
+    check(not reader_bad, "fixtures: the driver's own reader parses every screen",
+          "rejected: %s" % reader_bad[:4])
+else:
+    notes.append("p10d-ui.py not found; the reader half of check 3b did not run")
 
 # ---------------------------------------------------------------------------
 # 4. the v4 driver stages can actually see what they assert
