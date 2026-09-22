@@ -1,5 +1,5 @@
-[2026-09-22T21:12:32Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=1.18.23-phase10 versionCode=8
-[2026-09-22T21:12:32Z] === gradle :app:assembleRelease :app:bundleRelease ===
+[2026-09-22T21:55:28Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=1.18.23-phase10 versionCode=8
+[2026-09-22T21:55:28Z] === gradle :app:assembleRelease :app:bundleRelease ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
@@ -11,10 +11,10 @@ RELEASE SIGNING: not configured -> release artifacts are UNSIGNED (CI behavior; 
 
 > Task :app:verifyAndStagePayload
 PAYLOAD STAGING: -PskipPayload=null SKIP_PAYLOAD=null
-PAYLOAD_SOURCE runtime-payload.tar.gz=19987767B runtime-manifest.json=187351B
+PAYLOAD_SOURCE runtime-payload.tar.gz=19987973B runtime-manifest.json=187351B
 Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/assets / /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/jniLibs
-STAGED_ASSETS n=2 runtime-manifest.json(187351B), runtime-payload.tar.gz(19987767B)
-STAGED_JNILIBS n=12 x86_64/libbun.so, arm64-v8a/libbun.so, x86_64/libchildshim.so, arm64-v8a/libchildshim.so, x86_64/libexecshim.so, arm64-v8a/libexecshim.so, x86_64/libgit.so, arm64-v8a/libgit.so, x86_64/librg.so, arm64-v8a/librg.so, x86_64/libseccompshim.so, arm64-v8a/libseccompshim.so
+STAGED_ASSETS n=2 runtime-manifest.json(187351B), runtime-payload.tar.gz(19987973B)
+STAGED_JNILIBS n=12 arm64-v8a/libbun.so, x86_64/libbun.so, arm64-v8a/libchildshim.so, x86_64/libchildshim.so, arm64-v8a/libexecshim.so, x86_64/libexecshim.so, arm64-v8a/libgit.so, x86_64/libgit.so, arm64-v8a/librg.so, x86_64/librg.so, arm64-v8a/libseccompshim.so, x86_64/libseccompshim.so
 
 > Task :app:preBuild
 > Task :app:preReleaseBuild
@@ -52,7 +52,6 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:stripReleaseDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libbun.so, libchildshim.so, libexecshim.so, libgit.so, librg.so, libseccompshim.so.
 
-> Task :app:mergeExtDexRelease
 > Task :app:mergeReleaseAssets
 > Task :app:extractReleaseNativeSymbolTables
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
@@ -63,10 +62,12 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:writeReleaseAppMetadata
 > Task :app:writeReleaseSigningConfigVersions
 > Task :app:processApplicationManifestReleaseForBundle
+> Task :app:mergeExtDexRelease
 > Task :app:configureReleaseDependencies
 > Task :app:parseReleaseIntegrityConfig
 > Task :app:bundleReleaseResources
 > Task :app:compressReleaseAssets
+
 > Task :app:compileReleaseKotlin
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
@@ -89,26 +90,26 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 > Task :app:mergeDexRelease
 > Task :app:compileReleaseArtProfile
 > Task :app:buildReleasePreBundle
-> Task :app:packageReleaseBundle
 > Task :app:packageRelease
 > Task :app:createReleaseApkListingFileRedirect
+> Task :app:packageReleaseBundle
 > Task :app:lintVitalAnalyzeRelease
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
+> Task :app:assembleRelease
 > Task :app:signReleaseBundle
 > Task :app:produceReleaseBundleIdeListingFile
 > Task :app:createReleaseBundleListingFileRedirect
 > Task :app:bundleRelease
-> Task :app:lintVitalReportRelease
-> Task :app:lintVitalRelease
-> Task :app:assembleRelease
 
-BUILD SUCCESSFUL in 2m 7s
+BUILD SUCCESSFUL in 1m 31s
 60 actionable tasks: 56 executed, 4 from cache
-[2026-09-22T21:14:40Z] apk=app-release-unsigned.apk (131179389 bytes)
-[2026-09-22T21:14:40Z] aab=app-release.aab (119193894 bytes)
-[2026-09-22T21:14:40Z] RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
-[2026-09-22T21:14:40Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=169 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
-[2026-09-22T21:14:40Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
-[2026-09-22T21:14:40Z] RELEASE_AAB PASS :: CONTENTS entries=174 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
-[2026-09-22T21:14:41Z] sha256:
-2afc94b9cdc340e7fe35a209fff18ec0a374e57f383f28ec8f761edb3759ae34  ./app-release-unsigned.apk
-11dd6148982060f6c3fa51c8de102f08a9e8a8f86ee3bdb8393caaa861e03764  ./app-release.aab
+[2026-09-22T21:57:00Z] apk=app-release-unsigned.apk (131181633 bytes)
+[2026-09-22T21:57:00Z] aab=app-release.aab (119196136 bytes)
+[2026-09-22T21:57:00Z] RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
+[2026-09-22T21:57:00Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=169 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
+[2026-09-22T21:57:00Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
+[2026-09-22T21:57:00Z] RELEASE_AAB PASS :: CONTENTS entries=174 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
+[2026-09-22T21:57:00Z] sha256:
+792a64e082f39665386a18bc36b49cfc9222afcae8b7e3bf508c70e1886ee669  ./app-release-unsigned.apk
+3cc33e06b960c1bd95a5d39635d51a77dc00ccb4784261ac57125df8527061fe  ./app-release.aab

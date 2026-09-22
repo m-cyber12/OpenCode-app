@@ -1,29 +1,29 @@
-[2026-09-22T21:08:57Z] device: Android 14 (API 34); package=io.github.mcyber12.opencode.debug
-[2026-09-22T21:08:57Z] live project root: /storage/emulated/0/Documents/OpenCode (source: app-reported (W4 gate))
-[2026-09-22T21:08:57Z] --- non-root shell, live project root (/storage/emulated/0/Documents/OpenCode) ---
+[2026-09-22T21:52:54Z] device: Android 14 (API 34); package=io.github.mcyber12.opencode.debug
+[2026-09-22T21:52:54Z] live project root: /storage/emulated/0/Documents/OpenCode (source: app-reported (W4 gate))
+[2026-09-22T21:52:54Z] --- non-root shell, live project root (/storage/emulated/0/Documents/OpenCode) ---
 total 24
-drwxrws--- 2 u0_a176 media_rw 4096 2026-09-22 21:08 1
-drwxrws--- 2 u0_a176 media_rw 4096 2026-09-22 21:08 p10w6
-drwxrws--- 2 u0_a176 media_rw 4096 2026-09-22 21:08 w4-storage-1790111335134
-[2026-09-22T21:08:57Z] --- non-root shell, the app-private root ---
+drwxrws--- 2 u0_a185 media_rw 4096 2026-09-22 21:52 1
+drwxrws--- 2 u0_a185 media_rw 4096 2026-09-22 21:52 p10w6
+drwxrws--- 2 u0_a185 media_rw 4096 2026-09-22 21:52 w4-storage-1790113972816
+[2026-09-22T21:52:54Z] --- non-root shell, the app-private root ---
 ls: /data/data/io.github.mcyber12.opencode.debug/files/workspaces: Permission denied
 P10D_VISIBILITY_LOCATION PASS :: the project root exists and holds 3 project(s): /storage/emulated/0/Documents/OpenCode (source: app-reported (W4 gate), Android 14)
-[2026-09-22T21:08:57Z] --- project listing (/storage/emulated/0/Documents/OpenCode/w4-storage-1790111335134) ---
+[2026-09-22T21:52:54Z] --- project listing (/storage/emulated/0/Documents/OpenCode/w4-storage-1790113972816) ---
 total 8
--rw-rw---- 1 u0_a176 media_rw 26 2026-09-22 21:08 p10-visible.txt
-P10D_VISIBILITY_SHELL_LIST PASS :: a non-root shell lists the project directory (/storage/emulated/0/Documents/OpenCode/w4-storage-1790111335134): 2 lines
-P10D_VISIBILITY_SHELL_READ PASS :: read p10-visible.txt from outside the app: 'P10_VISIBLE_1790111335141' (matches /P10_VISIBLE_/)
+-rw-rw---- 1 u0_a185 media_rw 26 2026-09-22 21:52 p10-visible.txt
+P10D_VISIBILITY_SHELL_LIST PASS :: a non-root shell lists the project directory (/storage/emulated/0/Documents/OpenCode/w4-storage-1790113972816): 2 lines
+P10D_VISIBILITY_SHELL_READ PASS :: read p10-visible.txt from outside the app: 'P10_VISIBLE_1790113972817' (matches /P10_VISIBLE_/)
 P10D_VISIBILITY_PRIVATE_ROOT_NOT_LIVE PASS :: the live project root is outside /data: /storage/emulated/0/Documents/OpenCode
 P10D_VISIBILITY_SHARED_ROOT PASS :: the project root is on shared storage and outside Android/data: /storage/emulated/0/Documents/OpenCode (Android 14)
 P10D_VISIBILITY_DOCUMENTS_PROVIDER SKIP :: this device does not let a shell query the Documents provider (Error while accessing provider:com.android.externalstorage.documents)
-P10D_VISIBILITY_SHELL_WRITE PASS :: a file written by the non-root shell in /storage/emulated/0/Documents/OpenCode/w4-storage-1790111335134 was readable back: the directory is shared, ordinary storage
+P10D_VISIBILITY_SHELL_WRITE PASS :: a file written by the non-root shell in /storage/emulated/0/Documents/OpenCode/w4-storage-1790113972816 was readable back: the directory is shared, ordinary storage
 P10D_VISIBILITY_SHELL_BASELINE PASS :: baseline holds: an unprivileged shell cannot read /data/data/io.github.mcyber12.opencode.debug at all, so the PASSs above are real
-workspace visibility 2026-09-22T21:08:58Z pkg=io.github.mcyber12.opencode.debug android=14 api=34
+workspace visibility 2026-09-22T21:52:55Z pkg=io.github.mcyber12.opencode.debug android=14 api=34
 live_root=/storage/emulated/0/Documents/OpenCode source=app-reported (W4 gate)
 shared_storage_candidate=/storage/emulated/0/Documents/OpenCode
 app_external_candidate=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/workspaces
 app_external_listing=1 lines
 internal_root=/data/data/io.github.mcyber12.opencode.debug/files/workspaces
-project=/storage/emulated/0/Documents/OpenCode/w4-storage-1790111335134 expect=p10-visible.txt expect_content=P10_VISIBLE_
+project=/storage/emulated/0/Documents/OpenCode/w4-storage-1790113972816 expect=p10-visible.txt expect_content=P10_VISIBLE_
 pass=7 fail=0 skip=1
-[2026-09-22T21:08:58Z] pass=7 fail=0 skip=1 (log: /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/workspace/visibility/workspace-visibility.log)
+[2026-09-22T21:52:55Z] pass=7 fail=0 skip=1 (log: /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/workspace/visibility/workspace-visibility.log)
