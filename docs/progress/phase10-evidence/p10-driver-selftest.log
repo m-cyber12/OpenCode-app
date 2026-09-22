@@ -1,4 +1,12 @@
 === 90-real-device-signed.sh self-test (fake phone, no device needed) ===
+PASS fixtures: 11 screens, exactly the expected set :: missing=[] extra=[]
+PASS removed controls: none of 4 is served by any fixture :: served anyway: []
+PASS fixtures: no overlapping clickable nodes
+PASS v4 driver stages: every asserted label is producible from a fixture :: not in any fixture: []
+PASS driver needles: every NEEDLE_* group matches some fixture
+PASS gates: 57 tag lookups (38 distinct) resolve to a main-source testTag :: dangling: []
+
+SELFCHECK PASS (fixtures, driver needles and gate tags agree)
 
 --- scenario: happy path ---
   ok   driver exits 0 when every gate passes (rc=0)
@@ -29,7 +37,7 @@
   ok   model marker written for the x86_64 carry-forward
   ok   a POSIX host says so, instead of leaving the path question open
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-185553/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-192440/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
   ok   v4: the storage screen no longer shows copy-path, export or the folder choosers
@@ -47,7 +55,7 @@
   ok   and it does NOT report the step as skipped in the flow that shows it
   ok   no FAIL line anywhere in the first-run scenario
   ok   no diagnosis lines in the first-run scenario
-  FAIL the driver logged the single action it used
+  ok   the driver logged the single action it used
 
 --- scenario: locked device ---
   ok   a locked device is a non-zero exit (rc=1)
@@ -64,7 +72,7 @@
   ok   the run passes with tag-less dumps (rc=0)
   ok   FIRST_RUN PASS on content alone
   ok   the project was created by content-matched taps
-  FAIL the live turn ran on content alone
+  ok   the live turn ran on content alone
   ok   no FAIL line anywhere in the tag-less run
   ok   the fixture really did serve dumps with no tags (evidence, not setup)
 
@@ -148,7 +156,7 @@
   ok   run.log says the whole run is on the temp-dir path form
   ok   the inline dump script read the screen too (this gate said 'no path shown' when the dump path was handed over unconverted)
   ok   the screenshot validator ran on copies in that same directory
-  FAIL and the whole run reached the live turn
+  ok   and the whole run reached the live turn
 
-=== driver self-test: pass=116 fail=4 ===
+=== driver self-test: pass=119 fail=1 ===
 SELFTEST FAIL

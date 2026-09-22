@@ -1,9 +1,9 @@
-=== PHASE 10 START 2026-09-22T18:55:35Z ===
+=== PHASE 10 START 2026-09-22T19:24:22Z ===
 ########## 1/9 static checks (phase 9 invariants + phase 10 release invariants) ##########
-=== Phase 10 static checks 2026-09-22T18:55:36Z ===
+=== Phase 10 static checks 2026-09-22T19:24:22Z ===
 
 === phase 9 static checks (not weakened) ===
-=== Phase 9 static checks 2026-09-22T18:55:36Z ===
+=== Phase 9 static checks 2026-09-22T19:24:22Z ===
 OK   bash -n on 42 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8/phase9 driver
@@ -105,7 +105,7 @@ PASS a visible match is not flagged (rc=0) (rc=0 out='1020 1740')
 PASS has still finds an off-screen node (a tag being present is news) (rc=0)
 PASS a device that marks everything not-shown does not blind the reader (rc=0)
 PASS attrs reports the attribute set and the hidden count (rc=0 out='nodes=4 2 node(s) marked shown=false\nbounds:4 class:4 clickable:4 content-desc:4 enabled:4 index:4 package:4 resource-id:4 shown:4 text:4')
-PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmp4546863q/broken.xml')
+PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmp0qrymjvg/broken.xml')
 p10d-ui selftest: 20 checks, 0 failed
 SELFTEST PASS
 OK   uiautomator dump reader self-test (tap targets, disabled states, diagnostics)
@@ -122,6 +122,17 @@ NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/
 check-compose-icons: 65 kotlin files, 0 not-in-core, 5 deprecated references
 OK   compose icon availability (material-icons-core only)
 
+=== harness/app contract (v4 fixtures, driver needles, gate tags) ===
+PASS fixtures: 11 screens, exactly the expected set :: missing=[] extra=[]
+PASS removed controls: none of 4 is served by any fixture :: served anyway: []
+PASS fixtures: no overlapping clickable nodes
+PASS v4 driver stages: every asserted label is producible from a fixture :: not in any fixture: []
+PASS driver needles: every NEEDLE_* group matches some fixture
+PASS gates: 57 tag lookups (38 distinct) resolve to a main-source testTag :: dangling: []
+
+SELFCHECK PASS (fixtures, driver needles and gate tags agree)
+OK   harness/app contract (v4 fixtures, driver needles, gate tags)
+
 === phase10 workflow template present + no signing secret is pulled in ===
 OK   phase10 workflow template present + no signing secret is pulled in
 
@@ -132,6 +143,14 @@ OK   no infinite animations in the UI layer (Compose test clock)
 P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, published identity, store package) + apk inspector self-test
 ########## 1b/9 the real-device driver, run against a fake phone (self-test) ##########
 === 90-real-device-signed.sh self-test (fake phone, no device needed) ===
+PASS fixtures: 11 screens, exactly the expected set :: missing=[] extra=[]
+PASS removed controls: none of 4 is served by any fixture :: served anyway: []
+PASS fixtures: no overlapping clickable nodes
+PASS v4 driver stages: every asserted label is producible from a fixture :: not in any fixture: []
+PASS driver needles: every NEEDLE_* group matches some fixture
+PASS gates: 57 tag lookups (38 distinct) resolve to a main-source testTag :: dangling: []
+
+SELFCHECK PASS (fixtures, driver needles and gate tags agree)
 
 --- scenario: happy path ---
   ok   driver exits 0 when every gate passes (rc=0)
@@ -162,7 +181,7 @@ P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, 
   ok   model marker written for the x86_64 carry-forward
   ok   a POSIX host says so, instead of leaving the path question open
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-185553/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-192440/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
   ok   v4: the storage screen no longer shows copy-path, export or the folder choosers
@@ -180,7 +199,7 @@ P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, 
   ok   and it does NOT report the step as skipped in the flow that shows it
   ok   no FAIL line anywhere in the first-run scenario
   ok   no diagnosis lines in the first-run scenario
-  FAIL the driver logged the single action it used
+  ok   the driver logged the single action it used
 
 --- scenario: locked device ---
   ok   a locked device is a non-zero exit (rc=1)
@@ -197,7 +216,7 @@ P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, 
   ok   the run passes with tag-less dumps (rc=0)
   ok   FIRST_RUN PASS on content alone
   ok   the project was created by content-matched taps
-  FAIL the live turn ran on content alone
+  ok   the live turn ran on content alone
   ok   no FAIL line anywhere in the tag-less run
   ok   the fixture really did serve dumps with no tags (evidence, not setup)
 
@@ -281,9 +300,9 @@ P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, 
   ok   run.log says the whole run is on the temp-dir path form
   ok   the inline dump script read the screen too (this gate said 'no path shown' when the dump path was handed over unconverted)
   ok   the screenshot validator ran on copies in that same directory
-  FAIL and the whole run reached the live turn
+  ok   and the whole run reached the live turn
 
-=== driver self-test: pass=116 fail=4 ===
+=== driver self-test: pass=119 fail=1 ===
 SELFTEST FAIL
 STEP_FAILED rc=1: bash '/home/runner/work/OpenCode-app/OpenCode-app/phase10/scripts/test-90-real-device.sh' > '/home/runner/work/OpenCode-app/OpenCode-app/phase10/out/driver-selftest.log' 2>&1; rc=$?; cat '/home/runner/work/OpenCode-app/OpenCode-app/phase10/out/driver-selftest.log'; exit $rc
 P10_DRIVER_SELFTEST FAIL: see p10-driver-selftest.log - do NOT hand this driver to a phone
@@ -336,26 +355,56 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:javaPreCompileDebug
 > Task :app:processDebugAndroidTestManifest
 > Task :app:generateDebugAndroidTestBuildConfig
+> Task :app:processDebugManifestForPackage
 > Task :app:checkDebugAndroidTestAarMetadata
 > Task :app:generateDebugAndroidTestResValues FROM-CACHE
 > Task :app:mapDebugAndroidTestSourceSetPaths
 > Task :app:generateDebugAndroidTestResources
-> Task :app:processDebugManifestForPackage
-> Task :app:mergeDebugAndroidTestResources
 > Task :app:preDebugUnitTestBuild
 > Task :app:javaPreCompileDebugUnitTest FROM-CACHE
-> Task :app:processDebugAndroidTestResources
 > Task :app:processDebugResources
+> Task :app:mergeDebugAndroidTestResources
+> Task :app:processDebugAndroidTestResources
+> Task :app:compileDebugKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/security/SecretStore.kt:119:54 'getter for isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:144:39 'List: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.List
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:222:5 Parameter 'runtime' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:564:43 'Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:320:56 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:354:56 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:397:52 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:276:5 Parameter 'availability' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:279:9 Variable 'chat' is never used
 
-> Task :app:compileDebugKotlin FAILED
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/client/OpenCodeRepository.kt:826:58 Type mismatch: inferred type is List<OpenCodeApi.ModelRef>? but List<OpenCodeApi.ModelRef> was expected
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/AppRoot.kt:290:21 Unresolved reference: allFilesAccessLauncher
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/AppRoot.kt:344:21 Unresolved reference: publishLabel
+> Task :app:compileDebugJavaWithJavac
+> Task :app:processDebugJavaRes
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:bundleDebugClassesToRuntimeJar
+
+> Task :app:compileDebugAndroidTestKotlin FAILED
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/projects/WorkspaceIsolationGatesTest.kt:429:45 None of the following functions can be called with the arguments supplied: 
+public constructor File(p0: File!, p1: String!) defined in java.io.File
+public constructor File(p0: URI!) defined in java.io.File
+public constructor File(p0: String!) defined in java.io.File
+public constructor File(p0: String!, p1: String!) defined in java.io.File
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/ChatUiGatesTest.kt:1733:13 Type mismatch: inferred type is OpenCodeRepository.UiState but RuntimeSummary was expected
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/ChatUiGatesTest.kt:1854:24 Type mismatch: inferred type is OpenCodeRepository.UiState but RuntimeSummary was expected
+
+> Task :app:compileDebugUnitTestKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/client/OpenCodeApiHttpTest.kt:56:27 Parameter 'rec' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/projects/ProjectStoreLifecycleTest.kt:48:13 Variable 'p' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/projects/ProjectStoreLifecycleTest.kt:80:13 Variable 'p' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractionValidationTest.kt:45:13 Unsafe use of a nullable receiver of type File?
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractionValidationTest.kt:59:9 Unsafe use of a nullable receiver of type File?
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractionValidationTest.kt:117:9 Unsafe use of a nullable receiver of type File?
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractorTest.kt:103:37 Unsafe use of a nullable receiver of type File?
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':app:compileDebugKotlin'.
+Execution failed for task ':app:compileDebugAndroidTestKotlin'.
 > A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
    > Compilation error. See log for more details
 
@@ -365,7 +414,7 @@ Execution failed for task ':app:compileDebugKotlin'.
 > Get more help at https://help.gradle.org.
 
 * Exception is:
-org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugKotlin'.
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugAndroidTestKotlin'.
 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:130)
 	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:293)
 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:128)
@@ -395,6 +444,35 @@ org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:com
 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+	at org.gradle.execution.plan.DefaultPlanExecutor.process(DefaultPlanExecutor.java:111)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.executeWithServices(DefaultTaskExecutionGraph.java:138)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.execute(DefaultTaskExecutionGraph.java:123)
+	at org.gradle.execution.SelectedTaskExecutionAction.execute(SelectedTaskExecutionAction.java:35)
+	at org.gradle.execution.DryRunBuildExecutionAction.execute(DryRunBuildExecutionAction.java:51)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:54)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:43)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor.execute(BuildOperationFiringBuildWorkerExecutor.java:40)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$executeTasks$10(DefaultBuildLifecycleController.java:313)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.lambda$tryTransition$8(StateTransitionController.java:177)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
+	at org.gradle.internal.model.StateTransitionController.tryTransition(StateTransitionController.java:177)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.executeTasks(DefaultBuildLifecycleController.java:304)
+	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.runWork(DefaultBuildWorkGraphController.java:220)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:267)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:131)
+	at org.gradle.composite.internal.DefaultBuildController.doRun(DefaultBuildController.java:181)
+	at org.gradle.composite.internal.DefaultBuildController.access$000(DefaultBuildController.java:50)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.lambda$run$0(DefaultBuildController.java:198)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:198)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
 Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
@@ -524,6 +602,35 @@ Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionExcept
 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+	at org.gradle.execution.plan.DefaultPlanExecutor.process(DefaultPlanExecutor.java:111)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.executeWithServices(DefaultTaskExecutionGraph.java:138)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.execute(DefaultTaskExecutionGraph.java:123)
+	at org.gradle.execution.SelectedTaskExecutionAction.execute(SelectedTaskExecutionAction.java:35)
+	at org.gradle.execution.DryRunBuildExecutionAction.execute(DryRunBuildExecutionAction.java:51)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:54)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:43)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor.execute(BuildOperationFiringBuildWorkerExecutor.java:40)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$executeTasks$10(DefaultBuildLifecycleController.java:313)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:266)
+	at org.gradle.internal.model.StateTransitionController.lambda$tryTransition$8(StateTransitionController.java:177)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:44)
+	at org.gradle.internal.model.StateTransitionController.tryTransition(StateTransitionController.java:177)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.executeTasks(DefaultBuildLifecycleController.java:304)
+	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.runWork(DefaultBuildWorkGraphController.java:220)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:267)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:131)
+	at org.gradle.composite.internal.DefaultBuildController.doRun(DefaultBuildController.java:181)
+	at org.gradle.composite.internal.DefaultBuildController.access$000(DefaultBuildController.java:50)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.lambda$run$0(DefaultBuildController.java:198)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:198)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
 Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
@@ -559,10 +666,9 @@ Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilat
 	... 2 more
 
 
-BUILD FAILED in 1m 53s
-27 actionable tasks: 25 executed, 2 from cache
+BUILD FAILED in 2m 25s
+33 actionable tasks: 31 executed, 2 from cache
 STEP_FAILED rc=1: SKIP_PAYLOAD=1 '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
 FATAL: kotlin compile or JVM unit tests failed (compiler-errors.txt)
 P10-BUILD FAIL: kotlin compile or JVM unit tests failed (compiler-errors.txt)
 P10_SUMMARY gates not reached (build/environment failure) - see 00-run-phase10.log
-=== PHASE 10 END 2026-09-22T19:17:50Z FATAL: kotlin compile or JVM unit tests failed (compiler-errors.txt) ===
