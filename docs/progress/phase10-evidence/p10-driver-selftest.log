@@ -2,9 +2,11 @@
 PASS fixtures: 11 screens, exactly the expected set :: missing=[] extra=[]
 PASS removed controls: none of 4 is served by any fixture :: served anyway: []
 PASS fixtures: no overlapping clickable nodes
+PASS fixtures: every screen parses as XML with nodes in it
+PASS fixtures: the driver's own reader parses every screen :: rejected: []
 PASS v4 driver stages: every asserted label is producible from a fixture :: not in any fixture: []
 PASS driver needles: every NEEDLE_* group matches some fixture
-PASS gates: 57 tag lookups (38 distinct) resolve to a main-source testTag :: dangling: []
+PASS gates: 58 tag lookups (39 distinct) resolve to a main-source testTag :: dangling: []
 
 SELFCHECK PASS (fixtures, driver needles and gate tags agree)
 
@@ -28,8 +30,8 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   gate LIVE_TURN PASS/SKIP
   ok   gate FILES_APP_AND_SHELL PASS/SKIP
   ok   no FAIL line anywhere in a clean run
-  FAIL DIAGNOSIS.txt stays empty on a clean run
-  ok   screenshots captured at every step (got 17)
+  ok   DIAGNOSIS.txt stays empty on a clean run
+  ok   screenshots captured at every step (got 16)
   ok   screenshot validation ran and saw real screens
   ok   project was created through taps+typing
   ok   live turn with a tool card
@@ -37,7 +39,7 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   model marker written for the x86_64 carry-forward
   ok   a POSIX host says so, instead of leaving the path question open
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-194831/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-203921/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
   ok   v4: the storage screen no longer shows copy-path, export or the folder choosers
@@ -54,7 +56,7 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   the project card still creates a second project after the step
   ok   and it does NOT report the step as skipped in the flow that shows it
   ok   no FAIL line anywhere in the first-run scenario
-  FAIL no diagnosis lines in the first-run scenario
+  ok   no diagnosis lines in the first-run scenario
   ok   the driver logged the single action it used
 
 --- scenario: locked device ---
@@ -158,5 +160,5 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   the screenshot validator ran on copies in that same directory
   ok   and the whole run reached the live turn
 
-=== driver self-test: pass=118 fail=2 ===
-SELFTEST FAIL
+=== driver self-test: pass=120 fail=0 ===
+SELFTEST PASS (driver runs clean, and fails for the RIGHT reasons)

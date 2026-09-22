@@ -1,14 +1,14 @@
 P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, published identity, store package) + apk inspector self-test
-P10_DRIVER_SELFTEST FAIL: see p10-driver-selftest.log - do NOT hand this driver to a phone
+P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone (14 scenarios: happy, locked, blank, tags-gone, shown-hidden, no-grant, dump-unusable, msys-mangled, no-python, reader-dead, winhost, relout, incomplete, readertmp)
 P10-UNIT PASS: JVM tests=327 failures=0 errors=0 skipped=0 (unit tests are NOT runtime evidence - the device gates below are)
-P10-PAYLOAD PASS: payloadVersion=7 opencode=1.18.23@05ea5073be96 bun=1.3.14 git=v2.48.1 rg=15.1.0 sha256=dab162848e3b490c files=1062
+P10-PAYLOAD PASS: payloadVersion=7 opencode=1.18.23@05ea5073be96 bun=1.3.14 git=v2.48.1 rg=15.1.0 sha256=bc7a352958604227 files=1062
 P10-DEVICE PASS: fresh AVD on 14 (Physical size: 1080x1920 density=Physical density: 160)
 P6_U1 PASS ::
 P6_U1 PASS :: rows=602 composedAtBottom=24 composedAtTop=23 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
 P6_U10 PASS :: shown=t
 P6_U10 PASS :: shown=true label=true menu=true listed=true/true picked=true/[google/gemini-2.5-flash] settingsTrip=true emptyExplained=true offered=true
-P6_U11 FAIL :: sea
-P6_U11 FAIL :: search=true/true/true keyOnly=true/true activated=true star=false/false/false custom=true/true
+P6_U11 PASS :: sea
+P6_U11 PASS :: search=true/true/true keyOnly=true/true activated=true star=true/true/true/true collapsedFirst=true custom=true/true reported=(openrouter, openai/gpt-4o-mini, false)
 P6_U12 PASS :: onboa
 P6_U12 PASS :: onboarding=true/true/true/true v4Removed=true/true wired=true/true message=true hidden=true controls=true settings=true/true/true/true note=true
 P6_U2 PASS :: collapsedByDefault=t
@@ -32,29 +32,29 @@ P6_F1 PASS :: firstScreen=welcome workspaceStep=true stages=[extracting, startin
 P6_F2 PASS :: status=HEALTHY
 P6_F2 PASS :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=false,chat=false,workspace=true) leakedTokens=[] screenshot=45488
 P6_F3 PASS :: wo
-P6_F3 PASS :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:45488,chat:50142
+P6_F3 PASS :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:45488,chat:37584
 P6_F4 PASS :: count=4 usable=4 welcome=t
-P6_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=34350, 02-first-run-ready.png=45488, 02b-first-run-workspace.png=45488, 04-first-run-chat.png=50142]
+P6_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=34350, 02-first-run-ready.png=45488, 02b-first-run-workspace.png=45488, 04-first-run-chat.png=37584]
 P6_L1 PASS :: p
-P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=12 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=224
+P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=266
 P6_L2 PASS :: tool=bash status=completed pa
-P6_L2 PASS :: tool=bash status=completed partId=prt_0cac88e3d001Q0HpIhinYWh5sS cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0 marker=P6LIVE531617 screenshots[bytes=59422 ink=0.066 via=compose | 
+P6_L2 PASS :: tool=bash status=completed partId=prt_0caf30399001qIlZOqhkSUl8H7 cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0 marker=P6LIVE314849 screenshots[bytes=75262 ink=0.098 via=compose | 
 P6-UI totals: ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0
 P9_PROVSEL_CLEANUP PASS :: dummy c
 P9_PROVSEL_CLEANUP PASS :: dummy credential removed: connected=false
 P9_PROVSEL_REBUILT PASS :: afte
-P9_PROVSEL_REBUILT PASS :: after POST /global/dispose: connected=true instanceSource=api models=380 (was instanceSource=custom before the dispose)
+P9_PROVSEL_REBUILT PASS :: after POST /global/dispose: connected=true instanceSource=api models=381 (was instanceSource=custom before the dispose)
 P9_PROVSEL_STALE PASS :: afte
 P9_PROVSEL_STALE PASS :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
 P9_PROVSEL_TURN PASS :: p
 P9_PROVSEL_TURN PASS :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode default
 P9_PROVSEL_STALE PASS :: :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
-P9_PROVSEL_REBUILT PASS :: :: after POST /global/dispose: connected=true instanceSource=api models=380 (was instanceSource=custom before the dispose)
+P9_PROVSEL_REBUILT PASS :: :: after POST /global/dispose: connected=true instanceSource=api models=381 (was instanceSource=custom before the dispose)
 P9_PROVSEL_TURN PASS :: :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode d
 P9_PROVSEL_CLEANUP PASS :: :: dummy credential removed: connected=false
 P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
 P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
-P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=dab162848e3b490c 
+P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=bc7a352958604227 
 P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
 P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
 P10_RELEASE_AAB PASS :: CONTENTS entries=174 native_abis=arm64-v8a(6 libs,123.1MB),x86_64(6 libs,126.7MB) payload=True manifest_asset=True
@@ -71,15 +71,15 @@ P10_SMOKE_UI_F3 PASS :: workspaceStep=true folder=true picker=true action=true v
 P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=t
 P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=34350, 02-first-run-ready.png=45391, 02b-first-run-workspace.png=45391, 04-first-run-chat.png=50142]
 P10_SMOKE_UI_L1 PASS :: p
-P10_SMOKE_UI_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=3 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[
+P10_SMOKE_UI_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot
 P10_SMOKE_UI_L2 PASS :: tool=bash status=completed pa
-P10_SMOKE_UI_L2 PASS :: tool=bash status=completed partId=prt_0cacbf60c001AQ7ZO9As6xnjhI cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0 marker=P6LIVE755433 screenshots[bytes=58323 ink=0.067 via=
+P10_SMOKE_UI_L2 PASS :: tool=bash status=completed partId=prt_0caf6097d001ELp2r4gROqLPuJ cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0 marker=P6LIVE508563 screenshots[bytes=86336 ink=0.098 via=
 P10_SMOKE_UI_U1 PASS ::
 P10_SMOKE_UI_U1 PASS :: rows=602 composedAtBottom=24 composedAtTop=23 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
 P10_SMOKE_UI_U10 PASS :: shown=t
 P10_SMOKE_UI_U10 PASS :: shown=true label=true menu=true listed=true/true picked=true/[google/gemini-2.5-flash] settingsTrip=true emptyExplained=true offered=true
-P10_SMOKE_UI_U11 FAIL :: sea
-P10_SMOKE_UI_U11 FAIL :: search=true/true/true keyOnly=true/true activated=true star=false/false/false custom=true/true
+P10_SMOKE_UI_U11 PASS :: sea
+P10_SMOKE_UI_U11 PASS :: search=true/true/true keyOnly=true/true activated=true star=true/true/true/true collapsedFirst=true custom=true/true reported=(openrouter, openai/gpt-4o-mini, false)
 P10_SMOKE_UI_U12 PASS :: onboa
 P10_SMOKE_UI_U12 PASS :: onboarding=true/true/true/true v4Removed=true/true wired=true/true message=true hidden=true controls=true settings=true/true/true/true note=true
 P10_SMOKE_UI_U2 PASS :: collapsedByDefault=t
@@ -105,24 +105,24 @@ P10_WS_VISIBILITY_LOCATION PASS :: the project root exists and holds 3 project(s
 P10_WS_VISIBILITY_PRIVATE_ROOT_NOT_LIVE PASS :: the live project root is outside /data: /storage/emulated/0/Documents/OpenCode
 P10_WS_VISIBILITY_SHARED_ROOT PASS :: the project root is on shared storage and outside Android/data: /storage/emulated/0/Documents/OpenCode (Android 14)
 P10_WS_VISIBILITY_SHELL_BASELINE PASS :: baseline holds: an unprivileged shell cannot read /data/data/io.github.mcyber12.opencode.debug at all, so the PASSs above are real
-P10_WS_VISIBILITY_SHELL_LIST PASS :: a non-root shell lists the project directory (/storage/emulated/0/Documents/OpenCode/w4-storage-1790108553661): 2 lines
-P10_WS_VISIBILITY_SHELL_READ PASS :: read p10-visible.txt from outside the app: 'P10_VISIBLE_1790108553670' (matches /P10_VISIBLE_/)
-P10_WS_VISIBILITY_SHELL_WRITE PASS :: a file written by the non-root shell in /storage/emulated/0/Documents/OpenCode/w4-storage-1790108553661 was readable back: the directory is shared, ordinary storage
+P10_WS_VISIBILITY_SHELL_LIST PASS :: a non-root shell lists the project directory (/storage/emulated/0/Documents/OpenCode/w4-storage-1790111335134): 2 lines
+P10_WS_VISIBILITY_SHELL_READ PASS :: read p10-visible.txt from outside the app: 'P10_VISIBLE_1790111335141' (matches /P10_VISIBLE_/)
+P10_WS_VISIBILITY_SHELL_WRITE PASS :: a file written by the non-root shell in /storage/emulated/0/Documents/OpenCode/w4-storage-1790111335134 was readable back: the directory is shared, ordinary storage
 P10_WS_W1_PROJECT_LIFECYCLE PASS :: c
-P10_WS_W1_PROJECT_LIFECYCLE PASS :: created=p7-life-1790108555029 renamed=p7-renamed-1790108555029 adopted=p7-adopted-1790108555029 delete=true
+P10_WS_W1_PROJECT_LIFECYCLE PASS :: created=p7-life-1790111336187 renamed=p7-renamed-1790111336187 adopted=p7-adopted-1790111336187 delete=true
 P10_WS_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=t
-P10_WS_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_e1942293"}'
+P10_WS_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_a2c496cf"}'
 P10_WS_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: p
-P10_WS_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1790108555067/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
+P10_WS_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1790111336235/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
 P10_WS_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/sto
 P10_WS_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces se
 P10_WS_W5_SIBLING_PROJECT_CONFINEMENT PASS :: wsRoot=/sto
-P10_WS_W5_SIBLING_PROJECT_CONFINEMENT PASS :: wsRoot=/storage/emulated/0/Documents/OpenCode/p10ws-1790108552104 project=1 seesOwn=true seesSibling=false seesWorkspaceFile=false refused=sibling:true,workspace:true,deep:true readOwn=true/true chatNoFolder=true shape=true chatOwned=true session=ses_f35
+P10_WS_W5_SIBLING_PROJECT_CONFINEMENT PASS :: wsRoot=/storage/emulated/0/Documents/OpenCode/p10ws-1790111333733 project=1 seesOwn=true seesSibling=false seesWorkspaceFile=false refused=sibling:true,workspace:true,deep:true readOwn=true/true chatNoFolder=true shape=true chatOwned=true session=ses_f35
 P10_WS_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: f
 P10_WS_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w6-workspace mode=CHOSEN whenSwitched=[] hid=true oldStillOnDisk=true markerIntact=true pendingProjects=3 pendingNam
 STORE-ASSETS PASS: 4 screenshots in /home/runner/work/OpenCode-app/OpenCode-app/docs/store/screenshots (0 rejected)
-P10_SUMMARY 2026-09-22T20:32:51Z
-phase6_ui_fails=0 phase10_gate_fails=3 phase9_gate_fails=0
+P10_SUMMARY 2026-09-22T21:19:42Z
+phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0
 NOTE: PASS lines above are real gate executions on the emulator/device. Unit and
       compile lines are NOT runtime evidence. UNSIGNED release artifacts are
       expected in CI: signing is the human step (docs/RELEASE.md).
