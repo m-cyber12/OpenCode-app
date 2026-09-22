@@ -3,7 +3,7 @@
 --- scenario: happy path ---
   ok   driver exits 0 when every gate passes (rc=0)
   ok   SUMMARY.txt written
-  ok   at least 15 distinct gates reported (got 29)
+  ok   at least 15 distinct gates reported (got 36)
   ok   gate DEVICE_AWAKE PASS/SKIP
   ok   gate ABI PASS/SKIP
   ok   gate ANDROID_VERSION PASS/SKIP
@@ -21,7 +21,7 @@
   ok   gate FILES_APP_AND_SHELL PASS/SKIP
   ok   no FAIL line anywhere in a clean run
   ok   DIAGNOSIS.txt stays empty on a clean run
-  ok   screenshots captured at every step (got 10)
+  ok   screenshots captured at every step (got 16)
   ok   screenshot validation ran and saw real screens
   ok   project was created through taps+typing
   ok   live turn with a tool card
@@ -29,9 +29,25 @@
   ok   model marker written for the x86_64 carry-forward
   ok   a POSIX host says so, instead of leaving the path question open
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-195357/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-185553/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
+  ok   v4: the storage screen no longer shows copy-path, export or the folder choosers
+  ok   v4: the workspace switch is in Settings, with the note about what switching hides
+  ok   v4: the provider catalog is searchable (an impossible query says so, a real one narrows)
+  ok   v4: activating a catalog provider asks for the API key only
+  ok   v4: a starred model is switched from the chat header, without a trip to Settings
+  ok   v4: a returning install reports the workspace step as SKIP (it already ran), not FAIL
+
+--- scenario: the v4 first-run workspace step ---
+  ok   the v4 first run passes end to end (rc=0)
+  ok   the workspace step was read off the screen: a folder, one picker, one action, none of the removed controls
+  ok   one tap created project 1 and opened its chat, confirmed from outside the app
+  ok   the project card still creates a second project after the step
+  ok   and it does NOT report the step as skipped in the flow that shows it
+  ok   no FAIL line anywhere in the first-run scenario
+  ok   no diagnosis lines in the first-run scenario
+  FAIL the driver logged the single action it used
 
 --- scenario: locked device ---
   ok   a locked device is a non-zero exit (rc=1)
@@ -48,7 +64,7 @@
   ok   the run passes with tag-less dumps (rc=0)
   ok   FIRST_RUN PASS on content alone
   ok   the project was created by content-matched taps
-  ok   the live turn ran on content alone
+  FAIL the live turn ran on content alone
   ok   no FAIL line anywhere in the tag-less run
   ok   the fixture really did serve dumps with no tags (evidence, not setup)
 
@@ -127,12 +143,12 @@
   ok   and nothing was written into phase10/ by the child's cd
 
 --- scenario: a host where only a temp-dir copy opens (the fallback) ---
-  ok   the run is green through the temp-dir fallback (rc=0)
+  FAIL the run is green through the temp-dir fallback (rc=1)
   ok   HARNESS_READER PASS through the temp-dir copy
   ok   run.log says the whole run is on the temp-dir path form
   ok   the inline dump script read the screen too (this gate said 'no path shown' when the dump path was handed over unconverted)
   ok   the screenshot validator ran on copies in that same directory
-  ok   and the whole run reached the live turn
+  FAIL and the whole run reached the live turn
 
-=== driver self-test: pass=106 fail=0 ===
-SELFTEST PASS (driver runs clean, and fails for the RIGHT reasons)
+=== driver self-test: pass=116 fail=4 ===
+SELFTEST FAIL
