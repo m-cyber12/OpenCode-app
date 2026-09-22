@@ -166,6 +166,9 @@ class ChatUiGatesTest {
     private val workspacePath = mutableStateOf(WORKSPACE_FIXTURE_PATH)
     private val onboardingMessage = mutableStateOf("")
     private var starToggles = 0
+
+    /** (providerId, modelId, checked) the star callback reported, for U11's assertion. */
+    private var starLastToggle: Triple<String, String, Boolean>? = null
     private var connectCalls = 0
     private var customProviderCalls = 0
     private var modelPicks = 0
@@ -542,7 +545,10 @@ class ChatUiGatesTest {
             onDynamicColorChange = { },
             onSetModel = { _, _ -> },
             onClearModel = { },
-            onToggleStar = { _, _, _ -> starToggles++ },
+            onToggleStar = { providerId, modelId, checked ->
+                starToggles++
+                starLastToggle = Triple(providerId, modelId, checked)
+            },
             onConnectProvider = { _, _ -> connectCalls++ },
             onAddCustomProvider = { _, _, _, _, _ -> customProviderCalls++ },
             workspacePath = WORKSPACE_FIXTURE_PATH,
@@ -1766,8 +1772,14 @@ class ChatUiGatesTest {
         rule.waitForIdle()
         val activated = connectCalls == 1
 
-        // starring: the checkbox reflects the starred list and reports the toggle
+        // starring: the checkbox reflects the starred list and reports the toggle.
+        // The models (and therefore the stars) are behind the provider row's expansion -
+        // a collapsed row is what a user sees first, so what this gate proves is the
+        // flow: open the provider, see the star, toggle it.
         val starTag = "model_star_openrouter_openai/gpt-4o-mini"
+        val starHiddenUntilExpanded = !exists(starTag)
+        rule.onAllNodesWithTag("provider_openrouter")[0].performClick()
+        rule.waitForIdle()
         val starShown = exists(starTag)
         val starChecked = starShown &&
             rule.onAllNodesWithTag(starTag)[0].fetchSemanticsNode()
@@ -1779,6 +1791,7 @@ class ChatUiGatesTest {
             rule.waitForIdle()
         }
         val starWired = starToggles == 1
+        val starReported = starLastToggle == Triple("openrouter", "openai/gpt-4o-mini", false)
 
         // the manual path for a provider no catalog knows: four fields plus the key
         rule.onAllNodesWithTag("settings_list")[0].performScrollToNode(hasTestTag("custom_provider_id"))
@@ -1800,10 +1813,12 @@ class ChatUiGatesTest {
         gate(
             "U11",
             searchShown && filtered && countLine && dialogShown && onlyKeyAsked && activated &&
-                starShown && starChecked && starWired && customShown && customSaved,
+                starHiddenUntilExpanded && starShown && starChecked && starWired && starReported &&
+                customShown && customSaved,
             "search=$searchShown/$filtered/$countLine keyOnly=$dialogShown/$onlyKeyAsked " +
-                "activated=$activated star=$starShown/$starChecked/$starWired " +
-                "custom=$customShown/$customSaved",
+                "activated=$activated star=$starShown/$starChecked/$starWired/$starReported " +
+                "collapsedFirst=$starHiddenUntilExpanded custom=$customShown/$customSaved " +
+                "reported=$starLastToggle",
         )
     }
 
