@@ -1,0 +1,43 @@
+=== phase10 v4 driver self-test (local run, 2026-09-22T20:35:52Z) ===
+# 15 scenarios against the fake phone, revision: v4 with the fixture-escaping fix
+# the CI runner commits the FULL log as docs/progress/phase10-evidence/p10-driver-selftest.log;
+# this file is the tail of the local run plus the per-scenario exit codes, kept because the local
+# run is the one whose bundles were still on disk when the numbers were read.
+
+--- scenario exit codes (0 = clean run, non-zero = the deliberate failure that scenario exists for) ---
+blank=1
+dump-unusable=3
+happy=0
+incomplete=3
+locked=1
+msys-mangled=3
+no-grant=1
+no-python=3
+onboarding=0
+reader-dead=3
+readertmp=0
+relout=0
+shown-hidden=0
+tags-gone=0
+winhost=0
+
+--- the self-test's own checks ---
+# (the printed check list is not reproduced here line by line; it was read off the
+#  run's stdout, and the same list is committed in full by the CI runner whenever the
+#  self-test runs there - see p10-driver-selftest.log)
+
+=== driver self-test: pass=120 fail=0 ===
+SELFTEST PASS (driver runs clean, and fails for the RIGHT reasons)
+
+# The v4-specific checks that ran in this pass:
+#   ok   v4: the storage screen no longer shows copy-path, export or the folder choosers
+#   ok   v4: the workspace switch is in Settings, with the note about what switching hides
+#   ok   v4: the provider catalog is searchable (an impossible query says so, a real one narrows)
+#   ok   v4: activating a catalog provider asks for the API key only
+#   ok   v4: a starred model is switched from the chat header, without a trip to Settings
+#   ok   v4: a returning install reports the workspace step as SKIP (it already ran), not FAIL
+#   ok   the workspace step was read off the screen: a folder, one picker, one action, none of the removed controls
+#   ok   one tap created project 1 and opened its chat, confirmed from outside the app
+#   ok   the driver logged the single action it used
+#   ok   the live turn ran on content alone
+#   ok   the run is green through the temp-dir fallback (rc=0)
