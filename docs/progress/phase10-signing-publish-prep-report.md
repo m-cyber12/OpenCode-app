@@ -2319,15 +2319,15 @@ change it, it names the mechanism honestly.
 | `phase6/scripts/30-static-checks.sh` | copy/URL literals, resources, a11y names, lazy lists, UI purity (screens stay pure functions), icon availability | **rc=0** (20 UI files scanned, 0 findings each; 399 strings defined, 0 referenced-but-missing) |
 | `phase10/scripts/30-static-checks.sh` | the driver's reader self-test (20 checks), the fake-phone shim, Compose icon availability, workflow template, no infinite animations | **rc=0** |
 | `test-90-real-device.sh` | the real device driver run against the fake phone — now including the v4 stages | **15 scenarios / 120 checks, 0 failures** (§B.12.8) |
-| `ChatUiGatesTest` U9 (rewritten) | the storage screen offers **none** of the removed controls, still reports location/mode/honesty, still repairs a revoked grant and still moves projects | pending CI |
-| `ChatUiGatesTest` U10, U11, U12 (new) | quick switch lists only starred models and picks in place; provider search filters and reports no-match; the key dialog asks for the key only; the custom-provider path exists; the workspace step has one folder and one action; Settings owns the switch | pending CI |
-| `FirstRunUiGatesTest` F1–F3 (updated) | the first run may stop at the workspace step, and F3 walks it: one tap → first project → chat | pending CI |
-| `WorkspaceIsolationGatesTest` W1–W4 | unchanged, re-run as before | pending CI |
-| `WorkspaceIsolationGatesTest` W5 (new) | sibling confinement one level deeper (see §B.12.4) | pending CI (§B.12.7 records the two red runs that got it this far) |
-| `WorkspaceIsolationGatesTest` W6 (new) | a workspace switch hides the old projects, deletes nothing, and offers them back (see §B.12.6) | pending CI |
+| `ChatUiGatesTest` U9 (rewritten) | the storage screen offers **none** of the removed controls, still reports location/mode/honesty, still repairs a revoked grant and still moves projects | **PASS** (CI run `35781650307` on `6c78001`, board auto-committed at `2dedb3f`; the run's own numbers are quoted in §B.12.9) |
+| `ChatUiGatesTest` U10, U11, U12 (new) | quick switch lists only starred models and picks in place; provider search filters and reports no-match; the key dialog asks for the key only; the custom-provider path exists; the workspace step has one folder and one action; Settings owns the switch | **PASS** (CI run `35781650307` on `6c78001`, board auto-committed at `2dedb3f`; the run's own numbers are quoted in §B.12.9) - U11 needed one fix before it went green, and the fix was in the gate (§B.12.9) |
+| `FirstRunUiGatesTest` F1–F3 (updated) | the first run may stop at the workspace step, and F3 walks it: one tap → first project → chat | **PASS** (CI run `35781650307` on `6c78001`, board auto-committed at `2dedb3f`; the run's own numbers are quoted in §B.12.9) |
+| `WorkspaceIsolationGatesTest` W1–W4 | unchanged, re-run as before | **PASS** (CI run `35781650307` on `6c78001`, board auto-committed at `2dedb3f`; the run's own numbers are quoted in §B.12.9) |
+| `WorkspaceIsolationGatesTest` W5 (new) | sibling confinement one level deeper (see §B.12.4) | **PASS** (CI run `35781650307` on `6c78001`, board auto-committed at `2dedb3f`; the run's own numbers are quoted in §B.12.9) (§B.12.7 records the red runs that got it here) |
+| `WorkspaceIsolationGatesTest` W6 (new) | a workspace switch hides the old projects, deletes nothing, and offers them back (see §B.12.6) | **PASS** (CI run `35781650307` on `6c78001`, board auto-committed at `2dedb3f`; the run's own numbers are quoted in §B.12.9) |
 | `test-90-selfcheck.py` (new) | the harness/app contract, offline: fixtures match the app, needles match the fixtures, gates match the tags (see §B.12.6) | rc=0, and it reproduces the original incident on purpose |
-| JVM unit tests `ModelPreferenceTest`, `ProviderCatalogTest` (new) | the persistence decision, the codec (a model id containing a slash), the ranking, and the custom-provider config document | pending CI |
-| W4/host visibility, smoke, release verify, phase 9 PROVSEL | unchanged stages, re-run on the same revision | pending CI |
+| JVM unit tests `ModelPreferenceTest`, `ProviderCatalogTest` (new) | the persistence decision, the codec (a model id containing a slash), the ranking, and the custom-provider config document | **PASS** (CI run `35781650307` on `6c78001`, board auto-committed at `2dedb3f`; the run's own numbers are quoted in §B.12.9) |
+| W4/host visibility, smoke, release verify, phase 9 PROVSEL | unchanged stages, re-run on the same revision | **PASS** (CI run `35781650307` on `6c78001`, board auto-committed at `2dedb3f`; the run's own numbers are quoted in §B.12.9) |
 
 ### B.12.4 Isolation, re-stated for the new hierarchy (W5)
 
@@ -2597,3 +2597,55 @@ the honest fix was to make the harness say what it actually saw. The app-side ch
 round have not been executed on hardware: the single combined device pass is still the thing
 that decides them, and every new verdict is written so that a FAIL names its own evidence file
 (§B.12.7's second point).
+
+### B.12.9 The green board, and what the last red taught (the gate was wrong, the app was right)
+
+CI run **`35781650307`** (on `6c78001`, with the auto-committed evidence board at `2dedb3f` /
+`745e0e5`) is the verification run for this whole round. Its summary says, verbatim:
+
+```
+P10_SUMMARY 2026-09-22T21:19:42Z
+phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0
+```
+
+with `P10_DRIVER_SELFTEST PASS` (the committed `p10-driver-selftest.log` for this run shows
+`pass=120 fail=0`, including the v4 first-run workspace-step scenario), `P10-UNIT PASS
+tests=327 failures=0`, the payload digest `bc7a352958604227` (1062 files), and the
+workspace/isolation line re-verified end to end: `P10_WS_W1_PROJECT_LIFECYCLE`,
+`P10_WS_W2_WORKSPACE_ISOLATION`, `P10_WS_W3_MEMORY_INSPECTABLE_REMOVABLE`,
+`P10_WS_W4_WORKSPACE_VISIBLE`, `P10_WS_W5_SIBLING_PROJECT_CONFINEMENT`,
+`P10_WS_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING` all PASS on the emulator, and the
+outside-the-app visibility gates (`P10_WS_VISIBILITY_*`) all PASS on real shared storage
+(`/storage/emulated/0/Documents/OpenCode`) with the shell baseline proving the PASSs mean
+something. Every `P6_` gate passes, including the two that were red an hour before.
+
+**The one substantive last red, and why it is worth its own report entry.** `P6_U11` (and its
+smoke copy `P10_SMOKE_UI_U11`) failed with `star=false/false/false` while everything around
+it passed. The gate rendered Settings and immediately looked for the star checkbox of
+`openrouter / openai/gpt-4o-mini` - but the star checkboxes live in a provider's model list,
+and a provider row renders **collapsed** until it is opened. Nothing in the app was broken:
+a user would expand the row and see the star. The gate just navigated less carefully than a
+user. So the fix keeps the assertion and fixes the navigation: the gate now first asserts the
+star is **not** visible while the row is collapsed, then opens the row, checks the checkbox
+state, clicks it, and asserts the callback reported exactly
+`("openrouter", "openai/gpt-4o-mini", false)` - the toggle's payload, not just a click count.
+The green board now says `star=true/true/true/true collapsedFirst=true ... reported=...`, so
+what the gate proves includes the collapse behaviour it was originally slapped for ignoring.
+This is the same lesson as §B.12.7/B.12.8, one level higher: when a v4 gate went red, the red
+kept belonging to the harness's navigation, not to the feature. That is a good position to be
+in, and precisely why every fix here leaves the assertion intact.
+
+**One cosmetic red the board caught on the way up.** The runner's own PASS note for the
+driver self-test hardcoded "14 scenarios" and a list of their names; by this round the real
+self-test had 15 (the v4 first-run scenario), so the green line quoted a stale number - wrong
+evidence on a green line, the worst kind. `00-run-phase10.sh` now counts the
+`--- scenario:` headers in the log it just ran and quotes the score line from the same file,
+so the note cannot drift from the thing it describes again.
+
+Verification status of this sub-section: every number above is quoted from the committed
+evidence board (`docs/progress/phase10-evidence/GATES_SUMMARY.txt`) and the committed driver
+log of run 35781650307, not from intent. The remaining only-manual item is unchanged: the v3
+phone-verified stop and the v4 device stages together are tomorrow's single combined pass
+with `phase10/scripts/90-real-device-signed.sh` on the user's hardware, against CI's unsigned
+release artifact, signed locally with the user's key.
+

@@ -161,13 +161,19 @@ DSRC=0
 # into tee would report tee's status instead of the self-test's.
 # 2400s: fourteen scenarios, and two of them (`dump-unusable`, `reader-dead`) deliberately
 # spend their time in retry loops - they are the scenarios that prove the driver retries
-# before it blames the app. Five of the fourteen drive the whole happy path. Measured at
-# ~9 minutes locally and ~17 minutes for twelve scenarios on a CI runner; the budget is
+# before it blames the app. Five of them drive the whole happy path. Measured at ~9
+# minutes locally and ~17 minutes for twelve scenarios on a CI runner; the budget is
 # generous on purpose, because a TIMEOUT here would read as a driver failure.
 run_c 2400 "bash '$DIR/scripts/test-90-real-device.sh' > '$OUT/driver-selftest.log' 2>&1; rc=\$?; cat '$OUT/driver-selftest.log'; exit \$rc" || DSRC=1
 cp "$OUT/driver-selftest.log" "$EV/p10-driver-selftest.log" 2>/dev/null || true
 if [ "$DSRC" = 0 ]; then
-  note_gate "P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone (14 scenarios: happy, locked, blank, tags-gone, shown-hidden, no-grant, dump-unusable, msys-mangled, no-python, reader-dead, winhost, relout, incomplete, readertmp)"
+  # the count and score come from the log itself, not from a string here: a hardcoded
+  # list already drifted once (it said 14 scenarios when the log showed 15)
+  SCENES=$(grep -cE '^--- scenario:' "$OUT/driver-selftest.log" 2>/dev/null || true)
+  SCORE=$(grep -oE 'pass=[0-9]+ fail=[0-9]+' "$OUT/driver-selftest.log" 2>/dev/null | tail -1)
+  [ -n "$SCENES" ] || SCENES="?"
+  [ -n "$SCORE" ] || SCORE="score line missing from the log"
+  note_gate "P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone ($SCENES scenarios, $SCORE - the scenario list and every check are in p10-driver-selftest.log)"
 else
   note_gate "P10_DRIVER_SELFTEST FAIL: see p10-driver-selftest.log - do NOT hand this driver to a phone"
 fi
