@@ -28,8 +28,8 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   gate LIVE_TURN PASS/SKIP
   ok   gate FILES_APP_AND_SHELL PASS/SKIP
   ok   no FAIL line anywhere in a clean run
-  ok   DIAGNOSIS.txt stays empty on a clean run
-  ok   screenshots captured at every step (got 16)
+  FAIL DIAGNOSIS.txt stays empty on a clean run
+  ok   screenshots captured at every step (got 17)
   ok   screenshot validation ran and saw real screens
   ok   project was created through taps+typing
   ok   live turn with a tool card
@@ -37,7 +37,7 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   model marker written for the x86_64 carry-forward
   ok   a POSIX host says so, instead of leaving the path question open
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-192440/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-194831/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
   ok   v4: the storage screen no longer shows copy-path, export or the folder choosers
@@ -54,7 +54,7 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   the project card still creates a second project after the step
   ok   and it does NOT report the step as skipped in the flow that shows it
   ok   no FAIL line anywhere in the first-run scenario
-  ok   no diagnosis lines in the first-run scenario
+  FAIL no diagnosis lines in the first-run scenario
   ok   the driver logged the single action it used
 
 --- scenario: locked device ---
@@ -151,12 +151,12 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   and nothing was written into phase10/ by the child's cd
 
 --- scenario: a host where only a temp-dir copy opens (the fallback) ---
-  FAIL the run is green through the temp-dir fallback (rc=1)
+  ok   the run is green through the temp-dir fallback (rc=0)
   ok   HARNESS_READER PASS through the temp-dir copy
   ok   run.log says the whole run is on the temp-dir path form
   ok   the inline dump script read the screen too (this gate said 'no path shown' when the dump path was handed over unconverted)
   ok   the screenshot validator ran on copies in that same directory
   ok   and the whole run reached the live turn
 
-=== driver self-test: pass=119 fail=1 ===
+=== driver self-test: pass=118 fail=2 ===
 SELFTEST FAIL
