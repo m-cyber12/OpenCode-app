@@ -2482,3 +2482,50 @@ written out twice (an automatic advance when the runtime came up, and the Welcom
 button). They disagreed on a fresh install - the button went to the project list, the advance
 went to the workspace step - so a user who tapped "Continue" could skip the step entirely. Both
 now call one function, `firstRunDestination(projectName, workspaceConfirmed)`.
+
+### B.12.7 What the first CI run of v4 found (and why "code-complete" was a claim, not a fact)
+
+Run `35770403339` (push of `6cf6cc5`, the first v4 revision) came back **red**, and the two
+things it found are worth keeping in the record rather than quietly fixing:
+
+```
+P10-STATIC PASS
+P10_DRIVER_SELFTEST FAIL: see p10-driver-selftest.log - do NOT hand this driver to a phone
+P10-BUILD FAIL: kotlin compile or JVM unit tests failed (compiler-errors.txt)
+```
+
+**Three compile errors**, all in code written this round:
+
+| Where | Error | Cause | Fix |
+|---|---|---|---|
+| `OpenCodeRepository.kt:826` | `Type mismatch: inferred type is List<ModelRef>? but List<ModelRef> was expected` | `runCatching { modelPreference?.setStarred(...) }` infers `Result<List<ModelRef>?>` because the store itself is nullable, so `getOrDefault(emptyList())` cannot type-check | the fallback is the state already published (`getOrNull() ?: _state.value.starredModels`) - a prefs failure must not wipe the shortlist on screen |
+| `AppRoot.kt:290` | `Unresolved reference: allFilesAccessLauncher` | the new `confirmWorkspace()` is a *local* function and was declared above the launcher it uses; a local declaration is not visible above itself (the same trap as the first-run rule, caught by the compiler before a phone ever saw it) | the function sits below the launcher block now, and every other local it reads was checked to be declared earlier |
+| `AppRoot.kt:344` | `Unresolved reference: publishLabel` | a leftover of the removed publish picker: the surviving single-file "Save a copy" still assigned the label the deleted panel used to render | the outcome now goes through the file screen's own message channel |
+
+**Two driver defects**, both found by the self-test that had just been extended - and both of
+them would have made a *phone* run report the app as broken:
+
+1. `onboarding`: "the driver logged the single action it used" failed. The driver matched the
+   label (`tap_any "onboarding_workspace_use" "Use this folder as workspace"`) and never
+   printed it, so the bundle could not answer "what did the button say?" - a logging gap, not
+   a behaviour gap, but the self-test checks the bundle rather than the intention. R4a now logs
+   the label and the tag it used.
+2. `tags-gone`: `P10D_LIVE_TURN` came back SKIP instead of PASS - and the cause was v4 itself.
+   The key-entry flow now reaches a *deeper* screen than before (Settings, the provider
+   search, or the v4 provider dialog), and the driver left Settings with **one** BACK press.
+   From the key dialog one press lands on the provider search, not on the conversation, so the
+   run then waited 253 s for a composer that was on a different screen - and its own log said
+   so (`wait(ready-to-send) TIMED OUT`, `on screen: openr|1 of 500 providers shown|...`).
+   That is exactly the class of failure the v4 UI gates and the tag-less scenario exist to
+   catch: the app was fine, the driver was in the wrong place. The fix is
+   `return_to_conversation()`: a bounded BACK loop (three presses maximum) that stops the
+   moment a conversation surface is visible and only writes a DIAGNOSIS line when it cannot
+   get there at all. It is used at the four "get back to the chat" sites (R5 twice, R5b twice,
+   R6), so no stage can wait on a screen it did not return from.
+
+The general lesson, stated because it will apply to the next round too: in this sandbox there
+is no JDK and no Android SDK, so **nothing written here is compiled until CI compiles it**.
+"Code-complete" means "every item is implemented and reasoned about", not "it builds", and the
+report should keep saying which of the two is meant. The cost of getting that wrong is one red
+run and two commits - cheap only because the compiler errors were in the first stage of the
+pipeline and the self-test failures named the exact stage.
