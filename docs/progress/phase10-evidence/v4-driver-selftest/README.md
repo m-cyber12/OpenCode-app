@@ -1,6 +1,6 @@
-# Phase 10 continuation v4 — driver self-test evidence
+# Phase 10 continuation v4 -- driver self-test evidence
 
-**Result: `pass=120 fail=0`, `SELFTEST PASS` — 15 scenarios, run locally on the owner's
+**Result: `pass=120 fail=0`, `SELFTEST PASS` -- 15 scenarios, run locally on the owner's
 checkout shape (Linux host), with the fake phone answering every accessibility dump.**
 
 | File | What it is |
@@ -20,8 +20,8 @@ What the three earlier rounds in `../v3-driver-selftest/` are for comparison:
 Two things this file is careful about, because the numbers matter more than the green:
 
 * **the count went up with the scenarios, not with the assertions inside them.** The v4
-  additions are a new scenario (`onboarding`: welcome → workspace step → one tap → project
-  `1` → chat) and checks for the five new signed-build verdicts; the `happy` scenario's own
+  additions are a new scenario (`onboarding`: welcome -> workspace step -> one tap -> project
+  `1` -> chat) and checks for the five new signed-build verdicts; the `happy` scenario's own
   product path is unchanged from v3 apart from the v4 verdict ids it now asserts.
 * **a green self-test is evidence about the HARNESS, not about the app.** It says the driver
   runs clean against a phone that answers like a phone, and that it fails for the right
