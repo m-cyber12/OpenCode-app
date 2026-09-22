@@ -469,11 +469,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // goes depends on whether a project exists - never on a timer.
     LaunchedEffect(summary.ready, projectName) {
         if (route == ROUTE_WELCOME && summary.ready) {
-            route = when {
-                projectName.isNotEmpty() -> ROUTE_CHAT
-                !workspaceConfirmed -> ROUTE_WORKSPACE
-                else -> ROUTE_PROJECTS
-            }
+            route = firstRunDestination(projectName, workspaceConfirmed)
         }
     }
     // A confirm that was interrupted by the system grant screen finishes itself when
@@ -540,9 +536,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             when (route) {
                 ROUTE_WELCOME -> WelcomeScreen(
                     runtime = summary,
-                    onContinue = {
-                        route = if (projectName.isEmpty()) ROUTE_PROJECTS else ROUTE_CHAT
-                    },
+                    // Same decision as the automatic advance below: on a first run the
+                    // next screen is the workspace step (one folder, one action), not an
+                    // empty project list. Two spellings of one rule is how a screen gets
+                    // skipped, so this is the rule.
+                    onContinue = { route = firstRunDestination(projectName, workspaceConfirmed) },
                     onOpenSettings = { route = ROUTE_SETTINGS },
                 )
 
@@ -839,6 +837,23 @@ private fun storageMessageOf(context: Context, result: StorageController.ChangeR
         StorageController.MessageKey.GRANT_NOT_APPLIED ->
             context.getString(R.string.files_storage_grant_not_applied)
     }
+
+/**
+ * Where a first run goes once the runtime is up (v4 item 4).
+ *
+ * A run with a project opens that chat; otherwise the workspace step comes first
+ * (one folder, one action - confirming it creates the first project and lands in
+ * that project's chat); the persisted answer "the step already ran" is the third
+ * case, so an install that was set up once never sees the step again.
+ *
+ * Both the automatic advance and the Welcome screen's own button call this, because
+ * two spellings of one rule is how a screen gets skipped.
+ */
+private fun firstRunDestination(projectName: String, workspaceConfirmed: Boolean): String = when {
+    projectName.isNotEmpty() -> ROUTE_CHAT
+    !workspaceConfirmed -> ROUTE_WORKSPACE
+    else -> ROUTE_PROJECTS
+}
 
 /** The active location, named the way the storage panel names it. */
 private fun storageLabel(paths: RuntimePaths): String = when (paths.mode) {

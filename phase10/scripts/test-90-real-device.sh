@@ -72,6 +72,18 @@ check() { if [ "$1" = 0 ]; then ok "$2"; else bad "$2"; fi; }
 echo "=== 90-real-device-signed.sh self-test (fake phone, no device needed) ==="
 python3 "$DIR/scripts/test-90-fixtures.py" "$TMP/fx" || { echo "FATAL: fixtures failed"; exit 2; }
 
+# The harness/app contract, before a single scenario runs. The first v4 run of this
+# self-test went red because a fixture served a control the app had removed - the
+# driver was right and the harness was stale, which cost a full run to find. The
+# contract check is the same finding in a second: it is a check on the HARNESS, and
+# it must never be allowed to fail the other way (a fixture that silently drops a
+# control the driver needs is caught by the scenarios below, which is why both
+# exist).
+if ! python3 "$DIR/scripts/test-90-selfcheck.py"; then
+  echo "FATAL: the fixtures, the driver needles and the gate tags disagree (see above)"
+  exit 2
+fi
+
 # Prefer the Phase 6 evidence photos when they are here (they are pictures of the real
 # app), but the generator has already written valid frames, so this test never depends
 # on them being present.

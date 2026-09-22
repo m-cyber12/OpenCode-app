@@ -116,6 +116,8 @@ class StorageController(private val context: Context) {
      * The user picked a folder with the system picker. The tree is only usable when
      * it resolves to a real path (primary volume) and the app can actually write
      * there; anything else is refused with the reason, not accepted and broken.
+     *
+     * This is a SWITCH, not a migration - see [switchTo].
      */
     fun useChosenFolder(treeUri: Uri): ChangeResult {
         val dir = StorageChoice.realPathOf(treeUri)
@@ -123,16 +125,52 @@ class StorageController(private val context: Context) {
         if (!StorageChoice.isUsableRoot(dir)) {
             return ChangeResult(ok = false, messageKey = MessageKey.FOLDER_UNUSABLE, detail = "cannot write here")
         }
-        val oldRoot = RuntimePaths.get(context).workspaces
         StorageChoice.setChosenRoot(context, dir)
-        return reactivate(oldRoot)
+        return switchTo(RuntimePaths.get(context).workspaces)
     }
 
     /** Forget the chosen folder: back to the default (shared storage when allowed). */
     fun useDefaultLocation(): ChangeResult {
-        val oldRoot = RuntimePaths.get(context).workspaces
         StorageChoice.clearChosenRoot(context)
-        return reactivate(oldRoot)
+        return switchTo(RuntimePaths.get(context).workspaces)
+    }
+
+    /**
+     * Point the app at [dir] as the workspace, WITHOUT moving anything.
+     *
+     * The deliberate difference from [reactivate]: the user who picks another folder
+     * gets a different set of projects, exactly as `cd` changes what a terminal
+     * shows. The old folder is left untouched on disk - nothing is deleted, and the
+     * projects in it are not dragged along - and the Settings screen then offers
+     * "Move them here", which is [moveProjectsIntoPlace] and the only path in this
+     * class that fills a non-empty destination.
+     *
+     * (The one case that still moves is [activateAllFilesAccess]: after the grant,
+     * the shared location became usable and the projects that were parked in the
+     * app-specific fallback are the SAME workspace the user was working in, not a
+     * different one. [migrateOnStart] keeps doing the same on every app start.)
+     *
+     * Public because the instrumented workspace gate drives this exact function: a
+     * check that reimplemented the switch in the test would prove nothing about the
+     * app.
+     */
+    fun switchTo(dir: File): ChangeResult {
+        val oldRoot = RuntimePaths.get(context).workspaces
+        StorageChoice.setChosenRoot(context, dir)
+        RuntimePaths.refresh()
+        ProjectStore.refresh()
+        val p = RuntimePaths.get(context)
+        // Creates the new project root (and the rest of the layout) before anything
+        // tries to write into it. No migration: `moved` is 0 by construction, and the
+        // result says so, which is what the UI reads back to the user.
+        runCatching { p.ensureDirs() }
+        return ChangeResult(
+            ok = p.workspaces.absolutePath == dir.absolutePath,
+            messageKey = MessageKey.NOTHING_TO_MOVE,
+            moved = 0,
+            from = oldRoot.absolutePath,
+            to = p.workspaces.absolutePath,
+        )
     }
 
     /**
@@ -170,7 +208,9 @@ class StorageController(private val context: Context) {
     fun migrateOnStart(): Int = store.ensureMigrated()
 
     /**
-     * Re-resolve the layout after a change, then move what was left behind.
+     * Re-resolve the layout after a change, then move what was left behind: the
+     * MIGRATION path (a grant arrived, or the app started into a fallback root).
+     * An explicit folder switch does not come through here - see [switchTo].
      *
      * [oldRoot] is captured before the change because the singletons cache the
      * previously resolved paths; both caches are dropped here so nothing keeps

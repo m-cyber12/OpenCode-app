@@ -103,7 +103,7 @@ log "appops MANAGE_EXTERNAL_STORAGE: ${GRANT_LINE:-<no output>}"
 SHARED_PROBE=$(adb shell "ls -ld /storage/emulated/0/Documents/OpenCode 2>&1" | tr -d '\r' | head -1)
 log "shared-storage default: ${SHARED_PROBE:-<absent>}"
 
-log "=== am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest (W1-W5) ==="
+log "=== am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest (W1-W6) ==="
 ISO_RC=0
 timeout -k 30 3600 adb shell am instrument -w \
   -e class ai.opencode.android.projects.WorkspaceIsolationGatesTest "$RUNNER" \
@@ -131,6 +131,9 @@ emit "W3_MEMORY_INSPECTABLE_REMOVABLE"
 emit "W4_WORKSPACE_VISIBLE"
 # v4 item 1: the sibling-project half of the same guarantee, one level deeper.
 emit "W5_SIBLING_PROJECT_CONFINEMENT"
+# v4 item 1: switching the workspace hides the old projects and deletes nothing,
+# and the Settings screen's own "Move them here" brings them back.
+emit "W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING"
 
 # ---- the external vantage point ---------------------------------------------
 W4_LINE=$(grep -aE '^P7_W4_WORKSPACE_VISIBLE ' "$VERDICTS" | tail -1)
@@ -165,6 +168,11 @@ for r in "${WS_ROOT:-}" "/storage/emulated/0/Documents/OpenCode" "/storage/emula
   [ -n "$r" ] || continue
   adb shell "rm -rf '$r'/p10ws-*" >/dev/null 2>&1 || true
 done
+# W6's temporary workspace (a sibling of the app's own external root). The gate
+# removes it itself; this covers the crash case, and it is OUTSIDE the three roots
+# above on purpose - that is what made it a different workspace.
+adb shell "rm -rf /storage/emulated/0/Android/data/$PKG/files/p10w6-workspace" >/dev/null 2>&1 || true
+adb shell "rm -rf /sdcard/Android/data/$PKG/files/p10w6-workspace" >/dev/null 2>&1 || true
 
 # The W4 project directory is a gate fixture, not a user project: remove it so the
 # next run starts clean (only when the visibility check has already read it).

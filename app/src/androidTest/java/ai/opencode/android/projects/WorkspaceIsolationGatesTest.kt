@@ -6,6 +6,7 @@ import ai.opencode.android.memory.ProjectMemory
 import ai.opencode.android.runtime.RuntimeEnv
 import ai.opencode.android.runtime.RuntimeManager
 import ai.opencode.android.runtime.RuntimePaths
+import ai.opencode.android.runtime.StorageChoice
 import ai.opencode.android.runtime.Secrets
 import ai.opencode.android.security.SecretStore
 import android.content.Context
@@ -25,7 +26,9 @@ import org.junit.runner.RunWith
  * at the UI.
  *
  * v4 adds W5: the same boundary at the depth the product uses (a workspace folder
- * with sibling project subfolders, and a chat that must not create a folder).
+ * with sibling project subfolders, and a chat that must not create a folder), and
+ * W6: switching the workspace hides the old projects without deleting anything, and
+ * the Settings screen's own "Move them here" brings them over.
  *
  * W1 and W3 are model-free and deterministic on purpose: the Phase 6 live-tool
  * gate (L2) showed that a model choosing a tool is not something to bet a
@@ -355,6 +358,109 @@ class WorkspaceIsolationGatesTest {
             runCatching { p2.delete() }
             runCatching { wsRoot.delete() }
         }
+    }
+
+    // ---- W6: switching the workspace hides, and deletes nothing --------------
+
+    /**
+     * v4 item 1, the half a listing cannot prove: pointing the app at another folder
+     * changes WHICH projects it shows (the terminal-`cd` behaviour the brief asks
+     * for) and the ones it stops showing are still on disk, untouched.
+     *
+     * The switch is driven through [StorageController.switchTo] - the same function
+     * the system folder picker calls - rather than by reimplementing it here, so a
+     * green verdict is about the app, not about the test's own idea of the app.
+     *
+     * The round trip matters as much as the first half: the gate then asks for the
+     * projects back with the Settings screen's own "Move them here"
+     * ([StorageController.moveProjectsIntoPlace]), because "nothing is lost" is only
+     * honest if there is a way back. It ends by leaving the device exactly as it found
+     * it: the original workspace active, the project back in it, and the temporary
+     * root removed.
+     */
+    @Test
+    fun w6_switchingTheWorkspaceHidesTheOldProjectsAndDeletesNothing() {
+        val store = ProjectStore.get(context)
+        val controller = StorageController.get(context)
+        val live = RuntimePaths.get(context).workspaces
+        // How the workspace was chosen before the gate ran: restoring the MODE matters
+        // as much as restoring the project, or the next gate (and the next app start)
+        // would run in a state this gate invented.
+        val wasChosen = StorageChoice.chosenRoot(context) != null
+        val temp = File(context.getExternalFilesDir(null) ?: context.filesDir, "p10w6-workspace")
+        var stamp = "p10w6"
+        var n = 2
+        while (File(live, stamp).exists()) {
+            stamp = "p10w6-$n"
+            n += 1
+        }
+        var created: Project? = null
+        try {
+            created = store.create(stamp)
+            store.select(created.name)
+            val marker = File(created.dir, "survives.txt")
+            marker.writeText("written before the switch")
+            val beforeNames = store.projects().map { it.name }
+            assertTrue("the project is not in the live workspace before switching", beforeNames.contains(created.name))
+
+            // ---- the switch: a different folder, no migration ----
+            temp.mkdirs()
+            val switched = controller.switchTo(temp)
+            val nowRoot = RuntimePaths.get(context).workspaces
+            val afterNames = store.projects().map { it.name }
+            val stillOnDisk = File(live, created.name).isDirectory &&
+                File(live, created.name, "survives.txt").isFile
+            val markerIntact = runCatching { File(live, created.name, "survives.txt").readText() }
+                .getOrDefault("") == "written before the switch"
+            // The old folder is offered back as a pending root - that is the bridge the
+            // Settings screen turns into its "Move them here" action.
+            val pending = controller.snapshot().pendingProjects
+            val hid = !afterNames.contains(created.name)
+            val askedFor = controller.snapshot().pendingRoots.any { it == live.absolutePath }
+
+            // ---- the way back: the user's own "Move them here" ----
+            val moved = controller.moveProjectsIntoPlace()
+            val backRoot = RuntimePaths.get(context).workspaces
+            val backNames = store.projects().map { it.name }
+            val contentKept = runCatching { File(backRoot, created.name, "survives.txt").readText() }
+                .getOrDefault("") == "written before the switch"
+
+            gate(
+                "W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING",
+                switched.ok && nowRoot.absolutePath == temp.absolutePath && hid && stillOnDisk &&
+                    markerIntact && pending >= 1 && askedFor && moved.ok && backNames.contains(created.name) &&
+                    contentKept,
+                "from=${live.absolutePath} to=${nowRoot.absolutePath } " +
+                    "whenSwitched=$afterNames hid=$hid oldStillOnDisk=$stillOnDisk markerIntact=$markerIntact " +
+                    "pendingProjects=$pending pendingNamesRoot=$askedFor " +
+                    "movedBack=${moved.moved} rootNow=${backRoot.absolutePath} namesAfterMove=$backNames " +
+                    "contentKept=$contentKept before=$beforeNames",
+            )
+        } finally {
+            // Leave the device as found: the same MODE, the original workspace active,
+            // and our project deleted from wherever it ended up.
+            runCatching {
+                if (wasChosen) controller.switchTo(live) else controller.useDefaultLocation()
+            }
+            runCatching { moveBackIfNeeded(controller, live) }
+            runCatching { created?.let { store.delete(it.name) } }
+            runCatching { temp.deleteRecursively() }
+        }
+    }
+
+    /**
+     * After the gate switched the workspace, the project may sit in the temporary
+     * root: bring it home so the cleanup deletes it from the live workspace rather
+     * than leaving it in a directory that is about to be removed.
+     */
+    private fun moveBackIfNeeded(controller: StorageController, live: File) {
+        val pending = controller.snapshot().pendingRoots
+        if (pending.isNotEmpty()) {
+            runCatching { controller.moveProjectsIntoPlace() }
+        }
+        // Nothing to assert here: the gate above already reported. This runs in a
+        // `finally`, and a cleanup that throws would hide the real verdict.
+        File(live).mkdirs()
     }
 
     // ---- W4: the workspace is OUTSIDE the sandbox, and the server agrees -----

@@ -103,6 +103,19 @@ run "fake-phone shim answers the first two questions of every run" \
 run "compose icon availability (material-icons-core only)" \
   python3 "$ROOT/phase10/scripts/check-compose-icons.py"
 
+# ---- 4d. the harness agrees with the app (v4) ---------------------------------
+# The first v4 self-test run went red because a FIXTURE still served a control the
+# app had removed: the driver was right, the fake phone was stale, and the run cost
+# minutes to say so. This check is that incident in five seconds, offline - the
+# fixtures build, none of them serves a removed control, no two clickable nodes
+# overlap (the fake phone taps the first match), every label the v4 driver stages
+# assert is producible from a fixture, and every test tag the instrumented gates
+# look for exists in the main sources. It is a lint on the HARNESS, not on the app:
+# a green driver run cannot be trusted if the harness and the app disagree about
+# what is on screen.
+run "harness/app contract (v4 fixtures, driver needles, gate tags)" \
+  python3 "$ROOT/phase10/scripts/test-90-selfcheck.py"
+
 # ---- 5. the Phase 10 workflow exists in the tree and cannot sign ------------
 # The workflow is REQUIRED to explain which secrets must never be added (and its
 # own guard step checks that they are absent), so NAMING them is fine. What must
