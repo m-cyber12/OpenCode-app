@@ -243,9 +243,18 @@ class StorageController(private val context: Context) {
         )
     }
 
-    /** Older roots that still hold project directories, newest location first. */
+    /**
+     * Roots that still hold project directories and are NOT the live one, newest
+     * location first.
+     *
+     * v4: the SHARED default is in this list now. Before v4 an explicit switch
+     * migrated the projects, so a former location could never hold anything; now that
+     * a switch hides them (see [switchTo]) the folder the user came from has to be
+     * offered back, or "nothing is lost" would be true only on disk. The app-specific
+     * and app-private roots stay listed for the fallback -> shared migration.
+     */
     private fun pendingRoots(p: RuntimePaths): List<File> =
-        listOfNotNull(p.externalWorkspaces, p.internalWorkspaces)
+        listOfNotNull(p.publicWorkspaces, p.externalWorkspaces, p.internalWorkspaces)
             .filter { it.absolutePath != p.workspaces.absolutePath }
             .filter { it.isDirectory && (it.listFiles { f -> f.isDirectory }?.isNotEmpty() == true) }
 

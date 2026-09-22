@@ -380,7 +380,11 @@ class WorkspaceIsolationGatesTest {
      */
     @Test
     fun w6_switchingTheWorkspaceHidesTheOldProjectsAndDeletesNothing() {
-        val store = ProjectStore.get(context)
+        // A fresh store per step on purpose: Paths and ProjectStore are cached per
+        // context and refresh() replaces the cached instances, so a store captured
+        // before a switch would keep answering about the OLD root - the exact bug a
+        // gate like this exists to catch, and one it must not have itself.
+        fun storeNow(): ProjectStore = ProjectStore.get(context)
         val controller = StorageController.get(context)
         val live = RuntimePaths.get(context).workspaces
         // How the workspace was chosen before the gate ran: restoring the MODE matters
@@ -396,71 +400,63 @@ class WorkspaceIsolationGatesTest {
         }
         var created: Project? = null
         try {
-            created = store.create(stamp)
-            store.select(created.name)
-            val marker = File(created.dir, "survives.txt")
-            marker.writeText("written before the switch")
-            val beforeNames = store.projects().map { it.name }
+            created = storeNow().create(stamp)
+            storeNow().select(created.name)
+            File(created.dir, "survives.txt").writeText(MARKER)
+            val beforeNames = storeNow().projects().map { it.name }
             assertTrue("the project is not in the live workspace before switching", beforeNames.contains(created.name))
 
             // ---- the switch: a different folder, no migration ----
             temp.mkdirs()
             val switched = controller.switchTo(temp)
             val nowRoot = RuntimePaths.get(context).workspaces
-            val afterNames = store.projects().map { it.name }
-            val stillOnDisk = File(live, created.name).isDirectory &&
-                File(live, created.name, "survives.txt").isFile
-            val markerIntact = runCatching { File(live, created.name, "survives.txt").readText() }
-                .getOrDefault("") == "written before the switch"
+            val afterNames = storeNow().projects().map { it.name }
+            val oldDir = File(live, created.name)
+            val stillOnDisk = oldDir.isDirectory && File(oldDir, "survives.txt").isFile
+            val markerIntact = runCatching { File(oldDir, "survives.txt").readText() }
+                .getOrDefault("") == MARKER
             // The old folder is offered back as a pending root - that is the bridge the
             // Settings screen turns into its "Move them here" action.
-            val pending = controller.snapshot().pendingProjects
+            val snapshotAfter = controller.snapshot()
+            val pending = snapshotAfter.pendingProjects
             val hid = !afterNames.contains(created.name)
-            val askedFor = controller.snapshot().pendingRoots.any { it == live.absolutePath }
+            val askedFor = snapshotAfter.pendingRoots.any { it == live.absolutePath }
 
             // ---- the way back: the user's own "Move them here" ----
             val moved = controller.moveProjectsIntoPlace()
             val backRoot = RuntimePaths.get(context).workspaces
-            val backNames = store.projects().map { it.name }
+            val backNames = storeNow().projects().map { it.name }
             val contentKept = runCatching { File(backRoot, created.name, "survives.txt").readText() }
-                .getOrDefault("") == "written before the switch"
+                .getOrDefault("") == MARKER
 
             gate(
                 "W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING",
                 switched.ok && nowRoot.absolutePath == temp.absolutePath && hid && stillOnDisk &&
-                    markerIntact && pending >= 1 && askedFor && moved.ok && backNames.contains(created.name) &&
-                    contentKept,
-                "from=${live.absolutePath} to=${nowRoot.absolutePath } " +
+                    markerIntact && pending >= 1 && askedFor && moved.ok &&
+                    backNames.contains(created.name) && contentKept,
+                "from=${live.absolutePath} to=${nowRoot.absolutePath} mode=${snapshotAfter.mode} " +
                     "whenSwitched=$afterNames hid=$hid oldStillOnDisk=$stillOnDisk markerIntact=$markerIntact " +
-                    "pendingProjects=$pending pendingNamesRoot=$askedFor " +
+                    "pendingProjects=$pending pendingNamesOldRoot=$askedFor " +
                     "movedBack=${moved.moved} rootNow=${backRoot.absolutePath} namesAfterMove=$backNames " +
                     "contentKept=$contentKept before=$beforeNames",
             )
         } finally {
             // Leave the device as found: the same MODE, the original workspace active,
-            // and our project deleted from wherever it ended up.
-            runCatching {
-                if (wasChosen) controller.switchTo(live) else controller.useDefaultLocation()
-            }
-            runCatching { moveBackIfNeeded(controller, live) }
-            runCatching { created?.let { store.delete(it.name) } }
+            // and our project deleted from wherever the round trip left it.
+            runCatching { if (wasChosen) controller.switchTo(live) else controller.useDefaultLocation() }
+            // Anything still in the temporary root comes home BEFORE the folder is
+            // removed: the switch-back above only makes the live root active, and a
+            // project left in a folder that is about to be deleted would be quietly
+            // lost by the cleanup rather than by the app.
+            runCatching { ProjectMigration.moveAll(temp, live, allowTargetNonEmpty = true) }
+            runCatching { created?.let { storeNow().delete(it.name) } }
             runCatching { temp.deleteRecursively() }
         }
     }
 
-    /**
-     * After the gate switched the workspace, the project may sit in the temporary
-     * root: bring it home so the cleanup deletes it from the live workspace rather
-     * than leaving it in a directory that is about to be removed.
-     */
-    private fun moveBackIfNeeded(controller: StorageController, live: File) {
-        val pending = controller.snapshot().pendingRoots
-        if (pending.isNotEmpty()) {
-            runCatching { controller.moveProjectsIntoPlace() }
-        }
-        // Nothing to assert here: the gate above already reported. This runs in a
-        // `finally`, and a cleanup that throws would hide the real verdict.
-        File(live).mkdirs()
+    private companion object {
+        /** Written before the switch and read after the round trip. */
+        const val MARKER = "written before the switch"
     }
 
     // ---- W4: the workspace is OUTSIDE the sandbox, and the server agrees -----

@@ -2249,7 +2249,7 @@ pass that walks the v4 flow on hardware is §B.12.5, and it has **not run yet**.
 
 | Item | What changed | Where |
 |---|---|---|
-| 1. workspace → project → chat | One workspace folder holds every project as a direct subfolder (`<workspace>/1`); a chat is an OpenCode session inside the project directory and creates **no** folder; the workspace switch (pick another folder) moved to **Settings → Workspace**, where it is the only such control and carries the note about what switching hides | `AppRoot.kt` (route + `workspaceConfirmed` gate, `ROUTE_WORKSPACE`), `runtime/StorageChoice.kt` (`workspaceConfirmed`/`markWorkspaceConfirmed`), `projects/StorageController.kt` (snapshot reused for the Settings section), `settings/SettingsScreen.kt` (`WorkspaceSection`), `projects/ProjectStore.kt` (`FIRST_PROJECT_NAME = "1"`) |
+| 1. workspace → project → chat | One workspace folder holds every project as a direct subfolder (`<workspace>/1`); a chat is an OpenCode session inside the project directory and creates **no** folder; the workspace switch (pick another folder) moved to **Settings → Workspace**, where it is the only such control and carries the note about what switching hides; and the switch itself now *hides* instead of migrating (`StorageController.switchTo`) — see §B.12.6, because the old code moved the projects into the new folder while the screen told the user they would be hidden | `AppRoot.kt` (route + `workspaceConfirmed` gate, `ROUTE_WORKSPACE`), `runtime/StorageChoice.kt` (`workspaceConfirmed`/`markWorkspaceConfirmed`), `projects/StorageController.kt` (snapshot reused for the Settings section), `settings/SettingsScreen.kt` (`WorkspaceSection`), `projects/ProjectStore.kt` (`FIRST_PROJECT_NAME = "1"`) |
 | 2. provider search + one-step activation | The catalog is searchable (ranked: exact id, id prefix, name prefix, substring; case-insensitive; bounded to 60 rows), tapping a listed provider opens a dialog that asks for the **API key only** — base URL and model list come from the catalog — and the non-catalog path stays as its own section (id, display name, base URL, model ids, key) written as upstream's own `provider.<id>` config block plus `PUT /auth/:id` | `client/ProviderCatalog.kt` (new: `ProviderCatalog.search`, `CustomProviderConfig`), `client/OpenCodeRepository.kt` (`addCustomProvider`), `ui/settings/SettingsScreen.kt` (`provider_search`, `ProviderKeyDialog`, `provider_connect_<id>`, `custom_provider_*`) |
 | 3a. model persistence (the reported bug) | The model the user last used is persisted (SharedPreferences) and is what a **new chat, a new project and a fresh process** start from; the Phase 9 heuristic is only the fallback when the stored provider has left the server's catalog | `client/ModelPreference.kt` (new), `client/DefaultModelHint.kt` (`resolve`), `client/OpenCodeRepository.kt` (persist on pick and on a turn actually being sent; publish `starredModels` in `UiState`), `AppContainer.kt` (wires the store) |
 | 3b. quick switch | A compact dropdown at the top of the chat lists **only starred models** (plus a link to Settings when the list is empty) and switches the model in place; starring is a checkbox per model in Settings → Model, and starred order is the order the user starred in | `ui/chat/ModelQuickSwitch.kt` (new), `ui/chat/ChatScreen.kt`, `ui/settings/SettingsScreen.kt` (`model_star_<provider>_<model>`), `client/ModelPreference.kt` |
@@ -2318,12 +2318,14 @@ change it, it names the mechanism honestly.
 |---|---|---|
 | `phase6/scripts/30-static-checks.sh` | copy/URL literals, resources, a11y names, lazy lists, UI purity (screens stay pure functions), icon availability | **rc=0** (20 UI files scanned, 0 findings each; 399 strings defined, 0 referenced-but-missing) |
 | `phase10/scripts/30-static-checks.sh` | the driver's reader self-test (20 checks), the fake-phone shim, Compose icon availability, workflow template, no infinite animations | **rc=0** |
-| `test-90-real-device.sh` | the real device driver run against the fake phone — now including the v4 stages | see §B.12.4 (numbers below) |
+| `test-90-real-device.sh` | the real device driver run against the fake phone — now including the v4 stages | see §B.12.6 (numbers below) |
 | `ChatUiGatesTest` U9 (rewritten) | the storage screen offers **none** of the removed controls, still reports location/mode/honesty, still repairs a revoked grant and still moves projects | pending CI |
 | `ChatUiGatesTest` U10, U11, U12 (new) | quick switch lists only starred models and picks in place; provider search filters and reports no-match; the key dialog asks for the key only; the custom-provider path exists; the workspace step has one folder and one action; Settings owns the switch | pending CI |
 | `FirstRunUiGatesTest` F1–F3 (updated) | the first run may stop at the workspace step, and F3 walks it: one tap → first project → chat | pending CI |
 | `WorkspaceIsolationGatesTest` W1–W4 | unchanged, re-run as before | pending CI |
 | `WorkspaceIsolationGatesTest` W5 (new) | sibling confinement one level deeper (see §B.12.4) | pending CI |
+| `WorkspaceIsolationGatesTest` W6 (new) | a workspace switch hides the old projects, deletes nothing, and offers them back (see §B.12.6) | pending CI |
+| `test-90-selfcheck.py` (new) | the harness/app contract, offline: fixtures match the app, needles match the fixtures, gates match the tags (see §B.12.6) | rc=0, and it reproduces the original incident on purpose |
 | JVM unit tests `ModelPreferenceTest`, `ProviderCatalogTest` (new) | the persistence decision, the codec (a model id containing a slash), the ranking, and the custom-provider config document | pending CI |
 | W4/host visibility, smoke, release verify, phase 9 PROVSEL | unchanged stages, re-run on the same revision | pending CI |
 
@@ -2389,3 +2391,94 @@ The pending v3 stop condition is unchanged and still **NOT TESTED**: `FIRST_RUN_
 `FILES_SCREEN` and `LIVE_TURN` have never executed on hardware. Tomorrow's single pass is what
 changes that, and it now also answers whether the `HARNESS_READER` fix works (R0.4/R0.5) — so
 one run, one bundle, everything.
+
+### B.12.6 Two holes closed after the first push (and one of them was a lie in the copy)
+
+Both of these were found by re-reading the code against the brief rather than by a test, which
+is worth saying plainly: the first push was "code-complete" and still had them.
+
+**1. The switch migrated while the screen said it hid.** The brief asks for terminal-`cd`
+behaviour: pick a different folder and the previous workspace's projects are simply not there
+any more, nothing deleted. The v3 code did something else - `StorageController.useChosenFolder`
+called `reactivate(oldRoot)`, which *moves* every project into the new root. So the new
+`settings_workspace_switch_note` string ("Switching the workspace hides the projects in the old
+folder, the way cd changes what a terminal shows. Nothing is deleted; switch back to see them
+again.") described a behaviour the app did not have, and a user who switched folders to get a
+clean workspace would have found their old projects carried along.
+
+The fix is a new `StorageController.switchTo(dir)`: it persists the new root, refreshes the
+cached paths, creates the layout, and **does not move anything** - `moved` is 0 by
+construction. The two user-facing switches (`useChosenFolder`, `useDefaultLocation`) go through
+it. Migration deliberately stays where it is the same workspace becoming reachable rather than a
+different one being chosen: `activateAllFilesAccess` (the grant arrived, the shared location is
+now usable) and `migrateOnStart` (an app start in a fallback root). The old folder then shows up
+as a *pending root*, which is exactly what the Settings section already renders - "Move them
+here" (`moveProjectsIntoPlace`) is now the only action in the class that fills a non-empty
+destination, so "nothing is lost" has a name and a button instead of an assumption.
+
+Two smaller consequences of the same change, both found by writing the gate rather than by
+reading it, which is the argument for writing gates:
+
+* **the "way back" had to be widened.** `pendingRoots` listed only the app-specific and
+  app-private roots - which was right while an explicit switch migrated, because a former
+  location could never hold anything afterwards. With a switch that hides, the folder the user
+  came *from* is exactly where the projects still are, so the shared default is in the list now
+  and the Settings section offers them back. Without that, "nothing is lost" would have been
+  true on disk and false in the app;
+* **the gate had to stop holding a stale store.** `RuntimePaths.get` and `ProjectStore.get`
+  return cached instances and a switch replaces the cache, so a store captured before the switch
+  keeps answering about the old root. The gate re-fetches per step (`storeNow()`), and the
+  comment in it says why: a gate that measures the wrong object is the bug it is supposed to
+  catch.
+
+**W6** (`w6_switchingTheWorkspaceHidesTheOldProjectsAndDeletesNothing`, emitted as
+`P10_WS_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING`) drives that same function - not a
+re-implementation of it - and asserts the whole round trip on a device:
+
+| Step | Assertion |
+|---|---|
+| create + write | a project exists in the live workspace with `survives.txt` in it |
+| `switchTo(temp)` | the listing is the new root's (the project is gone from it), the old folder is still on disk, `survives.txt` still reads what it read, and the old root is reported as a pending root with a project in it |
+| `moveProjectsIntoPlace()` | the project is back in the listing, with its file, in the new root |
+| `finally` | the previous **mode** is restored, the project is brought home, our project and the temporary root are deleted - the next gate starts where this one started |
+
+The mode restore is not decoration: the first version of the gate called `switchTo(live)` at the
+end, which would have left the device in `CHOSEN` mode pointing at the shared default. A gate
+that leaves a state behind is how the *next* gate fails for a reason its own log does not
+explain.
+
+**2. The harness could disagree with the app and only a full run would say so.** The first v4
+self-test run came back red with `P10D_FILES_SIMPLIFIED FAIL :: Export a copy`: the *fixture*
+still served a control the v4 UI had removed. The driver was right and the harness was stale -
+the correct direction to fail, and still an evening of a red run to find out.
+
+`phase10/scripts/test-90-selfcheck.py` is that incident in five seconds, offline, and it checks
+what the *harness* has to be true before any driver run means anything:
+
+| Check | What a failure means |
+|---|---|
+| the fixtures build, exactly the 11 expected screens | a fixture edit broke the fake phone |
+| no fixture serves a control from the driver's own removed-list (read out of the driver, so "removed" has one definition) | the incident above |
+| no two `clickable` nodes in a fixture overlap | the fake phone taps the FIRST node containing the point, so an overlap silently drives a different control than the driver aimed at (this already happened once: the provider row swallowed the taps meant for its own buttons) |
+| every label the v4 driver stages assert is producible from a fixture (only assertion call sites are read: `wait_for`'s needle argument, `ui_has`/`ui_has_any`/`screen_label` arguments; `tap_any` alternatives and `rec` details are not assertions) | the driver waits for copy that no screen has |
+| every test tag the instrumented gates look for exists as a `testTag` in the main sources (constant and conditional forms included; a tag built from a gate-side constant is checked by prefix) | a gate asserting on a tag no screen sets - a gate that can only ever fail, or worse, pass on a stale tag |
+
+It runs in the Phase 10 static-check stage and again as a hard pre-stage of the driver
+self-test, so a device run cannot start against a harness that already disagrees with the app.
+Evidence that it is worth its line count: injecting a stale `Export a copy` node into the files
+fixture - the exact defect that produced the red run - makes it fail in one line
+(`FAIL removed controls: none of 4 is served by any fixture :: served anyway: ['Export a copy']`)
+in under a second. The injection was reverted; the check stays.
+
+Verification status of this sub-section, stated plainly: the contract check and the Phase 10
+static stage are **rc=0 on this revision** (with the incident reproduced on purpose, above), W6's
+gate and the pending-root change are **written but not yet executed on a device** - they run in
+the workspace gate stage of the same CI pass as everything else, and the full self-test run with
+the v4 driver scenarios was still in flight when this section was written (its numbers are
+recorded in §B.12.7).
+
+One more thing in the same spirit, small but load-bearing: the first-run destination was
+written out twice (an automatic advance when the runtime came up, and the Welcome screen's own
+button). They disagreed on a fresh install - the button went to the project list, the advance
+went to the workspace step - so a user who tapped "Continue" could skip the step entirely. Both
+now call one function, `firstRunDestination(projectName, workspaceConfirmed)`.
