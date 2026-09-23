@@ -1,7 +1,7 @@
-=== Phase 10 static checks 2026-09-23T15:29:40Z ===
+=== Phase 10 static checks 2026-09-23T19:28:55Z ===
 
 === phase 9 static checks (not weakened) ===
-=== Phase 9 static checks 2026-09-23T15:29:40Z ===
+=== Phase 9 static checks 2026-09-23T19:28:55Z ===
 OK   bash -n on 42 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8/phase9 driver
@@ -29,12 +29,12 @@ OK   androidTest method names are dex-safe identifiers (D8 rule)
 --- check-ui-strings (hardcoded copy + URL literals)
 check-ui-strings: 65 kotlin files, 0 hardcoded-copy findings, 0 url findings
 --- strings.xml sanity: every referenced R.string.* must exist
-strings.xml: 398 defined, 367 referenced, 0 missing, 31 unused (action_close, action_copy, ask_permission_metadata, ask_permission_request, ask_permission_waiting, availability_detail_label, availability_provider_note, chat_attachment_size)
+strings.xml: 400 defined, 369 referenced, 0 missing, 31 unused (action_close, action_copy, ask_permission_metadata, ask_permission_request, ask_permission_waiting, availability_detail_label, availability_provider_note, chat_attachment_size)
 check-ui-strings.sh rc=0
 OK   ui strings + resources
 
 === ui accessibility (contentDescription / labels) ===
-check-ui-a11y: 20 files, 22 icon/image, 65 button, 17 field call sites, 0 findings
+check-ui-a11y: 20 files, 22 icon/image, 65 button, 15 field call sites, 0 findings
 OK   ui accessibility (contentDescription / labels)
 
 === ui lazy lists (no take(8), no eager forEach) ===
@@ -103,7 +103,7 @@ PASS a visible match is not flagged (rc=0) (rc=0 out='1020 1740')
 PASS has still finds an off-screen node (a tag being present is news) (rc=0)
 PASS a device that marks everything not-shown does not blind the reader (rc=0)
 PASS attrs reports the attribute set and the hidden count (rc=0 out='nodes=4 2 node(s) marked shown=false\nbounds:4 class:4 clickable:4 content-desc:4 enabled:4 index:4 package:4 resource-id:4 shown:4 text:4')
-PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmpbmpi5_uv/broken.xml')
+PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmp2ypb6ezf/broken.xml')
 p10d-ui selftest: 20 checks, 0 failed
 SELFTEST PASS
 OK   uiautomator dump reader self-test (tap targets, disabled states, diagnostics)

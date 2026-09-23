@@ -39,7 +39,7 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   model marker written for the x86_64 carry-forward
   ok   a POSIX host says so, instead of leaving the path question open
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-152959/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-192913/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
   ok   v4: the storage screen no longer shows copy-path, export or the folder choosers
@@ -147,6 +147,16 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   the first-run screens were read on the converted path
   ok   the live turn ran - the whole run is usable on a simulated Windows host
 
+--- scenario: a returning device (projects on shared storage, the app opens chat directly) ---
+  ok   a returning-device run is green (rc=0)
+  ok   FIRST_RUN names the returning state it found
+  ok   run.log lists the workspace folders the shell saw (outside-app evidence)
+  ok   the verdict says where the fresh flow is verified instead of claiming it ran
+  ok   the workspace step SKIPs with the documented returning reason
+  ok   no 300s stall on first-run needles on a returning device
+  ok   the v4 search stage still runs from the chat surface
+  ok   the quick-switch stage still runs from the chat surface
+
 --- scenario: a relative --out, run from another directory (the owner's shape) ---
   ok   a relative --out run is green (rc=0)
   ok   the bundle landed under the caller's cwd
@@ -162,5 +172,5 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   the screenshot validator ran on copies in that same directory
   ok   and the whole run reached the live turn
 
-=== driver self-test: pass=122 fail=0 ===
+=== driver self-test: pass=130 fail=0 ===
 SELFTEST PASS (driver runs clean, and fails for the RIGHT reasons)
