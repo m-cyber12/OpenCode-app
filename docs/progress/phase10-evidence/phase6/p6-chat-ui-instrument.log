@@ -1,8 +1,31 @@
 
-ai.opencode.android.ui.ChatUiGatesTest:............
+ai.opencode.android.ui.ChatUiGatesTest:..
+Error in u12_workspaceStepHasOneFolderAndOneActionAndSettingsOwnsTheSwitch(ai.opencode.android.ui.ChatUiGatesTest):
+java.lang.AssertionError: Failed: performScrollToNode(TestTag = 'settings_workspace_pick')
+Can't retrieve node at index '0' of 'TestTag = 'settings_list''
+There are no existing nodes for that selector.
 
-Time: 44.554
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrDie(SemanticsNodeInteraction.kt:175)
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrDie$default(SemanticsNodeInteraction.kt:150)
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchSemanticsNode(SemanticsNodeInteraction.kt:84)
+	at androidx.compose.ui.test.ActionsKt.performScrollToNode(Actions.kt:225)
+	at ai.opencode.android.ui.ChatUiGatesTest.u12_workspaceStepHasOneFolderAndOneActionAndSettingsOwnsTheSwitch(ChatUiGatesTest.kt:1873)
+.........
 
-OK (12 tests)
+Time: 41.868
+There was 1 failure:
+1) u12_workspaceStepHasOneFolderAndOneActionAndSettingsOwnsTheSwitch(ai.opencode.android.ui.ChatUiGatesTest)
+java.lang.AssertionError: Failed: performScrollToNode(TestTag = 'settings_workspace_pick')
+Can't retrieve node at index '0' of 'TestTag = 'settings_list''
+There are no existing nodes for that selector.
+
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrDie(SemanticsNodeInteraction.kt:175)
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrDie$default(SemanticsNodeInteraction.kt:150)
+	at androidx.compose.ui.test.SemanticsNodeInteraction.fetchSemanticsNode(SemanticsNodeInteraction.kt:84)
+	at androidx.compose.ui.test.ActionsKt.performScrollToNode(Actions.kt:225)
+	at ai.opencode.android.ui.ChatUiGatesTest.u12_workspaceStepHasOneFolderAndOneActionAndSettingsOwnsTheSwitch(ChatUiGatesTest.kt:1873)
+
+FAILURES!!!
+Tests run: 12,  Failures: 1
 
 
