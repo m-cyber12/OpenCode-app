@@ -2695,3 +2695,62 @@ the FAIL line, the clone instruction - are untouched), and the full local driver
 re-run on the edited file before the branch returns to CI. The combined device pass itself
 remains the owner's next action with a full checkout.
 
+### B.12.12 The owner's second run found a real driver bug: adb.exe cannot eat a POSIX path (2026-09-23)
+
+With a full checkout the combined pass ran cleanly through R0-R2 and then stopped itself in
+R3. The owner's `p10d-out/run.log` (their own upload, `7b45454`) has the whole failure in
+two lines:
+
+```
+Performing Streamed Install
+adb.exe: failed to stat /c/src/app-release-signed.apk: No such file or directory
+```
+
+This one is the harness's fault - mine, specifically, in `90-real-device-signed.sh`. R2 had
+just finished *verifying the very same APK file* with bash and Python (`verifying
+/c/src/app-release-signed.apk`, `P10D_ARTIFACT PASS`), then the next line handed that same
+string to `adb install`. Like every Windows binary invoked from Git Bash, adb.exe takes a
+path string literally: `/c/src/app-release-signed.apk` resolves against the current drive as
+`C:\c\src\...`, which does not exist. The script already knows this - the entire
+`win_path()` / `host_path_m()` family exists because of the owner's 09-21 run, and every
+Python helper gets converted paths (`run.log` even says "python path mode: m"). The one
+call that hands a host path to a Windows binary, `adb install`, was left out.
+
+Three things were wrong, and all three are fixed:
+
+1. **The path.** `$APK` is now converted with `host_path_m` on `windows-msys` hosts before
+   `adb install` sees it (`APK_ADB`), exactly like the Python tools, and run.log states the
+   form adb received.
+2. **The verdict lied.** The old FAIL line said "a signing/ABI/minSdk mismatch" - the
+   checklist guess. adb said `failed to stat ... No such file or directory`. The new FAIL
+   line reports adb's own words (it greps for `INSTALL_FAILED_*` or the stat message), so a
+   host path problem and a genuine device-side `INSTALL_FAILED_VERIFICATION_FAILURE` can no
+   longer be confused.
+3. **The run kept going after its own load-bearing FAILURE.** R3 continued - it printed
+   `P10D_VERSION_ON_DEVICE PASS :: installed versionName= code=` *for an app that was not
+   installed*, then ran the R4 first-run stage at a device with nothing on it (the owner's
+   log: `Error: No UID for io.github.mcyber12.opencode`, `Activity class ... does not
+   exist`). An INSTALL fail now stops the run immediately - the same contract R0.4's
+   checkout and R0.5's reader already had. (The version-name gate now only runs after a
+   happy install.)
+
+The regression netting is as strong as this incident deserves: the fake phone's adb now
+**rejects exactly what real adb.exe on Windows rejects** - any install path that is not a
+drive path (`^[A-Za-z]:/...`) on a forced-windows host, printing byte-identical
+`adb.exe: failed to stat ... : No such file or directory` (probe transcripts in the turn's
+notes). The `winhost` scenario gained an assertion pair: `P10D_INSTALL PASS` must exist
+*with the stat-rejecting fake adb in place* (run green only if the conversion happened),
+and run.log must name the path form adb was handed. In other words, pre-fix this exact
+self-test line goes red, post-fix it is green - the owner's real device supplied the red.
+The full local self-test re-ran: **pass=122 fail=0** (15 scenarios, two new
+checks - both in `winhost`, both quoted above; the `incomplete`, `reader-dead` and
+`install` shapes all still fail for the right reasons), saved at
+`docs/progress/phase10-evidence/v4-driver-selftest/driver-selftest-after-adb-install-fix.log`.
+
+Verification status: named to the owner's 11:45Z run; the app, the signing flow and CI#71's
+artifact are exonerated - every failure line in both of the owner's stops (09:19Z and
+11:45Z) traces to this team, not to the artifact; the phone was fresh and unstained (the
+installer never got a file to install). The combined pass is safe to re-run with the same
+`app-release-signed.apk` (sha256 2744ecdf...) after a plain `git pull` - no re-signing, no
+new download.
+

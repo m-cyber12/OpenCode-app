@@ -497,6 +497,10 @@ check "$(grep -qa 'screen=yes' "$OUT/screenshots.log" && echo 0 || echo 1)" \
   "the screenshot validator ran through that form too (not just the reader)"
 check "$(! grep -qai 'could not be VALIDATED' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
   "and no capture is reported as unvalidated on this host"
+check "$(grep -qa '^P10D_INSTALL PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the APK is handed to the Windows adb as a Windows path - INSTALL PASS against an adb the owner's real phone never got (POSIX stat-reject, the 2026-09-23 run)"
+check "$(grep -qa 'the APK is handed to it as C:/' "$OUT/run.log" && echo 0 || echo 1)" \
+  "run.log names the path form adb was handed"
 check "$(grep -qa '^P10D_FIRST_RUN PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
   "the first-run screens were read on the converted path"
 check "$(grep -qa '^P10D_LIVE_TURN PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \

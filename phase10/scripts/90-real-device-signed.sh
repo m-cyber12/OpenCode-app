@@ -1074,15 +1074,33 @@ else
   rd SIGNATURE 7 "apksigner not on PATH: signature checked for PRESENCE by check-apk.py only. Install build-tools and re-run for the cryptographic verdict (docs/RELEASE.md s5)"
 fi
 
-# ---- R3: clean install of the SIGNED apk -------------------------------------
+# ---- R3: clean install of the SIGNED apk ------------------------------------
 step "R3 clean install of the signed artifact"
 log "uninstalling any previous install so this is a genuine first run"
 adb uninstall "$PKG" >/dev/null 2>&1 || true
 adb logcat -c >/dev/null 2>&1 || true
-if adb install -r -g "$APK" 2>&1 | tail -2 | tee -a "$LOG" | grep -q "Success"; then
-  rd INSTALL 0 "adb install of the signed release APK succeeded (this is the artifact a user would sideload)"
+# adb.exe is a WINDOWS binary on an MSYS host: the path string is received literally,
+# and a POSIX-absolute path like /c/src/app.apk does not exist as far as it is
+# concerned ('adb.exe: failed to stat /c/src/app-release-signed.apk: No such file or
+# directory' in the owner's 2026-09-23 run - bash and Python read the same string
+# fine, which is why R2 verified the artifact and R3 still failed). adb gets the
+# mixed path form achieved by the same host_path conversion every Python tool gets.
+APK_ADB="$APK"
+if [ "${HOST_SHELL:-}" = "windows-msys" ]; then
+  APK_ADB="$(host_path_m "$APK")"
+  log "adb is a Windows binary on this host - the APK is handed to it as $APK_ADB"
+fi
+INSTALL_OUT="$(adb install -r -g "$APK_ADB" 2>&1)"
+printf '%s\n' "$INSTALL_OUT" >> "$LOG"
+if printf '%s\n' "$INSTALL_OUT" | grep -q "Success"; then
+  rd INSTALL 0 "adb install of the signed release APK succeeded (as $APK_ADB) - this is the artifact a user would sideload"
 else
-  rd INSTALL 1 "adb install failed - a signing/ABI/minSdk mismatch (see run.log)"
+  # name WHAT adb said, not a guess from a checklist: 'failed to stat' is a host
+  # path problem, 'INSTALL_FAILED_*' is a real device verdict - they are different
+  # fixes, and the run.log line that carries the difference was already printed
+  INSTALL_LINE=$(printf '%s\n' "$INSTALL_OUT" | grep -oE '(INSTALL_FAILED_[A-Z_]+|failed to stat [^:]*: No such file or directory)' | head -1)
+  rd INSTALL 1 "adb install failed - ${INSTALL_LINE:-see run.log} (full adb output in run.log)"
+  bail "the signed APK did not install; every later stage presumes the app is on the device"
 fi
 adb shell pm grant "$PKG" android.permission.POST_NOTIFICATIONS >/dev/null 2>&1 || true
 VER_NOW=$(adb shell dumpsys package "$PKG" 2>/dev/null | tr -d '\r' | grep -o 'versionName=[^ ]*' | head -1 | cut -d= -f2)

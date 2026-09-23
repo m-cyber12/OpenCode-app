@@ -429,7 +429,26 @@ def main(argv):
         return 0
 
     if head in ("install", "uninstall"):
-        sys.stdout.write("Performing Streamed Install\nSuccess\n" if head == "install" else "Success\n")
+        if head == "uninstall":
+            sys.stdout.write("Success\n")
+            return 0
+        # adb.exe on the owner's Windows host is a WINDOWS binary: it receives the
+        # path string literally, and a POSIX-absolute path like
+        # /c/src/app-release-signed.apk is 'C:\c\src\...' to it. The 2026-09-23 run
+        # showed exactly that: 'failed to stat /c/src/app-release-signed.apk:
+        # No such file or directory'. The fake phone rejects precisely the paths
+        # real adb.exe rejects (anything that is not C:/... after conversion), so
+        # the driver's host_path conversion is load-bearing in the winhost scenario -
+        # without it the same FAIL the owner saw appears here instead of silently
+        # pretending the install succeeded.
+        apk_arg = args[-1] if args else ""
+        force_msys = os.environ.get("P10D_FORCE_HOST_SHELL") == "windows-msys"
+        if force_msys and not re.match(r"^[A-Za-z]:/", apk_arg):
+            sys.stdout.write("Performing Streamed Install\n")
+            sys.stdout.write(
+                "adb.exe: failed to stat %s: No such file or directory\n" % apk_arg)
+            return 1
+        sys.stdout.write("Performing Streamed Install\nSuccess\n")
         return 0
 
     if head == "logcat":

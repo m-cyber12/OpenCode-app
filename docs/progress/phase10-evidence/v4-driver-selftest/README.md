@@ -17,6 +17,10 @@ What the three earlier rounds in `../v3-driver-selftest/` are for comparison:
 | `driver-selftest-106.log` | 14 | 106 | PASS (the v3 revision that went to the phone) |
 | `driver-selftest-120-tail.log` | **15** | **120** | PASS (v4: onboarding scenario, the five v4 verdicts, the fixture-escape fix) |
 
+| File | What it covers |
+|---|---|
+See the log names; `driver-selftest-after-adb-install-fix.log` (15 scenarios, **122 checks**) is current: it verifies the adb-install host-path fix from the owner's 2026-09-23 run, where the fake phone's adb rejects exactly the paths real adb.exe on Windows rejects.
+
 Two things this file is careful about, because the numbers matter more than the green:
 
 * **the count went up with the scenarios, not with the assertions inside them.** The v4
