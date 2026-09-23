@@ -1,0 +1,16 @@
+# The owner's phone driver runs on Windows Git Bash, and the repo has no server
+# between us and the user's machine. Git for Windows installs with core.autocrlf=true
+# by default, which converts text files to CRLF on checkout there; a CRLF bash script
+# fails with stray-\r errors and a CRLF python helper is not the file CI tested.
+# Shell and python are therefore LF-pinned everywhere so a fresh clone behaves like
+# the file-by-file downloads the driver was first written for.
+*.sh  text eol=lf
+*.py  text eol=lf
+
+# Binary by nature; never touch. (The store assets and evidence screenshots live here,
+# and any release artifacts copied in by the owner on the device-run machine.)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.apk binary
+*.aab binary

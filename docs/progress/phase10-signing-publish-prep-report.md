@@ -2649,3 +2649,49 @@ phone-verified stop and the v4 device stages together are tomorrow's single comb
 with `phase10/scripts/90-real-device-signed.sh` on the user's hardware, against CI's unsigned
 release artifact, signed locally with the user's key.
 
+### B.12.11 The owner ran it: the run stopped itself before it could lie (2026-09-23, phone)
+
+The owner signed CI run #71's unsigned artifact and started the combined pass
+(`app-release-signed.apk`, sha256 `2744ecdf...`). The run printed two PASSes and one FAIL and
+stopped in seven seconds:
+
+```
+P10D_DEVICE_AWAKE PASS :: screen awake and unlocked before any UI step: ...
+P10D_HARNESS_PYTHON PASS :: Python interpreter: python3 (3.14.7)
+P10D_HARNESS_CHECKOUT FAIL :: this checkout is missing committed helper file(s):
+    phase10/scripts/p10d-ui.py phase10/scripts/p10d-png.py phase10/scripts/check-apk.py
+    phase10/scripts/92-workspace-visibility.sh ...
+STOPPING: the checkout is incomplete (see HARNESS_CHECKOUT)
+```
+
+This is the script behaving as designed, not a new defect: the directory the owner ran it
+from is a partial copy (four committed helpers absent), and R0.4 exists exactly to tell that
+apart from a path-format fault before six minutes of fake-green UI reads happen. It is also
+not a surprise to the harness - `test-90-real-device.sh` runs this very shape as the
+`incomplete` scenario (a stripped copy holding only the main script must produce exactly:
+`^P10D_HARNESS_CHECKOUT FAIL` in SUMMARY.txt, the clone instruction in DIAGNOSIS.txt, and an
+early stop). The owner hit on hardware what the self-test expects a real host to produce.
+The phone was untouched by the time the run stopped; nothing was left in a half state.
+
+Two fixes of record came out of it, both in this round's push (run `35786598511` + one):
+
+1. **The console now carries the fix.** The fuller diagnosis has always been written to
+   `p10d-out/DIAGNOSIS.txt`, but the only line the console showed was the one-line `rd`
+   verdict plus "See DIAGNOSIS.txt". For this failure the three recovery lines (what is
+   missing, the two clone commands, and the no-git ZIP alternative) now print in the console
+   directly, between the FAIL and the stop - the person who provoked this failure by
+   downloading files one at a time is exactly the person who will not open a second file.
+2. **A fresh Windows clone can no longer decode this differently than the self-test did.**
+   The repo gained `.gitattributes` pinning `*.sh` / `*.py` to LF (and the image/apk/aab
+   extensions to binary). Git for Windows installs with `core.autocrlf=true` by default; the
+   owner's own advice for this failure is "clone the whole branch", and that step would
+   otherwise hand them CRLF shell scripts that `bash` rejects with stray-`\r` errors. The
+   driver's whole pilot history was built around file-by-file downloads (LF preserved); the
+   clone path now gets the same guarantee.
+
+Verification status: name-tagged to the owner's 09:19Z incident; the two script/attribute
+fixes are committed and covered by the `incomplete` scenario unchanged (its asserted needles -
+the FAIL line, the clone instruction - are untouched), and the full local driver self-test is
+re-run on the edited file before the branch returns to CI. The combined device pass itself
+remains the owner's next action with a full checkout.
+

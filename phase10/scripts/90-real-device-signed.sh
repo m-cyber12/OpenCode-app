@@ -913,6 +913,13 @@ if [ -n "$MISSING_HELPERS" ]; then
   diag "    cd OpenCode-app && git checkout arena/01a0b9d5-opencode-app"
   diag "  (or: Code -> Download ZIP on that branch). Then re-run this script."
   rd HARNESS_CHECKOUT 1 "this checkout is missing committed helper file(s): $MISSING_HELPERS - the run cannot read the phone's screen without them. bash can see the directory ($DIR), so this is an incomplete download rather than a path problem; get the whole branch: git clone https://github.com/m-cyber12/OpenCode-app.git && git checkout arena/01a0b9d5-opencode-app"
+  # the console is what the owner actually reads; do not make them open a second file
+  # to learn the two commands that fix this
+  echo "  missing in this checkout: $MISSING_HELPERS"
+  echo "  fix once, then re-run this exact script with the same APK:"
+  echo "    git clone https://github.com/m-cyber12/OpenCode-app.git"
+  echo "    cd OpenCode-app && git checkout arena/01a0b9d5-opencode-app"
+  echo "  (no git on hand: Code -> Download ZIP on that branch, unzip, run from there)"
   bail "the checkout is incomplete (see HARNESS_CHECKOUT)"
 fi
 
