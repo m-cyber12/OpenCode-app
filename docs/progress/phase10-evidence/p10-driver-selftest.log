@@ -39,7 +39,7 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   model marker written for the x86_64 carry-forward
   ok   a POSIX host says so, instead of leaving the path question open
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-100709/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-122535/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
   ok   v4: the storage screen no longer shows copy-path, export or the folder choosers
@@ -142,6 +142,8 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   the run says which path form every Python tool is being handed
   ok   the screenshot validator ran through that form too (not just the reader)
   ok   and no capture is reported as unvalidated on this host
+  ok   the APK is handed to the Windows adb as a Windows path - INSTALL PASS against an adb the owner's real phone never got (POSIX stat-reject, the 2026-09-23 run)
+  ok   run.log names the path form adb was handed
   ok   the first-run screens were read on the converted path
   ok   the live turn ran - the whole run is usable on a simulated Windows host
 
@@ -160,5 +162,5 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   the screenshot validator ran on copies in that same directory
   ok   and the whole run reached the live turn
 
-=== driver self-test: pass=120 fail=0 ===
+=== driver self-test: pass=122 fail=0 ===
 SELFTEST PASS (driver runs clean, and fails for the RIGHT reasons)
