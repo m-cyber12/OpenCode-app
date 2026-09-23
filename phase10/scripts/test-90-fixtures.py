@@ -156,13 +156,14 @@ def build(root):
         # v4 item 2: one-step activation - the provider row and its key action.
         node("provider_openrouter", text="No key stored", bounds="[40,700][680,800]"),
         node("provider_connect_openrouter", text="Save key", bounds="[700,700][1040,800]"),
-        # v3: the manual provider-key path (R6 enters a key here when one is given).
-        text_node("Provider keys", "[40,900][1040,980]"),
-        node("key_provider", text="openrouter", desc="Provider", bounds="[40,1000][1040,1100]",
+        # v4 item 3: the manual name+key form is gone. What remains of the section
+        # is the custom-provider half (its own ids), plus the Keystore assurance.
+        text_node("Add a custom provider", "[40,900][1040,980]"),
+        node("custom_provider_id", text="", desc="Provider id", bounds="[40,1000][1040,1100]",
              cls="android.widget.EditText"),
-        node("key_value", text="", desc="API key", bounds="[40,1120][1040,1220]",
+        node("custom_provider_baseurl", text="", desc="Base URL", bounds="[40,1120][1040,1220]",
              cls="android.widget.EditText"),
-        node("key_save", text="Save key", bounds="[40,1240][540,1340]"),
+        node("custom_provider_save", text="Save provider", bounds="[40,1240][540,1340]"),
     ])
 
     # ---- settings, after a search that matches nothing -------------------------
@@ -172,12 +173,12 @@ def build(root):
              cls="android.widget.EditText"),
         text_node("No provider matches \"zzzqq\". Use the fields below for an endpoint that is "
                   "not in the catalog.", "[40,700][1040,780]"),
-        text_node("Provider keys", "[40,900][1040,980]"),
-        node("key_provider", text="openrouter", desc="Provider", bounds="[40,1000][1040,1100]",
+        text_node("Add a custom provider", "[40,900][1040,980]"),
+        node("custom_provider_id", text="", desc="Provider id", bounds="[40,1000][1040,1100]",
              cls="android.widget.EditText"),
-        node("key_value", text="", desc="API key", bounds="[40,1120][1040,1220]",
+        node("custom_provider_baseurl", text="", desc="Base URL", bounds="[40,1120][1040,1220]",
              cls="android.widget.EditText"),
-        node("key_save", text="Save key", bounds="[40,1240][540,1340]"),
+        node("custom_provider_save", text="Save provider", bounds="[40,1240][540,1340]"),
     ])
 
     # ---- settings, after a search that matches OpenRouter ----------------------
@@ -191,13 +192,13 @@ def build(root):
         text_node("OpenRouter", "[40,780][400,880]"),
         node("model_star_openrouter_gpt-4o-mini", text="",
              desc="Show gpt-4o-mini in the chat quick switch", bounds="[620,780][860,880]"),
-        node("provider_connect_openrouter", text="Save key", bounds="[880,780][1040,880]"),
-        text_node("Provider keys", "[40,1100][1040,1180]"),
-        node("key_provider", text="openrouter", desc="Provider", bounds="[40,1200][1040,1300]",
+        node("__CONNECT_NODE__", text="__CONNECT_TEXT__", bounds="[880,780][1040,880]"),
+        text_node("Add a custom provider", "[40,1100][1040,1180]"),
+        node("custom_provider_id", text="", desc="Provider id", bounds="[40,1200][1040,1300]",
              cls="android.widget.EditText"),
-        node("key_value", text="", desc="API key", bounds="[40,1320][1040,1420]",
+        node("custom_provider_baseurl", text="", desc="Base URL", bounds="[40,1320][1040,1420]",
              cls="android.widget.EditText"),
-        node("key_save", text="Save key", bounds="[40,1440][540,1540]"),
+        node("custom_provider_save", text="Save provider", bounds="[40,1440][540,1540]"),
     ])
 
     # ---- the one-step activation dialog (item 2): the key and nothing else -----
@@ -210,6 +211,8 @@ def build(root):
              cls="android.widget.EditText"),
         node("provider_key_save", text="Save key", bounds="[700,1040][1040,1140]"),
         node("provider_key_cancel", text="Not now", bounds="[400,1040][680,1140]"),
+        # Same dialog, connected mode: replace-or-revoke lives here now (v4 item 3).
+        node("provider_key_revoke", text="Revoke key", bounds="[40,1160][400,1260]"),
     ])
 
     # ---- the quick-switch menu (item 3): only the starred models ---------------

@@ -2754,3 +2754,89 @@ installer never got a file to install). The combined pass is safe to re-run with
 `app-release-signed.apk` (sha256 2744ecdf...) after a plain `git pull` - no re-signing, no
 new download.
 
+### B.12.13 The 15:13Z run, crash attribution, the returning install, and the end of the manual key form (2026-09-23)
+
+The owner's third pass (their own `p10d-out/` upload) ran the fixed installer and got much
+further: W1-W4 all green, then two false readings and one real UX complaint. All three are
+resolved here, and each fix is proven by the fake-phone self-test gaining a scenario that
+fails on the old code and passes on the new one - plus, for the crash gates, by replaying
+the owner's own `p10d-out/logcat.txt` through the new attribution code.
+
+**1. The ColorOS crash is no longer the artifact's crash.** The 15:13Z SUMMARY carried
+`P10D_PACKAGING_SWEEP FAIL` and `P10D_NO_CRASH FAIL` because logcat contained one fatal -
+a ColorOS system crash whose block never names this package. The old gates counted *any*
+fatal in the whole logcat as the app's. The sweep and NO_CRASH now attribute: a fatal
+exception block is "ours" only when its `Process: io.github.mcyber12.opencode,` line is
+inside it; packaging-class stack lines (`ClassNotFoundException|NoSuchMethodError|
+NoClassDefFoundError|UnsatisfiedLinkError`) are "ours" only when they name the package;
+everything else is counted as *uncredited* and reported as such in the PASS text (never
+silently dropped). Replay against the owner's real log: `fatals total=1 ours=0
+packaging-ours=0 uncredited=1` - the ColorOS fatal is still visible on the record, it just
+can no longer fail the artifact.
+
+**2. A returning install is first-class, not a needle miss.** The 15:13Z phone already had
+projects on shared storage, so the app opened straight into the conversation - and the
+first-run chain then burned ~300s waiting for first-run needles that can never appear on
+such a device before reporting it as a semi-failure. Verified from the owner's own dump
+(`p10d-out/ui/ui-wait-app-window.xml`, 46 nodes): the chat surface was fully reachable -
+`chat_screen`, `composer_input`, `model_quick_switch`, `open_settings`, all of it - the
+driver simply had no needle for "this is already a conversation." Both first-run waits now
+include the chat markers, and after the projects welcome branch the driver classifies what
+it actually saw: `workspace-step` / `fresh-projects` / **`returning`** / `unknown`. A
+`returning` verdict is a PASS that says *exactly* which surface it got (with
+device-independent evidence quoted: the folders the shell lists at
+`/storage/emulated/0/Documents/OpenCode` from outside the app), states that nothing was
+deleted, and points the fresh-flow proof at the CI gates (F1-F3) instead of pretending
+the fresh flow ran on this phone. Self-test: a new fake-phone scenario seeds that state
+(projects on shared storage, app opens chat directly) and asserts the run is green,
+FIRST_RUN names the returning state in seconds (no 300s stall), the workspace-step gates
+SKIP with the documented reason, the verdict points at CI for the fresh flow, and the
+whole v4 chain (search → key → star → quick switch → live turn) still runs from the chat
+surface.
+
+**3. The manual provider-key form is gone - as decided, relocate-then-delete.** Settings
+no longer has a free-text "provider id + key" form (the one that let a wrong scope go
+quiet). Key management lives where the knowledge is:
+
+* A catalog row only ever offers **Connect** while `!connected`. Once a key is stored, the
+  same row offers **Manage** (`provider_manage_key_<id>`, accessible label "Key options for
+  <Provider>"), which opens the same one-field key dialog in connected mode: title "Stored
+  key for <Provider>", body says a key is stored and offers replace-or-revoke, confirm
+  reads "Replace key", and a **Revoke** action (`provider_key_revoke`) sits inside the
+  dialog. The rotate flow is revoke-then-save through that one dialog - it cannot misname
+  the provider because it never asks for one.
+* The stored-ids + hardware-backed summary rows moved from the deleted form's card into
+  the Model section, right under the current-model line, so the "what secrets exist and
+  where do they live" statement is still on the record.
+* The section that kept its identity deletes nothing else: the **custom-provider** block
+  (id/name/base-URL/models/key) is untouched - it is the only path that legitimately needs
+  free text, and it is clearly the manual one. Its slot is now the whole card, retitled
+  "Add a custom provider."
+* Deleted: the `key_provider`/`key_value`/`key_save`/`key_revoke` nodes and the now-unused
+  copy (`settings_keys_optional`, the field placeholder, the manual provider label), plus
+  the duplicated custom-block title inside the card.
+
+Driver, fixtures and self-test all followed: the R6 key stage no longer types into a form;
+it searches the catalog, looks for the row's chip, and uses whichever the server truth
+offers - **Connect → type → Save** on a fresh phone, **Manage → Revoke → Connect → type →
+Save** (a real rotate, reported as one) when a key is already stored. R5b's key-only
+dialog gate probes both chip states quietly, and its acceptance copy handles both titles
+("API key for ..." / "Stored key for ...") and both bodies, because either wording is the
+same gate. The fixtures dropped the four dead nodes, gave the openrouter row a placeholder
+chip the fake phone resolves from its key state (so both row states are exercisable
+against the same fixture), and the dialog gained the relocated revoke. The self-test
+selfcheck now proves the inverse too: "removed controls: none of 4 is served by any
+fixture." One incident the fake phone earned its keep on: served dump and tap resolver
+disagreed about the placeholder chip (dump showed the resolved id, taps resolved the raw
+one) - caught because the key-dialog gate went red; both sides now resolve the same state.
+
+Verification status: `Bash -n` clean; `test-90-selfcheck.py` PASS; full local self-test
+**pass=130 fail=0** (16 scenarios; baseline was 122 - the eight new checks are the
+returning-device scenario). Kotlin compile is carried by CI (no Android SDK on this box),
+and the changed screen is exactly the one the U-gate suite renders (`ChatUiGatesTest`
+asserts the custom-provider ids that were kept, never the deleted form's ids).
+
+Note for the owner's next pass: the phone may already hold the freshly
+scoped key from the 15:13Z attempt - the R6 stage is built to exercise the rotate path on
+such a phone and will say so in run.log (`key rotated through the app's own UI...`), which
+is exactly the relocate surface this section ships.

@@ -507,6 +507,31 @@ check "$(grep -qa '^P10D_LIVE_TURN PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)
   "the live turn ran - the whole run is usable on a simulated Windows host"
 
 echo
+echo "--- scenario: a returning device (projects on shared storage, the app opens chat directly) ---"
+# The owner's 15:13Z run was not a fresh install and the v4 driver waited five
+# minutes for first-run needles that could never appear on it. With the classifier
+# fix, the same surface must classify + report 'returning' in seconds and still run
+# the whole chain (projects, files, settings, search, key, star, quick switch, live
+# turn) from the chat surface it actually found.
+run_scenario returning
+RC=$(cat "$TMP/rc-returning"); OUT="$TMP/out-returning"
+check "$([ "$RC" = 0 ] && echo 0 || echo 1)" "a returning-device run is green (rc=$RC)"
+check "$(grep -qa '^P10D_FIRST_RUN PASS :: returning install' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "FIRST_RUN names the returning state it found"
+check "$(grep -qa 'returning install detected' "$OUT/run.log" && echo 0 || echo 1)" \
+  "run.log lists the workspace folders the shell saw (outside-app evidence)"
+check "$(grep -qa 'Fresh-install flow: CI F1-F3' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the verdict says where the fresh flow is verified instead of claiming it ran"
+check "$(grep -qa '^P10D_WORKSPACE_STEP SKIP' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the workspace step SKIPs with the documented returning reason"
+check "$(! grep -qa 'wait(workspace-or-projects) TIMED OUT' "$OUT/run.log" && echo 0 || echo 1)" \
+  "no 300s stall on first-run needles on a returning device"
+check "$(grep -qa '^P10D_PROVIDER_SEARCH PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the v4 search stage still runs from the chat surface"
+check "$(grep -qa '^P10D_MODEL_QUICK_SWITCH PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "the quick-switch stage still runs from the chat surface"
+
+echo
 echo "--- scenario: a relative --out, run from another directory (the owner's shape) ---"
 # The owner runs `bash phase10/scripts/90-real-device-signed.sh --apk ...` from the repo
 # root, so OUT is the RELATIVE default "p10d-out". The visibility driver is now invoked

@@ -280,12 +280,15 @@
     <string name="settings_model_deprecated">deprecated</string>
     <string name="settings_model_providers">%1$d providers reported by the agent</string>
 
-    <string name="settings_section_keys">Provider keys</string>
-    <string name="settings_keys_body">A key is stored in the Android Keystore and handed to the agent own credential store. It is never shown again, never exported and never written to a log.</string>
-    <string name="settings_keys_optional">No key is needed for the built-in default model. Add one only if you want to use your own provider account.</string>
-    <string name="settings_keys_provider">Provider</string>
+    <string name="settings_section_keys">Add a custom provider</string>
+        <string name="settings_provider_manage_short">Key</string>
+    <string name="settings_provider_manage_desc">Key options for %1$s: replace or revoke</string>
+    <string name="settings_provider_manage_title">Stored key for %1$s</string>
+    <string name="settings_provider_manage_body">A key is stored on this phone. Type a new one to replace it, or revoke the stored key. The key never leaves the Android Keystore path and is never shown again.</string>
+    <string name="settings_provider_key_replace">Replace key</string>
+    <string name="settings_provider_revoke_desc">Revoke the stored key for %1$s</string>
+<string name="settings_keys_body">A key is stored in the Android Keystore and handed to the agent own credential store. It is never shown again, never exported and never written to a log.</string>
     <string name="settings_keys_field_label">API key</string>
-    <string name="settings_keys_field_placeholder">Paste the key</string>
     <string name="settings_keys_save">Save key</string>
     <string name="settings_keys_revoke">Remove key</string>
     <string name="settings_keys_stored">Stored in the Keystore: %1$s</string>
@@ -449,7 +452,6 @@
     <string name="settings_model_star_hint">Star a model to put it in the quick switch at the top of the chat. Starred: %1$d.</string>
     <string name="settings_model_star_on">Show %1$s in the chat quick switch</string>
     <string name="settings_model_star_off">Remove %1$s from the chat quick switch</string>
-    <string name="settings_custom_title">Provider that is not in the catalog</string>
     <string name="settings_custom_body">For an OpenAI-compatible endpoint the catalog does not know. The provider block goes into the agent own config and the key into the agent own credential store, exactly like the catalog path.</string>
     <string name="settings_custom_id">Provider id</string>
     <string name="settings_custom_name">Display name</string>

@@ -219,17 +219,15 @@ fun SettingsScreen(
                         providers = state.providers,
                         model = state.model,
                         starred = state.starredModels,
+                        storedProviderIds = storedProviderIds,
+                        hardwareBacked = hardwareBacked,
                         onSetModel = onSetModel,
                         onClearModel = onClearModel,
                         onToggleStar = onToggleStar,
                         onConnectProvider = onConnectProvider,
+                        onRevokeKey = onRevokeKey,
                     )
                     "keys" -> KeysSection(
-                        providers = state.providers,
-                        storedProviderIds = storedProviderIds,
-                        hardwareBacked = hardwareBacked,
-                        onSaveKey = onSaveKey,
-                        onRevokeKey = onRevokeKey,
                         onAddCustomProvider = onAddCustomProvider,
                     )
                     "mcp" -> McpSection(
@@ -429,10 +427,13 @@ private fun ModelSection(
     providers: OpenCodeApi.ProviderSnapshot?,
     model: OpenCodeApi.ModelRef?,
     starred: List<OpenCodeApi.ModelRef>,
+    storedProviderIds: String,
+    hardwareBacked: String,
     onSetModel: (String, String) -> Unit,
     onClearModel: () -> Unit,
     onToggleStar: (String, String, Boolean) -> Unit,
     onConnectProvider: (String, String) -> Unit,
+    onRevokeKey: (String) -> Unit,
 ) {
     val chat = ChatTheme.chat
     // v4 item 2: the catalog is hundreds of entries, so it is searched, not scrolled.
@@ -447,6 +448,10 @@ private fun ModelSection(
             value = current.ifEmpty { stringResource(R.string.settings_model_none) },
             mono = current.isNotEmpty(),
         )
+        // The old keys card showed this and the catalog did not; with key management
+        // on the provider row, the summary of stored secrets lives here now.
+        KeyValueRow(label = stringResource(R.string.settings_keys_stored_label), value = storedProviderIds)
+        KeyValueRow(label = stringResource(R.string.settings_keys_hardware_label), value = hardwareBacked)
         if (providers == null) {
             Text(
                 text = stringResource(R.string.settings_model_none),
@@ -519,9 +524,14 @@ private fun ModelSection(
     if (target != null) {
         ProviderKeyDialog(
             provider = target,
+            connected = providers.connected.contains(target.id),
             onDismiss = { connectTarget = null },
             onSave = { key ->
                 onConnectProvider(target.id, key)
+                connectTarget = null
+            },
+            onRevoke = {
+                onRevokeKey(target.id)
                 connectTarget = null
             },
         )
@@ -537,17 +547,28 @@ private fun ModelSection(
 @Composable
 private fun ProviderKeyDialog(
     provider: OpenCodeApi.ProviderEntry,
+    connected: Boolean,
     onDismiss: () -> Unit,
     onSave: (String) -> Unit,
+    onRevoke: () -> Unit,
 ) {
     var key by rememberSaveable(provider.id) { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.settings_provider_connect_title, provider.name)) },
+        title = {
+            Text(
+                stringResource(
+                    if (connected) R.string.settings_provider_manage_title else R.string.settings_provider_connect_title,
+                    provider.name,
+                ),
+            )
+        },
         text = {
             Column {
                 Text(
-                    text = stringResource(R.string.settings_provider_connect_body),
+                    text = stringResource(
+                        if (connected) R.string.settings_provider_manage_body else R.string.settings_provider_connect_body,
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                 )
                 Spacer(Modifier.height(10.dp))
@@ -559,6 +580,20 @@ private fun ProviderKeyDialog(
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth().semantics { testTag = "provider_key_value" },
                 )
+                if (connected) {
+                    Spacer(Modifier.height(10.dp))
+                    // The manual form's revoke, relocated onto the only place that ever
+                    // knows which provider it touches: the connected row itself.
+                    TextButton(
+                        onClick = onRevoke,
+                        modifier = Modifier.height(36.dp).semantics {
+                            testTag = "provider_key_revoke"
+                            contentDescription = stringResource(R.string.settings_provider_revoke_desc, provider.name)
+                        },
+                    ) {
+                        Text(stringResource(R.string.settings_keys_revoke))
+                    }
+                }
             }
         },
         confirmButton = {
@@ -567,7 +602,11 @@ private fun ProviderKeyDialog(
                 enabled = key.isNotBlank(),
                 modifier = Modifier.semantics { testTag = "provider_key_save" },
             ) {
-                Text(stringResource(R.string.settings_keys_save))
+                Text(
+                    stringResource(
+                        if (connected) R.string.settings_provider_key_replace else R.string.settings_keys_save,
+                    ),
+                )
             }
         },
         dismissButton = {
@@ -645,6 +684,20 @@ private fun ProviderRow(
                         },
                     ) {
                         Text(stringResource(R.string.settings_keys_save))
+                    }
+                } else {
+                    Spacer(Modifier.width(6.dp))
+                    // v4 item 3: replace and revoke move out of the manual form and onto
+                    // the provider they actually belong to. Same dialog, connected mode.
+                    val manageLabel = stringResource(R.string.settings_provider_manage_desc, provider.name)
+                    TextButton(
+                        onClick = { onConnect(provider) },
+                        modifier = Modifier.height(36.dp).semantics {
+                            testTag = "provider_manage_key_${provider.id}"
+                            contentDescription = manageLabel
+                        },
+                    ) {
+                        Text(stringResource(R.string.settings_provider_manage_short))
                     }
                 }
                 Spacer(Modifier.width(6.dp))
@@ -751,20 +804,13 @@ private fun ModelList(
 // ---- provider keys ---------------------------------------------------------
 
 @Composable
+// v4 item 3: the name+key form is gone. Keys come in exactly one way - the
+// catalog row's connect chip (or its one-step Manage action when connected) -
+// and everything left in this section is the manual custom-provider block.
 private fun KeysSection(
-    providers: OpenCodeApi.ProviderSnapshot?,
-    storedProviderIds: String,
-    hardwareBacked: String,
-    onSaveKey: (String, String) -> Unit,
-    onRevokeKey: (String) -> Unit,
     onAddCustomProvider: (String, String, String, String, String) -> Unit = { _, _, _, _, _ -> },
 ) {
     val chat = ChatTheme.chat
-    var providerId by rememberSaveable { mutableStateOf("") }
-    var apiKey by rememberSaveable { mutableStateOf("") }
-    // v4 item 2, the manual half: a provider the catalog does not list. Kept as a
-    // separate path from the one-step activation above, because it is the only case
-    // where the user has to supply a base URL and model ids themselves.
     var customId by rememberSaveable { mutableStateOf("") }
     var customName by rememberSaveable { mutableStateOf("") }
     var customBaseUrl by rememberSaveable { mutableStateOf("") }
@@ -774,67 +820,6 @@ private fun KeysSection(
         title = stringResource(R.string.settings_section_keys),
         body = stringResource(R.string.settings_keys_body),
     ) {
-        Text(
-            text = stringResource(R.string.settings_keys_optional),
-            style = MaterialTheme.typography.bodySmall,
-            color = chat.muted,
-        )
-        Spacer(Modifier.height(8.dp))
-        KeyValueRow(label = stringResource(R.string.settings_keys_stored_label), value = storedProviderIds)
-        KeyValueRow(label = stringResource(R.string.settings_keys_hardware_label), value = hardwareBacked)
-        Spacer(Modifier.height(8.dp))
-        OutlinedTextField(
-            value = providerId,
-            onValueChange = { providerId = it },
-            label = { Text(stringResource(R.string.settings_keys_provider)) },
-            placeholder = { Text(providers?.allIds?.firstOrNull() ?: "anthropic") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().semantics { testTag = "key_provider" },
-        )
-        Spacer(Modifier.height(8.dp))
-        // Masked, never read back: the field only ever holds what the user typed in
-        // this session, and saving clears it.
-        OutlinedTextField(
-            value = apiKey,
-            onValueChange = { apiKey = it },
-            label = { Text(stringResource(R.string.settings_keys_field_label)) },
-            placeholder = { Text(stringResource(R.string.settings_keys_field_placeholder)) },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth().semantics { testTag = "key_value" },
-        )
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(
-                onClick = {
-                    onSaveKey(providerId.trim(), apiKey.trim())
-                    apiKey = ""
-                },
-                enabled = providerId.isNotBlank() && apiKey.isNotBlank(),
-                modifier = Modifier.height(46.dp).weight(1f).semantics { testTag = "key_save" },
-            ) {
-                Text(stringResource(R.string.settings_keys_save))
-            }
-            OutlinedButton(
-                onClick = {
-                    onRevokeKey(providerId.trim())
-                    apiKey = ""
-                },
-                enabled = providerId.isNotBlank(),
-                modifier = Modifier.height(46.dp).weight(1f).semantics { testTag = "key_revoke" },
-            ) {
-                Text(stringResource(R.string.settings_keys_revoke))
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-        HorizontalDivider(thickness = 1.dp, color = chat.toolBorder)
-        Spacer(Modifier.height(10.dp))
-        Text(
-            text = stringResource(R.string.settings_custom_title),
-            style = MaterialTheme.typography.titleSmall,
-        )
-        Spacer(Modifier.height(4.dp))
         Text(
             text = stringResource(R.string.settings_custom_body),
             style = MaterialTheme.typography.bodySmall,

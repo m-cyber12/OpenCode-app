@@ -1138,15 +1138,43 @@ if wait_for "app-window" "$NEEDLE_WELCOME|OpenCode" "$(tmo 300)"; then
   # The welcome screen advances by itself when the supervisor reports HEALTHY
   # (AppRoot's LaunchedEffect). A human who gets impatient taps Continue; do the
   # same, but never make the verdict depend on the tap.
-  if wait_for "runtime-or-next" "$NEEDLE_WELCOME|$NEEDLE_PROJECTS|$NEEDLE_ONBOARDING" "$(tmo 180)"; then
+  if wait_for "runtime-or-next" "$NEEDLE_WELCOME|$NEEDLE_PROJECTS|$NEEDLE_ONBOARDING|$NEEDLE_CHAT" "$(tmo 180)"; then
     tap_any "welcome_continue" "Continue" >/dev/null 2>&1 || true
     shot "after-welcome" || true
-    if wait_for "workspace-or-projects" "$NEEDLE_PROJECTS|$NEEDLE_ONBOARDING" "$(tmo 300)"; then
+    # A device the app has met before is NOT a first run, and no amount of waiting
+    # turns it into one: projects live on shared storage (designed persistence -
+    # nothing is deleted on reinstall) and Android backup can restore the app's
+    # prefs. The owner's 15:13Z run: the screen showed project 'test' and a working
+    # composer for 308 straight seconds while this wait looked for first-run-only
+    # needles. So the wait matches any usable surface, then the run CLASSIFIES what
+    # it got instead of assuming a fresh install.
+    if wait_for "workspace-or-projects" "$NEEDLE_PROJECTS|$NEEDLE_ONBOARDING|$NEEDLE_CHAT" "$(tmo 300)"; then
       FIRST_RUN_OK=1
       T1=$(( $(date +%s) - T0 ))
-      rd FIRST_RUN 0 "app reached its first-run surface by itself in ${T1}s (payload extracted + agent started, no privileged access); screen: $(screen_state)"
+      FIRST_RUN_MODE="unknown"
+      if ui_has_any "Where your files will live" "onboarding_workspace" "Use this folder as workspace"; then
+        FIRST_RUN_MODE="workspace-step"
+      elif ui_has_any "project_name_input" "New project" "Create project"; then
+        FIRST_RUN_MODE="fresh-projects"
+      elif ui_has_any "chat_screen" "composer_input" "model_quick_switch" "Start a conversation"; then
+        FIRST_RUN_MODE="returning"
+      elif ui_has "Projects" && ui_has "New conversation"; then
+        FIRST_RUN_MODE="returning"
+      fi
+      case "$FIRST_RUN_MODE" in
+        returning)
+          # honesty evidence for "returning": project folders exist on shared
+          # storage, read from OUTSIDE the app (never a path the run already knew)
+          OUTSIDE_LIST=$(adb shell "ls -1 /storage/emulated/0/Documents/OpenCode 2>&1 | head -8" 2>/dev/null | tr -d '\r' | tr '\n' ' ' | sed 's/[[:space:]]*$//')
+          log "returning install detected (workspace holds: ${OUTSIDE_LIST:-unreadable by shell}); the fresh-install flow is CI-verified instrumented (F1-F3)"
+          rd FIRST_RUN 0 "returning install: the app opened its projects/chat surface by itself in ${T1}s (payload extracted + agent started, no privileged access). The device already holds project(s) on shared storage (${OUTSIDE_LIST:-listed separately}); NOT deleting anything by design. Fresh-install flow: CI F1-F3. screen: $(screen_state)"
+          ;;
+        workspace-step|fresh-projects|unknown)
+          rd FIRST_RUN 0 "app reached its first-run surface by itself in ${T1}s - $FIRST_RUN_MODE (payload extracted + agent started, no privileged access); screen: $(screen_state)"
+          ;;
+      esac
     else
-      rd FIRST_RUN 1 "the app never reached the workspace step or the projects screen (see DIAGNOSIS.txt and the screenshots at each step).$(dump_caveat)"
+      rd FIRST_RUN 1 "the app never reached any usable surface (workspace step, projects, or chat) (see DIAGNOSIS.txt and the screenshots at each step).$(dump_caveat)"
     fi
   else
     rd FIRST_RUN 1 "no welcome/projects surface became usable (see DIAGNOSIS.txt; the app also offers Settings -> Share diagnostics).$(dump_caveat)"
@@ -1442,12 +1470,27 @@ if [ "$SETTINGS_REACHED" = 1 ]; then
     # the one-step activation: tapping the key action on a listed provider opens a
     # dialog that asks for the key and nothing else (base URL / models are the
     # catalog's business), and it is dismissed without storing anything.
-    if tap_any "Save key" >/dev/null 2>&1; then
-      wait_for "provider-key-dialog" "API key for" "$(tmo 20)" >/dev/null 2>&1
+    # Quiet probe first: a fresh-key phone shows Connect ('Save key'), a stored-key
+    # phone shows Manage ('Key options'); probing the absent one with tap_any would
+    # write a false "not tappable" line into DIAGNOSIS.txt of a clean run.
+    ui_dump "key-chip" >/dev/null 2>&1 || true
+    CHIP=""
+    if ui_has_any "provider_manage_key_${P10D_PROVIDER:-openrouter}" "Key options"; then
+      CHIP="provider_manage_key_${P10D_PROVIDER:-openrouter} Key options"
+    elif ui_has_any "provider_connect_${P10D_PROVIDER:-openrouter}" "Save key"; then
+      CHIP="provider_connect_${P10D_PROVIDER:-openrouter} Save key"
+    fi
+    if [ -n "$CHIP" ] && tap_any $CHIP >/dev/null 2>&1; then
+      wait_for "provider-key-dialog" "API key for|Stored key for" "$(tmo 20)" >/dev/null 2>&1
       shot "v4-provider-key" || true
       ui_dump "v4-provider-key" >/dev/null 2>&1
       DIALOG_TITLE=$(screen_label "API key for")
+      [ -n "$DIALOG_TITLE" ] || DIALOG_TITLE=$(screen_label "Stored key for")
+      # Fresh phones read "Only the key is asked for here"; phones with a stored
+      # key read the manage body instead (and gain the relocated revoke). Both are
+      # the one-key dialog, so either wording proves the same gate.
       ONLY_KEY=$(screen_label "Only the key is asked for here")
+      [ -n "$ONLY_KEY" ] || ONLY_KEY=$(screen_label "A key is stored on this phone")
       FIELDS=$($PY - "$(map_dump "$LAST_DUMP")" <<PY
 import re, sys
 xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
@@ -1547,24 +1590,57 @@ else
   log "no terminal and no P10D_PROVIDER_KEY: skipping the key prompt (the live-turn gate will SKIP)"
 fi
 if [ -n "${MODEL_KEY:-}" ] && [ "$SKIP_LIVE" = 0 ]; then
-  # Route it through the app's own UI: Settings -> Provider keys.
+  # Route it through the app's own UI. v4 item 3: the name+key form is gone; the
+  # only typed entry is the catalog dialog. Search the provider, then:
+  #  - nothing stored yet   -> the row's Connect chip (label 'Save key'),
+  #  - a key already stored -> the row's Manage chip, where the relocated revoke
+  #    lives; revoke the stored key, then save the fresh one through the same
+  #    dialog (a real rotate, reported as one).
   if tap_any "open_settings" "Settings and diagnostics"; then
     sleep 2
-    # The provider id field is empty by default and Save stays disabled without it,
-    # which the v1 driver never noticed (it typed only the key, so Save did nothing
-    # and the live gate then reported "no model served the turn").
-    tap_any "key_provider" "Provider" >/dev/null 2>&1 && type_text "${P10D_PROVIDER:-openrouter}"
-    if tap_any "key_value" "API key"; then
-      type_text "$MODEL_KEY"
-      if tap_any "key_save" "Save key" "Save"; then
-        sleep 3
-        shot "provider-key-saved" || true
-        log "key entered through the app's own Settings screen (it is not in this log)"
+    if tap_any "provider_search" "Search providers"; then
+      type_text "${P10D_PROVIDER:-openrouter}"
+      sleep 1
+      # Probe before tapping: the Manage chip exists only when a key is already
+      # stored, so a blind tap_any on the common fresh-phone path would paint a
+      # false "not tappable" line into DIAGNOSIS.txt of an otherwise clean run.
+      KEY_VIA=""
+      ui_dump "key-chips" >/dev/null 2>&1 || true
+      if ui_has_any "provider_manage_key_${P10D_PROVIDER:-openrouter}" "Key options"; then
+        tap_any "provider_manage_key_${P10D_PROVIDER:-openrouter}" "Key options" && KEY_VIA=rotate
+      fi
+      if [ -z "$KEY_VIA" ] && tap_any "provider_connect_${P10D_PROVIDER:-openrouter}" "Save key"; then
+        KEY_VIA=connect
+      fi
+      if [ -n "$KEY_VIA" ]; then
+        wait_for "key-dialog" "provider_key_value" "$(tmo 30)" >/dev/null 2>&1 || true
+        if [ "$KEY_VIA" = rotate ]; then
+          tap_any "provider_key_revoke" "Revoke" >/dev/null 2>&1 || true
+          sleep 2
+          tap_any "provider_connect_${P10D_PROVIDER:-openrouter}" >/dev/null 2>&1 || true
+          wait_for "key-dialog-again" "provider_key_value" "$(tmo 30)" >/dev/null 2>&1 || true
+        fi
+        if tap_any "provider_key_value" "API key"; then
+          type_text "$MODEL_KEY"
+          if tap_any "provider_key_save" "Save key" "Replace key"; then
+            sleep 3
+            shot "provider-key-saved" || true
+            if [ "$KEY_VIA" = rotate ]; then
+              log "key rotated through the app's own UI: revoked the stored key via the Manage dialog, saved the fresh one through the same dialog (it is not in this log)"
+            else
+              log "key entered through the app's own catalog dialog: search -> Connect -> key field -> Save (it is not in this log)"
+            fi
+          else
+            log "the dialog's Save button never became tappable (the key field stayed empty)"
+          fi
+        else
+          log "none of the provider's key dialogs opened - add the key in Settings by hand and re-run to exercise the live gate"
+        fi
       else
-        log "the Save-key button never became tappable (it needs both the provider id and the key)"
+        log "neither the Manage chip nor the Connect chip for '${P10D_PROVIDER:-openrouter}' was on screen after the search"
       fi
     else
-      log "could not focus the provider-key field - add the key in Settings by hand and re-run to exercise the live gate"
+      log "the provider search field was not reachable in Settings"
     fi
   else
     log "could not open Settings to enter the key"
@@ -1738,19 +1814,63 @@ grep -aoE 'P6_MODEL_AVAILABLE [01][^\r]*' "$OUT/logcat.txt" 2>/dev/null | sort -
 # NOTE: no `|| echo 0` here. `grep -c` already prints 0 and exits 1 on no match,
 # so the fallback appended a SECOND zero and the value became "0\n0" - which made
 # this gate fail on a run with nothing in logcat at all.
-SWEEP=$(grep -acE "FATAL EXCEPTION|ClassNotFoundException|NoSuchMethodError|NoClassDefFoundError|UnsatisfiedLinkError" "$OUT/logcat.txt" 2>/dev/null)
-if [ "${SWEEP:-0}" = 0 ]; then
-  rd PACKAGING_SWEEP 0 "no FATAL EXCEPTION / ClassNotFound / NoSuchMethod / NoClassDefFound / UnsatisfiedLink in the session's logcat"
+# The owner's 15:13Z run taught this the hard way: ColorOS's own phone manager
+# (com.coloros.phonemanager, an Avast SDK inside it) crashes in the same logcat and
+# both gates blamed the artifact. A line-level grep cannot tell processes apart, so
+# the matching must be BLOCK-structured: every FATAL block has its own "Process:"
+# line, and a packaging-class error line (ClassNotFound/NoSuchMethod/NoClassDef/
+# UnsatisfiedLink) is only ours when the line itself or its enclosing fatal block
+# carries our package. Anything uncredited is counted separately and reported,
+# never silently lost.
+FATAL_ATTRIB=$($PY - "$PKG" "$OUT/logcat.txt" <<'AWKPY'
+import re, sys
+pkg, path = sys.argv[1], sys.argv[2]
+try:
+    lines = open(path, encoding="utf-8", errors="replace").read().splitlines()
+except OSError:
+    lines = []
+PKG_ERRS = ("ClassNotFoundException", "NoSuchMethodError",
+            "NoClassDefFoundError", "UnsatisfiedLinkError")
+# find fatal block starts and their Process: attribution
+our_fatals, our_packaging, uncredited, our_lines = 0, 0, 0, []
+fatals = [i for i, l in enumerate(lines) if "FATAL EXCEPTION" in l]
+bounds = fatals + [len(lines) + 1]
+for k, start in enumerate(fatals):
+    block = lines[start:min(start + 10, bounds[k + 1])]
+    if any(("Process: " + pkg + ",") in b for b in block):
+        our_fatals += 1
+        our_lines.append(lines[start])
+for i, l in enumerate(lines):
+    if "FATAL EXCEPTION" in l:
+        continue
+    if any(e in l for e in PKG_ERRS):
+        if pkg in l:
+            our_packaging += 1
+            our_lines.append(l)
+        else:
+            uncredited += 1
+uncredited += len(fatals) - our_fatals
+print(f"{our_fatals} {our_packaging} {uncredited}")
+for l in our_lines[:20]:
+    print("LINE " + l)
+AWKPY
+)
+read OUR_FATALS OUR_PACKAGING UNCREDITED_REMAIN <<<"$(printf '%s\n' "$FATAL_ATTRIB" | head -1)"
+ATTRIB_LINES=$(printf '%s\n' "$FATAL_ATTRIB" | grep -a '^LINE ' | sed 's/^LINE //')
+: "${OUR_FATALS:=0}"; : "${OUR_PACKAGING:=0}"; : "${UNCREDITED_REMAIN:=0}"
+if [ "$OUR_FATALS" = 0 ] && [ "$OUR_PACKAGING" = 0 ]; then
+  rd PACKAGING_SWEEP 0 "no packaging/runtime failure lines ATTRIBUTED to $PKG ($UNCREDITED_REMAIN uncredited device-side lines - e.g. OEM stack crashes - counted for completeness in run.log; none is the artifact's fault)"
 else
-  # v1 counted these lines and threw away the lines themselves. Print them: they are
-  # the only evidence of what release packaging broke, and they belong in the log.
-  grep -aE "FATAL EXCEPTION|ClassNotFoundException|NoSuchMethodError|NoClassDefFoundError|UnsatisfiedLinkError" "$OUT/logcat.txt" 2>/dev/null | head -20 >> "$OUT/SUMMARY.txt"
-  diag "packaging failure lines:"
-  grep -aE "FATAL EXCEPTION|ClassNotFoundException|NoSuchMethodError|NoClassDefFoundError|UnsatisfiedLinkError" "$OUT/logcat.txt" 2>/dev/null | head -20 | while read -r l; do diag "  $l"; done
-  rd PACKAGING_SWEEP 1 "$SWEEP packaging/runtime failure line(s) in logcat.txt (printed above and in SUMMARY.txt) - read them before uploading"
+  printf '%s\n' "$ATTRIB_LINES" >> "$OUT/SUMMARY.txt"
+  diag "packaging failure lines attributed to $PKG:"
+  printf '%s\n' "$ATTRIB_LINES" | while read -r l; do diag "  $l"; done
+  rd PACKAGING_SWEEP 1 "fatals=$OUR_FATALS packaging=$OUR_PACKAGING failure line(s) ATTRIBUTED to $PKG (printed above and in SUMMARY.txt) - read them before uploading"
 fi
-CRASHES=$(grep -acE "FATAL EXCEPTION|Process: $PKG" "$OUT/logcat.txt" 2>/dev/null)
-[ "${CRASHES:-0}" = 0 ] && rd NO_CRASH 0 "no app crash in this session" || rd NO_CRASH 1 "$CRASHES crash marker(s) in logcat.txt"
+if [ "$OUR_FATALS" = 0 ]; then
+  rd NO_CRASH 0 "no app crash in this session (fatal blocks whose Process: line names $PKG: 0; $UNCREDITED_REMAIN uncredited device-side lines - system/OEM processes - are not the app)"
+else
+  rd NO_CRASH 1 "$OUR_FATALS fatal block(s) whose Process: line names $PKG in logcat.txt"
+fi
 
 # ---- the accessibility channel itself ----------------------------------------
 # Phase 10 continuation v3. The v2 run reported a first-run FAIL while the phone

@@ -178,6 +178,15 @@ def transition(node_id):
         put("screen", "settings-key")
     elif here == "settings-key" and node_id in ("provider_key_cancel", "Not now"):
         put("screen", "settings-openr")
+    elif here == "settings-key" and node_id in ("provider_key_save", "Save key", "Replace key"):
+        # Saving closing the dialog is what the app does (connectTarget = null).
+        put("key_saved", "1")
+        put("screen", "settings-openr")
+    elif here == "settings-key" and node_id in ("provider_key_revoke", "Revoke key"):
+        put("key_saved", "")
+        put("screen", "settings-openr")
+    elif here in ("settings-openr", "settings") and node_id in ("provider_manage_key_openrouter",):
+        put("screen", "settings-key")
     elif here in ("settings-openr", "settings") and isinstance(node_id, str) and \
             node_id.startswith("model_star_"):
         # Starring: recorded so the detail line can say it happened.
@@ -198,7 +207,7 @@ def transition(node_id):
         with open(os.path.join(target, "p10-visible.txt"), "w", encoding="utf-8") as fh:
             fh.write("p10-live-ok\n")
         put("screen", "answer")
-    # settings/key_save, tool-card taps and everything else stay where they are
+    # tool-card taps and everything else stay where they are
 
 
 def shell(command):
@@ -253,6 +262,12 @@ def shell(command):
             except ValueError:
                 return (0, "")
             node_id = hit(x, y, screen())
+            # The connect/manage chip is one physical button whose id follows the
+            # key state; the raw fixture carries the placeholder, so resolve it
+            # exactly the way the served dump resolves its text (same state read).
+            if node_id == "__CONNECT_NODE__":
+                node_id = ("provider_manage_key_openrouter"
+                           if state("key_saved", "") else "provider_connect_openrouter")
             if not node_id:
                 return (1, "Error: a tap landed on no node\n")
             transition(node_id)
@@ -358,6 +373,15 @@ def main(argv):
     if not ROOT:
         sys.stderr.write("test-90-fake-adb: P10D_FAKE_ROOT is not set\n")
         return 2
+    # A device the app has met before (the owner's 15:13Z surface): the project is on
+    # shared storage, and the app opens straight into chat instead of the welcome /
+    # workspace-step / projects-chain a fresh install walks. Seed once per run (DEV is
+    # cleared by the scenario runner), then let the normal FSM drive everything.
+    if SCENARIO == "returning" and not state("seeded", ""):
+        os.makedirs(os.path.join(live_dir(), "test"), exist_ok=True)
+        put("project", "test")
+        put("screen", "chat")
+        put("seeded", "1")
     args = argv[1:]
     if not args:
         return 0
@@ -416,6 +440,19 @@ def main(argv):
             # changes when the quick switch is used, so the driver can observe the
             # change instead of assuming it.
             body = body.replace("__MODEL__", state("model", "opencode/zen-1"))
+            # The settings-openr fixture's connect chip is a placeholder: with the
+            # fake's key store fed it is the Manage chip and the row says so - the
+            # two states of the same row on a real phone, driven by the same state.
+            if screen() in ("settings", "settings-openr") and state("key_saved", ""):
+                body = body.replace("__CONNECT_NODE__", "provider_manage_key_openrouter") \
+                           .replace("__CONNECT_TEXT__", "Key") \
+                           .replace('resource-id="provider_connect_openrouter"',
+                                    'resource-id="provider_manage_key_openrouter"') \
+                           .replace('text="No key stored"', 'text="Key stored"') \
+                           .replace('text="Save key"', 'text="Key"')
+            else:
+                body = body.replace("__CONNECT_NODE__", "provider_connect_openrouter") \
+                           .replace("__CONNECT_TEXT__", "Save key")
             sys.stdout.write(body)
             return 0
         if rest.startswith("screencap"):
