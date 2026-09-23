@@ -1,0 +1,40 @@
+
+===== R0 preflight: device awake, unlocked, and the app able to be driven =====
+[2026-09-23T11:45:25Z] screen: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{d026a25 u0 com.android.launcher3/com.android.searchlauncher.SearchLauncher}, [type=1, isChildWindow=false]-[Surface(name=*Title#30055)/@0xf2202c0, shown=false, windowType=1] (  mState=ACTIVE mLightState=ACTIVE)
+[2026-09-23T11:45:26Z] P10D_DEVICE_AWAKE PASS :: screen awake and unlocked before any UI step: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{d026a25 u0 com.android.launcher3/com.android.searchlauncher.SearchLauncher}, [type=1, isChildWindow=false]-[Surface(name=*Title#30055)/@0xf2202c0, shown=false, windowType=1]
+
+===== R0.5 the harness can read this phone's screen =====
+[2026-09-23T11:45:27Z] P10D_HARNESS_PYTHON PASS :: Python interpreter: python3 (3.14.7)
+  probe POSIX path: rc=2 out='' err='C:\Users\MH\AppData\Local\Python\pythoncore-3.14-64\python.exe: can't open file 'C:\\c\\src\\OpenCode-full\\phase10\\scripts\\p10d-ui.py': [Errno 2] No such file or directory'
+  probe cygpath -m: OK (nodes=41 clickable=27 enabled=41 classes=TextView:27,FrameLayout:5,ViewGroup:4,View:3,LinearLayout:1,ScrollView:1)
+[2026-09-23T11:45:32Z] python path mode: m - python3 gets scripts and files as C:/src/OpenCode-full/phase10/scripts/... (cygpath -m (forward-slash Windows path))
+[2026-09-23T11:45:32Z] P10D_HARNESS_READER PASS :: the accessibility reader parsed the dump: nodes=41 clickable=27 enabled=41 classes=TextView:27,FrameLayout:5,ViewGroup:4,View:3,LinearLayout:1,ScrollView:1 node(s), reader=C:/src/OpenCode-full/phase10/scripts/p10d-ui.py (via cygpath -m (forward-slash Windows path))
+[2026-09-23T11:45:32Z] P10D_HARNESS_DUMP PASS :: the accessibility dump is readable from this host: nodes=41 clickable=27 enabled=41 classes=TextView:27,FrameLayout:5,ViewGroup:4,View:3,LinearLayout:1,ScrollView:1 node(s), acquisition /sdcard/p10d-ui.xml; host shell: windows-msys
+
+===== R1 device facts =====
+device=RMX3830
+manufacturer=realme
+android=15 (API 35)
+abi=arm64-v8a
+screen=Physical size: 720x1600 Physical density: 320
+screen_state=mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{d026a25 u0 com.android.launcher3/com.android.searchlauncher.SearchLauncher}, [type=1, isChildWindow=false]-[Surface(name=*Title#30055)/@0xf2202c0, shown=false, windowType=1]
+[2026-09-23T11:45:36Z] P10D_ABI PASS :: arm64-v8a device (the ABI this app ships to users)
+[2026-09-23T11:45:36Z] P10D_ANDROID_VERSION PASS :: API 35 (minSdk 29)
+
+===== R2 artifact verification =====
+[2026-09-23T11:45:36Z] verifying /c/src/app-release-signed.apk
+[2026-09-23T11:45:37Z] P10D_ARTIFACT PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
+[2026-09-23T11:45:37Z] P10D_SIGNATURE SKIP :: apksigner not on PATH: signature checked for PRESENCE by check-apk.py only. Install build-tools and re-run for the cryptographic verdict (docs/RELEASE.md s5)
+
+===== R3 clean install of the signed artifact =====
+[2026-09-23T11:45:37Z] uninstalling any previous install so this is a genuine first run
+Performing Streamed Install
+adb.exe: failed to stat /c/src/app-release-signed.apk: No such file or directory
+[2026-09-23T11:45:38Z] P10D_INSTALL FAIL :: adb install failed - a signing/ABI/minSdk mismatch (see run.log)
+[2026-09-23T11:45:38Z] P10D_VERSION_ON_DEVICE PASS :: installed versionName= code=
+
+===== R4 first run: welcome -> runtime healthy by itself -> the workspace step -> a project -> composer =====
+[2026-09-23T11:45:39Z] All files access: Error: No UID for io.github.mcyber12.opencode in user 0
+Starting: Intent { cmp=io.github.mcyber12.opencode/ai.opencode.android.MainActivity }
+Error type 3
+Error: Activity class {io.github.mcyber12.opencode/ai.opencode.android.MainActivity} does not exist.
