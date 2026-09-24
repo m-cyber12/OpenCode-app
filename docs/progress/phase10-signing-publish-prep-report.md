@@ -2967,3 +2967,15 @@ verified in both directions: rc=0 on the tree as committed, and deliberately
 un-escaping the string makes it fail naming exactly that resource. No local step
 compiles Android resources, so this was previously uncatchable before CI; now it is a
 seconds-fast static rule.
+
+### B.12.18 CI #81: main sources compile; the androidTest import that never existed (2026-09-24)
+
+Run #81 moved the line again: static PASS, driver self-test PASS (132/0),
+`compileDebugKotlin` PASS - the whole v6 app surface now compiles. The stop was
+`compileDebugAndroidTestKotlin`: all four gate files failed on
+`import androidx.compose.ui.test.onAllNodes`, an import I added by symmetry with
+`onAllNodesWithTag` when wiring the expanded-row session taps. There is no such
+top-level symbol - `onAllNodes` is a MEMBER of the rule
+(`SemanticsNodeInteractionsProvider`), which is why `ChatUiGatesTest` has always
+called `rule.onAllNodes(anyNodeMatcher())` with no import. Removed all four; the
+call sites themselves were already member calls and are unchanged.
