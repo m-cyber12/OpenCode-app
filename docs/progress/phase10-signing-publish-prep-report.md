@@ -2927,3 +2927,27 @@ Error 2 is a PATTERN, so the fix swept for it: a brace-matching scan of every
 `projects_switch_workspace` content descriptions), both fixed the same way, sweep now
 returns zero. The driver self-test does not compile Kotlin and stays at 132/0; the
 next CI run is the compile verdict for all of it.
+
+### B.12.16 CI #79 caught the next layer: the page itself broke two phase-6 UI rules (2026-09-24)
+
+The compile fixes never got their verdict - run #79 stopped one gate earlier, at
+`P10-STATIC`, and both findings were in the new projects page (plus one behind it):
+
+1. **check-ui-lists**: `sessions.forEach` inside the expanded project row - an eager
+   render loop over a server-owned collection that can grow without bound, which is
+   the exact case the phase-6 rule exists for. Fixed structurally, not cosmetically:
+   the page's list is now FLATTENED into one set of row models (project header /
+   no-sessions note / one session / new-session button), rendered by a single
+   `items()` in the one LazyColumn - the expanded project's conversations are real
+   lazy items directly under their header. Same test tags, same behaviour, actually
+   lazy.
+2. **check-ui-a11y**: the session-rename dialog's text field had neither label nor
+   placeholder. It reuses the project-rename label.
+3. The flatten introduced `$projectName` (bare) in a tag template; the selfcheck's
+   tag resolver understands the `${...}` convention every other templated tag uses,
+   so the new tag now uses braces too - caught by the same static suite, locally,
+   before the push.
+
+`30-static-checks.sh` local: **rc=0** end to end (a11y, lists, purity, selfcheck 9/9,
+phase-9 suite not weakened). Harness untouched since 132/0; the next CI run finally
+gets to compile the whole v6 surface.

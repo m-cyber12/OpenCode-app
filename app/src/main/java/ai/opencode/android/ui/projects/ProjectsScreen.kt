@@ -67,6 +67,28 @@ data class ProjectSession(val id: String, val title: String, val updatedAtMs: Lo
 data class KnownWorkspace(val path: String, val projectCount: Int, val current: Boolean)
 
 /**
+ * The page's list, flattened: the expanded project's conversations are REAL lazy
+ * items of the one LazyColumn, not an eager loop inside a row - a project can
+ * hold arbitrarily many sessions, and phase 6's list rule (check-ui-lists) is
+ * exactly about collections like that.
+ */
+private sealed interface PageRow {
+    val key: String
+    data class Header(val project: Project) : PageRow {
+        override val key get() = "p:" + project.name
+    }
+    data class NoSessions(val projectName: String) : PageRow {
+        override val key get() = "e:" + projectName
+    }
+    data class OneSession(val projectName: String, val session: ProjectSession) : PageRow {
+        override val key get() = "s:" + session.id
+    }
+    data class NewSession(val projectName: String) : PageRow {
+        override val key get() = "n:" + projectName
+    }
+}
+
+/**
  * Choosing, creating and managing the folders the agent works in.
  *
  * Phase 6 kept this to list, create, open. Phase 7 adds the rest of workspace
@@ -166,6 +188,19 @@ fun ProjectsScreen(
                     .semantics { testTag = "projects_notice" },
             )
         }
+        val pageRows = remember(projects, expandedName, sessions) {
+            buildList {
+                for (project in projects) {
+                    add(PageRow.Header(project))
+                    if (project.name == expandedName) {
+                        val list = sessions[project.name].orEmpty()
+                        if (list.isEmpty()) add(PageRow.NoSessions(project.name))
+                        for (sess in list) add(PageRow.OneSession(project.name, sess))
+                        add(PageRow.NewSession(project.name))
+                    }
+                }
+            }
+        }
         LazyColumn(
             modifier = Modifier.fillMaxSize().semantics { testTag = "project_list" },
             contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
@@ -179,28 +214,46 @@ fun ProjectsScreen(
                     )
                 }
             }
-            items(items = projects, key = { it.name }) { project ->
-                ProjectRow(
-                    project = project,
-                    active = project.name == activeName,
-                    expanded = project.name == expandedName,
-                    sessions = sessions[project.name] ?: emptyList(),
-                    sessionCount = sessionCounts[project.name] ?: (sessions[project.name]?.size ?: 0),
-                    now = now,
-                    onToggle = { onToggleExpand(project.name) },
-                    onSelect = { onSelect(project.name) },
-                    onOpenSession = { sid -> onOpenSession(project.name, sid) },
-                    onNewSession = { onNewSession(project.name) },
-                    onRenameSession = { sess -> sessionRenameText = sess.title; sessionRenameTarget = sess },
-                    onDeleteSession = { sess -> sessionDeleteTarget = sess },
-                    onRename = {
-                        renameText = project.name
-                        renameTarget = project
-                    },
-                    onDelete = { deleteTarget = project },
-                    onExport = { onExport(project.name) },
-                    onFiles = { onFiles(project.name) },
-                )
+            items(items = pageRows, key = { it.key }) { row ->
+                when (row) {
+                    is PageRow.Header -> ProjectRow(
+                        project = row.project,
+                        active = row.project.name == activeName,
+                        expanded = row.project.name == expandedName,
+                        sessionCount = sessionCounts[row.project.name]
+                            ?: (sessions[row.project.name]?.size ?: 0),
+                        now = now,
+                        onToggle = { onToggleExpand(row.project.name) },
+                        onSelect = { onSelect(row.project.name) },
+                        onRename = {
+                            renameText = row.project.name
+                            renameTarget = row.project
+                        },
+                        onDelete = { deleteTarget = row.project },
+                        onExport = { onExport(row.project.name) },
+                        onFiles = { onFiles(row.project.name) },
+                    )
+                    is PageRow.NoSessions -> Text(
+                        text = stringResource(R.string.projects_sessions_empty),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = ChatTheme.chat.muted,
+                        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 8.dp),
+                    )
+                    is PageRow.OneSession -> SessionRow(
+                        session = row.session,
+                        now = now,
+                        onOpen = { onOpenSession(row.projectName, row.session.id) },
+                        onRename = {
+                            sessionRenameText = row.session.title
+                            sessionRenameTarget = row.session
+                        },
+                        onDelete = { sessionDeleteTarget = row.session },
+                    )
+                    is PageRow.NewSession -> NewSessionButton(
+                        projectName = row.projectName,
+                        onNewSession = { onNewSession(row.projectName) },
+                    )
+                }
             }
             val previous = workspaces.filterNot { it.current }
             if (previous.isNotEmpty()) {
@@ -256,6 +309,7 @@ fun ProjectsScreen(
                 OutlinedTextField(
                     value = sessionRenameText,
                     onValueChange = { sessionRenameText = it },
+                    label = { Text(stringResource(R.string.projects_rename_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().semantics { testTag = "session_rename_input" },
                 )
@@ -404,15 +458,10 @@ private fun ProjectRow(
     project: Project,
     active: Boolean,
     expanded: Boolean,
-    sessions: List<ProjectSession>,
     sessionCount: Int,
     now: Long,
     onToggle: () -> Unit,
     onSelect: () -> Unit,
-    onOpenSession: (String) -> Unit,
-    onNewSession: () -> Unit,
-    onRenameSession: (ProjectSession) -> Unit,
-    onDeleteSession: (ProjectSession) -> Unit,
     onRename: () -> Unit,
     onDelete: () -> Unit,
     onExport: () -> Unit,
@@ -531,46 +580,39 @@ private fun ProjectRow(
             }
             if (expanded) {
                 HorizontalDivider(thickness = 1.dp, color = chat.toolBorder)
-                Column(Modifier.padding(start = 12.dp, top = 6.dp, bottom = 8.dp, end = 8.dp)) {
-                    Text(
-                        text = project.path,
-                        style = MonoSmall,
-                        color = chat.muted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    if (sessions.isEmpty()) {
-                        Text(
-                            text = stringResource(R.string.projects_sessions_empty),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = chat.muted,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                    }
-                    sessions.forEach { sess ->
-                        SessionRow(
-                            session = sess,
-                            now = now,
-                            onOpen = { onOpenSession(sess.id) },
-                            onRename = { onRenameSession(sess) },
-                            onDelete = { onDeleteSession(sess) },
-                        )
-                    }
-                    Spacer(Modifier.height(6.dp))
-                    val newSessionLabel = stringResource(R.string.projects_session_new)
-                    OutlinedButton(
-                        onClick = onNewSession,
-                        modifier = Modifier.height(40.dp).semantics {
-                            testTag = "projects_new_session_${project.name}"
-                            contentDescription = newSessionLabel
-                        },
-                    ) {
-                        Text(newSessionLabel)
-                    }
-                }
+                // Only the (bounded) path lives inside the row; the sessions are
+                // the LazyColumn's own items, right below this header.
+                Text(
+                    text = project.path,
+                    style = MonoSmall,
+                    color = chat.muted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = 12.dp, top = 6.dp, bottom = 8.dp, end = 8.dp),
+                )
             }
         }
+    }
+}
+
+/** The expanded project's way into a fresh conversation - its own lazy item. */
+@Composable
+private fun NewSessionButton(
+    projectName: String,
+    onNewSession: () -> Unit,
+) {
+    val newSessionLabel = stringResource(R.string.projects_session_new)
+    OutlinedButton(
+        onClick = onNewSession,
+        modifier = Modifier
+            .padding(start = 20.dp)
+            .height(40.dp)
+            .semantics {
+                testTag = "projects_new_session_${projectName}"
+                contentDescription = newSessionLabel
+            },
+    ) {
+        Text(newSessionLabel)
     }
 }
 
@@ -587,6 +629,7 @@ private fun SessionRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(start = 20.dp)
             .heightIn(min = 44.dp)
             .clickable(onClick = onOpen)
             .semantics {
