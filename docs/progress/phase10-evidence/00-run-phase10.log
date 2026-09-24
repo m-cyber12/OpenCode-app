@@ -1,9 +1,9 @@
-=== PHASE 10 START 2026-09-24T06:22:58Z ===
+=== PHASE 10 START 2026-09-24T06:49:28Z ===
 ########## 1/9 static checks (phase 9 invariants + phase 10 release invariants) ##########
-=== Phase 10 static checks 2026-09-24T06:22:58Z ===
+=== Phase 10 static checks 2026-09-24T06:49:28Z ===
 
 === phase 9 static checks (not weakened) ===
-=== Phase 9 static checks 2026-09-24T06:22:58Z ===
+=== Phase 9 static checks 2026-09-24T06:49:28Z ===
 OK   bash -n on 42 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8/phase9 driver
@@ -105,7 +105,7 @@ PASS a visible match is not flagged (rc=0) (rc=0 out='1020 1740')
 PASS has still finds an off-screen node (a tag being present is news) (rc=0)
 PASS a device that marks everything not-shown does not blind the reader (rc=0)
 PASS attrs reports the attribute set and the hidden count (rc=0 out='nodes=4 2 node(s) marked shown=false\nbounds:4 class:4 clickable:4 content-desc:4 enabled:4 index:4 package:4 resource-id:4 shown:4 text:4')
-PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmpcogepw9n/broken.xml')
+PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmp7pfloq0d/broken.xml')
 p10d-ui selftest: 20 checks, 0 failed
 SELFTEST PASS
 OK   uiautomator dump reader self-test (tap targets, disabled states, diagnostics)
@@ -140,6 +140,9 @@ OK   phase10 workflow template present + no signing secret is pulled in
 
 === no infinite animations in the UI layer (Compose test clock) ===
 OK   no infinite animations in the UI layer (Compose test clock)
+
+=== android string resources: apostrophes escaped (aapt2 rule) ===
+OK   android string resources: apostrophes escaped (aapt2 rule)
 
 === phase 10 static checks summary rc=0 ===
 P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, published identity, store package) + apk inspector self-test
@@ -185,7 +188,7 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   model marker written for the x86_64 carry-forward
   ok   a POSIX host says so, instead of leaving the path question open
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-062322/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-064952/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
   ok   v4: the storage screen no longer shows copy-path, export or the folder choosers
@@ -357,20 +360,72 @@ PAYLOAD STAGING SKIPPED: compile/test-only run, no APK was produced.
 > Task :app:mapDebugSourceSetPaths
 > Task :app:generateDebugResources
 > Task :app:packageDebugResources
-
-> Task :app:mergeDebugResources FAILED
-/home/runner/work/OpenCode-app/OpenCode-app/app/src/main/res/values/strings.xml:86:4: Failed to flatten XML for resource 'projects_session_delete_body' with error: Invalid unicode escape sequence in string
-"{str}"
-/home/runner/work/OpenCode-app/OpenCode-app/app/src/main/res/values/strings.xml:86:4: string/projects_session_delete_body does not contain a valid string resource.
-
+> Task :app:mergeDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
 > Task :app:parseDebugLocalResources
+
+> Task :app:processDebugMainManifest
+/home/runner/work/OpenCode-app/OpenCode-app/app/src/main/AndroidManifest.xml:68:9-41 Warning:
+	android:extractNativeLibs should not be specified in this source AndroidManifest.xml file. See https://d.android.com/guide/topics/manifest/application-element#extractNativeLibs for more information.
+The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml file and update the build file accordingly. See https://d.android.com/studio/build/agp-upgrade-assistant for more information.
+
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:javaPreCompileDebug
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:processDebugResources
+> Task :app:processDebugAndroidTestManifest
+> Task :app:generateDebugAndroidTestBuildConfig
+> Task :app:checkDebugAndroidTestAarMetadata
+> Task :app:generateDebugAndroidTestResValues FROM-CACHE
+> Task :app:mapDebugAndroidTestSourceSetPaths
+> Task :app:generateDebugAndroidTestResources
+> Task :app:preDebugUnitTestBuild
+> Task :app:javaPreCompileDebugUnitTest FROM-CACHE
+> Task :app:mergeDebugAndroidTestResources
+> Task :app:processDebugAndroidTestResources
+> Task :app:compileDebugKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/security/SecretStore.kt:119:54 'getter for isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:144:39 'List: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.List
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:222:5 Parameter 'runtime' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:564:43 'Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:320:56 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:354:56 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:397:52 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/projects/ProjectsScreen.kt:118:5 Parameter 'onOpen' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:116:5 Parameter 'onSaveKey' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:274:5 Parameter 'availability' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:277:9 Variable 'chat' is never used
+
+> Task :app:compileDebugJavaWithJavac
+> Task :app:processDebugJavaRes
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:bundleDebugClassesToRuntimeJar
+
+> Task :app:compileDebugAndroidTestKotlin FAILED
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/FirstRunUiGatesTest.kt:10:33 Unresolved reference: onAllNodes
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/LiveChatUiGatesTest.kt:19:33 Unresolved reference: onAllNodes
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/LiveToolCallGatesTest.kt:16:33 Unresolved reference: onAllNodes
+e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/StressRecoveryGatesTest.kt:21:33 Unresolved reference: onAllNodes
+
+> Task :app:compileDebugUnitTestKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/client/OpenCodeApiHttpTest.kt:56:27 Parameter 'rec' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/projects/ProjectStoreLifecycleTest.kt:48:13 Variable 'p' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/projects/ProjectStoreLifecycleTest.kt:80:13 Variable 'p' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractionValidationTest.kt:45:13 Unsafe use of a nullable receiver of type File?
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractionValidationTest.kt:59:9 Unsafe use of a nullable receiver of type File?
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractionValidationTest.kt:117:9 Unsafe use of a nullable receiver of type File?
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractorTest.kt:103:37 Unsafe use of a nullable receiver of type File?
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':app:mergeDebugResources'.
-> A failure occurred while executing com.android.build.gradle.internal.res.ResourceCompilerRunnable
-   > Resource compilation failed (Failed to compile values resource file /home/runner/work/OpenCode-app/OpenCode-app/app/build/intermediates/incremental/debug/mergeDebugResources/merged.dir/values/values.xml. Cause: java.lang.IllegalStateException: Can not extract resource from com.android.aaptcompiler.ParsedResource@2a736d96.). Check logs for more details.
+Execution failed for task ':app:compileDebugAndroidTestKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
 
 * Try:
 > Run with --info or --debug option to get more log output.
@@ -378,7 +433,7 @@ Execution failed for task ':app:mergeDebugResources'.
 > Get more help at https://help.gradle.org.
 
 * Exception is:
-org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:mergeDebugResources'.
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugAndroidTestKotlin'.
 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:130)
 	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:293)
 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:128)
@@ -439,7 +494,7 @@ org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:mer
 	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:198)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
-Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing com.android.build.gradle.internal.res.ResourceCompilerRunnable
+Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
 	at org.gradle.workers.internal.DefaultWorkerExecutor$WorkItemExecution.waitForCompletion(DefaultWorkerExecutor.java:287)
 	at org.gradle.internal.work.DefaultAsyncWorkTracker.lambda$waitForItemsAndGatherFailures$2(DefaultAsyncWorkTracker.java:130)
 	at org.gradle.internal.Factories$1.create(Factories.java:31)
@@ -518,7 +573,7 @@ Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionExcept
 	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:64)
 	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:43)
 	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.executeWithNonEmptySources(AbstractSkipEmptyWorkStep.java:125)
-	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:56)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:61)
 	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:36)
 	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
 	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:36)
@@ -597,11 +652,10 @@ Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionExcept
 	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:198)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
-Caused by: com.android.aaptcompiler.ResourceCompilationException: Resource compilation failed (Failed to compile values resource file /home/runner/work/OpenCode-app/OpenCode-app/app/build/intermediates/incremental/debug/mergeDebugResources/merged.dir/values/values.xml. Cause: java.lang.IllegalStateException: Can not extract resource from com.android.aaptcompiler.ParsedResource@2a736d96.). Check logs for more details.
-	at com.android.aaptcompiler.ResourceCompiler.compileResource(ResourceCompiler.kt:129)
-	at com.android.build.gradle.internal.res.ResourceCompilerRunnable$Companion.compileSingleResource(ResourceCompilerRunnable.kt:34)
-	at com.android.build.gradle.internal.res.ResourceCompilerRunnable.run(ResourceCompilerRunnable.kt:15)
-	at com.android.build.gradle.internal.profile.ProfileAwareWorkAction.execute(ProfileAwareWorkAction.kt:74)
+Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
+	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:20)
+	at org.jetbrains.kotlin.compilerRunner.GradleKotlinCompilerWork.run(GradleKotlinCompilerWork.kt:141)
+	at org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction.execute(GradleCompilerRunnerWithWorkers.kt:73)
 	at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:63)
 	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:66)
 	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:62)
@@ -629,24 +683,11 @@ Caused by: com.android.aaptcompiler.ResourceCompilationException: Resource compi
 	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:165)
 	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:134)
 	... 2 more
-Caused by: com.android.aaptcompiler.ResourceCompilationException: Failed to compile values resource file /home/runner/work/OpenCode-app/OpenCode-app/app/build/intermediates/incremental/debug/mergeDebugResources/merged.dir/values/values.xml
-	at com.android.aaptcompiler.ResourceCompiler.compileTable(ResourceCompiler.kt:192)
-	at com.android.aaptcompiler.ResourceCompiler.access$compileTable(ResourceCompiler.kt:1)
-	at com.android.aaptcompiler.ResourceCompiler$getCompileMethod$1.invoke(ResourceCompiler.kt:138)
-	at com.android.aaptcompiler.ResourceCompiler$getCompileMethod$1.invoke(ResourceCompiler.kt:138)
-	at com.android.aaptcompiler.ResourceCompiler.compileResource(ResourceCompiler.kt:123)
-	... 31 more
-Caused by: java.lang.IllegalStateException: Can not extract resource from com.android.aaptcompiler.ParsedResource@2a736d96.
-	at com.android.aaptcompiler.TableExtractor.extractResourceValues(TableExtractor.kt:270)
-	at com.android.aaptcompiler.TableExtractor.extract(TableExtractor.kt:181)
-	at com.android.aaptcompiler.ResourceCompiler.compileTable(ResourceCompiler.kt:188)
-	... 35 more
 
 
-BUILD FAILED in 1m 9s
-10 actionable tasks: 10 executed
+BUILD FAILED in 2m 39s
+33 actionable tasks: 31 executed, 2 from cache
 STEP_FAILED rc=1: SKIP_PAYLOAD=1 '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
 FATAL: kotlin compile or JVM unit tests failed (compiler-errors.txt)
 P10-BUILD FAIL: kotlin compile or JVM unit tests failed (compiler-errors.txt)
 P10_SUMMARY gates not reached (build/environment failure) - see 00-run-phase10.log
-=== PHASE 10 END 2026-09-24T06:46:48Z FATAL: kotlin compile or JVM unit tests failed (compiler-errors.txt) ===
