@@ -193,4 +193,26 @@ class UiErrorTest {
             UiError.combine(AgentAvailability.READY, AgentAvailability.READY, AgentAvailability.READY),
         )
     }
+
+    // ---- v6.1: the keyring's limit-switch trigger ------------------------------
+    // Narrower than PROVIDER_UNREACHABLE on purpose: only errors a DIFFERENT key
+    // could get past may advance the ring.
+
+    @Test
+    fun aRateLimitTriggersTheKeySwitch() {
+        assertTrue(UiError.isKeyLimitError(UiError.NAME_API, "", statusCode = 429))
+        assertTrue(UiError.isKeyLimitError(UiError.NAME_API, "Rate limit exceeded, retry after 20s"))
+        assertTrue(UiError.isKeyLimitError(UiError.NAME_UNKNOWN, "You exceeded your current quota"))
+        assertTrue(UiError.isKeyLimitError("", "429 Too Many Requests"))
+        assertTrue(UiError.isKeyLimitError(UiError.NAME_API, "Insufficient credits to run this model"))
+    }
+
+    @Test
+    fun aDeadNetworkOrAnAbortNeverBurnsThroughTheRing() {
+        assertFalse(UiError.isKeyLimitError(UiError.NAME_UNKNOWN, "fetch failed"))
+        assertFalse(UiError.isKeyLimitError(UiError.NAME_API, "socket hang up", statusCode = 502))
+        assertFalse(UiError.isKeyLimitError(UiError.NAME_ABORTED, "rate limit"))
+        assertFalse(UiError.isKeyLimitError(UiError.NAME_PROVIDER_AUTH, "Invalid API key"))
+        assertFalse(UiError.isKeyLimitError("", ""))
+    }
 }

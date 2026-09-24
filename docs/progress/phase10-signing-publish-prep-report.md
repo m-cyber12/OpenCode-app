@@ -3061,3 +3061,54 @@ Local evidence after the fix: the scenario subset runnable in this sandbox (happ
 onboarding, locked, blank, tags-gone) is 63/63 green including the two new checks;
 the full 16-scenario self-test, unit tests and the instrumented W7 run in CI (no JDK
 in this sandbox - compilation remains CI's job, as before).
+
+### B.12.21 Owner decisions implemented: per-provider keyring with automatic limit-switch, and import says it copies (2026-09-24)
+
+The owner answered the three design questions from B.12.20: (1) a **full keyring** -
+several saved keys per provider, one Active; (2) when the active key trips a
+rate/usage limit the app should **switch to the next key automatically**, with manual
+override, and the controls belong in **Settings under the provider** (not next to the
+model picker); (3) **import stays a copy** - just say it louder.
+
+**Why the keyring is app-side:** upstream `auth.json` is a map keyed by provider id
+and `PUT /auth/:providerID` replaces - the server can only ever hold ONE credential
+per provider. So `ProviderKeyring` keeps every key value as its own Keystore-encrypted
+`SecretStore` blob (`provider:<id>:<slot>`), mirrors the ACTIVE key at the legacy
+name `provider:<id>` (the name every pre-keyring code path reads - upgrade needs no
+migration anywhere else), and stores only labels/last-4/active-slot as metadata.
+A pre-keyring install's single key is ADOPTED as "Key 1 (active)" on first read.
+
+What changed, and its evidence:
+
+* `ProviderKeyring` (security pkg): pure core over an injected vault + meta
+  load/save, so its whole behaviour is JVM-tested - **15 new unit tests** covering
+  the exact complaint (add keeps the old key), adoption, activate, per-key delete
+  (active-key delete promotes the next and reports its value; last-key delete
+  reports empty so the caller mirrors `DELETE /auth`), round-robin failover,
+  restart round-trip, provider isolation, corrupt-metadata tolerance, and that
+  metadata never contains key material.
+* Repository: `provisionProvider` adds to the ring instead of overwriting;
+  `activateProviderKey`/`removeProviderKey` are the Settings actions (same upstream
+  mechanism as provisioning: `PUT /auth` + instance reset); `revokeProvider` clears
+  the whole ring. **Automatic limit-switch**: after every transcript publish, a turn
+  error classified by the new `UiError.isKeyLimitError` (429 / rate-limit / quota /
+  credit hints; deliberately NARROWER than PROVIDER_UNREACHABLE - a dead network
+  must not burn through the ring; 5 new classifier tests) advances the ring once
+  per distinct error, pushes the next key upstream, and says so in the notice.
+  The turn is not silently re-sent; manual override stays in Settings.
+* Settings dialog: a "Saved keys" list (label + last 4, Active marker, per-key
+  Use/Delete with per-provider a11y descriptions, tags `provider_key_row/use/
+  delete_<slot>`), a failover note, and the connected-mode button now reads
+  "Add key" - the old "Replace key" label described exactly the behaviour that no
+  longer happens. Existing tags/labels/flows are UNCHANGED (the driver's key stage
+  needed only one extra tolerant needle), so the 132-check harness contract holds.
+* Import (owner: "keep copy, say it louder"): the button reads "Import a copy"
+  (closing a drift - the fake phone's fixture already said so), and a finished
+  import now lands back ON the projects page with a notice naming the copy and
+  stating the original folder was not touched - instead of silently jumping into
+  the new project's chat.
+
+Local evidence: `30-static-checks.sh` rc=0 end to end (incl. UI-list purity over the
+new dialog section and the aapt2 apostrophe rule over the new strings); harness
+selfcheck PASS. The new unit tests and the full instrumented surface compile and run
+in CI (no JDK in this sandbox). W7 + the B.12.20 driver walk ride the same run.

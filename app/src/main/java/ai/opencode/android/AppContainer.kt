@@ -23,6 +23,27 @@ class AppContainer private constructor(private val context: Context) {
     val secrets: SecretStore = SecretStore.get(context)
     private var cached: Pair<String, OpenCodeRepository>? = null
 
+    /**
+     * v6.1: the per-provider multi-key ring. Key VALUES live in [secrets]
+     * (Keystore-encrypted, one blob per key); only labels/last-4/active-slot
+     * metadata goes into this prefs file - no key material.
+     */
+    private val keyringPrefs = context.getSharedPreferences("provider_keyring", Context.MODE_PRIVATE)
+    private val keyringInstance: ai.opencode.android.security.ProviderKeyring by lazy {
+        ai.opencode.android.security.ProviderKeyring(
+            loadMeta = { keyringPrefs.getString("meta", "") ?: "" },
+            saveMeta = { keyringPrefs.edit().putString("meta", it).apply() },
+            vault = object : ai.opencode.android.security.ProviderKeyring.Vault {
+                override fun put(name: String, value: String) = secrets.put(name, value)
+                override fun get(name: String): String? = runCatching { secrets.get(name) }.getOrNull()
+                override fun delete(name: String): Boolean = secrets.delete(name)
+                override fun contains(name: String): Boolean = secrets.contains(name)
+            },
+        )
+    }
+
+    fun keyring(): ai.opencode.android.security.ProviderKeyring = keyringInstance
+
     fun repositoryFor(workspaceDir: String?): OpenCodeRepository = synchronized(this) {
         val password = runCatching { secrets.get(SECRET_PASSWORD) }.getOrNull().orEmpty()
         val key = (workspaceDir ?: "") + "|" + password.hashCode()
@@ -39,6 +60,7 @@ class AppContainer private constructor(private val context: Context) {
             // app restart) starts from the user's own choice instead of the first
             // model the server happens to list (v4 item 3).
             modelPreference = ai.opencode.android.client.PrefsModelPreference.get(context),
+            keyring = keyringInstance,
         )
         cached = key to repo
         repo

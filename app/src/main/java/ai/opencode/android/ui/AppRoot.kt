@@ -183,8 +183,13 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 result.onSuccess { name ->
                     projects = store.projects()
                     projectName = name
-                    route = ROUTE_CHAT
                     importError = ""
+                    // v6.1 (owner decision "keep copy, say it louder"): import IS a
+                    // copy, so land back on the page that shows the copy and state
+                    // plainly that the original folder was not touched - instead of
+                    // silently jumping into the new project's chat.
+                    storageMessage = context.getString(R.string.projects_import_done, name)
+                    route = ROUTE_PROJECTS
                 }.onFailure { t ->
                     importError = (t.message ?: t.javaClass.simpleName)
                 }
@@ -773,6 +778,12 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         repository.setStarred(OpenCodeApi.ModelRef(providerId, modelId), starred)
                     },
                     onConnectProvider = { providerId, key -> repository.provisionProvider(providerId, key, secrets) },
+                    // v6.1: the keyring (several saved keys per provider, one active).
+                    providerKeys = { providerId ->
+                        runCatching { container.keyring().entries(providerId) }.getOrDefault(emptyList())
+                    },
+                    onUseKey = { providerId, slot -> repository.activateProviderKey(providerId, slot) },
+                    onDeleteKey = { providerId, slot -> repository.removeProviderKey(providerId, slot) },
                     onAddCustomProvider = { id, name, baseUrl, models, key ->
                         repository.addCustomProvider(id, name, baseUrl, CustomProviderConfig.parseModels(models), key, secrets)
                     },

@@ -47,6 +47,9 @@ class OpenCodeRepository(
      * behaviour; the app always passes the real store (AppContainer).
      */
     private val modelPreference: ModelPreference? = null,
+    // v6.1: the app-side multi-key ring (upstream auth.json holds ONE credential
+    // per provider, so several keys live here; the active one is pushed upstream).
+    private val keyring: ai.opencode.android.security.ProviderKeyring? = null,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) {
 
@@ -642,7 +645,14 @@ class OpenCodeRepository(
     fun provisionProvider(providerID: String, apiKey: String, store: ai.opencode.android.security.SecretStore) {
         scope.launch {
             try {
-                store.put(ai.opencode.android.security.SecretNames.providerSecretName(providerID), apiKey)
+                // v6.1: saving a key no longer destroys the previous one - the ring
+                // keeps them all and mirrors the ACTIVE key at the legacy secret
+                // name (which is also what gets pushed upstream, below).
+                if (keyring != null) {
+                    keyring.add(providerID, apiKey)
+                } else {
+                    store.put(ai.opencode.android.security.SecretNames.providerSecretName(providerID), apiKey)
+                }
                 api.setProviderAuth(providerID, apiKey)
                 val p = applyCredentialChange(providerID)
                 // The user just connected this provider: make it the model the
@@ -668,6 +678,7 @@ class OpenCodeRepository(
     fun revokeProvider(providerID: String, store: ai.opencode.android.security.SecretStore) {
         scope.launch {
             runCatching {
+                keyring?.removeAll(providerID)
                 store.delete(ai.opencode.android.security.SecretNames.providerSecretName(providerID))
                 api.deleteProviderAuth(providerID)
                 applyCredentialChange(providerID)
@@ -680,6 +691,60 @@ class OpenCodeRepository(
                     notice = "credential revoked for $providerID",
                 )
             }.onFailure { fail("revoke provider", it) }
+        }
+    }
+
+    /**
+     * v6.1: make a SAVED key the active one (Settings, the per-key "Use" action).
+     * Same upstream mechanism as provisioning: `PUT /auth/:id` + instance reset.
+     */
+    fun activateProviderKey(providerID: String, slot: String) {
+        scope.launch {
+            try {
+                val ring = keyring ?: return@launch
+                val value = ring.activate(providerID, slot)
+                if (value == null) {
+                    _state.value = _state.value.copy(error = "stored key could not be read; it was not activated", errorKind = AgentAvailability.UNKNOWN)
+                    return@launch
+                }
+                api.setProviderAuth(providerID, value)
+                val p = applyCredentialChange(providerID)
+                val label = ring.active(providerID)?.label ?: slot
+                _state.value = _state.value.copy(providers = p, notice = "now using '$label' for $providerID", error = "")
+            } catch (t: Throwable) {
+                fail("activate key", t)
+            }
+        }
+    }
+
+    /**
+     * v6.1: delete ONE saved key. Deleting the active key promotes the next saved
+     * one (pushed upstream); deleting the last key disconnects the provider - the
+     * same upstream DELETE the provider-level revoke uses. Never silent: every
+     * branch says what the provider is now running on.
+     */
+    fun removeProviderKey(providerID: String, slot: String) {
+        scope.launch {
+            try {
+                val ring = keyring ?: return@launch
+                val r = ring.remove(providerID, slot)
+                if (!r.removed) return@launch
+                when {
+                    r.promotedKey != null -> {
+                        api.setProviderAuth(providerID, r.promotedKey)
+                        val p = applyCredentialChange(providerID)
+                        _state.value = _state.value.copy(providers = p, notice = "key deleted; $providerID now uses '${r.promoted?.label}'")
+                    }
+                    r.empty -> {
+                        api.deleteProviderAuth(providerID)
+                        val p = applyCredentialChange(providerID)
+                        _state.value = _state.value.copy(providers = p, notice = "last key deleted; $providerID is disconnected")
+                    }
+                    else -> _state.value = _state.value.copy(notice = "key deleted for $providerID")
+                }
+            } catch (t: Throwable) {
+                fail("remove key", t)
+            }
         }
     }
 
@@ -968,6 +1033,40 @@ class OpenCodeRepository(
             busy = snap.busySessions().isNotEmpty() || busyFromServer,
             streamStatus = status,
         )
+        maybeFailoverKey(snap, st)
+    }
+
+    /**
+     * v6.1 (owner decision): when a turn dies on a rate/usage/credit limit and the
+     * keyring holds another key for the CURRENT provider, switch to the next key
+     * automatically and say so. The trigger is [UiError.isKeyLimitError] - narrower
+     * than "provider unreachable" on purpose (a dead network is not a key problem).
+     * One hop per distinct error: the marker below stops a re-published transcript
+     * from advancing the ring again for the same failure. The turn itself is NOT
+     * re-sent - the notice tells the user the next attempt runs on the new key,
+     * and Settings keeps full manual override.
+     */
+    private var lastFailoverMarker: String = ""
+
+    private fun maybeFailoverKey(snap: Transcript.Snapshot, st: UiState) {
+        val ring = keyring ?: return
+        val err = snap.session(st.selectedSession)?.error ?: return
+        if (!UiError.isKeyLimitError(err.name, err.message, err.statusCode)) return
+        val marker = st.selectedSession + "|" + err.name + "|" + err.message + "|" + err.statusCode + "|" + err.atMs
+        if (marker == lastFailoverMarker) return
+        lastFailoverMarker = marker
+        val pid = st.model?.providerID ?: return
+        val hop = runCatching { ring.failover(pid) }.getOrNull() ?: return
+        scope.launch {
+            runCatching {
+                api.setProviderAuth(pid, hop.second)
+                val p = applyCredentialChange(pid)
+                _state.value = _state.value.copy(
+                    providers = p,
+                    notice = "key limit hit on $pid; switched to '${hop.first.label}' automatically - send again to use it (Settings > $pid to override)",
+                )
+            }.onFailure { fail("key failover", it) }
+        }
     }
 
     companion object {

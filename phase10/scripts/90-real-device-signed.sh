@@ -1750,7 +1750,7 @@ if [ -n "${MODEL_KEY:-}" ] && [ "$SKIP_LIVE" = 0 ]; then
         fi
         if tap_any "provider_key_value" "API key"; then
           type_text "$MODEL_KEY"
-          if tap_any "provider_key_save" "Save key" "Replace key"; then
+          if tap_any "provider_key_save" "Save key" "Replace key" "Add key"; then
             sleep 3
             shot "provider-key-saved" || true
             if [ "$KEY_VIA" = rotate ]; then

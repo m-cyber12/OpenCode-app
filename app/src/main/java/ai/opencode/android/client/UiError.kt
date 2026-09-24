@@ -124,6 +124,27 @@ object UiError {
         }
     }
 
+    /**
+     * v6.1 (owner decision): is this turn error the kind a DIFFERENT key for the
+     * same provider could get past - a rate/usage/credit limit on the key that
+     * just ran? Used as the trigger for the keyring's automatic limit-switch,
+     * so it is deliberately NARROWER than [AgentAvailability.PROVIDER_UNREACHABLE]:
+     * a dead network is not a key problem, and switching keys on it would burn
+     * through the ring for nothing.
+     */
+    fun isKeyLimitError(name: String, message: String, statusCode: Int = 0): Boolean {
+        if (name == NAME_ABORTED) return false
+        if (statusCode == 429) return true
+        val lower = message.lowercase()
+        return LIMIT_HINTS.any { lower.contains(it) }
+    }
+
+    private val LIMIT_HINTS = listOf(
+        "rate limit", "rate_limit", "rate-limit", "too many requests", "quota",
+        "usage limit", "limit reached", "limit exceeded", "insufficient credit",
+        "credit balance", "out of credits", "insufficient balance", "billing hard limit",
+    )
+
     private fun hints(
         lower: String,
         fallback: AgentAvailability = AgentAvailability.PROVIDER_OTHER,

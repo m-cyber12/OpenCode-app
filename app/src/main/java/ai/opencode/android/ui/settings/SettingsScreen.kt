@@ -8,6 +8,7 @@ import ai.opencode.android.client.OpenCodeRepository
 import ai.opencode.android.client.ProviderSetup
 import ai.opencode.android.memory.MemoryState
 import ai.opencode.android.ui.common.DetailDisclosure
+import ai.opencode.android.security.ProviderKeyring
 import ai.opencode.android.ui.common.KeyValueRow
 import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.ui.common.SectionCard
@@ -122,6 +123,13 @@ fun SettingsScreen(
     onToggleStar: (String, String, Boolean) -> Unit = { _, _, _ -> },
     /** v4 item 2: one-step activation of a catalog provider (id, API key). */
     onConnectProvider: (String, String) -> Unit = { _, _ -> },
+    // ---- v6.1: the per-provider keyring (several saved keys, one active) -----------
+    /** The saved keys for a provider id (labels/last-4 only, never values). */
+    providerKeys: (String) -> List<ProviderKeyring.Entry> = { emptyList() },
+    /** Make a saved key (provider id, slot) the active one. */
+    onUseKey: (String, String) -> Unit = { _, _ -> },
+    /** Delete one saved key (provider id, slot). */
+    onDeleteKey: (String, String) -> Unit = { _, _ -> },
     /** v4 item 2, manual path: (id, display name, base URL, model ids, key). */
     onAddCustomProvider: (String, String, String, String, String) -> Unit = { _, _, _, _, _ -> },
     /** v4 items 1 and 4: the workspace folder, and the one action that changes it. */
@@ -226,6 +234,9 @@ fun SettingsScreen(
                         onToggleStar = onToggleStar,
                         onConnectProvider = onConnectProvider,
                         onRevokeKey = onRevokeKey,
+                        providerKeys = providerKeys,
+                        onUseKey = onUseKey,
+                        onDeleteKey = onDeleteKey,
                     )
                     "keys" -> KeysSection(
                         onAddCustomProvider = onAddCustomProvider,
@@ -434,6 +445,9 @@ private fun ModelSection(
     onToggleStar: (String, String, Boolean) -> Unit,
     onConnectProvider: (String, String) -> Unit,
     onRevokeKey: (String) -> Unit,
+    providerKeys: (String) -> List<ProviderKeyring.Entry> = { emptyList() },
+    onUseKey: (String, String) -> Unit = { _, _ -> },
+    onDeleteKey: (String, String) -> Unit = { _, _ -> },
 ) {
     val chat = ChatTheme.chat
     // v4 item 2: the catalog is hundreds of entries, so it is searched, not scrolled.
@@ -525,6 +539,7 @@ private fun ModelSection(
         ProviderKeyDialog(
             provider = target,
             connected = providers?.connected?.contains(target.id) == true,
+            keys = providerKeys(target.id),
             onDismiss = { connectTarget = null },
             onSave = { key ->
                 onConnectProvider(target.id, key)
@@ -532,6 +547,14 @@ private fun ModelSection(
             },
             onRevoke = {
                 onRevokeKey(target.id)
+                connectTarget = null
+            },
+            onUseKey = { slot ->
+                onUseKey(target.id, slot)
+                connectTarget = null
+            },
+            onDeleteKey = { slot ->
+                onDeleteKey(target.id, slot)
                 connectTarget = null
             },
         )
@@ -551,6 +574,9 @@ private fun ProviderKeyDialog(
     onDismiss: () -> Unit,
     onSave: (String) -> Unit,
     onRevoke: () -> Unit,
+    keys: List<ProviderKeyring.Entry> = emptyList(),
+    onUseKey: (String) -> Unit = {},
+    onDeleteKey: (String) -> Unit = {},
 ) {
     var key by rememberSaveable(provider.id) { mutableStateOf("") }
     AlertDialog(
@@ -571,6 +597,69 @@ private fun ProviderKeyDialog(
                     ),
                     style = MaterialTheme.typography.bodySmall,
                 )
+                // v6.1 (owner decision): every saved key for this provider, one
+                // active. Saving a new key ADDS it (nothing is destroyed any more);
+                // "Use" switches manually; the limit-switch does the same hop
+                // automatically when the active key runs into a rate/usage limit.
+                if (keys.isNotEmpty()) {
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        text = stringResource(R.string.settings_keys_stored_title),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                    keys.forEach { entry ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 40.dp)
+                                .semantics { testTag = "provider_key_row_${entry.slot}" },
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    text = entry.label + "  ····" + entry.last4,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                if (entry.active) {
+                                    Text(
+                                        text = stringResource(R.string.settings_keys_active),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = ChatTheme.chat.success,
+                                    )
+                                }
+                            }
+                            if (!entry.active) {
+                                val useDesc = stringResource(R.string.settings_keys_use_desc, entry.label, provider.name)
+                                TextButton(
+                                    onClick = { onUseKey(entry.slot) },
+                                    modifier = Modifier.height(36.dp).semantics {
+                                        testTag = "provider_key_use_${entry.slot}"
+                                        contentDescription = useDesc
+                                    },
+                                ) {
+                                    Text(stringResource(R.string.settings_keys_use))
+                                }
+                            }
+                            val deleteDesc = stringResource(R.string.settings_keys_delete_desc, entry.label, provider.name)
+                            TextButton(
+                                onClick = { onDeleteKey(entry.slot) },
+                                modifier = Modifier.height(36.dp).semantics {
+                                    testTag = "provider_key_delete_${entry.slot}"
+                                    contentDescription = deleteDesc
+                                },
+                            ) {
+                                Text(stringResource(R.string.settings_keys_delete_one))
+                            }
+                        }
+                    }
+                    Text(
+                        text = stringResource(R.string.settings_keys_failover_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = ChatTheme.chat.muted,
+                    )
+                }
                 Spacer(Modifier.height(10.dp))
                 OutlinedTextField(
                     value = key,
@@ -606,8 +695,11 @@ private fun ProviderKeyDialog(
                 modifier = Modifier.semantics { testTag = "provider_key_save" },
             ) {
                 Text(
+                    // v6.1: with the keyring, saving while connected ADDS a key
+                    // (the old label said "Replace", which is exactly what no
+                    // longer happens).
                     stringResource(
-                        if (connected) R.string.settings_provider_key_replace else R.string.settings_keys_save,
+                        if (connected) R.string.settings_provider_key_add else R.string.settings_keys_save,
                     ),
                 )
             }
