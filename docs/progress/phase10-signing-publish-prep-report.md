@@ -3140,3 +3140,42 @@ Still owed, unchanged: the owner's on-device pass with an APK signed FROM THIS R
 the driver will print `P10D_PICKER_WORKSPACE_SWITCH` and walk the new key dialog.
 The automatic limit-switch has unit + classifier coverage but its end-to-end trip
 (a real 429 from a real provider) can only be observed on a device with two keys.
+
+### B.13 v7: the gold redesign, and the Changes + Terminal surfaces (2026-09-24)
+
+The owner's fifth feedback round is a design brief: redesign the UI around a
+reference screenshot set (dark, card-based coding-agent app), but yellow/gold
+instead of the reference's red, own creativity encouraged, and take exactly TWO
+elements from the reference beyond the look - a Changes view ("what did the agent
+do to my files, at each stage") and a Terminal view (agent commands and logs,
+like our diagnosis view) - and nothing else (no voice, no prompt chips).
+
+Shipped in `07bdff4`, green on its first CI run (36040038327: 354 JVM tests,
+UI gates 14/0/0 on debug AND the release-shaped build, all W-gates, board 0/0/0):
+
+* **Theme**: same semantic-role system, new values - warm charcoal surfaces, gold
+  primary ("the colour of agency": actions, running work), orange reserved for
+  "the agent needs you" so an ask never vanishes into gold chrome, green for
+  success/alive (the one reference idea kept verbatim), code palettes retuned
+  warm. Material You now defaults OFF - a wallpaper-derived scheme would repaint
+  the brand on every modern phone - and the Settings toggle stays. The UI gates
+  pin dynamicColor=false themselves, so gate rendering is identical.
+* **client/WorkLog**: the two new pages are pure projections of the transcript
+  the server already streams (ToolMeta diffs, shell parts) - no new state, no new
+  endpoint, 10 JVM tests (grouping, ordering, omission rules, garbage tolerance).
+* **ProjectTabs** (Chat / Files / Changes / Terminal) under the chat header; the
+  Files toolbar icon stays because the driver and U9 navigate by it. New tags
+  only: `project_tab_*`, `changes_screen/_turn_/_row_`, `terminal_screen/_row_`.
+* **ChangesScreen**: newest stage first, per-file +N/-N, patch one tap away
+  (rendered by the existing diff highlighter). **TerminalScreen**: a real console
+  surface - gold `$` prompt, captured output, exit code / running / failed,
+  newest command pinned to the bottom edge, read-only by the owner's brief.
+* Reference-inspired marks: gold `</>` glyph tiles on project rows, the centred
+  brand mark on welcome. No existing tag, needle or string was removed.
+
+Honest limits, stated: the driver does not yet WALK the two new tabs on a device
+(next round - the fake-phone fixtures need the new screens before the driver can
+demand them); the new screens' correctness rides on the WorkLog unit tests plus
+compile-level inclusion in the gate APKs, not on a dedicated instrumented gate
+yet. The owner's device pass will see the gold theme everywhere - if any screen
+still reads "blue era", that is a finding for the next round.
