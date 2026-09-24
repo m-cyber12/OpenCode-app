@@ -3,6 +3,8 @@ package ai.opencode.android.ui.files
 import ai.opencode.android.R
 import ai.opencode.android.runtime.StorageMode
 import ai.opencode.android.ui.common.AppTopBar
+import ai.opencode.android.ui.common.ProjectTab
+import ai.opencode.android.ui.common.ProjectTabs
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
 import androidx.compose.foundation.clickable
@@ -135,6 +137,12 @@ fun FilesScreen(
     onRequestAllFilesAccess: () -> Unit,
     onMoveProjects: () -> Unit,
     onBack: () -> Unit,
+    /**
+     * v7 redesign: when non-null, the Chat/Files/Changes/Terminal strip renders
+     * under the bar and this callback handles a tab tap. Nullable so every
+     * existing call site (and the U9 gate's fixture) is untouched.
+     */
+    onSelectTab: ((ProjectTab) -> Unit)? = null,
 ) {
     val chat = ChatTheme.chat
     val where = if (currentPath.isEmpty()) "/" else "/$currentPath"
@@ -149,6 +157,10 @@ fun FilesScreen(
             subtitle = stringResource(R.string.files_subtitle) + where,
             onBack = onBack,
         )
+
+        if (onSelectTab != null && openFile == null) {
+            ProjectTabs(current = ProjectTab.FILES, onSelect = onSelectTab)
+        }
 
         // Where these files are on the device, said plainly - and what can be
         // done about it when the answer is "somewhere a file manager cannot open".

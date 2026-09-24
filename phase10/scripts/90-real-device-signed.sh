@@ -1430,6 +1430,41 @@ else
   rd FIRST_RUN_PROJECT 7 "no project could be created because the first run never reached a usable screen.$(dump_caveat)"
 fi
 
+# ---- R5t: the v7 tab strip (Changes and Terminal surfaces) -------------------
+# The redesign round added two project surfaces beside the conversation: what the
+# agent did to the files (stage by stage, with diffs) and what it ran (a read-only
+# console). This walk proves both open ON THE SIGNED BUILD by real taps, and that
+# the Chat tab leads back - a fresh session shows their empty states, which name
+# themselves, so the walk works before any turn has run.
+step "R5t v7: the Changes and Terminal tabs on the conversation"
+if [ "$FIRST_RUN_OK" = 1 ] && ui_has "project_tab_changes"; then
+  if tap_any "project_tab_changes" "Changes"; then
+    sleep 1
+    if wait_for "changes-surface" "changes_screen|No file changes yet" "$(tmo 90)"; then
+      shot "changes-surface" || true
+      if tap_any "project_tab_terminal" "Terminal" && wait_for "terminal-surface" "terminal_screen|Nothing has run yet" "$(tmo 90)"; then
+        shot "terminal-surface" || true
+        if tap_any "project_tab_chat" "Chat" && wait_for "tabs-back-to-chat" "$NEEDLE_CHAT" "$(tmo 90)"; then
+          rd TABS_SURFACES 0 "the Changes and Terminal tabs both open their surfaces on the signed build and the Chat tab returns to the conversation (all real taps; empty states name themselves on a fresh session)"
+        else
+          rd TABS_SURFACES 1 "the Terminal surface opened but the Chat tab did not return to the conversation (see DIAGNOSIS.txt)"
+          return_to_conversation >/dev/null 2>&1 || true
+        fi
+      else
+        rd TABS_SURFACES 1 "the Changes surface opened but the Terminal tab did not follow (see DIAGNOSIS.txt)"
+        return_to_conversation >/dev/null 2>&1 || true
+      fi
+    else
+      rd TABS_SURFACES 1 "the Changes tab was tapped but its surface never showed (see DIAGNOSIS.txt)"
+      return_to_conversation >/dev/null 2>&1 || true
+    fi
+  else
+    rd TABS_SURFACES 1 "the Changes tab is on screen but could not be tapped (see DIAGNOSIS.txt)"
+  fi
+else
+  rd TABS_SURFACES 7 "no conversation open, or this build predates the v7 tab strip"
+fi
+
 # ---- R5: the app's own file browser ------------------------------------------
 step "R5 the in-app file browser (this is how a user sees what the agent wrote)"
 FILES_SEEN=0

@@ -190,7 +190,12 @@ log "=== stage A: deterministic chat UI gates (no runtime, no model, no key) ===
 install_fresh
 CHAT_RC=0
 run_class "chat-ui" "ai.opencode.android.ui.ChatUiGatesTest" 1800 || CHAT_RC=1
-for g in U1 U2 U3 U4 U5 U6 U7 U8; do
+# v7: U9-U12 (files, quick switch, provider search, workspace step) used to ride
+# along uncounted - their lines reached the evidence but a FAIL would not have
+# moved ui_gates_fail. Counted now, together with the new U13 (Changes surface)
+# and U14 (Terminal surface). verdict_of treats an absent id as FAIL, so a gate
+# that stops printing cannot pass silently.
+for g in U1 U2 U3 U4 U5 U6 U7 U8 U9 U10 U11 U12 U13 U14; do
   v=$(verdict_of "P6_$g"); p6 "$g" "$v" "$(detail_of "P6_$g")"
 done
 [ "$CHAT_RC" = 0 ] || log "note: the chat-UI instrument run itself returned rc=$CHAT_RC"

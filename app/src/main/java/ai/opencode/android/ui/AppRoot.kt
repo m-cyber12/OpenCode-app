@@ -519,6 +519,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             storage = withContext(Dispatchers.IO) { storageController.snapshot() }
             if (filesPath.isEmpty()) loadFiles("")
         }
+        // v7: the terminal page appends the runtime log, so entering it loads the
+        // same diagnostics text the Settings view shows (once; refresh lives there).
+        if (route == ROUTE_TERMINAL && diagnosticsLines.isEmpty()) loadDiagnostics()
         if (route == ROUTE_SETTINGS) {
             if (diagnosticsLines.isEmpty()) loadDiagnostics()
             memory = withContext(Dispatchers.IO) {
@@ -734,6 +737,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 )
 
                 ROUTE_FILES -> FilesScreen(
+                    onSelectTab = { tab -> route = routeForTab(tab) },
                     projectName = projectName.ifEmpty { stringResource(R.string.projects_title) },
                     projectPath = projectDir?.absolutePath.orEmpty(),
                     storageMode = storage.mode,
@@ -907,6 +911,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     TerminalScreen(
                         projectName = projectName.ifEmpty { stringResource(R.string.projects_title) },
                         commands = remember(view) { WorkLog.commands(view) },
+                        runtimeLog = diagnosticsLines,
                         onBack = { route = ROUTE_CHAT },
                         onSelectTab = { tab -> route = routeForTab(tab) },
                     )

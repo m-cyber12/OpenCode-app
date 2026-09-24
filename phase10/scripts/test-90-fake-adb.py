@@ -195,6 +195,13 @@ def transition(node_id):
         put("screen", "projects-picked")
     elif here in ("chat", "answer", "chat-menu") and node_id in ("open_files", "Project files"):
         put("screen", "files")
+    # ---- v7: the project tab strip (Changes / Terminal / back to Chat) --------
+    elif here in ("chat", "answer", "terminal") and node_id in ("project_tab_changes", "Changes"):
+        put("screen", "changes")
+    elif here in ("chat", "answer", "changes") and node_id in ("project_tab_terminal", "Terminal"):
+        put("screen", "terminal")
+    elif here in ("changes", "terminal") and node_id in ("project_tab_chat", "Chat"):
+        put("screen", "chat")
     elif here in ("chat", "answer") and node_id in ("open_settings", "Settings and diagnostics"):
         put("screen", "settings")
     elif here in ("chat", "answer") and node_id in ("open_projects", "Projects", "Open the project list"):

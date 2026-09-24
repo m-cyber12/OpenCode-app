@@ -136,6 +136,11 @@ def build(root):
             # test would drive a different control than the driver aimed at.
             node("open_settings", text="Settings and diagnostics", bounds="[960,120][1060,220]"),
             text_node("Start a conversation", "[40,300][1040,380]"),
+            # v7: the project tab strip. Distinct rectangles (hit() takes the FIRST
+            # node whose bounds contain a tap, so tabs must never overlap).
+            node("project_tab_chat", text="Chat", desc="Chat", bounds="[40,390][280,470]"),
+            node("project_tab_changes", text="Changes", desc="Changes", bounds="[300,390][620,470]"),
+            node("project_tab_terminal", text="Terminal", desc="Terminal", bounds="[640,390][1000,470]"),
             node("composer_attach", text="Attach a file", bounds="[40,1700][300,1780]"),
             node("composer_input", text="Message the agent", bounds="[320,1690][820,1790]",
                  cls="android.widget.EditText"),
@@ -309,6 +314,25 @@ def build(root):
         node("", text="Cancel", bounds="[700,960][1040,1060]"),
     ])
 
+    # ---- v7: the Changes and Terminal surfaces --------------------------------
+    # Served in their fresh-session shape: the empty state that names itself, and
+    # the tab strip that crosses between them - exactly what the driver's R5t
+    # stage asserts on a phone before any turn has run.
+    screens_changes = screen("changes", [
+        node("changes_screen", text="", bounds="[0,0][1080,1920]", clickable="false"),
+        text_node("Changes", "[40,120][400,200]"),
+        node("project_tab_chat", text="Chat", desc="Chat", bounds="[40,390][280,470]"),
+        node("project_tab_terminal", text="Terminal", desc="Terminal", bounds="[640,390][1000,470]"),
+        text_node("No file changes yet", "[40,600][1040,680]"),
+    ])
+    screens_terminal = screen("terminal", [
+        node("terminal_screen", text="", bounds="[0,0][1080,1920]", clickable="false"),
+        text_node("Terminal", "[40,120][400,200]"),
+        node("project_tab_chat", text="Chat", desc="Chat", bounds="[40,390][280,470]"),
+        node("project_tab_changes", text="Changes", desc="Changes", bounds="[300,390][620,470]"),
+        text_node("Nothing has run yet", "[40,600][1040,680]"),
+    ])
+
     for name, body in (("welcome", screens_welcome), ("projects", screens_projects),
                        ("projects-switch", screens_projects_switch),
                        ("picker", screens_picker),
@@ -320,7 +344,8 @@ def build(root):
                        ("settings-openr", screens_settings_openr),
                        ("settings-key", screens_settings_key),
                        ("chat-menu", screens_chat_menu),
-                       ("workspace", screens_workspace)):
+                       ("workspace", screens_workspace),
+                       ("changes", screens_changes), ("terminal", screens_terminal)):
         with open(os.path.join(screens, name + ".xml"), "w", encoding="utf-8") as fh:
             fh.write(body)
 
@@ -336,7 +361,7 @@ def build(root):
     write_screen_png(os.path.join(shots_dir, "blank.png"), blank=True)
     for name in ("screen", "answer", "files", "projects", "welcome", "settings",
                  "settings-nomatch", "settings-openr", "settings-key", "chat-menu", "workspace",
-                 "picker", "projects-picked", "projects-switch-picked"):
+                 "picker", "projects-picked", "projects-switch-picked", "changes", "terminal"):
         write_screen_png(os.path.join(shots_dir, name + ".png"))
     return screens, shots_dir
 

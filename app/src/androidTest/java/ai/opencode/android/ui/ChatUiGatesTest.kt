@@ -6,9 +6,13 @@ import ai.opencode.android.client.OpenCodeApi
 import ai.opencode.android.client.OpenCodeRepository
 import ai.opencode.android.client.Transcript
 import ai.opencode.android.client.UiError
+import ai.opencode.android.client.WorkLog
 import ai.opencode.android.projects.Project
 import ai.opencode.android.runtime.RuntimeVersion
+import ai.opencode.android.ui.changes.ChangesScreen
 import ai.opencode.android.ui.chat.ChatScreen
+import ai.opencode.android.ui.common.ProjectTab
+import ai.opencode.android.ui.terminal.TerminalScreen
 import ai.opencode.android.ui.files.FileNode
 import ai.opencode.android.ui.files.FilesScreen
 import ai.opencode.android.ui.files.OpenFile
@@ -166,6 +170,11 @@ class ChatUiGatesTest {
     private val workspacePath = mutableStateOf(WORKSPACE_FIXTURE_PATH)
     private val onboardingMessage = mutableStateOf("")
     private var starToggles = 0
+    private var openChangesTaps = 0
+    private var openTerminalTaps = 0
+    private var changesBacks = 0
+    private var terminalBacks = 0
+    private val tabSelections = mutableListOf<ProjectTab>()
 
     /** (providerId, modelId, checked) the star callback reported, for U11's assertion. */
     private var starLastToggle: Triple<String, String, Boolean>? = null
@@ -323,7 +332,7 @@ class ChatUiGatesTest {
      * what the assertions expect - and growing [liveMessages] still recomposes the
      * transcript the way a streaming turn does.
      */
-    private enum class Surface { CHAT, LIVE_CHAT, SESSIONS, PROJECTS, WELCOME, SETTINGS, FILES, ONBOARDING }
+    private enum class Surface { CHAT, LIVE_CHAT, SESSIONS, PROJECTS, WELCOME, SETTINGS, FILES, ONBOARDING, CHANGES, TERMINAL }
 
     private val surface = mutableStateOf(Surface.CHAT)
     private val chatState = mutableStateOf(uiState())
@@ -345,6 +354,8 @@ class ChatUiGatesTest {
     private val settingsRuntime = mutableStateOf(healthy)
     private val settingsState = mutableStateOf(uiState())
     private val settingsAvailability = mutableStateOf(AgentAvailability.READY)
+    private val changesTurns = mutableStateOf(emptyList<WorkLog.TurnChanges>())
+    private val terminalCommands = mutableStateOf(emptyList<WorkLog.Command>())
     private var composed = false
 
     /** The one and only `setContent` of a test method. */
@@ -362,6 +373,8 @@ class ChatUiGatesTest {
                     Surface.SETTINGS -> SettingsSurface()
                     Surface.FILES -> FilesSurface()
                     Surface.ONBOARDING -> OnboardingSurface()
+                    Surface.CHANGES -> ChangesSurface()
+                    Surface.TERMINAL -> TerminalSurface()
                 }
             }
         }
@@ -391,6 +404,8 @@ class ChatUiGatesTest {
             onOpenSessions = { openSessions++ },
             onOpenProjects = { openProjects++ },
             onOpenSettings = { openSettings++ },
+            onOpenChanges = { openChangesTaps++ },
+            onOpenTerminal = { openTerminalTaps++ },
             onPickModel = { providerId, modelId ->
                 modelPicks++
                 pickedModels.add("$providerId/$modelId")
@@ -633,6 +648,39 @@ class ChatUiGatesTest {
         settingsState.value = state
         settingsAvailability.value = availability
         surface.value = Surface.SETTINGS
+        show()
+    }
+
+    @Composable
+    private fun ChangesSurface() {
+        ChangesScreen(
+            projectName = "gates",
+            turns = changesTurns.value,
+            onBack = { changesBacks++ },
+            onSelectTab = { tabSelections.add(it) },
+        )
+    }
+
+    @Composable
+    private fun TerminalSurface() {
+        TerminalScreen(
+            projectName = "gates",
+            commands = terminalCommands.value,
+            onBack = { terminalBacks++ },
+            onSelectTab = { tabSelections.add(it) },
+            runtimeLog = listOf("runtime line one", "runtime line two"),
+        )
+    }
+
+    private fun renderChanges(turns: List<WorkLog.TurnChanges>) {
+        changesTurns.value = turns
+        surface.value = Surface.CHANGES
+        show()
+    }
+
+    private fun renderTerminal(commands: List<WorkLog.Command>) {
+        terminalCommands.value = commands
+        surface.value = Surface.TERMINAL
         show()
     }
 
@@ -1890,6 +1938,128 @@ class ChatUiGatesTest {
                 "v4Removed=$noCopyPath/$noDefaultPair wired=$pickWired/$useWired " +
                 "message=$messageShown hidden=$hiddenExplained controls=$stillTwoControls " +
                 "settings=$settingsHasFolder/$settingsPicker/$settingsGrant/$settingsMove note=$switchNote",
+        )
+    }
+
+    // ---- U13: the Changes surface (v7 redesign) ------------------------------
+
+    @Test
+    fun u13_changesSurface_tabsStagesDiffsAndEmptyState() {
+        // (a) the tab strip on the chat, and that the two new tabs are wired.
+        renderChat(uiState(sessionView()), AgentAvailability.READY)
+        val tabsShown = exists("project_tab_chat") && exists("project_tab_files") &&
+            exists("project_tab_changes") && exists("project_tab_terminal")
+        val statusChip = exists("chat_status_pill")
+        rule.onNodeWithTag("project_tab_changes").performClick()
+        rule.onNodeWithTag("project_tab_terminal").performClick()
+        rule.waitForIdle()
+        val tabsWired = openChangesTaps == 1 && openTerminalTaps == 1
+
+        // (b) two stages out of three turns: the shell-only turn must not appear,
+        // and the newest stage leads.
+        val editMeta = "{\"filediff\":{\"file\":\"src/App.kt\",\"patch\":" +
+            "\"--- a/src/App.kt\\n+++ b/src/App.kt\\n+val redesign = true\",\"additions\":3,\"deletions\":1}}"
+        val view = sessionView(
+            messages = listOf(
+                message("m1", "user", listOf(textPart("p_q", "m1", "please change it"))),
+                message(
+                    "m2", "assistant",
+                    listOf(
+                        toolPart("p_edit", "m2", "edit", "completed", "src/App.kt", "{\"filePath\":\"src/App.kt\"}", "", metadata = editMeta),
+                        toolPart("p_ls", "m2", "bash", "completed", "ls", "{\"command\":\"ls\"}", "ok"),
+                    ),
+                ),
+                message(
+                    "m3", "assistant",
+                    listOf(toolPart("p_write", "m3", "write", "completed", "notes.md", "{\"filePath\":\"notes.md\"}", "")),
+                ),
+            ),
+        )
+        val turns = WorkLog.changes(view)
+        renderChanges(turns)
+        val screenShown = exists("changes_screen")
+        val bothStages = exists("changes_turn_m2") && exists("changes_turn_m3")
+        val newestFirst = turns.size == 2 && turns[0].messageID == "m3"
+        val rowCount = countPrefix("changes_row_")
+        val counts = countText(context.getString(R.string.changes_additions, 3)) > 0 &&
+            countText(context.getString(R.string.changes_deletions, 1)) > 0
+
+        // (c) the patch is one tap away, and hidden until that tap.
+        val patchHiddenBefore = countText("val redesign = true") == 0
+        rule.onNodeWithTag("changes_row_p_edit").performClick()
+        rule.waitForIdle()
+        val patchShown = countText("val redesign = true") > 0
+        shot("28-changes-stages.png")
+
+        // (d) a session with no file changes says so instead of showing nothing.
+        renderChanges(emptyList())
+        val emptyShown = countText(context.getString(R.string.changes_empty_title)) > 0
+
+        gate(
+            "U13",
+            tabsShown && statusChip && tabsWired && screenShown && bothStages && newestFirst &&
+                rowCount == 2 && counts && patchHiddenBefore && patchShown && emptyShown,
+            "tabs=$tabsShown chip=$statusChip wired=$tabsWired screen=$screenShown stages=$bothStages " +
+                "newestFirst=$newestFirst rows=$rowCount counts=$counts " +
+                "patch=hidden:$patchHiddenBefore,shown:$patchShown empty=$emptyShown",
+        )
+    }
+
+    // ---- U14: the Terminal surface (v7 redesign) -----------------------------
+
+    @Test
+    fun u14_terminalSurface_commandsExitCodesLogAndEmptyState() {
+        val okMeta = "{\"output\":\"total 4\\nBUILD OK\",\"exit\":0}"
+        val view = sessionView(
+            messages = listOf(
+                message(
+                    "m1", "assistant",
+                    listOf(
+                        toolPart("p_ok", "m1", "bash", "completed", "gradle build", "{\"command\":\"gradle build\",\"description\":\"Build the app\"}", "", metadata = okMeta),
+                        toolPart("p_edit", "m1", "edit", "completed", "a.kt", "{\"filePath\":\"a.kt\"}", ""),
+                    ),
+                ),
+                message(
+                    "m2", "assistant",
+                    listOf(
+                        toolPart("p_run", "m2", "bash", "running", "sleep", "{\"command\":\"sleep 60\"}", ""),
+                        toolPart("p_bad", "m2", "bash", "error", "false", "{\"command\":\"exit 1\"}", "", error = "boom"),
+                    ),
+                ),
+            ),
+        )
+        val commands = WorkLog.commands(view)
+        renderTerminal(commands)
+        val screenShown = exists("terminal_screen")
+        val rows = countPrefix("terminal_row_")
+        val commandShown = countText("gradle build") > 0
+        val outputShown = countText("BUILD OK") > 0
+        val exitShown = countText(context.getString(R.string.terminal_exit, 0)) > 0
+        val runningShown = countText(context.getString(R.string.terminal_running)) > 0
+        val failedShown = countText(context.getString(R.string.terminal_failed)) > 0
+
+        // The runtime log is one tap away and absent until asked for.
+        val logHidden = countText("runtime line two") == 0
+        rule.onNodeWithTag("terminal_log_toggle").performClick()
+        rule.waitForIdle()
+        val logShown = countText("runtime line two") > 0
+        shot("29-terminal-console.png")
+
+        // Tab wiring from the terminal back to the chat.
+        rule.onNodeWithTag("project_tab_chat").performClick()
+        rule.waitForIdle()
+        val tabBack = tabSelections.contains(ProjectTab.CHAT)
+
+        renderTerminal(emptyList())
+        val emptyShown = countText(context.getString(R.string.terminal_empty_title)) > 0
+
+        gate(
+            "U14",
+            screenShown && rows == 3 && commandShown && outputShown && exitShown &&
+                runningShown && failedShown && logHidden && logShown && tabBack && emptyShown,
+            "screen=$screenShown rows=$rows command=$commandShown output=$outputShown exit=$exitShown " +
+                "running=$runningShown failed=$failedShown log=hidden:$logHidden,shown:$logShown " +
+                "tabBack=$tabBack empty=$emptyShown",
         )
     }
 }

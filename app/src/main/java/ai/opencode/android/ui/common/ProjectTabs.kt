@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -44,13 +46,20 @@ fun ProjectTabs(
     current: ProjectTab,
     onSelect: (ProjectTab) -> Unit,
     modifier: Modifier = Modifier,
+    /** Right-aligned slot: the chat parks its Ready/Working status chip here. */
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     Column(modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             TabItem(ProjectTab.CHAT, stringResource(R.string.project_tab_chat), current, onSelect)
             TabItem(ProjectTab.FILES, stringResource(R.string.project_tab_files), current, onSelect)
             TabItem(ProjectTab.CHANGES, stringResource(R.string.project_tab_changes), current, onSelect)
             TabItem(ProjectTab.TERMINAL, stringResource(R.string.project_tab_terminal), current, onSelect)
+            if (trailing != null) {
+                Spacer(Modifier.weight(1f))
+                trailing()
+                Spacer(Modifier.width(12.dp))
+            }
         }
         HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
     }
@@ -64,13 +73,15 @@ private fun TabItem(
     onSelect: (ProjectTab) -> Unit,
 ) {
     val active = tab == current
-    val tag = "project_tab_" + tab.name.lowercase()
+    // The tag template stays INLINE in the semantics block: the harness selfcheck
+    // resolves gate lookups against literals on `testTag` lines, and a tag built
+    // on a separate line is invisible to it.
     Column(
         modifier = Modifier
             .clickable(enabled = !active) { onSelect(tab) }
             .padding(horizontal = 14.dp)
             .semantics {
-                testTag = tag
+                testTag = "project_tab_${tab.name.lowercase()}"
                 role = Role.Tab
                 selected = active
                 contentDescription = label

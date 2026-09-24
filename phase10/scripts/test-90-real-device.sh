@@ -214,6 +214,11 @@ check "$(grep -qa '^P10D_FIRST_RUN_PROJECT PASS' "$OUT/SUMMARY.txt" && echo 0 ||
 # FAIL would mean the walk's read-back logic is wrong.
 check "$(grep -qa '^P10D_PICKER_WORKSPACE_SWITCH PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "Browse -> system picker -> confirm changed the workspace and was switched back"
 check "$(grep -qa "restored=1" "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "the picker walk left the fake phone on the root it started from"
+# v7: the tab walk must PASS here for the same reason the picker walk must - the
+# fake phone serves both surfaces, so SKIP means the driver cannot see its own
+# fixtures and FAIL means the walk logic is wrong.
+check "$(grep -qa '^P10D_TABS_SURFACES PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "v7: the Changes and Terminal tabs open their surfaces and the Chat tab returns to the conversation"
 check "$(grep -qa '^P10D_LIVE_TURN PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "live turn with a tool card"
 check "$(grep -qa '^P10D_FILES_APP_AND_SHELL PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "in-app browser path == shell-visible path"
 check "$(grep -qa 'P6_MODEL_AVAILABLE 1' "$OUT/p10d-model-lines.txt" && echo 0 || echo 1)" "model marker written for the x86_64 carry-forward"

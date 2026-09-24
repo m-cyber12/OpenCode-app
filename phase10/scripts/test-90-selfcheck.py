@@ -47,6 +47,7 @@ EXPECTED_SCREENS = [
     "welcome", "projects", "chat", "answer", "files", "settings",
     "settings-nomatch", "settings-openr", "settings-key", "chat-menu", "workspace",
     "projects-switch", "picker", "projects-picked", "projects-switch-picked",
+    "changes", "terminal",
 ]
 
 failures = []

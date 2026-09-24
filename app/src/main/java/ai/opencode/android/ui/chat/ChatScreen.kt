@@ -11,6 +11,7 @@ import ai.opencode.android.ui.common.EmptyState
 import ai.opencode.android.ui.common.ProjectTab
 import ai.opencode.android.ui.common.ProjectTabs
 import ai.opencode.android.ui.common.RuntimeSummary
+import ai.opencode.android.ui.common.StatusPill
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
 import androidx.compose.foundation.layout.Arrangement
@@ -181,6 +182,24 @@ fun ChatScreen(
                     ProjectTab.TERMINAL -> onOpenTerminal()
                     ProjectTab.CHAT -> Unit
                 }
+            },
+            trailing = {
+                // The reference header's one-glance status, honestly mapped: gold
+                // while the agent works, green when everything is ready, the ask
+                // colour when something needs the user. The banners and the busy
+                // bar below stay the detailed record - this chip is a summary,
+                // never the only signal.
+                val chip = when {
+                    state.busy -> stringResource(R.string.chat_status_working) to MaterialTheme.colorScheme.primary
+                    availability == AgentAvailability.READY ->
+                        stringResource(R.string.chat_status_ready) to ChatTheme.chat.success
+                    else -> stringResource(R.string.chat_status_attention) to ChatTheme.chat.attention
+                }
+                StatusPill(
+                    text = chip.first,
+                    color = chip.second,
+                    modifier = Modifier.semantics { testTag = "chat_status_pill" },
+                )
             },
         )
 
