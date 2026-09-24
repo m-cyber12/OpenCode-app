@@ -132,6 +132,33 @@ run "phase10 workflow template present + no signing secret is pulled in" \
 run "no infinite animations in the UI layer (Compose test clock)" \
   bash -c '! grep -rn "rememberInfiniteTransition\|infiniteRepeatable" "$ROOT/app/src/main/java/ai/opencode/android/ui"'
 
+# ---- 7. Android resource escaping (the CI #80 lesson) -----------------------
+# aapt2 rejects a bare apostrophe inside a <string> body ("Invalid unicode
+# escape sequence" is its message for it), and no local step compiled resources,
+# so a python-heredoc that ate a backslash cost a full CI round trip. This is
+# the same rule aapt2 applies, run in seconds against every values file.
+run "android string resources: apostrophes escaped (aapt2 rule)" \
+  python3 - "$ROOT/app/src/main/res" <<'PYCHK'
+import re, sys, glob, os
+bad = []
+for f in glob.glob(os.path.join(sys.argv[1], "values*", "strings.xml")):
+    src = open(f, encoding="utf-8").read()
+    for m in re.finditer(r'<string name="([^"]+)"[^>]*>(.*?)</string>', src, re.S):
+        body = m.group(2)
+        i = 0
+        while True:
+            i = body.find("'", i)
+            if i < 0:
+                break
+            if i == 0 or body[i - 1] != "\\":
+                bad.append("%s: %s (unescaped apostrophe)" % (os.path.basename(f), m.group(1)))
+                break
+            i += 1
+for b in bad:
+    print("FAIL " + b)
+sys.exit(1 if bad else 0)
+PYCHK
+
 echo | tee -a "$LOG"
 echo "=== phase 10 static checks summary rc=$RC ===" | tee -a "$LOG"
 grep -a '^FAIL' "$LOG" | head -40 | tee -a "$LOG" >/dev/null || true

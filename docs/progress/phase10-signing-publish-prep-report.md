@@ -2951,3 +2951,19 @@ The compile fixes never got their verdict - run #79 stopped one gate earlier, at
 `30-static-checks.sh` local: **rc=0** end to end (a11y, lists, purity, selfcheck 9/9,
 phase-9 suite not weakened). Harness untouched since 132/0; the next CI run finally
 gets to compile the whole v6 surface.
+
+### B.12.17 CI #80: one unescaped apostrophe, and the check that makes it the last one (2026-09-24)
+
+Run #80 got past static (PASS) and the driver self-test (132/0 in CI too), then died in
+`mergeDebugResources`: `strings.xml:86 ... Invalid unicode escape sequence` - aapt2's
+message for a bare apostrophe in `projects_session_delete_body` ("the project's files
+are untouched"). The escape was written as `\'` but the python heredoc that patched the
+file consumed the backslash. One character, one full CI round trip.
+
+Fixed the string, swept every `<string>` body in every `values*/strings.xml` for the
+same shape (none left), and added the sweep to `phase10/scripts/30-static-checks.sh`
+as a permanent check ("android string resources: apostrophes escaped (aapt2 rule)") -
+verified in both directions: rc=0 on the tree as committed, and deliberately
+un-escaping the string makes it fail naming exactly that resource. No local step
+compiles Android resources, so this was previously uncatchable before CI; now it is a
+seconds-fast static rule.
