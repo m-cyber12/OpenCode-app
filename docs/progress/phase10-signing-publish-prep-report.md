@@ -2979,3 +2979,30 @@ top-level symbol - `onAllNodes` is a MEMBER of the rule
 (`SemanticsNodeInteractionsProvider`), which is why `ChatUiGatesTest` has always
 called `rule.onAllNodes(anyNodeMatcher())` with no import. Removed all four; the
 call sites themselves were already member calls and are unchanged.
+
+### B.12.19 CI #82: green end to end - the v6 projects page is verified on the emulator (2026-09-24)
+
+Run #82 (`c2e204e`, 46 minutes) is the first complete pass over the whole v6 surface,
+and every gate is green:
+
+* `P10-STATIC` PASS (including the new aapt2 apostrophe rule), `P10_DRIVER_SELFTEST`
+  PASS (132/0, 16 scenarios, in CI), `P10-UNIT` PASS (327 tests).
+* The 14 phase-6 UI gates: 14 pass / 0 fail / 0 skip. The one that matters most here
+  is **F3**, which walks the owner's requested flow on a real emulator: workspace step
+  -> `landedOnProjects=true workspaceShown=true firstExpanded=true` -> session tap ->
+  `landedInChat=true composerEnabled=true`, with the store screenshots captured off
+  the new page (`04-first-run-projects.png`).
+* The live gates (L1 prompt/reply, L2 tool card) both ran through the expanded-row
+  entry, and every phase-9 provider-selection gate and phase-10 release invariant
+  (no debug id, no R8 stripping, AAB/APK contents) still holds.
+
+Scoreboard for the CI ping-pong this page cost: #79 static (2 real UI-rule breaks),
+#80 resources (1 unescaped apostrophe), #81 androidTest (1 phantom import), #82 green.
+Each round trip left a permanent artifact - the flattened lazy list, the a11y label,
+the aapt2 static rule - so the page is not just merged, it is cheaper to change next
+time.
+
+For the owner's next device pass: `git pull`, re-sign nothing (CI does not sign), run
+the combined script as before. R4a/R4b now expect the projects-page landing and will
+name the header and expanded-row states they saw; a phone that already has projects
+takes the returning path (B.12.13) and still exercises the whole v4 chain from chat.
