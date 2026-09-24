@@ -6,6 +6,8 @@ P10_SMOKE_UI_U10 PASS :: shown=t
 P10_SMOKE_UI_U10 PASS :: shown=true label=true menu=true listed=true/true picked=true/[google/gemini-2.5-flash] settingsTrip=true emptyExplained=true offered=true
 P10_SMOKE_UI_U11 PASS :: sea
 P10_SMOKE_UI_U11 PASS :: search=true/true/true keyOnly=true/true activated=true star=true/true/true/true collapsedFirst=true custom=true/true reported=(openrouter, openai/gpt-4o-mini, false)
+P10_SMOKE_UI_U12 PASS :: onboa
+P10_SMOKE_UI_U12 PASS :: onboarding=true/true/true/true v4Removed=true/true wired=true/true message=true hidden=true controls=true settings=true/true/true/true note=true
 P10_SMOKE_UI_U2 PASS :: collapsedByDefault=t
 P10_SMOKE_UI_U2 PASS :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true
 P10_SMOKE_UI_U3 PASS :: ask=t
@@ -17,7 +19,7 @@ P10_SMOKE_UI_U5 PASS :: busyBar=true streamingIndicator=true stopShown=true send
 P10_SMOKE_UI_U6 PASS :: heading=t
 P10_SMOKE_UI_U6 PASS :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
 P10_SMOKE_UI_U7 PASS :: inte
-P10_SMOKE_UI_U7 PASS :: interactive={chat=25, sessions=25, projects=6, welcome=2, welcome-unsupported=2, settings=16, files=16} total=92 unnamed=0
+P10_SMOKE_UI_U7 PASS :: interactive={chat=25, sessions=11, projects=7, welcome=2, welcome-unsupported=2, settings=29, files=4} total=80 unnamed=0
 P10_SMOKE_UI_U8 PASS ::
 P10_SMOKE_UI_U8 PASS :: rowsComposedBefore=23 after=23 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true revertNote=true emptyState=true/true
 P10_SMOKE_UI_U9 PASS :: listed=t
@@ -27,13 +29,13 @@ P10_SMOKE_UI_F1 PASS :: firstScreen=welcome workspaceStep=true stages=[extractin
 P10_SMOKE_UI_F2 PASS :: status=HEALTHY
 P10_SMOKE_UI_F2 PASS :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=false,chat=false,workspace=true) leakedTokens=[] screenshot=45391
 P10_SMOKE_UI_F3 PASS :: wo
-P10_SMOKE_UI_F3 PASS :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:45391,chat:50142
+P10_SMOKE_UI_F3 PASS :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:45391,projects:60084
 P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=t
-P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=34350, 02-first-run-ready.png=45391, 02b-first-run-workspace.png=45391, 04-first-run-chat.png=50142]
+P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=34350, 02-first-run-ready.png=45391, 02b-first-run-workspace.png=45391, 04-first-run-projects.png=60084]
 P10_SMOKE_UI_L1 PASS :: p
-P10_SMOKE_UI_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=63 replyShownInUi=true(needle='scattering') newScreenLines=9 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true scre
+P10_SMOKE_UI_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot
 P10_SMOKE_UI_L2 PASS :: tool=bash status=completed pa
-P10_SMOKE_UI_L2 PASS :: tool=bash status=completed partId=prt_0cf025194001oo1H2jO3hZO0S1 cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0 marker=P6LIVE425690 screenshots[bytes=88953 ink=0.099 via=
+P10_SMOKE_UI_L2 PASS :: tool=bash status=completed partId=prt_0d269b0fb0017fHVFcTqXUw4k0 cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0 marker=P6LIVE531354 screenshots[bytes=82403 ink=0.098 via=
 P10_SMOKE_UI PASS :: pass=14 fail=0 skip=0 on the release-shaped build (identical gates to the debug run)
 P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
-P10_STORE_ASSETS PASS :: 512 icon + 1024x500 feature graphic + 4 screenshots at a real screen size
+P10_STORE_ASSETS PASS :: 512 icon + 1024x500 feature graphic + 3 screenshots at a real screen size
