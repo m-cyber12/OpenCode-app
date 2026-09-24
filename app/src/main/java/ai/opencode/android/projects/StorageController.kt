@@ -156,6 +156,9 @@ class StorageController(private val context: Context) {
      */
     fun switchTo(dir: File): ChangeResult {
         val oldRoot = RuntimePaths.get(context).workspaces
+        // The projects-page History section lists roots that were switched away
+        // from; the one being left behind is exactly that.
+        if (oldRoot.absolutePath != dir.absolutePath) StorageChoice.recordRoot(context, oldRoot)
         StorageChoice.setChosenRoot(context, dir)
         RuntimePaths.refresh()
         ProjectStore.refresh()

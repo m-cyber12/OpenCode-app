@@ -18,6 +18,7 @@ import ai.opencode.android.ui.chat.TAG_TURN_ERROR
 import android.content.Context
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodes
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
@@ -141,14 +142,26 @@ class StressRecoveryGatesTest {
         val leftWelcome = waitFor(timeoutMs) { exists("projects_screen") || exists("chat_screen") }
         if (!leftWelcome) return "the app never left the welcome screen within ${timeoutMs / 1000}s"
         if (exists("projects_screen")) {
-            if (exists("project_row_$project")) {
-                runCatching { rule.onNodeWithTag("project_row_$project").performClick() }
-            } else {
-                runCatching {
-                    rule.onNodeWithTag("project_name_input").performTextInput(project)
-                    rule.waitForIdle()
-                    rule.onNodeWithTag("project_create").performClick()
+            // v6: tapping a project row expands it; the chat opens from the row's
+            // own session controls (an existing conversation row, or + New session).
+            if (!exists("projects_new_session_$project")) {
+                if (exists("project_row_$project")) {
+                    runCatching { rule.onNodeWithTag("project_row_$project").performClick() }
+                } else {
+                    runCatching {
+                        rule.onNodeWithTag("project_name_input").performTextInput(project)
+                        rule.waitForIdle()
+                        rule.onNodeWithTag("project_create").performClick()
+                    }
                 }
+                rule.waitForIdle()
+            }
+            val sessionRows = rule.onAllNodes(tagPrefixMatcher("projects_session_"))
+                .fetchSemanticsNodes()
+            if (sessionRows.isNotEmpty()) {
+                rule.onAllNodes(tagPrefixMatcher("projects_session_"))[0].performClick()
+            } else {
+                runCatching { rule.onNodeWithTag("projects_new_session_$project").performClick() }
             }
             rule.waitForIdle()
         }

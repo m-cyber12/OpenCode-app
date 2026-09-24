@@ -149,19 +149,32 @@ def transition(node_id):
             put("screen", "projects")
     elif here == "workspace" and node_id in ("onboarding_workspace_use",
                                              "Use this folder as workspace"):
-        # One tap: the first project is created and its chat opens. The chat creates
-        # no directory - the project folder is the only thing that appears.
+        # One tap: the first project is created and the run LANDS ON THE PROJECTS
+        # PAGE (v6): the row for the new project expanded, its conversations
+        # underneath, the workspace header on top. The chat opens from the page.
         project = "1"
         os.makedirs(os.path.join(live_dir(), project), exist_ok=True)
         put("project", project)
         put("flags", "onboarded")
-        put("screen", "chat")
-    elif here == "projects" and node_id in ("project_create", "Create project"):
+        put("screen", "projects")
+    elif here == "projects" and node_id in ("project_create", "Create project",
+                                            "Create New Project"):
+        # Creating from the page keeps the page (the new project expanded).
         name = state("typed", "p10d-proj")
         os.makedirs(os.path.join(live_dir(), name), exist_ok=True)
         put("project", name)
         put("typed", "")
+        put("screen", "projects")
+    elif here == "projects" and isinstance(node_id, str) and (
+            node_id.startswith("projects_new_session_") or
+            node_id.startswith("projects_session_") or node_id == "New session"):
+        # The page's way into a conversation: a new session lands in the chat.
         put("screen", "chat")
+    elif here == "projects" and node_id in ("projects_switch_workspace", "Switch",
+                                            "See workspaces and switch to another one"):
+        put("screen", "projects-switch")
+    elif here == "projects-switch" and node_id in ("Cancel",):
+        put("screen", "projects")
     elif here in ("chat", "answer", "chat-menu") and node_id in ("open_files", "Project files"):
         put("screen", "files")
     elif here in ("chat", "answer") and node_id in ("open_settings", "Settings and diagnostics"):
@@ -276,7 +289,9 @@ def shell(command):
     if cmd.startswith("input keyevent"):
         key = cmd.split()[-1]
         if key in ("KEYCODE_BACK", "4"):
-            if screen() in ("files", "settings", "settings-nomatch", "settings-openr"):
+            if screen() == "projects-switch":
+                put("screen", "projects")
+            elif screen() in ("files", "settings", "settings-nomatch", "settings-openr"):
                 put("screen", "chat")
             elif screen() == "settings-key":
                 put("screen", "settings-openr")

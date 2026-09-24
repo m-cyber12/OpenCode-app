@@ -25,6 +25,8 @@ import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.ui.common.ThemeChoice
 import ai.opencode.android.ui.common.toSummary
 import ai.opencode.android.ui.onboarding.WorkspaceOnboardingScreen
+import ai.opencode.android.ui.projects.KnownWorkspace
+import ai.opencode.android.ui.projects.ProjectSession
 import ai.opencode.android.ui.projects.ProjectsScreen
 import ai.opencode.android.ui.settings.SettingsScreen
 import ai.opencode.android.ui.theme.OpenCodeTheme
@@ -113,6 +115,14 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     var dynamicColor by rememberSaveable { mutableStateOf(true) }
     var projectName by rememberSaveable { mutableStateOf(store.activeName()) }
     var projects by remember { mutableStateOf(emptyList<Project>()) }
+    // v6: the projects page is a workspace view. The expanded row, the sessions
+    // under each project (same server list the session panel reads), the folders
+    // the page can switch to, and a tick that re-reads the sessions after a
+    // rename/delete (the repository calls are async).
+    var expandedProject by rememberSaveable { mutableStateOf("") }
+    var sessionsByProject by remember { mutableStateOf(emptyMap<String, List<ProjectSession>>()) }
+    var knownWorkspaces by remember { mutableStateOf(emptyList<KnownWorkspace>()) }
+    var sessionsTick by remember { mutableStateOf(0) }
 
     val theme = runCatching { ThemeChoice.valueOf(themeName) }.getOrDefault(ThemeChoice.SYSTEM)
     val dark = when (theme) {
@@ -319,8 +329,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             projects = store.projects()
             pendingOnboarding = false
             onboardingMessage = ""
-            route = ROUTE_CHAT
-            // "Lands in chat": a real OpenCode session in the new project directory.
+            // v6: the projects page is the post-setup surface - the new first
+            // project is there, expanded, with the first chat already on the
+            // server (tapping its session enters the conversation).
+            expandedProject = created.name
+            route = ROUTE_PROJECTS
             repository.newSession(null)
         }
     }
@@ -431,17 +444,48 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     LaunchedEffect(summary.ready, repository) {
         if (summary.ready) repository.startStream()
     }
-    LaunchedEffect(route, summary.ready) {
+    LaunchedEffect(route, summary.ready, sessionsTick) {
         if (summary.ready) repository.refresh()
         if (route == ROUTE_PROJECTS) {
             projects = withContext(Dispatchers.IO) { store.projects() }
-            // Per-project conversation counts come from the server's own session
+            // Per-project conversation lists come from the server's own session
             // list grouped by directory - the same scoping the session panel uses.
-            sessionCounts = withContext(Dispatchers.IO) {
+            // The full (grouped) map feeds the expandable rows; the counts map
+            // feeds the row's count pill.
+            val rootPath = container.workspacesRoot().absolutePath
+            val grouped = withContext(Dispatchers.IO) {
                 runCatching { repository.api.listSessions(limit = 500) }
                     .getOrDefault(emptyList())
-                    .groupingBy { it.directory }
-                    .eachCount()
+                    .groupBy { it.directory }
+            }
+            sessionsByProject = projects.mapNotNull { pr ->
+                val list = grouped[java.io.File(rootPath, pr.name).absolutePath]
+                    ?.map { ProjectSession(it.id, it.title, it.updatedAt) }
+                    ?.sortedByDescending { it.updatedAtMs }
+                    ?: return@mapNotNull null
+                pr.name to list
+            }.toMap()
+            sessionCounts = sessionsByProject.mapValues { it.value.size }
+            // The switch-party: the current root plus the remembered ones that are
+            // still live folders, each with its project count read off the disk.
+            val currentRoot = container.workspacesRoot()
+            val legacy = withContext(Dispatchers.IO) {
+                val paths = ai.opencode.android.runtime.RuntimePaths.get(context)
+                listOfNotNull(paths.externalWorkspaces, paths.internalWorkspaces)
+            }
+            knownWorkspaces = withContext(Dispatchers.IO) {
+                val previous = ai.opencode.android.runtime.StorageChoice.previousRoots(context, currentRoot, legacy)
+                listOf(KnownWorkspace(
+                    path = currentRoot.absolutePath,
+                    projectCount = currentRoot.listFiles { f -> f.isDirectory }?.size ?: 0,
+                    current = true,
+                )) + previous.map { dir ->
+                    KnownWorkspace(
+                        path = dir.absolutePath,
+                        projectCount = dir.listFiles { f -> f.isDirectory }?.size ?: 0,
+                        current = false,
+                    )
+                }
             }
         }
         if (route == ROUTE_WORKSPACE || route == ROUTE_FILES) {
@@ -565,16 +609,53 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     activeName = projectName,
                     runtimeLine = runtimeLine,
                     onCreate = { name ->
+                        // v6: creating stays on the page (the new row expanded);
+                        // entering the chat is the session buttons' job.
                         val created = store.create(name)
                         projects = store.projects()
                         projectName = created.name
-                        route = ROUTE_CHAT
+                        expandedProject = created.name
                     },
                     onOpen = { name ->
                         store.select(name)
                         projectName = name
                         projects = store.projects()
                         route = ROUTE_CHAT
+                    },
+                    workspacePath = container.workspacesRoot().absolutePath,
+                    workspaces = knownWorkspaces,
+                    onSwitchTo = { path ->
+                        runStorageChange { storageController.switchTo(java.io.File(path)) }
+                    },
+                    onBrowseWorkspace = { chosenFolderPicker.launch(null) },
+                    sessions = sessionsByProject,
+                    expandedName = expandedProject,
+                    onToggleExpand = { name ->
+                        expandedProject = if (expandedProject == name) "" else name
+                    },
+                    onSelect = { name ->
+                        store.select(name)
+                        projectName = name
+                    },
+                    onOpenSession = { name, id ->
+                        store.select(name)
+                        projectName = name
+                        repository.selectSession(id)
+                        route = ROUTE_CHAT
+                    },
+                    onNewSession = { name ->
+                        store.select(name)
+                        projectName = name
+                        repository.newSession(null)
+                        route = ROUTE_CHAT
+                    },
+                    onRenameSession = { id, title ->
+                        repository.renameSession(id, title)
+                        sessionsTick++
+                    },
+                    onDeleteSession = { id ->
+                        repository.deleteSession(id)
+                        sessionsTick++
                     },
                     onRename = { old, new ->
                         val renamed = store.rename(old, new)

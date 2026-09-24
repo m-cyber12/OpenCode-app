@@ -239,6 +239,10 @@ check "$(grep -qa '^P10D_MODEL_QUICK_SWITCH PASS' "$OUT/SUMMARY.txt" && echo 0 |
   "v4: a starred model is switched from the chat header, without a trip to Settings"
 check "$(grep -qa '^P10D_WORKSPACE_STEP SKIP' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
   "v4: a returning install reports the workspace step as SKIP (it already ran), not FAIL"
+check "$(grep -qa 'projects page header: workspace path shown=1, Switch control opens the known-roots dialog=1' "$OUT/run.log" && echo 0 || echo 1)" \
+  "v6: the projects page leads with the workspace it lists (path + working Switch control)"
+check "$(grep -qa 'New session control opened the conversation' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
+  "v6: a project created from the page is expanded with its sessions, and the chat opens from the row"
 
 echo
 echo "--- scenario: the v4 first-run workspace step ---"
@@ -251,7 +255,7 @@ check "$([ "$RC" = 0 ] && echo 0 || echo 1)" "the v4 first run passes end to end
 check "$(grep -qa '^P10D_WORKSPACE_STEP PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
   "the workspace step was read off the screen: a folder, one picker, one action, none of the removed controls"
 check "$(grep -qa '^P10D_WORKSPACE_FIRST_PROJECT PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
-  "one tap created project 1 and opened its chat, confirmed from outside the app"
+  "one tap created project 1, the app landed on the projects page (workspace on top, row expanded), and its New-session control opened the chat - confirmed from outside the app"
 check "$(grep -qa '^P10D_FIRST_RUN_PROJECT PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
   "the project card still creates a second project after the step"
 check "$(grep -qa 'no workspace step' "$OUT/SUMMARY.txt" && echo 1 || echo 0)" \

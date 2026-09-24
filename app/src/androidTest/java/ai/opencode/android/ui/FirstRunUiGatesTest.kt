@@ -7,6 +7,7 @@ import ai.opencode.android.runtime.RuntimeStatus
 import android.content.Context
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodes
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
@@ -264,17 +265,40 @@ class FirstRunUiGatesTest {
                 !exists("files_storage_choose") && !exists("files_storage_default")
             val stepShot = shot("02b-first-run-workspace.png")
             rule.onNodeWithTag("onboarding_workspace_use").performClick()
-            val landedInChat = waitFor(180_000) { exists("chat_screen") }
-            val afterStep = shot("04-first-run-chat.png")
+            // v6: post-setup landing is the projects page itself - the workspace
+            // path on top, the first project expanded, its first session listed.
+            // The chat is entered from that surface (the session row), which is
+            // the same user journey this gate then verifies.
+            val landedOnProjects = waitFor(180_000) {
+                exists("projects_screen") && exists("projects_workspace_path")
+            }
+            rule.waitForIdle()
+            val workspaceShown = exists("projects_workspace_path") &&
+                allText().contains("OpenCode", ignoreCase = true)
+            val firstExpanded = rule.onAllNodes(tagPrefixMatcher("projects_session_"))
+                .fetchSemanticsNodes().isNotEmpty() ||
+                exists("projects_new_session_1")
+            val afterStep = shot("04-first-run-projects.png")
+            val sessionNodes = rule.onAllNodes(tagPrefixMatcher("projects_session_"))
+                .fetchSemanticsNodes()
+            if (sessionNodes.isNotEmpty()) {
+                rule.onAllNodes(tagPrefixMatcher("projects_session_"))[0].performClick()
+            } else if (exists("projects_new_session_1")) {
+                rule.onNodeWithTag("projects_new_session_1").performClick()
+            }
+            val landedInChat = waitFor(120_000) { exists("chat_screen") }
             val canType = waitFor(120_000) { enabled("composer_input") }
             val leaks = leakedTokens(allText())
             gate(
                 "F3",
-                folderShown && pickerShown && oneAction && removedControls && landedInChat &&
+                folderShown && pickerShown && oneAction && removedControls &&
+                    landedOnProjects && workspaceShown && firstExpanded && landedInChat &&
                     canType && leaks.isEmpty() && stepShot > 8_000 && afterStep > 8_000,
                 "workspaceStep=true folder=$folderShown picker=$pickerShown action=$oneAction " +
-                    "v4Removed=$removedControls landedInChat=$landedInChat composerEnabled=$canType " +
-                    "leakedTokens=$leaks screenshots=step:$stepShot,chat:$afterStep",
+                    "v4Removed=$removedControls landedOnProjects=$landedOnProjects " +
+                    "workspaceShown=$workspaceShown firstExpanded=$firstExpanded " +
+                    "landedInChat=$landedInChat composerEnabled=$canType " +
+                    "leakedTokens=$leaks screenshots=step:$stepShot,projects:$afterStep",
             )
             return
         }
@@ -288,14 +312,24 @@ class FirstRunUiGatesTest {
             rule.waitForIdle()
             typed = allText().contains("first run gates", ignoreCase = true)
             rule.onNodeWithTag("project_create").performClick()
-            createdThroughUi = waitFor(120_000) { exists("chat_screen") }
-            val afterCreate = shot("04-first-run-chat.png")
+            // v6: create stays on the projects page with the new row expanded;
+            // entering the new chat is the row's "New session" action.
+            createdThroughUi = waitFor(120_000) {
+                exists("projects_new_session_first-run-gates") ||
+                    exists("projects_screen")
+            }
+            val afterCreate = shot("04-first-run-created-project.png")
+            if (exists("projects_new_session_first-run-gates")) {
+                rule.onNodeWithTag("projects_new_session_first-run-gates").performClick()
+            }
+            val chatFromSession = waitFor(120_000) { exists("chat_screen") }
             val composer = exists("composer_input")
             // The composer enables once the app has talked to its own server; on a
             // fresh project that is a moment later, not never.
             val canType = waitFor(90_000) { enabled("composer_input") }
             val leaks = leakedTokens(allText())
             val namedAfterProject = allText().contains("first-run-gates", ignoreCase = true)
+            createdThroughUi = createdThroughUi && chatFromSession
             val ok = createdThroughUi && typed && composer && canType && leaks.isEmpty() &&
                 projectsShot > 8_000 && afterCreate > 8_000 && namedAfterProject
             gate(

@@ -58,7 +58,51 @@ object StorageChoice {
     private const val PREFS = "storage"
     private const val KEY_ROOT = "root_override"
     private const val KEY_CONFIRMED = "workspace_confirmed"
+    private const val KEY_HISTORY = "root_history"
     private const val PROBE = ".opencode-write-probe"
+    private const val HISTORY_CAP = 12
+
+    /**
+     * The projects page's History section: folders that recently served as the
+     * workspace. Recorded on every switch (the OLD root is what is remembered),
+     * deduplicated, most-recent first. Display filters the list down to folders
+     * that still exist and are not the current root, so a deleted card does not
+     * linger as a phantom entry.
+     */
+    fun recordRoot(context: Context, dir: File) {
+        val path = dir.absolutePath
+        val rest = history(context).filterNot { it == path }
+        prefs(context).edit().putString(
+            KEY_HISTORY,
+            (listOf(path) + rest).take(HISTORY_CAP).joinToString("\n"),
+        ).apply()
+    }
+
+    fun history(context: Context): List<String> =
+        (prefs(context).getString(KEY_HISTORY, "") ?: "")
+            .split("\n")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+
+    /**
+     * Every non-current root worth showing: what the user previously switched away
+     * from AND the fallback locations from earlier versions of the storage layout,
+     * so projects that predate the current root are visible instead of lost.
+     */
+    fun previousRoots(context: Context, current: File, legacy: List<File>): List<File> {
+        val cur = current.absolutePath
+        val seen = mutableSetOf(cur)
+        val out = mutableListOf<File>()
+        for (path in history(context)) {
+            val dir = File(path)
+            if (seen.add(path) && dir.isDirectory) out += dir
+        }
+        for (dir in legacy) {
+            val path = dir.absolutePath
+            if (seen.add(path) && dir.isDirectory) out += dir
+        }
+        return out
+    }
 
     /** The folder the user picked, or null when they never picked one. */
     fun chosenRoot(context: Context): File? {

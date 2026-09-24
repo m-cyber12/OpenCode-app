@@ -2840,3 +2840,90 @@ Note for the owner's next pass: the phone may already hold the freshly
 scoped key from the 15:13Z attempt - the R6 stage is built to exercise the rotate path on
 such a phone and will say so in run.log (`key rotated through the app's own UI...`), which
 is exactly the relocate surface this section ships.
+
+### B.12.14 The projects page becomes a workspace view (owner request, 2026-09-23)
+
+The owner asked for the projects page to say WHERE it is and put the whole project/
+conversation lifecycle on one surface, with four decisions confirmed by them before any
+code moved: (1) the Switch control lists known roots plus one "browse for a folder"
+entry that runs the full picker flow; (2) History is a collapsed section of previous
+workspace ROOTS (path + project count; tap = switch), never a jumble of all projects;
+(3) a fresh install lands ON the projects page after the workspace step, not in the
+chat; (4) "Import a copy" survives as the small secondary action next to Switch (the
+page's two big actions stay Switch and Create New Project).
+
+**What the page is now (`ProjectsScreen.kt`):**
+
+* Top: a Workspace card - the current root path (`projects_workspace_path`), a Switch
+  button (`projects_switch_workspace`, count of known roots in the label) and the small
+  Import action. Switch opens a dialog listing every known root (current one marked and
+  not tappable; each other root tappable with its project count) plus "Browse for a
+  folder..." which launches the existing system picker flow (permission probing and the
+  move-projects offer are untouched - the dialog only chooses WHICH flow starts).
+* Middle: the create card (name field + one Create button) and the projects of THIS
+  root only, each row expandable (`project_row_<name>`): tapping expands it in place and
+  selects the project; expanded, it shows the folder path, the project's conversations
+  (server-listed, grouped by the same `?directory=` scoping the session panel uses; each
+  row `projects_session_<id>` opens that chat), per-session Rename/Delete text actions
+  (dialog-confirmed; the DELETE names the project and states files are untouched), and
+  a New session button (`projects_new_session_<name>`). Rename/Files/Export/Delete for
+  the project stay in the three-dot menu, exactly as the owner said they should.
+* Bottom: History (n) - collapsed to one line; expanded, previous roots with project
+  counts, tap = switch. Fed by two sources: roots recorded at every `switchTo` (the OLD
+  root is what is remembered - new `StorageChoice.recordRoot/history/previousRoots`,
+  capped at 12, filtered to directories that still exist) and the legacy fallback
+  locations, so pre-v3 projects stay discoverable too.
+* Landing: `confirmWorkspace()` now routes to the projects page (first project created
+  and expanded, its first chat already on the server); creating a project from the page
+  also stays on the page with the new row expanded. Entering a conversation is always a
+  session action - tap a session row or New session.
+
+**Every checker followed the flow it checks:**
+
+* CI gates: F3's two branches walk the new journey (workspace step -> projects page with
+  the path shown and row expanded -> session tap -> chat; create -> expanded row -> New
+  session -> chat). The three live suites (LiveChat/LiveToolCall/StressRecovery) open
+  their project's conversation through the expanded row instead of expecting a route
+  change from the row tap. (First compile attempt used a non-existent
+  `onAllNodesWithTag(substring=)` parameter - replaced with the file's own
+  `tagPrefixMatcher` before anything was committed.)
+* Driver: R4a expects the projects-page landing (path + expanded row read off the
+  screen, outside-app `ls` unchanged) and enters the chat via `New session`; R4b checks
+  the header (path shown, Switch opens the dialog with "Where your projects live",
+  cancels out) and then creates its project through the page - with text fallbacks
+  ("Create New Project", "New session") for tag-less dumps, which the tags-gone
+  scenario promptly proved necessary: the first suite run failed 4 checks there because
+  the fake's create transition and the driver's expanded-row wait only knew the tags.
+* Fake device + fixtures: the projects screen carries the new header/rows; a new
+  `projects-switch` screen serves the dialog; transitions cover create-stays-on-page,
+  session-tap -> chat, Switch -> dialog -> Cancel/BACK -> page. Selfcheck: 12 screens
+  exactly, 61 tag lookups (42 distinct) all resolve, still 9/9 PASS.
+
+Verification status: full local self-test **pass=132 fail=0** (the two new checks pin
+the R4b header evidence line and the expanded-row create verdict in the happy path;
+baseline 130). Kotlin compile is CI's (no SDK here) - the changed surfaces are exactly
+the ones the F-gates and the three live suites drive on the emulator. Not re-verified on
+a real phone: that is the owner's pass; for it, note the page now opens where the chat
+used to on a fresh install, and R4a/R4b in `p10d-out/SUMMARY.txt` will name the header
+and row states they saw.
+
+### B.12.15 CI #78 caught two real compile errors in the v6 commit (2026-09-23)
+
+The push of B.12.13 (`3137a10`) failed CI at `P10-BUILD`: the local box has no Android
+SDK, so "Kotlin compile is carried by CI" was the stated arrangement - and CI did its
+job. `compiler-errors.txt` on the branch names both errors, both mine, both in the new
+provider-key dialog code:
+
+1. `SettingsScreen.kt:527` - `providers.connected.contains(...)` on the nullable
+   `ProviderSnapshot?` parameter. Fixed to `providers?.connected?.contains(target.id)
+   == true` (the dialog opens from a rendered row, so `providers` is never null there
+   in practice - but the type says otherwise and the type is right).
+2. `SettingsScreen.kt:591` - `stringResource(...)` inside the `semantics {}` lambda,
+   which is not a composable context. Fixed by resolving the string one line above.
+
+Error 2 is a PATTERN, so the fix swept for it: a brace-matching scan of every
+`semantics{}`/`clearAndSetSemantics{}` block in main sources found two more instances
+- both in the projects-page code written after that push (`projects_new_session_*` and
+`projects_switch_workspace` content descriptions), both fixed the same way, sweep now
+returns zero. The driver self-test does not compile Kotlin and stays at 132/0; the
+next CI run is the compile verdict for all of it.

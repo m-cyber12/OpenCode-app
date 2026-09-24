@@ -524,7 +524,7 @@ private fun ModelSection(
     if (target != null) {
         ProviderKeyDialog(
             provider = target,
-            connected = providers.connected.contains(target.id),
+            connected = providers?.connected?.contains(target.id) == true,
             onDismiss = { connectTarget = null },
             onSave = { key ->
                 onConnectProvider(target.id, key)
@@ -584,11 +584,14 @@ private fun ProviderKeyDialog(
                     Spacer(Modifier.height(10.dp))
                     // The manual form's revoke, relocated onto the only place that ever
                     // knows which provider it touches: the connected row itself.
+                    // (The description is resolved here, in composable context - a
+                    // stringResource call cannot live inside the semantics lambda.)
+                    val revokeDesc = stringResource(R.string.settings_provider_revoke_desc, provider.name)
                     TextButton(
                         onClick = onRevoke,
                         modifier = Modifier.height(36.dp).semantics {
                             testTag = "provider_key_revoke"
-                            contentDescription = stringResource(R.string.settings_provider_revoke_desc, provider.name)
+                            contentDescription = revokeDesc
                         },
                     ) {
                         Text(stringResource(R.string.settings_keys_revoke))

@@ -33,6 +33,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +60,12 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
+/** One session (chat) inside a project, as the server lists it. */
+data class ProjectSession(val id: String, val title: String, val updatedAtMs: Long)
+
+/** A workspace root the app can switch to. [current] is the one it uses now. */
+data class KnownWorkspace(val path: String, val projectCount: Int, val current: Boolean)
+
 /**
  * Choosing, creating and managing the folders the agent works in.
  *
@@ -68,6 +75,14 @@ import androidx.compose.ui.unit.dp
  * app's own storage ([ProjectStore]) and the server scopes sessions by that
  * directory, so "project" here means exactly what it means to OpenCode - and
  * nothing here exposes the rest of the Android filesystem to the agent.
+ *
+ * Phase 10 continuation v6: the page now shows the workspace it is a listing OF.
+ * The folder sits at the top with a Switch action (and the small import action);
+ * only that folder's projects are listed, as expandable rows - expanding reveals
+ * the project's sessions with New/Rename/Delete actions; a collapsed History
+ * section keeps previously used folders discoverable (tap switches back) so a
+ * switch never looks like data loss. Project-level rename/files/export/delete
+ * stay in the three-dot menu, as they were.
  *
  * The screen stays a pure function of its parameters: every management action is
  * a callback the caller (AppRoot) wires to [ProjectStore] and the SAF transfer.
@@ -80,6 +95,18 @@ fun ProjectsScreen(
     onCreate: (String) -> Unit,
     onOpen: (String) -> Unit,
     onBack: (() -> Unit)?,
+    workspacePath: String = "",
+    workspaces: List<KnownWorkspace> = emptyList(),
+    onSwitchTo: (String) -> Unit = {},
+    onBrowseWorkspace: () -> Unit = {},
+    sessions: Map<String, List<ProjectSession>> = emptyMap(),
+    expandedName: String = "",
+    onToggleExpand: (String) -> Unit = {},
+    onSelect: (String) -> Unit = {},
+    onOpenSession: (String, String) -> Unit = { _, _ -> },
+    onNewSession: (String) -> Unit = {},
+    onRenameSession: (String, String) -> Unit = { _, _ -> },
+    onDeleteSession: (String) -> Unit = {},
     onRename: (String, String) -> Unit = { _, _ -> },
     onDelete: (String) -> Unit = {},
     onImport: () -> Unit = {},
@@ -101,6 +128,10 @@ fun ProjectsScreen(
     var renameTarget by remember { mutableStateOf<Project?>(null) }
     var renameText by rememberSaveable { mutableStateOf("") }
     var deleteTarget by remember { mutableStateOf<Project?>(null) }
+    var sessionDeleteTarget by remember { mutableStateOf<ProjectSession?>(null) }
+    var sessionRenameTarget by remember { mutableStateOf<ProjectSession?>(null) }
+    var sessionRenameText by rememberSaveable { mutableStateOf("") }
+    var switchOpen by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxSize().semantics { testTag = "projects_screen" }) {
         AppTopBar(
@@ -108,7 +139,14 @@ fun ProjectsScreen(
             subtitle = runtimeLine,
             onBack = onBack,
         )
-        CreateProjectCard(onCreate = onCreate, onImport = onImport, importing = importing, existing = projects.map { it.name })
+        WorkspaceCard(
+            workspacePath = workspacePath,
+            rootCount = workspaces.size,
+            onSwitchOpen = { switchOpen = true },
+            onImport = onImport,
+            importing = importing,
+        )
+        CreateProjectCard(onCreate = onCreate, existing = projects.map { it.name })
         if (importError.isNotBlank()) {
             Text(
                 text = stringResource(R.string.projects_import_failed, importError),
@@ -133,14 +171,6 @@ fun ProjectsScreen(
             contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item(key = "projects_intro") {
-                Text(
-                    text = stringResource(R.string.projects_subtitle),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = ChatTheme.chat.muted,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp),
-                )
-            }
             if (projects.isEmpty()) {
                 item(key = "projects_empty") {
                     EmptyState(
@@ -153,17 +183,30 @@ fun ProjectsScreen(
                 ProjectRow(
                     project = project,
                     active = project.name == activeName,
-                    sessionCount = sessionCounts[project.name] ?: 0,
+                    expanded = project.name == expandedName,
+                    sessions = sessions[project.name] ?: emptyList(),
+                    sessionCount = sessionCounts[project.name] ?: (sessions[project.name]?.size ?: 0),
                     now = now,
-                    onOpen = { onOpen(project.name) },
+                    onToggle = { onToggleExpand(project.name) },
+                    onSelect = { onSelect(project.name) },
+                    onOpenSession = { sid -> onOpenSession(project.name, sid) },
+                    onNewSession = { onNewSession(project.name) },
+                    onRenameSession = { sess -> sessionRenameText = sess.title; sessionRenameTarget = sess },
+                    onDeleteSession = { sess -> sessionDeleteTarget = sess },
                     onRename = {
                         renameText = project.name
                         renameTarget = project
                     },
                     onDelete = { deleteTarget = project },
                     onExport = { onExport(project.name) },
-                onFiles = { onFiles(project.name) },
+                    onFiles = { onFiles(project.name) },
                 )
+            }
+            val previous = workspaces.filterNot { it.current }
+            if (previous.isNotEmpty()) {
+                item(key = "projects_history") {
+                    HistorySection(workspaces = previous, onSwitchTo = onSwitchTo)
+                }
             }
         }
     }
@@ -202,6 +245,71 @@ fun ProjectsScreen(
                     Text(stringResource(R.string.action_cancel))
                 }
             },
+        )
+    }
+
+    sessionRenameTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { sessionRenameTarget = null },
+            title = { Text(stringResource(R.string.projects_session_rename)) },
+            text = {
+                OutlinedTextField(
+                    value = sessionRenameText,
+                    onValueChange = { sessionRenameText = it },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().semantics { testTag = "session_rename_input" },
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onRenameSession(target.id, sessionRenameText)
+                        sessionRenameTarget = null
+                    },
+                    enabled = sessionRenameText.isNotBlank(),
+                    modifier = Modifier.semantics { testTag = "session_rename_save" },
+                ) { Text(stringResource(R.string.projects_rename_save)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { sessionRenameTarget = null }) { Text(stringResource(R.string.action_cancel)) }
+            },
+        )
+    }
+
+    sessionDeleteTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { sessionDeleteTarget = null },
+            title = { Text(stringResource(R.string.projects_session_delete_title, activeName)) },
+            text = { Text(stringResource(R.string.projects_session_delete_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDeleteSession(target.id)
+                        sessionDeleteTarget = null
+                    },
+                    modifier = Modifier.semantics { testTag = "session_delete_confirm" },
+                ) {
+                    Text(stringResource(R.string.projects_session_delete_confirm), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { sessionDeleteTarget = null }) { Text(stringResource(R.string.action_cancel)) }
+            },
+        )
+    }
+
+    if (switchOpen) {
+        SwitchWorkspaceDialog(
+            workspaces = workspaces,
+            onPick = { path ->
+                switchOpen = false
+                onSwitchTo(path)
+            },
+            onBrowse = {
+                switchOpen = false
+                onBrowseWorkspace()
+            },
+            onDismiss = { switchOpen = false },
         )
     }
 }
@@ -252,8 +360,6 @@ private fun RenameDialog(
 @Composable
 private fun CreateProjectCard(
     onCreate: (String) -> Unit,
-    onImport: () -> Unit,
-    importing: Boolean,
     existing: List<String>,
 ) {
     var name by rememberSaveable { mutableStateOf("") }
@@ -281,27 +387,14 @@ private fun CreateProjectCard(
             )
             Spacer(Modifier.height(4.dp))
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(
-                onClick = {
-                    onCreate(name)
-                    name = ""
-                },
-                modifier = Modifier.weight(1f).height(50.dp).semantics { testTag = "project_create" },
-            ) {
-                Text(stringResource(R.string.projects_create), style = MaterialTheme.typography.labelLarge)
-            }
-            OutlinedButton(
-                onClick = onImport,
-                enabled = !importing,
-                modifier = Modifier.weight(1f).height(50.dp).semantics { testTag = "project_import" },
-            ) {
-                Text(
-                    text = stringResource(if (importing) R.string.projects_importing else R.string.projects_import),
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = 1,
-                )
-            }
+        Button(
+            onClick = {
+                onCreate(name)
+                name = ""
+            },
+            modifier = Modifier.fillMaxWidth().height(50.dp).semantics { testTag = "project_create" },
+        ) {
+            Text(stringResource(R.string.projects_create), style = MaterialTheme.typography.labelLarge)
         }
     }
 }
@@ -310,9 +403,16 @@ private fun CreateProjectCard(
 private fun ProjectRow(
     project: Project,
     active: Boolean,
+    expanded: Boolean,
+    sessions: List<ProjectSession>,
     sessionCount: Int,
     now: Long,
-    onOpen: () -> Unit,
+    onToggle: () -> Unit,
+    onSelect: () -> Unit,
+    onOpenSession: (String) -> Unit,
+    onNewSession: () -> Unit,
+    onRenameSession: (ProjectSession) -> Unit,
+    onDeleteSession: (ProjectSession) -> Unit,
     onRename: () -> Unit,
     onDelete: () -> Unit,
     onExport: () -> Unit,
@@ -320,34 +420,57 @@ private fun ProjectRow(
 ) {
     val chat = ChatTheme.chat
     val opened = relativeTimeLabel(project.lastOpenedMs, now)
-    val created = relativeTimeLabel(project.createdMs, now)
-    val openLabel = stringResource(R.string.projects_open)
     val menuLabel = stringResource(R.string.projects_menu, project.name)
     var menuOpen by remember { mutableStateOf(false) }
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .semantics {
-                testTag = "project_row_${project.name}"
-                role = Role.Button
-            }
-            .clickable(onClick = onOpen),
+        modifier = Modifier.fillMaxWidth(),
         color = if (active) chat.userBubble else MaterialTheme.colorScheme.surface,
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(1.dp, if (active) chat.attention else chat.toolBorder),
     ) {
-        Column(Modifier.padding(start = 12.dp, top = 6.dp, bottom = 6.dp, end = 4.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = project.name,
-                    style = MaterialTheme.typography.titleSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
+        Column {
+            // Tapping the row expands/collapses the sessions under this project;
+            // opening to the chat is the session's job (or "+ New session").
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .clickable {
+                        if (!expanded) onSelect()
+                        onToggle()
+                    }
+                    .padding(start = 12.dp, top = 6.dp, bottom = 6.dp, end = 4.dp)
+                    .semantics {
+                        testTag = "project_row_${project.name}"
+                        role = Role.Button
+                        contentDescription = project.name
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = project.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = if (opened.isEmpty()) {
+                            stringResource(R.string.projects_never_opened)
+                        } else {
+                            stringResource(R.string.projects_last_opened, opened)
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = chat.muted,
+                        maxLines = 1,
+                    )
+                }
                 if (active) {
                     StatusPill(text = stringResource(R.string.projects_current), color = chat.success)
+                    Spacer(Modifier.width(6.dp))
                 }
+                StatusPill(text = "$sessionCount", color = chat.muted)
+                Spacer(Modifier.width(2.dp))
                 Box {
                     IconButton(
                         onClick = { menuOpen = true },
@@ -397,55 +520,329 @@ private fun ProjectRow(
                         )
                     }
                 }
+                Text(
+                    text = if (expanded) "▾" else "▸",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = chat.muted,
+                    modifier = Modifier
+                        .width(20.dp)
+                        .clearAndSetSemantics { },
+                )
             }
+            if (expanded) {
+                HorizontalDivider(thickness = 1.dp, color = chat.toolBorder)
+                Column(Modifier.padding(start = 12.dp, top = 6.dp, bottom = 8.dp, end = 8.dp)) {
+                    Text(
+                        text = project.path,
+                        style = MonoSmall,
+                        color = chat.muted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    if (sessions.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.projects_sessions_empty),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = chat.muted,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                    }
+                    sessions.forEach { sess ->
+                        SessionRow(
+                            session = sess,
+                            now = now,
+                            onOpen = { onOpenSession(sess.id) },
+                            onRename = { onRenameSession(sess) },
+                            onDelete = { onDeleteSession(sess) },
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    val newSessionLabel = stringResource(R.string.projects_session_new)
+                    OutlinedButton(
+                        onClick = onNewSession,
+                        modifier = Modifier.height(40.dp).semantics {
+                            testTag = "projects_new_session_${project.name}"
+                            contentDescription = newSessionLabel
+                        },
+                    ) {
+                        Text(newSessionLabel)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SessionRow(
+    session: ProjectSession,
+    now: Long,
+    onOpen: () -> Unit,
+    onRename: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val chat = ChatTheme.chat
+    val title = session.title.ifEmpty { session.id }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 44.dp)
+            .clickable(onClick = onOpen)
+            .semantics {
+                testTag = "projects_session_${session.id}"
+                role = Role.Button
+                contentDescription = title
+            }
+            .padding(start = 4.dp, end = 0.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
             Text(
-                text = project.path,
-                style = MonoSmall,
-                color = chat.muted,
+                text = title,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Spacer(Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        text = if (opened.isEmpty()) {
-                            stringResource(R.string.projects_never_opened)
-                        } else {
-                            stringResource(R.string.projects_last_opened, opened)
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = chat.muted,
-                    )
-                    if (created.isNotEmpty()) {
-                        Text(
-                            text = stringResource(R.string.projects_created, created),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = chat.muted,
-                        )
-                    }
-                    if (sessionCount > 0) {
-                        Text(
-                            text = stringResource(R.string.sessions_count, sessionCount),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = chat.muted,
-                        )
-                    }
-                }
-                Spacer(Modifier.width(8.dp))
-                // Visual affordance only: the whole row is the button, so this
-                // carries no role of its own (a second unnamed "button" inside a
-                // button is exactly what makes a screen reader confusing).
+            val updated = relativeTimeLabel(session.updatedAtMs, now)
+            if (updated.isNotEmpty()) {
                 Text(
-                    text = openLabel,
+                    text = updated,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = chat.muted,
+                )
+            }
+        }
+        TextButton(
+            onClick = onRename,
+            modifier = Modifier.height(36.dp).semantics { testTag = "session_rename_${session.id}" },
+        ) {
+            Text(stringResource(R.string.projects_session_rename), style = MaterialTheme.typography.labelSmall)
+        }
+        TextButton(
+            onClick = onDelete,
+            modifier = Modifier.height(36.dp).semantics { testTag = "session_delete_${session.id}" },
+        ) {
+            Text(
+                stringResource(R.string.projects_session_delete),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+    }
+}
+
+/**
+ * Where the listing lives: the workspace folder itself, the action that switches
+ * it, and the (small) import action. Every speech- and touch-path names what the
+ * path is; nothing here is only visual.
+ */
+@Composable
+private fun WorkspaceCard(
+    workspacePath: String,
+    rootCount: Int,
+    onSwitchOpen: () -> Unit,
+    onImport: () -> Unit,
+    importing: Boolean,
+) {
+    val chat = ChatTheme.chat
+    SectionCard(
+        title = stringResource(R.string.projects_workspace_label),
+        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+    ) {
+        Text(
+            text = workspacePath,
+            style = MonoSmall,
+            color = chat.muted,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth().semantics { testTag = "projects_workspace_path" },
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            val switchDesc = stringResource(R.string.projects_workspace_switch_desc)
+            OutlinedButton(
+                onClick = onSwitchOpen,
+                modifier = Modifier.height(42.dp).weight(1f).semantics {
+                    testTag = "projects_switch_workspace"
+                    contentDescription = switchDesc
+                },
+            ) {
+                Text(
+                    stringResource(R.string.projects_workspace_switch) +
+                        if (rootCount > 1) " ($rootCount)" else "",
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .height(44.dp)
-                        .padding(horizontal = 10.dp)
-                        .semantics { testTag = "project_open_${project.name}" },
+                    maxLines = 1,
+                )
+            }
+            TextButton(
+                onClick = onImport,
+                enabled = !importing,
+                modifier = Modifier.height(42.dp).semantics { testTag = "project_import" },
+            ) {
+                Text(
+                    text = stringResource(if (importing) R.string.projects_importing else R.string.projects_import),
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
                 )
             }
         }
     }
+}
+
+/**
+ * The folders the user has worked in before. Collapsed by default (one line),
+ * expanded it is a plain list of roots with their project counts; tapping a root
+ * switches to it (the server never moves anything - cf `cd`).
+ */
+@Composable
+private fun HistorySection(
+    workspaces: List<KnownWorkspace>,
+    onSwitchTo: (String) -> Unit,
+) {
+    val chat = ChatTheme.chat
+    var open by rememberSaveable { mutableStateOf(false) }
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shape = MaterialTheme.shapes.small,
+        border = BorderStroke(1.dp, chat.toolBorder),
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 44.dp)
+                    .clickable { open = !open }
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .semantics {
+                        testTag = "projects_history"
+                        role = Role.Button
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.projects_history, workspaces.size),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = chat.muted,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = if (open) "▾" else "▸",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = chat.muted,
+                    modifier = Modifier.clearAndSetSemantics { },
+                )
+            }
+            if (open) {
+                HorizontalDivider(thickness = 1.dp, color = chat.toolBorder)
+                Column(Modifier.padding(12.dp)) {
+                    Text(
+                        text = stringResource(R.string.projects_history_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = chat.muted,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    workspaces.forEach { ws ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 44.dp)
+                                .clickable { onSwitchTo(ws.path) }
+                                .padding(vertical = 6.dp)
+                                .semantics {
+                                    testTag = "projects_history_root"
+                                    role = Role.Button
+                                    contentDescription = ws.path
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    text = ws.path,
+                                    style = MonoSmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    text = stringResource(R.string.projects_history_project_count, ws.projectCount),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = chat.muted,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** The remembered-roots list plus the full "browse for a folder" entry. */
+@Composable
+private fun SwitchWorkspaceDialog(
+    workspaces: List<KnownWorkspace>,
+    onPick: (String) -> Unit,
+    onBrowse: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val chat = ChatTheme.chat
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.projects_switch_dialog_title)) },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(R.string.projects_switch_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = chat.muted,
+                )
+                Spacer(Modifier.height(10.dp))
+                workspaces.forEach { ws ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 44.dp)
+                            .clickable(enabled = !ws.current) { onPick(ws.path) }
+                            .padding(vertical = 6.dp)
+                            .semantics {
+                                testTag = if (ws.current) "projects_switch_current" else "projects_switch_root"
+                                if (!ws.current) role = Role.Button
+                                contentDescription = ws.path
+                            },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                text = ws.path,
+                                style = MonoSmall,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                text = if (ws.current) {
+                                    stringResource(R.string.projects_switch_current)
+                                } else {
+                                    stringResource(R.string.projects_history_project_count, ws.projectCount)
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (ws.current) chat.success else chat.muted,
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+                OutlinedButton(
+                    onClick = onBrowse,
+                    modifier = Modifier.fillMaxWidth().height(44.dp).semantics { testTag = "projects_switch_browse" },
+                ) {
+                    Text(stringResource(R.string.projects_switch_browse))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+    )
 }

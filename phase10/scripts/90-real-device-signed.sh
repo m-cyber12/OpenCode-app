@@ -330,7 +330,7 @@ set_swipe_geometry() {
 # hard-coded locator should stop matching rather than silently locate the wrong
 # screen.
 NEEDLE_WELCOME='welcome_screen|welcome_continue|Continue|Settings and diagnostics'
-NEEDLE_PROJECTS='projects_screen|project_list|project_name_input|project_create|New project|Create project|Project name'
+NEEDLE_PROJECTS='projects_screen|project_list|project_name_input|project_create|New project|Create project|Create New Project|Project name'
 NEEDLE_CHAT='chat_screen|composer_input|composer_send|Start a conversation|Message the agent'
 NEEDLE_FILES='files_screen|files_list|files_location|Where these files are|files_storage_mode'
 # v4 item 4: the first-run workspace step. It is what a first run now reaches
@@ -1239,8 +1239,15 @@ PY
   # folder holds (no extra directory per chat).
   WS_ROOT_OUT="${FOLDER_SHOWN:-/storage/emulated/0/Documents/OpenCode}"
   if tap_any "onboarding_workspace_use" "Use this folder as workspace"; then
-    if wait_for "conversation-after-workspace" "$NEEDLE_CHAT" "$(tmo 240)"; then
-      shot "chat-after-workspace" || true
+    # v6: the tap lands on the projects page itself - the workspace path on top,
+    # the first project expanded with its New session control, and the chat opens
+    # from that surface. The outside-app filesystem check is unchanged.
+    if wait_for "projects-after-workspace" "$NEEDLE_PROJECTS" "$(tmo 240)"; then
+      shot "projects-after-workspace" || true
+      WS_PATH_SHOWN=0; ROW_OPEN=0
+      ui_has_any "projects_workspace_path" && WS_PATH_SHOWN=1
+      ui_has_any "projects_new_session_1" "project_row_1" && ROW_OPEN=1
+      shot "workspace-header" || true
       # The listing comes back through the host's own shell, so the check reads the
       # NAMES in the workspace folder (a project folder called `1`), not a path string
       # this script already knew: the point is that the tap created it.
@@ -1253,13 +1260,17 @@ PY
                    *) PROJECT_ON_DISK=0 ;;
                  esac ;;
       esac
-      if [ "$PROJECT_ON_DISK" = 0 ]; then
-        rd WORKSPACE_FIRST_PROJECT 0 "one tap on the workspace action created the first project and opened its chat; from outside the app '$WS_ROOT_OUT' contains [$FIRST_PROJECT_LS]"
+      if [ "$PROJECT_ON_DISK" = 0 ] && [ "$WS_PATH_SHOWN" = 1 ] && [ "$ROW_OPEN" = 1 ] && \
+         tap_any "projects_new_session_1" "New session" && \
+         wait_for "conversation-after-workspace" "$NEEDLE_CHAT" "$(tmo 180)"; then
+        rd WORKSPACE_FIRST_PROJECT 0 "one tap created the first project and the app landed on the projects page: the workspace path is on top, project 1 is expanded ('$WS_ROOT_OUT' contains [$FIRST_PROJECT_LS] from outside the app), and its 'New session' control opened the chat"
+      elif [ "$PROJECT_ON_DISK" != 0 ]; then
+        rd WORKSPACE_FIRST_PROJECT 1 "the projects page opened but '$WS_ROOT_OUT/1' was not found from outside the app (ls: ${FIRST_PROJECT_DIR:-<empty>}; listing: [$FIRST_PROJECT_LS])"
       else
-        rd WORKSPACE_FIRST_PROJECT 1 "the chat opened but '$WS_ROOT_OUT/1' was not found from outside the app (ls: ${FIRST_PROJECT_DIR:-<empty>}; listing: [$FIRST_PROJECT_LS])"
+        rd WORKSPACE_FIRST_PROJECT 1 "post-setup landing incomplete: workspace path shown=$WS_PATH_SHOWN first project expanded=$ROW_OPEN; the New-session -> chat entry did not complete (see ui/ui-projects-after-workspace.xml)"
       fi
     else
-      rd WORKSPACE_FIRST_PROJECT 1 "the workspace action did not lead to a conversation (the system All-files-access screen may be in front; see the screenshots and ui/ui-workspace-step.xml)"
+      rd WORKSPACE_FIRST_PROJECT 1 "the workspace action did not land on the projects page (the system All-files-access screen may be in front; see the screenshots and ui/ui-workspace-step.xml)"
     fi
   else
     rd WORKSPACE_FIRST_PROJECT 1 "the single workspace action was not tappable (see ui/ui-tap-onboarding_workspace_use.xml)"
@@ -1272,19 +1283,45 @@ fi
 # ---- R4b: the project card still works (a second project, any time) ---------
 PROJECT_NAME=""
 if [ "$FIRST_RUN_OK" = 1 ]; then
-  if ui_has_any "projects_screen" "project_create" "Create project" || tap_any "open_projects" "Projects"; then
+  if ui_has_any "projects_screen" "project_create" "Create project" "Create New Project" || tap_any "open_projects" "Projects"; then
     if wait_for "projects-screen" "$NEEDLE_PROJECTS" "$(tmo 120)"; then
+      # v6: the page leads with the workspace it lists - the folder on top, one
+      # Switch control (which opens the known-roots dialog), and a small Import.
+      WS_HEADER=0; SW_DIALOG=0
+      ui_has_any "projects_workspace_path" && WS_HEADER=1
+      if tap_any "projects_switch_workspace" "Switch" >/dev/null 2>&1; then
+        if wait_for "workspace-switch-dialog" "Where your projects live" "$(tmo 20)" >/dev/null 2>&1; then
+          SW_DIALOG=1
+          tap_any "Cancel" >/dev/null 2>&1 || adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
+          sleep 1
+        else
+          log "note: the Switch control on the projects page did not open the known-roots dialog"
+        fi
+      fi
+      log "projects page header: workspace path shown=$WS_HEADER, Switch control opens the known-roots dialog=$SW_DIALOG"
       PROJECT_NAME="p10d-$(date +%H%M%S)"
       if tap_any "project_name_input" "Project name"; then
         type_text "$PROJECT_NAME"
         shot "project-name-typed" || true
-        if tap_any "project_create" "Create project"; then
+        if tap_any "project_create" "Create project" "Create New Project"; then
           sleep 2
+          # v6: creating keeps the page - the new project expanded, its New
+          # session control on screen. Reaching the chat is that control's tap.
+          # Text fallback for phones whose dumps carry no Compose tags: the
+          # expanded row's control reads "New session" either way.
+          if wait_for "project-created-expanded" "projects_new_session_${PROJECT_NAME}|New session" "$(tmo 90)"; then
+            shot "project-created-expanded" || true
+            tap_any "projects_new_session_${PROJECT_NAME}" "New session" >/dev/null 2>&1 || true
+          else
+            log "note: the expanded row's New-session control did not show for '$PROJECT_NAME'; trying the row itself"
+            tap_any "project_row_${PROJECT_NAME}" "${PROJECT_NAME}" >/dev/null 2>&1 || true
+            tap_any "projects_new_session_${PROJECT_NAME}" "New session" >/dev/null 2>&1 || true
+          fi
           if wait_for "conversation" "$NEEDLE_CHAT" "$(tmo 180)"; then
             shot "chat-ready" || true
-            rd FIRST_RUN_PROJECT 0 "second project '$PROJECT_NAME' created through the UI (taps + typed text) on the signed build; conversation surface reached"
+            rd FIRST_RUN_PROJECT 0 "project '$PROJECT_NAME' created through the page's own Create button (taps + typed text) on the signed build; the app stayed on the page with the row expanded, and its New session control opened the conversation"
           else
-            rd FIRST_RUN_PROJECT 1 "project created but the conversation surface was not reached (see DIAGNOSIS.txt)"
+            rd FIRST_RUN_PROJECT 1 "project created but the conversation surface was not reached via the expanded row (see DIAGNOSIS.txt)"
           fi
         else
           rd FIRST_RUN_PROJECT 1 "could not tap the create-project button (see ui/ui-tap-project_create.xml)"

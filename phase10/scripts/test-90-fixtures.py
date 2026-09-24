@@ -77,11 +77,45 @@ def build(root):
     ])
 
     # ---- projects -------------------------------------------------------------
+    # v6: the projects page is a workspace view - the folder at the top with its
+    # Switch action (import stays as the small secondary action), the create card,
+    # and projects as expandable rows whose sessions live underneath. The served
+    # row stands for the project's current state: `p10d-proj` is substituted by
+    # the fake phone with the project the driver actually created.
     screens_projects = screen("projects", [
         text_node("Projects", "[40,200][1040,280]"),
-        node("project_name_input", text="", desc="Project name", bounds="[40,320][1040,420]",
+        text_node("Workspace", "[40,300][1040,360]"),
+        node("projects_workspace_path", text=SHARED_WORKSPACE.rsplit("/", 1)[0],
+             bounds="[40,380][1040,440]", clickable="false"),
+        node("projects_switch_workspace", text="Switch",
+             desc="See workspaces and switch to another one", bounds="[40,460][620,540]"),
+        node("project_import", text="Import a copy", bounds="[640,460][1040,540]"),
+        node("project_name_input", text="", desc="Project name", bounds="[40,580][1040,680]",
              cls="android.widget.EditText"),
-        node("project_create", text="Create project", bounds="[40,460][1040,560]"),
+        node("project_create", text="Create New Project", bounds="[40,700][1040,800]"),
+        # The active project, expanded (the create/workspace flows leave exactly
+        # this surface: the row open, sessions underneath, New session below).
+        node("project_row_p10d-proj", text="p10d-proj", desc="p10d-proj",
+             bounds="[40,840][1040,940]"),
+        text_node("No conversations in this project yet.", "[40,960][1040,1020]"),
+        node("projects_new_session_p10d-proj", text="New session", desc="New session",
+             bounds="[40,1040][400,1140]"),
+    ])
+
+    # The workspace switcher dialog: one current root (not tappable), the note,
+    # and the "browse" entry. (The fake's remembered-roots list is the app's own
+    # state, which the fake phone cannot reach, so the dialog shows what a phone
+    # with only the current root shows - the driver has to accept both shapes.)
+    screens_projects_switch = screen("projects-switch", [
+        text_node("Where your projects live", "[40,400][1040,480]"),
+        text_node("Switching folders changes which projects you see, the way cd changes "
+                  "what a terminal shows. Nothing is deleted; switch back to see them again.",
+                  "[40,500][1040,590]"),
+        node("projects_switch_current", text=SHARED_WORKSPACE.rsplit("/", 1)[0],
+             bounds="[40,620][1040,700]", clickable="false"),
+        text_node("current", "[40,710][400,770]"),
+        node("projects_switch_browse", text="Browse for a folder...", bounds="[40,800][1040,820]"),
+        node("", text="Cancel", bounds="[700,960][1040,1060]"),
     ])
 
     # ---- conversation ---------------------------------------------------------
@@ -237,6 +271,7 @@ def build(root):
     ])
 
     for name, body in (("welcome", screens_welcome), ("projects", screens_projects),
+                       ("projects-switch", screens_projects_switch),
                        ("chat", screens_chat), ("answer", screens_answer),
                        ("files", screens_files), ("settings", screens_settings),
                        ("settings-nomatch", screens_settings_nomatch),
