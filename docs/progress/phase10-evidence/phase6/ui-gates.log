@@ -1,155 +1,185 @@
-[2026-09-24T19:42:24Z] === stage A: deterministic chat UI gates (no runtime, no model, no key) ===
-[2026-09-24T19:42:24Z] uninstalling io.github.mcyber12.opencode / io.github.mcyber12.opencode.test so the next gate really is a first run
+[2026-09-24T20:55:48Z] === stage A: deterministic chat UI gates (no runtime, no model, no key) ===
+[2026-09-24T20:55:48Z] uninstalling io.github.mcyber12.opencode / io.github.mcyber12.opencode.test so the next gate really is a first run
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-09-24T19:42:30Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
-[2026-09-24T19:43:12Z] instrument rc=0 (chat-ui)
+[2026-09-24T20:55:55Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
+[2026-09-24T20:56:40Z] instrument rc=0 (chat-ui)
 
-ai.opencode.android.ui.ChatUiGatesTest:............
+ai.opencode.android.ui.ChatUiGatesTest:...
+Error in u13_changesSurface_tabsStagesDiffsAndEmptyState(ai.opencode.android.ui.ChatUiGatesTest):
+java.lang.AssertionError: P6_U13 FAIL :: tabs=true chip=true wired=false screen=true stages=true newestFirst=true rows=2 counts=true patch=hidden:true,shown:true empty=true
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.ui.ChatUiGatesTest.gate(ChatUiGatesTest.kt:761)
+	at ai.opencode.android.ui.ChatUiGatesTest.u13_changesSurface_tabsStagesDiffsAndEmptyState(ChatUiGatesTest.kt:1998)
+..........
 
-Time: 41.672
+Time: 44.644
+There was 1 failure:
+1) u13_changesSurface_tabsStagesDiffsAndEmptyState(ai.opencode.android.ui.ChatUiGatesTest)
+java.lang.AssertionError: P6_U13 FAIL :: tabs=true chip=true wired=false screen=true stages=true newestFirst=true rows=2 counts=true patch=hidden:true,shown:true empty=true
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.ui.ChatUiGatesTest.gate(ChatUiGatesTest.kt:761)
+	at ai.opencode.android.ui.ChatUiGatesTest.u13_changesSurface_tabsStagesDiffsAndEmptyState(ChatUiGatesTest.kt:1998)
 
-OK (12 tests)
+FAILURES!!!
+Tests run: 14,  Failures: 1
 
 
-[2026-09-24T19:43:13Z] chat-ui runner trailer: OK
-[2026-09-24T19:43:14Z] screenshots pulled: 16
-total 3520
-drwxr-xr-x 2 runner runner    4096 Sep 24 19:40 .
-drwxr-xr-x 3 runner runner    4096 Sep 24 19:40 ..
--rw-r--r-- 1 runner runner   36664 Sep 24 19:40 01-first-run-welcome.png
--rw-r--r-- 1 runner runner   45525 Sep 24 19:40 02-first-run-ready.png
--rw-r--r-- 1 runner runner   45525 Sep 24 19:40 02b-first-run-workspace.png
--rw-r--r-- 1 runner runner   62344 Sep 24 19:40 04-first-run-projects.png
--rw-r--r-- 1 runner runner  121560 Sep 24 19:43 10-chat-long-transcript.png
--rw-r--r-- 1 runner runner  110602 Sep 24 19:43 11-chat-tool-cards.png
--rw-r--r-- 1 runner runner   53380 Sep 24 19:43 13-chat-runtime-down.png
--rw-r--r-- 1 runner runner   47891 Sep 24 19:43 14-chat-provider-auth.png
--rw-r--r-- 1 runner runner   35003 Sep 24 19:43 15-chat-streaming.png
--rw-r--r-- 1 runner runner   63977 Sep 24 19:43 16-chat-markdown.png
--rw-r--r-- 1 runner runner   39241 Sep 24 19:43 18-settings-a11y.png
--rw-r--r-- 1 runner runner   30546 Sep 24 19:43 19-sessions.png
--rw-r--r-- 1 runner runner   37488 Sep 24 19:43 19b-welcome-states.png
--rw-r--r-- 1 runner runner   37862 Sep 24 19:43 20-files-listing.png
--rw-r--r-- 1 runner runner   34285 Sep 24 19:43 21-files-viewer.png
--rw-r--r-- 1 runner runner   49153 Sep 24 19:43 22-files-storage-panel.png
--rw-r--r-- 1 runner runner  149185 Sep 24 19:43 24-provider-search.png
--rw-r--r-- 1 runner runner  197564 Sep 24 19:43 25-custom-provider.png
--rw-r--r-- 1 runner runner   39850 Sep 24 19:43 26-workspace-onboarding.png
--rw-r--r-- 1 runner runner  158385 Sep 24 19:43 27-settings-workspace.png
--rw-r--r-- 1 runner runner   39820 Sep 24 19:40 30-live-chat-reply.png
--rw-r--r-- 1 runner runner   89208 Sep 24 19:40 31-live-tool-card-collapsed.png
--rw-r--r-- 1 runner runner  121238 Sep 24 19:40 32-live-tool-card-expanded.png
--rw-r--r-- 1 runner runner 1893362 Sep 24 19:40 99-final-host-screen.png
-[2026-09-24T19:43:14Z] P6-U1 PASS :: :: rows=602 composedAtBottom=22 composedAtTop=20 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
-[2026-09-24T19:43:14Z] P6-U2 PASS :: :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true
-[2026-09-24T19:43:14Z] P6-U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
-[2026-09-24T19:43:14Z] P6-U4 PASS :: :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=true,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
-[2026-09-24T19:43:14Z] P6-U5 PASS :: :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true retryBanner=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true 
-[2026-09-24T19:43:14Z] P6-U6 PASS :: :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
-[2026-09-24T19:43:14Z] P6-U7 PASS :: :: interactive={chat=29, sessions=11, projects=7, welcome=2, welcome-unsupported=2, settings=29, files=4} total=84 unnamed=0
-[2026-09-24T19:43:14Z] P6-U8 PASS :: :: rowsComposedBefore=23 after=23 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true rever
-[2026-09-24T19:43:14Z] === stage B: first-run experience on a freshly installed APK ===
-[2026-09-24T19:43:14Z] uninstalling io.github.mcyber12.opencode / io.github.mcyber12.opencode.test so the next gate really is a first run
+[2026-09-24T20:56:41Z] chat-ui runner trailer: NOT-OK (rc=0)
+Error in u13_changesSurface_tabsStagesDiffsAndEmptyState(ai.opencode.android.ui.ChatUiGatesTest):
+FAILURES!!!
+Tests run: 14,  Failures: 1
+[2026-09-24T20:56:42Z] screenshots pulled: 18
+total 3684
+drwxr-xr-x 2 runner runner    4096 Sep 24 20:53 .
+drwxr-xr-x 3 runner runner    4096 Sep 24 20:53 ..
+-rw-r--r-- 1 runner runner   36664 Sep 24 20:53 01-first-run-welcome.png
+-rw-r--r-- 1 runner runner   45525 Sep 24 20:53 02-first-run-ready.png
+-rw-r--r-- 1 runner runner   45525 Sep 24 20:53 02b-first-run-workspace.png
+-rw-r--r-- 1 runner runner   62344 Sep 24 20:53 04-first-run-projects.png
+-rw-r--r-- 1 runner runner  121563 Sep 24 20:56 10-chat-long-transcript.png
+-rw-r--r-- 1 runner runner  110610 Sep 24 20:56 11-chat-tool-cards.png
+-rw-r--r-- 1 runner runner   53121 Sep 24 20:56 13-chat-runtime-down.png
+-rw-r--r-- 1 runner runner   48343 Sep 24 20:56 14-chat-provider-auth.png
+-rw-r--r-- 1 runner runner   35753 Sep 24 20:56 15-chat-streaming.png
+-rw-r--r-- 1 runner runner   63981 Sep 24 20:56 16-chat-markdown.png
+-rw-r--r-- 1 runner runner  151612 Sep 24 20:56 18-settings-a11y.png
+-rw-r--r-- 1 runner runner   30546 Sep 24 20:56 19-sessions.png
+-rw-r--r-- 1 runner runner   37488 Sep 24 20:56 19b-welcome-states.png
+-rw-r--r-- 1 runner runner   37862 Sep 24 20:56 20-files-listing.png
+-rw-r--r-- 1 runner runner   34285 Sep 24 20:56 21-files-viewer.png
+-rw-r--r-- 1 runner runner   49153 Sep 24 20:56 22-files-storage-panel.png
+-rw-r--r-- 1 runner runner  149185 Sep 24 20:56 24-provider-search.png
+-rw-r--r-- 1 runner runner  197564 Sep 24 20:56 25-custom-provider.png
+-rw-r--r-- 1 runner runner   39850 Sep 24 20:56 26-workspace-onboarding.png
+-rw-r--r-- 1 runner runner  158385 Sep 24 20:56 27-settings-workspace.png
+-rw-r--r-- 1 runner runner   36636 Sep 24 20:56 28-changes-stages.png
+-rw-r--r-- 1 runner runner   28097 Sep 24 20:56 29-terminal-console.png
+-rw-r--r-- 1 runner runner   37107 Sep 24 20:53 30-live-chat-reply.png
+-rw-r--r-- 1 runner runner   84606 Sep 24 20:53 31-live-tool-card-collapsed.png
+-rw-r--r-- 1 runner runner  117308 Sep 24 20:53 32-live-tool-card-expanded.png
+-rw-r--r-- 1 runner runner 1892972 Sep 24 20:53 99-final-host-screen.png
+[2026-09-24T20:56:42Z] P6-U1 PASS :: :: rows=602 composedAtBottom=22 composedAtTop=20 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
+[2026-09-24T20:56:42Z] P6-U2 PASS :: :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true
+[2026-09-24T20:56:42Z] P6-U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
+[2026-09-24T20:56:42Z] P6-U4 PASS :: :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=true,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
+[2026-09-24T20:56:42Z] P6-U5 PASS :: :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true retryBanner=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true 
+[2026-09-24T20:56:42Z] P6-U6 PASS :: :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
+[2026-09-24T20:56:42Z] P6-U7 PASS :: :: interactive={chat=29, sessions=11, projects=7, welcome=2, welcome-unsupported=2, settings=29, files=29} total=109 unnamed=0
+[2026-09-24T20:56:42Z] P6-U8 PASS :: :: rowsComposedBefore=23 after=23 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true rever
+[2026-09-24T20:56:42Z] P6-U9 PASS :: :: listed=true pathShown=true locationCopy=true openedDir=true upShown=true upWorks=true openedFile=true viewer=true body=true saveCopy=true/true closed=true empty=true v4Removed=copyPath:true,export:true,choose:true,res
+[2026-09-24T20:56:42Z] P6-U10 PASS :: :: shown=true label=true menu=true listed=true/true picked=true/[google/gemini-2.5-flash] settingsTrip=true emptyExplained=true offered=true
+[2026-09-24T20:56:42Z] P6-U11 PASS :: :: search=true/true/true keyOnly=true/true activated=true star=true/true/true/true collapsedFirst=true custom=true/true reported=(openrouter, openai/gpt-4o-mini, false)
+[2026-09-24T20:56:42Z] P6-U12 PASS :: :: onboarding=true/true/true/true v4Removed=true/true wired=true/true message=true hidden=true controls=true settings=true/true/true/true note=true
+[2026-09-24T20:56:42Z] P6-U13 FAIL :: :: tabs=true chip=true wired=false screen=true stages=true newestFirst=true rows=2 counts=true patch=hidden:true,shown:true empty=true
+[2026-09-24T20:56:42Z] P6-U14 PASS :: :: screen=true rows=3 command=true output=true exit=true running=true failed=true log=hidden:true,shown:true tabBack=true empty=true
+[2026-09-24T20:56:42Z] === stage B: first-run experience on a freshly installed APK ===
+[2026-09-24T20:56:42Z] uninstalling io.github.mcyber12.opencode / io.github.mcyber12.opencode.test so the next gate really is a first run
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-09-24T19:43:21Z] === am instrument ai.opencode.android.ui.FirstRunUiGatesTest ===
-[2026-09-24T19:43:39Z] instrument rc=0 (first-run)
+[2026-09-24T20:56:49Z] === am instrument ai.opencode.android.ui.FirstRunUiGatesTest ===
+[2026-09-24T20:57:13Z] instrument rc=0 (first-run)
 
 ai.opencode.android.ui.FirstRunUiGatesTest:....
 
-Time: 17.537
+Time: 23.078
 
 OK (4 tests)
 
 
-[2026-09-24T19:43:40Z] first-run runner trailer: OK
-[2026-09-24T19:43:40Z] screenshots pulled: 4
-total 3520
-drwxr-xr-x 2 runner runner    4096 Sep 24 19:40 .
-drwxr-xr-x 3 runner runner    4096 Sep 24 19:40 ..
--rw-r--r-- 1 runner runner   36664 Sep 24 19:43 01-first-run-welcome.png
--rw-r--r-- 1 runner runner   45414 Sep 24 19:43 02-first-run-ready.png
--rw-r--r-- 1 runner runner   45414 Sep 24 19:43 02b-first-run-workspace.png
--rw-r--r-- 1 runner runner   61812 Sep 24 19:43 04-first-run-projects.png
--rw-r--r-- 1 runner runner  121560 Sep 24 19:43 10-chat-long-transcript.png
--rw-r--r-- 1 runner runner  110602 Sep 24 19:43 11-chat-tool-cards.png
--rw-r--r-- 1 runner runner   53380 Sep 24 19:43 13-chat-runtime-down.png
--rw-r--r-- 1 runner runner   47891 Sep 24 19:43 14-chat-provider-auth.png
--rw-r--r-- 1 runner runner   35003 Sep 24 19:43 15-chat-streaming.png
--rw-r--r-- 1 runner runner   63977 Sep 24 19:43 16-chat-markdown.png
--rw-r--r-- 1 runner runner   39241 Sep 24 19:43 18-settings-a11y.png
--rw-r--r-- 1 runner runner   30546 Sep 24 19:43 19-sessions.png
--rw-r--r-- 1 runner runner   37488 Sep 24 19:43 19b-welcome-states.png
--rw-r--r-- 1 runner runner   37862 Sep 24 19:43 20-files-listing.png
--rw-r--r-- 1 runner runner   34285 Sep 24 19:43 21-files-viewer.png
--rw-r--r-- 1 runner runner   49153 Sep 24 19:43 22-files-storage-panel.png
--rw-r--r-- 1 runner runner  149185 Sep 24 19:43 24-provider-search.png
--rw-r--r-- 1 runner runner  197564 Sep 24 19:43 25-custom-provider.png
--rw-r--r-- 1 runner runner   39850 Sep 24 19:43 26-workspace-onboarding.png
--rw-r--r-- 1 runner runner  158385 Sep 24 19:43 27-settings-workspace.png
--rw-r--r-- 1 runner runner   39820 Sep 24 19:40 30-live-chat-reply.png
--rw-r--r-- 1 runner runner   89208 Sep 24 19:40 31-live-tool-card-collapsed.png
--rw-r--r-- 1 runner runner  121238 Sep 24 19:40 32-live-tool-card-expanded.png
--rw-r--r-- 1 runner runner 1893362 Sep 24 19:40 99-final-host-screen.png
-[2026-09-24T19:43:40Z] P6-F1 PASS :: :: firstScreen=welcome workspaceStep=true stages=[extracting, starting, healthy] welcomeCopy=4/4 sampledLines=19 leakedTokens=[] continueBecameEnabled=false advancedToProjects=false advancedToChat=false supervisor=HEALTH
-[2026-09-24T19:43:40Z] P6-F2 PASS :: :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=false,chat=false,workspace=true) leakedTokens=[] screenshot=45414
-[2026-09-24T19:43:40Z] P6-F3 PASS :: :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:45414,projects
-[2026-09-24T19:43:40Z] P6-F4 PASS :: :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=36664, 02-first-run-ready.png=45414, 02b-first-run-workspace.png=45414, 04-first-run-projects.png=61812]
-[2026-09-24T19:43:40Z] === stage C: live turn through the UI (key-free default model) ===
-[2026-09-24T19:43:40Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
-[2026-09-24T19:44:13Z] instrument rc=0 (live-chat)
+[2026-09-24T20:57:14Z] first-run runner trailer: OK
+[2026-09-24T20:57:14Z] screenshots pulled: 4
+total 3684
+drwxr-xr-x 2 runner runner    4096 Sep 24 20:53 .
+drwxr-xr-x 3 runner runner    4096 Sep 24 20:53 ..
+-rw-r--r-- 1 runner runner   36664 Sep 24 20:57 01-first-run-welcome.png
+-rw-r--r-- 1 runner runner   45414 Sep 24 20:57 02-first-run-ready.png
+-rw-r--r-- 1 runner runner   45414 Sep 24 20:57 02b-first-run-workspace.png
+-rw-r--r-- 1 runner runner   61812 Sep 24 20:57 04-first-run-projects.png
+-rw-r--r-- 1 runner runner  121563 Sep 24 20:56 10-chat-long-transcript.png
+-rw-r--r-- 1 runner runner  110610 Sep 24 20:56 11-chat-tool-cards.png
+-rw-r--r-- 1 runner runner   53121 Sep 24 20:56 13-chat-runtime-down.png
+-rw-r--r-- 1 runner runner   48343 Sep 24 20:56 14-chat-provider-auth.png
+-rw-r--r-- 1 runner runner   35753 Sep 24 20:56 15-chat-streaming.png
+-rw-r--r-- 1 runner runner   63981 Sep 24 20:56 16-chat-markdown.png
+-rw-r--r-- 1 runner runner  151612 Sep 24 20:56 18-settings-a11y.png
+-rw-r--r-- 1 runner runner   30546 Sep 24 20:56 19-sessions.png
+-rw-r--r-- 1 runner runner   37488 Sep 24 20:56 19b-welcome-states.png
+-rw-r--r-- 1 runner runner   37862 Sep 24 20:56 20-files-listing.png
+-rw-r--r-- 1 runner runner   34285 Sep 24 20:56 21-files-viewer.png
+-rw-r--r-- 1 runner runner   49153 Sep 24 20:56 22-files-storage-panel.png
+-rw-r--r-- 1 runner runner  149185 Sep 24 20:56 24-provider-search.png
+-rw-r--r-- 1 runner runner  197564 Sep 24 20:56 25-custom-provider.png
+-rw-r--r-- 1 runner runner   39850 Sep 24 20:56 26-workspace-onboarding.png
+-rw-r--r-- 1 runner runner  158385 Sep 24 20:56 27-settings-workspace.png
+-rw-r--r-- 1 runner runner   36636 Sep 24 20:56 28-changes-stages.png
+-rw-r--r-- 1 runner runner   28097 Sep 24 20:56 29-terminal-console.png
+-rw-r--r-- 1 runner runner   37107 Sep 24 20:53 30-live-chat-reply.png
+-rw-r--r-- 1 runner runner   84606 Sep 24 20:53 31-live-tool-card-collapsed.png
+-rw-r--r-- 1 runner runner  117308 Sep 24 20:53 32-live-tool-card-expanded.png
+-rw-r--r-- 1 runner runner 1892972 Sep 24 20:53 99-final-host-screen.png
+[2026-09-24T20:57:14Z] P6-F1 PASS :: :: firstScreen=welcome workspaceStep=true stages=[extracting, starting, healthy] welcomeCopy=4/4 sampledLines=19 leakedTokens=[] continueBecameEnabled=false advancedToProjects=false advancedToChat=false supervisor=HEALTH
+[2026-09-24T20:57:14Z] P6-F2 PASS :: :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=false,chat=false,workspace=true) leakedTokens=[] screenshot=45414
+[2026-09-24T20:57:14Z] P6-F3 PASS :: :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:45414,projects
+[2026-09-24T20:57:14Z] P6-F4 PASS :: :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=36664, 02-first-run-ready.png=45414, 02b-first-run-workspace.png=45414, 04-first-run-projects.png=61812]
+[2026-09-24T20:57:14Z] === stage C: live turn through the UI (key-free default model) ===
+[2026-09-24T20:57:14Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
+[2026-09-24T20:57:53Z] instrument rc=0 (live-chat)
 
 ai.opencode.android.ui.LiveChatUiGatesTest:..
 
-Time: 32.088
+Time: 37.835
 
 OK (2 tests)
 
 
-[2026-09-24T19:44:14Z] live-chat runner trailer: OK
-[2026-09-24T19:44:14Z] screenshots pulled: 7
-total 3512
-drwxr-xr-x 2 runner runner    4096 Sep 24 19:40 .
-drwxr-xr-x 3 runner runner    4096 Sep 24 19:40 ..
--rw-r--r-- 1 runner runner   36664 Sep 24 19:44 01-first-run-welcome.png
--rw-r--r-- 1 runner runner   45414 Sep 24 19:44 02-first-run-ready.png
--rw-r--r-- 1 runner runner   45414 Sep 24 19:44 02b-first-run-workspace.png
--rw-r--r-- 1 runner runner   61812 Sep 24 19:44 04-first-run-projects.png
--rw-r--r-- 1 runner runner  121560 Sep 24 19:43 10-chat-long-transcript.png
--rw-r--r-- 1 runner runner  110602 Sep 24 19:43 11-chat-tool-cards.png
--rw-r--r-- 1 runner runner   53380 Sep 24 19:43 13-chat-runtime-down.png
--rw-r--r-- 1 runner runner   47891 Sep 24 19:43 14-chat-provider-auth.png
--rw-r--r-- 1 runner runner   35003 Sep 24 19:43 15-chat-streaming.png
--rw-r--r-- 1 runner runner   63977 Sep 24 19:43 16-chat-markdown.png
--rw-r--r-- 1 runner runner   39241 Sep 24 19:43 18-settings-a11y.png
--rw-r--r-- 1 runner runner   30546 Sep 24 19:43 19-sessions.png
--rw-r--r-- 1 runner runner   37488 Sep 24 19:43 19b-welcome-states.png
--rw-r--r-- 1 runner runner   37862 Sep 24 19:43 20-files-listing.png
--rw-r--r-- 1 runner runner   34285 Sep 24 19:43 21-files-viewer.png
--rw-r--r-- 1 runner runner   49153 Sep 24 19:43 22-files-storage-panel.png
--rw-r--r-- 1 runner runner  149185 Sep 24 19:43 24-provider-search.png
--rw-r--r-- 1 runner runner  197564 Sep 24 19:43 25-custom-provider.png
--rw-r--r-- 1 runner runner   39850 Sep 24 19:43 26-workspace-onboarding.png
--rw-r--r-- 1 runner runner  158385 Sep 24 19:43 27-settings-workspace.png
--rw-r--r-- 1 runner runner   39689 Sep 24 19:44 30-live-chat-reply.png
--rw-r--r-- 1 runner runner   85919 Sep 24 19:44 31-live-tool-card-collapsed.png
--rw-r--r-- 1 runner runner  118269 Sep 24 19:44 32-live-tool-card-expanded.png
--rw-r--r-- 1 runner runner 1893362 Sep 24 19:40 99-final-host-screen.png
-[2026-09-24T19:44:14Z] P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBann
-[2026-09-24T19:44:14Z] P6-L2 PASS :: :: tool=bash status=completed partId=prt_0d4f2621c001EHrD6bBzGhMKKc cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0
-[2026-09-24T19:44:14Z] === evidence pull ===
+[2026-09-24T20:57:53Z] live-chat runner trailer: OK
+[2026-09-24T20:57:54Z] screenshots pulled: 7
+total 3700
+drwxr-xr-x 2 runner runner    4096 Sep 24 20:53 .
+drwxr-xr-x 3 runner runner    4096 Sep 24 20:53 ..
+-rw-r--r-- 1 runner runner   36664 Sep 24 20:57 01-first-run-welcome.png
+-rw-r--r-- 1 runner runner   45414 Sep 24 20:57 02-first-run-ready.png
+-rw-r--r-- 1 runner runner   45414 Sep 24 20:57 02b-first-run-workspace.png
+-rw-r--r-- 1 runner runner   61812 Sep 24 20:57 04-first-run-projects.png
+-rw-r--r-- 1 runner runner  121563 Sep 24 20:56 10-chat-long-transcript.png
+-rw-r--r-- 1 runner runner  110610 Sep 24 20:56 11-chat-tool-cards.png
+-rw-r--r-- 1 runner runner   53121 Sep 24 20:56 13-chat-runtime-down.png
+-rw-r--r-- 1 runner runner   48343 Sep 24 20:56 14-chat-provider-auth.png
+-rw-r--r-- 1 runner runner   35753 Sep 24 20:56 15-chat-streaming.png
+-rw-r--r-- 1 runner runner   63981 Sep 24 20:56 16-chat-markdown.png
+-rw-r--r-- 1 runner runner  151612 Sep 24 20:56 18-settings-a11y.png
+-rw-r--r-- 1 runner runner   30546 Sep 24 20:56 19-sessions.png
+-rw-r--r-- 1 runner runner   37488 Sep 24 20:56 19b-welcome-states.png
+-rw-r--r-- 1 runner runner   37862 Sep 24 20:56 20-files-listing.png
+-rw-r--r-- 1 runner runner   34285 Sep 24 20:56 21-files-viewer.png
+-rw-r--r-- 1 runner runner   49153 Sep 24 20:56 22-files-storage-panel.png
+-rw-r--r-- 1 runner runner  149185 Sep 24 20:56 24-provider-search.png
+-rw-r--r-- 1 runner runner  197564 Sep 24 20:56 25-custom-provider.png
+-rw-r--r-- 1 runner runner   39850 Sep 24 20:56 26-workspace-onboarding.png
+-rw-r--r-- 1 runner runner  158385 Sep 24 20:56 27-settings-workspace.png
+-rw-r--r-- 1 runner runner   36636 Sep 24 20:56 28-changes-stages.png
+-rw-r--r-- 1 runner runner   28097 Sep 24 20:56 29-terminal-console.png
+-rw-r--r-- 1 runner runner   36988 Sep 24 20:57 30-live-chat-reply.png
+-rw-r--r-- 1 runner runner   96776 Sep 24 20:57 31-live-tool-card-collapsed.png
+-rw-r--r-- 1 runner runner  119054 Sep 24 20:57 32-live-tool-card-expanded.png
+-rw-r--r-- 1 runner runner 1892972 Sep 24 20:53 99-final-host-screen.png
+[2026-09-24T20:57:54Z] P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBann
+[2026-09-24T20:57:54Z] P6-L2 PASS :: :: tool=bash status=completed partId=prt_0d535caed001EB0Y3MxHLO1MLd cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0
+[2026-09-24T20:57:54Z] === evidence pull ===
 P6_MODEL_AVAILABLE 1 ::
 P6_MODEL_AVAILABLE 1 :: replyChars=5 asksAnswered=0
-[2026-09-24T19:44:16Z] === SUMMARY ===
-P6_SUMMARY 2026-09-24T19:44:16Z
-ui_gates_pass=14 ui_gates_fail=0 ui_gates_skip=0
+[2026-09-24T20:57:55Z] === SUMMARY ===
+P6_SUMMARY 2026-09-24T20:57:55Z
+ui_gates_pass=19 ui_gates_fail=1 ui_gates_skip=0
 chat_ui_instrument_rc=0 first_run_instrument_rc=0 live_chat_instrument_rc=0
-screenshots=24
+screenshots=26
 model_available=1
 device_abi=x86_64
 android_sdk=34

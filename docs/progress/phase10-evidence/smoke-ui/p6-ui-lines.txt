@@ -6,6 +6,10 @@ P6_U11 PASS :: sea
 P6_U11 PASS :: search=true/true/true keyOnly=true/true activated=true star=true/true/true/true collapsedFirst=true custom=true/true reported=(openrouter, openai/gpt-4o-mini, false)
 P6_U12 PASS :: onboa
 P6_U12 PASS :: onboarding=true/true/true/true v4Removed=true/true wired=true/true message=true hidden=true controls=true settings=true/true/true/true note=true
+P6_U13 FAIL :: tabs=t
+P6_U13 FAIL :: tabs=true chip=true wired=false screen=true stages=true newestFirst=true rows=2 counts=true patch=hidden:true,shown:true empty=true
+P6_U14 PASS :: sc
+P6_U14 PASS :: screen=true rows=3 command=true output=true exit=true running=true failed=true log=hidden:true,shown:true tabBack=true empty=true
 P6_U2 PASS :: collapsedByDefault=t
 P6_U2 PASS :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true
 P6_U3 PASS :: ask=t
@@ -17,7 +21,7 @@ P6_U5 PASS :: busyBar=true streamingIndicator=true stopShown=true sendHidden=tru
 P6_U6 PASS :: heading=t
 P6_U6 PASS :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
 P6_U7 PASS :: inte
-P6_U7 PASS :: interactive={chat=29, sessions=11, projects=7, welcome=2, welcome-unsupported=2, settings=29, files=4} total=84 unnamed=0
+P6_U7 PASS :: interactive={chat=29, sessions=11, projects=7, welcome=2, welcome-unsupported=2, settings=29, files=29} total=109 unnamed=0
 P6_U8 PASS ::
 P6_U8 PASS :: rowsComposedBefore=23 after=23 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true revertNote=true emptyState=true/true
 P6_U9 PASS :: listed=t
@@ -28,8 +32,14 @@ P6-U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=t
 P6-U4 PASS :: :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=true,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
 P6-U5 PASS :: :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true retryBanner=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true 
 P6-U6 PASS :: :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
-P6-U7 PASS :: :: interactive={chat=29, sessions=11, projects=7, welcome=2, welcome-unsupported=2, settings=29, files=4} total=84 unnamed=0
+P6-U7 PASS :: :: interactive={chat=29, sessions=11, projects=7, welcome=2, welcome-unsupported=2, settings=29, files=29} total=109 unnamed=0
 P6-U8 PASS :: :: rowsComposedBefore=23 after=23 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true rever
+P6-U9 PASS :: :: listed=true pathShown=true locationCopy=true openedDir=true upShown=true upWorks=true openedFile=true viewer=true body=true saveCopy=true/true closed=true empty=true v4Removed=copyPath:true,export:true,choose:true,res
+P6-U10 PASS :: :: shown=true label=true menu=true listed=true/true picked=true/[google/gemini-2.5-flash] settingsTrip=true emptyExplained=true offered=true
+P6-U11 PASS :: :: search=true/true/true keyOnly=true/true activated=true star=true/true/true/true collapsedFirst=true custom=true/true reported=(openrouter, openai/gpt-4o-mini, false)
+P6-U12 PASS :: :: onboarding=true/true/true/true v4Removed=true/true wired=true/true message=true hidden=true controls=true settings=true/true/true/true note=true
+P6-U13 FAIL :: :: tabs=true chip=true wired=false screen=true stages=true newestFirst=true rows=2 counts=true patch=hidden:true,shown:true empty=true
+P6-U14 PASS :: :: screen=true rows=3 command=true output=true exit=true running=true failed=true log=hidden:true,shown:true tabBack=true empty=true
 P6_F1 PASS :: fi
 P6_F1 PASS :: firstScreen=welcome workspaceStep=true stages=[extracting, starting, healthy] welcomeCopy=4/4 sampledLines=19 leakedTokens=[] continueBecameEnabled=false advancedToProjects=false advancedToChat=false supervisor=HEALTHY(restarts=0) screenshots=welcome:36664,projects:-1,chat:-1 detailLength=25
 P6_F2 PASS :: status=HEALTHY
@@ -43,9 +53,9 @@ P6-F2 PASS :: :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false read
 P6-F3 PASS :: :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:45414,projects
 P6-F4 PASS :: :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=36664, 02-first-run-ready.png=45414, 02b-first-run-workspace.png=45414, 04-first-run-projects.png=61812]
 P6_L1 PASS :: p
-P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=39689 ink=0.073 via=compose] reply='Blue.'
+P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=36988 ink=0.073 via=compose] reply='Blue.'
 P6_L2 PASS :: tool=bash status=completed pa
-P6_L2 PASS :: tool=bash status=completed partId=prt_0d4f2621c001EHrD6bBzGhMKKc cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0 marker=P6LIVE46035 screenshots[bytes=85919 ink=0.156 via=compose | bytes=118269 ink=0.309 via=compose]
+P6_L2 PASS :: tool=bash status=completed partId=prt_0d535caed001EB0Y3MxHLO1MLd cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0 marker=P6LIVE463229 screenshots[bytes=96776 ink=0.150 via=compose | bytes=119054 ink=0.308 via=compose]
 P6_MODEL_AVAILABLE 1 :: replyChars=5 asksAnswered=0
 P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=4 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBann
-P6-L2 PASS :: :: tool=bash status=completed partId=prt_0d4f2621c001EHrD6bBzGhMKKc cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0
+P6-L2 PASS :: :: tool=bash status=completed partId=prt_0d535caed001EB0Y3MxHLO1MLd cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=0
