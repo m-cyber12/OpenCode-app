@@ -8,6 +8,8 @@ import ai.opencode.android.client.UiError
 import ai.opencode.android.ui.common.AppTopBar
 import ai.opencode.android.ui.common.AvailabilityBanner
 import ai.opencode.android.ui.common.EmptyState
+import ai.opencode.android.ui.common.ProjectTab
+import ai.opencode.android.ui.common.ProjectTabs
 import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
@@ -104,6 +106,9 @@ fun ChatScreen(
     onOpenProjects: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenFiles: () -> Unit = {},
+    /** v7 redesign: the Changes and Terminal tabs under the project header. */
+    onOpenChanges: () -> Unit = {},
+    onOpenTerminal: () -> Unit = {},
     /** v4 item 3: pick one of the starred models without a trip to Settings. */
     onPickModel: (String, String) -> Unit = { _, _ -> },
     onPermissionReply: (String, String) -> Unit,
@@ -160,6 +165,21 @@ fun ChatScreen(
                     modifier = Modifier.semantics { testTag = "open_settings" },
                 ) {
                     Icon(Icons.Filled.Settings, contentDescription = settingsLabel)
+                }
+            },
+        )
+
+        // v7 redesign: the four project surfaces as one tab strip. The Files icon
+        // in the bar above stays for now - the device driver and the UI gates
+        // navigate by it - so the tab is a second door, not a moved one.
+        ProjectTabs(
+            current = ProjectTab.CHAT,
+            onSelect = { tab ->
+                when (tab) {
+                    ProjectTab.FILES -> onOpenFiles()
+                    ProjectTab.CHANGES -> onOpenChanges()
+                    ProjectTab.TERMINAL -> onOpenTerminal()
+                    ProjectTab.CHAT -> Unit
                 }
             },
         )

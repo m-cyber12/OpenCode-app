@@ -4,8 +4,10 @@ import ai.opencode.android.R
 import ai.opencode.android.client.AgentAvailability
 import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.ui.theme.ChatTheme
+import ai.opencode.android.ui.theme.MonoBody
 import ai.opencode.android.ui.theme.MonoSmall
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +38,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
@@ -71,7 +74,28 @@ fun WelcomeScreen(
             .semantics { testTag = "welcome_screen" },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(56.dp))
+        Spacer(Modifier.height(44.dp))
+        // v7 redesign: the brand mark - a mono "</>" on a rounded gold tile,
+        // centred like the reference's setup screen. Decorative (the title below
+        // is the accessible name), so its semantics are cleared.
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = MaterialTheme.shapes.medium,
+                )
+                .clearAndSetSemantics { },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = stringResource(R.string.project_glyph),
+                style = MonoBody,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Spacer(Modifier.height(18.dp))
         Text(
             text = stringResource(R.string.welcome_title),
             style = MaterialTheme.typography.headlineSmall,

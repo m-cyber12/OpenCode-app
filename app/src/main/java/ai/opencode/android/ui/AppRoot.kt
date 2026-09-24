@@ -8,6 +8,7 @@ import ai.opencode.android.client.OpenCodeApi
 import ai.opencode.android.client.OpenCodeRepository
 import ai.opencode.android.client.ProviderSetupClassifier
 import ai.opencode.android.client.UiError
+import ai.opencode.android.client.WorkLog
 import ai.opencode.android.memory.MemoryState
 import ai.opencode.android.projects.Project
 import ai.opencode.android.projects.ProjectStore
@@ -16,11 +17,13 @@ import ai.opencode.android.projects.StorageController
 import ai.opencode.android.runtime.RuntimeManager
 import ai.opencode.android.runtime.RuntimePaths
 import ai.opencode.android.runtime.StorageChoice
+import ai.opencode.android.ui.changes.ChangesScreen
 import ai.opencode.android.ui.chat.ChatScreen
 import ai.opencode.android.ui.chat.SessionPanel
 import ai.opencode.android.ui.files.FileNode
 import ai.opencode.android.ui.files.FilesScreen
 import ai.opencode.android.ui.files.OpenFile
+import ai.opencode.android.ui.common.ProjectTab
 import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.ui.common.ThemeChoice
 import ai.opencode.android.ui.common.toSummary
@@ -29,6 +32,7 @@ import ai.opencode.android.ui.projects.KnownWorkspace
 import ai.opencode.android.ui.projects.ProjectSession
 import ai.opencode.android.ui.projects.ProjectsScreen
 import ai.opencode.android.ui.settings.SettingsScreen
+import ai.opencode.android.ui.terminal.TerminalScreen
 import ai.opencode.android.ui.theme.OpenCodeTheme
 import ai.opencode.android.ui.welcome.WelcomeScreen
 import android.app.Activity
@@ -87,6 +91,11 @@ private const val ROUTE_SESSIONS = "sessions"
 private const val ROUTE_SETTINGS = "settings"
 private const val ROUTE_FILES = "files"
 
+// v7 redesign: two more project surfaces beside the chat - the agent's file
+// changes stage by stage, and the shell commands it ran, as a console.
+private const val ROUTE_CHANGES = "changes"
+private const val ROUTE_TERMINAL = "terminal"
+
 /**
  * Phase 10 continuation v4, item 4: the first-run workspace step. It is a route of
  * its own rather than part of WELCOME because it appears only after the runtime is
@@ -112,7 +121,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
 
     var route by rememberSaveable { mutableStateOf(ROUTE_WELCOME) }
     var themeName by rememberSaveable { mutableStateOf(ThemeChoice.SYSTEM.name) }
-    var dynamicColor by rememberSaveable { mutableStateOf(true) }
+    var dynamicColor by rememberSaveable { mutableStateOf(false) }
     var projectName by rememberSaveable { mutableStateOf(store.activeName()) }
     var projects by remember { mutableStateOf(emptyList<Project>()) }
     // v6: the projects page is a workspace view. The expanded row, the sessions
@@ -573,7 +582,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val turnAvailability = uiState.turnError?.kind ?: AgentAvailability.READY
     val availability = UiError.combine(summary.availability, serverAvailability, turnAvailability)
 
-    BackHandler(enabled = route == ROUTE_SESSIONS || route == ROUTE_SETTINGS || route == ROUTE_PROJECTS || route == ROUTE_FILES) {
+    BackHandler(enabled = route == ROUTE_SESSIONS || route == ROUTE_SETTINGS || route == ROUTE_PROJECTS || route == ROUTE_FILES || route == ROUTE_CHANGES || route == ROUTE_TERMINAL) {
         route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT
     }
 
@@ -879,6 +888,30 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onBack = { route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT },
                 )
 
+                ROUTE_CHANGES -> {
+                    val view = remember(uiState.transcript, uiState.selectedSession) {
+                        uiState.transcript.session(uiState.selectedSession)
+                    }
+                    ChangesScreen(
+                        projectName = projectName.ifEmpty { stringResource(R.string.projects_title) },
+                        turns = remember(view) { WorkLog.changes(view) },
+                        onBack = { route = ROUTE_CHAT },
+                        onSelectTab = { tab -> route = routeForTab(tab) },
+                    )
+                }
+
+                ROUTE_TERMINAL -> {
+                    val view = remember(uiState.transcript, uiState.selectedSession) {
+                        uiState.transcript.session(uiState.selectedSession)
+                    }
+                    TerminalScreen(
+                        projectName = projectName.ifEmpty { stringResource(R.string.projects_title) },
+                        commands = remember(view) { WorkLog.commands(view) },
+                        onBack = { route = ROUTE_CHAT },
+                        onSelectTab = { tab -> route = routeForTab(tab) },
+                    )
+                }
+
                 else -> ChatScreen(
                     state = uiState,
                     runtime = summary,
@@ -901,6 +934,8 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         filesPath = ""
                         route = ROUTE_FILES
                     },
+                    onOpenChanges = { route = ROUTE_CHANGES },
+                    onOpenTerminal = { route = ROUTE_TERMINAL },
                     // v4 item 3: pick a starred model without leaving the chat.
                     onPickModel = { providerId, modelId -> repository.setModel(providerId, modelId) },
                     onPermissionReply = { id, reply -> repository.replyPermission(id, reply) },
@@ -913,6 +948,14 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             }
         }
     }
+}
+
+/** v7: one spelling of "which route is that tab" for every tabbed surface. */
+private fun routeForTab(tab: ProjectTab): String = when (tab) {
+    ProjectTab.CHAT -> ROUTE_CHAT
+    ProjectTab.FILES -> ROUTE_FILES
+    ProjectTab.CHANGES -> ROUTE_CHANGES
+    ProjectTab.TERMINAL -> ROUTE_TERMINAL
 }
 
 /** The picker's mime filter: any file the user can point at. */

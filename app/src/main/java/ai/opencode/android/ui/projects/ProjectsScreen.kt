@@ -11,6 +11,7 @@ import ai.opencode.android.ui.common.relativeTimeLabel
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,6 +58,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
@@ -368,6 +370,39 @@ fun ProjectsScreen(
     }
 }
 
+/**
+ * v7 redesign: the rounded code-glyph tile that leads a project row - the
+ * reference design's one-glance "this is a codebase" mark. Text, not an icon
+ * asset: material-icons-core has no code glyph, and a mono "</>" IS the brand.
+ */
+@Composable
+private fun ProjectGlyph(active: Boolean, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(40.dp)
+            .background(
+                color = if (active) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.primaryContainer
+                },
+                shape = MaterialTheme.shapes.small,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = stringResource(R.string.project_glyph),
+            style = MonoSmall,
+            fontWeight = FontWeight.Bold,
+            color = if (active) {
+                MaterialTheme.colorScheme.onPrimary
+            } else {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            },
+        )
+    }
+}
+
 @Composable
 private fun RenameDialog(
     project: Project,
@@ -475,7 +510,7 @@ private fun ProjectRow(
         modifier = Modifier.fillMaxWidth(),
         color = if (active) chat.userBubble else MaterialTheme.colorScheme.surface,
         shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(1.dp, if (active) chat.attention else chat.toolBorder),
+        border = BorderStroke(1.dp, if (active) MaterialTheme.colorScheme.primary else chat.toolBorder),
     ) {
         Column {
             // Tapping the row expands/collapses the sessions under this project;
@@ -496,6 +531,8 @@ private fun ProjectRow(
                     },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                ProjectGlyph(active = active)
+                Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
                         text = project.name,
