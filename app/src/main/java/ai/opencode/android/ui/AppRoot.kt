@@ -164,6 +164,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     var memory by remember { mutableStateOf(MemoryState()) }
     var importing by remember { mutableStateOf(false) }
     var importError by remember { mutableStateOf("") }
+    // Storage/import outcomes, shown wherever the action happened (projects page
+    // notice, onboarding, Files). Declared BEFORE the pickers: their result
+    // callbacks write it (CI #83's one compile error was this exact forward
+    // reference).
+    var storageMessage by remember { mutableStateOf("") }
     var sessionCounts by remember { mutableStateOf(emptyMap<String, Int>()) }
 
     // SAF pickers: import a document tree, export a project as a zip.
@@ -242,7 +247,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // in system settings shows up here without the app having to be restarted.
     val storageController = remember { StorageController.get(context) }
     var storage by remember { mutableStateOf(storageController.snapshot()) }
-    var storageMessage by remember { mutableStateOf("") }
 
     /**
      * Run one storage change off the main thread, then rebuild every singleton that
