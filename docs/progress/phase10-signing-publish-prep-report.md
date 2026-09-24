@@ -3112,3 +3112,31 @@ Local evidence: `30-static-checks.sh` rc=0 end to end (incl. UI-list purity over
 new dialog section and the aapt2 apostrophe rule over the new strings); harness
 selfcheck PASS. The new unit tests and the full instrumented surface compile and run
 in CI (no JDK in this sandbox). W7 + the B.12.20 driver walk ride the same run.
+
+### B.12.22 CI verdict on the v6.1 batch: green, with one honest slip on the way (2026-09-24)
+
+The keyring commit failed its first CI run on ONE compile error - `AppRoot.kt:191
+Unresolved reference: storageMessage`. The import-notice handler wrote to a state
+variable that was declared 70 lines further down; no JDK exists in this sandbox, so
+the forward reference survived every local check (grep confirms symbols exist, not
+where they are). Fix: the declaration moved above the pickers that write it, with a
+comment naming this failure so it stays moved.
+
+Run 36000296361 (`b12b1b6`, 50 min): **all green**.
+
+* P10-UNIT 344/0 - up 17 from 327: 15 `ProviderKeyringTest` + 2 `isKeyLimitError`
+  classifier tests, all passing on first compile.
+* P10_DRIVER_SELFTEST 135/0 across 16 scenarios - includes the B.12.20 picker walk
+  and tolerates the "Add key" label.
+* UI gates 14/0/0 on debug AND on the release-shaped smoke build (P10_SMOKE_UI
+  14/0/0); U7 interactive count re-baselined automatically.
+* **P10_WS_W7_PICKER_FOLDER_SWITCHES PASS** - the owner's switch bug is now
+  regression-gated on an emulator in every run: picker URI -> resolved folder ->
+  `ok=true`, workspace actually moved.
+* W1-W6, visibility, P9 provider-selection, payload, release invariants: all PASS;
+  board `phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0`.
+
+Still owed, unchanged: the owner's on-device pass with an APK signed FROM THIS RUN -
+the driver will print `P10D_PICKER_WORKSPACE_SWITCH` and walk the new key dialog.
+The automatic limit-switch has unit + classifier coverage but its end-to-end trip
+(a real 429 from a real provider) can only be observed on a device with two keys.
