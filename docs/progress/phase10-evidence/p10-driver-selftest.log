@@ -1,12 +1,12 @@
 === 90-real-device-signed.sh self-test (fake phone, no device needed) ===
-PASS fixtures: 11 screens, exactly the expected set :: missing=[] extra=[]
+PASS fixtures: 12 screens, exactly the expected set :: missing=[] extra=[]
 PASS removed controls: none of 4 is served by any fixture :: served anyway: []
 PASS fixtures: no overlapping clickable nodes
 PASS fixtures: every screen parses as XML with nodes in it
 PASS fixtures: the driver's own reader parses every screen :: rejected: []
 PASS v4 driver stages: every asserted label is producible from a fixture :: not in any fixture: []
 PASS driver needles: every NEEDLE_* group matches some fixture
-PASS gates: 58 tag lookups (39 distinct) resolve to a main-source testTag :: dangling: []
+PASS gates: 63 tag lookups (43 distinct) resolve to a main-source testTag :: dangling: []
 
 SELFCHECK PASS (fixtures, driver needles and gate tags agree)
 
@@ -31,7 +31,7 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   gate FILES_APP_AND_SHELL PASS/SKIP
   ok   no FAIL line anywhere in a clean run
   ok   DIAGNOSIS.txt stays empty on a clean run
-  ok   screenshots captured at every step (got 16)
+  ok   screenshots captured at every step (got 17)
   ok   screenshot validation ran and saw real screens
   ok   project was created through taps+typing
   ok   live turn with a tool card
@@ -39,7 +39,7 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   model marker written for the x86_64 carry-forward
   ok   a POSIX host says so, instead of leaving the path question open
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-192913/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-062322/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
   ok   v4: the storage screen no longer shows copy-path, export or the folder choosers
@@ -48,11 +48,13 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   v4: activating a catalog provider asks for the API key only
   ok   v4: a starred model is switched from the chat header, without a trip to Settings
   ok   v4: a returning install reports the workspace step as SKIP (it already ran), not FAIL
+  ok   v6: the projects page leads with the workspace it lists (path + working Switch control)
+  ok   v6: a project created from the page is expanded with its sessions, and the chat opens from the row
 
 --- scenario: the v4 first-run workspace step ---
   ok   the v4 first run passes end to end (rc=0)
   ok   the workspace step was read off the screen: a folder, one picker, one action, none of the removed controls
-  ok   one tap created project 1 and opened its chat, confirmed from outside the app
+  ok   one tap created project 1, the app landed on the projects page (workspace on top, row expanded), and its New-session control opened the chat - confirmed from outside the app
   ok   the project card still creates a second project after the step
   ok   and it does NOT report the step as skipped in the flow that shows it
   ok   no FAIL line anywhere in the first-run scenario
@@ -172,5 +174,5 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   the screenshot validator ran on copies in that same directory
   ok   and the whole run reached the live turn
 
-=== driver self-test: pass=130 fail=0 ===
+=== driver self-test: pass=132 fail=0 ===
 SELFTEST PASS (driver runs clean, and fails for the RIGHT reasons)
