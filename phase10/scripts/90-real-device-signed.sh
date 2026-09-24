@@ -381,6 +381,11 @@ dump_failure_reason() {
 
 ui_dump() { # $1 = tag -> $OUT/ui/ui-<tag>.xml ; returns non-zero when unusable
   local tag="$1" attempt mode src out rc
+  # The tag becomes a FILENAME. Taps are named after their needle, and a needle can
+  # be a path ("tap-/storage/emulated/0/Documents/OpenCode" - the v6.1 restore tap):
+  # slashes there made every write fail, which the run then reported as "the screen
+  # could not be seen" about a screen it was reading fine. Sanitize, don't trust.
+  tag=$(printf '%s' "$tag" | tr '/ :*?"<>|\\' '__________' | cut -c1-120)
   # Three attempts, and the two things that make `uiautomator dump` fail on a real
   # phone are both worked around rather than reported as "the screen is not there":
   #
@@ -499,6 +504,23 @@ ui() { # shellcheck disable=SC2086
   printf '%s' "$out"
   return $rc; }
 ui_has() { ui has "$1"; }
+
+first_screen_path() { # newest dump -> the workspace path the page header shows
+  # Prefers the node tagged projects_workspace_path; falls back to the first
+  # absolute path on screen for phones whose dumps carry no resource ids.
+  $PY - "$(map_dump "$LAST_DUMP")" <<'PY'
+import re, sys
+xml = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+for raw in re.findall(r'<node\b[^>]*>', xml):
+    if 'projects_workspace_path' in raw:
+        m = re.search(r'text="(/[^"<>]{3,})"', raw)
+        if m:
+            print(m.group(1)); raise SystemExit
+paths = [c for c in re.findall(r'(?:text|content-desc)="(/[^"<>]{3,})"', xml)
+         if not c.startswith(("/data/data/", "/data/user/0/"))]
+print(paths[0] if paths else "")
+PY
+}
 # Any of these on screen: the content fallback for a check that decides what the
 # driver does next (a tag-only check would send a working app down the wrong path
 # on a device whose dumps carry no resource ids - the v3 first-run failure).
@@ -1289,16 +1311,85 @@ if [ "$FIRST_RUN_OK" = 1 ]; then
       # Switch control (which opens the known-roots dialog), and a small Import.
       WS_HEADER=0; SW_DIALOG=0
       ui_has_any "projects_workspace_path" && WS_HEADER=1
+      WS_BEFORE=$(first_screen_path)
       if tap_any "projects_switch_workspace" "Switch" >/dev/null 2>&1; then
         if wait_for "workspace-switch-dialog" "Where your projects live" "$(tmo 20)" >/dev/null 2>&1; then
           SW_DIALOG=1
-          tap_any "Cancel" >/dev/null 2>&1 || adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
-          sleep 1
         else
           log "note: the Switch control on the projects page did not open the known-roots dialog"
         fi
       fi
       log "projects page header: workspace path shown=$WS_HEADER, Switch control opens the known-roots dialog=$SW_DIALOG"
+
+      # ---- v6.1: Browse -> the system picker -> confirm, walked end to end -----
+      # The owner's fourth device pass (2026-09-24) found this exact flow doing
+      # nothing: useChosenFolder handed the CACHED old root back to switchTo, which
+      # wrote it over the folder the user had just picked. The fix is in
+      # StorageController (pinned by the instrumented W7 gate); this stage makes the
+      # same taps a finger makes on the signed build, and PASSES only when the page
+      # header reads back a DIFFERENT path after the pick. The picker is another
+      # app's UI with OEM wording, so a picker this driver cannot read is a SKIP
+      # with instructions - never a silent pass.
+      if [ "$SW_DIALOG" = 1 ] && [ -n "$WS_BEFORE" ]; then
+        adb shell "mkdir -p /sdcard/opencode-picked" >/dev/null 2>&1 || true
+        if tap_any "projects_switch_browse" "Browse for a folder" >/dev/null 2>&1 && \
+           wait_for "system-picker" "Use this folder|Select this folder" "$(tmo 60)"; then
+          shot "system-picker" || true
+          # Best effort: enter the folder made for this run when it is on screen;
+          # confirming whatever folder the picker opened on still proves the entry
+          # point (the check is that the path CHANGES, not which folder it becomes).
+          if ui_has "opencode-picked"; then
+            tap_any "opencode-picked" >/dev/null 2>&1 || true
+            sleep 1
+          fi
+          if tap_any "Use this folder" "Select this folder" >/dev/null 2>&1; then
+            sleep 1
+            ui_dump "picker-consent" >/dev/null 2>&1
+            # Stock Android asks once more ("Allow ... to access files in ...?").
+            if ui_has_any "ALLOW" "Allow"; then tap_any "Allow" >/dev/null 2>&1 || true; fi
+            if wait_for "projects-after-browse" "$NEEDLE_PROJECTS" "$(tmo 120)"; then
+              WS_AFTER=$(first_screen_path)
+              shot "projects-after-browse" || true
+              if [ -n "$WS_AFTER" ] && [ "$WS_AFTER" != "$WS_BEFORE" ]; then
+                # Leave the phone as found: back through the known-roots dialog to
+                # the root the walk started from, then remove the walk's folder.
+                RESTORED=0
+                if tap_any "projects_switch_workspace" "Switch" >/dev/null 2>&1 && \
+                   wait_for "switch-dialog-restore" "Where your projects live" "$(tmo 20)" >/dev/null 2>&1 && \
+                   tap_any "$WS_BEFORE" "projects_switch_root" >/dev/null 2>&1 && \
+                   wait_for "projects-after-restore" "$NEEDLE_PROJECTS" "$(tmo 120)" >/dev/null 2>&1 && \
+                   [ "$(first_screen_path)" = "$WS_BEFORE" ]; then
+                  RESTORED=1
+                  adb shell "rm -rf /sdcard/opencode-picked" >/dev/null 2>&1 || true
+                fi
+                rd PICKER_WORKSPACE_SWITCH 0 "Browse -> system picker -> confirm changed the workspace: '$WS_BEFORE' -> '$WS_AFTER' (the page header, read back after the pick); switched back through the known-roots dialog: restored=$RESTORED"
+                [ "$RESTORED" = 1 ] || log "note: the walk could not switch back to '$WS_BEFORE'; the run continues in '$WS_AFTER'"
+              elif ui_has "That folder cannot be used"; then
+                rd PICKER_WORKSPACE_SWITCH 7 "the picker confirmed a folder the app refuses, and the refusal is ON the page ('That folder cannot be used...'): the entry point ran and answered; repeat with a folder on internal storage to see the switch itself"
+              else
+                rd PICKER_WORKSPACE_SWITCH 1 "confirmed a folder in the system picker but the page header still reads '${WS_AFTER:-<none>}' - the pick was swallowed (the owner's 2026-09-24 bug; see ui/ui-wait-projects-after-browse.xml)"
+              fi
+            else
+              rd PICKER_WORKSPACE_SWITCH 1 "confirmed a folder in the system picker but the projects page never came back (see DIAGNOSIS.txt)"
+            fi
+          else
+            adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
+            sleep 1
+            rd PICKER_WORKSPACE_SWITCH 7 "the system picker opened but no confirm control matched this OEM's wording (see ui/, screenshot system-picker): confirm 'Use this folder' by hand this pass"
+          fi
+        else
+          rd PICKER_WORKSPACE_SWITCH 7 "the Browse entry did not open a readable system picker; verify Browse -> Use this folder by hand this pass"
+        fi
+      else
+        rd PICKER_WORKSPACE_SWITCH 7 "no known-roots dialog (or no workspace path in the header) to browse from: header=$WS_HEADER dialog=$SW_DIALOG"
+      fi
+      # Whatever branch ran, end where the walk began: the projects page with no
+      # dialog in front (a leftover dialog would swallow the create-project taps).
+      ui_dump "after-browse-walk" >/dev/null 2>&1
+      if ui_has "Where your projects live"; then
+        tap_any "Cancel" >/dev/null 2>&1 || adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
+        sleep 1
+      fi
       PROJECT_NAME="p10d-$(date +%H%M%S)"
       if tap_any "project_name_input" "Project name"; then
         type_text "$PROJECT_NAME"

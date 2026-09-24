@@ -270,8 +270,50 @@ def build(root):
         text_node("You can change the folder later in Settings.", "[40,820][1040,880]"),
     ])
 
+    # ---- the system folder picker, and the page after its pick (v6.1) ----------
+    # The owner's 2026-09-24 device pass found Browse -> "Use this folder" doing
+    # nothing, so the driver now walks that flow; the fake phone serves a minimal
+    # documentsui tree (another app's window: different package, no Compose tags)
+    # and the projects page as it must read AFTER the picked folder became the
+    # root - a DIFFERENT path in the header, which is the walk's whole assertion.
+    screens_picker = screen("picker", [
+        text_node("Internal storage", "[40,120][600,200]", pkg="com.android.documentsui"),
+        node("", text="opencode-picked", bounds="[40,300][1040,400]",
+             cls="android.widget.TextView", pkg="com.android.documentsui"),
+        node("", text="Use this folder", bounds="[40,1700][1040,1800]",
+             pkg="com.android.documentsui"),
+    ])
+
+    screens_projects_picked = screen("projects-picked", [
+        text_node("Projects", "[40,200][1040,280]"),
+        text_node("Workspace", "[40,300][1040,360]"),
+        node("projects_workspace_path", text="/storage/emulated/0/opencode-picked",
+             bounds="[40,380][1040,440]", clickable="false"),
+        node("projects_switch_workspace", text="Switch",
+             desc="See workspaces and switch to another one", bounds="[40,460][620,540]"),
+        node("project_name_input", text="", desc="Project name", bounds="[40,580][1040,680]",
+             cls="android.widget.EditText"),
+        node("project_create", text="Create New Project", bounds="[40,700][1040,800]"),
+    ])
+
+    # Its switch dialog: the picked root is current (not tappable), the previous
+    # root is the row the driver taps to leave the phone as it found it.
+    screens_projects_switch_picked = screen("projects-switch-picked", [
+        text_node("Where your projects live", "[40,400][1040,480]"),
+        node("projects_switch_current", text="/storage/emulated/0/opencode-picked",
+             desc="/storage/emulated/0/opencode-picked", bounds="[40,600][1040,680]",
+             clickable="false"),
+        node("projects_switch_root", text=SHARED_WORKSPACE.rsplit("/", 1)[0],
+             desc=SHARED_WORKSPACE.rsplit("/", 1)[0], bounds="[40,700][1040,780]"),
+        node("projects_switch_browse", text="Browse for a folder...", bounds="[40,800][1040,880]"),
+        node("", text="Cancel", bounds="[700,960][1040,1060]"),
+    ])
+
     for name, body in (("welcome", screens_welcome), ("projects", screens_projects),
                        ("projects-switch", screens_projects_switch),
+                       ("picker", screens_picker),
+                       ("projects-picked", screens_projects_picked),
+                       ("projects-switch-picked", screens_projects_switch_picked),
                        ("chat", screens_chat), ("answer", screens_answer),
                        ("files", screens_files), ("settings", screens_settings),
                        ("settings-nomatch", screens_settings_nomatch),
@@ -293,7 +335,8 @@ def build(root):
     os.makedirs(shots_dir, exist_ok=True)
     write_screen_png(os.path.join(shots_dir, "blank.png"), blank=True)
     for name in ("screen", "answer", "files", "projects", "welcome", "settings",
-                 "settings-nomatch", "settings-openr", "settings-key", "chat-menu", "workspace"):
+                 "settings-nomatch", "settings-openr", "settings-key", "chat-menu", "workspace",
+                 "picker", "projects-picked", "projects-switch-picked"):
         write_screen_png(os.path.join(shots_dir, name + ".png"))
     return screens, shots_dir
 

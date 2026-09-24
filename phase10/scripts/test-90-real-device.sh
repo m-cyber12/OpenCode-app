@@ -200,7 +200,7 @@ MISSING=$(grep -aoE '^P10D_[A-Z_]+ (PASS|SKIP)' "$OUT/SUMMARY.txt" | awk '{print
 check "$([ "${MISSING:-0}" -ge 15 ] && echo 0 || echo 1)" "at least 15 distinct gates reported (got ${MISSING:-0})"
 for G in DEVICE_AWAKE ABI ANDROID_VERSION INSTALL VERSION_ON_DEVICE FIRST_RUN FIRST_RUN_PROJECT \
          FILES_SCREEN MEMORY STORAGE PACKAGING_SWEEP NO_CRASH SCREENSHOTS LIVE_TURN \
-         FILES_APP_AND_SHELL; do
+         FILES_APP_AND_SHELL PICKER_WORKSPACE_SWITCH; do
   if grep -qaE "^P10D_$G (PASS|SKIP)" "$OUT/SUMMARY.txt"; then ok "gate $G PASS/SKIP"; else bad "gate $G missing or FAIL: $(grep -a "^P10D_$G" "$OUT/SUMMARY.txt" | head -1)"; fi
 done
 check "$(grep -qacE '^P10D_[A-Z_]+ FAIL' "$OUT/SUMMARY.txt" && echo 1 || echo 0)" "no FAIL line anywhere in a clean run"
@@ -209,6 +209,11 @@ NSHOTS=$(ls -1 "$OUT/screenshots"/*.png 2>/dev/null | wc -l | tr -d ' ')
 check "$([ "${NSHOTS:-0}" -ge 8 ] && echo 0 || echo 1)" "screenshots captured at every step (got ${NSHOTS:-0})"
 check "$(grep -q 'screen=yes' "$OUT/screenshots.log" && echo 0 || echo 1)" "screenshot validation ran and saw real screens"
 check "$(grep -qa '^P10D_FIRST_RUN_PROJECT PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "project was created through taps+typing"
+# v6.1: the walk must actually PASS here - the fake phone serves the picker and the
+# post-pick page, so a SKIP would mean the driver cannot see its own fixtures, and a
+# FAIL would mean the walk's read-back logic is wrong.
+check "$(grep -qa '^P10D_PICKER_WORKSPACE_SWITCH PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "Browse -> system picker -> confirm changed the workspace and was switched back"
+check "$(grep -qa "restored=1" "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "the picker walk left the fake phone on the root it started from"
 check "$(grep -qa '^P10D_LIVE_TURN PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "live turn with a tool card"
 check "$(grep -qa '^P10D_FILES_APP_AND_SHELL PASS' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" "in-app browser path == shell-visible path"
 check "$(grep -qa 'P6_MODEL_AVAILABLE 1' "$OUT/p10d-model-lines.txt" && echo 0 || echo 1)" "model marker written for the x86_64 carry-forward"

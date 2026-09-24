@@ -175,6 +175,24 @@ def transition(node_id):
         put("screen", "projects-switch")
     elif here == "projects-switch" and node_id in ("Cancel",):
         put("screen", "projects")
+    # ---- v6.1: Browse -> the system picker -> confirm (the 2026-09-24 bug's path) --
+    elif here == "projects-switch" and node_id in ("projects_switch_browse",
+                                                   "Browse for a folder..."):
+        put("screen", "picker")
+    elif here == "picker" and node_id in ("Use this folder",):
+        # Confirming the pick returns to the app with the picked folder LIVE: the
+        # header reads a different path. (The pre-fix app came back with the old
+        # path - exactly what the driver's walk exists to catch.)
+        put("screen", "projects-picked")
+    elif here == "projects-picked" and node_id in ("projects_switch_workspace", "Switch",
+                                                   "See workspaces and switch to another one"):
+        put("screen", "projects-switch-picked")
+    elif here == "projects-switch-picked" and node_id in (
+            "projects_switch_root", "/storage/emulated/0/Documents/OpenCode"):
+        # The restore half of the driver's walk: back to the previous root.
+        put("screen", "projects")
+    elif here == "projects-switch-picked" and node_id in ("Cancel",):
+        put("screen", "projects-picked")
     elif here in ("chat", "answer", "chat-menu") and node_id in ("open_files", "Project files"):
         put("screen", "files")
     elif here in ("chat", "answer") and node_id in ("open_settings", "Settings and diagnostics"):
@@ -291,6 +309,11 @@ def shell(command):
         if key in ("KEYCODE_BACK", "4"):
             if screen() == "projects-switch":
                 put("screen", "projects")
+            elif screen() == "picker":
+                # Backing out of the system picker lands on the app again.
+                put("screen", "projects")
+            elif screen() == "projects-switch-picked":
+                put("screen", "projects-picked")
             elif screen() in ("files", "settings", "settings-nomatch", "settings-openr"):
                 put("screen", "chat")
             elif screen() == "settings-key":

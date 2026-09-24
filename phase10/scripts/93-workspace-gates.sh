@@ -103,7 +103,7 @@ log "appops MANAGE_EXTERNAL_STORAGE: ${GRANT_LINE:-<no output>}"
 SHARED_PROBE=$(adb shell "ls -ld /storage/emulated/0/Documents/OpenCode 2>&1" | tr -d '\r' | head -1)
 log "shared-storage default: ${SHARED_PROBE:-<absent>}"
 
-log "=== am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest (W1-W6) ==="
+log "=== am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest (W1-W7) ==="
 ISO_RC=0
 timeout -k 30 3600 adb shell am instrument -w \
   -e class ai.opencode.android.projects.WorkspaceIsolationGatesTest "$RUNNER" \
@@ -134,6 +134,11 @@ emit "W5_SIBLING_PROJECT_CONFINEMENT"
 # v4 item 1: switching the workspace hides the old projects and deletes nothing,
 # and the Settings screen's own "Move them here" brings them back.
 emit "W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING"
+# Owner's fourth device pass (2026-09-24): the system picker's entry point
+# (useChosenFolder) used to clobber the user's choice with the cached old root.
+# W6 drives switchTo(dir) directly, so it could not see this; W7 drives the
+# picker's own function with a real primary-volume tree URI.
+emit "W7_PICKER_FOLDER_SWITCHES"
 
 # ---- the external vantage point ---------------------------------------------
 W4_LINE=$(grep -aE '^P7_W4_WORKSPACE_VISIBLE ' "$VERDICTS" | tail -1)
@@ -173,6 +178,10 @@ done
 # above on purpose - that is what made it a different workspace.
 adb shell "rm -rf /storage/emulated/0/Android/data/$PKG/files/p10w6-workspace" >/dev/null 2>&1 || true
 adb shell "rm -rf /sdcard/Android/data/$PKG/files/p10w6-workspace" >/dev/null 2>&1 || true
+# W7's picked folder (under the app's own external files dir); the gate deletes
+# it itself, this covers the crash case.
+adb shell "rm -rf /storage/emulated/0/Android/data/$PKG/files/p10w7-picked" >/dev/null 2>&1 || true
+adb shell "rm -rf /sdcard/Android/data/$PKG/files/p10w7-picked" >/dev/null 2>&1 || true
 
 # The W4 project directory is a gate fixture, not a user project: remove it so the
 # next run starts clean (only when the visibility check has already read it).

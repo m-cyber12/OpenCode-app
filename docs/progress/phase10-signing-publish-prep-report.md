@@ -3006,3 +3006,58 @@ For the owner's next device pass: `git pull`, re-sign nothing (CI does not sign)
 the combined script as before. R4a/R4b now expect the projects-page landing and will
 name the header and expanded-row states they saw; a phone that already has projects
 takes the returning path (B.12.13) and still exercises the whole v4 chain from chat.
+
+### B.12.20 The owner's fourth device pass: a real bug in the picker path, and why every gate missed it (2026-09-24)
+
+The owner ran the new build by hand (plus a model-driven coding-harness test, which
+passed) and reported three things: the app is otherwise fine; **picking a folder via
+Browse -> the system's "Use this folder" does not change the workspace**; and two
+design questions (multiple keys per provider, import-copies-instead-of-using-in-place)
+that are being put back to the owner rather than decided here.
+
+**The bug is real and the root cause is a stale cache.** `StorageController.useChosenFolder`
+resolved the picked tree URI to a real path, saved it with `setChosenRoot`, and then
+called `switchTo(RuntimePaths.get(context).workspaces)`. `RuntimePaths.get` returns a
+CACHED singleton - still resolving the OLD root - so `switchTo` received the old root
+and its own `setChosenRoot(dir)` wrote it back over the folder the user had just
+picked. Net effect: pick, confirm, nothing changes. `useDefaultLocation` had the
+mirror-image bug: clear the choice, then `switchTo(cached old root)` re-pinned the
+exact root the user asked to leave.
+
+**Why W6 didn't catch it:** W6's own comment claimed it drives "the same function the
+system folder picker calls" - but it drives `switchTo(dir)` with the target already
+in hand. The picker's entry point is one function earlier, and that is where the bug
+lived. A second gap compounded it: the projects page never received `storageMessage`,
+so when a pick is refused (SD card, cloud provider) the page said nothing - a silent
+refusal reads exactly like "the app ignored my choice".
+
+Fixes, each with its own evidence path:
+
+1. `useChosenFolder` now calls `switchTo(dir)` with the resolved directory
+   (`switchTo` pins the root itself); `useDefaultLocation` clears the override,
+   drops the caches, and lets the layout re-resolve WITHOUT re-pinning - recording
+   the departed root for History in both cases.
+2. AppRoot passes `notice = storageMessage` to the projects page - the
+   `projects_notice` slot existed and was never fed; refusals are now visible where
+   the pick happened.
+3. **W7 (instrumented, CI)**: `w7_pickerChosenFolderActuallyBecomesTheWorkspace`
+   drives `useChosenFolder` with a real `primary:`-style tree URI built by
+   `DocumentsContract` - the exact shape the picker returns - and asserts the live
+   root BECOMES the picked folder. Wired into `93-workspace-gates.sh` (emit + crash
+   cleanup). Pre-fix this gate fails; post-fix it passes.
+4. **Driver walk (real device)**: R4b now walks Browse -> system picker -> confirm on
+   the signed build and PASSES only when the page header reads back a different path,
+   then switches back through the known-roots dialog and removes its folder. An OEM
+   picker the driver cannot read is a SKIP with instructions - never a silent pass.
+   The fake phone serves the picker (`picker`, `projects-picked`,
+   `projects-switch-picked` fixtures + transitions), and the self-test now REQUIRES
+   the walk to PASS end-to-end (including restore) in the happy scenario.
+
+The walk found one harness bug of its own on the first local run: `ui_dump` uses the
+tap needle as a FILENAME, and the restore tap's needle is a path - slashes made every
+dump write fail, which the run then reported as "the screen could not be seen" (9 red
+checks across three scenarios, all one cause). `ui_dump` now sanitizes the tag.
+Local evidence after the fix: the scenario subset runnable in this sandbox (happy,
+onboarding, locked, blank, tags-gone) is 63/63 green including the two new checks;
+the full 16-scenario self-test, unit tests and the instrumented W7 run in CI (no JDK
+in this sandbox - compilation remains CI's job, as before).

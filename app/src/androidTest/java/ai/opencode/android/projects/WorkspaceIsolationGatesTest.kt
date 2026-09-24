@@ -10,6 +10,8 @@ import ai.opencode.android.runtime.StorageChoice
 import ai.opencode.android.runtime.Secrets
 import ai.opencode.android.security.SecretStore
 import android.content.Context
+import android.os.Environment
+import android.provider.DocumentsContract
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -451,6 +453,64 @@ class WorkspaceIsolationGatesTest {
             runCatching { ProjectMigration.moveAll(temp, live, allowTargetNonEmpty = true) }
             runCatching { created?.let { storeNow().delete(it.name) } }
             runCatching { temp.deleteRecursively() }
+        }
+    }
+
+    // ---- W7: the system picker's own entry point actually switches -----------
+
+    /**
+     * Regression gate for the owner's fourth device pass (2026-09-24): pick a
+     * folder, confirm the system's "Use this folder" - and the workspace did not
+     * change. W6 proves [StorageController.switchTo] works when handed the target
+     * directory; the picker goes through [StorageController.useChosenFolder],
+     * which used to re-read the CACHED RuntimePaths root and hand THAT to
+     * switchTo - writing the old root back over the choice the user just made.
+     * A gap a gate that "drives the same function the picker calls" did not
+     * cover, because the picker's entry point is one function earlier.
+     *
+     * This gate drives useChosenFolder with a real primary-volume tree URI (the
+     * exact shape the external-storage provider returns) pointing at a folder the
+     * test can write without any grant, and asserts the live root BECOMES that
+     * folder - the one assertion the bug falsified on the owner's phone.
+     */
+    @Test
+    fun w7_pickerChosenFolderActuallyBecomesTheWorkspace() {
+        val controller = StorageController.get(context)
+        val live = RuntimePaths.get(context).workspaces
+        val wasChosen = StorageChoice.chosenRoot(context) != null
+        val primary = Environment.getExternalStorageDirectory()
+        val base = context.getExternalFilesDir(null)
+        val prefix = primary.absolutePath + "/"
+        if (base == null || !base.absolutePath.startsWith(prefix)) {
+            skip("W7_PICKER_FOLDER_SWITCHES", "app-external dir not under the primary volume; cannot fabricate a primary: tree URI")
+            return
+        }
+        val rel = base.absolutePath.removePrefix(prefix)
+        val picked = File(base, "p10w7-picked")
+        // The URI the system picker hands back for this folder on the primary
+        // volume - built with the platform's own DocumentsContract, not by string
+        // concatenation, so the escaping matches what onActivityResult delivers.
+        val treeUri = DocumentsContract.buildTreeDocumentUri(
+            "com.android.externalstorage.documents",
+            "primary:$rel/p10w7-picked",
+        )
+        try {
+            picked.mkdirs()
+            val result = controller.useChosenFolder(treeUri)
+            val nowRoot = RuntimePaths.get(context).workspaces
+            val pinned = StorageChoice.chosenRoot(context)?.absolutePath
+            gate(
+                "W7_PICKER_FOLDER_SWITCHES",
+                result.ok && nowRoot.absolutePath == picked.absolutePath && pinned == picked.absolutePath,
+                "uri=$treeUri resolved=${StorageChoice.realPathOf(treeUri)?.absolutePath} ok=${result.ok} " +
+                    "from=${live.absolutePath} to=${result.to} rootNow=${nowRoot.absolutePath} pinned=$pinned",
+            )
+        } finally {
+            // Leave the device as found: original mode and root active, the picked
+            // folder gone (History filters to folders that still exist, so no
+            // phantom entry remains either).
+            runCatching { if (wasChosen) controller.switchTo(live) else controller.useDefaultLocation() }
+            runCatching { picked.deleteRecursively() }
         }
     }
 

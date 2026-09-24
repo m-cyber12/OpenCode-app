@@ -125,14 +125,37 @@ class StorageController(private val context: Context) {
         if (!StorageChoice.isUsableRoot(dir)) {
             return ChangeResult(ok = false, messageKey = MessageKey.FOLDER_UNUSABLE, detail = "cannot write here")
         }
-        StorageChoice.setChosenRoot(context, dir)
-        return switchTo(RuntimePaths.get(context).workspaces)
+        // THE BUG THE OWNER'S FOURTH DEVICE PASS FOUND (2026-09-24): this used to
+        // read the target back out of RuntimePaths.get() - a CACHED singleton that
+        // still resolved the old root - and hand THAT to switchTo, which wrote the
+        // old root back over the user's choice. Pick a folder, tap the system's
+        // "Use this folder", nothing changes. switchTo pins the root itself, so
+        // the resolved directory goes in directly.
+        return switchTo(dir)
     }
 
     /** Forget the chosen folder: back to the default (shared storage when allowed). */
     fun useDefaultLocation(): ChangeResult {
+        // Same stale-cache trap as useChosenFolder had: clearing the override and
+        // then calling switchTo(cached workspaces) would re-pin the exact root the
+        // user just asked to leave. Clear, drop the caches, and let the layout
+        // re-resolve to its natural default - WITHOUT pinning it as a choice.
+        val oldRoot = RuntimePaths.get(context).workspaces
         StorageChoice.clearChosenRoot(context)
-        return switchTo(RuntimePaths.get(context).workspaces)
+        RuntimePaths.refresh()
+        ProjectStore.refresh()
+        val p = RuntimePaths.get(context)
+        if (oldRoot.absolutePath != p.workspaces.absolutePath) {
+            StorageChoice.recordRoot(context, oldRoot)
+        }
+        runCatching { p.ensureDirs() }
+        return ChangeResult(
+            ok = true,
+            messageKey = MessageKey.NOTHING_TO_MOVE,
+            moved = 0,
+            from = oldRoot.absolutePath,
+            to = p.workspaces.absolutePath,
+        )
     }
 
     /**

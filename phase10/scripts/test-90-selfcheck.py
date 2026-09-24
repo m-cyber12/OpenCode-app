@@ -46,7 +46,7 @@ STRING_FILES = os.path.join(ROOT, "app", "src", "main", "res", "values", "string
 EXPECTED_SCREENS = [
     "welcome", "projects", "chat", "answer", "files", "settings",
     "settings-nomatch", "settings-openr", "settings-key", "chat-menu", "workspace",
-    "projects-switch",
+    "projects-switch", "picker", "projects-picked", "projects-switch-picked",
 ]
 
 failures = []

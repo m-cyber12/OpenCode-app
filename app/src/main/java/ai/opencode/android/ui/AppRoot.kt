@@ -689,6 +689,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     importing = importing,
                     importError = importError,
                     sessionCounts = sessionCounts,
+                    // A refused folder pick (SD card, cloud provider, unwritable) must
+                    // be visible on the page that asked - the owner's fourth device
+                    // pass read the silence as "the app ignored my choice".
+                    notice = storageMessage,
                     // With no project open yet there is nothing to go back to except
                     // the welcome screen (where the runtime status lives).
                     onBack = { route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT },
