@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Compose drives the real UI; this base theme only avoids a system-bar flash. -->
-    <style name="Theme.OpenCodeApp" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Compose drives the real UI; this base theme only avoids a system-bar flash.
+         Dark parent: the app launches into its dark gold look, so the pre-Compose
+         frame must not flash white. -->
+    <style name="Theme.OpenCodeApp" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#120F0A</item>
+    </style>
 </resources>

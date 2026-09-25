@@ -27,6 +27,11 @@ internal val InkOnSurfaceMuted = Color(0xFFB3A98F)
 internal val InkOutline = Color(0xFF51462D)
 internal val InkOutlineSoft = Color(0xFF2F2822)
 
+// Glass edge: the thin top-light line a floating dark pane catches. Used for
+// card/composer borders in the dark theme so depth comes from light, not from
+// drawn outlines.
+internal val InkHairline = Color(0x1FFFFFFF)
+
 internal val AccentGold = Color(0xFFF0C24F)
 internal val AccentGoldDeep = Color(0xFFC79A2A)
 internal val AccentOnGold = Color(0xFF221803)

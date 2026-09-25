@@ -5,6 +5,7 @@ import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.CodePalette
 import androidx.compose.foundation.BorderStroke
 import ai.opencode.android.ui.theme.MonoBody
+import ai.opencode.android.ui.theme.MonoFamily
 import ai.opencode.android.ui.theme.MonoSmall
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -308,7 +309,7 @@ private fun annotateSpans(
                 withStyle(
                     SpanStyle(
                         color = codeColor,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = MonoFamily,
                         fontSize = 14.sp,
                         background = codeBackground,
                     ),

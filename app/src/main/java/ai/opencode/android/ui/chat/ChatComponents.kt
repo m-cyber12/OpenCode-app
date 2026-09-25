@@ -25,7 +25,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -77,6 +79,7 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * The pieces a conversation is made of: turns, tool calls, blocking asks.
@@ -143,6 +146,11 @@ fun MessageRow(
     streaming: Boolean = false,
     onRetry: (() -> Unit)? = null,
     onUndo: (() -> Unit)? = null,
+    showHeader: Boolean = true,
+    showFooter: Boolean = true,
+    groupTokensIn: Long = -1L,
+    groupTokensOut: Long = -1L,
+    groupCost: Double = -1.0,
 ) {
     val chat = ChatTheme.chat
     val tag = "${TAG_MESSAGE}_${message.id}"
@@ -158,6 +166,7 @@ fun MessageRow(
                 contentColor = chat.onUserBubble,
                 shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp),
                 border = BorderStroke(1.dp, chat.toolBorder),
+                shadowElevation = 4.dp,
                 modifier = Modifier.widthIn(max = 340.dp),
             ) {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 11.dp)) {
@@ -183,45 +192,54 @@ fun MessageRow(
     }
 
     Column(modifier = modifier.fillMaxWidth().semantics { testTag = tag }) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // v8: the agent's turns lead with the brand glyph tile (the
-            // reference's avatar), not an anonymous dot.
-            Box(
-                modifier = Modifier
-                    .size(26.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = stringResource(R.string.project_glyph),
-                    style = MonoSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.chat_role_agent),
-                style = MaterialTheme.typography.labelMedium,
-                color = chat.muted,
-            )
-            val model = modelLabel(message)
-            if (model.isNotEmpty()) {
+        // v8 beauty pass: one quiet line above the turn - a small glyph tile and
+        // the model's own name (upstream's provider/model verbatim; the word
+        // "Agent" only when the server reported no model). No pill, no second
+        // label: the metadata must never compete with the response.
+        if (showHeader) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(6.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(R.string.project_glyph),
+                        style = MonoSmall.copy(fontSize = 9.sp),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
                 Spacer(Modifier.width(8.dp))
-                StatusPill(text = model, color = chat.muted)
-            }
-            Spacer(Modifier.weight(1f))
-            if (streaming) {
-                StreamingDots()
-            } else if (message.completedMs > 0L) {
                 Text(
-                    text = relativeTimeLabel(message.completedMs, now),
+                    text = modelLabel(message).ifEmpty { stringResource(R.string.chat_role_agent) },
                     style = MaterialTheme.typography.labelSmall,
                     color = chat.muted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
                 )
+                Spacer(Modifier.weight(1f))
+                if (streaming) {
+                    StreamingDots()
+                } else if (message.completedMs > 0L) {
+                    Text(
+                        text = relativeTimeLabel(message.completedMs, now),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = chat.muted,
+                    )
+                }
             }
+            Spacer(Modifier.height(6.dp))
+        } else if (streaming) {
+            // A grouped continuation still has to show that it is streaming.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Spacer(Modifier.weight(1f))
+                StreamingDots()
+            }
+            Spacer(Modifier.height(6.dp))
         }
-        Spacer(Modifier.height(6.dp))
 
         for (part in message.parts) {
             PartRow(part = part, streaming = streaming)
@@ -238,9 +256,21 @@ fun MessageRow(
             Spacer(Modifier.height(6.dp))
         }
 
-        val footer = messageFooter(message)
-        if (footer.isNotEmpty()) {
-            Text(text = footer, style = MaterialTheme.typography.labelSmall, color = chat.muted)
+        // One tiny muted line under the whole group - the turn's real totals -
+        // instead of a metadata block after every message.
+        if (showFooter) {
+            val footer = if (groupTokensIn >= 0L) {
+                messageFooterText(groupTokensIn, groupTokensOut, groupCost)
+            } else {
+                messageFooterText(message.tokensInput, message.tokensOutput, message.cost)
+            }
+            if (footer.isNotEmpty()) {
+                Text(
+                    text = footer,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = chat.muted.copy(alpha = 0.75f),
+                )
+            }
         }
 
         if (onRetry != null || onUndo != null) {
@@ -440,8 +470,18 @@ fun ToolCard(part: Transcript.Part, modifier: Modifier = Modifier) {
             1.dp,
             if (part.status == "error") MaterialTheme.colorScheme.error else chat.toolBorder,
         ),
+        shadowElevation = 6.dp,
     ) {
-        Column(Modifier.fillMaxWidth().animateContentSize()) {
+        Column(
+            Modifier.fillMaxWidth().animateContentSize(
+                // Springy, finite (M3-expressive): expanding is a physical motion,
+                // and a finite spring keeps the gates' test clock idle.
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    stiffness = Spring.StiffnessMediumLow,
+                ),
+            ),
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1186,18 +1226,12 @@ private fun modelLabel(message: Transcript.Message): String {
 }
 
 @Composable
-private fun messageFooter(message: Transcript.Message): String {
+private fun messageFooterText(tokensIn: Long, tokensOut: Long, cost: Double): String {
     val bits = ArrayList<String>()
-    if (message.tokensInput > 0L || message.tokensOutput > 0L) {
-        bits.add(
-            stringResource(
-                R.string.chat_message_tokens,
-                message.tokensInput.toInt(),
-                message.tokensOutput.toInt(),
-            ),
-        )
+    if (tokensIn > 0L || tokensOut > 0L) {
+        bits.add(stringResource(R.string.chat_message_tokens, tokensIn.toInt(), tokensOut.toInt()))
     }
-    val cost = formatCost(message.cost)
-    if (cost.isNotEmpty()) bits.add(stringResource(R.string.chat_message_cost, cost))
+    val costText = formatCost(cost)
+    if (costText.isNotEmpty()) bits.add(stringResource(R.string.chat_message_cost, costText))
     return bits.joinToString("  \u00b7  ")
 }

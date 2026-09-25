@@ -43,6 +43,10 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -605,6 +609,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             contentColor = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.fillMaxSize(),
         ) {
+            // Edge-to-edge: the Surface paints under the system bars; the content
+            // pads by the safe-drawing insets (status bar, gesture bar, IME).
+            Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
             when (route) {
                 ROUTE_WELCOME -> WelcomeScreen(
                     runtime = summary,
@@ -952,6 +959,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onRemoveAttachment = { url -> repository.detach(url) },
                     onDismissBanner = { repository.clearBanner() },
                 )
+            }
             }
         }
     }

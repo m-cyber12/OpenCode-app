@@ -465,6 +465,7 @@ private fun CreateProjectCard(
         color = chat.toolContainer,
         shape = MaterialTheme.shapes.large,
         border = BorderStroke(1.dp, chat.toolBorder),
+        shadowElevation = 6.dp,
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -540,6 +541,7 @@ private fun ProjectRow(
         color = if (active) chat.selectedContainer else chat.toolContainer,
         shape = MaterialTheme.shapes.large,
         border = BorderStroke(1.dp, if (active) MaterialTheme.colorScheme.primary else chat.toolBorder),
+        shadowElevation = 6.dp,
     ) {
         Column {
             // Tapping the row expands/collapses the sessions under this project;

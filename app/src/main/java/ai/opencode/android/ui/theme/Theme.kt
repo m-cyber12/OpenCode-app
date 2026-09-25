@@ -101,7 +101,7 @@ internal val DarkChatPalette = ChatPalette(
     onAttentionContainer = AccentOnAmberContainer,
     toolContainer = InkSurfaceHigh,
     onToolContainer = InkOnSurface,
-    toolBorder = InkOutlineSoft,
+    toolBorder = InkHairline,
     success = AccentGreen,
     muted = InkOnSurfaceMuted,
 )

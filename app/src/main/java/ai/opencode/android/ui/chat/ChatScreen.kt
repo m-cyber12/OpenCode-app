@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -58,6 +59,14 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -248,7 +257,7 @@ private fun ChatHeader(
     val newLabel = stringResource(R.string.chat_new_conversation)
     val settingsLabel = stringResource(R.string.chat_open_settings)
     val filesLabel = stringResource(R.string.chat_open_files)
-    Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+    Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Row(
@@ -407,6 +416,7 @@ private fun BusyBar() {
         color = chat.toolContainer,
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, chat.toolBorder),
+        shadowElevation = 8.dp,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
         Row(
@@ -445,6 +455,7 @@ private fun RetryBanner(retry: Transcript.RetryInfo) {
     Surface(
         color = chat.attentionContainer,
         shape = RoundedCornerShape(16.dp),
+        shadowElevation = 8.dp,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
         Column(
@@ -542,14 +553,45 @@ private fun TranscriptPane(
             if (messages.isEmpty()) {
                 item(key = "empty") { EmptyState(title = emptyTitle, body = emptyBody) }
             }
-            items(items = messages, key = { it.id }, contentType = { it.role }) { message ->
+            itemsIndexed(items = messages, key = { _, m -> m.id }, contentType = { _, m -> m.role }) { index, message ->
                 val isLast = message.id == messages.lastOrNull()?.id
+                // v8 beauty pass: consecutive assistant messages from the same
+                // model read as ONE turn - the model name appears once above the
+                // group and the token/cost footer once below it (summed over the
+                // group, so the number is the turn's real total).
+                val prev = if (index > 0) messages[index - 1] else null
+                val next = if (index < messages.size - 1) messages[index + 1] else null
+                val assistant = message.role != "user"
+                val headerShown = !assistant || prev == null || prev.role == "user" ||
+                    prev.providerID != message.providerID || prev.modelID != message.modelID
+                val footerShown = !assistant || next == null || next.role == "user" ||
+                    next.providerID != message.providerID || next.modelID != message.modelID
+                var tokensIn = -1L
+                var tokensOut = -1L
+                var cost = -1.0
+                if (assistant && footerShown) {
+                    tokensIn = 0L; tokensOut = 0L; cost = 0.0
+                    var i = index
+                    while (i >= 0) {
+                        val m = messages[i]
+                        if (m.role == "user" || m.providerID != message.providerID || m.modelID != message.modelID) break
+                        tokensIn += m.tokensInput
+                        tokensOut += m.tokensOutput
+                        cost += m.cost
+                        i--
+                    }
+                }
                 MessageRow(
                     message = message,
                     now = now,
                     streaming = busy && isLast,
                     onRetry = if (isLast && message.role != "user") onRetry else null,
                     onUndo = if (isLast && message.role != "user") onUndo else null,
+                    showHeader = headerShown,
+                    showFooter = footerShown,
+                    groupTokensIn = tokensIn,
+                    groupTokensOut = tokensOut,
+                    groupCost = cost,
                 )
             }
         }
@@ -558,6 +600,7 @@ private fun TranscriptPane(
             Surface(
                 color = MaterialTheme.colorScheme.primaryContainer,
                 shape = MaterialTheme.shapes.large,
+                shadowElevation = 8.dp,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 12.dp),
@@ -664,7 +707,7 @@ private fun Composer(
     val blockedHint = stringResource(R.string.availability_composer_blocked)
     val sendLabel = stringResource(R.string.chat_send)
     val attachLabel = stringResource(R.string.chat_attach)
-    Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+    Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 8.dp)) {
             if (!canSend) {
                 Text(
@@ -686,6 +729,7 @@ private fun Composer(
                 color = chat.toolContainer,
                 shape = RoundedCornerShape(26.dp),
                 border = BorderStroke(1.dp, chat.toolBorder),
+                shadowElevation = 12.dp,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Row(
@@ -730,9 +774,17 @@ private fun Composer(
                         ),
                     )
                     Spacer(Modifier.width(4.dp))
+                    // M3-expressive micro-interactions: a physical press (the send
+                    // circle shrinks under the finger, spring release) and a haptic
+                    // tick on the two actions that commit something. Finite
+                    // animations only - the gates' test clock must stay idle.
+                    val haptic = LocalHapticFeedback.current
                     if (busy) {
                         TextButton(
-                            onClick = onStop,
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onStop()
+                            },
                             modifier = Modifier
                                 .padding(bottom = 2.dp)
                                 .height(44.dp)
@@ -746,12 +798,27 @@ private fun Composer(
                         }
                     } else {
                         val sendEnabled = canSend && draft.isNotBlank()
+                        val sendInteraction = remember { MutableInteractionSource() }
+                        val sendPressed by sendInteraction.collectIsPressedAsState()
+                        val sendScale by animateFloatAsState(
+                            targetValue = if (sendPressed) 0.86f else 1f,
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                            label = "sendScale",
+                        )
                         IconButton(
-                            onClick = onSend,
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onSend()
+                            },
                             enabled = sendEnabled,
+                            interactionSource = sendInteraction,
                             modifier = Modifier
                                 .padding(bottom = 4.dp)
                                 .size(42.dp)
+                                .graphicsLayer {
+                                    scaleX = sendScale
+                                    scaleY = sendScale
+                                }
                                 .background(
                                     color = if (sendEnabled) {
                                         MaterialTheme.colorScheme.primary
