@@ -3179,3 +3179,49 @@ demand them); the new screens' correctness rides on the WorkLog unit tests plus
 compile-level inclusion in the gate APKs, not on a dedicated instrumented gate
 yet. The owner's device pass will see the gold theme everywhere - if any screen
 still reads "blue era", that is a finding for the next round.
+
+### B.14 v7 completion: every promised piece, and the bug the new gate caught (2026-09-25)
+
+B.13 closed with three honest gaps. This round closed them, and the very first
+CI run proved why they were worth closing: the new instrumented gate caught a
+real layout bug that unit tests, compilation and 12 existing gates had all
+missed.
+
+**Shipped (`d619fe5` + fix `f37c548`, CI run 36098800257 = SUCCESS: 354 JVM
+tests, UI gates 20/0/0 on debug AND the release-shaped build, driver selftest
+136/0 across 16 scenarios, board 0/0/0):**
+
+* **U13 (Changes surface)**: tab strip present on chat with the status chip;
+  Changes/Terminal tabs actually wired (counted callbacks, not presence); two
+  stages from a three-turn fixture (the shell-only turn correctly absent),
+  newest first; +3/-1 counts rendered; the patch hidden until its row is
+  tapped; the empty state names itself.
+* **U14 (Terminal surface)**: three command rows from a four-part fixture
+  (edit part correctly absent), command/output/exit-0/running/failed all
+  rendered; the runtime log collapsed until tapped; the Chat tab returns to
+  the conversation; the empty state names itself.
+* **Driver stage `TABS_SURFACES`**: on a phone, real taps walk
+  Chat -> Changes -> Terminal -> Chat, asserting each surface's tag or
+  empty-state text; SKIP (never a false FAIL) on a build without the strip.
+  The fake phone serves both surfaces, and the selftest happy path now
+  DEMANDS the walk passes - a SKIP there means the driver cannot see its own
+  fixtures.
+* **Smaller promises kept**: chat header status chip (Ready green / Working
+  gold / Needs attention orange - a summary, never the only signal), the tab
+  strip on the Files screen, the runtime log inside Terminal (the diagnosis
+  view's lines, one tap away, read-only).
+
+**The catch**: run #91 failed exactly one gate - U13, `wired=false`. The
+emulator screenshot showed why: the tab underline used `fillMaxWidth`, and
+inside a Row the first child is measured with the whole remaining width, so
+the Chat tab swallowed the entire strip and the other three tabs were pushed
+out of sight. U14 had passed only because Chat is the first - and therefore
+visible - tab on the Terminal surface's strip. One line (`width(28.dp)`, the
+short gold underline the design wanted anyway) fixed it; run #92 went green
+everywhere. Without U13 the broken strip would have reached the owner's phone.
+
+**For the owner's device pass** (signed APK from run 36098800257): the chat
+header now has four tabs and a status chip; Changes and Terminal open from the
+strip and come back through Chat; both show named empty states on a fresh
+session, real content after a turn. The driver walks all of it, so
+`90-real-device-signed.sh` will verify the same things your eyes do.
