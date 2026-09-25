@@ -140,7 +140,7 @@ fun SettingsScreen(
     onPickWorkspace: () -> Unit = {},
     onGrantAllFilesAccess: () -> Unit = {},
     onMoveWorkspaceProjects: () -> Unit = {},
-    onAddMcp: (String, String, Boolean) -> Unit,
+    onAddMcp: (String, String, Boolean) -> Boolean,
     onConnectMcp: (String) -> Unit,
     onDisconnectMcp: (String) -> Unit,
     onRefreshMcp: () -> Unit,
@@ -988,7 +988,7 @@ private fun KeysSection(
 @Composable
 private fun McpSection(
     entries: Map<String, OpenCodeApi.McpEntry>,
-    onAdd: (String, String, Boolean) -> Unit,
+    onAdd: (String, String, Boolean) -> Boolean,
     onConnect: (String) -> Unit,
     onDisconnect: (String) -> Unit,
     onRefresh: () -> Unit,
@@ -998,6 +998,10 @@ private fun McpSection(
     var name by rememberSaveable { mutableStateOf("") }
     var config by rememberSaveable { mutableStateOf("") }
     var persist by rememberSaveable { mutableStateOf(true) }
+    // v8 fix round (owner's issue 7): a config that fails to parse as JSON used
+    // to be swallowed silently - the button "did nothing". Now the form stays
+    // open and says so.
+    var configInvalid by rememberSaveable { mutableStateOf(false) }
     SectionCard(
         title = stringResource(R.string.settings_section_mcp),
         body = stringResource(R.string.settings_mcp_body),
@@ -1039,13 +1043,26 @@ private fun McpSection(
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = config,
-                onValueChange = { config = it },
+                onValueChange = {
+                    config = it
+                    configInvalid = false
+                },
                 label = { Text(stringResource(R.string.settings_mcp_config_label)) },
                 placeholder = { Text(stringResource(R.string.settings_mcp_config_placeholder)) },
                 minLines = 3,
                 maxLines = 8,
+                isError = configInvalid,
                 modifier = Modifier.fillMaxWidth().semantics { testTag = "mcp_config" },
             )
+            if (configInvalid) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.settings_mcp_config_invalid),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.semantics { testTag = "mcp_config_error" },
+                )
+            }
             Spacer(Modifier.height(6.dp))
             val persistLabel = stringResource(R.string.settings_mcp_persist)
             Row(
@@ -1074,10 +1091,14 @@ private fun McpSection(
             Spacer(Modifier.height(6.dp))
             OutlinedButton(
                 onClick = {
-                    onAdd(name.trim(), config.trim(), persist)
-                    adding = false
-                    name = ""
-                    config = ""
+                    if (onAdd(name.trim(), config.trim(), persist)) {
+                        adding = false
+                        name = ""
+                        config = ""
+                        configInvalid = false
+                    } else {
+                        configInvalid = true
+                    }
                 },
                 enabled = name.isNotBlank() && config.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().height(46.dp).semantics { testTag = "mcp_add" },
@@ -1313,8 +1334,11 @@ private fun PermissionsSection(
         body = stringResource(R.string.settings_permissions_body),
     ) {
         // A prompt the agent makes while it works always goes through the bottom
-        // sheet; this table only sets the standing policy, and it is empty by
-        // default, which is exactly OpenCode's own "ask" default.
+        // sheet; this table only sets the standing policy. An empty config does
+        // NOT mean "ask" to the server (upstream's own defaults allow most
+        // tools - the owner's issue 4), so the repository writes the five keys
+        // shown here as explicit `ask` entries on first contact; what this
+        // table displays is always what the config actually stores.
         for (key in PERMISSION_KEYS) {
             val res = permissionLabelRes(key) ?: continue
             PermissionToolRow(

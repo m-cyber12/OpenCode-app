@@ -181,6 +181,10 @@ class OpenCodeRepository(
     @Volatile
     private var messagesFetchInFlight = false
 
+    /** One-shot guard for [enforceAskDefaults]; see that function's contract. */
+    @Volatile
+    private var askDefaultsEnforced = false
+
     /** Does the transcript already hold rows for [sid]? (`Snapshot` is per-session.) */
     private fun hasRows(sid: String): Boolean =
         _state.value.transcript.session(sid)?.messages?.isNotEmpty() == true
@@ -273,7 +277,8 @@ class OpenCodeRepository(
             }.onFailure { errors.add("providers: ${it.message}") }
 
             runCatching { api.globalConfig() }.onSuccess { cfg ->
-                _state.value = _state.value.copy(permissionPolicy = parsePermissionPolicy(cfg))
+                val effective = enforceAskDefaults(cfg)
+                _state.value = _state.value.copy(permissionPolicy = parsePermissionPolicy(effective))
             }.onFailure { errors.add("config: ${it.message}") }
 
             runCatching { api.pendingPermissions() }.onSuccess { list ->
@@ -910,6 +915,14 @@ class OpenCodeRepository(
             val patch = JSONObject().put("permission", JSONObject().put(key, action))
             runCatching { api.patchGlobalConfig(patch) }
                 .onSuccess {
+                    // v8 fix round (owner's issue 4): a loaded instance keeps the
+                    // config it booted with, so a patched policy only governed
+                    // the NEXT project the server loaded - the running one kept
+                    // acting on the old rules and the table looked decorative.
+                    // Disposing the loaded instances (the same remedy Phase 9
+                    // proved for stale credentials) makes the new policy real
+                    // from the next turn onward.
+                    runCatching { api.dispose() }
                     runCatching { api.globalConfig() }.onSuccess { cfg ->
                         _state.value = _state.value.copy(
                             permissionPolicy = parsePermissionPolicy(cfg),
@@ -934,6 +947,34 @@ class OpenCodeRepository(
      * upstream object form (per-subtool rules) is left untouched and still wins
      * server-side.
      */
+    /**
+     * v8 fix round (owner's issue 4). The Settings table has always SAID "Asking
+     * is the default", but an empty `permission` block does not mean ask to the
+     * server - upstream's own defaults allow most tools, which is exactly what
+     * the owner saw on his phone: every policy read "Now: Ask" while commands
+     * ran without a single prompt. The promise is made real here: any of the
+     * five UI-managed keys that has no explicit value in the global config is
+     * written as `ask` once, and the loaded instances are disposed so the rule
+     * governs the very next turn. Keys that already carry a value - including
+     * upstream's object form for per-subtool rules - are never touched, and the
+     * write happens at most once per process so a server that refuses to
+     * persist cannot cause a patch loop.
+     */
+    private fun enforceAskDefaults(cfg: JSONObject): JSONObject {
+        if (askDefaultsEnforced) return cfg
+        askDefaultsEnforced = true
+        val perm = cfg.optJSONObject("permission")
+        val missing = MANAGED_PERMISSION_KEYS.filter { perm == null || !perm.has(it) }
+        if (missing.isEmpty()) return cfg
+        val block = JSONObject()
+        for (key in missing) block.put(key, "ask")
+        return runCatching {
+            api.patchGlobalConfig(JSONObject().put("permission", block))
+            runCatching { api.dispose() }
+            api.globalConfig()
+        }.getOrDefault(cfg)
+    }
+
     private fun parsePermissionPolicy(cfg: JSONObject): Map<String, String> {
         val perm = cfg.optJSONObject("permission") ?: return emptyMap()
         val out = LinkedHashMap<String, String>()
@@ -1072,5 +1113,12 @@ class OpenCodeRepository(
     companion object {
         /** OpenCode's default coding agent; the shell endpoint requires one. */
         const val SHELL_AGENT = "build"
+
+        /**
+         * The permission keys the Settings table edits. Must stay in sync with
+         * `PERMISSION_KEYS` in SettingsScreen.kt (the UI list); these are the
+         * keys [enforceAskDefaults] writes to `ask` when the config is silent.
+         */
+        val MANAGED_PERMISSION_KEYS = listOf("bash", "edit", "read", "webfetch", "external_directory")
     }
 }

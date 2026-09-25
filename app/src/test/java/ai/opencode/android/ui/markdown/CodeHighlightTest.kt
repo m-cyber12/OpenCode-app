@@ -84,8 +84,11 @@ class CodeHighlightTest {
         val source = "--- a/Foo.kt\n+++ b/Foo.kt\n@@ -1,2 +1,3 @@\n+added\n-removed\n context"
         val out = assertLossless("diff", source)
         val byLine = out.filter { it.text.isNotEmpty() && it.text != "\n" }
-        assertTrue(byLine.any { it.token == CodeToken.STRING && it.text == "+added" })
-        assertTrue(byLine.any { it.token == CodeToken.NUMBER && it.text == "-removed" })
+        // v8 fix round: +/- lines carry dedicated diff roles so the Compose
+        // layer can give them the review-tool line backgrounds the owner asked
+        // for (green behind added, red behind removed).
+        assertTrue(byLine.any { it.token == CodeToken.DIFF_ADD && it.text == "+added" })
+        assertTrue(byLine.any { it.token == CodeToken.DIFF_DEL && it.text == "-removed" })
         assertTrue(byLine.any { it.token == CodeToken.FUNCTION && it.text.startsWith("@@") })
         assertTrue(byLine.any { it.token == CodeToken.TYPE && it.text.startsWith("---") })
     }

@@ -3266,3 +3266,59 @@ the two v7 surfaces still wear only the theme - that is batch 2, gated on the
 owner's on-device review of this batch. The gate emulator renders the light
 scheme, so the evidence screenshots show the layout, not the device's warm
 dark palette.
+
+## B.16 v8 beauty passes 1.5 and 2 (2026-09-25): dark-first, real typefaces, glass, one-turn metadata
+
+The owner reviewed batch 1 on his phone and said it plainly: not enough. Two
+more passes shipped the same day, each green on its first CI run.
+
+**Pass 1.5 (`7e4c450`, run 36116828757 / #98):** the single biggest gap was
+that CI evidence and fresh installs rendered the LIGHT scheme while the design
+is dark - so dark became the default (Settings still offers Light and
+Match-the-system). With it: warm-neutral surface tune in `Color.kt`, the user
+bubble became the reference's quiet neutral (a new `selectedContainer` token
+keeps list selections gold), tool cards got the reference face - mono
+`[ kind - tool ]` line, command/path prominent, pill right - and `todowrite`
+parts now render their plan as a checklist on the card face (`TodoParser`,
+pure org.json, 3 JVM tests; U2 now asserts the three rows readable while the
+card is collapsed: `todoChecklist=true(collapsed=true)`). 357 JVM tests,
+20/0/0 gates, selftest 136/0.
+
+The owner then ran the signed build on his real phone (fresh `p10d-out/`,
+API 35, versionCode 8): first run, workspace step, tabs, files, live tool
+call - all PASS. One real finding: `P10D_PROVIDER_SEARCH FAIL` - the provider
+search field was not reachable by the driver on the device (CI's fake-phone
+walk passes, so it is a reachability/scroll difference, not a missing
+control). Parked for batch 2, which touches Settings anyway.
+
+**Pass 2 (`4149c71`, run 36140455212 / #101):** the owner's verdict on 1.5 -
+much better, still not "beautiful": no real typeface, no floating glass, and
+the `Agent + tokens` block after every message made one turn read as three.
+He also delivered the modern-android-ui-features brief (M3 Expressive) and
+locked four decisions: batch 2 after this pass; Sora AND Space Grotesk; glass
+everywhere it fits; the manager/worker workflow mode parked.
+
+* Typography: bundled OFL fonts (Sora variable wght 600/700 for the display
+  voice, Space Grotesk 400/500/700 for body/labels, JetBrains Mono 400/500
+  for everything code). ~1.2 MB in `res/font`, no runtime fetch.
+* Glass: dark card borders became a 12%-white top-light hairline and the
+  panes got real shadow elevation (composer 12dp, busy/retry 8dp, tool cards
+  6dp, bubble 4dp); header, composer strip and tab bar sit on the canvas so
+  the pills float.
+* One-turn metadata: consecutive same-model assistant messages group - model
+  name once above (the word "Agent" only when the server reported none), one
+  dimmed summed tokens/cost line below, streaming dots preserved on grouped
+  continuations.
+* Edge-to-edge + `adjustResize`, dark base theme with `#120F0A` window
+  background (the grey status-bar strip and the white launch flash are gone).
+* Finite springy motion: tool-card expand, send press-scale; haptic tick on
+  Send/Stop.
+
+Board: 20/0/0 gates, 357 JVM, selftest 136/0. U7's per-screen interactive
+counts moved (settings 29 -> 14) because the taller type composes fewer lazy
+rows per viewport - its assertion is `unnamed=0`, which held.
+
+Honest limit: the sandbox's GitHub egress died right after the board came
+back, so run #101's screenshots were verified by gate assertions and byte
+sizes, not yet by my own eyes - the owner sees the real thing on his device
+either way, and the next connectivity window closes the loop.

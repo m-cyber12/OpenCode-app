@@ -193,7 +193,9 @@ def transition(node_id):
         put("screen", "projects")
     elif here == "projects-switch-picked" and node_id in ("Cancel",):
         put("screen", "projects-picked")
-    elif here in ("chat", "answer", "chat-menu") and node_id in ("open_files", "Project files"):
+    # v8 fix round: the header's Files icon is gone (redundant next to the tab
+    # strip, said the owner) - the bottom tab is THE door to the file browser.
+    elif here in ("chat", "answer", "chat-menu") and node_id in ("project_tab_files", "Files"):
         put("screen", "files")
     # ---- v7: the project tab strip (Changes / Terminal / back to Chat) --------
     elif here in ("chat", "answer", "terminal") and node_id in ("project_tab_changes", "Changes"):

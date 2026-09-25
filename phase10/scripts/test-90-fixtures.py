@@ -130,17 +130,23 @@ def build(root):
             # The top bar's project affordance (the app opens the project list from it).
             node("open_projects", text="Projects", desc="Open the project list",
                  bounds="[40,120][400,220]"),
-            node("open_files", text="Project files", bounds="[820,120][940,220]"),
+            # v8 fix round: the four header icons collapsed into one hamburger
+            # (`chat_menu`); the driver taps it first, then the menu item. The
+            # fake phone shows both at once - it cannot model the popup opening,
+            # and the driver's tap order does not require it to.
+            node("chat_menu", text="Menu", desc="Menu", bounds="[820,120][940,220]"),
             # Deliberately its own rectangle: `hit()` matches the FIRST node whose
             # bounds contain the tap, so two controls must never overlap or the self
             # test would drive a different control than the driver aimed at.
             node("open_settings", text="Settings and diagnostics", bounds="[960,120][1060,220]"),
             text_node("Start a conversation", "[40,300][1040,380]"),
-            # v7: the project tab strip. Distinct rectangles (hit() takes the FIRST
-            # node whose bounds contain a tap, so tabs must never overlap).
-            node("project_tab_chat", text="Chat", desc="Chat", bounds="[40,390][280,470]"),
-            node("project_tab_changes", text="Changes", desc="Changes", bounds="[300,390][620,470]"),
-            node("project_tab_terminal", text="Terminal", desc="Terminal", bounds="[640,390][1000,470]"),
+            # v7: the project tab strip (v8: + Files, since the header icon is
+            # gone). Distinct rectangles (hit() takes the FIRST node whose bounds
+            # contain a tap, so tabs must never overlap).
+            node("project_tab_chat", text="Chat", desc="Chat", bounds="[40,390][260,470]"),
+            node("project_tab_files", text="Files", desc="Files", bounds="[280,390][500,470]"),
+            node("project_tab_changes", text="Changes", desc="Changes", bounds="[520,390][740,470]"),
+            node("project_tab_terminal", text="Terminal", desc="Terminal", bounds="[760,390][1000,470]"),
             node("composer_attach", text="Attach a file", bounds="[40,1700][300,1780]"),
             node("composer_input", text="Message the agent", bounds="[320,1690][820,1790]",
                  cls="android.widget.EditText"),

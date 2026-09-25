@@ -19,10 +19,11 @@ package ai.opencode.android.ui.markdown
  * to the input, which is what the unit tests assert.
  *
  * `diff`/`patch` output is special-cased because an agent's file edits arrive that
- * way and the sign is the meaning: added lines take the string role (green),
- * removed lines the number role (amber/orange), headers the type role.
+ * way and the sign is the meaning: added lines take the DIFF_ADD role (green text
+ * on a green line background), removed lines DIFF_DEL (red text on a red line
+ * background), headers the type role.
  */
-enum class CodeToken { PLAIN, KEYWORD, STRING, COMMENT, NUMBER, FUNCTION, TYPE, PUNCTUATION }
+enum class CodeToken { PLAIN, KEYWORD, STRING, COMMENT, NUMBER, FUNCTION, TYPE, PUNCTUATION, DIFF_ADD, DIFF_DEL }
 
 data class CodeSpan(val text: String, val token: CodeToken)
 
@@ -197,8 +198,8 @@ object CodeHighlight {
                     line.startsWith("deleted file") || line.startsWith("similarity ") ||
                     line.startsWith("rename ") -> CodeToken.TYPE
                 line.startsWith("@@") -> CodeToken.FUNCTION
-                line.startsWith("+") -> CodeToken.STRING
-                line.startsWith("-") -> CodeToken.NUMBER
+                line.startsWith("+") -> CodeToken.DIFF_ADD
+                line.startsWith("-") -> CodeToken.DIFF_DEL
                 line.startsWith(" ") -> CodeToken.PLAIN
                 else -> CodeToken.COMMENT
             }

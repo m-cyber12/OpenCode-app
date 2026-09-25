@@ -1469,7 +1469,9 @@ fi
 step "R5 the in-app file browser (this is how a user sees what the agent wrote)"
 FILES_SEEN=0
 FILES_PATH=""
-if [ "$FIRST_RUN_OK" = 1 ] && tap_any "open_files" "Project files"; then
+# v8 fix round: the header's Files icon is gone (the owner called it redundant
+# next to the bottom tab strip) - the tab IS the door now.
+if [ "$FIRST_RUN_OK" = 1 ] && tap_any "project_tab_files" "Files"; then
   sleep 2
   if wait_for "files-screen" "$NEEDLE_FILES" "$(tmo 120)"; then
     shot "files-listing" || true
@@ -1542,7 +1544,7 @@ PY
 
 # ---- v4 item 4: the storage screen no longer carries copy/export/chooser -----
 FILES_SIMPLIFIED=0
-if tap_any "open_files" "Project files"; then
+if tap_any "project_tab_files" "Files"; then
   if wait_for "files-screen" "$NEEDLE_FILES" "$(tmo 120)"; then
     sleep 1
     shot "v4-files" || true
@@ -1570,6 +1572,11 @@ fi
 
 # ---- v4 items 2 and 4: Settings - workspace section, provider search, stars --
 SETTINGS_REACHED=0
+# v8 fix round: Settings moved off the header into the hamburger menu; the menu
+# has to be opened first. The `|| true` keeps the old direct path alive as a
+# fallback (an older build under this driver still has the flat icon).
+tap_any "chat_menu" "Menu" >/dev/null 2>&1 || true
+sleep 1
 if tap_any "open_settings" "Settings and diagnostics"; then
   if wait_for "settings-screen" "$NEEDLE_SETTINGS" "$(tmo 120)"; then
     SETTINGS_REACHED=1
@@ -1759,6 +1766,8 @@ if [ -n "${MODEL_KEY:-}" ] && [ "$SKIP_LIVE" = 0 ]; then
   #  - a key already stored -> the row's Manage chip, where the relocated revoke
   #    lives; revoke the stored key, then save the fresh one through the same
   #    dialog (a real rotate, reported as one).
+  tap_any "chat_menu" "Menu" >/dev/null 2>&1 || true
+  sleep 1
   if tap_any "open_settings" "Settings and diagnostics"; then
     sleep 2
     if tap_any "provider_search" "Search providers"; then

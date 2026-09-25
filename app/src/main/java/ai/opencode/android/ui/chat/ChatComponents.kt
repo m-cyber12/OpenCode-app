@@ -24,8 +24,13 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -161,22 +166,24 @@ fun MessageRow(
             modifier = modifier.fillMaxWidth().semantics { testTag = tag },
             horizontalAlignment = Alignment.End,
         ) {
-            Surface(
-                color = chat.userBubble,
-                contentColor = chat.onUserBubble,
-                shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp),
-                border = BorderStroke(1.dp, chat.toolBorder),
-                shadowElevation = 4.dp,
-                modifier = Modifier.widthIn(max = 340.dp),
-            ) {
-                Column(Modifier.padding(horizontal = 16.dp, vertical = 11.dp)) {
-                    if (text.isNotBlank()) MarkdownText(source = text, color = chat.onUserBubble)
-                    for (f in files) {
-                        Spacer(Modifier.height(4.dp))
-                        AttachmentChip(
-                            filename = f.filename.ifEmpty { f.url.substringAfterLast('/') },
-                            mime = f.mime,
-                        )
+            EnterFromAbove {
+                Surface(
+                    color = chat.userBubble,
+                    contentColor = chat.onUserBubble,
+                    shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp),
+                    border = BorderStroke(1.dp, chat.toolBorder),
+                    shadowElevation = 4.dp,
+                    modifier = Modifier.widthIn(max = 340.dp),
+                ) {
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 11.dp)) {
+                        if (text.isNotBlank()) MarkdownText(source = text, color = chat.onUserBubble)
+                        for (f in files) {
+                            Spacer(Modifier.height(4.dp))
+                            AttachmentChip(
+                                filename = f.filename.ifEmpty { f.url.substringAfterLast('/') },
+                                mime = f.mime,
+                            )
+                        }
                     }
                 }
             }
@@ -242,7 +249,14 @@ fun MessageRow(
         }
 
         for (part in message.parts) {
-            PartRow(part = part, streaming = streaming)
+            // v8 fix round: a freshly streamed part used to pop into place with
+            // no transition at all - the owner called it jarring. Each part now
+            // fades and settles in from slightly above, once, when it first
+            // joins the composition (finite one-shot tweens; the gates'
+            // waitForIdle runs them to completion).
+            EnterFromAbove {
+                PartRow(part = part, streaming = streaming)
+            }
             // Phase 10 polish: 6 -> 10 dp between the pieces of one turn. The
             // brief's "generous whitespace" has to be visible between a sentence
             // and the tool card that follows it, which is where a reader's eye
@@ -294,6 +308,26 @@ fun MessageRow(
                 }
             }
         }
+    }
+}
+
+/**
+ * One-shot entry transition for anything that joins the transcript while the
+ * user is watching: fade in while settling down from slightly above. The
+ * transition state starts false and flips to true on first composition, so the
+ * animation runs exactly once per composition slot; both tweens are finite,
+ * which the UI gates require (their test clock must reach idle).
+ */
+@Composable
+private fun EnterFromAbove(content: @Composable () -> Unit) {
+    val entered = remember { MutableTransitionState(false).apply { targetState = true } }
+    AnimatedVisibility(
+        visibleState = entered,
+        enter = fadeIn(animationSpec = tween(durationMillis = 200)) +
+            slideInVertically(animationSpec = tween(durationMillis = 240)) { full -> -full / 6 },
+        exit = ExitTransition.None,
+    ) {
+        content()
     }
 }
 

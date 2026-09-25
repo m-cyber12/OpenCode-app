@@ -293,6 +293,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 (context as? Activity)?.recreate()
             } else {
                 projects = withContext(Dispatchers.IO) { ProjectStore.get(context).projects() }
+                // The projects list just changed under the same root (an import,
+                // a move) - the per-project conversation lists must follow it
+                // (v8 fix round, owner's issue 1).
+                sessionsTick++
             }
         }
     }
@@ -468,7 +472,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     LaunchedEffect(summary.ready, repository) {
         if (summary.ready) repository.startStream()
     }
-    LaunchedEffect(route, summary.ready, sessionsTick) {
+    // v8 fix round (owner's issue 1): the workspace root is a key on purpose.
+    // A switch that does not recreate the Activity used to leave this effect
+    // dormant - the projects list swapped but the conversation lists were never
+    // re-fetched until the user navigated away and back.
+    LaunchedEffect(route, summary.ready, sessionsTick, storage.rootPath) {
         if (summary.ready) repository.refresh()
         if (route == ROUTE_PROJECTS) {
             projects = withContext(Dispatchers.IO) { store.projects() }
@@ -477,10 +485,22 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             // The full (grouped) map feeds the expandable rows; the counts map
             // feeds the row's count pill.
             val rootPath = container.workspacesRoot().absolutePath
-            val grouped = withContext(Dispatchers.IO) {
+            suspend fun fetchGrouped() = withContext(Dispatchers.IO) {
                 runCatching { repository.api.listSessions(limit = 500) }
                     .getOrDefault(emptyList())
                     .groupBy { it.directory }
+            }
+            var grouped = fetchGrouped()
+            // Right after a workspace switch the recreated Activity runs this
+            // effect exactly once, and the server can still be settling on the
+            // new root at that moment: an empty answer while projects exist on
+            // disk is more likely "too early" than "no conversations". Three
+            // finite retries, one second apart - then the empty answer stands.
+            var retries = 0
+            while (grouped.isEmpty() && projects.isNotEmpty() && retries < 3) {
+                kotlinx.coroutines.delay(1_000)
+                retries++
+                grouped = fetchGrouped()
             }
             sessionsByProject = projects.mapNotNull { pr ->
                 val list = grouped[java.io.File(rootPath, pr.name).absolutePath]
@@ -829,8 +849,12 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onSaveKey = { providerId, key -> repository.provisionProvider(providerId, key, secrets) },
                     onRevokeKey = { providerId -> repository.revokeProvider(providerId, secrets) },
                     onAddMcp = { name, config, persist ->
+                        // Returns whether the config parsed: the form shows an
+                        // inline error instead of swallowing a bad paste (v8 fix
+                        // round, owner's issue 7 - the button used to "do nothing").
                         val parsed = runCatching { JSONObject(config) }.getOrNull()
                         if (parsed != null) repository.addMcp(name, parsed, persist)
+                        parsed != null
                     },
                     onConnectMcp = { name -> repository.connectMcp(name) },
                     onDisconnectMcp = { name -> repository.disconnectMcp(name) },

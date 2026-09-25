@@ -340,7 +340,17 @@ private fun annotateSpans(
 internal fun annotateCode(language: String, source: String, palette: CodePalette): AnnotatedString =
     buildAnnotatedString {
         for (span in CodeHighlight.tokenize(language, source)) {
-            withStyle(SpanStyle(color = colorOf(span.token, palette))) { append(span.text) }
+            // Diff lines are the one place a token also carries a BACKGROUND:
+            // green behind additions, red behind deletions (v8 fix round - the
+            // owner asked for review-tool colouring, not just tinted text).
+            val background = when (span.token) {
+                CodeToken.DIFF_ADD -> palette.diffAddedBackground
+                CodeToken.DIFF_DEL -> palette.diffRemovedBackground
+                else -> Color.Unspecified
+            }
+            withStyle(SpanStyle(color = colorOf(span.token, palette), background = background)) {
+                append(span.text)
+            }
         }
     }
 
@@ -353,6 +363,8 @@ private fun colorOf(token: CodeToken, palette: CodePalette): Color = when (token
     CodeToken.TYPE -> palette.type
     CodeToken.PUNCTUATION -> palette.punctuation
     CodeToken.PLAIN -> palette.plain
+    CodeToken.DIFF_ADD -> palette.diffAdded
+    CodeToken.DIFF_DEL -> palette.diffRemoved
 }
 
 /**

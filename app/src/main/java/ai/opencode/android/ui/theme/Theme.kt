@@ -36,6 +36,14 @@ data class CodePalette(
     val type: Color,
     val punctuation: Color,
     val blockBackground: Color,
+    /** Foreground for an added diff line ("+"). */
+    val diffAdded: Color,
+    /** Line background behind an added diff line - green, per the owner's brief. */
+    val diffAddedBackground: Color,
+    /** Foreground for a removed diff line ("-"). */
+    val diffRemoved: Color,
+    /** Line background behind a removed diff line - red, per the owner's brief. */
+    val diffRemovedBackground: Color,
 )
 
 internal val DarkCodePalette = CodePalette(
@@ -48,6 +56,10 @@ internal val DarkCodePalette = CodePalette(
     type = CodeDarkType,
     punctuation = CodeDarkPunct,
     blockBackground = CodeBlockDark,
+    diffAdded = DiffDarkAdded,
+    diffAddedBackground = DiffDarkAddedBg,
+    diffRemoved = DiffDarkRemoved,
+    diffRemovedBackground = DiffDarkRemovedBg,
 )
 
 internal val LightCodePalette = CodePalette(
@@ -60,6 +72,10 @@ internal val LightCodePalette = CodePalette(
     type = CodeLightType,
     punctuation = CodeLightPunct,
     blockBackground = CodeBlockLight,
+    diffAdded = DiffLightAdded,
+    diffAddedBackground = DiffLightAddedBg,
+    diffRemoved = DiffLightRemoved,
+    diffRemovedBackground = DiffLightRemovedBg,
 )
 
 internal val LocalCodePalette = staticCompositionLocalOf { DarkCodePalette }

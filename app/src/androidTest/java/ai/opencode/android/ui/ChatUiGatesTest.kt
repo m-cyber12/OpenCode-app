@@ -575,7 +575,7 @@ class ChatUiGatesTest {
             onMoveWorkspaceProjects = { projectMoves++ },
             onSaveKey = { _, _ -> },
             onRevokeKey = { },
-            onAddMcp = { _, _, _ -> },
+            onAddMcp = { _, _, _ -> true },
             onConnectMcp = { },
             onDisconnectMcp = { },
             onRefreshMcp = { },

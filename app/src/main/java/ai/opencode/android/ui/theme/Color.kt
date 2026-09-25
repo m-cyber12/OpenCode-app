@@ -102,3 +102,17 @@ internal val CodeLightPlain = Color(0xFF1C1810)
 
 internal val CodeBlockDark = Color(0xFF0C0A06)
 internal val CodeBlockLight = Color(0xFFF4F0E4)
+
+// v8 fix round (owner): diff lines carry their meaning as a line BACKGROUND -
+// green behind additions, red behind deletions - the way every code review
+// tool renders a patch. The red is a diff semantic, not a theme accent, so it
+// does not contradict the "gold, not red" theme rule. Translucent backgrounds
+// so they sit correctly on either code-block surface.
+internal val DiffDarkAdded = Color(0xFFB9E8A6)
+internal val DiffDarkAddedBg = Color(0x3327A148)
+internal val DiffDarkRemoved = Color(0xFFF3B8B2)
+internal val DiffDarkRemovedBg = Color(0x38E5534B)
+internal val DiffLightAdded = Color(0xFF1A6B2F)
+internal val DiffLightAddedBg = Color(0x3345C463)
+internal val DiffLightRemoved = Color(0xFF9C2318)
+internal val DiffLightRemovedBg = Color(0x30F0655D)

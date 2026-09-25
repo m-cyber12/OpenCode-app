@@ -9,7 +9,6 @@ import ai.opencode.android.ui.common.ProjectTabs
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -32,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -170,7 +170,11 @@ private fun CommandEntry(command: WorkLog.Command) {
             )
             Spacer(Modifier.height(2.dp))
         }
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+        // v8 fix round: a long command used to ride off the right edge behind a
+        // horizontal scroll the owner never discovered - a phone screen is too
+        // narrow for that trick, so the command WRAPS like a real terminal at
+        // 80 columns would, with the prompt pinned to the first line.
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Text(
                 text = stringResource(R.string.terminal_prompt_symbol),
                 style = MonoSmall,
@@ -182,15 +186,18 @@ private fun CommandEntry(command: WorkLog.Command) {
                 text = command.command,
                 style = MonoSmall,
                 fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f),
             )
         }
         if (command.output.isNotBlank()) {
             Spacer(Modifier.height(3.dp))
+            // Output wraps for the same reason the command does: on a phone,
+            // text pushed off-screen is text the owner reads as "cut off".
             Text(
                 text = command.output,
                 style = MonoSmall,
                 color = chat.muted,
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         Spacer(Modifier.height(3.dp))

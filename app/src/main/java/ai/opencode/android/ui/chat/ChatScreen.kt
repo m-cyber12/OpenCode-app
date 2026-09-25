@@ -40,11 +40,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -84,6 +85,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -154,10 +157,10 @@ fun ChatScreen(
             .semantics { testTag = "chat_screen" },
     ) {
         // v8 redesign: the reference header - glyph tile + project identity on
-        // the left, the one-glance status chip and the toolbar on the right. The
-        // Files icon stays even though the bottom bar also leads there: the
-        // device driver and gate U9 navigate by `open_files`, so the tab is a
-        // second door, not a moved one.
+        // the left, the one-glance status chip and a single hamburger menu on
+        // the right. The owner called the old four-icon toolbar clutter: Files
+        // duplicated the bottom tab and Sessions duplicated the project list,
+        // so both are gone and the remaining actions live inside `chat_menu`.
         ChatHeader(
             projectLabel = projectLabel,
             sessionTitle = sessionTitle,
@@ -165,8 +168,6 @@ fun ChatScreen(
             busy = state.busy,
             availability = availability,
             onOpenProjects = onOpenProjects,
-            onOpenFiles = onOpenFiles,
-            onOpenSessions = onOpenSessions,
             onNewSession = onNewSession,
             onOpenSettings = onOpenSettings,
         )
@@ -239,6 +240,7 @@ fun ChatScreen(
  * status chip plus the four toolbar actions the driver and the gates navigate
  * by. Pure layout: every tag, label and callback is the v7 set.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun ChatHeader(
     projectLabel: String,
@@ -247,16 +249,13 @@ private fun ChatHeader(
     busy: Boolean,
     availability: AgentAvailability,
     onOpenProjects: () -> Unit,
-    onOpenFiles: () -> Unit,
-    onOpenSessions: () -> Unit,
     onNewSession: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val chat = ChatTheme.chat
-    val conversationsLabel = stringResource(R.string.chat_conversations)
     val newLabel = stringResource(R.string.chat_new_conversation)
     val settingsLabel = stringResource(R.string.chat_open_settings)
-    val filesLabel = stringResource(R.string.chat_open_files)
+    val menuLabel = stringResource(R.string.chat_open_menu)
     Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -326,29 +325,58 @@ private fun ChatHeader(
                     modifier = Modifier.semantics { testTag = "chat_status_pill" },
                 )
                 Spacer(Modifier.weight(1f))
-                IconButton(
-                    onClick = onOpenFiles,
-                    modifier = Modifier.size(40.dp).semantics { testTag = "open_files" },
-                ) {
-                    Icon(Icons.Filled.List, contentDescription = filesLabel, tint = chat.muted)
-                }
-                IconButton(
-                    onClick = onOpenSessions,
-                    modifier = Modifier.size(40.dp).semantics { testTag = "open_sessions" },
-                ) {
-                    Icon(Icons.Filled.Menu, contentDescription = conversationsLabel, tint = chat.muted)
-                }
-                IconButton(
-                    onClick = onNewSession,
-                    modifier = Modifier.size(40.dp).semantics { testTag = "new_session" },
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = newLabel, tint = chat.muted)
-                }
-                IconButton(
-                    onClick = onOpenSettings,
-                    modifier = Modifier.size(40.dp).semantics { testTag = "open_settings" },
-                ) {
-                    Icon(Icons.Filled.Settings, contentDescription = settingsLabel, tint = chat.muted)
+                // v8 iteration 3 (owner): the ghost toolbar was clutter - Files
+                // duplicated the bottom tab and Sessions duplicated the project
+                // list - so the header keeps ONE hamburger button and the two
+                // real actions live in its menu, same tags as before.
+                var menuOpen by remember { mutableStateOf(false) }
+                Box {
+                    IconButton(
+                        onClick = { menuOpen = true },
+                        modifier = Modifier.size(40.dp).semantics { testTag = "chat_menu" },
+                    ) {
+                        Icon(Icons.Filled.Menu, contentDescription = menuLabel, tint = chat.muted)
+                    }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text(newLabel) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Add,
+                                    contentDescription = null,
+                                    tint = chat.muted,
+                                    modifier = Modifier.clearAndSetSemantics { },
+                                )
+                            },
+                            onClick = {
+                                menuOpen = false
+                                onNewSession()
+                            },
+                            modifier = Modifier.semantics {
+                                testTagsAsResourceId = true
+                                testTag = "new_session"
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(settingsLabel) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Settings,
+                                    contentDescription = null,
+                                    tint = chat.muted,
+                                    modifier = Modifier.clearAndSetSemantics { },
+                                )
+                            },
+                            onClick = {
+                                menuOpen = false
+                                onOpenSettings()
+                            },
+                            modifier = Modifier.semantics {
+                                testTagsAsResourceId = true
+                                testTag = "open_settings"
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -736,11 +764,16 @@ private fun Composer(
                     modifier = Modifier.fillMaxWidth().padding(start = 6.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.Bottom,
                 ) {
+                    // The bottom paddings below centre each control against the
+                    // single-line field (the field's intrinsic height is 56dp:
+                    // 8+20=28, 7+21=28, 6+22=28) while the Bottom alignment keeps
+                    // them anchored when the field grows to six lines. v8 fix
+                    // round: the owner saw the old 2/4dp riding visibly low.
                     IconButton(
                         onClick = onAttach,
                         enabled = canSend,
                         modifier = Modifier
-                            .padding(bottom = 2.dp)
+                            .padding(bottom = 8.dp)
                             .size(40.dp)
                             .semantics {
                                 testTag = TAG_COMPOSER_ATTACH
@@ -786,7 +819,7 @@ private fun Composer(
                                 onStop()
                             },
                             modifier = Modifier
-                                .padding(bottom = 2.dp)
+                                .padding(bottom = 6.dp)
                                 .height(44.dp)
                                 .semantics { testTag = TAG_COMPOSER_STOP },
                         ) {
@@ -813,7 +846,7 @@ private fun Composer(
                             enabled = sendEnabled,
                             interactionSource = sendInteraction,
                             modifier = Modifier
-                                .padding(bottom = 4.dp)
+                                .padding(bottom = 7.dp)
                                 .size(42.dp)
                                 .graphicsLayer {
                                     scaleX = sendScale
