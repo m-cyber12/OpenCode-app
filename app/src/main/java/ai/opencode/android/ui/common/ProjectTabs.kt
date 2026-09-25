@@ -99,10 +99,14 @@ private fun TabItem(
             },
             modifier = Modifier.padding(top = 10.dp, bottom = 7.dp),
         )
+        // A SHORT underline, never fillMaxWidth: inside a Row the first child is
+        // measured with the whole remaining width, so a fill here made the Chat
+        // tab swallow the entire strip and pushed the other three tabs out of
+        // sight - the exact bug gate U13 caught on the emulator (wired=false).
         Box(
             Modifier
                 .height(3.dp)
-                .fillMaxWidth()
+                .width(28.dp)
                 .background(
                     color = if (active) MaterialTheme.colorScheme.primary else Color.Transparent,
                     shape = RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp),
