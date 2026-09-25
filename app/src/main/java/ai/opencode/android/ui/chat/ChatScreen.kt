@@ -5,7 +5,6 @@ import ai.opencode.android.client.AgentAvailability
 import ai.opencode.android.client.OpenCodeRepository
 import ai.opencode.android.client.Transcript
 import ai.opencode.android.client.UiError
-import ai.opencode.android.ui.common.AppTopBar
 import ai.opencode.android.ui.common.AvailabilityBanner
 import ai.opencode.android.ui.common.EmptyState
 import ai.opencode.android.ui.common.ProjectTab
@@ -14,6 +13,9 @@ import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.ui.common.StatusPill
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +34,8 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -41,12 +45,12 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -62,10 +66,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
@@ -133,74 +144,22 @@ fun ChatScreen(
             .fillMaxSize()
             .semantics { testTag = "chat_screen" },
     ) {
-        AppTopBar(
-            title = projectLabel,
-            subtitle = sessionTitle,
-            onTitleClick = onOpenProjects,
-            titleDescription = projectsDescription,
-            actions = {
-                val conversationsLabel = stringResource(R.string.chat_conversations)
-                val newLabel = stringResource(R.string.chat_new_conversation)
-                val settingsLabel = stringResource(R.string.chat_open_settings)
-                val filesLabel = stringResource(R.string.chat_open_files)
-                IconButton(
-                    onClick = onOpenFiles,
-                    modifier = Modifier.semantics { testTag = "open_files" },
-                ) {
-                    Icon(Icons.Filled.List, contentDescription = filesLabel)
-                }
-                IconButton(
-                    onClick = onOpenSessions,
-                    modifier = Modifier.semantics { testTag = "open_sessions" },
-                ) {
-                    Icon(Icons.Filled.Menu, contentDescription = conversationsLabel)
-                }
-                IconButton(
-                    onClick = onNewSession,
-                    modifier = Modifier.semantics { testTag = "new_session" },
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = newLabel)
-                }
-                IconButton(
-                    onClick = onOpenSettings,
-                    modifier = Modifier.semantics { testTag = "open_settings" },
-                ) {
-                    Icon(Icons.Filled.Settings, contentDescription = settingsLabel)
-                }
-            },
-        )
-
-        // v7 redesign: the four project surfaces as one tab strip. The Files icon
-        // in the bar above stays for now - the device driver and the UI gates
-        // navigate by it - so the tab is a second door, not a moved one.
-        ProjectTabs(
-            current = ProjectTab.CHAT,
-            onSelect = { tab ->
-                when (tab) {
-                    ProjectTab.FILES -> onOpenFiles()
-                    ProjectTab.CHANGES -> onOpenChanges()
-                    ProjectTab.TERMINAL -> onOpenTerminal()
-                    ProjectTab.CHAT -> Unit
-                }
-            },
-            trailing = {
-                // The reference header's one-glance status, honestly mapped: gold
-                // while the agent works, green when everything is ready, the ask
-                // colour when something needs the user. The banners and the busy
-                // bar below stay the detailed record - this chip is a summary,
-                // never the only signal.
-                val chip = when {
-                    state.busy -> stringResource(R.string.chat_status_working) to MaterialTheme.colorScheme.primary
-                    availability == AgentAvailability.READY ->
-                        stringResource(R.string.chat_status_ready) to ChatTheme.chat.success
-                    else -> stringResource(R.string.chat_status_attention) to ChatTheme.chat.attention
-                }
-                StatusPill(
-                    text = chip.first,
-                    color = chip.second,
-                    modifier = Modifier.semantics { testTag = "chat_status_pill" },
-                )
-            },
+        // v8 redesign: the reference header - glyph tile + project identity on
+        // the left, the one-glance status chip and the toolbar on the right. The
+        // Files icon stays even though the bottom bar also leads there: the
+        // device driver and gate U9 navigate by `open_files`, so the tab is a
+        // second door, not a moved one.
+        ChatHeader(
+            projectLabel = projectLabel,
+            sessionTitle = sessionTitle,
+            projectsDescription = projectsDescription,
+            busy = state.busy,
+            availability = availability,
+            onOpenProjects = onOpenProjects,
+            onOpenFiles = onOpenFiles,
+            onOpenSessions = onOpenSessions,
+            onNewSession = onNewSession,
+            onOpenSettings = onOpenSettings,
         )
 
         // The quick switch sits directly under the bar: it is a property of the
@@ -245,6 +204,145 @@ fun ChatScreen(
             canRedo = state.canRedo,
             onRedo = onRedo,
         )
+
+        // v8: the project surfaces live in a bottom bar now (owner's decision:
+        // thumb-reachable). Same tags, same callbacks as the v7 top strip.
+        ProjectTabs(
+            current = ProjectTab.CHAT,
+            onSelect = { tab ->
+                when (tab) {
+                    ProjectTab.FILES -> onOpenFiles()
+                    ProjectTab.CHANGES -> onOpenChanges()
+                    ProjectTab.TERMINAL -> onOpenTerminal()
+                    ProjectTab.CHAT -> Unit
+                }
+            },
+        )
+    }
+}
+
+// ---- header -----------------------------------------------------------------
+
+/**
+ * The v8 chat header, after the reference: a rounded code-glyph tile and the
+ * project's name lead (tapping them opens the project list, as the old title
+ * did), the session's title runs underneath, and the right side carries the
+ * status chip plus the four toolbar actions the driver and the gates navigate
+ * by. Pure layout: every tag, label and callback is the v7 set.
+ */
+@Composable
+private fun ChatHeader(
+    projectLabel: String,
+    sessionTitle: String,
+    projectsDescription: String,
+    busy: Boolean,
+    availability: AgentAvailability,
+    onOpenProjects: () -> Unit,
+    onOpenFiles: () -> Unit,
+    onOpenSessions: () -> Unit,
+    onNewSession: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    val chat = ChatTheme.chat
+    val conversationsLabel = stringResource(R.string.chat_conversations)
+    val newLabel = stringResource(R.string.chat_new_conversation)
+    val settingsLabel = stringResource(R.string.chat_open_settings)
+    val filesLabel = stringResource(R.string.chat_open_files)
+    Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .clickable(onClick = onOpenProjects)
+                        .semantics {
+                            role = Role.Button
+                            contentDescription = projectsDescription
+                        }
+                        .padding(end = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = RoundedCornerShape(12.dp),
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.project_glyph),
+                            style = MonoSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = projectLabel,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = sessionTitle,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = chat.muted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // The one-glance status, honestly mapped: gold while the agent
+                // works, green when everything is ready, the ask colour when
+                // something needs the user. The banners and the busy bar below
+                // stay the detailed record - this chip is a summary, never the
+                // only signal. It sits OUTSIDE the clickable identity block on
+                // purpose: a merged clickable would swallow its test tag.
+                val chip = when {
+                    busy -> stringResource(R.string.chat_status_working) to MaterialTheme.colorScheme.primary
+                    availability == AgentAvailability.READY ->
+                        stringResource(R.string.chat_status_ready) to chat.success
+                    else -> stringResource(R.string.chat_status_attention) to chat.attention
+                }
+                StatusPill(
+                    text = chip.first,
+                    color = chip.second,
+                    modifier = Modifier.semantics { testTag = "chat_status_pill" },
+                )
+                Spacer(Modifier.weight(1f))
+                IconButton(
+                    onClick = onOpenFiles,
+                    modifier = Modifier.size(40.dp).semantics { testTag = "open_files" },
+                ) {
+                    Icon(Icons.Filled.List, contentDescription = filesLabel, tint = chat.muted)
+                }
+                IconButton(
+                    onClick = onOpenSessions,
+                    modifier = Modifier.size(40.dp).semantics { testTag = "open_sessions" },
+                ) {
+                    Icon(Icons.Filled.Menu, contentDescription = conversationsLabel, tint = chat.muted)
+                }
+                IconButton(
+                    onClick = onNewSession,
+                    modifier = Modifier.size(40.dp).semantics { testTag = "new_session" },
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = newLabel, tint = chat.muted)
+                }
+                IconButton(
+                    onClick = onOpenSettings,
+                    modifier = Modifier.size(40.dp).semantics { testTag = "open_settings" },
+                ) {
+                    Icon(Icons.Filled.Settings, contentDescription = settingsLabel, tint = chat.muted)
+                }
+            }
+        }
     }
 }
 
@@ -301,26 +399,39 @@ private fun StatusArea(
 
 @Composable
 private fun BusyBar() {
+    // v8: a floating rounded card in the reference's voice ("* Agent is
+    // working"), not a full-width strip - same tag, same label, same signal.
     val chat = ChatTheme.chat
     val label = stringResource(R.string.chat_working)
-    Surface(color = chat.toolContainer, modifier = Modifier.fillMaxWidth()) {
+    Surface(
+        color = chat.toolContainer,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, chat.toolBorder),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = 14.dp, vertical = 10.dp)
                 .semantics {
                     testTag = "busy_bar"
                     contentDescription = label
                 },
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Box(
+                Modifier
+                    .size(8.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+            Spacer(Modifier.weight(1f))
             CircularProgressIndicator(
                 modifier = Modifier.size(14.dp),
                 strokeWidth = 2.dp,
-                color = chat.success,
+                color = MaterialTheme.colorScheme.primary,
             )
-            Spacer(Modifier.width(10.dp))
-            Text(text = label, style = MaterialTheme.typography.labelMedium, color = chat.muted)
         }
     }
 }
@@ -331,11 +442,15 @@ private fun RetryBanner(retry: Transcript.RetryInfo) {
     val chat = ChatTheme.chat
     val headline = stringResource(R.string.chat_retrying, retry.attempt)
     val detail = retry.message
-    Surface(color = chat.attentionContainer, modifier = Modifier.fillMaxWidth()) {
+    Surface(
+        color = chat.attentionContainer,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+    ) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = 14.dp, vertical = 10.dp)
                 .semantics { testTag = "retry_banner" },
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -540,67 +655,120 @@ private fun Composer(
     canRedo: Boolean,
     onRedo: () -> Unit,
 ) {
+    // v8 redesign, after the reference: one rounded container holds the whole
+    // composer - a ghost attach button on the left, a borderless input in the
+    // middle, and a filled gold send circle (or the Stop pill while a turn
+    // runs) on the right. Same tags, same enable/disable rules as before: the
+    // container is the restyle, not the contract.
     val chat = ChatTheme.chat
     val blockedHint = stringResource(R.string.availability_composer_blocked)
     val sendLabel = stringResource(R.string.chat_send)
+    val attachLabel = stringResource(R.string.chat_attach)
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-        Column {
-            HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+        Column(Modifier.padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 8.dp)) {
             if (!canSend) {
                 Text(
                     text = blockedHint,
                     style = MaterialTheme.typography.labelSmall,
                     color = chat.muted,
-                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 6.dp),
+                    modifier = Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 4.dp),
                 )
             }
             if (canRedo) {
                 TextButton(
                     onClick = onRedo,
-                    modifier = Modifier.padding(start = 8.dp).height(40.dp).semantics { testTag = "redo_turn" },
+                    modifier = Modifier.height(40.dp).semantics { testTag = "redo_turn" },
                 ) {
                     Text(stringResource(R.string.chat_redo_turn), style = MaterialTheme.typography.labelMedium)
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 10.dp),
-                verticalAlignment = Alignment.Bottom,
+            Surface(
+                color = chat.toolContainer,
+                shape = RoundedCornerShape(26.dp),
+                border = BorderStroke(1.dp, chat.toolBorder),
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                TextButton(
-                    onClick = onAttach,
-                    enabled = canSend,
-                    modifier = Modifier.height(48.dp).semantics { testTag = TAG_COMPOSER_ATTACH },
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(start = 6.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.Bottom,
                 ) {
-                    Text(stringResource(R.string.chat_attach), style = MaterialTheme.typography.labelMedium)
-                }
-                OutlinedTextField(
-                    value = draft,
-                    onValueChange = onDraftChange,
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 52.dp)
-                        .semantics { testTag = TAG_COMPOSER_INPUT },
-                    placeholder = { Text(stringResource(R.string.chat_composer_placeholder)) },
-                    label = { Text(stringResource(R.string.chat_composer_label)) },
-                    maxLines = 6,
-                    enabled = canSend,
-                    shape = MaterialTheme.shapes.medium,
-                )
-                Spacer(Modifier.width(6.dp))
-                if (busy) {
-                    TextButton(
-                        onClick = onStop,
-                        modifier = Modifier.height(48.dp).semantics { testTag = TAG_COMPOSER_STOP },
-                    ) {
-                        Text(stringResource(R.string.chat_stop), style = MaterialTheme.typography.labelLarge)
-                    }
-                } else {
                     IconButton(
-                        onClick = onSend,
-                        enabled = canSend && draft.isNotBlank(),
-                        modifier = Modifier.size(48.dp).semantics { testTag = TAG_COMPOSER_SEND },
+                        onClick = onAttach,
+                        enabled = canSend,
+                        modifier = Modifier
+                            .padding(bottom = 2.dp)
+                            .size(40.dp)
+                            .semantics {
+                                testTag = TAG_COMPOSER_ATTACH
+                                contentDescription = attachLabel
+                            },
                     ) {
-                        Icon(Icons.Filled.Send, contentDescription = sendLabel)
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = null,
+                            tint = chat.muted,
+                            modifier = Modifier.clearAndSetSemantics { },
+                        )
+                    }
+                    OutlinedTextField(
+                        value = draft,
+                        onValueChange = onDraftChange,
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
+                            .semantics { testTag = TAG_COMPOSER_INPUT },
+                        placeholder = { Text(stringResource(R.string.chat_composer_placeholder)) },
+                        maxLines = 6,
+                        enabled = canSend,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            disabledBorderColor = Color.Transparent,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            disabledContainerColor = Color.Transparent,
+                        ),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    if (busy) {
+                        TextButton(
+                            onClick = onStop,
+                            modifier = Modifier
+                                .padding(bottom = 2.dp)
+                                .height(44.dp)
+                                .semantics { testTag = TAG_COMPOSER_STOP },
+                        ) {
+                            Text(
+                                text = stringResource(R.string.chat_stop),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    } else {
+                        val sendEnabled = canSend && draft.isNotBlank()
+                        IconButton(
+                            onClick = onSend,
+                            enabled = sendEnabled,
+                            modifier = Modifier
+                                .padding(bottom = 4.dp)
+                                .size(42.dp)
+                                .background(
+                                    color = if (sendEnabled) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                                    },
+                                    shape = CircleShape,
+                                )
+                                .semantics { testTag = TAG_COMPOSER_SEND },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Send,
+                                contentDescription = sendLabel,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
                     }
                 }
             }

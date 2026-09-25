@@ -158,10 +158,6 @@ fun FilesScreen(
             onBack = onBack,
         )
 
-        if (onSelectTab != null && openFile == null) {
-            ProjectTabs(current = ProjectTab.FILES, onSelect = onSelectTab)
-        }
-
         // Where these files are on the device, said plainly - and what can be
         // done about it when the answer is "somewhere a file manager cannot open".
         Surface(
@@ -259,22 +255,28 @@ fun FilesScreen(
         // Either one file is open, or the folder is listed - never both, so the
         // screen has exactly one scrollable region at a time.
         val file = openFile
-        if (file != null) {
-            FileViewer(
-                file = file,
-                onClose = onCloseFile,
-                onSaveCopy = { onSaveCopy(file.path) },
-            )
-        } else {
-            Listing(
-                currentPath = currentPath,
-                nodes = nodes,
-                loading = loading,
-                error = error,
-                onOpenDir = onOpenDir,
-                onOpenFile = onOpenFile,
-                onUp = onUp,
-            )
+        Box(Modifier.fillMaxWidth().weight(1f)) {
+            if (file != null) {
+                FileViewer(
+                    file = file,
+                    onClose = onCloseFile,
+                    onSaveCopy = { onSaveCopy(file.path) },
+                )
+            } else {
+                Listing(
+                    currentPath = currentPath,
+                    nodes = nodes,
+                    loading = loading,
+                    error = error,
+                    onOpenDir = onOpenDir,
+                    onOpenFile = onOpenFile,
+                    onUp = onUp,
+                )
+            }
+        }
+        // v8: the surfaces live in a bottom bar now - same tags as the v7 strip.
+        if (onSelectTab != null && openFile == null) {
+            ProjectTabs(current = ProjectTab.FILES, onSelect = onSelectTab)
         }
     }
 }

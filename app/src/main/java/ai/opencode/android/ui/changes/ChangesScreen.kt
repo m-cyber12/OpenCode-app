@@ -72,16 +72,15 @@ fun ChangesScreen(
             subtitle = projectName,
             onBack = onBack,
         )
-        ProjectTabs(current = ProjectTab.CHANGES, onSelect = onSelectTab)
         if (turns.isEmpty()) {
             EmptyState(
                 title = stringResource(R.string.changes_empty_title),
                 body = stringResource(R.string.changes_empty_body),
-                modifier = Modifier.fillMaxSize().padding(24.dp),
+                modifier = Modifier.fillMaxWidth().weight(1f).padding(24.dp),
             )
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxWidth().weight(1f),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
             ) {
                 items(
@@ -93,6 +92,8 @@ fun ChangesScreen(
                 }
             }
         }
+        // v8: the surfaces live in a bottom bar now - same tags as the v7 strip.
+        ProjectTabs(current = ProjectTab.CHANGES, onSelect = onSelectTab)
     }
 }
 

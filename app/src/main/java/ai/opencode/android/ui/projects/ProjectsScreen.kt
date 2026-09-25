@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
@@ -455,35 +456,63 @@ private fun CreateProjectCard(
     // ProjectStore.sanitize is the pure name rule (no storage access), used here so
     // the hint matches what create() will actually do with the typed name.
     val taken = name.isNotBlank() && existing.contains(ProjectStore.sanitize(name))
-    SectionCard(
-        title = stringResource(R.string.projects_new),
-        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+    // v8 redesign, after the reference's "Start a project" card: the brand
+    // glyph leads, a plain sentence says what a project IS, the input and the
+    // one filled action follow. Same tags, same callback, same name rule.
+    val chat = ChatTheme.chat
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+        color = chat.toolContainer,
+        shape = MaterialTheme.shapes.large,
+        border = BorderStroke(1.dp, chat.toolBorder),
     ) {
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text(stringResource(R.string.projects_name_label)) },
-            placeholder = { Text(stringResource(R.string.projects_name_placeholder)) },
-            supportingText = { Text(stringResource(R.string.projects_name_hint)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics { testTag = "project_name_input" },
-        )
-        if (taken) {
-            Text(
-                text = stringResource(R.string.projects_name_taken),
-                style = MaterialTheme.typography.labelSmall,
-                color = ChatTheme.chat.attention,
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ProjectGlyph(active = false)
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = stringResource(R.string.projects_new),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = stringResource(R.string.projects_new_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = chat.muted,
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text(stringResource(R.string.projects_name_label)) },
+                placeholder = { Text(stringResource(R.string.projects_name_placeholder)) },
+                supportingText = { Text(stringResource(R.string.projects_name_hint)) },
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics { testTag = "project_name_input" },
             )
-            Spacer(Modifier.height(4.dp))
-        }
-        Button(
-            onClick = {
-                onCreate(name)
-                name = ""
-            },
-            modifier = Modifier.fillMaxWidth().height(50.dp).semantics { testTag = "project_create" },
-        ) {
-            Text(stringResource(R.string.projects_create), style = MaterialTheme.typography.labelLarge)
+            if (taken) {
+                Text(
+                    text = stringResource(R.string.projects_name_taken),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = chat.attention,
+                )
+                Spacer(Modifier.height(4.dp))
+            }
+            Spacer(Modifier.height(10.dp))
+            Button(
+                onClick = {
+                    onCreate(name)
+                    name = ""
+                },
+                shape = RoundedCornerShape(50),
+                modifier = Modifier.fillMaxWidth().height(50.dp).semantics { testTag = "project_create" },
+            ) {
+                Text(stringResource(R.string.projects_create), style = MaterialTheme.typography.labelLarge)
+            }
         }
     }
 }
@@ -508,8 +537,8 @@ private fun ProjectRow(
     var menuOpen by remember { mutableStateOf(false) }
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = if (active) chat.userBubble else MaterialTheme.colorScheme.surface,
-        shape = MaterialTheme.shapes.medium,
+        color = if (active) chat.userBubble else chat.toolContainer,
+        shape = MaterialTheme.shapes.large,
         border = BorderStroke(1.dp, if (active) MaterialTheme.colorScheme.primary else chat.toolBorder),
     ) {
         Column {
@@ -537,6 +566,16 @@ private fun ProjectRow(
                     Text(
                         text = project.name,
                         style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    // The reference card's second line: where this project LIVES,
+                    // in mono - the path was previously hidden behind an expand.
+                    Text(
+                        text = project.path,
+                        style = MonoSmall,
+                        color = chat.muted,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -615,19 +654,9 @@ private fun ProjectRow(
                         .clearAndSetSemantics { },
                 )
             }
-            if (expanded) {
-                HorizontalDivider(thickness = 1.dp, color = chat.toolBorder)
-                // Only the (bounded) path lives inside the row; the sessions are
-                // the LazyColumn's own items, right below this header.
-                Text(
-                    text = project.path,
-                    style = MonoSmall,
-                    color = chat.muted,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(start = 12.dp, top = 6.dp, bottom = 8.dp, end = 8.dp),
-                )
-            }
+            // v8: the path moved onto the card face (the reference shows it
+            // under the name), so the expanded state adds nothing extra here -
+            // the sessions are the LazyColumn's own items right below.
         }
     }
 }

@@ -183,7 +183,21 @@ fun MessageRow(
 
     Column(modifier = modifier.fillMaxWidth().semantics { testTag = tag }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Surface(color = chat.success, shape = CircleShape, modifier = Modifier.size(8.dp)) {}
+            // v8: the agent's turns lead with the brand glyph tile (the
+            // reference's avatar), not an anonymous dot.
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.project_glyph),
+                    style = MonoSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
             Spacer(Modifier.width(8.dp))
             Text(
                 text = stringResource(R.string.chat_role_agent),

@@ -70,7 +70,6 @@ fun TerminalScreen(
             subtitle = projectName,
             onBack = onBack,
         )
-        ProjectTabs(current = ProjectTab.TERMINAL, onSelect = onSelectTab)
         if (runtimeLog.isNotEmpty()) {
             RuntimeLogSection(runtimeLog)
         }
@@ -78,7 +77,7 @@ fun TerminalScreen(
             EmptyState(
                 title = stringResource(R.string.terminal_empty_title),
                 body = stringResource(R.string.terminal_empty_body),
-                modifier = Modifier.fillMaxSize().padding(24.dp),
+                modifier = Modifier.fillMaxWidth().weight(1f).padding(24.dp),
             )
         } else {
             Surface(
@@ -103,6 +102,8 @@ fun TerminalScreen(
                 }
             }
         }
+        // v8: the surfaces live in a bottom bar now - same tags as the v7 strip.
+        ProjectTabs(current = ProjectTab.TERMINAL, onSelect = onSelectTab)
     }
 }
 
