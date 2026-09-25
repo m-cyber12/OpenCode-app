@@ -3225,3 +3225,44 @@ header now has four tabs and a status chip; Changes and Terminal open from the
 strip and come back through Chat; both show named empty states on a fresh
 session, real content after a turn. The driver walks all of it, so
 `90-real-device-signed.sh` will verify the same things your eyes do.
+
+### B.15 v8 batch 1: the modernization round - chat + projects, bottom navigation (2026-09-25)
+
+The owner reviewed v7 on paper and called it what it was: a theme, not a
+redesign ("only the app theme has been changed... take more inspiration from
+the reference image"). Three owner decisions were taken up front: batch by
+surface (chat + projects first, owner reviews on-device before the rest),
+navigation moves to a BOTTOM bar, Settings later leads with clean sections and
+tucks diagnostics away. Three reference mocks now live in
+docs/design/reference-v8/ as the direction; gold stays (binding), the salmon
+palette of the mocks does not.
+
+Shipped in `d750be1`, green on its first CI run (36109950567: 354 JVM tests,
+UI gates 20/0/0 debug AND release-shaped, driver selftest 136/0):
+
+* **Bottom navigation**: ProjectTabs is now a bar under the content - quiet
+  text labels, a soft gold pill behind the active surface. Same enum, same
+  `project_tab_*` tags, same callbacks; Chat, Files, Changes and Terminal all
+  place it at the bottom edge. U13/U14 and the driver's TABS_SURFACES walk
+  passed unchanged, which is the point of tags that describe meaning, not
+  position.
+* **Chat header** after the reference: brand glyph tile + project name +
+  session line (tap opens the project list, as the old title did), the status
+  chip anchoring a ghost toolbar row (files / conversations / new / settings -
+  the driver's five tags all kept).
+* **Composer** after the reference: one rounded container - ghost attach
+  icon, borderless input, filled gold send circle; the Stop pill replaces it
+  while a turn runs. Enable rules identical (U4/U5 assert them).
+* **Transcript chrome**: busy and retry banners are floating rounded cards
+  now; agent turns lead with the glyph avatar tile instead of an anonymous
+  dot.
+* **Projects**: the create form is the reference's Start-a-project card
+  (glyph, a plain sentence about what a project is, pill-shaped Create);
+  project rows are cards that show the mono path on their face - it used to
+  hide behind the expand arrow, and nothing asserted it there.
+
+Honest limits, stated: Settings, Sessions, Welcome, the Files listing rows and
+the two v7 surfaces still wear only the theme - that is batch 2, gated on the
+owner's on-device review of this batch. The gate emulator renders the light
+scheme, so the evidence screenshots show the layout, not the device's warm
+dark palette.
