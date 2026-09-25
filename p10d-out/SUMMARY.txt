@@ -1,0 +1,37 @@
+P10D_DEVICE_AWAKE PASS :: screen awake and unlocked before any UI step: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{d026a25 u0 com.android.launcher3/com.android.searchlauncher.SearchLauncher}, [type=1, isChildWindow=false]-[Surface(name=*Title#46510)/@0x16e2072, shown=false, windowType=1]
+P10D_HARNESS_PYTHON PASS :: Python interpreter: python3 (3.14.7)
+P10D_HARNESS_READER PASS :: the accessibility reader parsed the dump: nodes=40 clickable=26 enabled=40 classes=TextView:26,FrameLayout:5,ViewGroup:4,View:3,LinearLayout:1,ScrollView:1 node(s), reader=C:/src/OpenCode-full/phase10/scripts/p10d-ui.py (via cygpath -m (forward-slash Windows path))
+P10D_HARNESS_DUMP PASS :: the accessibility dump is readable from this host: nodes=40 clickable=26 enabled=40 classes=TextView:26,FrameLayout:5,ViewGroup:4,View:3,LinearLayout:1,ScrollView:1 node(s), acquisition /sdcard/p10d-ui.xml; host shell: windows-msys
+P10D_ABI PASS :: arm64-v8a device (the ABI this app ships to users)
+P10D_ANDROID_VERSION PASS :: API 35 (minSdk 29)
+P10D_ARTIFACT PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
+P10D_SIGNATURE SKIP :: apksigner not on PATH: signature checked for PRESENCE by check-apk.py only. Install build-tools and re-run for the cryptographic verdict (docs/RELEASE.md s5)
+P10D_INSTALL PASS :: adb install of the signed release APK succeeded (as C:/src/app-release-signed.apk) - this is the artifact a user would sideload
+P10D_VERSION_ON_DEVICE PASS :: installed versionName=1.18.23-phase10 code=8
+P10D_FIRST_RUN PASS :: returning install: the app opened its projects/chat surface by itself in 63s (payload extracted + agent started, no privileged access). The device already holds project(s) on shared storage (1 mobile); NOT deleting anything by design. Fresh-install flow: CI F1-F3. screen: mWakefulness=Awake mShowingDream=false mDreamingLockscreen=false mCurrentFocus=Window{28ba4ed u0 io.github.mcyber12.opencode/ai.opencode.android.MainActivity}, [type=1, isChildWindow=false]-[Surface(name=*Title#46557)/@0x76fd06, shown=false, windowType=1]
+P10D_WORKSPACE_STEP SKIP :: no workspace step on screen (a returning install with a project opens its chat directly, which is the documented behaviour)
+P10D_WORKSPACE_FIRST_PROJECT SKIP :: no workspace step, so nothing to confirm
+P10D_FIRST_RUN_PROJECT SKIP :: no project list and no projects control was reachable; the workspace step already created the first project
+P10D_TABS_SURFACES PASS :: the Changes and Terminal tabs both open their surfaces on the signed build and the Chat tab returns to the conversation (all real taps; empty states name themselves on a fresh session)
+P10D_FILES_SCREEN PASS :: the app's file browser shows the project at /storage/emulated/0/Documents/OpenCode/1 (storage mode: Documents/OpenCode; read from the screen, not from the app's internals)
+P10D_FILES_SIMPLIFIED PASS :: the signed build's file browser offers no copy-path, no export and no folder chooser; the storage panel states the location only (see 1?-v4-files.png)
+P10D_WORKSPACE_SECTION PASS :: Settings carries the workspace switch (Choose another folder) and the switching note is on screen; the section names the folder as 'Workspace folder'
+P10D_PROVIDER_SEARCH FAIL :: the provider search field was not reachable ('<none>')
+P10D_PROVIDER_KEY_ONLY SKIP :: no search field, so no provider to activate
+P10D_MODEL_QUICK_SWITCH SKIP :: no expandable provider row with a star control was reachable in Settings
+P10D_LIVE_TURN PASS :: the answer is on screen AND a Shell-command tool card is visible: a real live tool call ran in the SIGNED build (ui/ui-turn-tool.xml)
+P10D_VISIBILITY_LOCATION PASS :: :: the project root exists and holds 2 project(s): /storage/emulated/0/Documents/OpenCode (source: probed, Android 15)
+P10D_VISIBILITY_SHELL_LIST PASS :: :: a non-root shell lists the project directory (/storage/emulated/0/Documents/OpenCode/1): 2 lines
+P10D_VISIBILITY_SHELL_READ PASS :: :: read p10-visible.txt from outside the app: 'p10-live-ok' (matches /P10_VISIBLE_|p10-live-ok/)
+P10D_VISIBILITY_PRIVATE_ROOT_NOT_LIVE PASS :: :: the live project root is outside /data: /storage/emulated/0/Documents/OpenCode
+P10D_VISIBILITY_SHARED_ROOT PASS :: :: the project root is on shared storage and outside Android/data: /storage/emulated/0/Documents/OpenCode (Android 15)
+P10D_VISIBILITY_DOCUMENTS_PROVIDER SKIP :: :: this device does not let a shell query the Documents provider (Error while accessing provider:com.android.externalstorage.documents)
+P10D_VISIBILITY_SHELL_WRITE PASS :: :: a file written by the non-root shell in /storage/emulated/0/Documents/OpenCode/1 was readable back: the directory is shared, ordinary storage
+P10D_VISIBILITY_SHELL_BASELINE PASS :: :: baseline holds: an unprivileged shell cannot read /data/data/io.github.mcyber12.opencode at all, so the PASSs above are real
+P10D_FILES_APP_AND_SHELL PASS :: in-app browser path=/storage/emulated/0/Documents/OpenCode/1; shell visibility rc=0 (see visibility.log for the raw ls/cat output)
+P10D_MEMORY PASS :: total PSS 98 MB (see meminfo.txt)
+P10D_STORAGE PASS :: on-device project storage: /storage/emulated/0/Documents/OpenCode=15K /storage/emulated/0/Android/data/io.github.mcyber12.opencode=7.0K
+P10D_PACKAGING_SWEEP PASS :: no packaging/runtime failure lines ATTRIBUTED to io.github.mcyber12.opencode (0 uncredited device-side lines - e.g. OEM stack crashes - counted for completeness in run.log; none is the artifact's fault)
+P10D_NO_CRASH PASS :: no app crash in this session (fatal blocks whose Process: line names io.github.mcyber12.opencode: 0; 0 uncredited device-side lines - system/OEM processes - are not the app)
+P10D_UI_DUMP PASS :: every accessibility dump was readable (49 dump(s) saved in ui/; last acquisition: /sdcard/p10d-ui.xml)
+P10D_SCREENSHOTS PASS :: 18 screenshots captured at every step and every one is a real screen (screenshots/)
