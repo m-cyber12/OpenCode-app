@@ -6,6 +6,7 @@ import ai.opencode.android.client.ToolKind
 import ai.opencode.android.client.ToolKinds
 import ai.opencode.android.client.ToolMeta
 import ai.opencode.android.client.ToolMetaParser
+import ai.opencode.android.client.TodoParser
 import ai.opencode.android.client.Transcript
 import ai.opencode.android.ui.common.DetailDisclosure
 import ai.opencode.android.ui.common.StatusPill
@@ -16,8 +17,10 @@ import ai.opencode.android.ui.common.relativeTimeLabel
 import ai.opencode.android.ui.markdown.CodeBlock
 import ai.opencode.android.ui.markdown.MarkdownText
 import ai.opencode.android.ui.theme.ChatTheme
+import ai.opencode.android.ui.theme.MonoBody
 import ai.opencode.android.ui.theme.MonoSmall
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -62,10 +65,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -156,10 +156,11 @@ fun MessageRow(
             Surface(
                 color = chat.userBubble,
                 contentColor = chat.onUserBubble,
-                shape = RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp),
-                modifier = Modifier.fillMaxWidth(0.92f),
+                shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp),
+                border = BorderStroke(1.dp, chat.toolBorder),
+                modifier = Modifier.widthIn(max = 340.dp),
             ) {
-                Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 11.dp)) {
                     if (text.isNotBlank()) MarkdownText(source = text, color = chat.onUserBubble)
                     for (f in files) {
                         Spacer(Modifier.height(4.dp))
@@ -417,16 +418,20 @@ fun ToolCard(part: Transcript.Part, modifier: Modifier = Modifier) {
     val headline = toolHeadline(part.tool)
     val title = oneLine(part.title.ifBlank { primaryInputValue(part.input) })
 
-    // Phase 10 polish - "a tool is running here, this is not prose":
-    //   * a 4 dp status rail down the left edge, drawn in the status colour, so a
-    //     running/failed/finished tool is distinguishable at a glance and without
-    //     reading the pill (and, being colour PLUS position, without relying on
-    //     colour alone);
-    //   * `animateContentSize`, so expanding a card is a transition rather than a
-    //     jump - finite on purpose: an infinite animation would keep the Compose
-    //     test clock busy and hang `waitForIdle()` in the UI gates;
-    //   * a bordered output box, so the agent's own words and a command's raw
-    //     output are never the same surface.
+    // The reference direction for a tool card: a mono `[ category · tool ]` kind
+    // line, then the command or path as the prominent line - the terminal-flavoured
+    // face a developer scans - with the status pill and the chevron on the right.
+    // Status stays colour PLUS words (the pill's text), never colour alone.
+    // `animateContentSize` keeps expanding a transition rather than a jump - finite
+    // on purpose: an infinite animation would keep the Compose test clock busy and
+    // hang `waitForIdle()` in the UI gates. The output stays a bordered mono box,
+    // so the agent's own words and a command's raw output are never the same
+    // surface.
+    val todos = if (ToolKinds.of(part.tool) == ToolKind.TODO) {
+        remember(part.input, part.metadata) { TodoParser.parse(part.input, part.metadata) }
+    } else {
+        emptyList()
+    }
     Surface(
         modifier = modifier.fillMaxWidth().semantics { testTag = "${TAG_TOOL_CARD}_${part.id}" },
         color = chat.toolContainer,
@@ -436,27 +441,13 @@ fun ToolCard(part: Transcript.Part, modifier: Modifier = Modifier) {
             if (part.status == "error") MaterialTheme.colorScheme.error else chat.toolBorder,
         ),
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .animateContentSize()
-                .drawBehind {
-                    // The rail spans whatever the card's content measured to.
-                    val stroke = 4.dp.toPx()
-                    drawRoundRect(
-                        color = statusColor,
-                        size = Size(stroke, size.height),
-                        cornerRadius = CornerRadius(stroke / 2f),
-                    )
-                }
-                .padding(start = 4.dp),
-        ) {
+        Column(Modifier.fillMaxWidth().animateContentSize()) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 52.dp)
+                    .heightIn(min = 54.dp)
                     .clickable { expanded = !expanded }
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
                     .semantics {
                         testTag = "${TAG_TOOL_HEADER}_${part.id}"
                         role = Role.Button
@@ -464,27 +455,69 @@ fun ToolCard(part: Transcript.Part, modifier: Modifier = Modifier) {
                     },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                StatusPill(text = statusLabel, color = statusColor)
-                Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = headline,
-                        style = MaterialTheme.typography.labelLarge,
+                        text = stringResource(R.string.chat_tool_kind_frame, headline),
+                        style = MonoSmall,
+                        color = when (part.status) {
+                            "error" -> MaterialTheme.colorScheme.error
+                            "running" -> MaterialTheme.colorScheme.primary
+                            else -> chat.muted
+                        },
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     if (title.isNotEmpty()) {
+                        Spacer(Modifier.height(2.dp))
                         Text(
                             text = title,
-                            style = MonoSmall,
-                            color = chat.muted,
+                            style = MonoBody,
+                            color = chat.onToolContainer,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
+                Spacer(Modifier.width(10.dp))
+                StatusPill(text = statusLabel, color = statusColor)
                 Spacer(Modifier.width(6.dp))
                 Chevron(up = expanded)
+            }
+
+            // A todo tool is a plan: its list is the card's face, checklist-style,
+            // always visible - never one tap deeper. Malformed input falls back to
+            // the generic face above, with the raw JSON behind the expander.
+            if (todos.isNotEmpty()) {
+                Column(Modifier.padding(start = 14.dp, end = 14.dp, bottom = 12.dp)) {
+                    for (item in todos) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(vertical = 3.dp),
+                        ) {
+                            val glyph: String
+                            val tint: Color
+                            when (item.status) {
+                                "completed" -> { glyph = "\u2713"; tint = chat.success }
+                                "in_progress" -> { glyph = "\u25CF"; tint = MaterialTheme.colorScheme.primary }
+                                "cancelled" -> { glyph = "\u2715"; tint = chat.muted }
+                                else -> { glyph = "\u25CB"; tint = chat.muted }
+                            }
+                            Text(
+                                text = glyph,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = tint,
+                                modifier = Modifier.width(24.dp),
+                            )
+                            Text(
+                                text = item.content,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (item.status == "completed") chat.muted else chat.onToolContainer,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
             }
 
             if (expanded) {

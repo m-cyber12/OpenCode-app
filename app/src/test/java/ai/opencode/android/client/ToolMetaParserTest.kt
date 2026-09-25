@@ -163,4 +163,39 @@ class ToolMetaParserTest {
         assertEquals(2, meta.deletions)
         assertEquals(3, meta.exit)
     }
+
+    // ---- TodoParser: the plan checklist behind a todowrite card ----------------
+
+    @Test
+    fun todoParserReadsUpstreamInputShape() {
+        val input = """{"todos":[
+            {"id":"1","content":"Design the login screen","status":"completed","priority":"high"},
+            {"id":"2","content":"Wire up the form state","status":"in_progress"},
+            {"id":"3","content":"Add validation errors","status":"pending"}
+        ]}"""
+        val todos = TodoParser.parse(input)
+        assertEquals(3, todos.size)
+        assertEquals(TodoItem("Design the login screen", "completed"), todos[0])
+        assertEquals(TodoItem("Wire up the form state", "in_progress"), todos[1])
+        assertEquals(TodoItem("Add validation errors", "pending"), todos[2])
+    }
+
+    @Test
+    fun todoParserPrefersMetadataOverInputAndNormalisesStatus() {
+        val input = """{"todos":[{"content":"stale entry","status":"pending"}]}"""
+        val metadata = """{"todos":[{"content":"fresh entry","status":" COMPLETED "}]}"""
+        val todos = TodoParser.parse(input, metadata)
+        assertEquals(1, todos.size)
+        assertEquals(TodoItem("fresh entry", "completed"), todos[0])
+    }
+
+    @Test
+    fun todoParserDegradesToEmptyOnMalformedOrForeignShapes() {
+        assertTrue(TodoParser.parse("").isEmpty())
+        assertTrue(TodoParser.parse("null").isEmpty())
+        assertTrue(TodoParser.parse("not json at all").isEmpty())
+        assertTrue(TodoParser.parse("""{"command":"ls -la"}""").isEmpty())
+        assertTrue(TodoParser.parse("""{"todos":"oops"}""").isEmpty())
+        assertTrue(TodoParser.parse("""{"todos":[{"status":"pending"},"raw",42]}""").isEmpty())
+    }
 }

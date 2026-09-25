@@ -120,7 +120,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val summary = remember(runtimeState) { runtimeState.toSummary() }
 
     var route by rememberSaveable { mutableStateOf(ROUTE_WELCOME) }
-    var themeName by rememberSaveable { mutableStateOf(ThemeChoice.SYSTEM.name) }
+    // Dark is the product's designed look (the reference direction is a dark,
+    // warm-gold surface); SYSTEM and LIGHT stay available in Settings.
+    var themeName by rememberSaveable { mutableStateOf(ThemeChoice.DARK.name) }
     var dynamicColor by rememberSaveable { mutableStateOf(false) }
     var projectName by rememberSaveable { mutableStateOf(store.activeName()) }
     var projects by remember { mutableStateOf(emptyList<Project>()) }
@@ -133,7 +135,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     var knownWorkspaces by remember { mutableStateOf(emptyList<KnownWorkspace>()) }
     var sessionsTick by remember { mutableStateOf(0) }
 
-    val theme = runCatching { ThemeChoice.valueOf(themeName) }.getOrDefault(ThemeChoice.SYSTEM)
+    val theme = runCatching { ThemeChoice.valueOf(themeName) }.getOrDefault(ThemeChoice.DARK)
     val dark = when (theme) {
         ThemeChoice.DARK -> true
         ThemeChoice.LIGHT -> false

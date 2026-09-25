@@ -537,7 +537,7 @@ private fun ProjectRow(
     var menuOpen by remember { mutableStateOf(false) }
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = if (active) chat.userBubble else chat.toolContainer,
+        color = if (active) chat.selectedContainer else chat.toolContainer,
         shape = MaterialTheme.shapes.large,
         border = BorderStroke(1.dp, if (active) MaterialTheme.colorScheme.primary else chat.toolBorder),
     ) {

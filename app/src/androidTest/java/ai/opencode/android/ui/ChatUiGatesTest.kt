@@ -857,7 +857,28 @@ class ChatUiGatesTest {
             output = "",
             error = "command not found: nope",
         )
-        val assistant = message("msg_a1", "assistant", listOf(shell, edit))
+        // The agent's plan (upstream `tool/todo.ts` shape): the checklist must sit
+        // on the card's face - completed, active and pending rows all readable
+        // without a tap.
+        val todoInput = JSONObject()
+            .put(
+                "todos",
+                org.json.JSONArray()
+                    .put(JSONObject().put("id", "1").put("content", "Design the login screen").put("status", "completed"))
+                    .put(JSONObject().put("id", "2").put("content", "Wire up the form state").put("status", "in_progress"))
+                    .put(JSONObject().put("id", "3").put("content", "Add validation errors").put("status", "pending")),
+            )
+            .toString()
+        val todo = toolPart(
+            id = "prt_todo",
+            messageID = "msg_a1",
+            tool = "todowrite",
+            status = "completed",
+            title = "3 todos",
+            input = todoInput,
+            output = "",
+        )
+        val assistant = message("msg_a1", "assistant", listOf(shell, edit, todo))
         val failedTurn = message("msg_a2", "assistant", listOf(failed), error = null)
         renderChat(
             uiState(sessionView(messages = listOf(message("msg_u1", "user", listOf(textPart("p", "msg_u1", "list the project"))), assistant, failedTurn))),
@@ -873,6 +894,14 @@ class ChatUiGatesTest {
         val headlineEdit = countText(editHeadline) > 0
         val statusDone = countText(context.getString(R.string.chat_tool_status_completed)) >= 2
         val expandLabel = context.getString(R.string.chat_tool_expand)
+
+        // The plan checklist is the todo card's collapsed face: every row readable
+        // with the card still collapsed (no tool_output node yet).
+        val todoText = onScreenText()
+        val todoCollapsed = !exists("$TAG_TOOL_OUTPUT" + "_prt_todo")
+        val todoRows = todoText.contains("Design the login screen") &&
+            todoText.contains("Wire up the form state") &&
+            todoText.contains("Add validation errors")
 
         rule.onNodeWithTag("$TAG_TOOL_HEADER" + "_prt_shell").performClick()
         rule.waitForIdle()
@@ -909,14 +938,15 @@ class ChatUiGatesTest {
         val ok = collapsedShell && collapsedEdit && headlineShell && headlineEdit && statusDone &&
             shellExpanded && outputShown && inputShown && exitShown && collapseLabel &&
             diffSummary && diffFile && diffBody && diagnostics && failedExpanded && failedStatus &&
-            expandLabel.isNotEmpty()
+            todoCollapsed && todoRows && expandLabel.isNotEmpty()
         gate(
             "U2",
             ok,
             "collapsedByDefault=$collapsedShell/$collapsedEdit headline=$headlineShell/$headlineEdit " +
                 "expandedShowsOutput=$shellExpanded output=$outputShown input=$inputShown exit=$exitShown " +
                 "diff=$diffSummary/$diffFile/$diffBody diagnostics=$diagnostics " +
-                "failedCardOpen=$failedExpanded failedStatus=$failedStatus",
+                "failedCardOpen=$failedExpanded failedStatus=$failedStatus " +
+                "todoChecklist=$todoRows(collapsed=$todoCollapsed)",
         )
     }
 

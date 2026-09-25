@@ -1622,7 +1622,7 @@ private fun ThemeButton(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        color = if (selected) ChatTheme.chat.userBubble else MaterialTheme.colorScheme.surfaceVariant,
+        color = if (selected) ChatTheme.chat.selectedContainer else MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(10.dp),
         border = BorderStroke(1.dp, if (selected) ChatTheme.chat.attention else ChatTheme.chat.toolBorder),
         modifier = modifier

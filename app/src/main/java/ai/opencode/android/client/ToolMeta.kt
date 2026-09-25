@@ -60,6 +60,44 @@ object ToolMetaParser {
     }
 }
 
+/** One entry of the agent's own plan, as `todowrite` reported it. */
+data class TodoItem(val content: String, val status: String)
+
+/**
+ * The agent's plan checklist, read out of the fields OpenCode itself puts on a
+ * `todowrite`/`todoread` tool part - nothing inferred, nothing re-derived.
+ *
+ * Shape from the pinned upstream source (`packages/opencode/src/tool/todo.ts`):
+ * the call INPUT is `{todos: [{id, content, status, priority?}]}` with `status`
+ * one of `pending | in_progress | completed | cancelled`; `state.metadata.todos`
+ * echoes the same array back. Metadata wins when both parse, because it is the
+ * server's own record of what it stored. Pure org.json so a JVM unit test covers
+ * the real field names, and any malformed document parses to an empty list - the
+ * card then falls back to its generic face rather than inventing rows.
+ */
+object TodoParser {
+
+    fun parse(input: String, metadata: String = ""): List<TodoItem> {
+        val fromMetadata = fromJson(metadata)
+        if (fromMetadata.isNotEmpty()) return fromMetadata
+        return fromJson(input)
+    }
+
+    private fun fromJson(raw: String): List<TodoItem> {
+        if (raw.isBlank() || raw == "null") return emptyList()
+        val o = runCatching { JSONObject(raw) }.getOrNull() ?: return emptyList()
+        val todos = o.optJSONArray("todos") ?: return emptyList()
+        val out = ArrayList<TodoItem>(todos.length())
+        for (i in 0 until todos.length()) {
+            val item = todos.optJSONObject(i) ?: continue
+            val content = item.optString("content").trim()
+            if (content.isEmpty()) continue
+            out.add(TodoItem(content = content, status = item.optString("status").trim().lowercase()))
+        }
+        return out
+    }
+}
+
 /**
  * The family a tool belongs to, for choosing an icon and a one-line human summary.
  * The upstream tool NAME is always shown verbatim beside it: this categorisation is

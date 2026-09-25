@@ -156,7 +156,7 @@ private fun SessionRow(
                 this.selected = selected
             }
             .clickable(onClick = onSelect),
-        color = if (selected) chat.userBubble else MaterialTheme.colorScheme.surface,
+        color = if (selected) chat.selectedContainer else MaterialTheme.colorScheme.surface,
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(1.dp, if (selected) chat.attention else chat.toolBorder),
     ) {

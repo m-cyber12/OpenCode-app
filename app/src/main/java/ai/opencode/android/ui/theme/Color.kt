@@ -19,13 +19,13 @@ import androidx.compose.ui.graphics.Color
 
 // ---- dark (default) ----
 internal val InkBackground = Color(0xFF120F0A)
-internal val InkSurface = Color(0xFF1A1610)
-internal val InkSurfaceHigh = Color(0xFF231D14)
-internal val InkSurfaceVariant = Color(0xFF2D2518)
+internal val InkSurface = Color(0xFF1B1712)
+internal val InkSurfaceHigh = Color(0xFF241E16)
+internal val InkSurfaceVariant = Color(0xFF2C2620)
 internal val InkOnSurface = Color(0xFFEDE7DA)
 internal val InkOnSurfaceMuted = Color(0xFFB3A98F)
 internal val InkOutline = Color(0xFF51462D)
-internal val InkOutlineSoft = Color(0xFF2B2415)
+internal val InkOutlineSoft = Color(0xFF2F2822)
 
 internal val AccentGold = Color(0xFFF0C24F)
 internal val AccentGoldDeep = Color(0xFFC79A2A)

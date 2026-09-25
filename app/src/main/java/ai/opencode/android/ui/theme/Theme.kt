@@ -67,9 +67,14 @@ internal val LocalCodePalette = staticCompositionLocalOf { DarkCodePalette }
 /** Roles the chat UI needs that Material's scheme does not name. */
 @Immutable
 data class ChatPalette(
-    /** The user's own turn bubble. */
+    /**
+     * The user's own turn bubble. A quiet neutral (the reference direction): the
+     * user's words matter, the bubble itself should not shout.
+     */
     val userBubble: Color,
     val onUserBubble: Color,
+    /** "This row is the active/selected one": gold-tinted, used by lists only. */
+    val selectedContainer: Color,
     /** The assistant's turn surface (near-background, so text is the focus). */
     val agentBubble: Color,
     val onAgentBubble: Color,
@@ -86,8 +91,9 @@ data class ChatPalette(
 )
 
 internal val DarkChatPalette = ChatPalette(
-    userBubble = AccentGoldContainer,
-    onUserBubble = AccentOnGoldContainer,
+    userBubble = InkSurfaceVariant,
+    onUserBubble = InkOnSurface,
+    selectedContainer = AccentGoldContainer,
     agentBubble = InkSurface,
     onAgentBubble = InkOnSurface,
     attention = AccentAmber,
@@ -101,8 +107,9 @@ internal val DarkChatPalette = ChatPalette(
 )
 
 internal val LightChatPalette = ChatPalette(
-    userBubble = DayGoldContainer,
-    onUserBubble = DayOnGoldContainer,
+    userBubble = PaperSurfaceVariant,
+    onUserBubble = PaperOnSurface,
+    selectedContainer = DayGoldContainer,
     agentBubble = PaperSurface,
     onAgentBubble = PaperOnSurface,
     attention = DayAmber,
