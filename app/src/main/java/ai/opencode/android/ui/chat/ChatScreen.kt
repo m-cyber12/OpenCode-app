@@ -7,12 +7,25 @@ import ai.opencode.android.client.Transcript
 import ai.opencode.android.client.UiError
 import ai.opencode.android.ui.common.AvailabilityBanner
 import ai.opencode.android.ui.common.EmptyState
+import ai.opencode.android.ui.common.RedoGlyph
 import ai.opencode.android.ui.common.ProjectTab
 import ai.opencode.android.ui.common.ProjectTabs
 import ai.opencode.android.ui.common.RuntimeSummary
-import ai.opencode.android.ui.common.StatusPill
+import ai.opencode.android.client.OpenCodeApi
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
+import ai.opencode.android.ui.theme.goldAccentBrush
+import ai.opencode.android.ui.theme.goldenBackdrop
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.graphics.SolidColor
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -76,7 +89,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -154,30 +166,29 @@ fun ChatScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            // v9: the whole conversation floats over true black that settles
+            // into a faint golden bloom at the base (a static brush - the
+            // glow never animates). Header, composer and tab bar are
+            // transparent so the one backdrop runs edge to edge.
+            .background(goldenBackdrop())
             .semantics { testTag = "chat_screen" },
     ) {
-        // v8 redesign: the reference header - glyph tile + project identity on
-        // the left, the one-glance status chip and a single hamburger menu on
-        // the right. The owner called the old four-icon toolbar clutter: Files
-        // duplicated the bottom tab and Sessions duplicated the project list,
-        // so both are gone and the remaining actions live inside `chat_menu`.
+        // v9 premium pass, after the Gemini reference: ONE header row - the
+        // hamburger leads, the model capsule sits beside it, the status orb
+        // holds the far right. The project/session identity moved INSIDE the
+        // hamburger menu (glass card at its very top), so the row above the
+        // conversation carries exactly three quiet controls and nothing else.
         ChatHeader(
             projectLabel = projectLabel,
             sessionTitle = sessionTitle,
             projectsDescription = projectsDescription,
             busy = state.busy,
             availability = availability,
+            model = state.model,
+            starred = state.starredModels,
+            onPickModel = onPickModel,
             onOpenProjects = onOpenProjects,
             onNewSession = onNewSession,
-            onOpenSettings = onOpenSettings,
-        )
-
-        // The quick switch sits directly under the bar: it is a property of the
-        // conversation the user is looking at (which model answers), not a setting.
-        ModelQuickSwitch(
-            current = state.model,
-            starred = state.starredModels,
-            onPick = onPickModel,
             onOpenSettings = onOpenSettings,
         )
 
@@ -234,13 +245,16 @@ fun ChatScreen(
 // ---- header -----------------------------------------------------------------
 
 /**
- * The v8 chat header, after the reference: a rounded code-glyph tile and the
- * project's name lead (tapping them opens the project list, as the old title
- * did), the session's title runs underneath, and the right side carries the
- * status chip plus the four toolbar actions the driver and the gates navigate
- * by. Pure layout: every tag, label and callback is the v7 set.
+ * The v9 chat header, after the Gemini reference: one row. The hamburger menu
+ * leads on the left; the model capsule sits beside it; the status orb holds
+ * the far right. The project/session identity (the code-glyph tile and both
+ * names) lives INSIDE the menu now, as a glass card at its very top - tapping
+ * it opens the project list, exactly as the old header block did. Every tag,
+ * label and callback the gates and the driver navigate by is the v8 set:
+ * `chat_menu`, `new_session`, `open_settings`, `model_quick_switch`,
+ * `chat_status_pill`.
  */
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun ChatHeader(
     projectLabel: String,
@@ -248,6 +262,9 @@ private fun ChatHeader(
     projectsDescription: String,
     busy: Boolean,
     availability: AgentAvailability,
+    model: OpenCodeApi.ModelRef?,
+    starred: List<OpenCodeApi.ModelRef>,
+    onPickModel: (String, String) -> Unit,
     onOpenProjects: () -> Unit,
     onNewSession: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -256,128 +273,209 @@ private fun ChatHeader(
     val newLabel = stringResource(R.string.chat_new_conversation)
     val settingsLabel = stringResource(R.string.chat_open_settings)
     val menuLabel = stringResource(R.string.chat_open_menu)
-    Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(14.dp))
-                        .clickable(onClick = onOpenProjects)
-                        .semantics {
-                            role = Role.Button
-                            contentDescription = projectsDescription
-                        }
-                        .padding(end = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 6.dp, end = 12.dp, top = 8.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        var menuOpen by remember { mutableStateOf(false) }
+        Box {
+            IconButton(
+                onClick = { menuOpen = true },
+                modifier = Modifier.size(42.dp).semantics { testTag = "chat_menu" },
+            ) {
+                Icon(Icons.Filled.Menu, contentDescription = menuLabel, tint = MaterialTheme.colorScheme.onSurface)
+            }
+            // The menu itself rounds to a soft card (the stock extraSmall corner
+            // reads sharp against the black backdrop).
+            MaterialTheme(shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(22.dp))) {
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    // The identity card: the code-glyph tile on a golden
+                    // gradient, project name and session title beside it, the
+                    // whole card a floating glass pane. One tap = the project
+                    // list, exactly what tapping the old header block did.
+                    Surface(
+                        onClick = {
+                            menuOpen = false
+                            onOpenProjects()
+                        },
+                        color = chat.toolContainer,
+                        shape = RoundedCornerShape(18.dp),
+                        border = BorderStroke(1.dp, chat.toolBorder),
                         modifier = Modifier
-                            .size(38.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                shape = RoundedCornerShape(12.dp),
-                            ),
-                        contentAlignment = Alignment.Center,
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                            .widthIn(min = 236.dp)
+                            .semantics { contentDescription = projectsDescription },
                     ) {
-                        Text(
-                            text = stringResource(R.string.project_glyph),
-                            style = MonoSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(goldAccentBrush(), RoundedCornerShape(13.dp)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.project_glyph),
+                                    style = MonoSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                )
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = projectLabel,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    text = sessionTitle,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = chat.muted,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
                     }
-                    Spacer(Modifier.width(10.dp))
-                    Column {
-                        Text(
-                            text = projectLabel,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = sessionTitle,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = chat.muted,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+                    Spacer(Modifier.height(4.dp))
+                    DropdownMenuItem(
+                        text = { Text(newLabel) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Add,
+                                contentDescription = null,
+                                tint = chat.muted,
+                                modifier = Modifier.clearAndSetSemantics { },
+                            )
+                        },
+                        onClick = {
+                            menuOpen = false
+                            onNewSession()
+                        },
+                        modifier = Modifier.semantics {
+                            testTagsAsResourceId = true
+                            testTag = "new_session"
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(settingsLabel) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Settings,
+                                contentDescription = null,
+                                tint = chat.muted,
+                                modifier = Modifier.clearAndSetSemantics { },
+                            )
+                        },
+                        onClick = {
+                            menuOpen = false
+                            onOpenSettings()
+                        },
+                        modifier = Modifier.semantics {
+                            testTagsAsResourceId = true
+                            testTag = "open_settings"
+                        },
+                    )
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // The one-glance status, honestly mapped: gold while the agent
-                // works, green when everything is ready, the ask colour when
-                // something needs the user. The banners and the busy bar below
-                // stay the detailed record - this chip is a summary, never the
-                // only signal. It sits OUTSIDE the clickable identity block on
-                // purpose: a merged clickable would swallow its test tag.
-                val chip = when {
-                    busy -> stringResource(R.string.chat_status_working) to MaterialTheme.colorScheme.primary
-                    availability == AgentAvailability.READY ->
-                        stringResource(R.string.chat_status_ready) to chat.success
-                    else -> stringResource(R.string.chat_status_attention) to chat.attention
-                }
-                StatusPill(
-                    text = chip.first,
-                    color = chip.second,
-                    modifier = Modifier.semantics { testTag = "chat_status_pill" },
+        }
+        Spacer(Modifier.width(4.dp))
+        ModelQuickSwitch(
+            current = model,
+            starred = starred,
+            onPick = onPickModel,
+            onOpenSettings = onOpenSettings,
+        )
+        Spacer(Modifier.weight(1f))
+        StatusOrb(busy = busy, availability = availability)
+    }
+}
+
+/**
+ * The one-glance status, as a glass orb (owner's v9 brief): collapsed it is a
+ * small circle holding only the coloured dot - gold while the agent works,
+ * green when ready, amber while the runtime starts, red when something is
+ * down. A tap (or any status change) expands it into a capsule with the dot
+ * on the left and the status word beside it, and ~2.6 s later it settles back
+ * to the orb on its own. Finite animations only: one delay, one contentSize
+ * tween, one visibility tween per change - nothing loops. The banners and the
+ * busy bar below stay the detailed record; this is a summary, never the only
+ * signal.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StatusOrb(
+    busy: Boolean,
+    availability: AgentAvailability,
+    modifier: Modifier = Modifier,
+) {
+    val chat = ChatTheme.chat
+    val text: String
+    val color: Color
+    when {
+        busy -> {
+            text = stringResource(R.string.chat_status_working)
+            color = MaterialTheme.colorScheme.primary
+        }
+        availability == AgentAvailability.READY -> {
+            text = stringResource(R.string.chat_status_ready)
+            color = chat.success
+        }
+        availability == AgentAvailability.RUNTIME_STARTING -> {
+            text = stringResource(R.string.chat_status_starting)
+            color = chat.attention
+        }
+        else -> {
+            text = stringResource(R.string.chat_status_attention)
+            color = MaterialTheme.colorScheme.error
+        }
+    }
+    var pulse by remember { mutableStateOf(0) }
+    var expanded by remember { mutableStateOf(false) }
+    // Re-runs when the status text changes OR the user taps: expand, hold,
+    // settle back. A change mid-hold restarts the effect (the old one is
+    // cancelled), so the capsule simply stays open showing the new word.
+    LaunchedEffect(text, pulse) {
+        expanded = true
+        delay(2600)
+        expanded = false
+    }
+    Surface(
+        onClick = { pulse++ },
+        color = chat.toolContainer,
+        shape = RoundedCornerShape(50),
+        border = BorderStroke(1.dp, chat.toolBorder),
+        modifier = modifier.semantics {
+            testTag = "chat_status_pill"
+            contentDescription = text
+        },
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .height(36.dp)
+                .animateContentSize(animationSpec = tween(240))
+                .padding(horizontal = 13.dp),
+        ) {
+            Box(Modifier.size(10.dp).background(color, CircleShape))
+            AnimatedVisibility(
+                visible = expanded,
+                enter = fadeIn(tween(160)) + expandHorizontally(tween(240)),
+                exit = fadeOut(tween(140)) + shrinkHorizontally(tween(220)),
+            ) {
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1,
+                    modifier = Modifier.padding(start = 8.dp),
                 )
-                Spacer(Modifier.weight(1f))
-                // v8 iteration 3 (owner): the ghost toolbar was clutter - Files
-                // duplicated the bottom tab and Sessions duplicated the project
-                // list - so the header keeps ONE hamburger button and the two
-                // real actions live in its menu, same tags as before.
-                var menuOpen by remember { mutableStateOf(false) }
-                Box {
-                    IconButton(
-                        onClick = { menuOpen = true },
-                        modifier = Modifier.size(40.dp).semantics { testTag = "chat_menu" },
-                    ) {
-                        Icon(Icons.Filled.Menu, contentDescription = menuLabel, tint = chat.muted)
-                    }
-                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                        DropdownMenuItem(
-                            text = { Text(newLabel) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.Add,
-                                    contentDescription = null,
-                                    tint = chat.muted,
-                                    modifier = Modifier.clearAndSetSemantics { },
-                                )
-                            },
-                            onClick = {
-                                menuOpen = false
-                                onNewSession()
-                            },
-                            modifier = Modifier.semantics {
-                                testTagsAsResourceId = true
-                                testTag = "new_session"
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(settingsLabel) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.Settings,
-                                    contentDescription = null,
-                                    tint = chat.muted,
-                                    modifier = Modifier.clearAndSetSemantics { },
-                                )
-                            },
-                            onClick = {
-                                menuOpen = false
-                                onOpenSettings()
-                            },
-                            modifier = Modifier.semantics {
-                                testTagsAsResourceId = true
-                                testTag = "open_settings"
-                            },
-                        )
-                    }
-                }
             }
         }
     }
@@ -735,7 +833,7 @@ private fun Composer(
     val blockedHint = stringResource(R.string.availability_composer_blocked)
     val sendLabel = stringResource(R.string.chat_send)
     val attachLabel = stringResource(R.string.chat_attach)
-    Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxWidth()) {
+    Surface(color = Color.Transparent, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 8.dp)) {
             if (!canSend) {
                 Text(
@@ -746,11 +844,22 @@ private fun Composer(
                 )
             }
             if (canRedo) {
-                TextButton(
+                // v9: an icon, not a word (owner's request for the turn
+                // actions). The label survives as the accessibility name.
+                val redoLabel = stringResource(R.string.chat_redo_turn)
+                IconButton(
                     onClick = onRedo,
-                    modifier = Modifier.height(40.dp).semantics { testTag = "redo_turn" },
+                    modifier = Modifier.size(40.dp).semantics {
+                        testTag = "redo_turn"
+                        contentDescription = redoLabel
+                    },
                 ) {
-                    Text(stringResource(R.string.chat_redo_turn), style = MaterialTheme.typography.labelMedium)
+                    Icon(
+                        imageVector = RedoGlyph,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(19.dp).clearAndSetSemantics { },
+                    )
                 }
             }
             Surface(
@@ -853,10 +962,10 @@ private fun Composer(
                                     scaleY = sendScale
                                 }
                                 .background(
-                                    color = if (sendEnabled) {
-                                        MaterialTheme.colorScheme.primary
+                                    brush = if (sendEnabled) {
+                                        goldAccentBrush()
                                     } else {
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                                        SolidColor(MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
                                     },
                                     shape = CircleShape,
                                 )

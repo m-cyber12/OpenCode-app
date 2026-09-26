@@ -3363,3 +3363,44 @@ the agent's probing of Termux paths was the model exploring, not a broken
 feature. And the sandbox reset git state twice this round; both times the
 worktree carried the truth and the remote was re-anchored before pushing,
 which is why B.16 landed a commit later than written.
+
+## B.18 v9 premium pass, round 1 (2026-09-26): black glass, golden gradients, the Gemini-order header
+
+The owner put the app next to Gemini and called ours raw. Round 1 of the v9
+premium pass, all in the chat surface's chrome:
+
+- the dark theme's backdrop drops to TRUE black and every screen's floating
+  pane moves down with it; the chat backdrop is a static vertical brush that
+  settles into a faint golden bloom at the base (the reference's signature
+  glow, in this product's gold - never animated, per the finite-animation
+  rule);
+- the header is ONE row in the reference's order: hamburger top-left, the
+  model selector beside it as a minimal glass capsule (just the model's name;
+  the full "Model: <name>" sentence survives as the accessibility label the
+  real-device driver taps), and the status top-right;
+- the status is now a glass orb: collapsed, a small circle holding only the
+  coloured dot (gold working / green ready / amber starting / red down); a
+  tap or any status change expands it into a capsule - dot left, status word
+  beside it - and ~2.6s later it settles back on its own. One delay, finite
+  tweens, nothing loops;
+- the project/session identity (the code-glyph tile and both names) moved
+  inside the hamburger menu as a glass card at its very top, on a golden
+  gradient tile; tapping it opens the project list exactly as the old header
+  block did;
+- golden gradients throughout: the send circle, the active bottom tab pill
+  and the identity tile all draw the same bright-to-deep brass brush; the tab
+  bar lost its divider and slab and floats over the bloom;
+- Retry-last-turn / Undo-last-turn / Redo became glyphs (the owner asked what
+  they do and whether they could be icons: retry reverts and re-runs the last
+  prompt, undo reverts the turn including its file changes, redo restores an
+  undone one). Undo/Redo are not in material-icons-core, so the two Material
+  paths are drawn locally in AppGlyphs.kt - the icon-set rule stands.
+
+Contract audit before the push: chat_menu, new_session, open_settings,
+model_quick_switch(+label/menu/empty/settings/pick_N), chat_status_pill,
+message_retry, message_undo, redo_turn and every project_tab_* tag survive
+with the same callbacks; U7 keeps unnamed=0 (every glyph button carries its
+sentence as contentDescription); U10's on-screen model-name check is
+satisfied by the capsule text; the driver's "Model:" needle matches the
+capsule's accessibility label. Static checks EXIT=0. The driver was not
+touched this round.

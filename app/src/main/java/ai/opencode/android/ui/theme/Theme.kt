@@ -14,6 +14,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -104,6 +105,14 @@ data class ChatPalette(
     val toolBorder: Color,
     val success: Color,
     val muted: Color,
+    /** Bright end of the golden accent gradient (send circle, active tab, identity tile). */
+    val goldBright: Color,
+    /** Deep end of the golden accent gradient. */
+    val goldDeep: Color,
+    /** Top of the screen backdrop (true black in the dark theme). */
+    val backdropTop: Color,
+    /** The faint golden bloom the backdrop fades into at the base. */
+    val backdropGlow: Color,
 )
 
 internal val DarkChatPalette = ChatPalette(
@@ -120,6 +129,10 @@ internal val DarkChatPalette = ChatPalette(
     toolBorder = InkHairline,
     success = AccentGreen,
     muted = InkOnSurfaceMuted,
+    goldBright = AccentGold,
+    goldDeep = AccentGoldDeep,
+    backdropTop = InkBackground,
+    backdropGlow = InkGlowGold,
 )
 
 internal val LightChatPalette = ChatPalette(
@@ -136,6 +149,10 @@ internal val LightChatPalette = ChatPalette(
     toolBorder = PaperOutlineSoft,
     success = DayGreen,
     muted = PaperOnSurfaceMuted,
+    goldBright = DayGold,
+    goldDeep = DayGoldDeep,
+    backdropTop = PaperBackground,
+    backdropGlow = PaperGlowGold,
 )
 
 internal val LocalChatPalette = staticCompositionLocalOf { DarkChatPalette }
@@ -260,4 +277,29 @@ object ChatTheme {
         @Composable @ReadOnlyComposable get() = LocalChatPalette.current
     val code: CodePalette
         @Composable @ReadOnlyComposable get() = LocalCodePalette.current
+}
+
+/**
+ * v9 premium pass: the screen backdrop. True black through most of the screen,
+ * settling into a faint golden bloom at the base - the reference's signature
+ * "the interface floats over a glow" move, in this product's gold. A static
+ * brush, not an animation: the glow never pulses (the finite-animation rule).
+ */
+@Composable
+@ReadOnlyComposable
+fun goldenBackdrop(): Brush {
+    val chat = LocalChatPalette.current
+    return Brush.verticalGradient(
+        0.00f to chat.backdropTop,
+        0.62f to chat.backdropTop,
+        1.00f to chat.backdropGlow,
+    )
+}
+
+/** The golden accent gradient: bright brass into deep brass, top-left to bottom-right. */
+@Composable
+@ReadOnlyComposable
+fun goldAccentBrush(): Brush {
+    val chat = LocalChatPalette.current
+    return Brush.linearGradient(listOf(chat.goldBright, chat.goldDeep))
 }

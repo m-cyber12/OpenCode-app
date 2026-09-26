@@ -1,6 +1,7 @@
 package ai.opencode.android.ui.common
 
 import ai.opencode.android.R
+import ai.opencode.android.ui.theme.goldAccentBrush
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -10,13 +11,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -48,11 +49,11 @@ fun ProjectTabs(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxWidth()) {
-        HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+        // v9: no divider, no opaque slab - the bar floats over the screen's
+        // golden bloom, and only the active pill carries colour.
         Row(
             Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -76,16 +77,13 @@ private fun TabItem(
     // The tag template stays INLINE in the semantics block: the harness selfcheck
     // resolves gate lookups against literals on `testTag` lines, and a tag built
     // on a separate line is invisible to it.
+    val pill = goldAccentBrush()
     Box(
         modifier = modifier
             .padding(horizontal = 4.dp)
             .clickable(enabled = !active) { onSelect(tab) }
             .background(
-                color = if (active) {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-                } else {
-                    Color.Transparent
-                },
+                brush = if (active) pill else SolidColor(Color.Transparent),
                 shape = RoundedCornerShape(50),
             )
             .height(38.dp)
@@ -102,7 +100,7 @@ private fun TabItem(
             style = MaterialTheme.typography.labelLarge,
             fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
             color = if (active) {
-                MaterialTheme.colorScheme.primary
+                MaterialTheme.colorScheme.onPrimary
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant
             },

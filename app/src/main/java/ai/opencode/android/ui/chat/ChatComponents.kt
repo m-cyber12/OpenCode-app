@@ -10,6 +10,7 @@ import ai.opencode.android.client.TodoParser
 import ai.opencode.android.client.Transcript
 import ai.opencode.android.ui.common.DetailDisclosure
 import ai.opencode.android.ui.common.StatusPill
+import ai.opencode.android.ui.common.UndoGlyph
 import ai.opencode.android.ui.common.formatBytes
 import ai.opencode.android.ui.common.formatCost
 import ai.opencode.android.ui.common.oneLine
@@ -56,8 +57,10 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -288,22 +291,43 @@ fun MessageRow(
         }
 
         if (onRetry != null || onUndo != null) {
-            Spacer(Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Spacer(Modifier.height(2.dp))
+            // v9: the turn actions as quiet glyphs (owner's request) - retry
+            // re-runs the last prompt, undo reverts the turn and its file
+            // changes. The full sentences survive as accessibility names.
+            val retryLabel = stringResource(R.string.chat_retry_turn)
+            val undoLabel = stringResource(R.string.chat_undo_turn)
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 if (onRetry != null) {
-                    TextButton(
+                    IconButton(
                         onClick = onRetry,
-                        modifier = Modifier.height(44.dp).semantics { testTag = TAG_MESSAGE_RETRY },
+                        modifier = Modifier.size(40.dp).semantics {
+                            testTag = TAG_MESSAGE_RETRY
+                            contentDescription = retryLabel
+                        },
                     ) {
-                        Text(stringResource(R.string.chat_retry_turn), style = MaterialTheme.typography.labelMedium)
+                        Icon(
+                            imageVector = Icons.Filled.Refresh,
+                            contentDescription = null,
+                            tint = chat.muted,
+                            modifier = Modifier.size(19.dp).clearAndSetSemantics { },
+                        )
                     }
                 }
                 if (onUndo != null) {
-                    TextButton(
+                    IconButton(
                         onClick = onUndo,
-                        modifier = Modifier.height(44.dp).semantics { testTag = TAG_MESSAGE_UNDO },
+                        modifier = Modifier.size(40.dp).semantics {
+                            testTag = TAG_MESSAGE_UNDO
+                            contentDescription = undoLabel
+                        },
                     ) {
-                        Text(stringResource(R.string.chat_undo_turn), style = MaterialTheme.typography.labelMedium)
+                        Icon(
+                            imageVector = UndoGlyph,
+                            contentDescription = null,
+                            tint = chat.muted,
+                            modifier = Modifier.size(19.dp).clearAndSetSemantics { },
+                        )
                     }
                 }
             }

@@ -18,10 +18,14 @@ import androidx.compose.ui.graphics.Color
 //     keeping verbatim: green = alive), errors stay red.
 
 // ---- dark (default) ----
-internal val InkBackground = Color(0xFF120F0A)
-internal val InkSurface = Color(0xFF1B1712)
-internal val InkSurfaceHigh = Color(0xFF241E16)
-internal val InkSurfaceVariant = Color(0xFF2C2620)
+// v9 premium pass (owner, after the Gemini reference): the backdrop drops to
+// TRUE black - on OLED the app disappears into the bezel and every floating
+// pane reads as glass over a void. The lifted surfaces keep their warm cast
+// but move down with it, so the old depth ordering survives the drop.
+internal val InkBackground = Color(0xFF000000)
+internal val InkSurface = Color(0xFF14100B)
+internal val InkSurfaceHigh = Color(0xFF1C1711)
+internal val InkSurfaceVariant = Color(0xFF251E16)
 internal val InkOnSurface = Color(0xFFEDE7DA)
 internal val InkOnSurfaceMuted = Color(0xFFB3A98F)
 internal val InkOutline = Color(0xFF51462D)
@@ -34,6 +38,13 @@ internal val InkHairline = Color(0x1FFFFFFF)
 
 internal val AccentGold = Color(0xFFF0C24F)
 internal val AccentGoldDeep = Color(0xFFC79A2A)
+
+// v9: the two ends of the golden gradients (buttons, active pill, identity
+// tile) and the faint gold bloom the black backdrop fades into at the base -
+// the Gemini reference's bottom glow, in this product's metal.
+internal val InkGlowGold = Color(0xFF1D1302)
+internal val PaperGlowGold = Color(0xFFF1E4C3)
+internal val DayGoldDeep = Color(0xFF57420A)
 internal val AccentOnGold = Color(0xFF221803)
 internal val AccentGoldContainer = Color(0xFF4A3A12)
 internal val AccentOnGoldContainer = Color(0xFFFFE7AC)

@@ -4,8 +4,13 @@ import ai.opencode.android.R
 import ai.opencode.android.client.ModelRefCodec
 import ai.opencode.android.client.OpenCodeApi
 import ai.opencode.android.ui.theme.ChatTheme
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -64,12 +69,18 @@ fun ModelQuickSwitch(
     val currentText = current?.let { ModelRefCodec.encode(it) } ?: stringResource(R.string.chat_model_none)
     val label = stringResource(R.string.chat_model_switch, currentText)
 
+    // v9 premium pass, after the Gemini reference: the switch is a compact
+    // glass capsule in the header row (hamburger - model - status), showing
+    // just the model's own name. The accessibility label keeps the full
+    // "Model: <name>" sentence - it is what the real-device driver taps.
     Row(
         modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 40.dp)
+            .clip(RoundedCornerShape(50))
+            .background(chat.toolContainer)
+            .border(1.dp, chat.toolBorder, RoundedCornerShape(50))
             .clickable { open = true }
-            .padding(horizontal = 14.dp)
+            .heightIn(min = 36.dp)
+            .padding(start = 14.dp, end = 6.dp)
             .semantics {
                 testTag = "model_quick_switch"
                 role = Role.Button
@@ -78,13 +89,13 @@ fun ModelQuickSwitch(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = chat.muted,
+            text = currentText,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
-                .weight(1f)
+                .widthIn(max = 200.dp)
                 .semantics { testTag = "model_quick_switch_label" },
         )
         Icon(
@@ -93,6 +104,9 @@ fun ModelQuickSwitch(
             tint = chat.muted,
             modifier = Modifier.size(20.dp).clearAndSetSemantics { },
         )
+        // The menu matches the capsule: a soft rounded card, not the stock
+        // sharp-cornered sheet.
+        MaterialTheme(shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(20.dp))) {
         DropdownMenu(
             expanded = open,
             onDismissRequest = { open = false },
@@ -137,6 +151,7 @@ fun ModelQuickSwitch(
                 },
                 modifier = Modifier.semantics { testTag = "model_quick_switch_settings" },
             )
+        }
         }
         Spacer(Modifier.width(0.dp))
     }
