@@ -3322,3 +3322,44 @@ Honest limit: the sandbox's GitHub egress died right after the board came
 back, so run #101's screenshots were verified by gate assertions and byte
 sizes, not yet by my own eyes - the owner sees the real thing on his device
 either way, and the next connectivity window closes the loop.
+
+## B.17 v8 fix round (2026-09-26): the owner's eight findings, the hamburger header, and the day "Ask" became real
+
+The owner tested run #101 on his phone, called the polish done, and filed
+eight findings. All eight shipped in `90e9e3f`, plus his request to collapse
+the chat header into one hamburger menu: workspace-switch session lists now
+follow the switch (root-keyed effect + finite retry), diffs carry green/red
+line backgrounds (new DIFF_ADD/DIFF_DEL tokens), the terminal wraps long
+commands, composer buttons are centred, new transcript content fades in from
+above (finite one-shot tweens), the MCP form reports invalid JSON instead of
+silently doing nothing, and Files/Sessions left the header (the tab strip and
+the project list already owned those doors).
+
+The permissions finding was the deep one, and run #102 went RED proving it.
+Two real defects: an empty config never meant "ask" to the server (upstream
+evaluates missing rules against the agent's own ruleset, so everything ran
+allowed while the table displayed "Now: Ask"), and a patched policy only
+governed the NEXT loaded instance. The fix writes the five managed keys as
+explicit `ask` once, and disposes loaded instances on every change - the
+same remedy Phase 9 proved for stale credentials. #102's server log shows it
+working ('evaluated permission=bash action=ask' -> 'asking id=per_...') and
+the smoke L2 gate failing for a new, honest reason: the ask sheet appeared
+and NOTHING answered it - the gate's answering loop exited the moment the
+tool part existed, a beat before the sheet rendered. The two "stray root"
+screenshot warnings in the logcat were the unanswered sheet itself.
+
+`19c8038` taught both live gates and the device driver's R6 wait to answer
+asks all the way to the tool's terminal state. Run 36238691261 is the proof,
+end to end and live: smoke L2 `tool=bash status=completed ... asksAnswered=1`
+- a real model call, blocked by a real permission sheet, answered the way a
+user would, tool output on screen. Smoke totals 20/0/0; the main pass ran
+18/0 with L1/L2 SKIP (the free-tier model served nothing for 300s in that
+window; the same model answered in the smoke pass an hour later - provider
+queue, tolerated by design and worth watching, not hiding).
+
+Honest notes: the owner's Python question is answered by the payload
+manifest, not an apology - bun, git and ripgrep ship, Python does not, and
+the agent's probing of Termux paths was the model exploring, not a broken
+feature. And the sandbox reset git state twice this round; both times the
+worktree carried the truth and the remote was re-anchored before pushing,
+which is why B.16 landed a commit later than written.
