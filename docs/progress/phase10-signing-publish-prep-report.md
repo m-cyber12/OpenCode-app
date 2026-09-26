@@ -3465,3 +3465,21 @@ known dead phase9 workflow trigger), and the full driver self-test was
 re-run after the rewrite: pass=136 fail=0, SELFTEST PASS, including the v4
 provider scenarios now travelling the new route. CI on this push is the
 binding gate before the owner installs.
+
+### B.19.1 CI run #106: nineteen of twenty gates green, one screenshot race, fixed
+
+Run 36265727147 (`32c6346`) came back: P10-STATIC PASS, driver self-test in CI
+pass=136 fail=0, unit 357/0, P6 UI gates 18 pass / 0 fail / 2 tolerated SKIPs
+(L1/L2: the provider queue refused the turn and the app said so), and the
+release-shaped smoke run 20/0/0 WITH the relocated flows: SMOKE_UI_U11
+surface=true (Providers screen, `+`-gated custom form), SMOKE_UI_U12 through
+the Workspace accordion, U7 unnamed=0. The single FAIL was P10_STORE_ASSETS:
+70-device-screenshots.sh captured only 01-welcome.png because "Continue" was
+not on screen three seconds later. The two runs' logs tell the story: #105
+tapped Continue at +9s; #106's runtime reported ready faster and the app
+AUTO-advanced off the welcome (the documented no-timer advance) before the
+dump - the button's absence was the app working. The script now captures the
+post-welcome surface either way (a returning install's next screen is the
+conversation - real product, real listing material) instead of betting on
+boot speed. Nothing about the gate or the validator was weakened; the fix is
+in the capture, where the race was.

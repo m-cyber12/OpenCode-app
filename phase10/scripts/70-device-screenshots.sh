@@ -106,11 +106,22 @@ adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 ||
 settle 6
 shot 01-welcome.png || true
 
-# ---- 2. projects (Continue -> the project list) -----------------------------
+# ---- 2. the surface after the welcome ---------------------------------------
+# Race fix (CI run #106): on a returning install the app auto-advances off the
+# welcome on its own the moment the runtime reports ready - no tap involved.
+# "Continue" missing from the dump is that advance having already happened, not
+# a failure, so the screen is captured EITHER way: whatever the app advanced to
+# (the project list on a first run, the conversation on a returning one) is the
+# product's real next surface, which is exactly what a store listing shows.
+# Run #105 won this race by seconds and run #106 lost it - the capture must not
+# depend on how fast the runtime boots.
 if tap_text "Continue" "welcome action"; then
   settle 4
-  shot 02-projects.png || true
+else
+  log "no 'Continue' on screen - the app already advanced past the welcome (capturing where it landed)"
+  settle 4
 fi
+shot 02-projects.png || true
 
 # ---- 3. create a project, land in the conversation --------------------------
 if tap_text "New project" "projects action"; then
