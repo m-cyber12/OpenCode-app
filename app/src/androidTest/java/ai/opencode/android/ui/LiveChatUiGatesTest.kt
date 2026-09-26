@@ -516,6 +516,13 @@ class LiveChatUiGatesTest {
         } else {
             val toolPartId = started.id
             waitFor(180_000) {
+                // v8 fix round: bash is ask-by-default now (the permission table
+                // stopped being decorative), so the tool stays "running" until
+                // the ask sheet is answered - and the sheet can render a beat
+                // AFTER the tool part appears, i.e. after the loop above has
+                // already exited. Run #102's smoke L2 failed exactly there:
+                // status=running forever, asksAnswered=0. Answer asks HERE too.
+                asksAnswered += answerAnyAsk()
                 toolPartsInNew(known).firstOrNull { it.id == toolPartId }?.status == "completed"
             }
             // Judge the finished call, not the snapshot the loop happened to see last.
@@ -527,7 +534,10 @@ class LiveChatUiGatesTest {
         val cardTag = "tool_card_${part.id}"
         val headerTag = "tool_header_${part.id}"
         val outputTag = "tool_output_${part.id}"
-        val cardShown = waitFor(60_000) { exists(cardTag) }
+        val cardShown = waitFor(60_000) {
+            asksAnswered += answerAnyAsk()
+            exists(cardTag)
+        }
         val collapsedBeforeTap = !exists(outputTag)
         val collapsedShot = shot("31-live-tool-card-collapsed.png")
         val headline = context.getString(R.string.chat_tool_kind_shell)

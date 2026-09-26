@@ -545,18 +545,38 @@ class LiveToolCallGatesTest {
             return
         }
 
+        // v8 fix round: bash is ask-by-default now (the permission table stopped
+        // being decorative), so a freshly started call stays "running" until the
+        // ask sheet is answered - and the sheet can render a beat after the tool
+        // part appears, after the loop above already exited (run #102's smoke L2:
+        // status=running forever, asksAnswered=0). Keep answering asks until the
+        // SAME part id reaches a terminal state, then judge the finished call.
+        val done = if (part.status == "completed") {
+            part
+        } else {
+            val toolPartId = part.id
+            waitFor(180_000) {
+                asksAnswered += answerAnyAsk()
+                probe.toolPartsInNew(known).firstOrNull { it.id == toolPartId }?.status == "completed"
+            }
+            probe.toolPartsInNew(known).firstOrNull { it.id == toolPartId } ?: part
+        }
+
         // Wait for the UI to catch up with the server, then assert on the card
         // that carries THIS part's id - no guessing which card is whose.
-        val cardTag = "tool_card_${part.id}"
-        val headerTag = "tool_header_${part.id}"
-        val outputTag = "tool_output_${part.id}"
-        val cardShown = waitFor(60_000) { exists(cardTag) }
+        val cardTag = "tool_card_${done.id}"
+        val headerTag = "tool_header_${done.id}"
+        val outputTag = "tool_output_${done.id}"
+        val cardShown = waitFor(60_000) {
+            asksAnswered += answerAnyAsk()
+            exists(cardTag)
+        }
         val collapsedBeforeTap = !exists(outputTag)
         shot("41-p8-tool-card-collapsed.png")
         val headline = context.getString(R.string.chat_tool_kind_shell)
         val lines = allLines()
         val headlineShown = lines.any { it.contains(headline, ignoreCase = true) } ||
-            lines.any { it.contains(part.tool, ignoreCase = true) }
+            lines.any { it.contains(done.tool, ignoreCase = true) }
 
         var tapped = false
         if (exists(headerTag)) {
@@ -564,7 +584,7 @@ class LiveToolCallGatesTest {
                 .onSuccess { tapped = true }
         }
         val outputShown = waitFor(30_000) { exists(outputTag) }
-        val serverOutputHasMarker = part.output.contains(marker)
+        val serverOutputHasMarker = done.output.contains(marker)
         val uiOutputHasMarker = allLines().any { it.contains(marker) }
         shot("42-p8-tool-card-expanded.png")
 
@@ -573,7 +593,7 @@ class LiveToolCallGatesTest {
         gate(
             "TOOL",
             ok,
-            "tool=${part.tool} status=${part.status} partId=${part.id} cardShown=$cardShown " +
+            "tool=${done.tool} status=${done.status} partId=${done.id} cardShown=$cardShown " +
                 "collapsedBeforeTap=$collapsedBeforeTap headline=$headlineShown expandedByTap=$tapped " +
                 "outputRendered=$outputShown markerInServerOutput=$serverOutputHasMarker " +
                 "markerOnScreen=$uiOutputHasMarker asksAnswered=$asksAnswered marker=$marker " +

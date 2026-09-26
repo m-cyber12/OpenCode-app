@@ -1847,7 +1847,22 @@ elif tap_any "composer_input" "Message the agent" "Message"; then
   tap_any "composer_send" "Send" >/dev/null 2>&1 || adb shell input keyevent KEYCODE_ENTER >/dev/null 2>&1
   log "prompt sent; waiting up to $(tmo 300)s for the answer"
   TURN=0
-  if wait_for "turn-answer" "p10-visible.txt|p10-live-ok" "$(tmo 300)"; then TURN=1; fi
+  ASKS=0
+  # v8 fix round: bash and edit are ask-by-default in this build (the permission
+  # table stopped being decorative), so the turn BLOCKS on the app's own
+  # permission sheet until someone taps "Allow once" - this driver is that
+  # someone, exactly like the owner would be. The wait answers sheets while it
+  # waits instead of staring at a stuck screen for the whole window.
+  TURN_T=$(tmo 300); TURN_WAITED=0
+  while [ "$TURN_WAITED" -lt "$TURN_T" ]; do
+    ui_dump "turn-answer" >/dev/null 2>&1 || true
+    if ui_has "p10-visible.txt" || ui_has "p10-live-ok"; then TURN=1; break; fi
+    if ui_has_any "permission_once" "Allow once"; then
+      tap_any "permission_once" "Allow once" >/dev/null 2>&1 && ASKS=$((ASKS+1))
+      log "answered a permission ask (total $ASKS): the ask-by-default policy is live on this phone"
+    fi
+    sleep 10; TURN_WAITED=$((TURN_WAITED+10))
+  done
   shot "turn-answer" || true
   TOOLCARD=0
   ui_dump "turn-tool" >/dev/null 2>&1 && { ui_has "Shell command" || ui_has "bash" || ui_has "tool"; } && TOOLCARD=1
@@ -1857,7 +1872,7 @@ elif tap_any "composer_input" "Message the agent" "Message"; then
     tap_any "Shell command" "bash" "Write" >/dev/null 2>&1 || true
     sleep 1
     shot "tool-card-expanded" || true
-    rd LIVE_TURN 0 "the answer is on screen AND a Shell-command tool card is visible: a real live tool call ran in the SIGNED build (ui/ui-turn-tool.xml)"
+    rd LIVE_TURN 0 "the answer is on screen AND a Shell-command tool card is visible: a real live tool call ran in the SIGNED build (asks answered on the way: $ASKS - ui/ui-turn-tool.xml)"
   elif [ "$TURN" = 1 ]; then
     MODEL_AVAILABLE=1
     rd LIVE_TURN 1 "the expected output is on screen but no tool card is visible: the model may have echoed the prompt instead of running it - expand the turn and re-check (ui/ui-turn-tool.xml)"
