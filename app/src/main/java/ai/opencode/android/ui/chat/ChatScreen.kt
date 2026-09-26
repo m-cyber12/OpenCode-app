@@ -6,7 +6,6 @@ import ai.opencode.android.client.OpenCodeRepository
 import ai.opencode.android.client.Transcript
 import ai.opencode.android.client.UiError
 import ai.opencode.android.ui.common.AvailabilityBanner
-import ai.opencode.android.ui.common.EmptyState
 import ai.opencode.android.ui.common.RedoGlyph
 import ai.opencode.android.ui.common.ProjectTab
 import ai.opencode.android.ui.common.ProjectTabs
@@ -28,6 +27,7 @@ import androidx.compose.ui.graphics.SolidColor
 import kotlinx.coroutines.delay
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,6 +53,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
@@ -100,6 +101,7 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -141,6 +143,8 @@ fun ChatScreen(
     onOpenSessions: () -> Unit,
     onOpenProjects: () -> Unit,
     onOpenSettings: () -> Unit,
+    /** v9.1: providers manage themselves on their own surface; defaulted so the gates' call sites stay valid. */
+    onOpenProviders: () -> Unit = onOpenSettings,
     onOpenFiles: () -> Unit = {},
     /** v7 redesign: the Changes and Terminal tabs under the project header. */
     onOpenChanges: () -> Unit = {},
@@ -190,6 +194,7 @@ fun ChatScreen(
             onOpenProjects = onOpenProjects,
             onNewSession = onNewSession,
             onOpenSettings = onOpenSettings,
+            onOpenProviders = onOpenProviders,
         )
 
         StatusArea(state = state, runtime = runtime, availability = availability, onDismissBanner = onDismissBanner)
@@ -268,22 +273,30 @@ private fun ChatHeader(
     onOpenProjects: () -> Unit,
     onNewSession: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenProviders: () -> Unit,
 ) {
     val chat = ChatTheme.chat
     val newLabel = stringResource(R.string.chat_new_conversation)
     val settingsLabel = stringResource(R.string.chat_open_settings)
+    val providersLabel = stringResource(R.string.chat_open_providers)
     val menuLabel = stringResource(R.string.chat_open_menu)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 6.dp, end = 12.dp, top = 8.dp, bottom = 6.dp),
+            .padding(start = 10.dp, end = 14.dp, top = 10.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         var menuOpen by remember { mutableStateOf(false) }
         Box {
+            // v9.1: the hamburger sits in its own glass circle, like the other
+            // header controls - the row reads as three floating glass pieces.
             IconButton(
                 onClick = { menuOpen = true },
-                modifier = Modifier.size(42.dp).semantics { testTag = "chat_menu" },
+                modifier = Modifier
+                    .size(42.dp)
+                    .background(chat.toolContainer, CircleShape)
+                    .border(1.dp, chat.toolBorder, CircleShape)
+                    .semantics { testTag = "chat_menu" },
             ) {
                 Icon(Icons.Filled.Menu, contentDescription = menuLabel, tint = MaterialTheme.colorScheme.onSurface)
             }
@@ -346,6 +359,25 @@ private fun ChatHeader(
                     }
                     Spacer(Modifier.height(4.dp))
                     DropdownMenuItem(
+                        text = { Text(providersLabel) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Lock,
+                                contentDescription = null,
+                                tint = chat.muted,
+                                modifier = Modifier.clearAndSetSemantics { },
+                            )
+                        },
+                        onClick = {
+                            menuOpen = false
+                            onOpenProviders()
+                        },
+                        modifier = Modifier.semantics {
+                            testTagsAsResourceId = true
+                            testTag = "open_providers"
+                        },
+                    )
+                    DropdownMenuItem(
                         text = { Text(newLabel) },
                         leadingIcon = {
                             Icon(
@@ -386,12 +418,15 @@ private fun ChatHeader(
                 }
             }
         }
-        Spacer(Modifier.width(4.dp))
+        Spacer(Modifier.width(6.dp))
+        // Models are starred on the Providers surface now, so the quick
+        // switch's manage entry leads there (in the gates the two callbacks
+        // are the same lambda, which keeps the U10 contract meaningful).
         ModelQuickSwitch(
             current = model,
             starred = starred,
             onPick = onPickModel,
-            onOpenSettings = onOpenSettings,
+            onOpenSettings = onOpenProviders,
         )
         Spacer(Modifier.weight(1f))
         StatusOrb(busy = busy, availability = availability)
@@ -677,7 +712,49 @@ private fun TranscriptPane(
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             if (messages.isEmpty()) {
-                item(key = "empty") { EmptyState(title = emptyTitle, body = emptyBody) }
+                // v9.1: an intentional idle state - a golden glyph and the two
+                // lines, centred in the viewport - instead of copy stranded at
+                // the top of a dark void. Same strings as before (the driver
+                // reads the title as a chat needle).
+                item(key = "empty") {
+                    Box(
+                        modifier = Modifier.fillParentMaxHeight(0.68f).fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.widthIn(max = 420.dp),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(46.dp)
+                                    .background(goldAccentBrush(), RoundedCornerShape(15.dp)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.project_glyph),
+                                    style = MonoSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                )
+                            }
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                text = emptyTitle,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center,
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = emptyBody,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = ChatTheme.chat.muted,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
+                }
             }
             itemsIndexed(items = messages, key = { _, m -> m.id }, contentType = { _, m -> m.role }) { index, message ->
                 val isLast = message.id == messages.lastOrNull()?.id
@@ -707,18 +784,37 @@ private fun TranscriptPane(
                         i--
                     }
                 }
-                MessageRow(
-                    message = message,
-                    now = now,
-                    streaming = busy && isLast,
-                    onRetry = if (isLast && message.role != "user") onRetry else null,
-                    onUndo = if (isLast && message.role != "user") onUndo else null,
-                    showHeader = headerShown,
-                    showFooter = footerShown,
-                    groupTokensIn = tokensIn,
-                    groupTokensOut = tokensOut,
-                    groupCost = cost,
-                )
+                // v9.1 (owner): under the COMPLETE response, the true wall-clock
+                // span of the turn - from the moment the user's message was
+                // created to the moment the final assistant message finished.
+                // Only at the real end of a turn (the next row is the user or
+                // nothing), and only once the response is complete.
+                var elapsedMs = -1L
+                if (assistant && footerShown && (next == null || next.role == "user") && message.completedMs > 0L) {
+                    var j = index
+                    while (j >= 0 && messages[j].role != "user") j--
+                    val askedMs = if (j >= 0) messages[j].createdMs else 0L
+                    if (askedMs in 1 until message.completedMs) elapsedMs = message.completedMs - askedMs
+                }
+                // v9.1: the conversation lives in a centred column with a
+                // comfortable maximum width - unchanged on phones, intentional
+                // on wide screens.
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                    MessageRow(
+                        message = message,
+                        now = now,
+                        streaming = busy && isLast,
+                        onRetry = if (isLast && message.role != "user") onRetry else null,
+                        onUndo = if (isLast && message.role != "user") onUndo else null,
+                        showHeader = headerShown,
+                        showFooter = footerShown,
+                        groupTokensIn = tokensIn,
+                        groupTokensOut = tokensOut,
+                        groupCost = cost,
+                        groupElapsedMs = elapsedMs,
+                        modifier = Modifier.widthIn(max = 760.dp),
+                    )
+                }
             }
         }
 
@@ -833,8 +929,16 @@ private fun Composer(
     val blockedHint = stringResource(R.string.availability_composer_blocked)
     val sendLabel = stringResource(R.string.chat_send)
     val attachLabel = stringResource(R.string.chat_attach)
-    Surface(color = Color.Transparent, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 8.dp)) {
+    // v9.1: the composer is the primary element at the bottom - a floating
+    // capsule in the same centred column as the conversation, with clear air
+    // between it and the tab strip below.
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+        Column(
+            Modifier
+                .widthIn(max = 760.dp)
+                .fillMaxWidth()
+                .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 10.dp),
+        ) {
             if (!canSend) {
                 Text(
                     text = blockedHint,

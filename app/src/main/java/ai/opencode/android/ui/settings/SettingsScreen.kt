@@ -41,6 +41,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -49,6 +50,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -105,33 +107,14 @@ fun SettingsScreen(
     availability: AgentAvailability,
     diagnosticsLines: List<String>,
     diagnosticsLoading: Boolean,
-    storedProviderIds: String,
-    hardwareBacked: String,
     appVersion: String,
     theme: ThemeChoice,
     dynamicColor: Boolean,
     onThemeChange: (ThemeChoice) -> Unit,
     onDynamicColorChange: (Boolean) -> Unit,
-    onSetModel: (String, String) -> Unit,
-    onClearModel: () -> Unit,
-    onSaveKey: (String, String) -> Unit,
-    onRevokeKey: (String) -> Unit,
     // ---- Phase 10 continuation v4 -------------------------------------------------
     // Every addition is defaulted: the Phase 6 UI gates call this screen directly
     // with the parameters they care about, and a new control must not break them.
-    /** v4 item 3: star/unstar one model for the chat header's quick switch. */
-    onToggleStar: (String, String, Boolean) -> Unit = { _, _, _ -> },
-    /** v4 item 2: one-step activation of a catalog provider (id, API key). */
-    onConnectProvider: (String, String) -> Unit = { _, _ -> },
-    // ---- v6.1: the per-provider keyring (several saved keys, one active) -----------
-    /** The saved keys for a provider id (labels/last-4 only, never values). */
-    providerKeys: (String) -> List<ProviderKeyring.Entry> = { emptyList() },
-    /** Make a saved key (provider id, slot) the active one. */
-    onUseKey: (String, String) -> Unit = { _, _ -> },
-    /** Delete one saved key (provider id, slot). */
-    onDeleteKey: (String, String) -> Unit = { _, _ -> },
-    /** v4 item 2, manual path: (id, display name, base URL, model ids, key). */
-    onAddCustomProvider: (String, String, String, String, String) -> Unit = { _, _, _, _, _ -> },
     /** v4 items 1 and 4: the workspace folder, and the one action that changes it. */
     workspacePath: String = "",
     workspaceVisibleToFileManagers: Boolean = true,
@@ -145,7 +128,6 @@ fun SettingsScreen(
     onDisconnectMcp: (String) -> Unit,
     onRefreshMcp: () -> Unit,
     onBashPolicy: (String) -> Unit,
-    providerSetup: ProviderSetup = ProviderSetup.UNKNOWN,
     permissionPolicy: Map<String, String> = emptyMap(),
     onPermissionPolicy: (String, String) -> Unit = { _, _ -> },
     memory: MemoryState = MemoryState(),
@@ -163,17 +145,17 @@ fun SettingsScreen(
     // and model sections can be long, and their CONTENT scrolls inside a bounded
     // box rather than the screen nesting a lazy list inside a scrolling column.
     val sections = remember(
-        runtime, state, availability, diagnosticsLines, diagnosticsLoading, storedProviderIds,
-        hardwareBacked, appVersion, theme, dynamicColor, providerSetup, permissionPolicy, memory,
+        runtime, state, availability, diagnosticsLines, diagnosticsLoading,
+        appVersion, theme, dynamicColor, permissionPolicy, memory,
         workspacePath, workspaceVisibleToFileManagers, workspaceCanGrantAllFilesAccess, workspacePendingMove,
     ) {
+        // v9.1 (owner): provider management moved to its own surface behind the
+        // hamburger menu (ProvidersScreen below); Settings keeps everything else,
+        // as one page of inline accordions.
         listOf(
             "runtime",
-            "provider",
             "workspace",
             "diagnostics",
-            "model",
-            "keys",
             "mcp",
             "permissions",
             "memory",
@@ -203,10 +185,6 @@ fun SettingsScreen(
                         availability = availability,
                         onRestart = onRestartRuntime,
                     )
-                    "provider" -> ProviderSection(
-                        providerSetup = providerSetup,
-                        connectedCount = state.providers?.connected?.size ?: 0,
-                    )
                     "workspace" -> WorkspaceSection(
                         path = workspacePath,
                         visibleToFileManagers = workspaceVisibleToFileManagers,
@@ -222,24 +200,6 @@ fun SettingsScreen(
                         onShare = onShareDiagnostics,
                         onCopy = onCopyDiagnostics,
                         onRefresh = onRefreshDiagnostics,
-                    )
-                    "model" -> ModelSection(
-                        providers = state.providers,
-                        model = state.model,
-                        starred = state.starredModels,
-                        storedProviderIds = storedProviderIds,
-                        hardwareBacked = hardwareBacked,
-                        onSetModel = onSetModel,
-                        onClearModel = onClearModel,
-                        onToggleStar = onToggleStar,
-                        onConnectProvider = onConnectProvider,
-                        onRevokeKey = onRevokeKey,
-                        providerKeys = providerKeys,
-                        onUseKey = onUseKey,
-                        onDeleteKey = onDeleteKey,
-                    )
-                    "keys" -> KeysSection(
-                        onAddCustomProvider = onAddCustomProvider,
                     )
                     "mcp" -> McpSection(
                         entries = state.mcp,
@@ -286,7 +246,7 @@ private fun RuntimeSection(
     onRestart: () -> Unit,
 ) {
     val chat = ChatTheme.chat
-    SectionCard(title = stringResource(R.string.settings_section_runtime)) {
+    SectionCard(title = stringResource(R.string.settings_section_runtime), collapsible = true) {
         KeyValueRow(
             label = stringResource(R.string.settings_runtime_status),
             value = availabilityHeadline(runtime.availability),
@@ -362,6 +322,8 @@ private fun DiagnosticsSection(
     SectionCard(
         title = stringResource(R.string.settings_section_diagnostics),
         body = stringResource(R.string.settings_diagnostics_body),
+        collapsible = true,
+        initiallyExpanded = false,
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TextButton(
@@ -1005,6 +967,8 @@ private fun McpSection(
     SectionCard(
         title = stringResource(R.string.settings_section_mcp),
         body = stringResource(R.string.settings_mcp_body),
+        collapsible = true,
+        initiallyExpanded = false,
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TextButton(
@@ -1259,6 +1223,8 @@ private fun WorkspaceSection(
     SectionCard(
         title = stringResource(R.string.settings_section_workspace),
         body = stringResource(R.string.settings_workspace_body),
+        collapsible = true,
+        initiallyExpanded = false,
     ) {
         KeyValueRow(
             label = stringResource(R.string.settings_workspace_current),
@@ -1332,6 +1298,8 @@ private fun PermissionsSection(
     SectionCard(
         title = stringResource(R.string.settings_section_permissions),
         body = stringResource(R.string.settings_permissions_body),
+        collapsible = true,
+        initiallyExpanded = false,
     ) {
         // A prompt the agent makes while it works always goes through the bottom
         // sheet; this table only sets the standing policy. An empty config does
@@ -1462,6 +1430,8 @@ private fun MemorySection(
     SectionCard(
         title = stringResource(R.string.settings_section_memory),
         body = stringResource(R.string.settings_memory_body),
+        collapsible = true,
+        initiallyExpanded = false,
     ) {
         MemoryEditorCard(
             title = stringResource(R.string.settings_memory_project),
@@ -1583,7 +1553,7 @@ private fun AppearanceSection(
     onThemeChange: (ThemeChoice) -> Unit,
     onDynamicColorChange: (Boolean) -> Unit,
 ) {
-    SectionCard(title = stringResource(R.string.settings_section_appearance)) {
+    SectionCard(title = stringResource(R.string.settings_section_appearance), collapsible = true, initiallyExpanded = false) {
         Text(
             text = stringResource(R.string.settings_theme_label),
             style = MaterialTheme.typography.labelSmall,
@@ -1678,6 +1648,8 @@ private fun AboutSection(
     SectionCard(
         title = stringResource(R.string.settings_section_about),
         body = stringResource(R.string.settings_about_body),
+        collapsible = true,
+        initiallyExpanded = false,
     ) {
         KeyValueRow(label = stringResource(R.string.settings_about_version), value = appVersion.ifEmpty { "-" }, mono = true)
         // The application ID comes from BuildConfig, so this row cannot drift from
@@ -1759,6 +1731,8 @@ private fun OpenSourceSection(onOpenUrl: (String) -> Unit) {
     SectionCard(
         title = stringResource(R.string.settings_section_opensource),
         body = stringResource(R.string.settings_opensource_body),
+        collapsible = true,
+        initiallyExpanded = false,
     ) {
         KeyValueRow(
             label = stringResource(R.string.settings_opensource_agent),
@@ -1790,6 +1764,88 @@ private fun OpenSourceSection(onOpenUrl: (String) -> Unit) {
                 tag = "opensource_notices",
                 onOpenUrl = onOpenUrl,
             )
+        }
+    }
+}
+
+// ---- v9.1: the Providers surface -------------------------------------------
+//
+// The owner moved provider management out of Settings entirely: it opens from
+// the chat's hamburger menu as its own screen. The sections it shows are the
+// same file-private composables Settings used to render (status, searchable
+// catalog with keys and stars, and - behind the `+` in the top bar - the
+// manual custom-provider form), so nothing about their behaviour or wording
+// changed in the move.
+@Composable
+fun ProvidersScreen(
+    state: OpenCodeRepository.UiState,
+    availability: AgentAvailability,
+    storedProviderIds: String,
+    hardwareBacked: String,
+    onSetModel: (String, String) -> Unit,
+    onClearModel: () -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    onToggleStar: (String, String, Boolean) -> Unit = { _, _, _ -> },
+    onConnectProvider: (String, String) -> Unit = { _, _ -> },
+    onRevokeKey: (String) -> Unit = {},
+    providerKeys: (String) -> List<ProviderKeyring.Entry> = { emptyList() },
+    onUseKey: (String, String) -> Unit = { _, _ -> },
+    onDeleteKey: (String, String) -> Unit = { _, _ -> },
+    onAddCustomProvider: (String, String, String, String, String) -> Unit = { _, _, _, _, _ -> },
+    providerSetup: ProviderSetup = ProviderSetup.UNKNOWN,
+) {
+    // The `+` toggles the manual form into the list instead of pushing another
+    // screen: the owner asked for an add affordance at the top, not more depth.
+    var addOpen by rememberSaveable { mutableStateOf(false) }
+    val addLabel = stringResource(R.string.providers_add)
+    Column(modifier = modifier.fillMaxSize().semantics { testTag = "providers_screen" }) {
+        AppTopBar(
+            title = stringResource(R.string.providers_title),
+            subtitle = availabilityHeadline(availability),
+            onBack = onBack,
+            actions = {
+                IconButton(
+                    onClick = { addOpen = !addOpen },
+                    modifier = Modifier.semantics { testTag = "providers_add" },
+                ) {
+                    Icon(imageVector = Icons.Filled.Add, contentDescription = addLabel)
+                }
+            },
+        )
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().semantics { testTag = "providers_list" },
+            contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            item(key = "provider") {
+                ProviderSection(
+                    providerSetup = providerSetup,
+                    connectedCount = state.providers?.connected?.size ?: 0,
+                )
+            }
+            if (addOpen) {
+                item(key = "keys") {
+                    KeysSection(onAddCustomProvider = onAddCustomProvider)
+                }
+            }
+            item(key = "model") {
+                ModelSection(
+                    providers = state.providers,
+                    model = state.model,
+                    starred = state.starredModels,
+                    storedProviderIds = storedProviderIds,
+                    hardwareBacked = hardwareBacked,
+                    onSetModel = onSetModel,
+                    onClearModel = onClearModel,
+                    onToggleStar = onToggleStar,
+                    onConnectProvider = onConnectProvider,
+                    onRevokeKey = onRevokeKey,
+                    providerKeys = providerKeys,
+                    onUseKey = onUseKey,
+                    onDeleteKey = onDeleteKey,
+                )
+            }
         }
     }
 }

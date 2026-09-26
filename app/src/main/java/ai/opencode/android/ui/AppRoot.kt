@@ -31,6 +31,7 @@ import ai.opencode.android.ui.onboarding.WorkspaceOnboardingScreen
 import ai.opencode.android.ui.projects.KnownWorkspace
 import ai.opencode.android.ui.projects.ProjectSession
 import ai.opencode.android.ui.projects.ProjectsScreen
+import ai.opencode.android.ui.settings.ProvidersScreen
 import ai.opencode.android.ui.settings.SettingsScreen
 import ai.opencode.android.ui.terminal.TerminalScreen
 import ai.opencode.android.ui.theme.OpenCodeTheme
@@ -93,6 +94,10 @@ private const val ROUTE_PROJECTS = "projects"
 private const val ROUTE_CHAT = "chat"
 private const val ROUTE_SESSIONS = "sessions"
 private const val ROUTE_SETTINGS = "settings"
+
+// v9.1: provider management left Settings for its own surface, opened from the
+// chat's hamburger menu (owner decision: Settings stays one compact page).
+private const val ROUTE_PROVIDERS = "providers"
 private const val ROUTE_FILES = "files"
 
 // v7 redesign: two more project surfaces beside the chat - the agent's file
@@ -586,7 +591,8 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     var storedIdList by remember { mutableStateOf(emptyList<String>()) }
     var hardwareBacked by remember { mutableStateOf("") }
     LaunchedEffect(route) {
-        if (route == ROUTE_SETTINGS) {
+        // v9.1: the Providers surface shows the same Keystore facts Settings used to.
+        if (route == ROUTE_SETTINGS || route == ROUTE_PROVIDERS) {
             storedIds = withContext(Dispatchers.IO) { container.storedProviderIdsLabel() }
             storedIdList = withContext(Dispatchers.IO) { container.storedProviderIds() }
             hardwareBacked = withContext(Dispatchers.IO) { container.hardwareBackedLabel() }
@@ -611,7 +617,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val turnAvailability = uiState.turnError?.kind ?: AgentAvailability.READY
     val availability = UiError.combine(summary.availability, serverAvailability, turnAvailability)
 
-    BackHandler(enabled = route == ROUTE_SESSIONS || route == ROUTE_SETTINGS || route == ROUTE_PROJECTS || route == ROUTE_FILES || route == ROUTE_CHANGES || route == ROUTE_TERMINAL) {
+    BackHandler(enabled = route == ROUTE_SESSIONS || route == ROUTE_SETTINGS || route == ROUTE_PROVIDERS || route == ROUTE_PROJECTS || route == ROUTE_FILES || route == ROUTE_CHANGES || route == ROUTE_TERMINAL) {
         route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT
     }
 
@@ -811,28 +817,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     availability = availability,
                     diagnosticsLines = diagnosticsLines,
                     diagnosticsLoading = diagnosticsLoading,
-                    storedProviderIds = storedIds,
-                    hardwareBacked = hardwareBacked,
                     appVersion = appVersion,
                     theme = theme,
                     dynamicColor = dynamicColor,
                     onThemeChange = { themeName = it.name },
                     onDynamicColorChange = { dynamicColor = it },
-                    onSetModel = { providerId, modelId -> repository.setModel(providerId, modelId) },
-                    onClearModel = { repository.clearModel() },
-                    onToggleStar = { providerId, modelId, starred ->
-                        repository.setStarred(OpenCodeApi.ModelRef(providerId, modelId), starred)
-                    },
-                    onConnectProvider = { providerId, key -> repository.provisionProvider(providerId, key, secrets) },
-                    // v6.1: the keyring (several saved keys per provider, one active).
-                    providerKeys = { providerId ->
-                        runCatching { container.keyring().entries(providerId) }.getOrDefault(emptyList())
-                    },
-                    onUseKey = { providerId, slot -> repository.activateProviderKey(providerId, slot) },
-                    onDeleteKey = { providerId, slot -> repository.removeProviderKey(providerId, slot) },
-                    onAddCustomProvider = { id, name, baseUrl, models, key ->
-                        repository.addCustomProvider(id, name, baseUrl, CustomProviderConfig.parseModels(models), key, secrets)
-                    },
                     workspacePath = storage.rootPath,
                     workspaceVisibleToFileManagers = storage.visibleToFileManagers,
                     workspaceCanGrantAllFilesAccess = storage.canGrantAllFilesAccess,
@@ -846,8 +835,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         filesError = ""
                         runStorageChange { storageController.moveProjectsIntoPlace() }
                     },
-                    onSaveKey = { providerId, key -> repository.provisionProvider(providerId, key, secrets) },
-                    onRevokeKey = { providerId -> repository.revokeProvider(providerId, secrets) },
                     onAddMcp = { name, config, persist ->
                         // Returns whether the config parsed: the form shows an
                         // inline error instead of swallowing a bad paste (v8 fix
@@ -860,7 +847,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onDisconnectMcp = { name -> repository.disconnectMcp(name) },
                     onRefreshMcp = { repository.refreshMcp() },
                     onBashPolicy = { policy -> repository.setPermissionPolicy("bash", policy) },
-                    providerSetup = providerSetup,
                     permissionPolicy = uiState.permissionPolicy,
                     onPermissionPolicy = { key, action -> repository.setPermissionPolicy(key, action) },
                     memory = memory,
@@ -925,6 +911,34 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onBack = { route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT },
                 )
 
+                // v9.1: the Providers surface - the provider/model/keys sections that
+                // used to sit inside Settings, unchanged in behaviour, plus the `+`
+                // that opens the manual custom-provider form.
+                ROUTE_PROVIDERS -> ProvidersScreen(
+                    state = uiState,
+                    availability = availability,
+                    storedProviderIds = storedIds,
+                    hardwareBacked = hardwareBacked,
+                    onSetModel = { providerId, modelId -> repository.setModel(providerId, modelId) },
+                    onClearModel = { repository.clearModel() },
+                    onToggleStar = { providerId, modelId, starred ->
+                        repository.setStarred(OpenCodeApi.ModelRef(providerId, modelId), starred)
+                    },
+                    onConnectProvider = { providerId, key -> repository.provisionProvider(providerId, key, secrets) },
+                    // v6.1: the keyring (several saved keys per provider, one active).
+                    providerKeys = { providerId ->
+                        runCatching { container.keyring().entries(providerId) }.getOrDefault(emptyList())
+                    },
+                    onUseKey = { providerId, slot -> repository.activateProviderKey(providerId, slot) },
+                    onDeleteKey = { providerId, slot -> repository.removeProviderKey(providerId, slot) },
+                    onAddCustomProvider = { id, name, baseUrl, models, key ->
+                        repository.addCustomProvider(id, name, baseUrl, CustomProviderConfig.parseModels(models), key, secrets)
+                    },
+                    onRevokeKey = { providerId -> repository.revokeProvider(providerId, secrets) },
+                    providerSetup = providerSetup,
+                    onBack = { route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT },
+                )
+
                 ROUTE_CHANGES -> {
                     val view = remember(uiState.transcript, uiState.selectedSession) {
                         uiState.transcript.session(uiState.selectedSession)
@@ -968,6 +982,8 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         route = ROUTE_PROJECTS
                     },
                     onOpenSettings = { route = ROUTE_SETTINGS },
+                    // v9.1: provider management has its own surface behind the menu.
+                    onOpenProviders = { route = ROUTE_PROVIDERS },
                     onOpenFiles = {
                         filesPath = ""
                         route = ROUTE_FILES

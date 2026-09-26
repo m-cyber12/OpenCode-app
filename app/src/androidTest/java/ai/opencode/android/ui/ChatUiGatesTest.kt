@@ -38,6 +38,7 @@ import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.ui.common.ThemeChoice
 import ai.opencode.android.ui.markdown.TAG_CODE_BODY
 import ai.opencode.android.ui.projects.ProjectsScreen
+import ai.opencode.android.ui.settings.ProvidersScreen
 import ai.opencode.android.ui.settings.SettingsScreen
 import ai.opencode.android.ui.theme.OpenCodeTheme
 import ai.opencode.android.ui.welcome.WelcomeScreen
@@ -56,9 +57,11 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -332,7 +335,7 @@ class ChatUiGatesTest {
      * what the assertions expect - and growing [liveMessages] still recomposes the
      * transcript the way a streaming turn does.
      */
-    private enum class Surface { CHAT, LIVE_CHAT, SESSIONS, PROJECTS, WELCOME, SETTINGS, FILES, ONBOARDING, CHANGES, TERMINAL }
+    private enum class Surface { CHAT, LIVE_CHAT, SESSIONS, PROJECTS, WELCOME, SETTINGS, PROVIDERS, FILES, ONBOARDING, CHANGES, TERMINAL }
 
     private val surface = mutableStateOf(Surface.CHAT)
     private val chatState = mutableStateOf(uiState())
@@ -371,6 +374,7 @@ class ChatUiGatesTest {
                     Surface.PROJECTS -> ProjectsSurface()
                     Surface.WELCOME -> WelcomeSurface()
                     Surface.SETTINGS -> SettingsSurface()
+                    Surface.PROVIDERS -> ProvidersSurface()
                     Surface.FILES -> FilesSurface()
                     Surface.ONBOARDING -> OnboardingSurface()
                     Surface.CHANGES -> ChangesSurface()
@@ -551,21 +555,11 @@ class ChatUiGatesTest {
             availability = settingsAvailability.value,
             diagnosticsLines = listOf("HEALTHY", "spawn ok", "bind 127.0.0.1 only"),
             diagnosticsLoading = false,
-            storedProviderIds = "anthropic",
-            hardwareBacked = "software",
             appVersion = "1.18.23-phase9 (7)",
             theme = ThemeChoice.DARK,
             dynamicColor = false,
             onThemeChange = { },
             onDynamicColorChange = { },
-            onSetModel = { _, _ -> },
-            onClearModel = { },
-            onToggleStar = { providerId, modelId, checked ->
-                starToggles++
-                starLastToggle = Triple(providerId, modelId, checked)
-            },
-            onConnectProvider = { _, _ -> connectCalls++ },
-            onAddCustomProvider = { _, _, _, _, _ -> customProviderCalls++ },
             workspacePath = WORKSPACE_FIXTURE_PATH,
             workspaceVisibleToFileManagers = storageVisible.value,
             workspaceCanGrantAllFilesAccess = storageCanGrant.value,
@@ -573,8 +567,6 @@ class ChatUiGatesTest {
             onPickWorkspace = { workspacePicks++ },
             onGrantAllFilesAccess = { allFilesRequests++ },
             onMoveWorkspaceProjects = { projectMoves++ },
-            onSaveKey = { _, _ -> },
-            onRevokeKey = { },
             onAddMcp = { _, _, _ -> true },
             onConnectMcp = { },
             onDisconnectMcp = { },
@@ -586,6 +578,38 @@ class ChatUiGatesTest {
             onRestartRuntime = { restarts++ },
             onBack = { settingsBack++ },
         )
+    }
+
+    // v9.1: provider management moved out of Settings onto its own surface. The
+    // surface reuses the settings state holders - the sections it shows are the
+    // same ones, just reached from the hamburger menu now.
+    @Composable
+    private fun ProvidersSurface() {
+        ProvidersScreen(
+            state = settingsState.value,
+            availability = settingsAvailability.value,
+            storedProviderIds = "anthropic",
+            hardwareBacked = "software",
+            onSetModel = { _, _ -> },
+            onClearModel = { },
+            onToggleStar = { providerId, modelId, checked ->
+                starToggles++
+                starLastToggle = Triple(providerId, modelId, checked)
+            },
+            onConnectProvider = { _, _ -> connectCalls++ },
+            onAddCustomProvider = { _, _, _, _, _ -> customProviderCalls++ },
+            onBack = { settingsBack++ },
+        )
+    }
+
+    private fun renderProviders(
+        state: OpenCodeRepository.UiState = uiState(),
+        availability: AgentAvailability = AgentAvailability.READY,
+    ) {
+        settingsState.value = state
+        settingsAvailability.value = availability
+        surface.value = Surface.PROVIDERS
+        show()
     }
 
     private fun renderChat(
@@ -1813,7 +1837,9 @@ class ChatUiGatesTest {
                 OpenCodeApi.ProviderEntry("anthropic", "Anthropic", listOf(OpenCodeApi.ModelEntry("claude-sonnet-4", "Claude Sonnet 4", "" ))),
             ),
         )
-        renderSettings(
+        // v9.1: these flows live on the Providers surface now (hamburger menu),
+        // not in Settings - the gate proves them where the user finds them.
+        renderProviders(
             state = uiState(
                 model = OpenCodeApi.ModelRef("opencode", "big-pickle"),
                 starred = listOf(OpenCodeApi.ModelRef("openrouter", "openai/gpt-4o-mini")),
@@ -1821,8 +1847,9 @@ class ChatUiGatesTest {
         )
         settingsState.value = settingsState.value.copy(providers = providers)
         rule.waitForIdle()
+        val screenShown = exists("providers_screen")
 
-        rule.onAllNodesWithTag("settings_list")[0].performScrollToNode(hasTestTag("provider_search"))
+        rule.onAllNodesWithTag("providers_list")[0].performScrollToNode(hasTestTag("provider_search"))
         rule.waitForIdle()
         val searchShown = exists("provider_search")
 
@@ -1871,8 +1898,13 @@ class ChatUiGatesTest {
         val starWired = starToggles == 1
         val starReported = starLastToggle == Triple("openrouter", "openai/gpt-4o-mini", false)
 
-        // the manual path for a provider no catalog knows: four fields plus the key
-        rule.onAllNodesWithTag("settings_list")[0].performScrollToNode(hasTestTag("custom_provider_id"))
+        // the manual path for a provider no catalog knows: four fields plus the
+        // key. v9.1 put the form behind the `+` in the top bar (the owner's "add
+        // a provider" affordance), so the gate goes through that button.
+        val customHiddenUntilAdd = !exists("custom_provider_id")
+        rule.onAllNodesWithTag("providers_add")[0].performClick()
+        rule.waitForIdle()
+        rule.onAllNodesWithTag("providers_list")[0].performScrollToNode(hasTestTag("custom_provider_id"))
         rule.waitForIdle()
         val customShown = exists("custom_provider_id") && exists("custom_provider_baseurl") &&
             exists("custom_provider_models") && exists("custom_provider_save")
@@ -1890,12 +1922,12 @@ class ChatUiGatesTest {
 
         gate(
             "U11",
-            searchShown && filtered && countLine && dialogShown && onlyKeyAsked && activated &&
+            screenShown && searchShown && filtered && countLine && dialogShown && onlyKeyAsked && activated &&
                 starHiddenUntilExpanded && starShown && starChecked && starWired && starReported &&
-                customShown && customSaved,
-            "search=$searchShown/$filtered/$countLine keyOnly=$dialogShown/$onlyKeyAsked " +
+                customHiddenUntilAdd && customShown && customSaved,
+            "surface=$screenShown search=$searchShown/$filtered/$countLine keyOnly=$dialogShown/$onlyKeyAsked " +
                 "activated=$activated star=$starShown/$starChecked/$starWired/$starReported " +
-                "collapsedFirst=$starHiddenUntilExpanded custom=$customShown/$customSaved " +
+                "collapsedFirst=$starHiddenUntilExpanded custom=$customHiddenUntilAdd/$customShown/$customSaved " +
                 "reported=$starLastToggle",
         )
     }
@@ -1947,6 +1979,13 @@ class ChatUiGatesTest {
         renderSettings(state = uiState())
         storageCanGrant.value = true
         storagePending.value = 2
+        rule.waitForIdle()
+        // v9.1: Settings is one page of accordions and the workspace section starts
+        // collapsed - the switch is one header tap away, exactly like on the phone.
+        val workspaceHeader = context.getString(R.string.settings_section_workspace)
+        rule.onAllNodesWithTag("settings_list")[0].performScrollToNode(hasText(workspaceHeader))
+        rule.waitForIdle()
+        rule.onAllNodesWithText(workspaceHeader)[0].performClick()
         rule.waitForIdle()
         rule.onAllNodesWithTag("settings_list")[0].performScrollToNode(hasTestTag("settings_workspace_pick"))
         rule.waitForIdle()

@@ -79,6 +79,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -159,6 +161,8 @@ fun MessageRow(
     groupTokensIn: Long = -1L,
     groupTokensOut: Long = -1L,
     groupCost: Double = -1.0,
+    /** v9.1: wall-clock span of the whole turn (user message -> final response), or -1 to hide. */
+    groupElapsedMs: Long = -1L,
 ) {
     val chat = ChatTheme.chat
     val tag = "${TAG_MESSAGE}_${message.id}"
@@ -175,7 +179,9 @@ fun MessageRow(
                     contentColor = chat.onUserBubble,
                     shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp),
                     border = BorderStroke(1.dp, chat.toolBorder),
-                    shadowElevation = 4.dp,
+                    // v9.1: visually lightweight - the border carries the edge,
+                    // not a heavy shadow.
+                    shadowElevation = 1.dp,
                     modifier = Modifier.widthIn(max = 340.dp),
                 ) {
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 11.dp)) {
@@ -190,7 +196,9 @@ fun MessageRow(
                     }
                 }
             }
-            val stamp = relativeTimeLabel(message.createdMs, now)
+            // v9.1 (owner): the EXACT send time, in the device's own time zone
+            // and clock format - not a relative "just now".
+            val stamp = exactTimeLabel(message.createdMs)
             Text(
                 text = if (stamp.isEmpty()) stringResource(R.string.chat_role_you) else stamp,
                 style = MaterialTheme.typography.labelSmall,
@@ -276,11 +284,15 @@ fun MessageRow(
         // One tiny muted line under the whole group - the turn's real totals -
         // instead of a metadata block after every message.
         if (showFooter) {
-            val footer = if (groupTokensIn >= 0L) {
+            val base = if (groupTokensIn >= 0L) {
                 messageFooterText(groupTokensIn, groupTokensOut, groupCost)
             } else {
                 messageFooterText(message.tokensInput, message.tokensOutput, message.cost)
             }
+            // v9.1 (owner): the turn's true duration, precise to the
+            // hundredth of a second, joins the quiet footer line.
+            val elapsedText = if (groupElapsedMs > 0L) elapsedLabel(groupElapsedMs) else ""
+            val footer = listOf(base, elapsedText).filter { it.isNotEmpty() }.joinToString("  \u00b7  ")
             if (footer.isNotEmpty()) {
                 Text(
                     text = footer,
@@ -1281,6 +1293,37 @@ private fun modelLabel(message: Transcript.Message): String {
     if (model.isBlank()) return ""
     val provider = message.providerID
     return if (provider.isBlank()) model else "$provider/$model"
+}
+
+/** The device clock's own rendering of an absolute moment (12/24h per system settings, local zone). */
+@Composable
+private fun exactTimeLabel(ms: Long): String {
+    if (ms <= 0L) return ""
+    val context = LocalContext.current
+    return remember(ms) { android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(ms)) }
+}
+
+/**
+ * v9.1 (owner): the turn's elapsed time, unrounded to the unit - seconds keep
+ * two decimals, minutes and hours appear only once they are non-zero:
+ * "2.37 seconds", "1 minute 43.52 seconds", "1 hour 12 minutes 8.24 seconds".
+ */
+@Composable
+private fun elapsedLabel(ms: Long): String {
+    val hours = (ms / 3_600_000L).toInt()
+    val minutes = ((ms % 3_600_000L) / 60_000L).toInt()
+    val seconds = (ms % 60_000L) / 1000.0
+    val secondsText = stringResource(
+        R.string.chat_elapsed_seconds,
+        String.format(java.util.Locale.getDefault(), "%.2f", seconds),
+    )
+    val minutesText = pluralStringResource(R.plurals.chat_elapsed_minutes, minutes, minutes)
+    val hoursText = pluralStringResource(R.plurals.chat_elapsed_hours, hours, hours)
+    return when {
+        hours > 0 -> "$hoursText $minutesText $secondsText"
+        minutes > 0 -> "$minutesText $secondsText"
+        else -> secondsText
+    }
 }
 
 @Composable

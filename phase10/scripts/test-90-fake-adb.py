@@ -206,6 +206,10 @@ def transition(node_id):
         put("screen", "chat")
     elif here in ("chat", "answer") and node_id in ("open_settings", "Settings and diagnostics"):
         put("screen", "settings")
+    # v9.1: the Providers surface opens from the hamburger; the fake phone
+    # reuses the settings fixture, which already carries the provider catalog.
+    elif here in ("chat", "answer") and node_id in ("open_providers", "Providers"):
+        put("screen", "settings")
     elif here in ("chat", "answer") and node_id in ("open_projects", "Projects", "Open the project list"):
         put("screen", "projects")
     # ---- v4 items 2 and 3: search, the key dialog, the star and the quick switch --

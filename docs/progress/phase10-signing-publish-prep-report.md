@@ -3404,3 +3404,64 @@ sentence as contentDescription); U10's on-screen model-name check is
 satisfied by the capsule text; the driver's "Model:" needle matches the
 capsule's accessibility label. Static checks EXIT=0. The driver was not
 touched this round.
+
+## B.19 v9 premium pass, round 2 (2026-09-26): the Providers surface, one-page Settings, and honest clocks
+
+The owner approved round 1 ("very better") and issued round 2: chat detail
+work, a forwarded 10-point polish spec, and a structural change to Settings.
+
+Chat details (owner's words, implemented literally):
+
+- the hamburger sits in its own glass circle now, matching the other header
+  chrome (same toolContainer fill + hairline border, still `chat_menu`);
+- under each user message: the EXACT send time, rendered by
+  `android.text.format.DateFormat.getTimeFormat()` - the device's own zone
+  and 12/24h preference, never a hand-rolled format;
+- under the COMPLETE response: the turn's true wall-clock span, from the
+  user message's `createdMs` to the final assistant message's `completedMs`,
+  precise to the hundredth of a second and formatted by magnitude
+  ("2.37 seconds", "1 minute 43.52 seconds", "1 hour 12 minutes
+  8.24 seconds"); it joins the existing token/cost footer line and appears
+  only at the real end of a turn.
+
+The forwarded polish spec, in its own priority order: the conversation and
+the composer live in a centred column capped at 760dp (unchanged on phones,
+intentional on wide screens); the empty state is a centred golden glyph tile
+with the same two strings as before (the title doubles as a driver needle,
+so the copy did not move); code blocks got the 15dp radius, hairline border
+and more padding; and the dark theme moved OFF pure #000000 onto the spec's
+warm near-black ladder (bg 0x0B0A08, surface 0x13100C, raised 0x1A1610,
+variant 0x231D15). The spec's example suggestion chips were NOT added - the
+owner's ban on prompt chips predates the spec and stands.
+
+The restructure: provider management left Settings entirely. A new
+`ProvidersScreen` (same file as the sections it shows, which stay private)
+carries the status card, the searchable catalog with keys and stars, and -
+behind a `+` in its top bar - the manual custom-provider form. It opens from
+the hamburger menu (`open_providers`, route `providers`). Settings itself is
+one compact page of inline accordions: runtime starts open, everything else
+starts collapsed behind its header (finite expand/shrink tweens; the chevron
+is decorative, the header carries the name). No per-category pages - the
+owner said one page, so it is one page.
+
+Harness and driver moved with the app, not after it:
+
+- U11 now renders the Providers surface, goes through the `+` for the
+  custom form (and proves the form is NOT on screen before it), and keeps
+  every existing assertion; U12 taps the Workspace accordion header before
+  reaching for the switch - exactly what a user does now;
+- the real-device driver reaches provider search, key-only activation and
+  the star flow via hamburger -> Providers (its own `PROVIDERS_REACHED`
+  gateway with per-verdict SKIPs), taps the Workspace header in Settings
+  before hunting the folder labels, and R6's key entry tries
+  `open_providers` first with the old settings path as fallback;
+- the fake phone serves an `open_providers` node on the chat screen (its own
+  rectangle in the header gap - the selfcheck's overlap check caught the
+  first placement over the model capsule and it was moved) and reuses the
+  settings fixture as the Providers surface.
+
+Evidence, not reasoning: static checks EXIT=0 (the only FAIL line is the
+known dead phase9 workflow trigger), and the full driver self-test was
+re-run after the rewrite: pass=136 fail=0, SELFTEST PASS, including the v4
+provider scenarios now travelling the new route. CI on this push is the
+binding gate before the owner installs.

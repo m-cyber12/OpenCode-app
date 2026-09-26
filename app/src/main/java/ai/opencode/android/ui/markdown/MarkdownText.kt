@@ -187,13 +187,15 @@ fun CodeBlock(
     val clipboard = LocalClipboardManager.current
     val langLabel = if (language.isNotEmpty()) language else stringResource(R.string.code_language_plain)
     val annotated = remember(source, language, palette) { annotateCode(language, source, palette) }
+    // v9.1: the code is the focus, not the container - a soft 15dp corner, the
+    // faint glass hairline instead of a drawn outline, and a touch more air.
     Surface(
         modifier = modifier.fillMaxWidth().semantics { testTag = TAG_CODE_BLOCK },
         color = palette.blockBackground,
-        shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shape = RoundedCornerShape(15.dp),
+        border = BorderStroke(1.dp, ChatTheme.chat.toolBorder),
     ) {
-        Column(Modifier.padding(start = 12.dp, end = 6.dp, top = 8.dp, bottom = 10.dp)) {
+        Column(Modifier.padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,

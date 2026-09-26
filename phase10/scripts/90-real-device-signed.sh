@@ -1570,7 +1570,7 @@ else
   rd FILES_SIMPLIFIED 7 "no project open, so the file browser could not be reached"
 fi
 
-# ---- v4 items 2 and 4: Settings - workspace section, provider search, stars --
+# ---- v4 items 1/4: Settings - the workspace section (v9.1: accordion) ------
 SETTINGS_REACHED=0
 # v8 fix round: Settings moved off the header into the hamburger menu; the menu
 # has to be opened first. The `|| true` keeps the old direct path alive as a
@@ -1586,18 +1586,22 @@ if tap_any "open_settings" "Settings and diagnostics"; then
 fi
 
 if [ "$SETTINGS_REACHED" = 1 ]; then
-  # The sections are long; a user scrolls. Three swipes bring the workspace and
-  # model sections into view on any phone size this project has been tested on.
+  # v9.1: the sections are collapsed accordions now - tapping the Workspace
+  # header opens it. On an older expanded build the same tap lands on a label
+  # and changes nothing, so the path is safe both ways.
+  tap_any "Workspace" >/dev/null 2>&1 || true
+  sleep 1
+  # A short screen still gets a bounded swipe pass: phone sizes differ.
   i=0
   while [ "$i" -lt 4 ]; do
+    ui_has_any "Workspace folder" "Choose another folder" && break
     adb shell input swipe "$SWIPE_FROM_X" "$SWIPE_FROM_Y" "$SWIPE_TO_X" "$SWIPE_TO_Y" 300 >/dev/null 2>&1
     sleep 1
     i=$((i + 1))
-    ui_has_any "Workspace folder" "Choose another folder" "Search providers" && break
   done
   ui_dump "v4-settings-scrolled" >/dev/null 2>&1
 
-  # item 1/4: the workspace switch lives here, with the honest note about switching
+  # the workspace switch lives here, with the honest note about switching
   WS_FOLDER=$(screen_label "Workspace folder")
   WS_PICK=$(screen_label "Choose another folder")
   WS_NOTE=$(screen_label "Switching the workspace hides")
@@ -1606,8 +1610,30 @@ if [ "$SETTINGS_REACHED" = 1 ]; then
   else
     rd WORKSPACE_SECTION 1 "the Settings workspace section is incomplete: folder='${WS_FOLDER:-<none>}' picker='${WS_PICK:-<none>}' note='${WS_NOTE:-<none>}' (see ui/ui-v4-settings-scrolled.xml)"
   fi
+  return_to_conversation >/dev/null 2>&1 || true
+else
+  rd WORKSPACE_SECTION 7 "Settings could not be opened"
+fi
 
+# ---- v4 items 2/3 (v9.1): the Providers surface, from the hamburger menu ----
+# The owner moved provider management out of Settings onto its own surface:
+# hamburger -> Providers. Search, one-step key activation and the model stars
+# all live there now - which also puts the search box on the first screenful
+# (the old deep-scroll placement is what failed PROVIDER_SEARCH on the phone).
+PROVIDERS_REACHED=0
+tap_any "chat_menu" "Menu" >/dev/null 2>&1 || true
+sleep 1
+if tap_any "open_providers" "Providers"; then
+  if wait_for "providers-screen" "providers_screen|Search providers" "$(tmo 120)"; then
+    PROVIDERS_REACHED=1
+    sleep 1
+    shot "v4-providers" || true
+  fi
+fi
+
+if [ "$PROVIDERS_REACHED" = 1 ]; then
   # item 2: search over the catalog, then a provider that asks for a key only
+  ui_dump "v4-providers" >/dev/null 2>&1
   SEARCH_FIELD=$(screen_label "Search providers")
   PROVIDER_SEARCH=0
   if [ -n "$SEARCH_FIELD" ] && tap_any "Search providers" >/dev/null 2>&1; then
@@ -1632,7 +1658,7 @@ if [ "$SETTINGS_REACHED" = 1 ]; then
     MATCH=$(screen_label "OpenRouter")
     if [ -n "$NO_MATCH" ] && [ -n "$MATCH" ]; then
       PROVIDER_SEARCH=1
-      rd PROVIDER_SEARCH 0 "the catalog is searchable: an impossible query states '$NO_MATCH' and 'openr' narrows the list to '$MATCH'"
+      rd PROVIDER_SEARCH 0 "the catalog is searchable on the Providers surface: an impossible query states '$NO_MATCH' and 'openr' narrows the list to '$MATCH'"
     else
       rd PROVIDER_SEARCH 1 "the search box did not behave: no-match='${NO_MATCH:-<none>}' match='${MATCH:-<none>}' (see ui/ui-v4-provider-search.xml)"
     fi
@@ -1700,7 +1726,7 @@ PY
       sleep 1
       return_to_conversation >/dev/null 2>&1 || true
       sleep 2
-      if wait_for "chat-after-settings" "$NEEDLE_CHAT" "$(tmo 90)"; then
+      if wait_for "chat-after-providers" "$NEEDLE_CHAT" "$(tmo 90)"; then
         QS_BEFORE=$(screen_label "Model:")
         # (the header label is read the same way on both sides of the pick, so the
         # verdict compares like with like)
@@ -1713,7 +1739,7 @@ PY
             sleep 2
             QS_AFTER=$(screen_label "Model:")
             if [ -n "$QS_AFTER" ] && printf '%s' "$QS_AFTER" | grep -qF "$STAR_NAME"; then
-              rd MODEL_QUICK_SWITCH 0 "starred '$STAR_NAME' in Settings, opened the quick switch in the chat ('$MENU_TITLE') and picked it there: the header went from '${QS_BEFORE:-<none>}' to '$QS_AFTER'"
+              rd MODEL_QUICK_SWITCH 0 "starred '$STAR_NAME' on the Providers surface, opened the quick switch in the chat ('$MENU_TITLE') and picked it there: the header went from '${QS_BEFORE:-<none>}' to '$QS_AFTER'"
             else
               rd MODEL_QUICK_SWITCH 1 "the quick switch did not set the model: after='${QS_AFTER:-<none>}' expected to contain '$STAR_NAME'"
             fi
@@ -1724,23 +1750,21 @@ PY
           rd MODEL_QUICK_SWITCH 1 "the chat header has no model control on screen (see ui/ui-r5b.xml)"
         fi
       else
-        rd MODEL_QUICK_SWITCH 1 "leaving Settings did not return to the conversation"
+        rd MODEL_QUICK_SWITCH 1 "leaving the Providers surface did not return to the conversation"
       fi
     else
       rd MODEL_QUICK_SWITCH 1 "the star control ('$STAR_DESC') was not tappable (see ui/ui-v4-star.png)"
     fi
   else
-    rd MODEL_QUICK_SWITCH 7 "no expandable provider row with a star control was reachable in Settings"
+    rd MODEL_QUICK_SWITCH 7 "no expandable provider row with a star control was reachable on the Providers surface"
   fi
-  # Leave Settings so R6 starts from the conversation, at whatever depth the v4
-  # screens put this stage (Settings, the provider search, the key dialog): one press
-  # is only right for one of those, so the bounded loop decides.
+  # Leave the surface so R6 starts from the conversation, at whatever depth the
+  # star flow ended.
   return_to_conversation >/dev/null 2>&1 || true
 else
-  rd WORKSPACE_SECTION 7 "Settings could not be opened"
-  rd PROVIDER_SEARCH 7 "Settings could not be opened"
-  rd PROVIDER_KEY_ONLY 7 "Settings could not be opened"
-  rd MODEL_QUICK_SWITCH 7 "Settings could not be opened"
+  rd PROVIDER_SEARCH 7 "the Providers surface could not be opened from the hamburger menu"
+  rd PROVIDER_KEY_ONLY 7 "the Providers surface could not be opened from the hamburger menu"
+  rd MODEL_QUICK_SWITCH 7 "the Providers surface could not be opened from the hamburger menu"
 fi
 
 # ---- R6: a live turn --------------------------------------------------------
@@ -1768,7 +1792,7 @@ if [ -n "${MODEL_KEY:-}" ] && [ "$SKIP_LIVE" = 0 ]; then
   #    dialog (a real rotate, reported as one).
   tap_any "chat_menu" "Menu" >/dev/null 2>&1 || true
   sleep 1
-  if tap_any "open_settings" "Settings and diagnostics"; then
+  if tap_any "open_providers" "Providers" || tap_any "open_settings" "Settings and diagnostics"; then
     sleep 2
     if tap_any "provider_search" "Search providers"; then
       type_text "${P10D_PROVIDER:-openrouter}"

@@ -4,6 +4,12 @@ import ai.opencode.android.R
 import ai.opencode.android.client.AgentAvailability
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -23,6 +29,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -144,8 +151,12 @@ fun SectionCard(
     title: String,
     modifier: Modifier = Modifier,
     body: String = "",
+    /** v9.1 (owner): Settings is one page of accordions - a collapsible card's header toggles its content inline. */
+    collapsible: Boolean = false,
+    initiallyExpanded: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    var expanded by rememberSaveable(title, collapsible) { mutableStateOf(!collapsible || initiallyExpanded) }
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
@@ -155,8 +166,35 @@ fun SectionCard(
         // 14 -> 16 dp on the section card: the title now has room to breathe above
         // the first row, which is what makes a list of sections scan as sections.
         Column(Modifier.padding(16.dp)) {
-            Text(text = title, style = MaterialTheme.typography.titleSmall)
-            if (body.isNotEmpty()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = if (collapsible) {
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { expanded = !expanded }
+                        .semantics {
+                            role = Role.Button
+                            contentDescription = title
+                        }
+                } else {
+                    Modifier.fillMaxWidth()
+                },
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f).padding(vertical = if (collapsible) 6.dp else 0.dp),
+                )
+                if (collapsible) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp).clearAndSetSemantics { },
+                    )
+                }
+            }
+            if (body.isNotEmpty() && expanded) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = body,
@@ -164,8 +202,21 @@ fun SectionCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Spacer(Modifier.height(10.dp))
-            content()
+            if (!collapsible) {
+                Spacer(Modifier.height(10.dp))
+                content()
+            } else {
+                AnimatedVisibility(
+                    visible = expanded,
+                    enter = fadeIn(tween(150)) + expandVertically(tween(220)),
+                    exit = fadeOut(tween(120)) + shrinkVertically(tween(200)),
+                ) {
+                    Column {
+                        Spacer(Modifier.height(10.dp))
+                        content()
+                    }
+                }
+            }
         }
     }
 }

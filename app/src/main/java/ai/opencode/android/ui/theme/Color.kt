@@ -22,10 +22,12 @@ import androidx.compose.ui.graphics.Color
 // TRUE black - on OLED the app disappears into the bezel and every floating
 // pane reads as glass over a void. The lifted surfaces keep their warm cast
 // but move down with it, so the old depth ordering survives the drop.
-internal val InkBackground = Color(0xFF000000)
-internal val InkSurface = Color(0xFF14100B)
-internal val InkSurfaceHigh = Color(0xFF1C1711)
-internal val InkSurfaceVariant = Color(0xFF251E16)
+// (v9.1 refinement: not #000000 flat - a warm near-black keeps the OLED depth
+// while giving the layers above it something to sit on.)
+internal val InkBackground = Color(0xFF0B0A08)
+internal val InkSurface = Color(0xFF13100C)
+internal val InkSurfaceHigh = Color(0xFF1A1610)
+internal val InkSurfaceVariant = Color(0xFF231D15)
 internal val InkOnSurface = Color(0xFFEDE7DA)
 internal val InkOnSurfaceMuted = Color(0xFFB3A98F)
 internal val InkOutline = Color(0xFF51462D)

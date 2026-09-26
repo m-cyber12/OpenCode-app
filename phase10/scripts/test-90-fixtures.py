@@ -139,6 +139,10 @@ def build(root):
             # bounds contain the tap, so two controls must never overlap or the self
             # test would drive a different control than the driver aimed at.
             node("open_settings", text="Settings and diagnostics", bounds="[960,120][1060,220]"),
+            # v9.1: provider management moved to its own surface behind the
+            # hamburger. Its own rectangle in the header gap between the project
+            # affordance (ends at x=400) and the menu (starts at x=820).
+            node("open_providers", text="Providers", desc="Providers", bounds="[440,120][800,220]"),
             text_node("Start a conversation", "[40,300][1040,380]"),
             # v7: the project tab strip (v8: + Files, since the header icon is
             # gone). Distinct rectangles (hit() takes the FIRST node whose bounds
