@@ -1,10 +1,10 @@
 sources:
-  /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/screenshots (2 png)
+  /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/screenshots (1 png)
   keep   01-welcome.png (1080x1920)
-  keep   02-projects.png (1080x1920)
   ok     icon-512.png (512x512)
   ok     feature-graphic-1024x500.png (1024x500)
 
-STORE-ASSETS PASS: 2 screenshots in /home/runner/work/OpenCode-app/OpenCode-app/docs/store/screenshots (0 rejected)
-NOTE: these files are store assets, not evidence. The gate verdicts that
-      produced them are in docs/progress/phase10-evidence/.
+STORE-ASSETS FAIL: 1 usable screenshots (Play needs at least 2), 0 rejected
+  screenshots must come from a real device run of the Phase 10 build:
+    bash phase10/scripts/00-run-phase10.sh      (CI: the whole pipeline)
+    bash phase10/scripts/90-real-device-signed.sh --apk <signed apk>   (on a phone)
