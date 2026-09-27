@@ -3565,3 +3565,25 @@ with no catalog row the menu shows the honest empty line. New screenshot
 30-mode-switch.png. Harness selfcheck green after moving the new tags onto
 `testTag =` lines it can resolve. Static checks EXIT=0 locally; the CI run
 on this push is the binding verdict.
+
+### B.21.1 Run #109 verdict and the diagnosability fix (2026-09-27)
+
+Run #109 (36327179579, `d58dc90`): the debug pass ran ALL the new assertions
+green - U10 PASS with `thinking=true/true/[high]` and
+`mode=true/true/true/[plan]`, U7 chat=30 total=74 unnamed=0, 359/0 JVM tests -
+and the release-shaped smoke pass ALSO passed U10 with the same detail, plus
+both live gates (L1 reply "Blue", L2 tool card) with the new `agent` field on
+the wire. The run still went RED: smoke-pass U12 (workspace/settings, a gate
+this commit does not touch) failed with no detail line - the test threw
+before `gate()` wrote anything - while the SAME U12 passed the debug pass of
+the SAME run minutes earlier. The debug pass's L1/L2 both timed out at 300 s
+(SKIP, provider stall), so the emulator session was visibly degraded by the
+time the smoke pass ran. Everything says timing flake, but the stack lived
+only in `p6-settings-instrument.log` inside the artifact, and the artifact
+blob store was unreachable from the sandbox - the flake verdict could not be
+PROVEN from committed evidence. That blindness is the bug fixed here:
+`50-smoke-gates.sh` now copies every non-OK instrument class's
+INSTRUMENTATION_STATUS stack blocks into
+`docs/progress/phase10-evidence/smoke-ui/instrument-failures.txt` (empty on a
+green run). This commit re-runs the identical app code as run #110: if U12
+was a flake it clears; if it fails again the stack is in the branch.

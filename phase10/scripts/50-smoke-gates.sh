@@ -171,6 +171,22 @@ P6_PKG="$PKG" P6_TEST_PKG="$TEST_PKG" \
 mkdir -p "$EV/smoke-ui"
 cp "$ROOT/phase6/out/evidence/p6-ui-lines.txt" "$EV/smoke-ui/" 2>/dev/null || true
 cp "$ROOT/phase6/out/evidence/GATES_SUMMARY.txt" "$EV/smoke-ui/" 2>/dev/null || true
+# Run #109's smoke pass failed U12 with NO committed detail: the test threw
+# before gate() wrote a line, so the stack existed only in the per-class
+# `am instrument` log inside the artifact - and artifacts are not always
+# reachable. Keep every non-OK class's stack blocks next to the verdicts,
+# where the evidence commit picks them up; a green run writes an empty file.
+: > "$EV/smoke-ui/instrument-failures.txt"
+for f in "$ROOT/phase6/out/evidence/"p6-*-instrument.log; do
+  [ -f "$f" ] || continue
+  if ! grep -aqE '^OK \([0-9]+ test' "$f"; then
+    { echo "=== $(basename "$f") ==="
+      grep -a -B 2 -A 60 'INSTRUMENTATION_STATUS: stack=' "$f" | head -400
+      grep -aE 'Tests run:|FAILURES|Process crashed|INSTRUMENTATION_RESULT' "$f" | tail -8
+      echo
+    } >> "$EV/smoke-ui/instrument-failures.txt" || true
+  fi
+done
 SMOKE_F=$(sed -n 's/^ui_gates_pass=[0-9]* ui_gates_fail=\([0-9]*\).*/\1/p' "$ROOT/phase6/out/evidence/GATES_SUMMARY.txt" 2>/dev/null | head -1)
 SMOKE_P=$(sed -n 's/^ui_gates_pass=\([0-9]*\).*/\1/p' "$ROOT/phase6/out/evidence/GATES_SUMMARY.txt" 2>/dev/null | head -1)
 SMOKE_S=$(sed -n 's/.*ui_gates_skip=\([0-9]*\).*/\1/p' "$ROOT/phase6/out/evidence/GATES_SUMMARY.txt" 2>/dev/null | head -1)
