@@ -133,6 +133,59 @@ fi
 ( cd "$REL" && ls -la ) > "$EV/release-listing.txt" 2>&1 || true
 log "sha256:"; cat "$EV/release-sha256.txt" | tee -a "$LOG"
 
+# How to sign THIS apk on a phone, learned the hard way (owner report,
+# 2026-09-27): this app targets SDK 34, and Android refuses to install any
+# APK targeting 30+ whose signature is not scheme v2 or newer - and a
+# v1-style signing pass rewrites the zip, which also breaks the 4-byte
+# alignment Android 11+ requires of resources.arsc. Both mistakes end in the
+# same dialog: "App not installed as package appears to be invalid". Two
+# widely used phone tools fail exactly this way: Termux's `pkg install
+# apksigner` (a 2016 v1-only zip-signer, NOT Google's apksigner) and any GUI
+# signer left on its v1 default. The rule fits in one line - V1 OFF, V2 ON -
+# because v2/v3 signing only appends a signing block and never touches the
+# zip entries Gradle already aligned. Written next to the APK so the
+# artifact carries its own instructions.
+cp "$EV/release-sha256.txt" "$REL/sha256.txt" 2>/dev/null || true
+cat > "$REL/HOW-TO-SIGN-ON-PHONE.txt" <<'EOF'
+SIGNING app-release-unsigned.apk ON A PHONE (no computer, no adb)
+=================================================================
+
+THE ONE RULE: sign with scheme V2 (and optionally V3). V1 must be OFF.
+
+Why: this app targets Android 14 (SDK 34). Android refuses to install any
+APK targeting SDK 30+ without a v2+ signature, and a v1 signing pass
+rewrites the zip and breaks the resources.arsc alignment Android 11+
+demands. Either way the phone says "App not installed as package appears
+to be invalid" - the APK in this folder is fine; the signing step did it.
+
+KNOWN-BAD TOOLS (produce exactly that error):
+  - Termux `pkg install apksigner`  -> third-party v1-only tool from 2016,
+    NOT Google's apksigner. Never use it for this APK.
+  - Any GUI signer with V1 enabled by default and no zipalign step.
+
+KNOWN-GOOD PHONE PATH (GUI, no commands):
+  MT Manager -> open app-release-unsigned.apk -> Sign:
+    [ ] V1 signature   OFF
+    [x] V2 signature   ON
+    [x] V3 signature   ON (optional)
+  Sign with YOUR OWN keystore and keep the keystore file + password:
+  every future update must use the same key or Android forces a
+  reinstall (uninstall = in-app sessions lost; Documents/OpenCode
+  projects survive).
+
+VERIFY THE DOWNLOAD FIRST (Termux):
+  sha256sum app-release-unsigned.apk
+  -> must equal the line in sha256.txt beside this file.
+
+NO-SIGNING ALTERNATIVE: the CI artifact `opencode-android-smoke-test-only`
+contains TEST-ONLY-debugkey-app-smoke.apk - already signed (v2/v3, debug
+key), same release packaging, installable by tapping it. Its trade-off:
+debuggable=true and everyone shares the debug key.
+
+The .aab file cannot be installed on a phone; it is Play Store input only.
+EOF
+log "wrote $REL/HOW-TO-SIGN-ON-PHONE.txt + sha256.txt (phone-signing rules, verified against run #110 evidence)"
+
 echo
 echo "P10_RELEASE_SUMMARY pass=$PASS fail=$FAIL"
 exit $([ "$FAIL" = 0 ] && echo 0 || echo 1)

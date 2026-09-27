@@ -108,6 +108,11 @@ DO NOT TRY TO INSTALL:
   - it carries no signature at all; Android rejects it with
     "App not installed as package appears to be invalid" on every phone.
     That artifact exists only to be signed later with a real release key.
+  - if you sign it yourself: V2 signature ON, V1 OFF. This app targets
+    SDK 34, so Android requires scheme v2+; v1-only tools (including
+    Termux's `pkg install apksigner`, a third-party v1 signer) and
+    v1-defaulted GUI signers produce that same "invalid" error. See
+    HOW-TO-SIGN-ON-PHONE.txt in the unsigned-release artifact.
 
 BEFORE INSTALLING:
   - if a previously SIGNED build of io.github.mcyber12.opencode is on the

@@ -3587,3 +3587,26 @@ INSTRUMENTATION_STATUS stack blocks into
 `docs/progress/phase10-evidence/smoke-ui/instrument-failures.txt` (empty on a
 green run). This commit re-runs the identical app code as run #110: if U12
 was a flake it clears; if it fails again the stack is in the branch.
+
+### B.21.2 "Both signing methods failed" - root-caused (2026-09-27)
+
+The owner uninstalled the old build, downloaded `opencode-android-unsigned-release`,
+signed it on the phone two ways (Termux and a GUI signer) and hit "App not
+installed as package appears to be invalid" both times, concluding the build
+was broken. The build is fine, and the evidence for that was already in the
+branch: `p10-smoke-apk-report.txt` shows the smoke APK - the IDENTICAL
+packaging pipeline - signed `scheme=v2/v3 v1_files=0` and installed by CI on
+every run. What actually failed is the signature scheme: the app targets
+SDK 34, and Android refuses ANY APK targeting 30+ without a v2+ signature;
+additionally a v1 pass rewrites the zip and breaks the 4-byte
+resources.arsc alignment Android 11+ enforces. Termux's `pkg install
+apksigner` is fornwall/apksigner, a 2016 v1-only zip-signer, NOT Google's
+tool (verified from its repository: "Based on zip-signer"); most GUI
+signers default to v1. Both therefore produce exactly the reported dialog.
+The earlier advice to pass `--skipZipAlign` to uber-apk-signer was wrong in
+this direction too - with a v1 pass included, alignment must be redone, and
+Termux has no zipalign. The durable fix is in the artifacts themselves:
+`40-release-verify.sh` now writes `HOW-TO-SIGN-ON-PHONE.txt` + `sha256.txt`
+next to the unsigned APK (rule: V1 OFF, V2 ON; known-bad tools named;
+download-verification hash; AAB warning), and the smoke artifact's
+INSTALL-README points at it. App code untouched.
