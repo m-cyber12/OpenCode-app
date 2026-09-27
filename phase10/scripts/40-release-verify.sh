@@ -184,7 +184,18 @@ debuggable=true and everyone shares the debug key.
 
 The .aab file cannot be installed on a phone; it is Play Store input only.
 EOF
-log "wrote $REL/HOW-TO-SIGN-ON-PHONE.txt + sha256.txt (phone-signing rules, verified against run #110 evidence)"
+# The exact bytes of THIS build, appended dynamically - the check that
+# separates "signing did it" from "the download/extract did it" without adb.
+{
+  echo ""
+  echo "WHAT YOU DOWNLOAD FROM GITHUB IS A ZIP: extract it first."
+  echo "Sign ONLY app-release-unsigned.apk - NOT the .zip, NOT the .aab."
+  echo ""
+  echo "THIS BUILD'S EXACT BYTES (check before signing):"
+  ( cd "$REL" && ls -l app-release-unsigned.apk | awk '{print "  size:   " $5 " bytes"}' )
+  ( cd "$REL" && sha256sum app-release-unsigned.apk | awk '{print "  sha256: " $1}' )
+} >> "$REL/HOW-TO-SIGN-ON-PHONE.txt"
+log "wrote $REL/HOW-TO-SIGN-ON-PHONE.txt + sha256.txt (phone-signing rules + this build's exact bytes)"
 
 echo
 echo "P10_RELEASE_SUMMARY pass=$PASS fail=$FAIL"

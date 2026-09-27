@@ -123,6 +123,23 @@ BEFORE INSTALLING:
     suite, not the app - no need to install it.
 EOF
 log "wrote $SMOKE/INSTALL-README.txt (which artifact file is installable, and why)"
+# The exact bytes of THIS build, appended dynamically: the owner's install
+# failures turned out to be undiagnosable without a way to check, on the
+# phone, that the file being tapped is the right file, whole, and not the
+# artifact ZIP wrapper (which signers happily "sign" and installers reject
+# as "package appears to be invalid").
+{
+  echo ""
+  echo "THIS BUILD'S EXACT BYTES (check after download + extract):"
+  ( cd "$SMOKE" && ls -l TEST-ONLY-debugkey-app-smoke.apk | awk '{print "  size:   " $5 " bytes"}' )
+  ( cd "$SMOKE" && sha256sum TEST-ONLY-debugkey-app-smoke.apk | awk '{print "  sha256: " $1}' )
+  echo ""
+  echo "IMPORTANT: what GitHub gives you is a ZIP that CONTAINS this apk."
+  echo "Tapping or signing the ZIP itself fails with 'package appears to be"
+  echo "invalid'. Extract the zip first; install the .apk from inside it."
+  echo "In Termux: sha256sum the extracted apk and compare with the line above."
+} >> "$SMOKE/INSTALL-README.txt"
+( cd "$SMOKE" && sha256sum ./*.apk ) > "$SMOKE/sha256.txt" 2>/dev/null || true
 
 # ---- 2. inspect the artifact before trusting it ------------------------------
 log "=== inspecting the smoke APK (identity, payload, abis, signing) ==="
