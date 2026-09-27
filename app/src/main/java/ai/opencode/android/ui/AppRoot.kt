@@ -992,6 +992,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onOpenTerminal = { route = ROUTE_TERMINAL },
                     // v4 item 3: pick a starred model without leaving the chat.
                     onPickModel = { providerId, modelId -> repository.setModel(providerId, modelId) },
+                    // Build/plan mode and the model's own thinking level, both
+                    // sent with the next prompt (PromptInput.agent / .variant).
+                    onPickMode = { mode -> repository.setAgentMode(mode) },
+                    onPickThinking = { variant -> repository.setThinkingVariant(variant) },
                     onPermissionReply = { id, reply -> repository.replyPermission(id, reply) },
                     onQuestionSubmit = { id, answers -> repository.replyQuestion(id, answers) },
                     onQuestionSkip = { id -> repository.rejectQuestion(id) },

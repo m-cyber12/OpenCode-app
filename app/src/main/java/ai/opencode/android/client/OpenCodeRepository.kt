@@ -90,6 +90,19 @@ class OpenCodeRepository(
          * upstream's own "ask" default and is not invented here.
          */
         val permissionPolicy: Map<String, String> = emptyMap(),
+        /**
+         * Which of upstream's two built-in agents the next prompt runs as:
+         * [AGENT_BUILD] (the default) or [AGENT_PLAN]. Sent verbatim as
+         * `PromptInput.agent`.
+         */
+        val agentMode: String = AGENT_BUILD,
+        /**
+         * The reasoning-variant id for the next prompt ("" = the model's own
+         * default). Only sent when the current model's catalog row actually
+         * lists it - `Model.variants` is per model, and the ids differ
+         * (gpt-5 says low/medium/high/xhigh, others say none/high/max).
+         */
+        val thinkingVariant: String = "",
     ) {
         /** The selected session as the event stream/history reduced it. */
         val selected: Transcript.SessionView? get() = transcript.session(selectedSession)
@@ -440,7 +453,14 @@ class OpenCodeRepository(
                     )
                 }
                 val used = _state.value.model
-                api.promptAsync(sid, trimmed, used, attachments = files)
+                api.promptAsync(
+                    sid,
+                    trimmed,
+                    used,
+                    agent = _state.value.agentMode,
+                    variant = variantFor(used),
+                    attachments = files,
+                )
                 rememberUsedModel(used)
                 _state.value = _state.value.copy(
                     draft = "",
@@ -534,7 +554,14 @@ class OpenCodeRepository(
                 _state.value = _state.value.copy(draft = "", attachments = emptyList())
                 if (text.isBlank() && files.isEmpty()) return@launch
                 val used = _state.value.model
-                api.promptAsync(sid, text, used, attachments = files)
+                api.promptAsync(
+                    sid,
+                    text,
+                    used,
+                    agent = _state.value.agentMode,
+                    variant = variantFor(used),
+                    attachments = files,
+                )
                 rememberUsedModel(used)
                 refreshSessionList(sid)
                 publishTranscript("retry accepted")
@@ -869,10 +896,46 @@ class OpenCodeRepository(
         // Persist the choice: this is "the model the user last used", and it has to
         // survive the repository being rebuilt for another project (item 3).
         runCatching { modelPreference?.rememberModel(ref) }
+        // Variant ids are PER MODEL (upstream `Model.variants`); a level picked
+        // for the old model must not silently ride along to one that does not
+        // list it, so it is kept only when the new model's row lists the same id.
+        val current = _state.value.thinkingVariant
+        val keep = current.isNotEmpty() &&
+            _state.value.providers?.variantsOf(ref)?.contains(current) == true
         _state.value = _state.value.copy(
             model = ref,
+            thinkingVariant = if (keep) current else "",
             notice = "model -> $providerID/$modelID",
         )
+    }
+
+    /**
+     * Switch between upstream's two built-in primary agents for the NEXT prompt.
+     * Anything other than the two known names is refused rather than forwarded:
+     * `PromptInput.agent` with an unknown name is a server-side error event
+     * ("Agent not found"), and the switch must not be able to cause one.
+     */
+    fun setAgentMode(mode: String) {
+        if (mode != AGENT_BUILD && mode != AGENT_PLAN) return
+        _state.value = _state.value.copy(agentMode = mode)
+    }
+
+    /**
+     * Pick the reasoning-variant id for the next prompt; "" returns to the
+     * model's default. Stored as given - [sendPrompt] checks the id against the
+     * current model's own `variants` row at send time, which is also what keeps
+     * a stale pick from being sent after the catalog changed underneath it.
+     */
+    fun setThinkingVariant(variant: String) {
+        _state.value = _state.value.copy(thinkingVariant = variant)
+    }
+
+    /** The variant id to send with [model], or null when none applies. */
+    private fun variantFor(model: OpenCodeApi.ModelRef?): String? {
+        val v = _state.value.thinkingVariant
+        if (v.isEmpty()) return null
+        if (_state.value.providers?.variantsOf(model)?.contains(v) != true) return null
+        return v
     }
 
     /**
@@ -1113,6 +1176,16 @@ class OpenCodeRepository(
     companion object {
         /** OpenCode's default coding agent; the shell endpoint requires one. */
         const val SHELL_AGENT = "build"
+
+        /**
+         * Upstream's two built-in primary agents (`agent/agent.ts`): `build`
+         * "executes tools based on configured permissions" and is the default;
+         * `plan` "disallows all edit tools". The chat header's mode switch
+         * chooses between exactly these two - the names go verbatim into
+         * `PromptInput.agent`, so an invented mode would be a server error.
+         */
+        const val AGENT_BUILD = "build"
+        const val AGENT_PLAN = "plan"
 
         /**
          * The permission keys the Settings table edits. Must stay in sync with

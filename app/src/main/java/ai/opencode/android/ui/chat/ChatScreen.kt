@@ -50,9 +50,11 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Send
@@ -151,6 +153,10 @@ fun ChatScreen(
     onOpenTerminal: () -> Unit = {},
     /** v4 item 3: pick one of the starred models without a trip to Settings. */
     onPickModel: (String, String) -> Unit = { _, _ -> },
+    /** Build/plan: which built-in agent the next prompt runs as. */
+    onPickMode: (String) -> Unit = {},
+    /** The reasoning-variant id for the next prompt; "" = model default. */
+    onPickThinking: (String) -> Unit = {},
     onPermissionReply: (String, String) -> Unit,
     onQuestionSubmit: (String, List<List<String>>) -> Unit,
     onQuestionSkip: (String) -> Unit,
@@ -190,7 +196,12 @@ fun ChatScreen(
             availability = availability,
             model = state.model,
             starred = state.starredModels,
+            thinkingVariants = state.providers?.variantsOf(state.model) ?: emptyList(),
+            thinkingVariant = state.thinkingVariant,
+            agentMode = state.agentMode,
             onPickModel = onPickModel,
+            onPickMode = onPickMode,
+            onPickThinking = onPickThinking,
             onOpenProjects = onOpenProjects,
             onNewSession = onNewSession,
             onOpenSettings = onOpenSettings,
@@ -257,7 +268,8 @@ fun ChatScreen(
  * it opens the project list, exactly as the old header block did. Every tag,
  * label and callback the gates and the driver navigate by is the v8 set:
  * `chat_menu`, `new_session`, `open_settings`, `model_quick_switch`,
- * `chat_status_pill`.
+ * `chat_status_pill` - plus the mode switch (`mode_switch`) to the left of
+ * the status orb.
  */
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -269,7 +281,12 @@ private fun ChatHeader(
     availability: AgentAvailability,
     model: OpenCodeApi.ModelRef?,
     starred: List<OpenCodeApi.ModelRef>,
+    thinkingVariants: List<String>,
+    thinkingVariant: String,
+    agentMode: String,
     onPickModel: (String, String) -> Unit,
+    onPickMode: (String) -> Unit,
+    onPickThinking: (String) -> Unit,
     onOpenProjects: () -> Unit,
     onNewSession: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -427,10 +444,132 @@ private fun ChatHeader(
             starred = starred,
             onPick = onPickModel,
             onOpenSettings = onOpenProviders,
+            variants = thinkingVariants,
+            activeVariant = thinkingVariant,
+            onPickVariant = onPickThinking,
         )
         Spacer(Modifier.weight(1f))
+        ModeSwitch(agentMode = agentMode, onPickMode = onPickMode)
+        Spacer(Modifier.width(8.dp))
         StatusOrb(busy = busy, availability = availability)
     }
+}
+
+/**
+ * The build/plan switch: a glass capsule to the LEFT of the status orb (the
+ * owner's brief), one word - Build or Plan. Tapping opens a two-row menu, each
+ * row the mode's name over one line of what it really is: upstream's own
+ * `build` ("executes tools based on configured permissions") and `plan`
+ * ("disallows all edit tools") agents, sent verbatim as `PromptInput.agent`.
+ */
+@Composable
+private fun ModeSwitch(
+    agentMode: String,
+    onPickMode: (String) -> Unit,
+) {
+    val chat = ChatTheme.chat
+    var open by remember { mutableStateOf(false) }
+    val plan = agentMode == OpenCodeRepository.AGENT_PLAN
+    val currentLabel = stringResource(if (plan) R.string.chat_mode_plan else R.string.chat_mode_build)
+    val switchLabel = stringResource(R.string.chat_mode_switch, currentLabel)
+    Box {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .background(chat.toolContainer)
+                .border(1.dp, chat.toolBorder, RoundedCornerShape(50))
+                .clickable { open = true }
+                .heightIn(min = 36.dp)
+                .padding(horizontal = 13.dp)
+                .semantics {
+                    testTag = "mode_switch"
+                    role = Role.Button
+                    contentDescription = switchLabel
+                },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // A tiny gold dot marks the non-default mode at a glance; Build
+            // stays a quiet word, exactly as "standard" should look.
+            if (plan) {
+                Box(Modifier.size(7.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                Spacer(Modifier.width(7.dp))
+            }
+            Text(
+                text = currentLabel,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+            )
+        }
+        MaterialTheme(shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(20.dp))) {
+            DropdownMenu(
+                expanded = open,
+                onDismissRequest = { open = false },
+                modifier = Modifier.semantics { testTag = "mode_menu" },
+            ) {
+                val buildTitle = stringResource(R.string.chat_mode_build)
+                val planTitle = stringResource(R.string.chat_mode_plan)
+                ModeRow(
+                    title = buildTitle,
+                    body = stringResource(R.string.chat_mode_build_body),
+                    active = !plan,
+                    onClick = {
+                        open = false
+                        onPickMode(OpenCodeRepository.AGENT_BUILD)
+                    },
+                    modifier = Modifier.semantics {
+                        testTag = "mode_pick_build"
+                        contentDescription = buildTitle
+                    },
+                )
+                ModeRow(
+                    title = planTitle,
+                    body = stringResource(R.string.chat_mode_plan_body),
+                    active = plan,
+                    onClick = {
+                        open = false
+                        onPickMode(OpenCodeRepository.AGENT_PLAN)
+                    },
+                    modifier = Modifier.semantics {
+                        testTag = "mode_pick_plan"
+                        contentDescription = planTitle
+                    },
+                )
+            }
+        }
+    }
+}
+
+/** One mode row: name, one-line truth, gold check on the active one. */
+@Composable
+private fun ModeRow(
+    title: String,
+    body: String,
+    active: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val chat = ChatTheme.chat
+    DropdownMenuItem(
+        text = {
+            Column {
+                Text(title, style = MaterialTheme.typography.labelLarge)
+                Text(body, style = MaterialTheme.typography.bodySmall, color = chat.muted)
+            }
+        },
+        trailingIcon = {
+            if (active) {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp).clearAndSetSemantics { },
+                )
+            }
+        },
+        onClick = onClick,
+        modifier = Modifier.widthIn(min = 220.dp).then(modifier),
+    )
 }
 
 /**

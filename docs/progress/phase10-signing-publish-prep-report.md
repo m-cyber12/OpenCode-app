@@ -3514,3 +3514,54 @@ platform clipboard read is focus-gated on API 29+ and would have made the
 gate flaky). U7 picks the new buttons up automatically - each carries its
 sentence as the accessibility name. Static checks EXIT=0 locally; the CI run
 on this push is the binding verdict.
+
+## B.21 v9.3 (2026-09-27): plan/build mode, real thinking levels, and "which APK actually installs"
+
+Three owner asks, one commit.
+
+**Mode switch (real).** A glass capsule sits LEFT of the status orb showing
+Build or Plan; tapping it opens a two-row menu (name + one honest line each,
+gold check on the active row). The names are upstream's own built-in primary
+agents at the pinned commit 05ea5073 (`agent/agent.ts`): `build` ("executes
+tools based on configured permissions", the default) and `plan` ("disallows
+all edit tools"). The pick lands in `UiState.agentMode` (default `build`) and
+every `sendPrompt`/`retryLastTurn` now sends it verbatim as
+`PromptInput.agent` - the server records the agent on the user message and
+enforces plan's edit-deny permission set itself; nothing is simulated
+client-side. `setAgentMode` refuses any name that is not one of the two, so
+the switch can never produce upstream's "Agent not found" error event.
+
+**Thinking level (real, per model).** `GET /provider` model rows carry
+upstream `Model.variants` - a record keyed by the reasoning-variant ids that
+model actually supports (gpt-5-class models list low/medium/high/xhigh;
+others list none/high/max; most list nothing). The parser now keeps those
+keys (`ModelEntry.variants`, `ProviderSnapshot.variantsOf`), and the model
+quick-switch menu grew a bottom section listing EXACTLY the current model's
+ids plus a "Model default" row - a model with no variants gets a plain
+"lists no thinking levels" line instead of invented options. The pick lands
+in `UiState.thinkingVariant` and is sent as `PromptInput.variant`, which is
+how upstream's own TUI applies reasoning effort; the id is re-checked
+against the catalog at send time and cleared on model switch when the new
+model does not list it, so a stale id is never sent. Two new JVM wire tests
+pin the shape: agent+variant present when set, both ABSENT when not chosen,
+and the variants parsing incl. the provider-prefixed model-id lookup.
+
+**Install answer.** The owner tried `app-release-unsigned.apk` from the
+`opencode-android-unsigned-release` artifact and Android said "package
+appears to be invalid" - correct behaviour for an unsigned APK, and no
+phone setting changes it. The installable build has existed all along:
+artifact `opencode-android-smoke-test-only`, file
+`phase10/out/smoke/TEST-ONLY-debugkey-app-smoke.apk` (debug-key signed,
+RELEASE applicationId `io.github.mcyber12.opencode`, embedded payload, both
+ABIs, debuggable=true - the exact APK all 20 UI gates run against).
+`50-smoke-gates.sh` now writes `INSTALL-README.txt` next to it so the
+artifact explains itself, including the signature-mismatch uninstall note.
+
+**Gates.** No new @Test (smoke asserts exactly 20): U10 extended - thinking
+rows counted against the fixture catalog (default + 4, no more), a pick
+reports the server's own id ("high"), the mode chip exists, its menu offers
+both agents, picking Plan reports upstream's name and the chip relabels;
+with no catalog row the menu shows the honest empty line. New screenshot
+30-mode-switch.png. Harness selfcheck green after moving the new tags onto
+`testTag =` lines it can resolve. Static checks EXIT=0 locally; the CI run
+on this push is the binding verdict.

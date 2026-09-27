@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -63,6 +65,16 @@ fun ModelQuickSwitch(
     onPick: (String, String) -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * The CURRENT model's own reasoning-variant ids, exactly as its catalog row
+     * lists them (upstream `Model.variants` keys - low/medium/high/xhigh on the
+     * models that have them). Empty = the model reports none, and the menu says
+     * so instead of inventing levels the server would ignore.
+     */
+    variants: List<String> = emptyList(),
+    /** The active variant id, "" = the model's default. */
+    activeVariant: String = "",
+    onPickVariant: (String) -> Unit = {},
 ) {
     var open by remember { mutableStateOf(false) }
     val chat = ChatTheme.chat
@@ -151,8 +163,93 @@ fun ModelQuickSwitch(
                 },
                 modifier = Modifier.semantics { testTag = "model_quick_switch_settings" },
             )
+            // ---- thinking level (the bottom of the menu, per the brief) ----
+            // Only what the server lists for THIS model: `PromptInput.variant`
+            // takes a variant id from the model's own `variants` record, so
+            // the rows ARE that record's keys - no invented levels. The
+            // "Model default" row returns to sending no variant at all.
+            HorizontalDivider(
+                color = chat.toolBorder,
+                modifier = Modifier.padding(vertical = 4.dp),
+            )
+            Text(
+                text = stringResource(R.string.chat_thinking_title),
+                style = MaterialTheme.typography.labelSmall,
+                color = chat.muted,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+            if (variants.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.chat_thinking_empty),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = chat.muted,
+                    modifier = Modifier
+                        .width(260.dp)
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .semantics { testTag = "thinking_empty" },
+                )
+            } else {
+                val defaultLabel = stringResource(R.string.chat_thinking_default)
+                val defaultDescription = stringResource(R.string.chat_thinking_pick, defaultLabel)
+                ThinkingRow(
+                    label = defaultLabel,
+                    active = activeVariant.isEmpty(),
+                    onClick = {
+                        open = false
+                        onPickVariant("")
+                    },
+                    modifier = Modifier.semantics {
+                        testTag = "thinking_default"
+                        contentDescription = defaultDescription
+                    },
+                )
+                variants.forEachIndexed { index, id ->
+                    val description = stringResource(R.string.chat_thinking_pick, id)
+                    ThinkingRow(
+                        label = id,
+                        active = id == activeVariant,
+                        onClick = {
+                            open = false
+                            onPickVariant(id)
+                        },
+                        modifier = Modifier.semantics {
+                            testTag = "thinking_pick_${index}"
+                            contentDescription = description
+                        },
+                    )
+                }
+            }
         }
         }
         Spacer(Modifier.width(0.dp))
     }
+}
+
+/**
+ * One thinking-level row: the variant id as the server spells it, a gold check
+ * on the active one. The row's accessible name is the full "Thinking level: x"
+ * sentence so the id-only label still reads as what it does.
+ */
+@Composable
+private fun ThinkingRow(
+    label: String,
+    active: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    DropdownMenuItem(
+        text = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        trailingIcon = {
+            if (active) {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp).clearAndSetSemantics { },
+                )
+            }
+        },
+        onClick = onClick,
+        modifier = Modifier.width(280.dp).then(modifier),
+    )
 }

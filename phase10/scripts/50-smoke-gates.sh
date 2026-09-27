@@ -85,6 +85,40 @@ cp "$APK" "$SMOKE_APK"
 cp "$TAPK" "$SMOKE/TEST-ONLY-debugkey-app-smoke-androidTest.apk"
 APK="$SMOKE_APK"
 
+# The one honest answer to "which file can I actually install on a phone":
+# the smoke APK above. The `opencode-android-unsigned-release` artifact is,
+# by design, UNSIGNED - Android refuses it with "package appears to be
+# invalid", and no phone-side setting changes that. Written next to the APK
+# so the artifact explains itself.
+cat > "$SMOKE/INSTALL-README.txt" <<'EOF'
+WHICH FILE INSTALLS ON A PHONE
+==============================
+
+INSTALL THIS ONE:
+  TEST-ONLY-debugkey-app-smoke.apk
+  - signed with the standard Android debug key, so a phone accepts it
+  - release packaging: applicationId io.github.mcyber12.opencode,
+    release code shape, embedded runtime payload, both ABIs
+  - debuggable=true (that is the one deliberate difference from a real
+    release; it is what lets CI run the gates against it)
+  - every CI gate in this run passed against EXACTLY this file
+
+DO NOT TRY TO INSTALL:
+  app-release-unsigned.apk (artifact: opencode-android-unsigned-release)
+  - it carries no signature at all; Android rejects it with
+    "App not installed as package appears to be invalid" on every phone.
+    That artifact exists only to be signed later with a real release key.
+
+BEFORE INSTALLING:
+  - if a previously SIGNED build of io.github.mcyber12.opencode is on the
+    phone, Android will refuse this one (signature mismatch). Uninstall it
+    first. Projects under Documents/OpenCode survive an uninstall; in-app
+    sessions and settings do not.
+  - TEST-ONLY-debugkey-app-smoke-androidTest.apk is the instrumentation
+    suite, not the app - no need to install it.
+EOF
+log "wrote $SMOKE/INSTALL-README.txt (which artifact file is installable, and why)"
+
 # ---- 2. inspect the artifact before trusting it ------------------------------
 log "=== inspecting the smoke APK (identity, payload, abis, signing) ==="
 # Anchored extraction: an unanchored grep matched the comment line

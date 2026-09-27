@@ -116,6 +116,8 @@ class OpenCodeApiHttpTest {
             "ses_1",
             "hello",
             OpenCodeApi.ModelRef("opencode", "big-pickle"),
+            agent = "plan",
+            variant = "high",
         )
         assertEquals(204, status)
         val r = lastExchange!!
@@ -124,6 +126,47 @@ class OpenCodeApiHttpTest {
         assertEquals("text", body.getJSONArray("parts").getJSONObject(0).getString("type"))
         assertEquals("hello", body.getJSONArray("parts").getJSONObject(0).getString("text"))
         assertEquals("big-pickle", body.getJSONObject("model").getString("modelID"))
+        // Upstream PromptInput.agent / .variant, verbatim (build/plan mode and
+        // the model's reasoning variant id).
+        assertEquals("plan", body.getString("agent"))
+        assertEquals("high", body.getString("variant"))
+    }
+
+    /** Default prompts must NOT invent agent/variant fields the user never chose. */
+    @Test
+    fun promptAsyncOmitsAgentAndVariantWhenUnset() {
+        responseStatus = 204
+        responseBody = ""
+        api().promptAsync("ses_1", "hello")
+        val body = JSONObject(lastExchange!!.body)
+        assertTrue(body.toString(), !body.has("agent"))
+        assertTrue(body.toString(), !body.has("variant"))
+    }
+
+    /**
+     * `GET /provider` model rows carry `variants` (upstream `Model.variants`,
+     * a record keyed by the ids `PromptInput.variant` accepts). The parser must
+     * surface exactly those keys, and `variantsOf` must resolve them for a
+     * ModelRef whose model id arrives with or without the provider prefix.
+     */
+    @Test
+    fun providersParsesTheModelsOwnVariantIds() {
+        responseBody = """{"all":[{"id":"openai","name":"OpenAI","models":{
+            "gpt-5":{"id":"gpt-5","name":"GPT-5","status":"active",
+                     "variants":{"low":{},"medium":{},"high":{},"xhigh":{}}},
+            "gpt-4o-mini":{"id":"gpt-4o-mini","name":"GPT-4o mini","status":"active"}
+        }}],"default":{},"connected":["openai"]}"""
+        val snap = api().providers()
+        // Set comparison: the JVM org.json (unlike Android's) does not promise
+        // key order, and the CONTRACT is "exactly these ids", not their order.
+        val expected = setOf("low", "medium", "high", "xhigh")
+        val gpt5 = snap.modelsOf("openai").first { it.id == "gpt-5" }
+        assertEquals(expected, gpt5.variants.toSet())
+        assertEquals(emptyList<String>(), snap.modelsOf("openai").first { it.id == "gpt-4o-mini" }.variants)
+        assertEquals(expected, snap.variantsOf(OpenCodeApi.ModelRef("openai", "gpt-5")).toSet())
+        // The default-map shape "openai/gpt-5" must find the same row.
+        assertEquals(expected, snap.variantsOf(OpenCodeApi.ModelRef("openai", "openai/gpt-5")).toSet())
+        assertEquals(emptyList<String>(), snap.variantsOf(null))
     }
 
     @Test

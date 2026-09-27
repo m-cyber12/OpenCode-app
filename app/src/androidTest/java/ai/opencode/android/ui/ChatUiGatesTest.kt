@@ -188,6 +188,8 @@ class ChatUiGatesTest {
     private var customProviderCalls = 0
     private var modelPicks = 0
     private val pickedModels = mutableListOf<String>()
+    private val modePicks = mutableListOf<String>()
+    private val thinkingPicks = mutableListOf<String>()
     private var projectMoves = 0
     private val storageMessage = mutableStateOf("")
     private val storageMode = mutableStateOf(StorageMode.PUBLIC)
@@ -305,6 +307,9 @@ class ChatUiGatesTest {
         attachments: List<OpenCodeApi.Attachment> = emptyList(),
         model: OpenCodeApi.ModelRef? = null,
         starred: List<OpenCodeApi.ModelRef> = emptyList(),
+        providers: OpenCodeApi.ProviderSnapshot? = null,
+        agentMode: String = OpenCodeRepository.AGENT_BUILD,
+        thinkingVariant: String = "",
     ) = OpenCodeRepository.UiState(
         streaming = true,
         streamStatus = "open",
@@ -320,6 +325,9 @@ class ChatUiGatesTest {
         attachments = attachments,
         model = model,
         starredModels = starred,
+        providers = providers,
+        agentMode = agentMode,
+        thinkingVariant = thinkingVariant,
     )
 
     // ---- rendering ----------------------------------------------------------
@@ -431,6 +439,8 @@ class ChatUiGatesTest {
                 modelPicks++
                 pickedModels.add("$providerId/$modelId")
             },
+            onPickMode = { modePicks.add(it) },
+            onPickThinking = { thinkingPicks.add(it) },
             onPermissionReply = { id, response -> replies.add(id to response) },
             onQuestionSubmit = { id, answers -> questionAnswers.add(id to answers) },
             onQuestionSkip = { questionSkips.add(it) },
@@ -1806,8 +1816,31 @@ class ChatUiGatesTest {
             OpenCodeApi.ModelRef("openrouter", "openai/gpt-4o-mini"),
             OpenCodeApi.ModelRef("google", "gemini-2.5-flash"),
         )
+        // The current model's catalog row lists its own reasoning variants
+        // (upstream `Model.variants` keys) - the thinking section at the bottom
+        // of the menu must show EXACTLY these, no invented levels.
+        val variantIds = listOf("low", "medium", "high", "xhigh")
+        val providers = OpenCodeApi.ProviderSnapshot(
+            allIds = listOf("openrouter", "google"),
+            connected = listOf("openrouter", "google"),
+            defaultModel = emptyMap(),
+            entries = listOf(
+                OpenCodeApi.ProviderEntry(
+                    id = "openrouter",
+                    name = "OpenRouter",
+                    models = listOf(
+                        OpenCodeApi.ModelEntry(
+                            id = "openai/gpt-4o-mini",
+                            name = "GPT-4o mini",
+                            status = "active",
+                            variants = variantIds,
+                        ),
+                    ),
+                ),
+            ),
+        )
         renderChat(
-            uiState(model = starred[0], starred = starred),
+            uiState(model = starred[0], starred = starred, providers = providers),
             AgentAvailability.READY,
         )
         val shown = exists("model_quick_switch")
@@ -1821,32 +1854,70 @@ class ChatUiGatesTest {
         val listed = countPrefix("model_pick_") == starred.size
         val idsShown = onScreenText().contains("openai/gpt-4o-mini") &&
             onScreenText().contains("gemini-2.5-flash")
+        // the thinking section sits at the bottom: a default row plus one row
+        // per variant id the model itself reports - no more, no fewer
+        val thinkingListed = exists("thinking_default") &&
+            countPrefix("thinking_pick_") == variantIds.size
         shot("23-model-quick-switch.png")
 
-        // picking one calls back with the two halves, and does NOT require Settings
+        // picking a level calls back with the SERVER'S OWN id and closes the menu
+        rule.onAllNodesWithTag("thinking_pick_2")[0].performClick()
+        rule.waitForIdle()
+        val thinkingPicked = thinkingPicks == listOf("high") && modelPicks == 0
+
+        // picking a model calls back with the two halves, and does NOT require Settings
+        rule.onAllNodesWithTag("model_quick_switch")[0].performClick()
+        rule.waitForIdle()
         rule.onAllNodesWithTag("model_pick_1")[0].performClick()
         rule.waitForIdle()
         val picked = modelPicks == 1 && pickedModels.contains("google/gemini-2.5-flash")
         val noSettingsTrip = openSettings == 0
 
+        // the build/plan switch, left of the status orb: two real agents, the
+        // pick reports upstream's own name, and the chip shows the active mode
+        val modeShown = exists("mode_switch")
+        rule.onAllNodesWithTag("mode_switch")[0].performClick()
+        rule.waitForIdle()
+        val modeMenu = exists("mode_pick_build") && exists("mode_pick_plan")
+        rule.onAllNodesWithTag("mode_pick_plan")[0].performClick()
+        rule.waitForIdle()
+        val modePicked = modePicks == listOf(OpenCodeRepository.AGENT_PLAN)
+        renderChat(
+            uiState(
+                model = starred[0],
+                starred = starred,
+                providers = providers,
+                agentMode = OpenCodeRepository.AGENT_PLAN,
+            ),
+            AgentAvailability.READY,
+        )
+        val modeLabelled = onScreenText().contains(context.getString(R.string.chat_mode_plan))
+        shot("30-mode-switch.png")
+
         // with nothing starred the menu says what to do and offers the one place
-        // where models are starred
+        // where models are starred; without a catalog row the thinking section
+        // says the model lists no levels instead of inventing any
         renderChat(uiState(model = starred[0], starred = emptyList()), AgentAvailability.READY)
         rule.onAllNodesWithTag("model_quick_switch")[0].performClick()
         rule.waitForIdle()
         val emptyExplained = exists("model_quick_switch_empty") &&
             onScreenText().contains(context.getString(R.string.chat_model_empty))
+        val thinkingEmptyExplained = exists("thinking_empty")
         rule.onAllNodesWithTag("model_quick_switch_settings")[0].performClick()
         rule.waitForIdle()
         val settingsOffered = openSettings == 1
 
-        val settled = modelPicks == 1 && pickedModels.size == 1
+        val settled = modelPicks == 1 && pickedModels.size == 1 && thinkingPicks.size == 1
         gate(
             "U10",
             shown && labelNamesCurrent && menuOpen && listed && idsShown && picked && noSettingsTrip &&
+                thinkingListed && thinkingPicked && thinkingEmptyExplained &&
+                modeShown && modeMenu && modePicked && modeLabelled &&
                 emptyExplained && settingsOffered && settled,
             "shown=$shown label=$labelNamesCurrent menu=$menuOpen listed=$listed/$idsShown " +
                 "picked=$picked/$pickedModels settingsTrip=$noSettingsTrip " +
+                "thinking=$thinkingListed/$thinkingPicked/$thinkingPicks thinkingEmpty=$thinkingEmptyExplained " +
+                "mode=$modeShown/$modeMenu/$modePicked/$modePicks label=$modeLabelled " +
                 "emptyExplained=$emptyExplained offered=$settingsOffered",
         )
     }

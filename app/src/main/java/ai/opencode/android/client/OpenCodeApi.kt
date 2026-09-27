@@ -176,6 +176,7 @@ class OpenCodeApi(
         text: String,
         model: ModelRef? = null,
         agent: String? = null,
+        variant: String? = null,
         attachments: List<Attachment> = emptyList(),
     ): Int {
         val parts = org.json.JSONArray()
@@ -195,6 +196,12 @@ class OpenCodeApi(
             )
         }
         if (agent != null) body.put("agent", agent)
+        // Upstream `PromptInput.variant` (session/prompt.ts): the reasoning
+        // variant of THIS turn's model, by the id the model's own `variants`
+        // record lists (e.g. "low" | "medium" | "high" | "xhigh"). The server
+        // records it on the user message and applies the variant's provider
+        // settings; an absent field means the model's default effort.
+        if (!variant.isNullOrEmpty()) body.put("variant", variant)
         return request("POST", "/session/$sessionID/prompt_async", body.toString()).status
     }
 
@@ -395,11 +402,21 @@ class OpenCodeApi(
             if (modelsRaw != null) {
                 for (k in modelsRaw.keys()) {
                     val m = modelsRaw.optJSONObject(k) ?: continue
+                    // Upstream `Model.variants` is a record keyed by variant id
+                    // ("low" | "high" | "xhigh" | ...); the settings under each
+                    // key are provider-internal, so only the ids are kept - the
+                    // ids are what `PromptInput.variant` accepts.
+                    val variantsRaw = m.optJSONObject("variants")
+                    val variants = ArrayList<String>()
+                    if (variantsRaw != null) {
+                        for (v in variantsRaw.keys()) variants.add(v)
+                    }
                     models.add(
                         ModelEntry(
                             id = m.optString("id").ifEmpty { k },
                             name = m.optString("name").ifEmpty { k },
                             status = m.optString("status"),
+                            variants = variants,
                         ),
                     )
                 }
@@ -636,8 +653,17 @@ class OpenCodeApi(
         }
     }
 
-    /** One entry of upstream's `Provider.Info.models` record. */
-    data class ModelEntry(val id: String, val name: String, val status: String) {
+    /**
+     * One entry of upstream's `Provider.Info.models` record. [variants] are the
+     * ids of the model's own reasoning variants (upstream `Model.variants` keys,
+     * e.g. "low"/"medium"/"high"/"xhigh"); empty when the model reports none.
+     */
+    data class ModelEntry(
+        val id: String,
+        val name: String,
+        val status: String,
+        val variants: List<String> = emptyList(),
+    ) {
         /** Upstream's own `ModelStatus` literals; a blank status is just "listed". */
         val deprecated: Boolean get() = status == "deprecated"
     }
@@ -659,6 +685,22 @@ class OpenCodeApi(
     ) {
         fun modelsOf(providerID: String): List<ModelEntry> =
             entries.firstOrNull { it.id == providerID }?.models ?: emptyList()
+
+        /**
+         * The reasoning-variant ids the server lists for [ref]'s model - the
+         * exact set `PromptInput.variant` accepts for that model. The model id
+         * is matched both verbatim and with the provider prefix stripped
+         * (the same normalization [ModelRef.bareModelID] applies when the id
+         * is sent), so a default-map ref like "subconscious/tim-..." still
+         * finds its catalog row.
+         */
+        fun variantsOf(ref: ModelRef?): List<String> {
+            if (ref == null) return emptyList()
+            val bare = ref.bareModelID
+            return modelsOf(ref.providerID)
+                .firstOrNull { it.id == ref.modelID || it.id == bare }
+                ?.variants ?: emptyList()
+        }
     }
 
     data class FileEntry(val path: String, val type: String) {
