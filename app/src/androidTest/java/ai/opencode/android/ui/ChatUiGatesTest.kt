@@ -41,6 +41,9 @@ import ai.opencode.android.ui.projects.ProjectsScreen
 import ai.opencode.android.ui.settings.ProvidersScreen
 import ai.opencode.android.ui.settings.SettingsScreen
 import ai.opencode.android.ui.theme.OpenCodeTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import ai.opencode.android.ui.welcome.WelcomeScreen
 import android.content.Context
 import androidx.compose.runtime.Composable
@@ -362,11 +365,24 @@ class ChatUiGatesTest {
     private var composed = false
 
     /** The one and only `setContent` of a test method. */
+    // v9.2: the chat's Copy action writes through LocalClipboardManager; the test
+    // provides its own recorder so the gate asserts the exact text that was put
+    // on the clipboard instead of poking at the platform service (whose read
+    // access is focus-gated on API 29+ and flaky under instrumentation).
+    private val copiedTexts = mutableListOf<String>()
+    private val recordingClipboard = object : androidx.compose.ui.platform.ClipboardManager {
+        override fun setText(annotatedString: AnnotatedString) {
+            copiedTexts.add(annotatedString.text)
+        }
+        override fun getText(): AnnotatedString? = copiedTexts.lastOrNull()?.let { AnnotatedString(it) }
+    }
+
     private fun composeOnce() {
         if (composed) return
         composed = true
         rule.setContent {
             OpenCodeTheme(darkTheme = true, dynamicColor = false) {
+                CompositionLocalProvider(LocalClipboardManager provides recordingClipboard) {
                 when (surface.value) {
                     Surface.CHAT -> ChatSurface()
                     Surface.LIVE_CHAT -> LiveChatSurface()
@@ -379,6 +395,7 @@ class ChatUiGatesTest {
                     Surface.ONBOARDING -> OnboardingSurface()
                     Surface.CHANGES -> ChangesSurface()
                     Surface.TERMINAL -> TerminalSurface()
+                }
                 }
             }
         }
@@ -1286,6 +1303,21 @@ class ChatUiGatesTest {
         rule.waitForIdle()
         val acted = retries == 1 && undos == 1 && redos == 1
 
+        // v9.2 (owner): Copy / Like / Dislike sit in the same action row. Copy
+        // is proven by the exact text that lands on the (test-provided)
+        // clipboard; the reactions are local markers, so the gate proves they
+        // exist, carry names and take the tap.
+        val copyAction = exists("message_copy")
+        val likeAction = exists("message_like")
+        val dislikeAction = exists("message_dislike")
+        copiedTexts.clear()
+        if (copyAction) rule.onNodeWithTag("message_copy").performClick()
+        rule.waitForIdle()
+        val copyWired = copiedTexts.lastOrNull() == "the answer"
+        if (likeAction) rule.onNodeWithTag("message_like").performClick()
+        if (dislikeAction) rule.onNodeWithTag("message_dislike").performClick()
+        rule.waitForIdle()
+
         // A turn error is shown with the server's own words, and can be dismissed.
         renderChat(
             uiState(
@@ -1301,14 +1333,16 @@ class ChatUiGatesTest {
         val turnErrorShown = onScreenText().contains("APIError") && onScreenText().contains("overloaded")
 
         val ok = busyBar && streamingDots && stopShown && sendHidden && workingLabel && stopped &&
-            retryBanner && retryText && retryDetail && retryAction && undoAction && redoAction && acted && turnErrorShown
+            retryBanner && retryText && retryDetail && retryAction && undoAction && redoAction && acted &&
+            copyAction && copyWired && likeAction && dislikeAction && turnErrorShown
         gate(
             "U5",
             ok,
             "busyBar=$busyBar streamingIndicator=$streamingDots stopShown=$stopShown sendHidden=$sendHidden " +
                 "workingLabel=$workingLabel stopCallback=$stopped retryBanner=$retryBanner " +
                 "retryText=$retryText retryDetail=$retryDetail retryAction=$retryAction undoAction=$undoAction " +
-                "redoAction=$redoAction callbacks=$acted turnErrorKept=$turnErrorShown",
+                "redoAction=$redoAction callbacks=$acted copy=$copyAction/$copyWired like=$likeAction " +
+                "dislike=$dislikeAction turnErrorKept=$turnErrorShown",
         )
     }
 

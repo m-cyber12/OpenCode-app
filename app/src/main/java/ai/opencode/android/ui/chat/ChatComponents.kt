@@ -10,6 +10,8 @@ import ai.opencode.android.client.TodoParser
 import ai.opencode.android.client.Transcript
 import ai.opencode.android.ui.common.DetailDisclosure
 import ai.opencode.android.ui.common.StatusPill
+import ai.opencode.android.ui.common.CopyGlyph
+import ai.opencode.android.ui.common.ThumbDownGlyph
 import ai.opencode.android.ui.common.UndoGlyph
 import ai.opencode.android.ui.common.formatBytes
 import ai.opencode.android.ui.common.formatCost
@@ -58,6 +60,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -68,6 +71,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -78,7 +82,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -89,6 +95,7 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import androidx.compose.ui.unit.sp
 
 /**
@@ -135,6 +142,11 @@ const val TAG_TURN_ERROR = "turn_error"
 const val TAG_STREAMING = "streaming_indicator"
 const val TAG_MESSAGE_RETRY = "message_retry"
 const val TAG_MESSAGE_UNDO = "message_undo"
+
+// v9.2 (owner): Copy / Like / Dislike beside Retry and Undo.
+const val TAG_MESSAGE_COPY = "message_copy"
+const val TAG_MESSAGE_LIKE = "message_like"
+const val TAG_MESSAGE_DISLIKE = "message_dislike"
 const val TAG_REASONING = "reasoning"
 
 /** Upstream's own permission reply literals (`PermissionV1.Reply`). */
@@ -307,8 +319,32 @@ fun MessageRow(
             // v9: the turn actions as quiet glyphs (owner's request) - retry
             // re-runs the last prompt, undo reverts the turn and its file
             // changes. The full sentences survive as accessibility names.
+            // v9.2 (owner): Copy, Like and Dislike join the same row. Copy puts
+            // the response's text on the clipboard and confirms with a brief
+            // check mark. The reactions are a local marker on this screen -
+            // upstream has no feedback endpoint, so the app does not pretend
+            // to send one anywhere.
             val retryLabel = stringResource(R.string.chat_retry_turn)
             val undoLabel = stringResource(R.string.chat_undo_turn)
+            val copyLabel = stringResource(R.string.chat_copy_response)
+            val copiedLabel = stringResource(R.string.chat_copied_response)
+            val likeLabel = stringResource(R.string.chat_like_response)
+            val dislikeLabel = stringResource(R.string.chat_dislike_response)
+            val clipboard = LocalClipboardManager.current
+            val responseText = remember(message.parts) {
+                message.parts.filter { it.type == "text" }.joinToString("\n") { it.text }
+            }
+            var copied by remember { mutableStateOf(false) }
+            if (copied) {
+                // Finite by construction: one delay, then the check mark reverts.
+                LaunchedEffect(Unit) {
+                    delay(1400L)
+                    copied = false
+                }
+            }
+            // 1 = liked, -1 = disliked, 0 = neither; one at a time, tapping the
+            // active one again clears it.
+            var reaction by rememberSaveable(message.id) { mutableStateOf(0) }
             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 if (onRetry != null) {
                     IconButton(
@@ -341,6 +377,53 @@ fun MessageRow(
                             modifier = Modifier.size(19.dp).clearAndSetSemantics { },
                         )
                     }
+                }
+                if (responseText.isNotBlank()) {
+                    IconButton(
+                        onClick = {
+                            clipboard.setText(AnnotatedString(responseText))
+                            copied = true
+                        },
+                        modifier = Modifier.size(40.dp).semantics {
+                            testTag = TAG_MESSAGE_COPY
+                            contentDescription = if (copied) copiedLabel else copyLabel
+                        },
+                    ) {
+                        Icon(
+                            imageVector = if (copied) Icons.Filled.Check else CopyGlyph,
+                            contentDescription = null,
+                            tint = if (copied) MaterialTheme.colorScheme.primary else chat.muted,
+                            modifier = Modifier.size(19.dp).clearAndSetSemantics { },
+                        )
+                    }
+                }
+                IconButton(
+                    onClick = { reaction = if (reaction == 1) 0 else 1 },
+                    modifier = Modifier.size(40.dp).semantics {
+                        testTag = TAG_MESSAGE_LIKE
+                        contentDescription = likeLabel
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ThumbUp,
+                        contentDescription = null,
+                        tint = if (reaction == 1) MaterialTheme.colorScheme.primary else chat.muted,
+                        modifier = Modifier.size(19.dp).clearAndSetSemantics { },
+                    )
+                }
+                IconButton(
+                    onClick = { reaction = if (reaction == -1) 0 else -1 },
+                    modifier = Modifier.size(40.dp).semantics {
+                        testTag = TAG_MESSAGE_DISLIKE
+                        contentDescription = dislikeLabel
+                    },
+                ) {
+                    Icon(
+                        imageVector = ThumbDownGlyph,
+                        contentDescription = null,
+                        tint = if (reaction == -1) MaterialTheme.colorScheme.primary else chat.muted,
+                        modifier = Modifier.size(19.dp).clearAndSetSemantics { },
+                    )
                 }
             }
         }

@@ -3483,3 +3483,34 @@ post-welcome surface either way (a returning install's next screen is the
 conversation - real product, real listing material) instead of betting on
 boot speed. Nothing about the gate or the validator was weakened; the fix is
 in the capture, where the race was.
+
+CI run #107 (36270069491, `8e52d62`) closed the loop: SUCCESS, with
+`phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0` and
+STORE-ASSETS PASS (2 screenshots kept, 0 rejected - the race fix captured
+the post-welcome surface). v9 batch 2 is green end to end and ready for the
+owner's phone.
+
+## B.20 v9.2 (2026-09-27): Copy, Like and Dislike beside Retry and Undo
+
+The owner asked for three more icons in the response action row. What shipped,
+and what each one honestly does:
+
+- **Copy** (`message_copy`) puts the response's text parts on the clipboard
+  and confirms with a brief check mark (one finite delay, then it reverts).
+  It only appears when the response actually has text - a tool-only turn has
+  nothing to copy and shows no dead button.
+- **Like / Dislike** (`message_like` / `message_dislike`, mutually exclusive,
+  tap again to clear, gold when active) are a local marker on this screen.
+  Upstream OpenCode has no feedback endpoint, so the app does not pretend to
+  send the reaction anywhere - the honest scope is "remembered while you look
+  at the conversation".
+- Icons: `ThumbUp` is in material-icons-core; `ContentCopy` and `ThumbDown`
+  are not, so their Material paths joined Undo/Redo in AppGlyphs.kt - the
+  no-extended-artifact rule stands (check-compose-icons: 0 not-in-core).
+
+Evidence, not reasoning: U5 now asserts all three controls and proves Copy by
+the exact text that lands on a test-provided LocalClipboardManager (the
+platform clipboard read is focus-gated on API 29+ and would have made the
+gate flaky). U7 picks the new buttons up automatically - each carries its
+sentence as the accessibility name. Static checks EXIT=0 locally; the CI run
+on this push is the binding verdict.
