@@ -121,6 +121,27 @@ BEFORE INSTALLING:
     sessions and settings do not.
   - TEST-ONLY-debugkey-app-smoke-androidTest.apk is the instrumentation
     suite, not the app - no need to install it.
+
+IF TAPPING THE APK FAILS ("package appears to be invalid") BUT THE
+sha256 MATCHES sha256.txt: the APK is fine - the phone's tap-install
+path is what failed. Tapping makes YOUR FILE MANAGER stream the file to
+Android's installer, and some managers break on large APKs; adb streams
+the same bytes itself, which is why "script" installs always work. Same
+file, other doors, no computer needed:
+  1. Termux:  termux-open TEST-ONLY-debugkey-app-smoke.apk
+  2. Move the apk to Download/ and install with the phone's BUILT-IN
+     Files app (not a third-party manager); check that app has the
+     "Install unknown apps" permission.
+  3. Self-adb (identical to what CI does): Settings -> Developer options
+     -> Wireless debugging -> ON -> Pair device with pairing code, then
+     in Termux:
+       pkg install android-tools
+       adb pair <IP:pairing-port>     (type the 6-digit code)
+       adb connect <IP:port>          (port from the main screen)
+       adb install TEST-ONLY-debugkey-app-smoke.apk
+An APK cannot be "installable by adb but not by tap" - both end in the
+same Android system service. If the hash matches and route 3 installs,
+the build is proven fine and the phone's tap path is the defect.
 EOF
 log "wrote $SMOKE/INSTALL-README.txt (which artifact file is installable, and why)"
 # The exact bytes of THIS build, appended dynamically: the owner's install
