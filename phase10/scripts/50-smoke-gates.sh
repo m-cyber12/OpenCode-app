@@ -142,6 +142,30 @@ file, other doors, no computer needed:
 An APK cannot be "installable by adb but not by tap" - both end in the
 same Android system service. If the hash matches and route 3 installs,
 the build is proven fine and the phone's tap path is the defect.
+
+THE REAL MEANING OF "PACKAGE APPEARS TO BE INVALID" (solved 2026-09-28):
+the stock Android installer shows that one useless sentence for MANY
+different system errors. On the owner's phone the true error - surfaced
+by an installer app that prints "System details" - was:
+  INSTALL_FAILED_UPDATE_INCOMPATIBLE: Existing package
+  io.github.mcyber12.opencode signatures do not match newer version
+Meaning: a build of this app signed with ANOTHER certificate is still
+present on the phone (visible or leftover), and Android refuses any APK
+signed differently. It has nothing to do with the APK being broken.
+Fix, in order:
+  1. Settings -> Apps -> OpenCode -> Uninstall. Also check the work
+     profile / Dual Apps / Private Space copies if the phone has them.
+  2. If no OpenCode is listed but the error stays, remove the ghost
+     package over self-adb (route 3 above):
+       adb shell pm list packages -u | grep opencode
+       adb shell pm uninstall io.github.mcyber12.opencode
+       (if refused):  adb shell pm uninstall --user 0 io.github.mcyber12.opencode
+  3. Install the new APK. Then STAY on one certificate: pick your own
+     keystore, back it up, sign every future release with it, and
+     updates will install without any of this.
+Projects under Documents/OpenCode survive all of the above.
+TIP: when an install fails, use an installer that shows "System
+details" - the stock dialog hides the actual reason.
 EOF
 log "wrote $SMOKE/INSTALL-README.txt (which artifact file is installable, and why)"
 # The exact bytes of THIS build, appended dynamically: the owner's install

@@ -3610,3 +3610,31 @@ Termux has no zipalign. The durable fix is in the artifacts themselves:
 next to the unsigned APK (rule: V1 OFF, V2 ON; known-bad tools named;
 download-verification hash; AAB warning), and the smoke artifact's
 INSTALL-README points at it. App code untouched.
+
+### B.21.3 Case closed: INSTALL_FAILED_UPDATE_INCOMPATIBLE, masked by the stock installer (2026-09-28)
+
+The owner installed an "Apk Installer" app that prints the system error
+instead of the stock dialog's one-liner, and the whole story collapsed into
+one line:
+
+  INSTALL_FAILED_UPDATE_INCOMPATIBLE: Existing package
+  io.github.mcyber12.opencode signatures do not match newer version; ignoring!
+
+Every failed attempt - smoke APK, Termux-signed, GUI-signed - was Android
+refusing to REPLACE an existing install of the same applicationId carrying a
+different signing certificate. The stock installer showed all of them as
+"App not installed as package appears to be invalid", which sent the
+investigation (owner's and mine) through signature schemes, zip alignment,
+download corruption and file-manager streaming before an installer that
+prints "System details" ended the guessing. For the record, in this session
+that generic dialog turned out to mean, at different moments: (a) a truly
+unsigned APK, (b) possibly v1-only/misaligned self-signed APKs, and finally
+(c) UPDATE_INCOMPATIBLE - three different root causes behind one identical
+message. Also for the record: the owner's file listing shows
+app-release-debugSigned.apk (uber-apk-signer's default output name), i.e.
+at least one self-signing attempt DID produce an installable APK whose
+certificate is likely what the phone now holds - the "script-only
+installable, fundamentally flawed, unpublishable" hypothesis is dead. The
+smoke README now documents the real meaning of the dialog, the
+uninstall-everywhere checklist (incl. ghost-package removal over self-adb),
+and the one-certificate-forever rule. Scripts/docs only; app code untouched.
