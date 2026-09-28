@@ -1288,6 +1288,8 @@ class ChatUiGatesTest {
             uiState(
                 sessionView(
                     messages = listOf(
+                        message("msg_u0", "user", listOf(textPart("pz", "msg_u0", "earlier question"))),
+                        message("msg_a0", "assistant", listOf(textPart("py", "msg_a0", "earlier answer"))),
                         message("msg_u1", "user", listOf(textPart("p0", "msg_u1", "explain"))),
                         message("msg_a1", "assistant", listOf(textPart("p1", "msg_a1", "the answer"))),
                     ),
@@ -1304,12 +1306,14 @@ class ChatUiGatesTest {
             ),
             availability = AgentAvailability.READY,
         )
-        val retryAction = exists("message_retry")
-        val undoAction = exists("message_undo")
+        // v9.4 (owner's bug 3): Retry/Undo act on the NEWEST turn only, so
+        // exactly one of each even with two finished turns on screen.
+        val retryAction = countTag("message_retry") == 1
+        val undoAction = countTag("message_undo") == 1
         val redoAction = exists("redo_turn")
-        if (retryAction) rule.onNodeWithTag("message_retry").performClick()
-        if (undoAction) rule.onNodeWithTag("message_undo").performClick()
-        if (redoAction) rule.onNodeWithTag("redo_turn").performClick()
+        if (retryAction) rule.onAllNodesWithTag("message_retry")[0].performClick()
+        if (undoAction) rule.onAllNodesWithTag("message_undo")[0].performClick()
+        if (redoAction) rule.onAllNodesWithTag("redo_turn")[0].performClick()
         rule.waitForIdle()
         val acted = retries == 1 && undos == 1 && redos == 1
 
@@ -1317,15 +1321,21 @@ class ChatUiGatesTest {
         // is proven by the exact text that lands on the (test-provided)
         // clipboard; the reactions are local markers, so the gate proves they
         // exist, carry names and take the tap.
-        val copyAction = exists("message_copy")
-        val likeAction = exists("message_like")
-        val dislikeAction = exists("message_dislike")
+        // v9.4 (owner's bug 3): the strip is per turn now - BOTH finished
+        // turns carry Copy/Like/Dislike, and copying the OLDER one must put
+        // the OLDER text on the clipboard (composition order: oldest first).
+        val copyAction = countTag("message_copy") == 2
+        val likeAction = countTag("message_like") == 2
+        val dislikeAction = countTag("message_dislike") == 2
         copiedTexts.clear()
-        if (copyAction) rule.onNodeWithTag("message_copy").performClick()
+        if (copyAction) rule.onAllNodesWithTag("message_copy")[0].performClick()
         rule.waitForIdle()
-        val copyWired = copiedTexts.lastOrNull() == "the answer"
-        if (likeAction) rule.onNodeWithTag("message_like").performClick()
-        if (dislikeAction) rule.onNodeWithTag("message_dislike").performClick()
+        val copyOldWired = copiedTexts.lastOrNull() == "earlier answer"
+        if (copyAction) rule.onAllNodesWithTag("message_copy")[1].performClick()
+        rule.waitForIdle()
+        val copyWired = copyOldWired && copiedTexts.lastOrNull() == "the answer"
+        if (likeAction) rule.onAllNodesWithTag("message_like")[0].performClick()
+        if (dislikeAction) rule.onAllNodesWithTag("message_dislike")[1].performClick()
         rule.waitForIdle()
 
         // A turn error is shown with the server's own words, and can be dismissed.
@@ -1884,6 +1894,12 @@ class ChatUiGatesTest {
         val modePicked = modePicks == listOf(OpenCodeRepository.AGENT_PLAN)
         renderChat(
             uiState(
+                sessionView(
+                    messages = listOf(
+                        message("msg_up", "user", listOf(textPart("pp0", "msg_up", "plan a feature"))),
+                        message("msg_ap", "assistant", listOf(textPart("pp1", "msg_ap", "1. step one 2. step two"))),
+                    ),
+                ),
                 model = starred[0],
                 starred = starred,
                 providers = providers,
@@ -1892,6 +1908,16 @@ class ChatUiGatesTest {
             AgentAvailability.READY,
         )
         val modeLabelled = onScreenText().contains(context.getString(R.string.chat_mode_plan))
+        // v9.4 (owner's bug 4): plan mode is the plan-then-approve workflow.
+        // With a COMPLETED assistant turn on screen in plan mode, the approve
+        // bar is offered; the tap switches the agent to build AND sends the
+        // approval prompt verbatim - execution starts from the approved plan.
+        val approveOffered = exists("plan_ready_bar") && exists("plan_approve")
+        sent.clear()
+        if (approveOffered) rule.onAllNodesWithTag("plan_approve")[0].performClick()
+        rule.waitForIdle()
+        val approveWired = modePicks.lastOrNull() == OpenCodeRepository.AGENT_BUILD &&
+            sent.lastOrNull() == context.getString(R.string.chat_plan_approved_prompt)
         shot("30-mode-switch.png")
 
         // with nothing starred the menu says what to do and offers the one place
@@ -1913,11 +1939,13 @@ class ChatUiGatesTest {
             shown && labelNamesCurrent && menuOpen && listed && idsShown && picked && noSettingsTrip &&
                 thinkingListed && thinkingPicked && thinkingEmptyExplained &&
                 modeShown && modeMenu && modePicked && modeLabelled &&
+                approveOffered && approveWired &&
                 emptyExplained && settingsOffered && settled,
             "shown=$shown label=$labelNamesCurrent menu=$menuOpen listed=$listed/$idsShown " +
                 "picked=$picked/$pickedModels settingsTrip=$noSettingsTrip " +
                 "thinking=$thinkingListed/$thinkingPicked/$thinkingPicks thinkingEmpty=$thinkingEmptyExplained " +
                 "mode=$modeShown/$modeMenu/$modePicked/$modePicks label=$modeLabelled " +
+                "planApprove=$approveOffered/$approveWired " +
                 "emptyExplained=$emptyExplained offered=$settingsOffered",
         )
     }

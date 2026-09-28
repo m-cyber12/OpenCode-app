@@ -168,6 +168,13 @@ fun MessageRow(
     streaming: Boolean = false,
     onRetry: (() -> Unit)? = null,
     onUndo: (() -> Unit)? = null,
+    /**
+     * v9.4 (owner's bug 3): whether this row carries the action strip. The
+     * caller decides (once per assistant turn, only when the turn is
+     * complete); Copy/Like/Dislike always join, Retry/Undo only when their
+     * callbacks are non-null - i.e. on the newest turn.
+     */
+    showActions: Boolean = false,
     showHeader: Boolean = true,
     showFooter: Boolean = true,
     groupTokensIn: Long = -1L,
@@ -314,7 +321,7 @@ fun MessageRow(
             }
         }
 
-        if (onRetry != null || onUndo != null) {
+        if (showActions || onRetry != null || onUndo != null) {
             Spacer(Modifier.height(2.dp))
             // v9: the turn actions as quiet glyphs (owner's request) - retry
             // re-runs the last prompt, undo reverts the turn and its file

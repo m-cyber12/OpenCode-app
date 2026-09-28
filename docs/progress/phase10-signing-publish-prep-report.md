@@ -3661,3 +3661,55 @@ that no end user will ever see. Prevention is now in the README: install by
 tap or `adb install --user 0`, and keep ONE signing certificate, after which
 every update is a single tap. The README also documents the diagnose/clean
 commands verbatim. Scripts/docs only; app code untouched.
+
+## B.22 v9.4 (2026-09-28): the owner's five-bug list after the first self-installed build
+
+**1. Custom folder refused during onboarding ("cannot write here").** Real
+cause: without the All files access grant the app genuinely cannot write
+anywhere in shared storage except its own Android/data - the folder was
+fine, the permission was missing, and the error was a dead end. AppRoot's
+folder picker now detects exactly that case (real folder + probe write
+failed + grant not yet given), explains it in place
+(onboarding_workspace_grant_for_folder), opens the system switch, and
+CONNECTS THE EXACT FOLDER THE USER PICKED when they return with the grant -
+no re-picking, no error loop. Both onboarding and Settings share the picker,
+so both got the fix.
+
+**2. ~14k input tokens for "hi make a hello world file".** Not a defect and
+not app-inflicted: the server composes each LLM request from the system
+prompt, the FULL tool catalog (bash/read/write/edit/grep/glob/todo/task/...),
+environment context and project memory - that baseline is what makes a
+one-line prompt able to actually create files. Upstream's own TUI pays the
+same; so do Claude Code and friends (10-20k is the going rate). The app only
+sends the user text + ids. Where the provider supports prompt caching
+(Anthropic, much of OpenRouter) the constant prefix is billed at cached
+rates on subsequent turns. Documented; nothing to fix without deleting
+tools.
+
+**3. Copy/Like/Dislike only under the newest response.** MessageRow grew an
+explicit showActions parameter; the transcript passes it for the LAST
+message of EVERY completed assistant group (never the still-streaming one),
+while Retry/Undo remain wired only on the newest turn, whose meaning they
+carry. U5 now renders TWO finished turns and proves: exactly one
+message_retry/message_undo, exactly two message_copy/like/dislike, and
+copying the older turn puts the OLDER text on the clipboard.
+
+**4. Plan mode = plan, approve, execute.** The mode menu line for Plan now
+reads "Plan first, edit nothing until you approve". While in Plan with a
+COMPLETED assistant turn on screen, a glass bar (plan_ready_bar) sits above
+the composer: "Plan ready / Review the plan above..." with one gold action
+(plan_approve). Approving flips the agent to build and sends
+chat_plan_approved_prompt as the next user message - execution starts from
+the plan the user just read. Upstream still enforces plan's edit-deny
+server-side; the app adds the workflow, not a simulation. U10 proves the
+bar appears in plan mode, the tap reports agent=build and sends the exact
+prompt.
+
+**5. Cluttered header / vanishing status orb.** The model capsule now owns
+the row's only elastic slot (weight 1f) and its label ellipsizes inside it;
+hamburger, mode switch and status orb are laid out after it at fixed size.
+Long model names shrink the capsule text - they can no longer push the orb
+(or anything) off screen. Nothing was removed or relocated.
+
+Static checks EXIT=0 and harness selfcheck PASS locally; the CI run on this
+push is the binding verdict for all five.

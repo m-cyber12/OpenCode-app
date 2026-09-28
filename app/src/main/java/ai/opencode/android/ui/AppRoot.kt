@@ -318,19 +318,54 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
      * is an OpenCode session in it; no folder is created for the chat).
      */
 
+    // All files access is granted in system settings, not by a dialog, so the app
+    // sends the user there and re-checks when the screen comes back. v9.4 (owner's
+    // bug 1): when the trip was triggered by a CUSTOM folder the app could not
+    // write, the exact folder the user picked is retried on return instead of
+    // bouncing them back to the same error.
+    var pendingChosenTree by remember { mutableStateOf<android.net.Uri?>(null) }
+    val allFilesAccessLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) {
+        val pendingTree = pendingChosenTree
+        pendingChosenTree = null
+        if (pendingTree != null && StorageChoice.hasAllFilesAccess()) {
+            runStorageChange { storageController.useChosenFolder(pendingTree) }
+        } else {
+            runStorageChange { storageController.activateAllFilesAccess() }
+        }
+    }
+
     // The system folder picker, for a project root the user chooses themselves.
     // Folders that cannot be handed to a POSIX runtime (SD card, cloud provider) are
     // refused with the reason - see StorageChoice.realPathOf.
+    //
+    // v9.4 (owner's bug 1): "cannot write here" used to be a dead end when the real
+    // cause was the missing All files access grant - the folder was fine, the app
+    // just was not allowed into shared storage yet. Now that exact case explains
+    // itself and walks the user to the system switch, then connects the folder
+    // they picked when they come back with the grant.
     val chosenFolderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
-            runStorageChange { storageController.useChosenFolder(uri) }
+            scope.launch {
+                val dir = withContext(Dispatchers.IO) { StorageChoice.realPathOf(uri) }
+                val writable = dir != null && withContext(Dispatchers.IO) { StorageChoice.isUsableRoot(dir) }
+                val grant = StorageChoice.allFilesAccessIntent(context)
+                if (dir != null && !writable && grant != null && !StorageChoice.hasAllFilesAccess()) {
+                    val text = context.getString(
+                        R.string.onboarding_workspace_grant_for_folder,
+                        dir.absolutePath,
+                    )
+                    onboardingMessage = text
+                    storageMessage = text
+                    pendingChosenTree = uri
+                    allFilesAccessLauncher.launch(grant)
+                } else {
+                    runStorageChange { storageController.useChosenFolder(uri) }
+                }
+            }
         }
     }
-    // All files access is granted in system settings, not by a dialog, so the app
-    // sends the user there and re-checks when the screen comes back.
-    val allFilesAccessLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { runStorageChange { storageController.activateAllFilesAccess() } }
 
     fun confirmWorkspace() {
         scope.launch {

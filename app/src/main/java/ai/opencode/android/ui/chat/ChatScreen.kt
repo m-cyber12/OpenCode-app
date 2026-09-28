@@ -228,6 +228,24 @@ fun ChatScreen(
             onQuestionSkip = onQuestionSkip,
         )
 
+        // v9.4 (owner's bug 4): plan mode as the well-known workflow, not just a
+        // tool restriction. The plan agent answers read-only (upstream enforces
+        // that server-side); once its turn is COMPLETE, this bar offers the
+        // approval step: one tap switches the agent to build and sends the
+        // approval prompt, so execution starts from the plan the user just read.
+        val lastRole = messages.lastOrNull()?.role
+        if (state.agentMode == OpenCodeRepository.AGENT_PLAN && !state.busy &&
+            lastRole != null && lastRole != "user" && UiError.canSend(availability)
+        ) {
+            val approvedPrompt = stringResource(R.string.chat_plan_approved_prompt)
+            PlanApproveBar(
+                onApprove = {
+                    onPickMode(OpenCodeRepository.AGENT_BUILD)
+                    onSend(approvedPrompt)
+                },
+            )
+        }
+
         AttachmentTray(attachments = state.attachments, onRemove = onRemoveAttachment)
 
         Composer(
@@ -439,19 +457,77 @@ private fun ChatHeader(
         // Models are starred on the Providers surface now, so the quick
         // switch's manage entry leads there (in the gates the two callbacks
         // are the same lambda, which keeps the U10 contract meaningful).
-        ModelQuickSwitch(
-            current = model,
-            starred = starred,
-            onPick = onPickModel,
-            onOpenSettings = onOpenProviders,
-            variants = thinkingVariants,
-            activeVariant = thinkingVariant,
-            onPickVariant = onPickThinking,
-        )
-        Spacer(Modifier.weight(1f))
+        // v9.4 (owner's bug 5): the capsule owns the flexible middle of the
+        // row and shrinks FIRST - a long model name ellipsizes inside it
+        // instead of shoving the mode switch and the status orb off screen.
+        // Nothing left the header; the fixed-size pieces are simply laid out
+        // after the only elastic one.
+        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+            ModelQuickSwitch(
+                current = model,
+                starred = starred,
+                onPick = onPickModel,
+                onOpenSettings = onOpenProviders,
+                variants = thinkingVariants,
+                activeVariant = thinkingVariant,
+                onPickVariant = onPickThinking,
+            )
+        }
+        Spacer(Modifier.width(8.dp))
         ModeSwitch(agentMode = agentMode, onPickMode = onPickMode)
         Spacer(Modifier.width(8.dp))
         StatusOrb(busy = busy, availability = availability)
+    }
+}
+
+/**
+ * v9.4 (owner's bug 4): the approval step that makes plan mode the well-known
+ * plan-then-execute workflow. Shown between the transcript and the composer
+ * only while the app is in Plan mode with a COMPLETED assistant turn on
+ * screen: one glass bar naming the state (plan ready), one line of what
+ * approving does, one gold action. The tap flips the agent to build and sends
+ * the approval prompt - the reply that follows is the execution.
+ */
+@Composable
+private fun PlanApproveBar(onApprove: () -> Unit) {
+    val chat = ChatTheme.chat
+    val approveLabel = stringResource(R.string.chat_plan_approve)
+    Surface(
+        color = chat.toolContainer,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.dp, chat.toolBorder),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 4.dp)
+            .semantics { testTag = "plan_ready_bar" },
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.chat_plan_ready),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = stringResource(R.string.chat_plan_ready_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = chat.muted,
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            TextButton(
+                onClick = onApprove,
+                modifier = Modifier.semantics {
+                    testTag = "plan_approve"
+                    contentDescription = approveLabel
+                },
+            ) {
+                Text(approveLabel, color = MaterialTheme.colorScheme.primary)
+            }
+        }
     }
 }
 
@@ -945,6 +1021,13 @@ private fun TranscriptPane(
                         streaming = busy && isLast,
                         onRetry = if (isLast && message.role != "user") onRetry else null,
                         onUndo = if (isLast && message.role != "user") onUndo else null,
+                        // v9.4 (owner's bug 3): Copy/Like/Dislike live under EVERY
+                        // completed agent turn (once per turn, at the group's last
+                        // message), not only the newest one. Retry/Undo stay on
+                        // the newest turn - they act on "the last turn" by
+                        // definition. The streaming turn gets no row yet.
+                        showActions = assistant && footerShown &&
+                            (next == null || next.role == "user") && !(busy && isLast),
                         showHeader = headerShown,
                         showFooter = footerShown,
                         groupTokensIn = tokensIn,

@@ -8,7 +8,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Spacer
@@ -106,8 +105,12 @@ fun ModelQuickSwitch(
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            // v9.4 (owner's bug 5): the label yields to the row instead of
+            // pinning a fixed width - inside the header the capsule now gets
+            // exactly the space the other controls leave, and a long model
+            // name ellipsizes right here.
             modifier = Modifier
-                .widthIn(max = 200.dp)
+                .weight(1f, fill = false)
                 .semantics { testTag = "model_quick_switch_label" },
         )
         Icon(
