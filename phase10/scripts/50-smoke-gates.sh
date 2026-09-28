@@ -138,7 +138,11 @@ file, other doors, no computer needed:
        pkg install android-tools
        adb pair <IP:pairing-port>     (type the 6-digit code)
        adb connect <IP:port>          (port from the main screen)
-       adb install TEST-ONLY-debugkey-app-smoke.apk
+       adb install --user 0 TEST-ONLY-debugkey-app-smoke.apk
+     ALWAYS pass --user 0: a bare `adb install`/`pm install` installs
+     into EVERY Android user/profile on the phone (Dual Apps, Second
+     Space, work profile), and copies left in a hidden profile later
+     block any differently-signed install (see the multi-user section).
 An APK cannot be "installable by adb but not by tap" - both end in the
 same Android system service. If the hash matches and route 3 installs,
 the build is proven fine and the phone's tap path is the defect.
@@ -166,6 +170,25 @@ Fix, in order:
 Projects under Documents/OpenCode survive all of the above.
 TIP: when an install fails, use an installer that shows "System
 details" - the stock dialog hides the actual reason.
+
+MULTI-USER GHOSTS ("installed under another user", solved 2026-09-28):
+Settings can show OpenCode entries that refuse to uninstall, saying they
+belong to another user. Cause: `adb install`/`pm install` WITHOUT
+`--user` installs into every Android user/profile at once, so old
+developer-script installs land in secondary profiles (Dual Apps, Second
+Space, work profile - internally "user 10"), while a normal Settings
+uninstall removes only YOUR user's copy. The leftover keeps the old
+certificate registered and Android then refuses every differently-signed
+install - reported by the stock installer as "package appears to be
+invalid". This is Android multi-user behaviour, not something this app
+chooses; there is no "GitHub user" on a phone. Diagnose and clean over
+adb (or Shizuku rish):
+  pm list packages -f | grep -i opencode
+  dumpsys package <pkg> | grep installed=     (find users with installed=true)
+  pm uninstall --user <N> <pkg>               (for each such user N)
+PREVENT IT: install by tap or with `--user 0` only, and stay on ONE
+signing certificate - then every future update is a single tap, and
+none of this page is ever needed again.
 EOF
 log "wrote $SMOKE/INSTALL-README.txt (which artifact file is installable, and why)"
 # The exact bytes of THIS build, appended dynamically: the owner's install

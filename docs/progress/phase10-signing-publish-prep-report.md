@@ -3638,3 +3638,26 @@ installable, fundamentally flawed, unpublishable" hypothesis is dead. The
 smoke README now documents the real meaning of the dialog, the
 uninstall-everywhere checklist (incl. ghost-package removal over self-adb),
 and the one-certificate-forever rule. Scripts/docs only; app code untouched.
+
+### B.21.4 The multi-user ghosts: why three OpenCodes refused to uninstall (2026-09-28)
+
+The owner cleaned the phone with Shizuku + Termux and the dumpsys output
+settles the last "why". Three packages existed - io.github.mcyber12.opencode,
+ai.opencode.android.debug, ai.opencode.android.debug.test - and for all
+three: `User 0: installed=false ... User 10: installed=true`. Two of the
+three carry the applicationId this project used in its EARLY phases
+(`ai.opencode.android.*`, long since renamed) - these were leftovers of the
+old real-device driver runs, not anything a recent APK did. The mechanism:
+`adb install`/`pm install` without `--user` installs into EVERY Android
+user/profile; the phone has (or had) a secondary profile with id 10, so the
+dev-era installs landed there too; a normal Settings uninstall removes only
+user 0's copy; the surviving user-10 copy kept its old signing certificate
+registered, so every differently-signed install since then was refused as
+INSTALL_FAILED_UPDATE_INCOMPATIBLE - masked by the stock dialog as "package
+appears to be invalid". `pm uninstall --user 10 <pkg>` x3 ended it, and the
+smoke build then installed normally. There is no "GitHub user" on a phone
+and the app does not choose users - this was developer-device archaeology
+that no end user will ever see. Prevention is now in the README: install by
+tap or `adb install --user 0`, and keep ONE signing certificate, after which
+every update is a single tap. The README also documents the diagnose/clean
+commands verbatim. Scripts/docs only; app code untouched.
