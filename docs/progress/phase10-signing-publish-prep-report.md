@@ -3782,3 +3782,16 @@ because the provider CACHED the constant prefix after turn 1 and upstream
 reports tokens.input as the non-cached portion (cache reads are a separate
 counter). That is prompt caching working exactly as documented; nothing to
 fix, and the second-turn number is the one users live with inside a session.
+
+### B.24.1 v9.6.1 (2026-09-29): the preview becomes browser-grade
+
+The owner compared the in-app HTML preview against the same file in Chrome:
+in-app the layout broke (wrong zoom, cropped headings, light body under
+white text) while Chrome rendered it perfectly. Same engine - the
+difference is that a raw WebView ships with mobile-hostile defaults: meta
+viewport IGNORED (useWideViewPort=false), no text autosizing, no DOM
+storage. The preview WebView now sets useWideViewPort +
+loadWithOverviewMode + TEXT_AUTOSIZING + domStorageEnabled + pinch zoom
+(controls hidden) and a WebViewClient so links stay in the pane. This is
+also the component the Sandbox live preview will reuse, so the fidelity
+work pays twice.

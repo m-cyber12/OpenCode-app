@@ -8,7 +8,9 @@ import ai.opencode.android.ui.common.ProjectTabs
 import ai.opencode.android.ui.markdown.MarkdownText
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
+import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -497,11 +499,23 @@ private fun FileViewer(
                         factory = { ctx ->
                             WebView(ctx).apply {
                                 // The user's own project files, rendered as a
-                                // browser would: scripts run, and file access
-                                // stays on so the page's relative css/js/img
-                                // resolve inside the project folder.
+                                // browser would. A raw WebView ships with
+                                // mobile-hostile defaults (owner's finding,
+                                // v9.6.1): it IGNORES the page's meta viewport,
+                                // does no text autosizing and has no DOM
+                                // storage - the same page then looks broken
+                                // in-app while Chrome (same engine) nails it.
                                 settings.javaScriptEnabled = true
                                 settings.allowFileAccess = true
+                                settings.domStorageEnabled = true
+                                settings.useWideViewPort = true
+                                settings.loadWithOverviewMode = true
+                                settings.layoutAlgorithm = WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING
+                                settings.builtInZoomControls = true
+                                settings.displayZoomControls = false
+                                // Links stay inside the preview instead of
+                                // punting every tap out to a browser.
+                                webViewClient = WebViewClient()
                             }
                         },
                         update = { web ->
