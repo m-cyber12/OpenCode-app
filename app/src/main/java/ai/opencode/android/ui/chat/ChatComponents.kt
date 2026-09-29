@@ -228,7 +228,15 @@ fun MessageRow(
         return
     }
 
-    Column(modifier = modifier.fillMaxWidth().semantics { testTag = tag }) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            // v9.5 (owner): streamed text used to snap in height as deltas
+            // landed; the turn now GROWS smoothly instead (one finite tween
+            // per size change - the gates' test clock still reaches idle).
+            .animateContentSize(animationSpec = tween(220))
+            .semantics { testTag = tag },
+    ) {
         // v8 beauty pass: one quiet line above the turn - a small glyph tile and
         // the model's own name (upstream's provider/model verbatim; the word
         // "Agent" only when the server reported no model). No pill, no second

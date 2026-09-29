@@ -328,12 +328,19 @@ private fun ChatHeader(
             IconButton(
                 onClick = { menuOpen = true },
                 modifier = Modifier
-                    .size(42.dp)
+                    // v9.5 (owner): same footprint as the collapsed status orb
+                    // (36dp) - the three header glass pieces read as one family.
+                    .size(36.dp)
                     .background(chat.toolContainer, CircleShape)
                     .border(1.dp, chat.toolBorder, CircleShape)
                     .semantics { testTag = "chat_menu" },
             ) {
-                Icon(Icons.Filled.Menu, contentDescription = menuLabel, tint = MaterialTheme.colorScheme.onSurface)
+                Icon(
+                    Icons.Filled.Menu,
+                    contentDescription = menuLabel,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp),
+                )
             }
             // The menu itself rounds to a soft card (the stock extraSmall corner
             // reads sharp against the black backdrop).
@@ -1025,9 +1032,14 @@ private fun TranscriptPane(
                         // completed agent turn (once per turn, at the group's last
                         // message), not only the newest one. Retry/Undo stay on
                         // the newest turn - they act on "the last turn" by
-                        // definition. The streaming turn gets no row yet.
+                        // definition. v9.5 (owner): the row waits for the server's
+                        // OWN completion stamp (`time.completed` -> message.completed),
+                        // not the busy flag - the busy signal can lag around a
+                        // turn's edges, and the buttons must never precede the
+                        // finished response.
                         showActions = assistant && footerShown &&
-                            (next == null || next.role == "user") && !(busy && isLast),
+                            (next == null || next.role == "user") &&
+                            message.completed && !(busy && isLast),
                         showHeader = headerShown,
                         showFooter = footerShown,
                         groupTokensIn = tokensIn,

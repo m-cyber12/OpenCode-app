@@ -3713,3 +3713,36 @@ Long model names shrink the capsule text - they can no longer push the orb
 
 Static checks EXIT=0 and harness selfcheck PASS locally; the CI run on this
 push is the binding verdict for all five.
+
+## B.23 v9.5 (2026-09-29): header balance, completion-gated actions, and the token-baseline measurement
+
+**Hamburger size.** The menu button was a 42dp circle with a 24dp glyph next
+to a 36dp status orb; it is now 36dp with a 20dp glyph - the three header
+glass pieces share one footprint.
+
+**Streaming presentation.** Each streamed part already faded in (v8 fix
+round); what still snapped was the turn's HEIGHT as deltas landed. The
+assistant message column now grows through one finite animateContentSize
+tween per change. And the action strip is gated on the server's own
+completion stamp: `time.completed` -> `message.completed`, not the busy
+flag, which lags around a turn's edges - the buttons can no longer appear
+before the response is fully generated (upstream stamps time.completed on
+its abort/interrupt paths too - prompt.ts Effect.onInterrupt - so a stopped
+turn still gets its strip). U5 now also asserts NO action tag exists
+anywhere on screen during the streaming render.
+
+**Token baseline, measured, not argued.** From the pinned upstream source
+(05ea5073), chars/4 as the usual estimate: ONE model-family system prompt
+ships per request (anthropic 8.2k chars ~2.1k tok; gpt 9.3k ~2.3k; gemini
+15.4k ~3.8k; copilot-gpt-5 14.2k ~3.6k), plus ALL registered tool
+descriptions (15.1k chars ~3.8k tok total: task 576, todowrite 503, edit
+342, lsp 325, read 289, apply_patch 274, websearch 258, +9 more), plus each
+tool's JSON parameter schema (~1-2k tok), plus the environment block and
+any AGENTS.md. A bare "hi" on a gpt-family model therefore costs
+~2.3k + ~3.8k + schemas + env == the ~5k the owner observed; a richer
+family prompt or larger project context reaches the earlier ~14k. The
+baseline is flat per request, is identical in upstream's own TUI, and is
+the price of the model being ABLE to edit files from a one-line prompt.
+Providers with prompt caching bill the constant prefix at reduced rates on
+repeat turns. No app-side change can shrink it without removing tools -
+recorded here as measured fact rather than reassurance.

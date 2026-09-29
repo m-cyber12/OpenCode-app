@@ -1261,6 +1261,11 @@ class ChatUiGatesTest {
         val streamingDots = exists("streaming_indicator")
         val stopShown = exists(TAG_COMPOSER_STOP)
         val sendHidden = !exists(TAG_COMPOSER_SEND)
+        // v9.5 (owner): the action strip must NEVER precede the finished
+        // response - while the reply is still generating, no Copy/Like/
+        // Dislike/Retry/Undo anywhere on screen.
+        val noActionsWhileStreaming = !exists("message_copy") && !exists("message_like") &&
+            !exists("message_dislike") && !exists("message_retry") && !exists("message_undo")
         val workingLabel = onScreenText().contains(context.getString(R.string.chat_working))
         rule.onNodeWithTag(TAG_COMPOSER_STOP).performClick()
         rule.waitForIdle()
@@ -1353,16 +1358,17 @@ class ChatUiGatesTest {
         val turnErrorShown = onScreenText().contains("APIError") && onScreenText().contains("overloaded")
 
         val ok = busyBar && streamingDots && stopShown && sendHidden && workingLabel && stopped &&
+            noActionsWhileStreaming &&
             retryBanner && retryText && retryDetail && retryAction && undoAction && redoAction && acted &&
             copyAction && copyWired && likeAction && dislikeAction && turnErrorShown
         gate(
             "U5",
             ok,
             "busyBar=$busyBar streamingIndicator=$streamingDots stopShown=$stopShown sendHidden=$sendHidden " +
-                "workingLabel=$workingLabel stopCallback=$stopped retryBanner=$retryBanner " +
+                "workingLabel=$workingLabel stopCallback=$stopped noActionsWhileStreaming=$noActionsWhileStreaming " +
                 "retryText=$retryText retryDetail=$retryDetail retryAction=$retryAction undoAction=$undoAction " +
                 "redoAction=$redoAction callbacks=$acted copy=$copyAction/$copyWired like=$likeAction " +
-                "dislike=$dislikeAction turnErrorKept=$turnErrorShown",
+                "dislike=$dislikeAction turnErrorKept=$turnErrorShown retryBanner=$retryBanner",
         )
     }
 
