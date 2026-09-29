@@ -3746,3 +3746,14 @@ the price of the model being ABLE to edit files from a one-line prompt.
 Providers with prompt caching bill the constant prefix at reduced rates on
 repeat turns. No app-side change can shrink it without removing tools -
 recorded here as measured fact rather than reassurance.
+
+### B.23.1 CI #117 red: the row's escape hatch (2026-09-29)
+
+Run #117 failed U5 on BOTH passes with the new assertion itself:
+noActionsWhileStreaming=false - deterministic, not a flake, and the
+assertion did its job. The v9.4 row condition kept an escape hatch
+(`showActions || onRetry != null || onUndo != null`); with the session
+retryable, the streaming fixture still rendered the strip under the growing
+reply - exactly the owner's complaint. The row now renders on showActions
+alone (the caller's completion verdict); Retry/Undo still join it only on
+the newest turn. One-line fix, re-proven by the same assertion.

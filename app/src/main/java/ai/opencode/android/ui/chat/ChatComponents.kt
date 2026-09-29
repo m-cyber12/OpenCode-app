@@ -329,7 +329,12 @@ fun MessageRow(
             }
         }
 
-        if (showActions || onRetry != null || onUndo != null) {
+        // v9.5 fix (CI #117, U5 noActionsWhileStreaming=false): the caller's
+        // completion verdict is the ONLY thing that renders this row. The old
+        // `|| onRetry != null` escape put Retry/Undo - and with them the whole
+        // strip - under a still-streaming reply whenever the session allowed a
+        // retry, which is exactly what the owner reported.
+        if (showActions) {
             Spacer(Modifier.height(2.dp))
             // v9: the turn actions as quiet glyphs (owner's request) - retry
             // re-runs the last prompt, undo reverts the turn and its file
