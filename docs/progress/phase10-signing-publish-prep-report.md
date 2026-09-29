@@ -3757,3 +3757,28 @@ retryable, the streaming fixture still rendered the strip under the growing
 reply - exactly the owner's complaint. The row now renders on showActions
 alone (the caller's completion verdict); Retry/Undo still join it only on
 the newest turn. One-line fix, re-proven by the same assertion.
+
+## B.24 v9.6 (2026-09-29): orb-sized hamburger, file preview faces, and the cache-read answer
+
+**Hamburger, second pass.** v9.5 set the IconButton to 36dp, but Material's
+IconButton carries minimum-touch-target plumbing that kept it reading larger
+than its neighbours. It is now built EXACTLY like the status orb - a 36dp
+clickable Surface (18dp glyph) - so the two circles are the same control in
+two colours. Same tag, same label, same menu.
+
+**Files: source AND preview.** The viewer now recognises previewable files:
+html/htm/svg render in a WebView pointed at the real file path (so a page's
+relative css/js/img resolve inside the project folder; JS enabled - these
+are the user's own files), md/markdown render through the app's own
+markdown engine. One toggle (files_preview_toggle) flips Source <-> Preview;
+source remains the default face, plain files offer no toggle at all. U9
+extended: no toggle on main.kt, toggle on index.html, preview replaces the
+source body, and the same control leads back.
+
+**The owner's screenshot answered the token question itself.** Turn 1:
+5,896 in - the flat harness baseline (system prompt + full tool catalog +
+schemas + environment, B.23) plus the prompt. Turn 2, same session: 41 in -
+because the provider CACHED the constant prefix after turn 1 and upstream
+reports tokens.input as the non-cached portion (cache reads are a separate
+counter). That is prompt caching working exactly as documented; nothing to
+fix, and the second-turn number is the one users live with inside a session.

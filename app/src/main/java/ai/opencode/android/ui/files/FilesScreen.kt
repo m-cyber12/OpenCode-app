@@ -5,8 +5,10 @@ import ai.opencode.android.runtime.StorageMode
 import ai.opencode.android.ui.common.AppTopBar
 import ai.opencode.android.ui.common.ProjectTab
 import ai.opencode.android.ui.common.ProjectTabs
+import ai.opencode.android.ui.markdown.MarkdownText
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
+import android.webkit.WebView
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,6 +36,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -259,6 +267,7 @@ fun FilesScreen(
             if (file != null) {
                 FileViewer(
                     file = file,
+                    projectPath = projectPath,
                     onClose = onCloseFile,
                     onSaveCopy = { onSaveCopy(file.path) },
                 )
@@ -386,13 +395,33 @@ private fun Listing(
     }
 }
 
+/** What the viewer can render BESIDES the source text (owner, v9.6). */
+private enum class PreviewKind { NONE, WEB, MARKDOWN }
+
+private fun previewKindOf(name: String): PreviewKind {
+    val ext = name.substringAfterLast('.', "").lowercase()
+    return when (ext) {
+        "html", "htm", "svg" -> PreviewKind.WEB
+        "md", "markdown" -> PreviewKind.MARKDOWN
+        else -> PreviewKind.NONE
+    }
+}
+
 @Composable
 private fun FileViewer(
     file: OpenFile,
+    projectPath: String,
     onClose: () -> Unit,
     onSaveCopy: () -> Unit,
 ) {
     val chat = ChatTheme.chat
+    // v9.6 (owner): a previewable file offers both faces - the source stays
+    // the default (it is what the gates and the save-copy flow reason about),
+    // one toggle renders the page. HTML/SVG go through a WebView pointed at
+    // the real file on disk (so relative css/js/img inside the project
+    // resolve); markdown reuses the app's own renderer.
+    val previewKind = if (file.binary) PreviewKind.NONE else previewKindOf(file.name)
+    var showPreview by remember(file.path) { mutableStateOf(false) }
     Box(
         Modifier
             .fillMaxSize()
@@ -425,6 +454,20 @@ private fun FileViewer(
                         color = chat.muted,
                     )
                 }
+                if (previewKind != PreviewKind.NONE) {
+                    val toggleLabel = stringResource(
+                        if (showPreview) R.string.files_show_source else R.string.files_show_preview,
+                    )
+                    TextButton(
+                        onClick = { showPreview = !showPreview },
+                        modifier = Modifier.semantics {
+                            testTag = "files_preview_toggle"
+                            contentDescription = toggleLabel
+                        },
+                    ) {
+                        Text(toggleLabel)
+                    }
+                }
                 TextButton(
                     onClick = onSaveCopy,
                     modifier = Modifier.semantics { testTag = "files_save_copy" },
@@ -441,6 +484,50 @@ private fun FileViewer(
                         .padding(16.dp)
                         .semantics { testTag = "files_viewer_binary" },
                 )
+            } else if (showPreview && previewKind == PreviewKind.WEB) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .semantics { testTag = "files_preview" },
+                ) {
+                    AndroidView(
+                        factory = { ctx ->
+                            WebView(ctx).apply {
+                                // The user's own project files, rendered as a
+                                // browser would: scripts run, and file access
+                                // stays on so the page's relative css/js/img
+                                // resolve inside the project folder.
+                                settings.javaScriptEnabled = true
+                                settings.allowFileAccess = true
+                            }
+                        },
+                        update = { web ->
+                            web.loadUrl("file://$projectPath/${file.path}")
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            } else if (showPreview && previewKind == PreviewKind.MARKDOWN) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .semantics { testTag = "files_preview" },
+                ) {
+                    Column(
+                        Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(12.dp),
+                    ) {
+                        MarkdownText(source = file.text)
+                    }
+                }
             } else {
                 if (file.truncated) {
                     Text(

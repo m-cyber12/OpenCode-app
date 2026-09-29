@@ -1726,11 +1726,36 @@ class ChatUiGatesTest {
         )
         val viewer = exists("files_viewer") && exists("files_viewer_body")
         val bodyText = onScreenText().contains("fun main() = println(\"hello\")")
+        // v9.6 (owner): a plain source file offers NO preview face at all
+        val noToggleForPlain = !exists("files_preview_toggle")
         val saveCopyShown = exists("files_save_copy")
         rule.onAllNodesWithTag("files_save_copy")[0].performClick()
         rule.waitForIdle()
         val saveCopyWired = savedCopies.contains("src/main.kt")
         shot("21-files-viewer.png")
+
+        // v9.6 (owner): an HTML file has two faces - the source stays the
+        // default, the toggle renders the page (WebView on the real path),
+        // and the same toggle leads back to the source.
+        renderFiles(
+            path = "site",
+            open = OpenFile(
+                path = "site/index.html",
+                name = "index.html",
+                text = "<html><body>hi</body></html>",
+                bytes = 28,
+                binary = false,
+                truncated = false,
+            ),
+        )
+        val previewOffered = exists("files_preview_toggle")
+        val sourceDefault = exists("files_viewer_body") && !exists("files_preview")
+        if (previewOffered) rule.onAllNodesWithTag("files_preview_toggle")[0].performClick()
+        rule.waitForIdle()
+        val previewShown = exists("files_preview") && !exists("files_viewer_body")
+        if (previewOffered) rule.onAllNodesWithTag("files_preview_toggle")[0].performClick()
+        rule.waitForIdle()
+        val sourceBack = exists("files_viewer_body") && !exists("files_preview")
 
         // closing returns to the listing
         renderFiles(path = "src", nodes = listOf(FileNode(name = "main.kt", path = "src/main.kt", isDirectory = false)))
@@ -1807,6 +1832,7 @@ class ChatUiGatesTest {
 
         val ok = listed && pathShown && locationCopy && openedDir && upShown && upWorks && openedFile &&
             viewer && bodyText && saveCopyShown && saveCopyWired && closed && emptyShown &&
+            noToggleForPlain && previewOffered && sourceDefault && previewShown && sourceBack &&
             noCopyPath && noExport && noChoose && noReset &&
             goodPanelVisible && goodExplanation && goodNoGrant &&
             fallbackVisible && fallbackExplained && pendingShown && grantShown && grantWired &&
@@ -1816,6 +1842,7 @@ class ChatUiGatesTest {
             ok,
             "listed=$listed pathShown=$pathShown locationCopy=$locationCopy openedDir=$openedDir " +
                 "upShown=$upShown upWorks=$upWorks openedFile=$openedFile viewer=$viewer body=$bodyText " +
+                "preview=$noToggleForPlain/$previewOffered/$sourceDefault/$previewShown/$sourceBack " +
                 "saveCopy=$saveCopyShown/$saveCopyWired closed=$closed empty=$emptyShown " +
                 "v4Removed=copyPath:$noCopyPath,export:$noExport,choose:$noChoose,reset:$noReset " +
                 "panel=$goodPanelVisible/$goodExplanation/$goodNoGrant " +

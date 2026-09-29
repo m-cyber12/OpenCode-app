@@ -325,22 +325,27 @@ private fun ChatHeader(
         Box {
             // v9.1: the hamburger sits in its own glass circle, like the other
             // header controls - the row reads as three floating glass pieces.
-            IconButton(
+            // v9.6 (owner, second pass on the size): built EXACTLY like the
+            // status orb - a 36dp clickable Surface - instead of an
+            // IconButton, whose Material minimum-touch-target plumbing kept
+            // it visually larger than its neighbours.
+            Surface(
                 onClick = { menuOpen = true },
+                color = chat.toolContainer,
+                shape = CircleShape,
+                border = BorderStroke(1.dp, chat.toolBorder),
                 modifier = Modifier
-                    // v9.5 (owner): same footprint as the collapsed status orb
-                    // (36dp) - the three header glass pieces read as one family.
                     .size(36.dp)
-                    .background(chat.toolContainer, CircleShape)
-                    .border(1.dp, chat.toolBorder, CircleShape)
                     .semantics { testTag = "chat_menu" },
             ) {
-                Icon(
-                    Icons.Filled.Menu,
-                    contentDescription = menuLabel,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(20.dp),
-                )
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    Icon(
+                        Icons.Filled.Menu,
+                        contentDescription = menuLabel,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
             // The menu itself rounds to a soft card (the stock extraSmall corner
             // reads sharp against the black backdrop).
