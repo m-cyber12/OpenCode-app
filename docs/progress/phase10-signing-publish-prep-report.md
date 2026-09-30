@@ -3795,3 +3795,38 @@ loadWithOverviewMode + TEXT_AUTOSIZING + domStorageEnabled + pinch zoom
 (controls hidden) and a WebViewClient so links stay in the pane. This is
 also the component the Sandbox live preview will reuse, so the fidelity
 work pays twice.
+
+## B.25 v9.7 (2026-09-30): the Sandbox - loopback preview server, live pane, agent eyes
+
+Owner-locked scope (their three answers): static server first; the preview
+lives on the Files tab, which becomes "Sandbox"; the agent gets eyes in the
+same batch.
+
+**The server.** ai.opencode.android.preview.PreviewServer: a dependency-free
+static HTTP server bound to the LOOPBACK interface only, serving exactly the
+active project folder. GET/HEAD, canonical-path lookups confined to the root
+(traversal refused, including percent-encoded), directory -> index.html, a
+fixed mime map, no-store, no listing, no writes. Eight JVM tests prove it
+over real 127.0.0.1 sockets: mime types, index fallthrough, 404s, query
+strings, traversal confinement over the wire, stop(). AppRoot owns the
+lifecycle (screens stay pure): started on demand, kept while the app lives
+so the phone browser can hold the tab, stopped with the composition. The
+cleartext exception for 127.0.0.1 already existed for the OpenCode runtime.
+
+**Why this also fixes the preview fidelity complaint.** file:// origins
+forbid module scripts, fetch and storage - the http://127.0.0.1 origin is
+what a deployed site gets, which is how Chrome renders the owner's page
+correctly. The Sandbox pane renders through THAT origin.
+
+**The pane.** The listing offers one glass door (sandbox_preview_open); open,
+and the pane owns the screen: browser-grade WebView on the loopback url,
+Browser (same url handed to the phone browser - loopback is device-wide) and
+Snapshot. Snapshot draws the WebView into a bitmap and hands it to AppRoot,
+which writes .preview/latest.png INSIDE the project - the file the agent can
+read to see what the user sees. Page loads also self-snapshot once settled
+(one deferred runnable per load - finite). U9 extended (no new @Test): door
+shown and wired, pane's four controls present, door absent inside the pane,
+Browser and Close wired, and Snapshot must deliver a frame with real
+dimensions. Tab label and screen subtitle read Sandbox; every testTag and
+resource id (project_tab_files, files_*) is UNCHANGED so gates and the
+real-device driver keep their contract.

@@ -171,6 +171,11 @@ class ChatUiGatesTest {
     private var closedFiles = 0
     private var filesBack = 0
     private var allFilesRequests = 0
+    private var previewOpens = 0
+    private var previewCloses = 0
+    private var browserOpens = 0
+    private val capturedFrames = mutableListOf<Pair<Int, Int>>()
+    private val filesPreviewUrl = mutableStateOf("")
     private var workspacePicks = 0
     private var workspaceUse = 0
     private val workspacePath = mutableStateOf(WORKSPACE_FIXTURE_PATH)
@@ -554,6 +559,11 @@ class ChatUiGatesTest {
             onRequestAllFilesAccess = { allFilesRequests++ },
             onMoveProjects = { projectMoves++ },
             onBack = { filesBack++ },
+            previewUrl = filesPreviewUrl.value,
+            onOpenPreview = { previewOpens++ },
+            onClosePreview = { previewCloses++ },
+            onOpenInBrowser = { browserOpens++ },
+            onCapturePreview = { capturedFrames.add(it.width to it.height) },
         )
     }
 
@@ -563,11 +573,13 @@ class ChatUiGatesTest {
         open: OpenFile? = null,
         loading: Boolean = false,
         error: String = "",
+        previewUrl: String = "",
     ) {
         filesPath.value = path
         filesNodes.clear()
         filesNodes.addAll(nodes)
         filesOpen.value = open
+        filesPreviewUrl.value = previewUrl
         filesLoading.value = loading
         filesError.value = error
         surface.value = Surface.FILES
@@ -1757,6 +1769,32 @@ class ChatUiGatesTest {
         rule.waitForIdle()
         val sourceBack = exists("files_viewer_body") && !exists("files_preview")
 
+        // ---- v9.7 Sandbox: the live-preview pane -----------------------------
+        // The listing offers the door; with a preview url the pane owns the
+        // screen: WebView surface, Browser and Snapshot actions, and a working
+        // way back. Snapshot must hand a real frame (width x height > 0) to
+        // the capture callback - that is the file AppRoot writes for the agent.
+        renderFiles(path = "", nodes = listOf(FileNode(name = "index.html", path = "index.html", isDirectory = false)))
+        val doorShown = exists("sandbox_preview_open")
+        if (doorShown) rule.onAllNodesWithTag("sandbox_preview_open")[0].performClick()
+        rule.waitForIdle()
+        val doorWired = previewOpens == 1
+        renderFiles(path = "", previewUrl = "http://127.0.0.1:1/")
+        val paneShown = exists("sandbox_preview") && exists("sandbox_open_browser") &&
+            exists("sandbox_capture") && exists("sandbox_preview_close")
+        val doorHiddenInPane = !exists("sandbox_preview_open")
+        rule.onAllNodesWithTag("sandbox_open_browser")[0].performClick()
+        rule.waitForIdle()
+        val browserWired = browserOpens == 1
+        capturedFrames.clear()
+        rule.onAllNodesWithTag("sandbox_capture")[0].performClick()
+        rule.waitForIdle()
+        val frame = capturedFrames.lastOrNull()
+        val captureWired = frame != null && frame.first > 0 && frame.second > 0
+        rule.onAllNodesWithTag("sandbox_preview_close")[0].performClick()
+        rule.waitForIdle()
+        val paneClosable = previewCloses == 1
+
         // closing returns to the listing
         renderFiles(path = "src", nodes = listOf(FileNode(name = "main.kt", path = "src/main.kt", isDirectory = false)))
         rule.onAllNodesWithTag("files_file")[0].performClick()
@@ -1833,6 +1871,8 @@ class ChatUiGatesTest {
         val ok = listed && pathShown && locationCopy && openedDir && upShown && upWorks && openedFile &&
             viewer && bodyText && saveCopyShown && saveCopyWired && closed && emptyShown &&
             noToggleForPlain && previewOffered && sourceDefault && previewShown && sourceBack &&
+            doorShown && doorWired && paneShown && doorHiddenInPane && browserWired &&
+            captureWired && paneClosable &&
             noCopyPath && noExport && noChoose && noReset &&
             goodPanelVisible && goodExplanation && goodNoGrant &&
             fallbackVisible && fallbackExplained && pendingShown && grantShown && grantWired &&
@@ -1843,6 +1883,7 @@ class ChatUiGatesTest {
             "listed=$listed pathShown=$pathShown locationCopy=$locationCopy openedDir=$openedDir " +
                 "upShown=$upShown upWorks=$upWorks openedFile=$openedFile viewer=$viewer body=$bodyText " +
                 "preview=$noToggleForPlain/$previewOffered/$sourceDefault/$previewShown/$sourceBack " +
+                "sandbox=$doorShown/$doorWired/$paneShown/$doorHiddenInPane/$browserWired/$captureWired/$paneClosable " +
                 "saveCopy=$saveCopyShown/$saveCopyWired closed=$closed empty=$emptyShown " +
                 "v4Removed=copyPath:$noCopyPath,export:$noExport,choose:$noChoose,reset:$noReset " +
                 "panel=$goodPanelVisible/$goodExplanation/$goodNoGrant " +

@@ -11,6 +11,7 @@ import ai.opencode.android.ui.theme.MonoSmall
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,11 +27,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,7 +44,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.Alignment
@@ -111,6 +116,7 @@ data class OpenFile(
     val truncated: Boolean,
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilesScreen(
     projectName: String,
@@ -147,6 +153,18 @@ fun FilesScreen(
     onRequestAllFilesAccess: () -> Unit,
     onMoveProjects: () -> Unit,
     onBack: () -> Unit,
+    /**
+     * v9.7 Sandbox: the live-preview state. Empty [previewUrl] = closed; a
+     * non-empty url (the app-owned loopback static server) replaces the
+     * listing with the rendered project. The screen stays a pure function of
+     * these - the server itself lives with AppRoot.
+     */
+    previewUrl: String = "",
+    onOpenPreview: () -> Unit = {},
+    onClosePreview: () -> Unit = {},
+    onOpenInBrowser: () -> Unit = {},
+    /** The captured preview frame - AppRoot writes it into the project for the agent. */
+    onCapturePreview: (android.graphics.Bitmap) -> Unit = {},
     /**
      * v7 redesign: when non-null, the Chat/Files/Changes/Terminal strip renders
      * under the bar and this callback handles a tab tap. Nullable so every
@@ -262,11 +280,58 @@ fun FilesScreen(
             }
         }
 
+        // v9.7 Sandbox: the door to the live preview, on the listing only (a
+        // viewer or the preview itself owns the screen once open).
+        if (previewUrl.isEmpty() && openFile == null) {
+            val chat = ChatTheme.chat
+            val openLabel = stringResource(R.string.sandbox_preview_open)
+            Surface(
+                onClick = onOpenPreview,
+                color = chat.toolContainer,
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, chat.toolBorder),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+                    .semantics {
+                        testTag = "sandbox_preview_open"
+                        contentDescription = openLabel
+                    },
+            ) {
+                Row(
+                    Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(openLabel, style = MaterialTheme.typography.labelLarge)
+                        Text(
+                            stringResource(R.string.sandbox_preview_open_body),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = chat.muted,
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = chat.muted,
+                        modifier = Modifier.clearAndSetSemantics { },
+                    )
+                }
+            }
+        }
+
         // Either one file is open, or the folder is listed - never both, so the
         // screen has exactly one scrollable region at a time.
         val file = openFile
         Box(Modifier.fillMaxWidth().weight(1f)) {
-            if (file != null) {
+            if (previewUrl.isNotEmpty()) {
+                PreviewPane(
+                    url = previewUrl,
+                    onClose = onClosePreview,
+                    onOpenInBrowser = onOpenInBrowser,
+                    onCapture = onCapturePreview,
+                )
+            } else if (file != null) {
                 FileViewer(
                     file = file,
                     projectPath = projectPath,
@@ -609,4 +674,114 @@ private fun storageExplanation(
         },
     )
     StorageMode.INTERNAL -> stringResource(R.string.files_location_internal)
+}
+
+/**
+ * v9.7 Sandbox: the live preview - the project rendered from the app's own
+ * loopback static server (a real http origin, so pages behave exactly as they
+ * would deployed). One header row: back, the url, Browser (the same url in
+ * the phone's browser - loopback is reachable device-wide) and Snapshot,
+ * which hands the current frame to AppRoot to store inside the project so
+ * the agent can read what the user is seeing. Page loads also snapshot
+ * themselves once settled - the "agent eyes" the owner asked for.
+ */
+@Composable
+private fun PreviewPane(
+    url: String,
+    onClose: () -> Unit,
+    onOpenInBrowser: () -> Unit,
+    onCapture: (android.graphics.Bitmap) -> Unit,
+) {
+    val chat = ChatTheme.chat
+    val latestCapture = rememberUpdatedState(onCapture)
+    val webRef = remember { mutableStateOf<WebView?>(null) }
+    fun snap(web: WebView?) {
+        val w = web ?: return
+        if (w.width > 0 && w.height > 0) {
+            val bmp = android.graphics.Bitmap.createBitmap(w.width, w.height, android.graphics.Bitmap.Config.ARGB_8888)
+            w.draw(android.graphics.Canvas(bmp))
+            latestCapture.value(bmp)
+        }
+    }
+    Column(Modifier.fillMaxSize()) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(
+                onClick = onClose,
+                modifier = Modifier.semantics { testTag = "sandbox_preview_close" },
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.sandbox_preview_close),
+                )
+            }
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.sandbox_preview_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                )
+                Text(
+                    text = url,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = chat.muted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            TextButton(
+                onClick = onOpenInBrowser,
+                modifier = Modifier.semantics { testTag = "sandbox_open_browser" },
+            ) {
+                Text(stringResource(R.string.sandbox_open_browser))
+            }
+            TextButton(
+                onClick = { snap(webRef.value) },
+                modifier = Modifier.semantics { testTag = "sandbox_capture" },
+            ) {
+                Text(stringResource(R.string.sandbox_capture))
+            }
+        }
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .semantics { testTag = "sandbox_preview" },
+        ) {
+            AndroidView(
+                factory = { ctx ->
+                    WebView(ctx).apply {
+                        settings.javaScriptEnabled = true
+                        settings.domStorageEnabled = true
+                        settings.useWideViewPort = true
+                        settings.loadWithOverviewMode = true
+                        settings.layoutAlgorithm = WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING
+                        settings.builtInZoomControls = true
+                        settings.displayZoomControls = false
+                        webViewClient = object : WebViewClient() {
+                            override fun onPageFinished(view: WebView, finished: String?) {
+                                // One deferred self-snapshot per load: the page
+                                // settles, the frame lands in the project, the
+                                // agent can read what is on screen. Finite by
+                                // construction - a single delayed runnable.
+                                view.postDelayed({ runCatching { snap(view) } }, 600)
+                            }
+                        }
+                        webRef.value = this
+                    }
+                },
+                update = { web ->
+                    if (web.tag != url) {
+                        web.tag = url
+                        web.loadUrl(url)
+                    }
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
 }

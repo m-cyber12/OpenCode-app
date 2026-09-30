@@ -323,6 +323,17 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // bug 1): when the trip was triggered by a CUSTOM folder the app could not
     // write, the exact folder the user picked is retried on return instead of
     // bouncing them back to the same error.
+    // v9.7 Sandbox: the loopback static preview server. Owned here (the
+    // screens stay pure functions of state); started on demand, kept for the
+    // app's lifetime so the phone's browser can keep the tab open, stopped
+    // with the composition.
+    var previewServer by remember { mutableStateOf<ai.opencode.android.preview.PreviewServer?>(null) }
+    var previewUrl by remember { mutableStateOf("") }
+    var previewOpen by remember { mutableStateOf(false) }
+    DisposableEffect(Unit) {
+        onDispose { previewServer?.stop() }
+    }
+
     var pendingChosenTree by remember { mutableStateOf<android.net.Uri?>(null) }
     val allFilesAccessLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
@@ -807,6 +818,62 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 )
 
                 ROUTE_FILES -> FilesScreen(
+                    previewUrl = if (previewOpen) previewUrl else "",
+                    onOpenPreview = {
+                        val dir = projectDir
+                        if (dir != null) {
+                            val existing = previewServer
+                            val server = if (existing != null && existing.running && existing.root == dir) {
+                                existing
+                            } else {
+                                existing?.stop()
+                                ai.opencode.android.preview.PreviewServer(dir).also { fresh ->
+                                    runCatching { fresh.start() }
+                                }
+                            }
+                            if (server.running) {
+                                previewServer = server
+                                previewUrl = "http://127.0.0.1:${server.port}/"
+                                previewOpen = true
+                            } else {
+                                previewServer = null
+                                storageMessage = context.getString(R.string.sandbox_preview_failed)
+                            }
+                        }
+                    },
+                    // The server stays up while the app lives so the phone's
+                    // browser keeps working after leaving the pane; loopback
+                    // only, one project folder, read-only.
+                    onClosePreview = { previewOpen = false },
+                    onOpenInBrowser = {
+                        runCatching {
+                            context.startActivity(
+                                android.content.Intent(
+                                    android.content.Intent.ACTION_VIEW,
+                                    android.net.Uri.parse(previewUrl),
+                                ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+                            )
+                        }
+                    },
+                    onCapturePreview = { bitmap ->
+                        val dir = projectDir
+                        if (dir != null) {
+                            scope.launch {
+                                val outcome = withContext(Dispatchers.IO) {
+                                    runCatching {
+                                        val folder = File(dir, ".preview")
+                                        folder.mkdirs()
+                                        File(folder, "latest.png").outputStream().use { out ->
+                                            bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 90, out)
+                                        }
+                                    }
+                                }
+                                if (outcome.isSuccess) {
+                                    storageMessage = context.getString(R.string.sandbox_captured, ".preview/latest.png")
+                                }
+                            }
+                        }
+                    },
                     onSelectTab = { tab -> route = routeForTab(tab) },
                     projectName = projectName.ifEmpty { stringResource(R.string.projects_title) },
                     projectPath = projectDir?.absolutePath.orEmpty(),
