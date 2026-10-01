@@ -364,13 +364,28 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         }
     }
 
-    // v9.8 (owner): the AGENT'S door. When a turn produces something visual,
-    // the agent writes .preview/serve.json into the project (optionally
-    // {"path": "/page.html"}); the app notices within ~1.5s, serves the
-    // project and brings the live preview in front of the user - the agent
-    // opened the port, exactly as briefed. Only writes NEWER than the app's
-    // launch (or the last handled one) trigger, so stale markers from old
-    // sessions do nothing.
+    // v9.9 (owner): the app WATCHES the loopback instead of assuming its own
+    // server is the only preview source. Any server the agent starts on a
+    // watched port (the list is documented to the agent in the environment
+    // brief) makes the Preview door appear on the Sandbox tab; no live port,
+    // no door. A connect-probe of ~15 loopback ports every 2.5s is microseconds
+    // of kernel work - Android denies /proc/net/tcp to apps, so probing is
+    // the honest way to know.
+    var livePorts by remember { mutableStateOf(listOf<Int>()) }
+    LaunchedEffect(Unit) {
+        val scanner = ai.opencode.android.preview.PortScanner()
+        while (true) {
+            livePorts = withContext(Dispatchers.IO) { scanner.scan() }
+            kotlinx.coroutines.delay(2500)
+        }
+    }
+
+    // v9.8/v9.9: the AGENT'S explicit door. Writing .preview/serve.json into
+    // the project opens the preview in front of the user within ~1.5s:
+    //   {"port": 8080, "path": "/"} -> preview the agent's OWN server (any port)
+    //   {"path": "/index.html"}     -> the app serves the project statically
+    // Only writes NEWER than the app's launch (or the last handled one)
+    // trigger, so stale markers from old sessions do nothing.
     LaunchedEffect(projectDir) {
         val dir = projectDir ?: return@LaunchedEffect
         val marker = File(dir, ".preview/serve.json")
@@ -380,12 +395,19 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             val stamp = withContext(Dispatchers.IO) { if (marker.exists()) marker.lastModified() else 0L }
             if (stamp > handled) {
                 handled = stamp
-                val requested = withContext(Dispatchers.IO) {
-                    runCatching {
-                        org.json.JSONObject(marker.readText()).optString("path", "/")
-                    }.getOrDefault("/")
+                val declared = withContext(Dispatchers.IO) {
+                    runCatching { org.json.JSONObject(marker.readText()) }.getOrNull()
                 }
-                openPreviewFor(dir, requested.ifEmpty { "/" })
+                val declaredPort = declared?.optInt("port", 0) ?: 0
+                val requested = (declared?.optString("path", "/") ?: "/").ifEmpty { "/" }
+                val cleanPath = if (requested.startsWith("/")) requested else "/$requested"
+                if (declaredPort in 1..65535) {
+                    // The agent runs its own server - just point the pane at it.
+                    previewUrl = "http://127.0.0.1:$declaredPort$cleanPath"
+                    previewOpen = true
+                } else {
+                    openPreviewFor(dir, cleanPath)
+                }
                 route = ROUTE_FILES
             }
         }
@@ -876,9 +898,13 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
 
                 ROUTE_FILES -> FilesScreen(
                     previewUrl = if (previewOpen) previewUrl else "",
-                    onOpenPreview = {
-                        val dir = projectDir
-                        if (dir != null) openPreviewFor(dir)
+                    livePorts = livePorts,
+                    // v9.9: the door lists what is actually listening; opening
+                    // it is just pointing the pane at that port - the server
+                    // (the agent's own, or the app's static one) already runs.
+                    onOpenPort = { port ->
+                        previewUrl = "http://127.0.0.1:$port/"
+                        previewOpen = true
                     },
                     // The server stays up while the app lives so the phone's
                     // browser keeps working after leaving the pane; loopback

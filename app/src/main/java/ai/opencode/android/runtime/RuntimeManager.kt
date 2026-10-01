@@ -180,6 +180,13 @@ class RuntimeManager private constructor(private val appContext: Context) {
 
             paths.ensureDirs()
 
+            // v9.9: brief the agent about THIS environment before it ever
+            // runs a command (tools that exist, loopback-only networking,
+            // the preview protocol). Injected via OpenCode's own
+            // config.instructions; a user config we cannot parse is left alone.
+            val briefed = runCatching { EnvironmentBrief.install(paths.xdgConfigOpencode) }.getOrDefault(false)
+            logger.host("environment brief: " + if (briefed) "installed (config.instructions)" else "skipped (user config left untouched)")
+
             // ---- 2. extraction + validation -------------------------------
             publish(RuntimeStatus.EXTRACTING, "validating embedded runtime")
             val ext = extractor.ensureExtracted()

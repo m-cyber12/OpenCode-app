@@ -171,11 +171,12 @@ class ChatUiGatesTest {
     private var closedFiles = 0
     private var filesBack = 0
     private var allFilesRequests = 0
-    private var previewOpens = 0
+    private val portOpens = mutableListOf<Int>()
     private var previewCloses = 0
     private var browserOpens = 0
     private val capturedFrames = mutableListOf<Pair<Int, Int>>()
     private val filesPreviewUrl = mutableStateOf("")
+    private val filesLivePorts = mutableStateOf(listOf<Int>())
     private var workspacePicks = 0
     private var workspaceUse = 0
     private val workspacePath = mutableStateOf(WORKSPACE_FIXTURE_PATH)
@@ -560,7 +561,8 @@ class ChatUiGatesTest {
             onMoveProjects = { projectMoves++ },
             onBack = { filesBack++ },
             previewUrl = filesPreviewUrl.value,
-            onOpenPreview = { previewOpens++ },
+            livePorts = filesLivePorts.value,
+            onOpenPort = { portOpens.add(it) },
             onClosePreview = { previewCloses++ },
             onOpenInBrowser = { browserOpens++ },
             onCapturePreview = { capturedFrames.add(it.width to it.height) },
@@ -574,12 +576,14 @@ class ChatUiGatesTest {
         loading: Boolean = false,
         error: String = "",
         previewUrl: String = "",
+        livePorts: List<Int> = emptyList(),
     ) {
         filesPath.value = path
         filesNodes.clear()
         filesNodes.addAll(nodes)
         filesOpen.value = open
         filesPreviewUrl.value = previewUrl
+        filesLivePorts.value = livePorts
         filesLoading.value = loading
         filesError.value = error
         surface.value = Surface.FILES
@@ -1769,17 +1773,26 @@ class ChatUiGatesTest {
         rule.waitForIdle()
         val sourceBack = exists("files_viewer_body") && !exists("files_preview")
 
-        // ---- v9.7 Sandbox: the live-preview pane -----------------------------
-        // The listing offers the door; with a preview url the pane owns the
-        // screen: WebView surface, Browser and Snapshot actions, and a working
-        // way back. Snapshot must hand a real frame (width x height > 0) to
-        // the capture callback - that is the file AppRoot writes for the agent.
+        // ---- v9.7/v9.9 Sandbox: the live-preview pane ------------------------
+        // v9.9 (owner): the door exists ONLY while a loopback port actually
+        // answers - "the Preview button should only appear when the model has
+        // actually opened a port". No port, no door; with ports, one row per
+        // port, and tapping a row opens THAT port.
         renderFiles(path = "", nodes = listOf(FileNode(name = "index.html", path = "index.html", isDirectory = false)))
-        val doorShown = exists("sandbox_preview_open")
-        if (doorShown) rule.onAllNodesWithTag("sandbox_preview_open")[0].performClick()
+        val doorGated = !exists("sandbox_preview_open")
+        renderFiles(
+            path = "",
+            nodes = listOf(FileNode(name = "index.html", path = "index.html", isDirectory = false)),
+            livePorts = listOf(8080, 8642),
+        )
+        val doorShown = exists("sandbox_preview_open") &&
+            exists("sandbox_port_8080") && exists("sandbox_port_8642")
+        if (doorShown) rule.onAllNodesWithTag("sandbox_port_8080")[0].performClick()
         rule.waitForIdle()
-        val doorWired = previewOpens == 1
-        renderFiles(path = "", previewUrl = "http://127.0.0.1:1/")
+        val doorWired = portOpens == listOf(8080)
+        // Ports still live, but the pane owns the screen: the door must yield
+        // even while something listens.
+        renderFiles(path = "", previewUrl = "http://127.0.0.1:1/", livePorts = listOf(8080))
         val paneShown = exists("sandbox_preview") && exists("sandbox_open_browser") &&
             exists("sandbox_preview_close")
         val doorHiddenInPane = !exists("sandbox_preview_open")
@@ -1881,7 +1894,7 @@ class ChatUiGatesTest {
             "listed=$listed pathShown=$pathShown locationCopy=$locationCopy openedDir=$openedDir " +
                 "upShown=$upShown upWorks=$upWorks openedFile=$openedFile viewer=$viewer body=$bodyText " +
                 "preview=$noToggleForPlain/$previewOffered/$sourceDefault/$previewShown/$sourceBack " +
-                "sandbox=$doorShown/$doorWired/$paneShown/$doorHiddenInPane/$browserWired/$captureWired/$paneClosable " +
+                "sandbox=$doorGated/$doorShown/$doorWired/$paneShown/$doorHiddenInPane/$browserWired/$captureWired/$paneClosable " +
                 "saveCopy=$saveCopyShown/$saveCopyWired closed=$closed empty=$emptyShown " +
                 "v4Removed=copyPath:$noCopyPath,export:$noExport,choose:$noChoose,reset:$noReset " +
                 "panel=$goodPanelVisible/$goodExplanation/$goodNoGrant " +

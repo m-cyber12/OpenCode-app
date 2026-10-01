@@ -3852,3 +3852,39 @@ only: the user-facing button is gone, every settled page load silently
 captures .preview/latest.png for the agent to read. U9 updated: the pane
 must NOT offer a snapshot control. Agent-side navigation/interaction
 scripting (visit-and-screenshot protocol) is the next cycle of this batch.
+
+### B.27 v9.9 (2026-10-02): the environment brief, any-port previews, and the door that earns its place
+
+**What the owner's transcript proved.** The agent hand-rolled an HTTP server
+with toybox nc on port 8080 - and the v9.8 app, which only knew its own
+port 8642, showed a 404 on the Sandbox tab while the real result lived one
+port over. Worse, the turn burned ~16k tokens probing for python/node/curl
+(none exist), never found bun (which does), and had to discover by trial
+that nohup dies while setsid survives. Arena-style agents do not probe,
+because the platform briefs them.
+
+**1. The environment brief (Arena's trick, OpenCode's mechanism).** The app
+now writes environment.md into the global config dir and wires it into
+config.json's "instructions" array - upstream's own context-injection path
+(config.ts + session/instruction.ts), so every session starts knowing: bun/
+git/rg exist, python/node/curl do not, seccomp stderr lines are noise,
+127.0.0.1 is the only reachable interface, setsid is how you background,
+which ports the app watches, and the serve.json/latest.png protocol. The
+user's AGENTS.md stays untouched (it is THEIR memory); a user config.json
+that fails strict-JSON parsing is left byte-for-byte alone. 6 JVM tests pin
+the contract, including ports-list/doc non-drift.
+
+**2. Any port is a preview.** New PortScanner connect-probes 15 well-known
+dev ports on the IPv4 loopback every 2.5s (Android denies /proc/net/tcp to
+apps; probing is the honest way). serve.json learned {"port": N}: the agent
+can declare ANY port and the pane opens straight onto the agent's own
+server - the single-port assumption is gone. 4 JVM socket tests.
+
+**3. The door earns its place.** The always-visible "Live preview" card is
+gone: the door renders ONLY while something actually answers on a watched
+port, one tappable row per live port (127.0.0.1:NNNN). U9 now asserts the
+absence (no ports -> no door), the per-port rows, and that the pane still
+outranks the door while ports are live - sandbox octet.
+
+**Cost honesty:** the brief rides in every session's context, ~600 tokens.
+It exists to stop multi-thousand-token blind probing; net strongly negative.

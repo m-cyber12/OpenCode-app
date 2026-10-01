@@ -160,7 +160,13 @@ fun FilesScreen(
      * these - the server itself lives with AppRoot.
      */
     previewUrl: String = "",
-    onOpenPreview: () -> Unit = {},
+    /**
+     * v9.9 (owner): the door only exists while something actually answers on
+     * a loopback port. The app's PortScanner feeds this; empty = no door at
+     * all ("I don't want the Preview button to be visible all the time").
+     */
+    livePorts: List<Int> = emptyList(),
+    onOpenPort: (Int) -> Unit = {},
     onClosePreview: () -> Unit = {},
     onOpenInBrowser: () -> Unit = {},
     /** The captured preview frame - AppRoot writes it into the project for the agent. */
@@ -280,42 +286,62 @@ fun FilesScreen(
             }
         }
 
-        // v9.7 Sandbox: the door to the live preview, on the listing only (a
-        // viewer or the preview itself owns the screen once open).
-        if (previewUrl.isEmpty() && openFile == null) {
+        // v9.9 (owner): the door to the live preview exists ONLY while a
+        // server is actually answering on the loopback - the agent opening
+        // any watched port is what makes the button appear. One row per live
+        // port; no port, no door.
+        if (previewUrl.isEmpty() && openFile == null && livePorts.isNotEmpty()) {
             val chat = ChatTheme.chat
             val openLabel = stringResource(R.string.sandbox_preview_open)
             Surface(
-                onClick = onOpenPreview,
                 color = chat.toolContainer,
                 shape = RoundedCornerShape(16.dp),
                 border = BorderStroke(1.dp, chat.toolBorder),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 4.dp)
-                    .semantics {
-                        testTag = "sandbox_preview_open"
-                        contentDescription = openLabel
-                    },
+                    .semantics { testTag = "sandbox_preview_open" },
             ) {
-                Row(
-                    Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(openLabel, style = MaterialTheme.typography.labelLarge)
-                        Text(
-                            stringResource(R.string.sandbox_preview_open_body),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = chat.muted,
-                        )
-                    }
-                    Icon(
-                        imageVector = Icons.Filled.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = chat.muted,
-                        modifier = Modifier.clearAndSetSemantics { },
+                Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                    Text(openLabel, style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        stringResource(R.string.sandbox_ports_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = chat.muted,
                     )
+                    for (port in livePorts) {
+                        val rowLabel = stringResource(R.string.sandbox_port_row, port)
+                        Spacer(Modifier.height(6.dp))
+                        Surface(
+                            onClick = { onOpenPort(port) },
+                            color = chat.toolContainer,
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, chat.toolBorder),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .semantics {
+                                    testTag = "sandbox_port_${port}"
+                                    contentDescription = rowLabel
+                                },
+                        ) {
+                            Row(
+                                Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    rowLabel,
+                                    style = MonoSmall,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Icon(
+                                    imageVector = Icons.Filled.KeyboardArrowRight,
+                                    contentDescription = null,
+                                    tint = chat.muted,
+                                    modifier = Modifier.clearAndSetSemantics { },
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
