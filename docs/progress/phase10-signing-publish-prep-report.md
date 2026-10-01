@@ -3830,3 +3830,25 @@ Browser and Close wired, and Snapshot must deliver a frame with real
 dimensions. Tab label and screen subtitle read Sandbox; every testTag and
 resource id (project_tab_files, files_*) is UNCHANGED so gates and the
 real-device driver keep their contract.
+
+### B.26 v9.8 (2026-09-30): the refused port, and the preview handed to the agent
+
+**ERR_CONNECTION_REFUSED, root-caused.** The owner's pane dialled
+http://127.0.0.1:8642 and the kernel refused: on Android,
+InetAddress.getLoopbackAddress() can return the IPv6 loopback, so the
+server listened on [::1]:8642 while the URL went to IPv4. Desktop JVMs
+return 127.0.0.1 - which is exactly why the eight socket tests passed in
+CI while the phone failed. The bind now names the IPv4 loopback by address
+bytes (no resolver), a ninth test pins boundHost == 127.0.0.1, and the
+server start moved off the main thread.
+
+**Owner's redirection, implemented.** (1) The preview is now AGENT-driven:
+when the agent writes .preview/serve.json into the project (optionally
+{"path": "/page.html"}), the app notices within ~1.5s, starts the loopback
+server and brings the live preview in front of the user - the agent opened
+the port. Stale markers older than the app's launch do nothing; the user's
+own door on the Sandbox tab stays. (2) The snapshot is an AGENT capability
+only: the user-facing button is gone, every settled page load silently
+captures .preview/latest.png for the agent to read. U9 updated: the pane
+must NOT offer a snapshot control. Agent-side navigation/interaction
+scripting (visit-and-screenshot protocol) is the next cycle of this batch.

@@ -334,6 +334,63 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         onDispose { previewServer?.stop() }
     }
 
+    /**
+     * Start (or reuse) the loopback server for [dir] off the main thread, then
+     * open the pane. Shared by the user's door on the Sandbox tab and the
+     * AGENT'S door below.
+     */
+    fun openPreviewFor(dir: File, startPath: String = "/") {
+        scope.launch {
+            val existing = previewServer
+            val server = withContext(Dispatchers.IO) {
+                if (existing != null && existing.running && existing.root == dir) {
+                    existing
+                } else {
+                    existing?.stop()
+                    ai.opencode.android.preview.PreviewServer(dir).also { fresh ->
+                        runCatching { fresh.start() }
+                    }
+                }
+            }
+            if (server.running) {
+                previewServer = server
+                val cleanPath = if (startPath.startsWith("/")) startPath else "/$startPath"
+                previewUrl = "http://127.0.0.1:${server.port}$cleanPath"
+                previewOpen = true
+            } else {
+                previewServer = null
+                storageMessage = context.getString(R.string.sandbox_preview_failed)
+            }
+        }
+    }
+
+    // v9.8 (owner): the AGENT'S door. When a turn produces something visual,
+    // the agent writes .preview/serve.json into the project (optionally
+    // {"path": "/page.html"}); the app notices within ~1.5s, serves the
+    // project and brings the live preview in front of the user - the agent
+    // opened the port, exactly as briefed. Only writes NEWER than the app's
+    // launch (or the last handled one) trigger, so stale markers from old
+    // sessions do nothing.
+    LaunchedEffect(projectDir) {
+        val dir = projectDir ?: return@LaunchedEffect
+        val marker = File(dir, ".preview/serve.json")
+        var handled = withContext(Dispatchers.IO) { if (marker.exists()) marker.lastModified() else 0L }
+        while (true) {
+            kotlinx.coroutines.delay(1500)
+            val stamp = withContext(Dispatchers.IO) { if (marker.exists()) marker.lastModified() else 0L }
+            if (stamp > handled) {
+                handled = stamp
+                val requested = withContext(Dispatchers.IO) {
+                    runCatching {
+                        org.json.JSONObject(marker.readText()).optString("path", "/")
+                    }.getOrDefault("/")
+                }
+                openPreviewFor(dir, requested.ifEmpty { "/" })
+                route = ROUTE_FILES
+            }
+        }
+    }
+
     var pendingChosenTree by remember { mutableStateOf<android.net.Uri?>(null) }
     val allFilesAccessLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
@@ -821,25 +878,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     previewUrl = if (previewOpen) previewUrl else "",
                     onOpenPreview = {
                         val dir = projectDir
-                        if (dir != null) {
-                            val existing = previewServer
-                            val server = if (existing != null && existing.running && existing.root == dir) {
-                                existing
-                            } else {
-                                existing?.stop()
-                                ai.opencode.android.preview.PreviewServer(dir).also { fresh ->
-                                    runCatching { fresh.start() }
-                                }
-                            }
-                            if (server.running) {
-                                previewServer = server
-                                previewUrl = "http://127.0.0.1:${server.port}/"
-                                previewOpen = true
-                            } else {
-                                previewServer = null
-                                storageMessage = context.getString(R.string.sandbox_preview_failed)
-                            }
-                        }
+                        if (dir != null) openPreviewFor(dir)
                     },
                     // The server stays up while the app lives so the phone's
                     // browser keeps working after leaving the pane; loopback
@@ -868,9 +907,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                                         }
                                     }
                                 }
-                                if (outcome.isSuccess) {
-                                    storageMessage = context.getString(R.string.sandbox_captured, ".preview/latest.png")
-                                }
+                                // Silent on purpose (v9.8): the snapshot is the
+                                // AGENT'S eye, not a user event - no banner spam
+                                // on every page load.
+                                outcome.getOrNull()
                             }
                         }
                     },

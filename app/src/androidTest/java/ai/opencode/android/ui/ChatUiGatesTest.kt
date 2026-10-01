@@ -1781,16 +1781,14 @@ class ChatUiGatesTest {
         val doorWired = previewOpens == 1
         renderFiles(path = "", previewUrl = "http://127.0.0.1:1/")
         val paneShown = exists("sandbox_preview") && exists("sandbox_open_browser") &&
-            exists("sandbox_capture") && exists("sandbox_preview_close")
+            exists("sandbox_preview_close")
         val doorHiddenInPane = !exists("sandbox_preview_open")
         rule.onAllNodesWithTag("sandbox_open_browser")[0].performClick()
         rule.waitForIdle()
         val browserWired = browserOpens == 1
-        capturedFrames.clear()
-        rule.onAllNodesWithTag("sandbox_capture")[0].performClick()
-        rule.waitForIdle()
-        val frame = capturedFrames.lastOrNull()
-        val captureWired = frame != null && frame.first > 0 && frame.second > 0
+        // v9.8 (owner): the snapshot is the AGENT'S capability - no user
+        // button exists; the pane self-captures after page loads instead.
+        val captureWired = !exists("sandbox_capture")
         rule.onAllNodesWithTag("sandbox_preview_close")[0].performClick()
         rule.waitForIdle()
         val paneClosable = previewCloses == 1

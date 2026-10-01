@@ -737,12 +737,9 @@ private fun PreviewPane(
             ) {
                 Text(stringResource(R.string.sandbox_open_browser))
             }
-            TextButton(
-                onClick = { snap(webRef.value) },
-                modifier = Modifier.semantics { testTag = "sandbox_capture" },
-            ) {
-                Text(stringResource(R.string.sandbox_capture))
-            }
+            // v9.8 (owner): NO user-facing snapshot - seeing the page is the
+            // AGENT'S capability. Every settled page load self-captures into
+            // the project (.preview/latest.png) silently; the button is gone.
         }
         Surface(
             color = MaterialTheme.colorScheme.surface,

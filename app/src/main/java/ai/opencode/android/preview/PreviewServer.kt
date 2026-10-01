@@ -34,6 +34,9 @@ class PreviewServer(val root: File) {
     val running: Boolean get() = socket?.isClosed == false
     val port: Int get() = socket?.localPort ?: -1
 
+    /** The address actually bound - the IPv4/IPv6 confusion above is test-pinned via this. */
+    val boundHost: String get() = socket?.inetAddress?.hostAddress ?: ""
+
     /**
      * Bind loopback-only and start accepting. Tries the friendly port first so
      * the URL stays stable across preview sessions; falls back to an ephemeral
@@ -41,7 +44,13 @@ class PreviewServer(val root: File) {
      */
     fun start(preferredPort: Int = 8642) {
         if (running) return
-        val loopback = InetAddress.getLoopbackAddress()
+        // v9.8 fix (owner's ERR_CONNECTION_REFUSED): on Android,
+        // getLoopbackAddress() can hand back the IPv6 loopback (::1) - the
+        // socket then listens on [::1]:port while the pane dials the IPv4
+        // 127.0.0.1:port, which the kernel refuses. Desktop JVMs return
+        // 127.0.0.1, which is why the unit tests never caught it. Bind the
+        // IPv4 loopback EXPLICITLY, by address bytes (no resolver involved).
+        val loopback = InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1))
         val bound = runCatching { ServerSocket(preferredPort, 8, loopback) }
             .getOrElse { ServerSocket(0, 8, loopback) }
         socket = bound

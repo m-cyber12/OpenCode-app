@@ -102,6 +102,14 @@ class PreviewServerTest {
     }
 
     @Test
+    fun bindsTheIpv4LoopbackTheUrlActuallyDials() {
+        // The owner's phone refused http://127.0.0.1:8642 because Android's
+        // getLoopbackAddress() handed ::1 to the bind while the URL dialled
+        // IPv4. The bound host is pinned here so that regression is loud.
+        assertEquals("127.0.0.1", server.boundHost)
+    }
+
+    @Test
     fun mimeMapCoversTheWebBasics() {
         assertEquals("text/html; charset=utf-8", PreviewServer.mimeOf("a.html"))
         assertEquals("image/svg+xml", PreviewServer.mimeOf("logo.svg"))
