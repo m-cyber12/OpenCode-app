@@ -1580,11 +1580,19 @@ class ChatUiGatesTest {
                 FileNode(name = "app", path = "src/app", isDirectory = true),
             ),
         )
+        // v9.9.2: run #124's filesControls diagnostic NAMED the 11 nodes - they
+        // were the SETTINGS screen. The settings->files hop was being audited
+        // before the new frame landed, so the files leg of this audit silently
+        // re-counted settings (files=11==settings=11 in #123/#124). Hold the
+        // audit until the files screen is actually on the tree; if the switch
+        // ever really breaks, this times out loudly instead of lying politely.
+        rule.waitUntil(5_000) {
+            rule.onAllNodesWithTag("files_screen").fetchSemanticsNodes().isNotEmpty()
+        }
         audit("files")
-        // v9.9.1 evidence: run #123 reported files=11 where the rendered
-        // listing visibly accounts for only a handful - name every interactive
-        // node on this screen in the verdict line so the count explains itself
-        // in committed evidence instead of being guessed at.
+        // v9.9.1 evidence: name every interactive node on this screen in the
+        // verdict line so the count explains itself in committed evidence
+        // instead of being guessed at.
         val filesControls = rule.onAllNodes(anyNodeMatcher()).fetchSemanticsNodes()
             .filter {
                 it.config.contains(SemanticsActions.OnClick) ||

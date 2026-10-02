@@ -3916,3 +3916,17 @@ regression, P5 the LAN-URL honesty trap. Owner runs it on-device.
 the files screen (filesControls=[...]) - run #123 counted files=11 where the
 listing accounts for ~4, and the next run's evidence will say exactly what
 those nodes are instead of leaving a mystery in the audit.
+
+### B.29 v9.9.2 (2026-10-02): what files=11 actually was
+
+Run #124's filesControls diagnostic answered it: [Back, Agent runtime,
+Restart the agent, Workspace, Diagnostics, MCP servers, Permissions, Agent
+memory, Appearance, About, Open source] - the SETTINGS screen. Since v9.9,
+U7's settings->files hop was audited before the new frame landed, so the
+files leg silently re-counted settings (hence files=11==settings=11 in
+#123/#124; #121/#122's files=5 was the real listing). Not a product bug -
+U9 interacts with the real files screen end to end in its own method - but
+an audit that lies politely is worse than one that fails. U7 now holds
+until files_screen is actually on the tree before counting (times out
+loudly otherwise), and the filesControls line in evidence will name real
+files controls from the next run on.
