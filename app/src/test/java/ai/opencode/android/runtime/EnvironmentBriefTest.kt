@@ -89,6 +89,14 @@ class EnvironmentBriefTest {
         assertTrue(text.contains("127.0.0.1"))
         assertTrue(text.contains("seccomp"))
         assertTrue(text.contains("setsid"))
+        // v9.9.1 (owner's ENOENT screenshot): the protocol must teach that the
+        // preview path points at a file that EXISTS, and the recipe must not
+        // crash on a miss - it 404s and falls back from "/" to a real page.
+        assertTrue(text.contains("EXISTS"))
+        assertTrue(text.contains("/page.html"))
+        assertTrue(text.contains("status:404"))
+        assertTrue(text.contains("Bun.Glob"))
+        assertTrue("server must be checked before the hand-off", text.contains("nc -w 2 127.0.0.1"))
         // And never promises what the device cannot do.
         assertFalse(text.contains("<device-ip>:port rendered as reachable"))
     }

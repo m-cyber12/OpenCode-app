@@ -1581,6 +1581,17 @@ class ChatUiGatesTest {
             ),
         )
         audit("files")
+        // v9.9.1 evidence: run #123 reported files=11 where the rendered
+        // listing visibly accounts for only a handful - name every interactive
+        // node on this screen in the verdict line so the count explains itself
+        // in committed evidence instead of being guessed at.
+        val filesControls = rule.onAllNodes(anyNodeMatcher()).fetchSemanticsNodes()
+            .filter {
+                it.config.contains(SemanticsActions.OnClick) ||
+                    it.config.contains(SemanticsProperties.ToggleableState) ||
+                    it.config.contains(SemanticsActions.SetText)
+            }
+            .map { textOf(it.config).take(28).ifBlank { "?" } }
         shot("18-settings-a11y.png")
 
         val enoughControls = counts.values.sum() >= 25 && (counts["chat"] ?: 0) >= 10
@@ -1588,6 +1599,7 @@ class ChatUiGatesTest {
             "U7",
             violations.isEmpty() && enoughControls,
             "interactive=${counts} total=${counts.values.sum()} unnamed=${violations.size} " +
+                "filesControls=${filesControls} " +
                 (if (violations.isEmpty()) "" else violations.take(8).joinToString("; ")),
         )
     }

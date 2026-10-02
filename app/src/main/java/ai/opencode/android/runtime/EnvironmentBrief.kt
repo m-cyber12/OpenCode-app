@@ -108,16 +108,23 @@ appears in the app by itself - start a server on 127.0.0.1 and you are done.
 
 To hand off explicitly (ANY port, and the preview opens in front of the user
 immediately), write `.preview/serve.json` at the project root:
-  {"port": 8080, "path": "/"}   -> show the server you started
-  {"path": "/index.html"}       -> no server needed: the app itself serves
-                                   this project's files over loopback http
-A fresh write of that file is the trigger.
+  {"port": 8080, "path": "/page.html"} -> show the server you started
+  {"path": "/page.html"}               -> no server needed: the app itself
+                                          serves this project over loopback http
+A fresh write of that file is the trigger. Two rules that prevent a broken
+first impression:
+  1. `path` must point at a file that actually EXISTS. "/" only works if
+     index.html exists - otherwise use the real filename ("/1.html").
+  2. Start your server and check it answers BEFORE writing serve.json
+     (`nc -w 2 127.0.0.1 8080 < /dev/null`); the preview opens within ~1.5s
+     of the write and must not land on a dead or empty port.
 
 After each page load the app screenshots the preview into
 `.preview/latest.png` - read it to SEE what the user currently sees.
 
-Static server recipe (bun, port 8080, current directory):
-  setsid bun -e 'Bun.serve({port:8080,hostname:"127.0.0.1",fetch(r){let p=new URL(r.url).pathname;if(p.endsWith("/"))p+="index.html";return new Response(Bun.file("."+p))}})' </dev/null >"${'$'}TMPDIR/serve.log" 2>&1 &
+Static server recipe (bun, port 8080, current directory; serves index.html
+or the first *.html at "/", answers 404 instead of crashing on misses):
+  setsid bun -e 'Bun.serve({port:8080,hostname:"127.0.0.1",async fetch(r){let p=decodeURIComponent(new URL(r.url).pathname);if(p==="/"){const h=[...new Bun.Glob("*.html").scanSync(".")];p="/"+(h.includes("index.html")?"index.html":(h[0]??"index.html"))}const f=Bun.file("."+p);return await f.exists()?new Response(f):new Response("Not found: "+p,{status:404})}})' </dev/null >"${'$'}TMPDIR/serve.log" 2>&1 &
 """.trimIndent() + "\n"
     }
 }

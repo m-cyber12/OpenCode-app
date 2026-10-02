@@ -3888,3 +3888,31 @@ outranks the door while ports are live - sandbox octet.
 
 **Cost honesty:** the brief rides in every session's context, ~600 tokens.
 It exists to stop multi-thousand-token blind probing; net strongly negative.
+
+### B.28 v9.9.1 (2026-10-02): the ENOENT hand-off, and how to test a brief
+
+**The owner's screenshots are the best gate output this project gets.** The
+brief WORKED - the agent went straight to bun + setsid + serve.json + a
+watched port, 2m47s instead of 12m32s, zero probing. And then the preview
+opened on "ENOENT: ./index.html", because MY recipe hard-mapped "/" to
+index.html (the project only has 1.html) and crashed instead of 404ing,
+and my serve.json example taught '"path": "/"'. The brief caused the exact
+first impression it exists to prevent.
+
+**Fix (brief v2, auto-refreshed on app update):** (1) the recipe now 404s on
+misses and resolves "/" to index.html OR the first *.html in the project
+(Bun.Glob); (2) two protocol rules added - the preview path must point at a
+file that EXISTS (use the real filename), and the server must answer
+(nc -w 2 127.0.0.1 PORT) BEFORE serve.json is written; (3) the serve.json
+examples now show "/page.html", not "/". 5 new unit assertions pin all of
+it, including that the crash-prone recipe can never come back.
+
+**Acceptance test authored** (docs/testing/environment-brief-acceptance.md):
+one paste-able prompt (clock page + serve + preview + two trap questions)
+with a P1-P6 scorecard and instant-fail markers - P4 is the exact ENOENT
+regression, P5 the LAN-URL honesty trap. Owner runs it on-device.
+
+**Also in this push:** U7's verdict line now NAMES every interactive node on
+the files screen (filesControls=[...]) - run #123 counted files=11 where the
+listing accounts for ~4, and the next run's evidence will say exactly what
+those nodes are instead of leaving a mystery in the audit.
