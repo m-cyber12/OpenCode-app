@@ -167,6 +167,11 @@ fun FilesScreen(
      */
     livePorts: List<Int> = emptyList(),
     onOpenPort: (Int) -> Unit = {},
+    /**
+     * v9.10: bumped by AppRoot when the agent re-writes serve.json for the
+     * SAME url - the pane must reload fresh bytes, not sit on its last frame.
+     */
+    previewReload: Long = 0L,
     onClosePreview: () -> Unit = {},
     onOpenInBrowser: () -> Unit = {},
     /** The captured preview frame - AppRoot writes it into the project for the agent. */
@@ -180,12 +185,18 @@ fun FilesScreen(
 ) {
     val chat = ChatTheme.chat
     val where = if (currentPath.isEmpty()) "/" else "/$currentPath"
+    // v9.10 (owner): the live preview owns the WHOLE screen. The half-pane
+    // squeezed under the storage card misrepresented the page (and the agent
+    // then read that misrepresentation back via latest.png) - so while the
+    // preview is open, the top bar, the location card and the door all yield.
+    val inPreview = previewUrl.isNotEmpty()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .semantics { testTag = "files_screen" },
     ) {
+        if (!inPreview) {
         AppTopBar(
             title = projectName,
             subtitle = stringResource(R.string.files_subtitle) + where,
@@ -346,6 +357,8 @@ fun FilesScreen(
             }
         }
 
+        } // end !inPreview: bar, location card and door yield to the preview
+
         // Either one file is open, or the folder is listed - never both, so the
         // screen has exactly one scrollable region at a time.
         val file = openFile
@@ -353,6 +366,7 @@ fun FilesScreen(
             if (previewUrl.isNotEmpty()) {
                 PreviewPane(
                     url = previewUrl,
+                    reloadStamp = previewReload,
                     onClose = onClosePreview,
                     onOpenInBrowser = onOpenInBrowser,
                     onCapture = onCapturePreview,
@@ -714,6 +728,7 @@ private fun storageExplanation(
 @Composable
 private fun PreviewPane(
     url: String,
+    reloadStamp: Long,
     onClose: () -> Unit,
     onOpenInBrowser: () -> Unit,
     onCapture: (android.graphics.Bitmap) -> Unit,
@@ -721,6 +736,9 @@ private fun PreviewPane(
     val chat = ChatTheme.chat
     val latestCapture = rememberUpdatedState(onCapture)
     val webRef = remember { mutableStateOf<WebView?>(null) }
+    // v9.10: the stamp already consumed - initialised to the CURRENT stamp so
+    // first composition never double-loads; only a later bump forces reload.
+    val consumedStamp = remember { mutableStateOf(reloadStamp) }
     fun snap(web: WebView?) {
         val w = web ?: return
         if (w.width > 0 && w.height > 0) {
@@ -780,6 +798,13 @@ private fun PreviewPane(
                     WebView(ctx).apply {
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
+                        // v9.10 (owner's "still no clock" spiral): a dev
+                        // preview must NEVER serve yesterday's bytes. The
+                        // agent edits files between loads; the http cache
+                        // showed a stale page, the auto-snapshot wrote that
+                        // stale page into latest.png, and the agent debugged
+                        // a phantom. Fresh network fetch, always.
+                        settings.cacheMode = WebSettings.LOAD_NO_CACHE
                         settings.useWideViewPort = true
                         settings.loadWithOverviewMode = true
                         settings.layoutAlgorithm = WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING
@@ -801,6 +826,12 @@ private fun PreviewPane(
                     if (web.tag != url) {
                         web.tag = url
                         web.loadUrl(url)
+                    } else if (consumedStamp.value != reloadStamp) {
+                        // Same url, new serve.json write: the agent says the
+                        // content changed - reload fresh bytes right now.
+                        consumedStamp.value = reloadStamp
+                        web.clearCache(true)
+                        web.reload()
                     }
                 },
                 modifier = Modifier.fillMaxSize(),

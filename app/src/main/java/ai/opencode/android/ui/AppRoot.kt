@@ -330,6 +330,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     var previewServer by remember { mutableStateOf<ai.opencode.android.preview.PreviewServer?>(null) }
     var previewUrl by remember { mutableStateOf("") }
     var previewOpen by remember { mutableStateOf(false) }
+    // v9.10: bumped on every serve.json write so the pane reloads fresh bytes
+    // even when the url stays the same (the agent edited the page in place).
+    var previewReload by remember { mutableStateOf(0L) }
     DisposableEffect(Unit) {
         onDispose { previewServer?.stop() }
     }
@@ -408,6 +411,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 } else {
                     openPreviewFor(dir, cleanPath)
                 }
+                // Same url or not: the write says the content is new - the
+                // marker's mtime is a ready-made monotonic reload stamp.
+                previewReload = stamp
                 route = ROUTE_FILES
             }
         }
@@ -898,6 +904,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
 
                 ROUTE_FILES -> FilesScreen(
                     previewUrl = if (previewOpen) previewUrl else "",
+                    previewReload = previewReload,
                     livePorts = livePorts,
                     // v9.9: the door lists what is actually listening; opening
                     // it is just pointing the pane at that port - the server

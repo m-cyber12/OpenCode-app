@@ -1816,6 +1816,10 @@ class ChatUiGatesTest {
         val paneShown = exists("sandbox_preview") && exists("sandbox_open_browser") &&
             exists("sandbox_preview_close")
         val doorHiddenInPane = !exists("sandbox_preview_open")
+        // v9.10 (owner): the preview owns the WHOLE screen - the half-pane
+        // under the storage card misrepresented pages. While the pane is open
+        // the location card (and with it the top chrome) must be gone.
+        val paneFullPage = !exists("files_location")
         rule.onAllNodesWithTag("sandbox_open_browser")[0].performClick()
         rule.waitForIdle()
         val browserWired = browserOpens == 1
@@ -1914,7 +1918,7 @@ class ChatUiGatesTest {
             "listed=$listed pathShown=$pathShown locationCopy=$locationCopy openedDir=$openedDir " +
                 "upShown=$upShown upWorks=$upWorks openedFile=$openedFile viewer=$viewer body=$bodyText " +
                 "preview=$noToggleForPlain/$previewOffered/$sourceDefault/$previewShown/$sourceBack " +
-                "sandbox=$doorGated/$doorShown/$doorWired/$paneShown/$doorHiddenInPane/$browserWired/$captureWired/$paneClosable " +
+                "sandbox=$doorGated/$doorShown/$doorWired/$paneShown/$doorHiddenInPane/$paneFullPage/$browserWired/$captureWired/$paneClosable " +
                 "saveCopy=$saveCopyShown/$saveCopyWired closed=$closed empty=$emptyShown " +
                 "v4Removed=copyPath:$noCopyPath,export:$noExport,choose:$noChoose,reset:$noReset " +
                 "panel=$goodPanelVisible/$goodExplanation/$goodNoGrant " +

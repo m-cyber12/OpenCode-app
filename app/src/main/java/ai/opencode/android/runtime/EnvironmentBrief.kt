@@ -111,8 +111,10 @@ immediately), write `.preview/serve.json` at the project root:
   {"port": 8080, "path": "/page.html"} -> show the server you started
   {"path": "/page.html"}               -> no server needed: the app itself
                                           serves this project over loopback http
-A fresh write of that file is the trigger. Two rules that prevent a broken
-first impression:
+A fresh write of that file is the trigger - and re-writing it after editing
+the page RELOADS the preview with fresh bytes (the app's preview never
+caches), so re-trigger instead of wondering whether the user sees the new
+version. Two rules that prevent a broken first impression:
   1. `path` must point at a file that actually EXISTS. "/" only works if
      index.html exists - otherwise use the real filename ("/1.html").
   2. Start your server and check it answers BEFORE writing serve.json

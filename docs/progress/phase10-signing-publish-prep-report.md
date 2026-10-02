@@ -3937,3 +3937,29 @@ settings surface (the one-off #109 flake was almost certainly this too).
 U7's fix held (files=4, filesControls=[Back, Up one level, main.kt,
 Folder app] - the audit now counts the real listing). U12 got the same
 wait-for-the-frame guard; a genuine switch failure still times out loudly.
+
+### B.30 v9.10 (2026-10-02): the stale half-pane - acceptance run no.1 results
+
+**Owner ran the acceptance test.** P2 and P5 PASSED verbatim (tool inventory
+named bun/git/rg/toybox without probing; Wi-Fi answer "No - only 127.0.0.1").
+The preview auto-opened on /clock.html (P4's hand-off held). And then the
+run surfaced a real app bug: Chrome showed the finished clock while the
+in-app pane showed an older frame without it - the agent read that stale
+frame back through latest.png, concluded "still no clock", and spiralled
+into phantom debugging until the owner hit Stop.
+
+**Root cause, two halves, both app-side:** (1) the preview WebView never set
+cacheMode - it happily served http-cached bytes while the agent edited the
+page; (2) PreviewPane only reloaded when the URL CHANGED, so a serve.json
+re-write for the same url did nothing. Fix: LOAD_NO_CACHE always, and
+AppRoot now hands the marker's mtime down as a reload stamp - same url +
+new write = clearCache + reload. The brief states the new guarantee
+("re-writing serve.json reloads the preview; it never caches") so the
+model re-triggers instead of wondering.
+
+**Owner UX call (binding): the preview owns the whole screen.** The
+half-pane under the storage card misrepresented pages. While the preview
+is open, the top bar, location card and door yield; one slim header
+(back/url/Browser) + the page. U9 grew a paneFullPage assertion
+(files_location must be absent while the pane is shown) - sandbox detail
+is now 9 flags.
