@@ -3996,3 +3996,14 @@ was the killer) or console.log names the real murderer verbatim.
 Acceptance scorecard, run 2: P2 PASS again (bun/toybox named, no probing;
 the answer even got sharper - "git and rg as build tools"), P5 PASS again
 (loopback-only, correctly reasoned). The brief holds.
+
+**#128 postscript (the flake family, finally cornered):** #128 went red on
+U7's own guard - files_screen absent after a FULL 5s waitUntil. That is
+the decisive fact: the #109/#123/#125/#128 family is not a timing race, it
+is a LOST invalidation on the emulator - a surface.value write whose
+recomposition never happens, no matter how long the test waits. Waiting
+cannot cure that; only a fresh invalidation can. The fixture root now
+reads a nudge counter inside the `when` scope, and ensureShown() bumps it
+until the expected screen is really on the tree (40 tries, then a loud
+assert). Both known bite-sites (U7's files hop, U12's settings hop) use
+it. v9.11's app changes were not implicated in #128.

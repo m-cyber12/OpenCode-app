@@ -355,6 +355,29 @@ class ChatUiGatesTest {
     private enum class Surface { CHAT, LIVE_CHAT, SESSIONS, PROJECTS, WELCOME, SETTINGS, PROVIDERS, FILES, ONBOARDING, CHANGES, TERMINAL }
 
     private val surface = mutableStateOf(Surface.CHAT)
+
+    /**
+     * v9.11.1: counter whose only job is re-invalidating the root `when`
+     * scope. The #109/#123/#125/#128 flake family is a LOST invalidation on
+     * the emulator - a surface hop that never lands no matter how long the
+     * test waits. [ensureShown] bumps this until the expected screen exists.
+     */
+    private val composeNudge = mutableStateOf(0)
+
+    /**
+     * Deterministic surface-hop landing: returns once [tag] is on the tree,
+     * nudging recomposition when the emulator loses the invalidation. A
+     * genuine failure to switch still fails loudly on the final assert.
+     */
+    private fun ensureShown(tag: String) {
+        repeat(40) {
+            if (rule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()) return
+            composeNudge.value++
+            Snapshot.sendApplyNotifications()
+            rule.waitForIdle()
+        }
+        rule.onAllNodesWithTag(tag)[0].assertExists()
+    }
     private val chatState = mutableStateOf(uiState())
     private val chatAvailability = mutableStateOf(AgentAvailability.READY)
     private val chatRuntime = mutableStateOf(healthy)
@@ -397,6 +420,13 @@ class ChatUiGatesTest {
         rule.setContent {
             OpenCodeTheme(darkTheme = true, dynamicColor = false) {
                 CompositionLocalProvider(LocalClipboardManager provides recordingClipboard) {
+                // v9.11.1: read the nudge counter INSIDE this scope. Run #128
+                // proved the emulator occasionally LOSES a surface.value
+                // invalidation outright (files_screen absent after a full 5s
+                // waitUntil) - bumping the counter re-invalidates this exact
+                // scope, which re-reads surface.value and lands the hop.
+                @Suppress("UNUSED_VARIABLE")
+                val composeNudgeTick = composeNudge.value
                 when (surface.value) {
                     Surface.CHAT -> ChatSurface()
                     Surface.LIVE_CHAT -> LiveChatSurface()
@@ -1581,14 +1611,11 @@ class ChatUiGatesTest {
             ),
         )
         // v9.9.2: run #124's filesControls diagnostic NAMED the 11 nodes - they
-        // were the SETTINGS screen. The settings->files hop was being audited
-        // before the new frame landed, so the files leg of this audit silently
-        // re-counted settings (files=11==settings=11 in #123/#124). Hold the
-        // audit until the files screen is actually on the tree; if the switch
-        // ever really breaks, this times out loudly instead of lying politely.
-        rule.waitUntil(5_000) {
-            rule.onAllNodesWithTag("files_screen").fetchSemanticsNodes().isNotEmpty()
-        }
+        // were the SETTINGS screen (the hop was audited before it landed).
+        // v9.11.1: run #128 then proved waiting alone cannot fix it - the
+        // invalidation is occasionally LOST and no amount of time lands the
+        // hop. ensureShown nudges recomposition until the screen is real.
+        ensureShown("files_screen")
         audit("files")
         // v9.9.1 evidence: name every interactive node on this screen in the
         // verdict line so the count explains itself in committed evidence
@@ -2222,13 +2249,10 @@ class ChatUiGatesTest {
         storageCanGrant.value = true
         storagePending.value = 2
         rule.waitForIdle()
-        // v9.9.2: same stale-frame race the U7 audit had (run #125 failed here:
-        // 'no existing nodes for settings_list') - a surface hop can be acted on
-        // before the new frame is on the tree. Hold until Settings is really
-        // there; a genuine failure to switch still times out loudly.
-        rule.waitUntil(5_000) {
-            rule.onAllNodesWithTag("settings_list").fetchSemanticsNodes().isNotEmpty()
-        }
+        // v9.9.2: same lost-invalidation flake the U7 audit had (run #125
+        // failed here: 'no existing nodes for settings_list'). v9.11.1: waiting
+        // is not enough when the invalidation is lost - nudge until it lands.
+        ensureShown("settings_list")
         // v9.1: Settings is one page of accordions and the workspace section starts
         // collapsed - the switch is one header tap away, exactly like on the phone.
         val workspaceHeader = context.getString(R.string.settings_section_workspace)
