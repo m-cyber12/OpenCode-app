@@ -3930,3 +3930,10 @@ an audit that lies politely is worse than one that fails. U7 now holds
 until files_screen is actually on the tree before counting (times out
 loudly otherwise), and the filesControls line in evidence will name real
 files controls from the next run on.
+
+**#125 postscript:** the run went red on U12, not U7 - and it is the SAME
+race: 'no existing nodes for settings_list' right after the hop into the
+settings surface (the one-off #109 flake was almost certainly this too).
+U7's fix held (files=4, filesControls=[Back, Up one level, main.kt,
+Folder app] - the audit now counts the real listing). U12 got the same
+wait-for-the-frame guard; a genuine switch failure still times out loudly.

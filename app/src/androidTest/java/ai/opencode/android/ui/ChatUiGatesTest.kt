@@ -2218,6 +2218,13 @@ class ChatUiGatesTest {
         storageCanGrant.value = true
         storagePending.value = 2
         rule.waitForIdle()
+        // v9.9.2: same stale-frame race the U7 audit had (run #125 failed here:
+        // 'no existing nodes for settings_list') - a surface hop can be acted on
+        // before the new frame is on the tree. Hold until Settings is really
+        // there; a genuine failure to switch still times out loudly.
+        rule.waitUntil(5_000) {
+            rule.onAllNodesWithTag("settings_list").fetchSemanticsNodes().isNotEmpty()
+        }
         // v9.1: Settings is one page of accordions and the workspace section starts
         // collapsed - the switch is one header tap away, exactly like on the phone.
         val workspaceHeader = context.getString(R.string.settings_section_workspace)
