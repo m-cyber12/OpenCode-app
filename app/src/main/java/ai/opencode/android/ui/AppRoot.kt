@@ -947,6 +947,28 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                             }
                         }
                     },
+                    // v9.11: the preview's own console, mirrored into the
+                    // project. latest.png shows WHAT rendered; console.log
+                    // says WHY it did not - one SyntaxError kills a whole
+                    // script, and until now nobody could see it.
+                    onConsolePreview = { line ->
+                        val dir = projectDir
+                        if (dir != null) {
+                            scope.launch {
+                                withContext(Dispatchers.IO) {
+                                    runCatching {
+                                        val folder = File(dir, ".preview")
+                                        folder.mkdirs()
+                                        val log = File(folder, "console.log")
+                                        // Rolling: a chatty page must not grow a
+                                        // file forever. 64 KB cap, then restart.
+                                        if (log.length() > 64_000) log.writeText("")
+                                        log.appendText(line + "\n")
+                                    }
+                                }
+                            }
+                        }
+                    },
                     onSelectTab = { tab -> route = routeForTab(tab) },
                     projectName = projectName.ifEmpty { stringResource(R.string.projects_title) },
                     projectPath = projectDir?.absolutePath.orEmpty(),

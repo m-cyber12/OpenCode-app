@@ -123,6 +123,10 @@ version. Two rules that prevent a broken first impression:
 
 After each page load the app screenshots the preview into
 `.preview/latest.png` - read it to SEE what the user currently sees.
+The preview runs in the system WebView (Chromium); its JavaScript console
+and load errors are mirrored to `.preview/console.log`. When the preview
+looks wrong, read console.log FIRST - one SyntaxError silently kills a
+whole script. latest.png shows WHAT rendered; console.log shows WHY not.
 
 Static server recipe (bun, port 8080, current directory; serves index.html
 or the first *.html at "/", answers 404 instead of crashing on misses):

@@ -3963,3 +3963,36 @@ is open, the top bar, location card and door yield; one slim header
 (back/url/Browser) + the page. U9 grew a paneFullPage assertion
 (files_location must be absent while the pane is shown) - sandbox detail
 is now 9 flags.
+
+### B.31 v9.11 (2026-10-02): "it's a bug itself" - the viewer grows real eyes
+
+**Second clock run, v9.10 installed.** Full-page pane confirmed live; the
+cache fix held (fresh bytes). And the pane STILL lied: Chrome rendered
+clock + date + themed background, the pane rendered only the static HTML
+(button, caption, CSS-fallback background). Everything missing is
+JS-GENERATED - the page's script never ran (or died on its first error)
+in the pane's WebView while the same engine family in Chrome ran it.
+
+**What ships, per the owner's "research the best viewer":**
+1. Chrome-default layout: the legacy TEXT_AUTOSIZING re-layout (a v9.6.1
+   leftover for file:// document viewing) is gone from the live pane -
+   Chrome does not run it and a live-app preview must not either. The
+   FileViewer's document preview keeps its own settings; only the live
+   pane changed. Plus mediaPlaybackRequiresUserGesture=false.
+2. The diagnosis instrument this bug class needs: the pane's
+   WebChromeClient now mirrors every console message, load event and
+   resource error into `.preview/console.log` (rolling, 64KB cap).
+   latest.png shows WHAT rendered; console.log shows WHY not. The brief
+   tells the agent to read it FIRST when the preview looks wrong, and the
+   next broken page will name its own error instead of starting a
+   phantom-debug spiral.
+
+**Honesty:** the root cause of the dead script is NOT yet proven - the
+candidates (legacy layout algorithm, an outdated WebView provider choking
+on modern syntax, an early runtime error) are now distinguishable by one
+file. The owner's next clock run either renders correctly (TEXT_AUTOSIZING
+was the killer) or console.log names the real murderer verbatim.
+
+Acceptance scorecard, run 2: P2 PASS again (bun/toybox named, no probing;
+the answer even got sharper - "git and rg as build tools"), P5 PASS again
+(loopback-only, correctly reasoned). The brief holds.

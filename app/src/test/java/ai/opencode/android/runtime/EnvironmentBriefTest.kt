@@ -97,6 +97,9 @@ class EnvironmentBriefTest {
         assertTrue(text.contains("status:404"))
         assertTrue(text.contains("Bun.Glob"))
         assertTrue("server must be checked before the hand-off", text.contains("nc -w 2 127.0.0.1"))
+        // v9.11 (owner's second clock run): the agent must know the preview's
+        // console is readable - that is how a dead script stops being a mystery.
+        assertTrue(text.contains(".preview/console.log"))
         // And never promises what the device cannot do.
         assertFalse(text.contains("<device-ip>:port rendered as reachable"))
     }

@@ -177,6 +177,12 @@ fun FilesScreen(
     /** The captured preview frame - AppRoot writes it into the project for the agent. */
     onCapturePreview: (android.graphics.Bitmap) -> Unit = {},
     /**
+     * v9.11: one line per page console message / load error - AppRoot mirrors
+     * them into the project (.preview/console.log) so the agent reads WHY a
+     * page misrendered instead of debugging a phantom from latest.png alone.
+     */
+    onConsolePreview: (String) -> Unit = {},
+    /**
      * v7 redesign: when non-null, the Chat/Files/Changes/Terminal strip renders
      * under the bar and this callback handles a tab tap. Nullable so every
      * existing call site (and the U9 gate's fixture) is untouched.
@@ -370,6 +376,7 @@ fun FilesScreen(
                     onClose = onClosePreview,
                     onOpenInBrowser = onOpenInBrowser,
                     onCapture = onCapturePreview,
+                    onConsole = onConsolePreview,
                 )
             } else if (file != null) {
                 FileViewer(
@@ -732,9 +739,11 @@ private fun PreviewPane(
     onClose: () -> Unit,
     onOpenInBrowser: () -> Unit,
     onCapture: (android.graphics.Bitmap) -> Unit,
+    onConsole: (String) -> Unit,
 ) {
     val chat = ChatTheme.chat
     val latestCapture = rememberUpdatedState(onCapture)
+    val latestConsole = rememberUpdatedState(onConsole)
     val webRef = remember { mutableStateOf<WebView?>(null) }
     // v9.10: the stamp already consumed - initialised to the CURRENT stamp so
     // first composition never double-loads; only a later bump forces reload.
@@ -807,16 +816,49 @@ private fun PreviewPane(
                         settings.cacheMode = WebSettings.LOAD_NO_CACHE
                         settings.useWideViewPort = true
                         settings.loadWithOverviewMode = true
-                        settings.layoutAlgorithm = WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING
+                        // v9.11: Chrome does NOT run the legacy TEXT_AUTOSIZING
+                        // re-layout; a live-app preview must not either - it
+                        // rescales and reflows modern pages into something the
+                        // real browser never shows. Chrome-default layout.
+                        settings.layoutAlgorithm = WebSettings.LayoutAlgorithm.NORMAL
                         settings.builtInZoomControls = true
                         settings.displayZoomControls = false
+                        settings.mediaPlaybackRequiresUserGesture = false
+                        // v9.11 (owner's clock page: every JS-generated element
+                        // missing in the pane while Chrome renders them all):
+                        // stop guessing WHY a page misbehaves - mirror the
+                        // page's own console and load errors out to AppRoot,
+                        // which stores them in the project for the agent.
+                        webChromeClient = object : android.webkit.WebChromeClient() {
+                            override fun onConsoleMessage(msg: android.webkit.ConsoleMessage): Boolean {
+                                runCatching {
+                                    latestConsole.value(
+                                        "${msg.messageLevel()} ${msg.sourceId()}:${msg.lineNumber()} ${msg.message()}",
+                                    )
+                                }
+                                return true
+                            }
+                        }
                         webViewClient = object : WebViewClient() {
                             override fun onPageFinished(view: WebView, finished: String?) {
+                                runCatching { latestConsole.value("LOADED ${finished ?: ""}") }
                                 // One deferred self-snapshot per load: the page
                                 // settles, the frame lands in the project, the
                                 // agent can read what is on screen. Finite by
                                 // construction - a single delayed runnable.
                                 view.postDelayed({ runCatching { snap(view) } }, 600)
+                            }
+
+                            override fun onReceivedError(
+                                view: WebView,
+                                request: android.webkit.WebResourceRequest,
+                                error: android.webkit.WebResourceError,
+                            ) {
+                                runCatching {
+                                    latestConsole.value(
+                                        "LOAD_ERROR ${request.url} code=${error.errorCode} ${error.description}",
+                                    )
+                                }
                             }
                         }
                         webRef.value = this
