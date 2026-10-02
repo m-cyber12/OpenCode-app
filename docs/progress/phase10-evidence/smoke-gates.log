@@ -1,4 +1,4 @@
-[2026-10-02T15:50:25Z] === building the smoke variant (release configuration, debug-key signed) ===
+[2026-10-02T17:37:30Z] === building the smoke variant (release configuration, debug-key signed) ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
@@ -7,9 +7,9 @@ RELEASE SIGNING: not configured -> release artifacts are UNSIGNED (CI behavior; 
 
 > Task :app:verifyAndStagePayload
 PAYLOAD STAGING: -PskipPayload=null SKIP_PAYLOAD=null
-PAYLOAD_SOURCE runtime-payload.tar.gz=20057392B runtime-manifest.json=187351B
+PAYLOAD_SOURCE runtime-payload.tar.gz=20056595B runtime-manifest.json=187351B
 Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/assets / /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/jniLibs
-STAGED_ASSETS n=2 runtime-manifest.json(187351B), runtime-payload.tar.gz(20057392B)
+STAGED_ASSETS n=2 runtime-manifest.json(187351B), runtime-payload.tar.gz(20056595B)
 STAGED_JNILIBS n=12 x86_64/libbun.so, arm64-v8a/libbun.so, x86_64/libchildshim.so, arm64-v8a/libchildshim.so, x86_64/libexecshim.so, arm64-v8a/libexecshim.so, x86_64/libgit.so, arm64-v8a/libgit.so, x86_64/librg.so, arm64-v8a/librg.so, x86_64/libseccompshim.so, arm64-v8a/libseccompshim.so
 
 > Task :app:preBuild
@@ -34,18 +34,18 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:processSmokeManifest
 > Task :app:javaPreCompileSmoke FROM-CACHE
 > Task :app:mergeSmokeShaders
-> Task :app:processSmokeManifestForPackage
 > Task :app:compileSmokeShaders NO-SOURCE
 > Task :app:generateSmokeAssets
 > Task :app:mergeSmokeResources
 > Task :app:mergeSmokeAssets
-> Task :app:desugarSmokeFileDependencies FROM-CACHE
+> Task :app:processSmokeManifestForPackage
 > Task :app:checkSmokeDuplicateClasses
+> Task :app:desugarSmokeFileDependencies FROM-CACHE
 > Task :app:mergeSmokeStartupProfile
-> Task :app:processSmokeResources
 > Task :app:mergeExtDexSmoke FROM-CACHE
 > Task :app:mergeLibDexSmoke FROM-CACHE
 > Task :app:compressSmokeAssets
+> Task :app:processSmokeResources
 > Task :app:mergeSmokeJniLibFolders
 > Task :app:validateSigningSmoke
 > Task :app:writeSmokeAppMetadata
@@ -54,21 +54,20 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:mergeSmokeNativeLibs
 > Task :app:processSmokeAndroidTestManifest
 > Task :app:generateSmokeAndroidTestBuildConfig
-> Task :app:checkSmokeAndroidTestAarMetadata
 > Task :app:generateSmokeAndroidTestResValues FROM-CACHE
+> Task :app:checkSmokeAndroidTestAarMetadata
 > Task :app:mapSmokeAndroidTestSourceSetPaths
 > Task :app:generateSmokeAndroidTestResources
-> Task :app:javaPreCompileSmokeAndroidTest FROM-CACHE
-> Task :app:mergeSmokeAndroidTestShaders
-> Task :app:compileSmokeAndroidTestShaders NO-SOURCE
-> Task :app:generateSmokeAndroidTestAssets
 
 > Task :app:stripSmokeDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libbun.so, libchildshim.so, libexecshim.so, libgit.so, librg.so, libseccompshim.so.
 
+> Task :app:javaPreCompileSmokeAndroidTest FROM-CACHE
+> Task :app:mergeSmokeAndroidTestShaders
+> Task :app:compileSmokeAndroidTestShaders NO-SOURCE
+> Task :app:generateSmokeAndroidTestAssets
 > Task :app:mergeSmokeAndroidTestAssets
 > Task :app:compressSmokeAndroidTestAssets
-> Task :app:mergeSmokeAndroidTestResources
 > Task :app:checkSmokeAndroidTestDuplicateClasses
 > Task :app:desugarSmokeAndroidTestFileDependencies FROM-CACHE
 > Task :app:mergeExtDexSmokeAndroidTest FROM-CACHE
@@ -76,9 +75,11 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:mergeSmokeAndroidTestJniLibFolders
 > Task :app:mergeSmokeAndroidTestNativeLibs NO-SOURCE
 > Task :app:stripSmokeAndroidTestDebugSymbols NO-SOURCE
+> Task :app:mergeSmokeAndroidTestResources
 > Task :app:validateSigningSmokeAndroidTest
 > Task :app:writeSmokeAndroidTestSigningConfigVersions
 > Task :app:processSmokeAndroidTestResources
+
 > Task :app:compileSmokeKotlin
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
@@ -86,12 +87,12 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:145:5 Parameter 'onOpenSessions' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:756:5 Parameter 'runtime' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:1318:60 'Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:305:17 Name shadowed: chat
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:348:64 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:450:56 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:484:56 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:547:52 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:760:48 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:311:17 Name shadowed: chat
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:354:64 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:457:56 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:491:56 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:554:52 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:769:48 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/projects/ProjectsScreen.kt:121:5 Parameter 'onOpen' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:245:5 Parameter 'availability' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:248:9 Variable 'chat' is never used
@@ -117,25 +118,25 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/a
 > Task :app:dexBuilderSmokeAndroidTest
 > Task :app:mergeSmokeAndroidTestGlobalSynthetics FROM-CACHE
 > Task :app:processSmokeAndroidTestJavaRes
-> Task :app:mergeSmokeAndroidTestJavaResource
 > Task :app:mergeProjectDexSmokeAndroidTest
+> Task :app:mergeSmokeAndroidTestJavaResource
 > Task :app:packageSmokeAndroidTest
 > Task :app:createSmokeAndroidTestApkListingFileRedirect
 > Task :app:assembleSmokeAndroidTest
 
-BUILD SUCCESSFUL in 58s
+BUILD SUCCESSFUL in 55s
 69 actionable tasks: 55 executed, 14 from cache
-[2026-10-02T15:51:24Z] smoke apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/smoke/app-smoke.apk
-[2026-10-02T15:51:24Z] smoke testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/smoke/app-smoke-androidTest.apk
-[2026-10-02T15:51:24Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/smoke/INSTALL-README.txt (which artifact file is installable, and why)
-[2026-10-02T15:51:25Z] === inspecting the smoke APK (identity, payload, abis, signing) ===
-[2026-10-02T15:51:25Z] P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=True
-[2026-10-02T15:51:25Z] P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
-[2026-10-02T15:51:25Z] === installing the smoke build (fresh) ===
+[2026-10-02T17:38:26Z] smoke apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/smoke/app-smoke.apk
+[2026-10-02T17:38:26Z] smoke testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/smoke/app-smoke-androidTest.apk
+[2026-10-02T17:38:26Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/smoke/INSTALL-README.txt (which artifact file is installable, and why)
+[2026-10-02T17:38:26Z] === inspecting the smoke APK (identity, payload, abis, signing) ===
+[2026-10-02T17:38:26Z] P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=True
+[2026-10-02T17:38:26Z] P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
+[2026-10-02T17:38:26Z] === installing the smoke build (fresh) ===
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-10-02T15:51:26Z] === Phase 6 UI gates against the SMOKE build (P6_PKG=io.github.mcyber12.opencode) ===
-[2026-10-02T15:57:45Z] P10_SMOKE_UI PASS :: pass=18 fail=0 skip=2 on the release-shaped build (identical gates to the debug run)
-[2026-10-02T15:57:45Z] P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
+[2026-10-02T17:38:27Z] === Phase 6 UI gates against the SMOKE build (P6_PKG=io.github.mcyber12.opencode) ===
+[2026-10-02T17:40:00Z] P10_SMOKE_UI FAIL :: pass=19 fail=1 skip=0 - a gate that passes on debug and fails here is a RELEASE-SHAPE finding (see p10-smoke-ui.log)
+[2026-10-02T17:40:00Z] P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
