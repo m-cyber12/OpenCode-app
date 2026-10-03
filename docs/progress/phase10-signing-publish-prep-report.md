@@ -4007,3 +4007,55 @@ reads a nudge counter inside the `when` scope, and ensureShown() bumps it
 until the expected screen is really on the tree (40 tries, then a loud
 assert). Both known bite-sites (U7's files hop, U12's settings hop) use
 it. v9.11's app changes were not implicated in #128.
+
+## B.32 v9.12 - organized any-stage screenshots + viewport parity (2026-10-03)
+
+**Owner verdicts on v9.11 (clock run 3):** the pane renders the JS clock
+live and correctly - P6 passes; TEXT_AUTOSIZING was the killer, confirmed
+by a real device run, not reasoning. The agent read `.preview/latest.png`
+AND `console.log` on its own. Two asks remain:
+
+1. **Cosmetic:** the clock sits vertically centered in Chrome but
+   top-anchored in the pane - "is it a problem?"
+2. **Binding:** screenshots must be organized and categorized inside the
+   project workspace - the model takes shots at any number of important
+   stages during development, not one overwritten `latest.png`.
+
+**1) Viewport parity.** The pane ran with `useWideViewPort=true` +
+`loadWithOverviewMode=true` - desktop-ish viewport emulation that distorts
+CSS viewport units (`100vh` centers against the emulated layout viewport,
+not the pane). Both are now false: the layout viewport IS the pane, which
+is exactly what Chrome gives a page carrying
+`<meta name="viewport" content="width=device-width, initial-scale=1">`.
+The brief now mandates that meta in every page. Honesty: pages WITHOUT
+the meta can still differ from Chrome (Chrome falls back to a 980px-ish
+desktop viewport, the pane will not emulate that anymore); the Browser
+button remains the final-fidelity check. Unproven until the owner's next
+run - same discipline as B.31.
+
+**2) The organized screenshot protocol.** New contract, documented in the
+brief (v5) and symmetrical with serve.json:
+
+- Agent writes `.preview/capture.json`:
+  `{"name": "02-after-login-fix", "path": "/login.html", "port": 8080}`
+- AppRoot watches it (1.5s poll, mtime-gated - stale markers inert, same
+  as serve.json) and hands the URL to a new off-screen engine,
+  `preview/HeadlessCapture.kt`: a WebView never attached to any window,
+  same rendering contract as the pane (JS, DOM storage, NO_CACHE, NORMAL
+  layout), laid out at device size, onPageFinished + 800ms settle, drawn
+  to a Bitmap, destroyed. 15s hard timeout so a hung page cannot leak the
+  WebView. Works no matter which tab the user is on - no pane required.
+- `port` omitted -> the app's own static server via `ensureServerFor(dir)`,
+  extracted from openPreviewFor so a capture never flips preview UI state.
+- The frame is filed by `preview/ShotStore.kt` as
+  `.preview/shots/NNN-<slug>.png` (NNN = capture order, slug = agent's
+  stage name made filesystem-safe, max 48 chars, fallback "shot"), and
+  `latest.png` is refreshed too. The gallery IS the categorization: open
+  `.preview/shots/` and read the project's visual history in order.
+
+**Tests:** new JVM `ShotStoreTest` (slug safety, bounded length, ordered
+numbering, clutter immunity); EnvironmentBriefTest now asserts the brief
+teaches capture.json, `.preview/shots/`, and the viewport meta. NO new UI
+gate: the headless engine needs a real WebView provider and a served page,
+which the fixture cannot assert honestly, and the smoke contract is
+exactly 20 gates. Static checks rc=0. CI must stay 20/20 before install.

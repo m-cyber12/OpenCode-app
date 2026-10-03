@@ -127,6 +127,17 @@ The preview runs in the system WebView (Chromium); its JavaScript console
 and load errors are mirrored to `.preview/console.log`. When the preview
 looks wrong, read console.log FIRST - one SyntaxError silently kills a
 whole script. latest.png shows WHAT rendered; console.log shows WHY not.
+Always give pages `<meta name="viewport" content="width=device-width,
+initial-scale=1">` - with it the preview and Chrome lay out identically.
+
+## Screenshots, organized - document any stage you consider important
+Write `.preview/capture.json`:
+  {"name": "02-after-login-fix", "path": "/login.html", "port": 8080}
+The app loads that page OFF-SCREEN at device size (no preview needs to be
+open) and saves the settled frame as `.preview/shots/NNN-<name>.png`
+(NNN = capture order) plus a refreshed latest.png. Omit "port" to have the
+app serve the project itself. Name shots after the stage they document;
+read them back like any file when you need to compare states.
 
 Static server recipe (bun, port 8080, current directory; serves index.html
 or the first *.html at "/", answers 404 instead of crashing on misses):

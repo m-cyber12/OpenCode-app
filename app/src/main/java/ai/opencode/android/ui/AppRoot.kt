@@ -338,31 +338,99 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     }
 
     /**
-     * Start (or reuse) the loopback server for [dir] off the main thread, then
-     * open the pane. Shared by the user's door on the Sandbox tab and the
-     * AGENT'S door below.
+     * Start (or reuse) the loopback server for [dir] off the main thread.
+     * v9.12: extracted from openPreviewFor so the headless capture engine can
+     * get a server WITHOUT flipping any preview UI state. Returns null when
+     * the server could not start.
+     */
+    suspend fun ensureServerFor(dir: File): ai.opencode.android.preview.PreviewServer? {
+        val existing = previewServer
+        val server = withContext(Dispatchers.IO) {
+            if (existing != null && existing.running && existing.root == dir) {
+                existing
+            } else {
+                existing?.stop()
+                ai.opencode.android.preview.PreviewServer(dir).also { fresh ->
+                    runCatching { fresh.start() }
+                }
+            }
+        }
+        return if (server.running) {
+            previewServer = server
+            server
+        } else {
+            previewServer = null
+            null
+        }
+    }
+
+    /**
+     * Start (or reuse) the loopback server for [dir], then open the pane.
+     * Shared by the user's door on the Sandbox tab and the AGENT'S door below.
      */
     fun openPreviewFor(dir: File, startPath: String = "/") {
         scope.launch {
-            val existing = previewServer
-            val server = withContext(Dispatchers.IO) {
-                if (existing != null && existing.running && existing.root == dir) {
-                    existing
-                } else {
-                    existing?.stop()
-                    ai.opencode.android.preview.PreviewServer(dir).also { fresh ->
-                        runCatching { fresh.start() }
-                    }
-                }
-            }
-            if (server.running) {
-                previewServer = server
+            val server = ensureServerFor(dir)
+            if (server != null) {
                 val cleanPath = if (startPath.startsWith("/")) startPath else "/$startPath"
                 previewUrl = "http://127.0.0.1:${server.port}$cleanPath"
                 previewOpen = true
             } else {
-                previewServer = null
                 storageMessage = context.getString(R.string.sandbox_preview_failed)
+            }
+        }
+    }
+
+    // v9.12 (owner): organized, any-stage screenshots. The agent writes
+    // .preview/capture.json {"name": "02-after-login-fix", "path": "/x.html",
+    // "port": 8080} and the app loads that page in an OFF-SCREEN WebView at
+    // device size - no pane needs to be open, no tab needs to be visible -
+    // then files the settled frame as .preview/shots/NNN-name.png (capture
+    // order) and refreshes latest.png. Omitted port = the app's own static
+    // server. Same mtime gating as serve.json: stale markers do nothing.
+    val headlessCapture = remember { ai.opencode.android.preview.HeadlessCapture(context) }
+    LaunchedEffect(projectDir) {
+        val dir = projectDir ?: return@LaunchedEffect
+        val marker = File(dir, ".preview/capture.json")
+        var handled = withContext(Dispatchers.IO) { if (marker.exists()) marker.lastModified() else 0L }
+        while (true) {
+            kotlinx.coroutines.delay(1500)
+            val stamp = withContext(Dispatchers.IO) { if (marker.exists()) marker.lastModified() else 0L }
+            if (stamp > handled) {
+                handled = stamp
+                val declared = withContext(Dispatchers.IO) {
+                    runCatching { org.json.JSONObject(marker.readText()) }.getOrNull()
+                }
+                val name = (declared?.optString("name").orEmpty()).ifEmpty { "shot" }
+                val declaredPort = declared?.optInt("port", 0) ?: 0
+                val requested = (declared?.optString("path", "/") ?: "/").ifEmpty { "/" }
+                val cleanPath = if (requested.startsWith("/")) requested else "/$requested"
+                val url = if (declaredPort in 1..65535) {
+                    "http://127.0.0.1:$declaredPort$cleanPath"
+                } else {
+                    val server = ensureServerFor(dir) ?: continue
+                    "http://127.0.0.1:${server.port}$cleanPath"
+                }
+                val metrics = context.resources.displayMetrics
+                headlessCapture.capture(url, metrics.widthPixels, metrics.heightPixels) { bitmap ->
+                    if (bitmap != null) {
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                runCatching {
+                                    val preview = File(dir, ".preview")
+                                    preview.mkdirs()
+                                    val shot = ai.opencode.android.preview.ShotStore.nextFile(preview, name)
+                                    shot.outputStream().use { out ->
+                                        bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 90, out)
+                                    }
+                                    File(preview, "latest.png").outputStream().use { out ->
+                                        bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 90, out)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }

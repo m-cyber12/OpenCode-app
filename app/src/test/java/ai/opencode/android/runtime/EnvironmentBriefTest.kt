@@ -100,6 +100,11 @@ class EnvironmentBriefTest {
         // v9.11 (owner's second clock run): the agent must know the preview's
         // console is readable - that is how a dead script stops being a mystery.
         assertTrue(text.contains(".preview/console.log"))
+        // v9.12 (owner): organized any-stage screenshots + the viewport meta
+        // that makes pane and Chrome lay out identically.
+        assertTrue(text.contains("capture.json"))
+        assertTrue(text.contains(".preview/shots/"))
+        assertTrue(text.contains("width=device-width"))
         // And never promises what the device cannot do.
         assertFalse(text.contains("<device-ip>:port rendered as reachable"))
     }

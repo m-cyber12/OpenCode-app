@@ -814,8 +814,15 @@ private fun PreviewPane(
                         // stale page into latest.png, and the agent debugged
                         // a phantom. Fresh network fetch, always.
                         settings.cacheMode = WebSettings.LOAD_NO_CACHE
-                        settings.useWideViewPort = true
-                        settings.loadWithOverviewMode = true
+                        // v9.12 (owner: clock centred in Chrome, top-anchored
+                        // in the pane): the wide-viewport/overview emulation
+                        // distorts CSS viewport units in an embedded WebView.
+                        // Off - the layout viewport IS the pane, which is what
+                        // a page with a proper <meta viewport> gets in Chrome;
+                        // the brief now tells the agent to always include that
+                        // meta, so pane and Chrome agree.
+                        settings.useWideViewPort = false
+                        settings.loadWithOverviewMode = false
                         // v9.11: Chrome does NOT run the legacy TEXT_AUTOSIZING
                         // re-layout; a live-app preview must not either - it
                         // rescales and reflows modern pages into something the
