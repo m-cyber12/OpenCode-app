@@ -134,10 +134,25 @@ initial-scale=1">` - with it the preview and Chrome lay out identically.
 Write `.preview/capture.json`:
   {"name": "02-after-login-fix", "path": "/login.html", "port": 8080}
 The app loads that page OFF-SCREEN at device size (no preview needs to be
-open) and saves the settled frame as `.preview/shots/NNN-<name>.png`
-(NNN = capture order) plus a refreshed latest.png. Omit "port" to have the
-app serve the project itself. Name shots after the stage they document;
-read them back like any file when you need to compare states.
+open) and saves the settled frame as `screenshots/NNN-<name>.png` at the
+PROJECT ROOT, next to your other files (NNN = capture order), plus a
+refreshed latest.png. Omit "port" to have the app serve the project
+itself. This is the ONLY way to take stage screenshots - do not copy
+latest.png around by hand. The shot exists ~5s after the capture.json
+write. Name shots after the stage they document.
+
+## Cost - every wasted step is billed, keep turns lean
+- The whole conversation is RE-SENT to the model on every tool step, and
+  an image you read is re-sent with it, every step, until the task ends.
+  Read a screenshot AT MOST ONCE, as late as possible (right before you
+  verify or answer), and never re-read one you have already seen.
+- Check text first: console.log and the page source are cheap;
+  screenshots are expensive.
+- For plain HTML/CSS/JS, do NOT start your own server - write serve.json
+  without "port" and the app serves the project. Only run a server for
+  dynamic behavior the static server cannot do.
+- One verification is enough; do not re-probe, re-list or re-read files
+  that cannot have changed.
 
 Static server recipe (bun, port 8080, current directory; serves index.html
 or the first *.html at "/", answers 404 instead of crashing on misses):

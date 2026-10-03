@@ -385,9 +385,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // .preview/capture.json {"name": "02-after-login-fix", "path": "/x.html",
     // "port": 8080} and the app loads that page in an OFF-SCREEN WebView at
     // device size - no pane needs to be open, no tab needs to be visible -
-    // then files the settled frame as .preview/shots/NNN-name.png (capture
-    // order) and refreshes latest.png. Omitted port = the app's own static
-    // server. Same mtime gating as serve.json: stale markers do nothing.
+    // then files the settled frame in the project-root screenshots/ folder
+    // (v9.13, owner: next to the project's other files, not hidden in
+    // .preview) and refreshes latest.png. Omitted port = the app's own
+    // static server. Same mtime gating as serve.json: stale markers inert.
     val headlessCapture = remember { ai.opencode.android.preview.HeadlessCapture(context) }
     LaunchedEffect(projectDir) {
         val dir = projectDir ?: return@LaunchedEffect
@@ -419,7 +420,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                                 runCatching {
                                     val preview = File(dir, ".preview")
                                     preview.mkdirs()
-                                    val shot = ai.opencode.android.preview.ShotStore.nextFile(preview, name)
+                                    val shot = ai.opencode.android.preview.ShotStore.nextFile(dir, name)
                                     shot.outputStream().use { out ->
                                         bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 90, out)
                                     }

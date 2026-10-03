@@ -848,7 +848,12 @@ private fun PreviewPane(
                         }
                         webViewClient = object : WebViewClient() {
                             override fun onPageFinished(view: WebView, finished: String?) {
-                                runCatching { latestConsole.value("LOADED ${finished ?: ""}") }
+                                // v9.13: name the engine - a rendering gap vs
+                                // Chrome often means an outdated WebView provider.
+                                val engine = runCatching {
+                                    WebView.getCurrentWebViewPackage()?.let { "${it.packageName} ${it.versionName}" }
+                                }.getOrNull() ?: "unknown"
+                                runCatching { latestConsole.value("LOADED ${finished ?: ""} [webview: $engine]") }
                                 // One deferred self-snapshot per load: the page
                                 // settles, the frame lands in the project, the
                                 // agent can read what is on screen. Finite by

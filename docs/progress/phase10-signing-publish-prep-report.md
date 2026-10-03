@@ -4059,3 +4059,59 @@ teaches capture.json, `.preview/shots/`, and the viewport meta. NO new UI
 gate: the headless engine needs a real WebView provider and a served page,
 which the fixture cannot assert honestly, and the smoke contract is
 exactly 20 gates. Static checks rc=0. CI must stay 20/20 before install.
+
+## B.33 v9.13 - shots beside the project files + the 272k-token diagnosis (2026-10-03)
+
+**Owner evidence (15 screenshots, v9.12 on device):** two-page site built,
+"screenshots" delivered, previews work on both the pane and Chrome. Three
+findings and two owner asks.
+
+**Finding 1 - the agent bypassed the capture protocol.** The shots on
+device are `.preview/shots-01-page1-home.png` / `shots-02-page2-about.png`
+- FLAT files, hand-made (the model copied latest.png and invented names);
+no `shots/` folder exists, so capture.json was never written. The brief
+described the protocol but did not forbid the workaround. It now does
+("this is the ONLY way to take stage screenshots - do not copy latest.png
+around by hand") and states the ~5s wait.
+
+**Owner ask 1 - shots must sit NEXT TO the project's other files.** Done:
+ShotStore now files captures as `screenshots/NNN-<name>.png` at the
+PROJECT ROOT - visible beside index.html in the Sandbox list, in every
+file manager, in the served site. `.preview/latest.png` unchanged.
+
+**Owner ask 2 - 272,759 input tokens for a trivial two-page site.**
+Diagnosis, with source evidence: opencode's read tool returns any image
+as a full base64 data-URL attachment in the message history
+(packages/opencode/src/tool/read.ts: SUPPORTED_IMAGE_MIMES -> attachments
+url `data:<mime>;base64,...`). The agent loop re-sends the ENTIRE history
+on every tool step. That turn ran ~18 minutes of steps, read PNGs, and
+ALSO started its own bun server (extra steps) although the app serves
+static files. So the bill is roughly steps x (system + brief + history +
+every image read so far) - images read early are paid for again on every
+later step, and this provider route has no visible prompt caching (our
+earlier caching proof - a 41-token cached turn - was on a route that
+caches; this one clearly billed full price each step).
+
+What the app can and now does fix (brief v6, "Cost" section): read a
+screenshot AT MOST ONCE and as late as possible; text (console.log,
+source) before images; do NOT start your own server for plain HTML; no
+re-probing of things that cannot have changed. What the app cannot fix,
+said honestly: an agentic turn costs steps x context by construction;
+the big external levers are a provider/model with prompt caching and a
+model that follows the economy rules. A weaker model that ignores the
+brief (this one also ignored the mandated viewport meta) will stay
+expensive.
+
+**Finding 3 - centering still differs, and the evidence points at the
+page, not the pane.** In PLAIN Chrome the two-page site renders with tiny
+text = Chrome's 980px desktop-viewport fallback = the pages LACK the
+viewport meta the brief mandates. Without that meta, pane (device-width)
+and Chrome (980px emulation) legitimately disagree; with it they should
+match - still unproven on device, because the model never wrote the meta.
+Added for the hunt: the pane's "LOADED" console.log line now names the
+WebView provider package + version, so an outdated engine stops being a
+guess.
+
+**Tests:** ShotStoreTest asserts the gallery sits at `<project>/screenshots/`;
+EnvironmentBriefTest asserts the new location string, the ONLY-way rule
+phrases, and both cost rules. Static checks rc=0. CI must stay 20/20.

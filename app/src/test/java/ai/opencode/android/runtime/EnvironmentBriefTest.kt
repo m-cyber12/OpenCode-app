@@ -101,10 +101,14 @@ class EnvironmentBriefTest {
         // console is readable - that is how a dead script stops being a mystery.
         assertTrue(text.contains(".preview/console.log"))
         // v9.12 (owner): organized any-stage screenshots + the viewport meta
-        // that makes pane and Chrome lay out identically.
+        // that makes pane and Chrome lay out identically. v9.13 (owner):
+        // shots live NEXT TO the project files, and the brief must teach
+        // token economy - images are re-sent on every subsequent step.
         assertTrue(text.contains("capture.json"))
-        assertTrue(text.contains(".preview/shots/"))
+        assertTrue(text.contains("screenshots/NNN-<name>.png"))
         assertTrue(text.contains("width=device-width"))
+        assertTrue(text.contains("AT MOST ONCE"))
+        assertTrue(text.contains("do NOT start your own server"))
         // And never promises what the device cannot do.
         assertFalse(text.contains("<device-ip>:port rendered as reachable"))
     }

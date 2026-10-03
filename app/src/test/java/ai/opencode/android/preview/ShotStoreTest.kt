@@ -28,23 +28,26 @@ class ShotStoreTest {
     }
 
     @Test
-    fun capturesAreNumberedInOrder() {
-        val preview = tmp.newFolder(".preview")
-        val first = ShotStore.nextFile(preview, "login page")
+    fun capturesAreNumberedInOrderInsideProjectRootScreenshots() {
+        val project = tmp.newFolder("project")
+        val first = ShotStore.nextFile(project, "login page")
+        // v9.13 (owner): the gallery sits NEXT TO the project's files.
+        assertEquals("screenshots", first.parentFile?.name)
+        assertEquals(project, first.parentFile?.parentFile)
         assertEquals("001-login-page.png", first.name)
         first.writeBytes(byteArrayOf(1))
-        val second = ShotStore.nextFile(preview, "dark mode")
+        val second = ShotStore.nextFile(project, "dark mode")
         assertEquals("002-dark-mode.png", second.name)
         second.writeBytes(byteArrayOf(1))
-        assertEquals("003-final.png", ShotStore.nextFile(preview, "final").name)
+        assertEquals("003-final.png", ShotStore.nextFile(project, "final").name)
     }
 
     @Test
     fun nonPngClutterDoesNotBreakTheSequence() {
-        val preview = tmp.newFolder(".preview")
-        val shots = java.io.File(preview, ShotStore.SHOTS_DIR)
+        val project = tmp.newFolder("project")
+        val shots = java.io.File(project, ShotStore.SHOTS_DIR)
         shots.mkdirs()
         java.io.File(shots, "notes.txt").writeText("x")
-        assertEquals("001-a.png", ShotStore.nextFile(preview, "a").name)
+        assertEquals("001-a.png", ShotStore.nextFile(project, "a").name)
     }
 }
