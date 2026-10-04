@@ -854,6 +854,23 @@ private fun PreviewPane(
                                     WebView.getCurrentWebViewPackage()?.let { "${it.packageName} ${it.versionName}" }
                                 }.getOrNull() ?: "unknown"
                                 runCatching { latestConsole.value("LOADED ${finished ?: ""} [webview: $engine]") }
+                                // v9.15 (FocusList run): WebView preserves the
+                                // scroll offset across reloads and link hops -
+                                // the pane looked "broken" because it showed an
+                                // OLD scroll position of a correct page (the
+                                // headless capture of the same URL was perfect).
+                                // A fresh load starts at the top, like Chrome.
+                                runCatching { view.scrollTo(0, 0) }
+                                // ...and the geometry stops being a guess: one
+                                // line of real numbers per load, next to LOADED.
+                                runCatching {
+                                    view.evaluateJavascript(
+                                        "innerWidth+'x'+innerHeight+' dpr='+devicePixelRatio+" +
+                                            "' page='+document.documentElement.scrollHeight+' scrollY='+scrollY",
+                                    ) { v ->
+                                        runCatching { latestConsole.value("VIEWPORT " + (v ?: "?").trim('"')) }
+                                    }
+                                }
                                 // One deferred self-snapshot per load: the page
                                 // settles, the frame lands in the project, the
                                 // agent can read what is on screen. Finite by

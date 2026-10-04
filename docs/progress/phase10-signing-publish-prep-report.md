@@ -4171,3 +4171,41 @@ classes by explicit -e class filter only (20-ui-gates.sh/93-workspace),
 so a HeadlessCaptureTest would never execute there - the proof remains
 the owner's next device run, now with loud evidence either way. Static
 checks rc=0.
+
+## B.35 v9.15 - capture pipeline CONFIRMED on device; the pane mystery resolves to scroll carryover (2026-10-04)
+
+**Owner evidence (v9.14 on device, second FocusList run):** the organized
+screenshot pipeline now fully works - console.log shows
+`CAPTURE saved screenshots/001-landing.png (720x1488)` through
+`004-quote-live.png`, each self-confirmed, filed beside the project
+files, and the owner's file manager shows the numbered gallery. The
+agent followed the whole protocol and verified each shot after its own
+capture.json write. The B.34 Handler fix is proven by a real device run.
+
+**The engine is exonerated, with a version number:** every LOADED line
+reads `[webview: com.google.android.webview 153.0.8010.36]` - a fully
+modern Chromium. The dvh hypothesis is dead for THIS device (the ban
+stays as cross-device hygiene). Stronger still: the headless captures
+render the hero CENTERED, Chrome-identical, using the SAME engine and
+SAME settings as the pane. Engine and settings are both cleared.
+
+**So what is left? Scroll.** The owner's pane screenshot shows the
+tagline clipped at the very top edge and the title above the fold - a
+correct page at an OLD SCROLL POSITION. WebView preserves the scroll
+offset across reloads and link navigation; the pane never reset it; the
+headless WebView is virgin on every capture, which is exactly why it is
+always right. v9.15: `scrollTo(0, 0)` on every page finish - a fresh
+load starts at the top, like Chrome - plus a `VIEWPORT WxH dpr=...
+page=... scrollY=...` console line per load, so if ANY geometry gap
+remains after this, it arrives as numbers, not as another hypothesis.
+The brief tells the agent to check that line before spending an image
+read (cost synergy). Honesty: scroll carryover cleanly explains the
+FocusList pane shot; whether it also explains the earlier clock-at-top
+observation cannot be re-proven retroactively - the VIEWPORT line exists
+so the NEXT anomaly self-identifies.
+
+**Tests:** EnvironmentBriefTest asserts the VIEWPORT documentation.
+Static checks rc=0. Owner's agent-written ENVIRONMENT-REPORT.md verdict
+worth recording: "genuinely capable, honest environment... capture/
+preview pipeline is reliable and self-confirming" - with correct hard
+walls named (loopback-only, WebView-not-Chrome, settled-page captures).

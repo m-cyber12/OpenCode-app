@@ -133,7 +133,9 @@ Chrome app: $engine. Target that version's CSS/JS support.
 Its JavaScript console and load errors are mirrored to
 `.preview/console.log`. When the preview looks wrong, read console.log
 FIRST - one SyntaxError silently kills a whole script. latest.png shows
-WHAT rendered; console.log shows WHY not.
+WHAT rendered; console.log shows WHY not. Every pane load also logs a
+`VIEWPORT WxH dpr=... page=... scrollY=...` line - check layout geometry
+from this TEXT before spending a screenshot read on it.
 Layout rules that keep the preview identical to a browser:
 - Always include `<meta name="viewport" content="width=device-width,
   initial-scale=1">`.

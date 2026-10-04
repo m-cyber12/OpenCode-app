@@ -115,6 +115,8 @@ class EnvironmentBriefTest {
         assertTrue(text.contains("CAPTURE saved screenshots/"))
         assertTrue(text.contains("CAPTURE FAILED"))
         assertTrue(text.contains("NEVER use dvh/svh/lvh"))
+        // v9.15: geometry is text first - the VIEWPORT line beats an image read.
+        assertTrue(text.contains("VIEWPORT"))
         assertTrue(text.contains("html,body{height:100%;margin:0}"))
         assertTrue(EnvironmentBrief.briefText("com.test.webview 123.4.5").contains("com.test.webview 123.4.5"))
         // And never promises what the device cannot do.
