@@ -32,11 +32,16 @@ object EnvironmentBrief {
 
     const val FILE_NAME = "environment.md"
 
-    /** Install/refresh the brief and wire it into config.json. */
-    fun install(configDir: File): Boolean = runCatching {
+    /**
+     * Install/refresh the brief and wire it into config.json.
+     * [engine] names the device's WebView provider+version (v9.14): the
+     * preview and all screenshots render with THAT engine, and the agent
+     * must target it instead of assuming the newest Chrome.
+     */
+    fun install(configDir: File, engine: String = "unknown"): Boolean = runCatching {
         configDir.mkdirs()
         val brief = File(configDir, FILE_NAME)
-        val text = briefText()
+        val text = briefText(engine)
         if (!brief.isFile || brief.readText() != text) brief.writeText(text)
         wireConfig(File(configDir, "config.json"), brief.absolutePath)
     }.getOrDefault(false)
@@ -69,7 +74,7 @@ object EnvironmentBrief {
      * Kept deliberately compact: it rides along in every session's context
      * (~600 tokens) and pays for itself by ending blind probing.
      */
-    fun briefText(): String {
+    fun briefText(engine: String = "unknown"): String {
         val watched = PortScanner.CANDIDATE_PORTS.joinToString(", ")
         return """
 # Device environment (written by the OpenCode Android app; regenerated at startup - do not edit)
@@ -123,12 +128,19 @@ version. Two rules that prevent a broken first impression:
 
 After each page load the app screenshots the preview into
 `.preview/latest.png` - read it to SEE what the user currently sees.
-The preview runs in the system WebView (Chromium); its JavaScript console
-and load errors are mirrored to `.preview/console.log`. When the preview
-looks wrong, read console.log FIRST - one SyntaxError silently kills a
-whole script. latest.png shows WHAT rendered; console.log shows WHY not.
-Always give pages `<meta name="viewport" content="width=device-width,
-initial-scale=1">` - with it the preview and Chrome lay out identically.
+The preview and all screenshots render with THIS engine, not with the
+Chrome app: $engine. Target that version's CSS/JS support.
+Its JavaScript console and load errors are mirrored to
+`.preview/console.log`. When the preview looks wrong, read console.log
+FIRST - one SyntaxError silently kills a whole script. latest.png shows
+WHAT rendered; console.log shows WHY not.
+Layout rules that keep the preview identical to a browser:
+- Always include `<meta name="viewport" content="width=device-width,
+  initial-scale=1">`.
+- For full-height or vertically centered layouts use plain `vh` units
+  plus `html,body{height:100%;margin:0}`. NEVER use dvh/svh/lvh units -
+  on this device's engine they can resolve to nothing and the layout
+  silently collapses to the top of the page.
 
 ## Screenshots, organized - document any stage you consider important
 Write `.preview/capture.json`:
@@ -138,8 +150,12 @@ open) and saves the settled frame as `screenshots/NNN-<name>.png` at the
 PROJECT ROOT, next to your other files (NNN = capture order), plus a
 refreshed latest.png. Omit "port" to have the app serve the project
 itself. This is the ONLY way to take stage screenshots - do not copy
-latest.png around by hand. The shot exists ~5s after the capture.json
-write. Name shots after the stage they document.
+latest.png around by hand. Every capture CONFIRMS ITSELF: ~5s after the
+capture.json write, a line appears at the end of `.preview/console.log` -
+`CAPTURE saved screenshots/NNN-<name>.png ...` on success or
+`CAPTURE FAILED ... reason=...` on failure. Check that line instead of
+assuming; if it says FAILED, report the reason, do not improvise
+workarounds. Name shots after the stage they document.
 
 ## Cost - every wasted step is billed, keep turns lean
 - The whole conversation is RE-SENT to the model on every tool step, and

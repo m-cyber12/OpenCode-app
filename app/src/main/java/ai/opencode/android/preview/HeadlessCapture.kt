@@ -3,6 +3,8 @@ package ai.opencode.android.preview
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -16,24 +18,33 @@ import android.webkit.WebViewClient
  * laid out at device size loads the page, settles, is drawn into a bitmap,
  * and is destroyed.
  *
+ * v9.14 (owner's FocusList run proved the v9.12 version was a silent no-op):
+ * the settle delay and the timeout used View.postDelayed - but runnables
+ * posted on a view that is NEVER ATTACHED to a window stay queued until
+ * attachment, i.e. forever here. Nothing ran, nothing was saved, nothing was
+ * logged. Both delays now go through a main-looper Handler, which runs
+ * regardless of attachment, and every outcome is reported with a reason so
+ * the capture pipeline can never fail silently again.
+ *
  * Same rendering contract as the visible pane (Chrome-default layout, JS on,
- * no cache - see PreviewPane), so a headless shot shows what the user WOULD
- * see on the Sandbox tab. Must be called from the main thread (WebView rule);
- * one WebView per request, destroyed on completion, finite by construction
- * (one load, one delayed snap).
+ * no cache - see PreviewPane). Must be called from the main thread (WebView
+ * rule); one WebView per request, destroyed on completion, finite by
+ * construction (one load, one Handler-delayed snap, one Handler timeout).
  */
 class HeadlessCapture(private val context: Context) {
 
     /**
      * Load [url] off-screen at [width]x[height] and hand back the settled
-     * frame (null when the load or the draw failed). [onDone] arrives on the
-     * main thread.
+     * frame plus a reason string ("ok", "timeout", "draw-failed",
+     * "bad-size"). [onDone] arrives on the main thread; bitmap is null
+     * exactly when the reason is not "ok".
      */
-    fun capture(url: String, width: Int, height: Int, settleMs: Long = 800, onDone: (Bitmap?) -> Unit) {
+    fun capture(url: String, width: Int, height: Int, settleMs: Long = 800, onDone: (Bitmap?, String) -> Unit) {
         if (width <= 0 || height <= 0) {
-            onDone(null)
+            onDone(null, "bad-size")
             return
         }
+        val handler = Handler(Looper.getMainLooper())
         val web = WebView(context)
         var finished = false
         web.settings.javaScriptEnabled = true
@@ -41,6 +52,10 @@ class HeadlessCapture(private val context: Context) {
         web.settings.cacheMode = WebSettings.LOAD_NO_CACHE
         web.settings.layoutAlgorithm = WebSettings.LayoutAlgorithm.NORMAL
         web.settings.mediaPlaybackRequiresUserGesture = false
+        // Never attached to a window -> no hardware layer exists; force the
+        // software draw path explicitly so draw() renders instead of
+        // depending on an attachment-time decision.
+        web.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
         web.measure(
             View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
             View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY),
@@ -50,7 +65,8 @@ class HeadlessCapture(private val context: Context) {
             override fun onPageFinished(view: WebView, loaded: String?) {
                 if (finished) return
                 finished = true
-                view.postDelayed({
+                // v9.14: Handler, NOT view.postDelayed - see class comment.
+                handler.postDelayed({
                     val bmp = runCatching {
                         // Re-layout after the page settled, then draw.
                         view.measure(
@@ -63,16 +79,16 @@ class HeadlessCapture(private val context: Context) {
                         target
                     }.getOrNull()
                     runCatching { view.destroy() }
-                    onDone(bmp)
+                    onDone(bmp, if (bmp != null) "ok" else "draw-failed")
                 }, settleMs)
             }
         }
         // A page that never finishes must not leak the WebView: hard stop.
-        web.postDelayed({
+        handler.postDelayed({
             if (!finished) {
                 finished = true
                 runCatching { web.destroy() }
-                onDone(null)
+                onDone(null, "timeout")
             }
         }, TIMEOUT_MS)
         web.loadUrl(url)

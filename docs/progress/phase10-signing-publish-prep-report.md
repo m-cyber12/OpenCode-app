@@ -4115,3 +4115,59 @@ guess.
 **Tests:** ShotStoreTest asserts the gallery sits at `<project>/screenshots/`;
 EnvironmentBriefTest asserts the new location string, the ONLY-way rule
 phrases, and both cost rules. Static checks rc=0. CI must stay 20/20.
+
+## B.34 v9.14 - the FocusList verdict run: capture was a silent no-op, now fixed and loud (2026-10-04)
+
+The owner ran the comprehensive one-prompt acceptance (B.33 doc) on v9.13.
+The agent (muse-spar...) followed the protocol this time - capture.json,
+no hand-copied shots, one image read, honest final report - and the run
+convicted MY code, not the model:
+
+**1. `screenshots/` never materialized - root cause found by code reading,
+and it is exact.** HeadlessCapture used `View.postDelayed` for both the
+settle-snap and the 15s timeout. Runnables posted on a view that is NEVER
+attached to a window are queued until attachment - which never comes for
+an off-screen WebView. So onPageFinished fired, the snap never ran, the
+timeout never ran, nothing was saved, nothing was logged, and the WebView
+leaked. The visible pane's latest.png kept working because that WebView
+IS attached. Fix: both delays now run on a main-looper Handler
+(attachment-independent), plus LAYER_TYPE_SOFTWARE so the unattached
+draw path is explicit.
+
+**2. Silence itself was the deeper bug.** Every capture now writes its
+outcome to `.preview/console.log`: `CAPTURE saved screenshots/NNN-x.png
+(WxH) url=...` or `CAPTURE FAILED name=... url=... reason=timeout|
+draw-failed|bad-size|save-error:...`. The brief tells the agent to check
+that line and to REPORT a FAILED instead of improvising workarounds.
+A capture can no longer fail invisibly.
+
+**3. Centering, round three.** The hero carried the viewport meta this
+time (model obeyed) and the pane STILL collapsed it to the top -
+overlapping the nav - while Chrome centered it. That overlap is the
+signature of a zero-height centering box: viewport-unit variants
+(dvh/svh/lvh) resolve to nothing on older engines, modern models love
+them, and the Chrome app is usually years newer than the WebView
+provider. Honest status: hypothesis, not proof - the uploaded report
+with the quoted [webview: ...] version was lost to a sandbox reset.
+Defense shipped on both flanks: the brief now NAMES the device's actual
+engine (RuntimeManager passes WebView.getCurrentWebViewPackage() into
+EnvironmentBrief.install) and bans dvh/svh/lvh in favor of plain vh +
+html,body{height:100%;margin:0}.
+
+**4. Stale cross-project console lines (agent's own finding, correct):**
+console writes went to whichever project was SELECTED when the message
+arrived, not the project the pane was showing. New previewProjectDir
+tracks the pane's real project; set at every previewUrl assignment.
+
+**5. Token verdict:** 42,773 in / 7,932 out for the FULL comprehensive
+task vs 272,759 for a trivial two-pager before the cost rules - a 6.4x
+drop on a HARDER task. The remaining cost is the structural floor of an
+agentic loop without prompt caching; documented as such, not as a bug.
+
+**Tests:** EnvironmentBriefTest asserts the CAPTURE confirmation lines,
+the dvh ban, the height:100% recipe, and that a custom engine string
+lands in the brief. No new instrumented test: CI runs instrumented
+classes by explicit -e class filter only (20-ui-gates.sh/93-workspace),
+so a HeadlessCaptureTest would never execute there - the proof remains
+the owner's next device run, now with loud evidence either way. Static
+checks rc=0.

@@ -330,6 +330,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     var previewServer by remember { mutableStateOf<ai.opencode.android.preview.PreviewServer?>(null) }
     var previewUrl by remember { mutableStateOf("") }
     var previewOpen by remember { mutableStateOf(false) }
+    // v9.14: the project whose page the PANE is actually showing - console
+    // lines must land in THAT project's console.log, not in whichever
+    // project happens to be selected when a late message arrives (the
+    // FocusList run surfaced stale cross-project lines).
+    var previewProjectDir by remember { mutableStateOf<File?>(null) }
     // v9.10: bumped on every serve.json write so the pane reloads fresh bytes
     // even when the url stays the same (the agent edited the page in place).
     var previewReload by remember { mutableStateOf(0L) }
@@ -374,6 +379,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             if (server != null) {
                 val cleanPath = if (startPath.startsWith("/")) startPath else "/$startPath"
                 previewUrl = "http://127.0.0.1:${server.port}$cleanPath"
+                previewProjectDir = dir
                 previewOpen = true
             } else {
                 storageMessage = context.getString(R.string.sandbox_preview_failed)
@@ -413,11 +419,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     "http://127.0.0.1:${server.port}$cleanPath"
                 }
                 val metrics = context.resources.displayMetrics
-                headlessCapture.capture(url, metrics.widthPixels, metrics.heightPixels) { bitmap ->
-                    if (bitmap != null) {
-                        scope.launch {
-                            withContext(Dispatchers.IO) {
-                                runCatching {
+                headlessCapture.capture(url, metrics.widthPixels, metrics.heightPixels) { bitmap, reason ->
+                    scope.launch {
+                        val resultLine = withContext(Dispatchers.IO) {
+                            runCatching {
+                                if (bitmap != null) {
                                     val preview = File(dir, ".preview")
                                     preview.mkdirs()
                                     val shot = ai.opencode.android.preview.ShotStore.nextFile(dir, name)
@@ -427,7 +433,21 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                                     File(preview, "latest.png").outputStream().use { out ->
                                         bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 90, out)
                                     }
+                                    "CAPTURE saved ${ai.opencode.android.preview.ShotStore.SHOTS_DIR}/${shot.name} (${bitmap.width}x${bitmap.height}) url=$url"
+                                } else {
+                                    "CAPTURE FAILED name=$name url=$url reason=$reason"
                                 }
+                            }.getOrElse { e -> "CAPTURE FAILED name=$name url=$url reason=save-error:${e.message}" }
+                        }
+                        // v9.14: the capture pipeline must never be a silent
+                        // no-op again - every outcome lands in console.log.
+                        withContext(Dispatchers.IO) {
+                            runCatching {
+                                val folder = File(dir, ".preview")
+                                folder.mkdirs()
+                                val log = File(folder, "console.log")
+                                if (log.length() > 64_000) log.writeText("")
+                                log.appendText(resultLine + "\n")
                             }
                         }
                     }
@@ -476,6 +496,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 if (declaredPort in 1..65535) {
                     // The agent runs its own server - just point the pane at it.
                     previewUrl = "http://127.0.0.1:$declaredPort$cleanPath"
+                    previewProjectDir = dir
                     previewOpen = true
                 } else {
                     openPreviewFor(dir, cleanPath)
@@ -980,6 +1001,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     // (the agent's own, or the app's static one) already runs.
                     onOpenPort = { port ->
                         previewUrl = "http://127.0.0.1:$port/"
+                        previewProjectDir = projectDir
                         previewOpen = true
                     },
                     // The server stays up while the app lives so the phone's
@@ -1021,7 +1043,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     // says WHY it did not - one SyntaxError kills a whole
                     // script, and until now nobody could see it.
                     onConsolePreview = { line ->
-                        val dir = projectDir
+                        val dir = previewProjectDir ?: projectDir
                         if (dir != null) {
                             scope.launch {
                                 withContext(Dispatchers.IO) {

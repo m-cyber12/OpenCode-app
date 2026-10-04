@@ -184,7 +184,12 @@ class RuntimeManager private constructor(private val appContext: Context) {
             // runs a command (tools that exist, loopback-only networking,
             // the preview protocol). Injected via OpenCode's own
             // config.instructions; a user config we cannot parse is left alone.
-            val briefed = runCatching { EnvironmentBrief.install(paths.xdgConfigOpencode) }.getOrDefault(false)
+            // v9.14: tell the agent WHICH Chromium renders its preview and
+            // screenshots - an old provider explains rendering gaps vs Chrome.
+            val engine = runCatching {
+                android.webkit.WebView.getCurrentWebViewPackage()?.let { "${it.packageName} ${it.versionName}" }
+            }.getOrNull() ?: "unknown"
+            val briefed = runCatching { EnvironmentBrief.install(paths.xdgConfigOpencode, engine) }.getOrDefault(false)
             logger.host("environment brief: " + if (briefed) "installed (config.instructions)" else "skipped (user config left untouched)")
 
             // ---- 2. extraction + validation -------------------------------

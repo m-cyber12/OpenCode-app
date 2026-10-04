@@ -109,6 +109,14 @@ class EnvironmentBriefTest {
         assertTrue(text.contains("width=device-width"))
         assertTrue(text.contains("AT MOST ONCE"))
         assertTrue(text.contains("do NOT start your own server"))
+        // v9.14 (FocusList run): captures confirm themselves in console.log,
+        // the rendering engine is named, and the CSS trap that collapsed the
+        // centered hero (dvh/svh units on an older engine) is forbidden.
+        assertTrue(text.contains("CAPTURE saved screenshots/"))
+        assertTrue(text.contains("CAPTURE FAILED"))
+        assertTrue(text.contains("NEVER use dvh/svh/lvh"))
+        assertTrue(text.contains("html,body{height:100%;margin:0}"))
+        assertTrue(EnvironmentBrief.briefText("com.test.webview 123.4.5").contains("com.test.webview 123.4.5"))
         // And never promises what the device cannot do.
         assertFalse(text.contains("<device-ip>:port rendered as reachable"))
     }
