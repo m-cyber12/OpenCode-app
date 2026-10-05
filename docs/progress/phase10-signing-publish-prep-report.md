@@ -4209,3 +4209,41 @@ Static checks rc=0. Owner's agent-written ENVIRONMENT-REPORT.md verdict
 worth recording: "genuinely capable, honest environment... capture/
 preview pipeline is reliable and self-confirming" - with correct hard
 walls named (loopback-only, WebView-not-Chrome, settled-page captures).
+
+## B.36 v9.16 - the pane goes virgin-per-load, exactly like its proven-correct sibling (2026-10-05)
+
+**Owner evidence (v9.15 on device):** headless screenshot of the landing
+page: perfect, centered, Chrome-identical - AGAIN. Pane on the same URL:
+still showing the page scrolled (tagline clipped at the top edge). The
+v9.15 scrollTo(0,0)-at-onPageFinished was not enough.
+
+**Why, precisely:** the pane reuses ONE WebView across handoffs and
+reloads (web.tag + reload() since v9.10). Chromium restores a history
+entry's scroll offset ASYNCHRONOUSLY, after onPageFinished - so the
+v9.15 reset ran first and the restore overwrote it; reload() preserves
+scroll by design. The headless capture has been correct on this exact
+device, engine (WebView 153) and settings every single time for one
+reason: its WebView is created fresh per capture, with no history to
+restore.
+
+**v9.16:** the pane adopts the same semantics. PreviewPane wraps its
+AndroidView in key(url, reloadStamp): every agent handoff and every
+re-triggered serve.json write tears the old WebView down (AndroidView
+onRelease -> destroy(); identity-checked so a successor instance is
+never touched) and builds a virgin one whose single programmatic load
+happens in the factory. No shared instance, no history, no scroll
+restore, no stale cache (LOAD_NO_CACHE still set; the old clearCache-
+on-reload path is gone WITH the reload path itself - a fresh instance
+is strictly stronger). In-page link taps inside one load keep normal
+browser behavior. consumedStamp bookkeeping deleted - the key IS the
+bookkeeping now.
+
+**Honesty:** this is the third pane fix for what looked like one bug;
+each run eliminated a layer (v9.12 viewport flags - real but not this;
+v9.14 engine/dvh - exonerated by the version line; v9.15 scroll reset -
+right diagnosis, wrong timing). What makes v9.16 different in kind: the
+pane now shares the EXACT lifecycle of the code path that has rendered
+correctly on the owner's device in every single test. If the pane still
+differs from the gallery after this, the VIEWPORT line will say why in
+numbers. Static checks rc=0; CI must stay green (18 deterministic gates
++ 2 live skips are the current CI norm).

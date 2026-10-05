@@ -42,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -745,9 +746,15 @@ private fun PreviewPane(
     val latestCapture = rememberUpdatedState(onCapture)
     val latestConsole = rememberUpdatedState(onConsole)
     val webRef = remember { mutableStateOf<WebView?>(null) }
-    // v9.10: the stamp already consumed - initialised to the CURRENT stamp so
-    // first composition never double-loads; only a later bump forces reload.
-    val consumedStamp = remember { mutableStateOf(reloadStamp) }
+    // v9.16 (owner's third FocusList screenshot): REUSING one WebView was the
+    // last bug standing. Chromium restores a history entry's scroll offset
+    // ASYNCHRONOUSLY AFTER onPageFinished, overwriting the v9.15
+    // scrollTo(0,0); reload() keeps scroll by design. The headless capture
+    // was correct on the same device/engine/settings every single time for
+    // one reason only: its WebView is born fresh per capture. So the pane
+    // now gets the same semantics - key(url, reloadStamp) below tears the
+    // WebView down and builds a virgin one per agent handoff/reload. No
+    // history, nothing to restore, loads start at the top like a new tab.
     fun snap(web: WebView?) {
         val w = web ?: return
         if (w.width > 0 && w.height > 0) {
@@ -802,6 +809,7 @@ private fun PreviewPane(
                 .padding(horizontal = 8.dp, vertical = 4.dp)
                 .semantics { testTag = "sandbox_preview" },
         ) {
+            key(url, reloadStamp) {
             AndroidView(
                 factory = { ctx ->
                     WebView(ctx).apply {
@@ -891,22 +899,22 @@ private fun PreviewPane(
                             }
                         }
                         webRef.value = this
-                    }
-                },
-                update = { web ->
-                    if (web.tag != url) {
-                        web.tag = url
-                        web.loadUrl(url)
-                    } else if (consumedStamp.value != reloadStamp) {
-                        // Same url, new serve.json write: the agent says the
-                        // content changed - reload fresh bytes right now.
-                        consumedStamp.value = reloadStamp
-                        web.clearCache(true)
-                        web.reload()
+                        // Virgin instance per (url, stamp): the one and only
+                        // programmatic load happens right here, from zero.
+                        loadUrl(url)
                     }
                 },
                 modifier = Modifier.fillMaxSize(),
+                // The instance this key block created dies with the block -
+                // the next handoff/reload gets a WebView with no history at
+                // all. onRelease hands back exactly the discarded instance,
+                // so a freshly created successor is never touched.
+                onRelease = { w ->
+                    runCatching { w.destroy() }
+                    if (webRef.value === w) webRef.value = null
+                },
             )
+            }
         }
     }
 }
