@@ -4247,3 +4247,38 @@ correctly on the owner's device in every single test. If the pane still
 differs from the gallery after this, the VIEWPORT line will say why in
 numbers. Static checks rc=0; CI must stay green (18 deterministic gates
 + 2 live skips are the current CI norm).
+
+## B.37 v9.17 - load-after-size + on-screen geometry: the debug moves INTO the pane (2026-10-05)
+
+**Owner evidence (v9.16 on device): still wrong, and newly informative.**
+The pane shows the title clipped at the top edge with INTERNAL GAPS
+~1.75x larger than the correct headless render of the same page. A
+scrolled-but-correct layout keeps its gaps; inflated gaps mean the page
+was LAID OUT against wrong viewport numbers. v9.16 created exactly that
+opportunity: it called loadUrl inside the AndroidView factory, when the
+WebView is 0x0 and unattached - Chromium laid the page out against
+provisional geometry and the real size arrived underneath it. The
+headless engine has never rendered wrong on this device and it differs
+in precisely this: it sizes the WebView BEFORE loadUrl.
+
+**v9.17, the fix:** the pane's single programmatic load fires only when
+the view has its real, attached, non-zero size (OnLayoutChangeListener
+gate) - identical ordering to the headless path. Virgin-per-load from
+v9.16 stays (it is correct and kills the scroll-restore class); v9.16's
+sin was only the load timing.
+
+**v9.17, the real debug the owner demanded:** the pane itself now shows
+a one-line geometry strip under the header - the page-reported
+`VIEWPORT WxH dpr=... page=... scrollY=...` plus the native
+`view=WxHpx` - measured at load AND re-measured when settled
+(`VIEWPORT(settled)`), both also logged to console.log. Expected on the
+owner's device: `360x~605 dpr=2 page=~605 scrollY=0 | view=720x~1210px`.
+Any future wrong render carries its own numbers in the screenshot; no
+more pixel archaeology across lossy uploads (the sandbox wiped the
+uploaded ENVIRONMENT-REPORT.md for the fourth time this session - the
+on-screen strip is immune to that failure mode too).
+
+**Honesty:** fourth iteration on this symptom. What is different now:
+(a) the fix removes a mechanism PROVEN different from the correct path,
+not a hypothesis; (b) if anything still differs, the very screenshot
+that shows it will name the faulty number. Static checks rc=0.

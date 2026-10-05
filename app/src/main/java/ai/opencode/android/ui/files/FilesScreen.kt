@@ -763,6 +763,10 @@ private fun PreviewPane(
             latestCapture.value(bmp)
         }
     }
+    // v9.17 (owner: "we need a real change, a real debug"): the geometry the
+    // page ACTUALLY rendered against, shown IN the pane - every screenshot of
+    // a wrong layout now carries its own diagnosis. Reset per load.
+    val paneInfo = remember(url, reloadStamp) { mutableStateOf("") }
     Column(Modifier.fillMaxSize()) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
@@ -800,6 +804,16 @@ private fun PreviewPane(
             // v9.8 (owner): NO user-facing snapshot - seeing the page is the
             // AGENT'S capability. Every settled page load self-captures into
             // the project (.preview/latest.png) silently; the button is gone.
+        }
+        if (paneInfo.value.isNotEmpty()) {
+            Text(
+                text = paneInfo.value,
+                style = MaterialTheme.typography.labelSmall,
+                color = chat.muted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 12.dp),
+            )
         }
         Surface(
             color = MaterialTheme.colorScheme.surface,
@@ -871,19 +885,36 @@ private fun PreviewPane(
                                 runCatching { view.scrollTo(0, 0) }
                                 // ...and the geometry stops being a guess: one
                                 // line of real numbers per load, next to LOADED.
+                                val viewportJs =
+                                    "innerWidth+'x'+innerHeight+' dpr='+devicePixelRatio+" +
+                                        "' page='+document.documentElement.scrollHeight+' scrollY='+scrollY"
                                 runCatching {
-                                    view.evaluateJavascript(
-                                        "innerWidth+'x'+innerHeight+' dpr='+devicePixelRatio+" +
-                                            "' page='+document.documentElement.scrollHeight+' scrollY='+scrollY",
-                                    ) { v ->
-                                        runCatching { latestConsole.value("VIEWPORT " + (v ?: "?").trim('"')) }
+                                    view.evaluateJavascript(viewportJs) { v ->
+                                        runCatching {
+                                            val line = "VIEWPORT " + (v ?: "?").trim('"')
+                                            latestConsole.value(line)
+                                            paneInfo.value = "$line | view=${view.width}x${view.height}px"
+                                        }
                                     }
                                 }
                                 // One deferred self-snapshot per load: the page
                                 // settles, the frame lands in the project, the
                                 // agent can read what is on screen. Finite by
                                 // construction - a single delayed runnable.
-                                view.postDelayed({ runCatching { snap(view) } }, 600)
+                                // v9.17: re-measure the settled geometry too -
+                                // if it DRIFTED since load, that drift is the bug.
+                                view.postDelayed({
+                                    runCatching {
+                                        view.evaluateJavascript(viewportJs) { v ->
+                                            runCatching {
+                                                val line = "VIEWPORT(settled) " + (v ?: "?").trim('"')
+                                                latestConsole.value(line)
+                                                paneInfo.value = "$line | view=${view.width}x${view.height}px"
+                                            }
+                                        }
+                                    }
+                                    runCatching { snap(view) }
+                                }, 600)
                             }
 
                             override fun onReceivedError(
@@ -899,9 +930,23 @@ private fun PreviewPane(
                             }
                         }
                         webRef.value = this
-                        // Virgin instance per (url, stamp): the one and only
-                        // programmatic load happens right here, from zero.
-                        loadUrl(url)
+                        // v9.17: the LAST difference to the always-correct
+                        // headless engine was load ORDER. Headless sizes the
+                        // WebView BEFORE loadUrl; v9.16 loaded here at 0x0,
+                        // unattached - Chromium laid the page out against
+                        // provisional geometry and the real size arrived
+                        // underneath it (owner's screenshot: clipped title,
+                        // inflated gaps = a layout against wrong viewport
+                        // numbers, not a scroll). The single load now fires
+                        // only when the view has its real, attached,
+                        // non-zero size - identical ordering to headless.
+                        var loadedOnce = false
+                        addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
+                            if (!loadedOnce && v.width > 0 && v.height > 0) {
+                                loadedOnce = true
+                                (v as WebView).loadUrl(url)
+                            }
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxSize(),
