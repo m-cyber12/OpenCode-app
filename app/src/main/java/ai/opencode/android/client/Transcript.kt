@@ -94,6 +94,13 @@ class Transcript {
         val cost: Double = 0.0,
         val createdMs: Long = 0L,
         val completedMs: Long = 0L,
+        /**
+         * Upstream `MessageV2.Assistant.summary`: true on the assistant message
+         * that IS a compaction summary. v9.20 keys the automatic token
+         * regulator off this - a summary turn must never trigger another
+         * compaction, or the regulator would chase its own tail.
+         */
+        val summary: Boolean = false,
     )
 
     data class Prompt(
@@ -197,6 +204,7 @@ class Transcript {
                 cost = info?.optDouble("cost") ?: 0.0,
                 createdMs = info?.optJSONObject("time")?.optLong("created") ?: 0L,
                 completedMs = info?.optJSONObject("time")?.optLong("completed") ?: 0L,
+                summary = info?.optBoolean("summary") == true,
             )
             ids.add(m.id)
         }
@@ -367,6 +375,7 @@ class Transcript {
             cost = if (info.has("cost")) info.optDouble("cost") else existing?.cost ?: 0.0,
             createdMs = time?.optLong("created") ?: existing?.createdMs ?: 0L,
             completedMs = time?.optLong("completed") ?: existing?.completedMs ?: 0L,
+            summary = if (info.has("summary")) info.optBoolean("summary") else existing?.summary ?: false,
         )
         idsFor(sid).addIfAbsent(mid)
         dirty = true

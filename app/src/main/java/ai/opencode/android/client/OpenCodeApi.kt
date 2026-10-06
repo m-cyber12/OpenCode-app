@@ -161,10 +161,11 @@ class OpenCodeApi(
      * `SummarizePayload` (httpapi/groups/session.ts): providerID + modelID of
      * the model that writes the summary.
      */
-    fun summarizeSession(sessionID: String, providerID: String, modelID: String) {
+    fun summarizeSession(sessionID: String, providerID: String, modelID: String, auto: Boolean = false) {
         val body = org.json.JSONObject()
             .put("providerID", providerID)
             .put("modelID", modelID)
+        if (auto) body.put("auto", true)
         request("POST", "/session/$sessionID/summarize", body.toString())
     }
 

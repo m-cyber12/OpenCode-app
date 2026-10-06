@@ -250,27 +250,6 @@ fun ChatScreen(
             )
         }
 
-        // v9.19 token saver (owner: "the token usage scared me again"): when
-        // the LAST completed turn re-sent a heavy context, say so right where
-        // the user is about to type the next prompt, and offer the fix. The
-        // number is the turn's real input-token count - the same figure the
-        // message footer shows - so the chip never cries wolf on a cheap
-        // session. Hidden while busy (the count is in flux) and after one tap
-        // (the compaction itself proves or disproves the next turn).
-        val heavyTokens = if (state.busy) 0L else {
-            messages.lastOrNull { it.role != "user" && it.tokensInput > 0L }?.tokensInput ?: 0L
-        }
-        var compactAskedAt by remember(state.selectedSession) { mutableStateOf(-1) }
-        if (heavyTokens >= COMPACT_HINT_TOKENS && compactAskedAt != messages.size) {
-            CompactHintBar(
-                tokensIn = heavyTokens,
-                onCompact = {
-                    compactAskedAt = messages.size
-                    onCompactSession()
-                },
-            )
-        }
-
         AttachmentTray(attachments = state.attachments, onRemove = onRemoveAttachment)
 
         Composer(
@@ -549,51 +528,6 @@ private fun ChatHeader(
  * approving does, one gold action. The tap flips the agent to build and sends
  * the approval prompt - the reply that follows is the execution.
  */
-@Composable
-private fun CompactHintBar(tokensIn: Long, onCompact: () -> Unit) {
-    val chat = ChatTheme.chat
-    val actionLabel = stringResource(R.string.chat_compact_action)
-    Surface(
-        color = chat.toolContainer,
-        shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, chat.toolBorder),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 4.dp)
-            .semantics { testTag = "compact_hint_bar" },
-    ) {
-        Row(
-            modifier = Modifier.padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.chat_compact_hint, (tokensIn / 1000L).toInt()),
-                style = MaterialTheme.typography.bodySmall,
-                color = chat.muted,
-                modifier = Modifier.weight(1f),
-            )
-            Spacer(Modifier.width(8.dp))
-            TextButton(
-                onClick = onCompact,
-                modifier = Modifier.semantics {
-                    testTag = "compact_hint_action"
-                    contentDescription = actionLabel
-                },
-            ) {
-                Text(actionLabel, color = MaterialTheme.colorScheme.primary)
-            }
-        }
-    }
-}
-
-/**
- * v9.19: the hint fires at the context weight where a single further turn
- * costs real money on every paid model - the owner's own "it scared me"
- * reading was 112k in; 60k is early enough to matter and late enough to
- * never nag a normal session.
- */
-private const val COMPACT_HINT_TOKENS = 60_000L
-
 @Composable
 private fun PlanApproveBar(onApprove: () -> Unit) {
     val chat = ChatTheme.chat

@@ -1162,6 +1162,48 @@ class OpenCodeRepository(
             streamStatus = status,
         )
         maybeFailoverKey(snap, st)
+        maybeAutoCompact(snap)
+    }
+
+    /**
+     * v9.20 (owner: "normal chat tokens [should be] more controlled and
+     * calculated ... not too high" - nothing special to tap): the automatic
+     * token regulator. When a turn COMPLETES having re-sent a heavy context
+     * (its real input-token count, the same number the message footer
+     * shows), the app triggers upstream's auto-compaction by itself: the
+     * history becomes a short summary and the next turns stop paying for
+     * the whole transcript. Same one-shot-marker shape as the key failover
+     * above. Guards, each load-bearing:
+     *  - never while the session is busy (the count is still growing);
+     *  - never off a summary message (upstream marks compaction output with
+     *    `summary: true` - without this the regulator would chase its own
+     *    tail, because the summarize turn itself reads the full transcript);
+     *  - once per message id (a re-published snapshot must not re-fire);
+     *  - only a COMPLETED turn (completedMs set), so a mid-stream token
+     *    update cannot trigger on a number that is still moving.
+     */
+    private var lastAutoCompactMarker: String = ""
+
+    private fun maybeAutoCompact(snap: Transcript.Snapshot) {
+        val st = _state.value
+        val sid = st.selectedSession
+        val model = st.model
+        if (sid.isEmpty() || model == null || st.busy) return
+        val last = snap.session(sid)?.messages?.lastOrNull { it.role != "user" } ?: return
+        if (last.summary || last.completedMs <= 0L || last.tokensInput < AUTO_COMPACT_TOKENS) return
+        val marker = "$sid|${last.id}"
+        if (marker == lastAutoCompactMarker) return
+        lastAutoCompactMarker = marker
+        val kTokens = last.tokensInput / 1000L
+        scope.launch {
+            runCatching { api.summarizeSession(sid, model.providerID, model.modelID, auto = true) }
+                .onSuccess {
+                    _state.value = _state.value.copy(
+                        notice = "that turn re-sent ~${kTokens}k tokens - compacting the conversation automatically so the next ones stay cheap",
+                    )
+                }
+                .onFailure { fail("auto-compact", it) }
+        }
     }
 
     /**
@@ -1200,6 +1242,17 @@ class OpenCodeRepository(
     companion object {
         /** OpenCode's default coding agent; the shell endpoint requires one. */
         const val SHELL_AGENT = "build"
+
+        /**
+         * v9.20: where the automatic token regulator kicks in, per completed
+         * turn's input tokens. Balance, stated honestly: the compaction turn
+         * itself reads the full transcript ONCE at this size, so a low
+         * threshold would compact often and summarize away working context,
+         * while a high one lets the owner's scary numbers (112k in the
+         * FocusList run) build up first. 40k fires at roughly a third of
+         * that runaway and about never in a normal short session.
+         */
+        const val AUTO_COMPACT_TOKENS = 40_000L
 
         /**
          * Upstream's two built-in primary agents (`agent/agent.ts`): `build`

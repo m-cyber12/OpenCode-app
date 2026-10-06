@@ -4375,3 +4375,39 @@ resend of conversation+images are the remaining floor - the brief already
 teaches the image-read discipline that keeps that floor low. No gate was
 added or changed: the chip cannot appear in fixtures (no fixture reaches
 60k input tokens), and the menu gained one defaulted, untested entry.
+
+## B.40 v9.20 - the automatic token regulator (2026-10-06)
+
+Owner, correcting v9.19's direction: "I do not want to be anything
+special - these normal chat tokens [should be] more controlled and
+calculated and the token consumption is not too high." Not a feature to
+operate - the NORMAL flow must police itself. v9.20 turns the manual
+compact into a regulator:
+
+- **Transcript now carries upstream's `summary` flag** (`MessageV2.
+  Assistant.summary` - true on the assistant message that IS a compaction
+  summary), parsed on both the load and event paths, pinned by a new JVM
+  test (flag + tokens survive the event path; a later update without the
+  field does not erase it).
+- **`maybeAutoCompact` in the repository**, hooked into publishTranscript
+  beside the key-failover regulator and built in the same one-shot-marker
+  shape. When a COMPLETED turn re-sent >= 40k input tokens, the app calls
+  `POST /session/:id/summarize` with upstream's `auto: true` by itself and
+  says so in a notice ("that turn re-sent ~112k tokens - compacting ...").
+  Guards, each load-bearing: never while busy (the count is still moving),
+  never off a summary message (the summarize turn itself reads the full
+  transcript once - without the flag the regulator would chase its own
+  tail), once per message id, only completed turns.
+- **The v9.19 hint chip is GONE** - it was exactly the "something special"
+  the owner declined. The menu's `Compact conversation` stays as the
+  manual override; the heavy case is now handled without anyone tapping
+  anything.
+
+Threshold honesty (also in the code): compaction itself reads the full
+transcript once at the trigger size, so low thresholds would compact
+constantly and summarize away working context; 40k fires at about a third
+of the owner's 112k runaway and essentially never in a short session.
+What the regulator canNOT do: shrink growth WITHIN one long multi-step
+turn (the 112k was reached inside a single turn; only upstream's own
+overflow compaction acts mid-turn) - it guarantees the NEXT turn is cheap
+instead. Static checks rc=0; no gate added or changed.

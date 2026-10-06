@@ -136,6 +136,29 @@ class TranscriptPhase6Test {
     }
 
     @Test
+    fun summaryFlagAndTokensSurviveTheEventPath() {
+        // v9.20: the automatic token regulator reads BOTH fields off the
+        // transcript - the input-token count decides WHEN to compact, the
+        // upstream `summary: true` marker (the compaction's own output)
+        // decides when it must NOT, or it would chase its own tail.
+        apply(
+            "message.updated",
+            """{"info":{"id":"m1","sessionID":"s1","role":"assistant","summary":true,
+               "tokens":{"input":41000,"output":200},"time":{"created":1,"completed":2}}}""".trimIndent(),
+        )
+        val message = messages().single()
+        assertTrue(message.summary)
+        assertEquals(41000L, message.tokensInput)
+        assertTrue(message.completedMs > 0L)
+        // A later update WITHOUT the field must not erase the marker.
+        apply(
+            "message.updated",
+            """{"info":{"id":"m1","sessionID":"s1","role":"assistant","cost":0.01}}""",
+        )
+        assertTrue(messages().single().summary)
+    }
+
+    @Test
     fun startingANewTurnClearsThePreviousTurnsError() {
         apply("session.error", """{"sessionID":"s1","error":{"name":"ProviderAuthError","message":"invalid api key"}}""")
         assertNotNull(view()?.error)
