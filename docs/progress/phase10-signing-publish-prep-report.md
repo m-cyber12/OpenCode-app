@@ -4282,3 +4282,49 @@ on-screen strip is immune to that failure mode too).
 (a) the fix removes a mechanism PROVEN different from the correct path,
 not a hypothesis; (b) if anything still differs, the very screenshot
 that shows it will name the faulty number. Static checks rc=0.
+
+## B.38 v9.18 - the viewer host rewritten on researched ground (2026-10-06)
+
+**The v9.17 debug strip did its job on the first try.** Owner's pane
+shows: `VIEWPORT(settled) 344x606 dpr=2 page=606 scrollY=0 |
+view=688x1212px`. Read it: CSS viewport matches the native view exactly
+(dpr 2), the document is exactly viewport-high, nothing is scrolled -
+the page's LAYOUT is flawless. Yet the paint sits ~360 CSS px too high
+(tagline clipped at the pane's top edge, title above it, dead space
+below). Correct layout + displaced paint = the native view draws its
+content at the wrong place relative to its Compose slot. Owner demanded
+research; research delivered two community-documented defects that match
+exactly:
+
+1. WebView is inherently UNCLIPPED - as a direct Compose child it
+   "bleeds" rendering outside its own bounds
+   (stackoverflow.com/questions/79547984, incl. the maintainer-grade
+   explanation: WebView draws unbounded up to the next outer clip).
+2. WebView is an AbsoluteLayout descendant that resolves geometry "too
+   late" without a conventional ViewGroup parent; the standing community
+   fix is wrapping it in a FrameLayout
+   (slack-chats.kotlinlang.org #compose-android).
+
+And the "only the landing page" puzzle fits the same story: the landing
+page is the one loaded WHILE the pane's native layout is still settling
+- v9.17's own debug strip appeared only after onPageFinished, resizing
+the WebView mid-render and feeding the bug it was built to diagnose.
+app/about load later, via link taps inside an already-stable view.
+
+**v9.18, the rewrite:**
+- The WebView now lives inside a plain FrameLayout host (MATCH_PARENT,
+  clipChildren) - the conventional hierarchy every production WebView
+  sits in; Compose side gets clipToBounds() as the hard outer fence.
+- The geometry strip is composed from the FIRST frame with constant
+  one-line height ("viewport: measuring..." placeholder) - pane
+  geometry NEVER changes after load anymore.
+- Transparent WebView background (kills the unbounded background paint
+  and the white flash).
+- Everything proven before stays: virgin instance per (url, stamp),
+  load only after real attached size, VIEWPORT lines at load + settled,
+  onRelease destroys exactly the discarded instance.
+
+**Honesty:** the FrameLayout/clip explanation fits all evidence but is
+confirmed only by community reports, not yet by this device - the strip
+remains in place, so the next screenshot either shows a centered hero
+with healthy numbers, or it convicts a named number. Static checks rc=0.

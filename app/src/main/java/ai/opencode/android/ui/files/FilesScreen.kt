@@ -47,6 +47,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.viewinterop.AndroidView
@@ -805,16 +806,18 @@ private fun PreviewPane(
             // AGENT'S capability. Every settled page load self-captures into
             // the project (.preview/latest.png) silently; the button is gone.
         }
-        if (paneInfo.value.isNotEmpty()) {
-            Text(
-                text = paneInfo.value,
-                style = MaterialTheme.typography.labelSmall,
-                color = chat.muted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 12.dp),
-            )
-        }
+        // v9.18: ALWAYS composed, from the first frame - in v9.17 this strip
+        // appeared only after the page loaded, which RESIZED the WebView
+        // mid-render and fed the exact bug it was built to diagnose.
+        // Constant one-line height; only the text changes.
+        Text(
+            text = paneInfo.value.ifEmpty { "viewport: measuring..." },
+            style = MaterialTheme.typography.labelSmall,
+            color = chat.muted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 12.dp),
+        )
         Surface(
             color = MaterialTheme.colorScheme.surface,
             modifier = Modifier
@@ -826,7 +829,21 @@ private fun PreviewPane(
             key(url, reloadStamp) {
             AndroidView(
                 factory = { ctx ->
-                    WebView(ctx).apply {
+                    // v9.18 (owner: "search for html viewer and rewrite"):
+                    // two community-documented WebView-in-Compose defects
+                    // match the device evidence (layout numbers correct,
+                    // paint at the wrong place):
+                    //   1. WebView is inherently UNCLIPPED - it draws
+                    //      outside its own bounds as a direct Compose child
+                    //      (stackoverflow 79547984).
+                    //   2. WebView is an AbsoluteLayout descendant that
+                    //      resolves its geometry "too late" without a real
+                    //      ViewGroup parent (kotlinlang #compose-android).
+                    // The rewrite: a plain FrameLayout host - the
+                    // conventional hierarchy every production WebView sits
+                    // in - which clips children by default, plus
+                    // clipToBounds() on the Compose side.
+                    val web = WebView(ctx).apply {
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
                         // v9.10 (owner's "still no clock" spiral): a dev
@@ -947,15 +964,31 @@ private fun PreviewPane(
                                 (v as WebView).loadUrl(url)
                             }
                         }
+                        // No white flash over the themed Surface while the
+                        // first frame arrives (kotlinlang #compose-android).
+                        setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                    }
+                    android.widget.FrameLayout(ctx).apply {
+                        clipChildren = true
+                        clipToPadding = true
+                        addView(
+                            web,
+                            android.widget.FrameLayout.LayoutParams(
+                                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                            ),
+                        )
                     }
                 },
-                modifier = Modifier.fillMaxSize(),
-                // The instance this key block created dies with the block -
+                modifier = Modifier.fillMaxSize().clipToBounds(),
+                // The instances this key block created die with the block -
                 // the next handoff/reload gets a WebView with no history at
-                // all. onRelease hands back exactly the discarded instance,
-                // so a freshly created successor is never touched.
-                onRelease = { w ->
-                    runCatching { w.destroy() }
+                // all. onRelease hands back exactly the discarded host, so a
+                // freshly created successor is never touched.
+                onRelease = { host ->
+                    val w = host.getChildAt(0) as? WebView
+                    runCatching { host.removeAllViews() }
+                    runCatching { w?.destroy() }
                     if (webRef.value === w) webRef.value = null
                 },
             )
