@@ -4411,3 +4411,57 @@ What the regulator canNOT do: shrink growth WITHIN one long multi-step
 turn (the 112k was reached inside a single turn; only upstream's own
 overflow compaction acts mid-turn) - it guarantees the NEXT turn is cheap
 instead. Static checks rc=0; no gate added or changed.
+
+## B.41 v9.21 - split brief: index + topic briefs, and the CreatorsHub lessons (2026-10-06)
+
+Owner, after cloning their real site (github.com/m-cyber12/CreatorsHub)
+into the v9.18 sandbox: "after a lot of trial and error, and after
+consuming around 400,000 tokens, it finally managed to open the server"
+- and the structural idea: split the brief into one main brief plus
+topic briefs read only when needed, each summarized in the main brief so
+the model "immediately knows which brief to access and goes directly
+there."
+
+**Why the 400k happened (verified by cloning the repo here):** CreatorsHub
+is Next.js 15 + React 19 + three.js with `engines: node 24.x` - on a
+device whose ONLY JS runtime is bun. Every node_modules/.bin CLI starts
+with `#!/usr/bin/env node` and dies; the working pattern
+(`bun --bun run dev`, or the tool's JS entry under `bun` directly), the
+minutes-long `bun install`, and log-polled readiness all had to be
+discovered by trial. Knowledge, not capability - exactly what a brief is
+for.
+
+**The split (EnvironmentBrief v9.21):**
+- `environment.md` (the ONLY always-injected text, ~427 words): identity,
+  tool inventory + the no-node trap stated up front, the four quirks, the
+  one-line preview hand-off, the cost discipline, and the INDEX - per
+  topic one summary line + the absolute file path + when to read it.
+- `briefs/preview.md` - full hand-off/reload rules, watched ports, engine,
+  layout rules, static recipe. `briefs/screenshots.md` - capture.json
+  protocol + self-confirming CAPTURE lines. `briefs/webapp.md` - NEW: the
+  CreatorsHub distillation (read package.json first; background
+  `bun install` + poll install.log; `--bun` pattern; readiness from the
+  log then `nc`; serve.json with the LOG's port; placeholder `.env.local`
+  on env crashes; no lint/typecheck/build detours).
+- install() writes & refreshes all files, wires ONLY environment.md into
+  config.instructions; topic files cost tokens solely when the agent
+  reads them, once, on their own topic.
+
+**Tests (never weakened, per the standing rule):** every pre-split literal
+is now asserted against the installed SET; new pins: the index names
+every topic file by absolute path, the main brief stays under 480 words
+forever, only environment.md is injected, topic files exist and refresh
+when stale, and webapp.md keeps each CreatorsHub lesson verbatim
+(`#!/usr/bin/env node`, `bun --bun run dev`, install.log, `.env.local`,
+port-from-the-log).
+
+**Math:** always-paid text 568 -> 427 words; the 647 topic words are paid
+only when their topic is live, and at most once per session each.
+
+**Honesty:** the index depends on the agent respecting "read on demand,
+once" - the main brief says so twice, but a disobedient model could still
+read everything every time (that costs one read each, not a per-step
+tax). And the webapp lessons are distilled from the owner's report plus
+repo analysis, not yet re-proven on-device; the acceptance test is
+re-running the CreatorsHub "open server" ask on this build and comparing
+the bill against 400k.

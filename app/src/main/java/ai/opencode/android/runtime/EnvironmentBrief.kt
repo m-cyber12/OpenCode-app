@@ -33,15 +33,33 @@ object EnvironmentBrief {
     const val FILE_NAME = "environment.md"
 
     /**
-     * Install/refresh the brief and wire it into config.json.
-     * [engine] names the device's WebView provider+version (v9.14): the
-     * preview and all screenshots render with THAT engine, and the agent
-     * must target it instead of assuming the newest Chrome.
+     * v9.21 (owner): "split the brief ... one main brief that introduces the
+     * environment, the rest as separate briefs, each covering a specific
+     * topic. The model should only access those secondary briefs when
+     * necessary ... summarized or referenced in the main brief so it
+     * immediately knows which brief to access." The main brief is the only
+     * text injected into EVERY request; the topic files below live next to
+     * it and cost tokens only when their topic actually comes up (the agent
+     * reads them with its normal file tool, once).
+     */
+    const val BRIEFS_DIR = "briefs"
+
+    /**
+     * Install/refresh the main brief + topic briefs and wire ONLY the main
+     * one into config.json. [engine] names the device's WebView
+     * provider+version (v9.14): preview and screenshots render with THAT
+     * engine, and the agent must target it instead of assuming newest Chrome.
      */
     fun install(configDir: File, engine: String = "unknown"): Boolean = runCatching {
         configDir.mkdirs()
+        val dir = File(configDir, BRIEFS_DIR)
+        dir.mkdirs()
+        for ((name, text) in topicBriefs(engine)) {
+            val f = File(dir, name)
+            if (!f.isFile || f.readText() != text) f.writeText(text)
+        }
         val brief = File(configDir, FILE_NAME)
-        val text = briefText(engine)
+        val text = briefText(engine, dir.absolutePath)
         if (!brief.isFile || brief.readText() != text) brief.writeText(text)
         wireConfig(File(configDir, "config.json"), brief.absolutePath)
     }.getOrDefault(false)
@@ -67,23 +85,20 @@ object EnvironmentBrief {
         return true
     }
 
-
     /**
-     * The brief itself. Every fact in it is either enforced by this codebase
-     * (ports, serve.json, latest.png, loopback-only) or was verified on a
-     * real device (toybox inventory, seccomp noise, setsid-vs-nohup, the
-     * missing $TMPDIR from the FocusList run's honest-failure report).
-     * v9.19 diet (owner: "we should have a token saver"): this text rides
-     * in EVERY request of EVERY session, so the same rules now cost about
-     * half the tokens. Nothing was dropped - only prose.
+     * The MAIN brief - the only always-injected text, so every word here is
+     * paid on every step of every session. Identity, tool inventory, the
+     * device quirks that waste a turn each when rediscovered, the cost
+     * discipline, and the INDEX: per topic one summary line + the exact file
+     * to read, so the agent goes straight there instead of searching.
      */
-    fun briefText(engine: String = "unknown"): String {
-        val watched = PortScanner.CANDIDATE_PORTS.joinToString(", ")
+    fun briefText(engine: String = "unknown", briefsDir: String = BRIEFS_DIR): String {
         return """
 # Device environment (written by the OpenCode Android app; regenerated at startup - do not edit)
 
 You run INSIDE an Android app on the user's phone (no root, no VM). All
-facts below are enforced or device-verified - trust them, never probe.
+facts here and in the topic briefs are enforced or device-verified - trust
+them, never probe.
 
 ## Tools
 On PATH: `bun` (full runtime - `bun -e`, scripts, `Bun.serve`, `fetch`,
@@ -91,18 +106,56 @@ JSON, bundling: use it for everything python/node/curl would do), `git`,
 `rg`, plus /system/bin toybox (sh, ls, cp, mv, sed, grep, awk, tar, find,
 diff, ps, kill, nc, base64, sha256sum, ...).
 NOT installed - do not probe: python, node, npm, pip, perl, ruby, curl,
-wget, apt.
+wget, apt. There is NO node binary at all: npm-style CLIs start with
+`#!/usr/bin/env node` and die - the webapp brief below has the working
+pattern before you touch any package.json project.
 
 ## Quirks (device-verified)
 - stderr `[seccomp] preload handler installed (rc=0)` is harmless noise.
-- Only 127.0.0.1 is reachable; no LAN address exists - never offer
-  `http://<device-ip>:port` URLs.
-- `${'$'}TMPDIR` may NOT exist yet: `mkdir -p "${'$'}TMPDIR"` before using
-  it, or just write scratch/log files inside the project directory.
+- Only 127.0.0.1 is reachable; no LAN address exists.
+- `${'$'}TMPDIR` may NOT exist yet: `mkdir -p "${'$'}TMPDIR"` first, or keep
+  scratch/log files inside the project directory.
 - Plain `cmd &` and `nohup` can die with your shell; background with:
   `setsid sh serve.sh </dev/null >serve.log 2>&1 &`
 
-## Live preview - how the user sees your work
+## Live preview, in one line
+A server on a watched loopback port shows the user a "Live preview" button
+by itself; or hand off explicitly by writing `.preview/serve.json`
+({"port": 8080, "path": "/page.html"} - the path must EXIST; omit "port"
+for plain HTML/CSS/JS: the app serves the project itself, do NOT start
+your own server). Read the preview brief ONCE before your first hand-off.
+
+## Cost - every wasted step is billed
+The whole conversation, including EVERY image ever read, is re-sent to the
+model on each tool step. Read a screenshot AT MOST ONCE, as late as
+possible, never twice; check text before pixels; verify once - never
+re-probe what cannot have changed; read each topic brief at most once and
+only when its topic is actually at hand.
+
+## Topic briefs - the summary tells you which file; go straight there
+- $briefsDir/preview.md - full hand-off/reload rules, the watched port
+  list, rendering engine + layout rules (viewport meta, vh not dvh), the
+  no-dependency static-server recipe. Read before the FIRST preview
+  hand-off, or when the pane looks wrong.
+- $briefsDir/screenshots.md - stage screenshots via `.preview/capture.json`,
+  the self-confirming CAPTURE log lines, latest.png/console.log debugging.
+  Read before taking or reading any screenshot.
+- $briefsDir/webapp.md - running a real/cloned framework project (Next,
+  Vite, ...): install, starting dev servers WITHOUT node, readiness,
+  missing-env crashes. Read BEFORE the first command in any project that
+  has a package.json.
+""".trimIndent() + "\n"
+    }
+
+    /**
+     * The topic briefs, each a complete standalone reference for one job.
+     * File names are load-bearing: the main brief's index points at them.
+     */
+    fun topicBriefs(engine: String = "unknown"): Map<String, String> {
+        val watched = PortScanner.CANDIDATE_PORTS.joinToString(", ")
+        val preview = """
+# Preview & layout - read once, before the first hand-off
+
 The app watches these loopback ports: $watched.
 A server listening on any of them makes a "Live preview" button appear by
 itself. To hand off explicitly (ANY port, opens immediately), write
@@ -127,27 +180,64 @@ Layout rules (pane == browser):
 - Full-height/centered layouts: plain `vh` + `html,body{height:100%;margin:0}`.
   NEVER use dvh/svh/lvh - they can collapse the layout on this engine.
 
-## Stage screenshots
-Write `.preview/capture.json`:
-  {"name": "02-after-login-fix", "path": "/login.html", "port": 8080}
-(omit "port" -> the app serves the project). The page renders off-screen
-at device size into `screenshots/NNN-<name>.png` at the PROJECT ROOT
-(NNN = capture order), plus a refreshed latest.png. This is the ONLY way
-to take stage shots. Each capture confirms itself ~5s after the write, at
-the end of `.preview/console.log`: `CAPTURE saved screenshots/NNN-<name>.png ...`
-or `CAPTURE FAILED ... reason=...` - check that line; on FAILED report
-the reason, do not improvise.
-
-## Cost - every wasted step is billed
-The whole conversation, including EVERY image ever read, is re-sent to
-the model on each tool step. So: read a screenshot AT MOST ONCE, as late
-as possible, never twice; check text (console.log, page source) before
-pixels; verify once - never re-probe what cannot have changed; for plain
-HTML/CSS/JS do NOT start your own server - serve.json without "port".
-
 Static server recipe (bun, 8080, serves cwd; "/" falls back to the first
 *.html; 404 instead of crashing on misses):
   setsid bun -e 'Bun.serve({port:8080,hostname:"127.0.0.1",async fetch(r){let p=decodeURIComponent(new URL(r.url).pathname);if(p==="/"){const h=[...new Bun.Glob("*.html").scanSync(".")];p="/"+(h.includes("index.html")?"index.html":(h[0]??"index.html"))}const f=Bun.file("."+p);return await f.exists()?new Response(f):new Response("Not found: "+p,{status:404})}})' </dev/null >serve.log 2>&1 &
 """.trimIndent() + "\n"
+
+        val screenshots = """
+# Stage screenshots - read once, before the first screenshot
+
+Write `.preview/capture.json`:
+  {"name": "02-after-login-fix", "path": "/login.html", "port": 8080}
+(omit "port" -> the app serves the project). The page renders off-screen
+at device size into `screenshots/NNN-<name>.png` at the PROJECT ROOT
+(NNN = capture order), plus a refreshed `.preview/latest.png`. This is
+the ONLY way to take stage shots - never copy latest.png around by hand.
+Each capture confirms itself ~5s after the write, at the end of
+`.preview/console.log`: `CAPTURE saved screenshots/NNN-<name>.png ...` or
+`CAPTURE FAILED ... reason=...` - check that line instead of assuming; on
+FAILED report the reason, do not improvise workarounds. Name shots after
+the stage they document, and remember the cost rule: each image you read
+rides along on every later step.
+""".trimIndent() + "\n"
+
+        val webapp = """
+# Running a real project (package.json exists) - read BEFORE the first command
+
+Verified on this device with a cloned Next.js 15 + React 19 site. Follow
+the order; every skipped step below was paid for in wasted turns once.
+
+1. Read package.json FIRST - `scripts` and `engines`. Never guess the
+   toolchain, never run a script you have not read.
+2. Install once, in the background, and WAIT:
+   `mkdir -p "${'$'}TMPDIR" 2>/dev/null; setsid bun install </dev/null >install.log 2>&1 &`
+   then poll `tail -3 install.log`. A big dependency tree takes minutes on
+   a phone - waiting is correct, re-running is not. bun reads
+   package-lock.json / yarn.lock fine.
+3. There is NO node binary. Every node_modules/.bin CLI starts with
+   `#!/usr/bin/env node` and dies when run directly or via plain
+   `bun run`. Start dev servers as:
+   `setsid bun --bun run dev </dev/null >dev.log 2>&1 &`
+   (`--bun` forces the bin scripts onto bun). If a tool still execs node,
+   call its JS entry directly: `bun node_modules/next/dist/bin/next dev`.
+4. Readiness lives in the log, not in your patience: poll `tail -5 dev.log`
+   until the framework prints its ready/port line (first compile can take
+   a minute+), then confirm: `nc -w 2 127.0.0.1 3000 < /dev/null`.
+5. Only then hand off: `.preview/serve.json` {"port": 3000, "path": "/"}.
+   If the log printed a DIFFERENT port than you expected, trust the log
+   and put that port in serve.json.
+6. Crash on missing env vars (API keys, database URLs): create
+   `.env.local` with placeholder values and restart - a dev preview does
+   not need real secrets to render pages.
+7. Serving needs NONE of: lint, typecheck, test, e2e, `next build`. Do
+   not run them unless the user asked for them.
+""".trimIndent() + "\n"
+
+        return linkedMapOf(
+            "preview.md" to preview,
+            "screenshots.md" to screenshots,
+            "webapp.md" to webapp,
+        )
     }
 }
