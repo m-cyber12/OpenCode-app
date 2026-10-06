@@ -121,9 +121,10 @@ pattern before you touch any package.json project.
 ## Live preview, in one line
 A server on a watched loopback port shows the user a "Live preview" button
 by itself; or hand off explicitly by writing `.preview/serve.json`
-({"port": 8080, "path": "/page.html"} - the path must EXIST; omit "port"
-for plain HTML/CSS/JS: the app serves the project itself, do NOT start
-your own server). Read the preview brief ONCE before your first hand-off.
+({"port": 8080, "path": "/page.html"} - the path must name a file that
+EXISTS; omit "port" for plain HTML/CSS/JS: the app serves the project
+itself, do NOT start your own server). Read the preview brief ONCE
+before your first hand-off.
 
 ## Cost - every wasted step is billed
 The whole conversation, including EVERY image ever read, is re-sent to the

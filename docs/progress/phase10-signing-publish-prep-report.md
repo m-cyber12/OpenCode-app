@@ -4465,3 +4465,15 @@ tax). And the webapp lessons are distilled from the owner's report plus
 repo analysis, not yet re-proven on-device; the acceptance test is
 re-running the CreatorsHub "open server" ask on this build and comparing
 the bill against 400k.
+
+### B.41.1 - the red run, owned (2026-10-06)
+
+Run 37510228084 (34e538d) FAILED. Cause, found by rendering the brief
+strings exactly as Kotlin would and replaying every test assertion
+(CI logs were unreachable from the sandbox): the main brief's one-line
+preview paragraph said "the path must EXIST" where the pinned literal is
+EXISTS, and line-wrapped "do NOT start your own server" across a
+newline, breaking two substring pins - my own tests caught my own
+prose edit, which is precisely what they are for. Fixed by rewording the
+paragraph (431 words, still under the 480 budget); the assertion replay
+now passes clean. No code-path change.
