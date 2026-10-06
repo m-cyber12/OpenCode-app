@@ -509,6 +509,30 @@ class OpenCodeRepository(
         scope.launch { runCatching { api.abortSession(sid) }.onFailure { fail("abort", it) } }
     }
 
+    /**
+     * v9.19 token saver — upstream's `/compact` over POST /session/:id/summarize.
+     * The server has the CURRENT model write a short summary of the history;
+     * every later turn then resends that summary instead of the whole
+     * transcript, which is where the per-step input tokens actually go. The
+     * compaction itself streams like a normal turn (the event stream keeps the
+     * transcript and busy state honest while it runs).
+     */
+    fun compactSession() {
+        val st = _state.value
+        val sid = st.selectedSession
+        val model = st.model
+        if (sid.isEmpty() || model == null || st.busy) return
+        scope.launch {
+            runCatching { api.summarizeSession(sid, model.providerID, model.modelID) }
+                .onSuccess {
+                    _state.value = _state.value.copy(
+                        notice = "compacting conversation - older turns become a short summary, cutting what every next step re-sends",
+                    )
+                }
+                .onFailure { fail("compact", it) }
+        }
+    }
+
     // ---- undo / retry (upstream's own revert choreography) -----------------
 
     /**

@@ -67,114 +67,87 @@ object EnvironmentBrief {
         return true
     }
 
+
     /**
      * The brief itself. Every fact in it is either enforced by this codebase
      * (ports, serve.json, latest.png, loopback-only) or was verified on a
-     * real device (toybox inventory, seccomp noise, setsid-vs-nohup).
-     * Kept deliberately compact: it rides along in every session's context
-     * (~600 tokens) and pays for itself by ending blind probing.
+     * real device (toybox inventory, seccomp noise, setsid-vs-nohup, the
+     * missing $TMPDIR from the FocusList run's honest-failure report).
+     * v9.19 diet (owner: "we should have a token saver"): this text rides
+     * in EVERY request of EVERY session, so the same rules now cost about
+     * half the tokens. Nothing was dropped - only prose.
      */
     fun briefText(engine: String = "unknown"): String {
         val watched = PortScanner.CANDIDATE_PORTS.joinToString(", ")
         return """
 # Device environment (written by the OpenCode Android app; regenerated at startup - do not edit)
 
-You run INSIDE an Android app on the user's phone. No root, no VM, no other
-package manager. The facts below are enforced or device-verified - trust them
-instead of probing.
+You run INSIDE an Android app on the user's phone (no root, no VM). All
+facts below are enforced or device-verified - trust them, never probe.
 
-## Tools that exist (on PATH)
-- `bun` - full Bun JavaScript runtime. Your escape hatch for everything:
-  one-liners (`bun -e '...'`), scripts, HTTP servers (`Bun.serve`), HTTP
-  requests (`fetch`), JSON, bundling.
-- `git`, `rg` (ripgrep) - real builds.
-- `/system/bin` toybox: sh, ls, cp, mv, sed, grep, awk, tar, gzip, find,
-  diff, ps, kill, nc/netcat, base64, sha256sum, and the usual rest.
+## Tools
+On PATH: `bun` (full runtime - `bun -e`, scripts, `Bun.serve`, `fetch`,
+JSON, bundling: use it for everything python/node/curl would do), `git`,
+`rg`, plus /system/bin toybox (sh, ls, cp, mv, sed, grep, awk, tar, find,
+diff, ps, kill, nc, base64, sha256sum, ...).
+NOT installed - do not probe: python, node, npm, pip, perl, ruby, curl,
+wget, apt.
 
-## Tools that do NOT exist
-No python, node, npm, npx, pip, perl, ruby, curl, wget, apt, brew.
-Do not spend turns probing for them - use `bun` for anything they would do.
+## Quirks (device-verified)
+- stderr `[seccomp] preload handler installed (rc=0)` is harmless noise.
+- Only 127.0.0.1 is reachable; no LAN address exists - never offer
+  `http://<device-ip>:port` URLs.
+- `${'$'}TMPDIR` may NOT exist yet: `mkdir -p "${'$'}TMPDIR"` before using
+  it, or just write scratch/log files inside the project directory.
+- Plain `cmd &` and `nohup` can die with your shell; background with:
+  `setsid sh serve.sh </dev/null >serve.log 2>&1 &`
 
-## Quirks (device-verified; rediscovering each one wastes a turn)
-- stderr lines `[seccomp] preload handler installed (rc=0)` are harmless
-  loader noise. Ignore them everywhere.
-- `ip addr` fails (no netlink permission) and there is no usable LAN address:
-  the ONLY reachable interface is 127.0.0.1. Other devices can never connect;
-  do not offer `http://<device-ip>:port` URLs.
-- Backgrounding: plain `cmd &` and `nohup` can die with your shell. Use:
-  `setsid sh serve.sh </dev/null >"${'$'}TMPDIR/serve.log" 2>&1 &`
-- Stay inside the project directory (your cwd); `${'$'}TMPDIR` is for scratch.
-
-## Live preview - how the user sees your work (no permission needed)
-The app probes these loopback ports every few seconds:
-  $watched
-The moment your server listens on one of them, a "Live preview" button
-appears in the app by itself - start a server on 127.0.0.1 and you are done.
-
-To hand off explicitly (ANY port, and the preview opens in front of the user
-immediately), write `.preview/serve.json` at the project root:
+## Live preview - how the user sees your work
+The app watches these loopback ports: $watched.
+A server listening on any of them makes a "Live preview" button appear by
+itself. To hand off explicitly (ANY port, opens immediately), write
+`.preview/serve.json` at the project root:
   {"port": 8080, "path": "/page.html"} -> show the server you started
-  {"path": "/page.html"}               -> no server needed: the app itself
-                                          serves this project over loopback http
-A fresh write of that file is the trigger - and re-writing it after editing
-the page RELOADS the preview with fresh bytes (the app's preview never
-caches), so re-trigger instead of wondering whether the user sees the new
-version. Two rules that prevent a broken first impression:
-  1. `path` must point at a file that actually EXISTS. "/" only works if
-     index.html exists - otherwise use the real filename ("/1.html").
-  2. Start your server and check it answers BEFORE writing serve.json
-     (`nc -w 2 127.0.0.1 8080 < /dev/null`); the preview opens within ~1.5s
-     of the write and must not land on a dead or empty port.
+  {"path": "/page.html"}               -> no server: the app serves this
+                                          project over loopback itself
+Re-writing serve.json after edits RELOADS the preview with fresh bytes
+(never cached) - re-trigger instead of wondering. Two rules:
+  1. `path` must name a file that EXISTS ("/" needs index.html).
+  2. Confirm the server answers BEFORE the hand-off:
+     `nc -w 2 127.0.0.1 8080 < /dev/null`.
 
-After each page load the app screenshots the preview into
-`.preview/latest.png` - read it to SEE what the user currently sees.
-The preview and all screenshots render with THIS engine, not with the
-Chrome app: $engine. Target that version's CSS/JS support.
-Its JavaScript console and load errors are mirrored to
-`.preview/console.log`. When the preview looks wrong, read console.log
-FIRST - one SyntaxError silently kills a whole script. latest.png shows
-WHAT rendered; console.log shows WHY not. Every pane load also logs a
-`VIEWPORT WxH dpr=... page=... scrollY=...` line - check layout geometry
-from this TEXT before spending a screenshot read on it.
-Layout rules that keep the preview identical to a browser:
-- Always include `<meta name="viewport" content="width=device-width,
-  initial-scale=1">`.
-- For full-height or vertically centered layouts use plain `vh` units
-  plus `html,body{height:100%;margin:0}`. NEVER use dvh/svh/lvh units -
-  on this device's engine they can resolve to nothing and the layout
-  silently collapses to the top of the page.
+After each load the app saves the frame to `.preview/latest.png` and
+mirrors the page's JS console + load errors + a geometry line
+(`VIEWPORT WxH dpr=... page=... scrollY=...`) to `.preview/console.log`.
+Debug in that order: console.log and the VIEWPORT text are cheap, a
+screenshot read is expensive. Preview and screenshots render with THIS
+engine, not the Chrome app: $engine - target it.
+Layout rules (pane == browser):
+- Always `<meta name="viewport" content="width=device-width, initial-scale=1">`.
+- Full-height/centered layouts: plain `vh` + `html,body{height:100%;margin:0}`.
+  NEVER use dvh/svh/lvh - they can collapse the layout on this engine.
 
-## Screenshots, organized - document any stage you consider important
+## Stage screenshots
 Write `.preview/capture.json`:
   {"name": "02-after-login-fix", "path": "/login.html", "port": 8080}
-The app loads that page OFF-SCREEN at device size (no preview needs to be
-open) and saves the settled frame as `screenshots/NNN-<name>.png` at the
-PROJECT ROOT, next to your other files (NNN = capture order), plus a
-refreshed latest.png. Omit "port" to have the app serve the project
-itself. This is the ONLY way to take stage screenshots - do not copy
-latest.png around by hand. Every capture CONFIRMS ITSELF: ~5s after the
-capture.json write, a line appears at the end of `.preview/console.log` -
-`CAPTURE saved screenshots/NNN-<name>.png ...` on success or
-`CAPTURE FAILED ... reason=...` on failure. Check that line instead of
-assuming; if it says FAILED, report the reason, do not improvise
-workarounds. Name shots after the stage they document.
+(omit "port" -> the app serves the project). The page renders off-screen
+at device size into `screenshots/NNN-<name>.png` at the PROJECT ROOT
+(NNN = capture order), plus a refreshed latest.png. This is the ONLY way
+to take stage shots. Each capture confirms itself ~5s after the write, at
+the end of `.preview/console.log`: `CAPTURE saved screenshots/NNN-<name>.png ...`
+or `CAPTURE FAILED ... reason=...` - check that line; on FAILED report
+the reason, do not improvise.
 
-## Cost - every wasted step is billed, keep turns lean
-- The whole conversation is RE-SENT to the model on every tool step, and
-  an image you read is re-sent with it, every step, until the task ends.
-  Read a screenshot AT MOST ONCE, as late as possible (right before you
-  verify or answer), and never re-read one you have already seen.
-- Check text first: console.log and the page source are cheap;
-  screenshots are expensive.
-- For plain HTML/CSS/JS, do NOT start your own server - write serve.json
-  without "port" and the app serves the project. Only run a server for
-  dynamic behavior the static server cannot do.
-- One verification is enough; do not re-probe, re-list or re-read files
-  that cannot have changed.
+## Cost - every wasted step is billed
+The whole conversation, including EVERY image ever read, is re-sent to
+the model on each tool step. So: read a screenshot AT MOST ONCE, as late
+as possible, never twice; check text (console.log, page source) before
+pixels; verify once - never re-probe what cannot have changed; for plain
+HTML/CSS/JS do NOT start your own server - serve.json without "port".
 
-Static server recipe (bun, port 8080, current directory; serves index.html
-or the first *.html at "/", answers 404 instead of crashing on misses):
-  setsid bun -e 'Bun.serve({port:8080,hostname:"127.0.0.1",async fetch(r){let p=decodeURIComponent(new URL(r.url).pathname);if(p==="/"){const h=[...new Bun.Glob("*.html").scanSync(".")];p="/"+(h.includes("index.html")?"index.html":(h[0]??"index.html"))}const f=Bun.file("."+p);return await f.exists()?new Response(f):new Response("Not found: "+p,{status:404})}})' </dev/null >"${'$'}TMPDIR/serve.log" 2>&1 &
+Static server recipe (bun, 8080, serves cwd; "/" falls back to the first
+*.html; 404 instead of crashing on misses):
+  setsid bun -e 'Bun.serve({port:8080,hostname:"127.0.0.1",async fetch(r){let p=decodeURIComponent(new URL(r.url).pathname);if(p==="/"){const h=[...new Bun.Glob("*.html").scanSync(".")];p="/"+(h.includes("index.html")?"index.html":(h[0]??"index.html"))}const f=Bun.file("."+p);return await f.exists()?new Response(f):new Response("Not found: "+p,{status:404})}})' </dev/null >serve.log 2>&1 &
 """.trimIndent() + "\n"
     }
 }

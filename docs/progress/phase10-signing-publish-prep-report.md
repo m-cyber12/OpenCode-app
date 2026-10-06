@@ -4328,3 +4328,50 @@ app/about load later, via link taps inside an already-stable view.
 confirmed only by community reports, not yet by this device - the strip
 remains in place, so the next screenshot either shows a centered hero
 with healthy numbers, or it convicts a named number. Static checks rc=0.
+
+## B.39 v9.19 - the token saver (2026-10-06)
+
+v9.18 verdict first: the owner's three screenshots show the pane rendering
+the FocusList landing page EXACTLY like Chrome - hero centered, strip
+reading `VIEWPORT(settled) 344x606 dpr=2 page=606 scrollY=0 | view=688x121...`.
+Five rounds of elimination, closed by the FrameLayout/clip rewrite. Done.
+
+The owner's next complaint, verbatim: "the token usage scared me again,
+even I said it 'open server' and it just use 12000 token for input - we
+should have a token saver progress." The FocusList run's own footer read
+112,497 in / 10,016 out. Three levers shipped:
+
+1. **Compact conversation (upstream's /compact, surfaced).** The bundled
+   opencode 1.18.23 exposes `POST /session/:id/summarize` ("Generate a
+   concise summary of the session using AI compaction to preserve key
+   information" - httpapi/groups/session.ts). The app now calls it with the
+   currently selected model: `OpenCodeApi.summarizeSession`,
+   `OpenCodeRepository.compactSession()` (no-ops while busy or modelless;
+   failure lands in the normal error banner). After compaction the server
+   resends the short summary instead of the whole transcript - that
+   transcript is exactly where a 12k-input "open server" turn goes.
+2. **Where it lives.** A `Compact conversation` entry in the hamburger menu
+   (tag `compact_session`), always reachable - plus a smart hint bar above
+   the composer (tags `compact_hint_bar`/`compact_hint_action`) that appears
+   only when the LAST completed turn's real input-token count (the same
+   figure the message footer shows) reaches 60k. One tap compacts and the
+   hint hides until the transcript grows again; it never renders while busy.
+   The owner skipped the placement questions, so these are the defaults the
+   question offered: menu + smart chip, no silent auto-compaction.
+3. **Brief diet + the $TMPDIR lie.** The environment brief rides in EVERY
+   request of every session; it was 902 words (~1250 tokens) and is now 568
+   (~780) with every enforced fact, every tested literal and both recipes
+   intact - prose went, rules stayed. And the FocusList agent's
+   honest-failure report ("$TMPDIR ... did not exist - first start failed")
+   exposed that the brief recommended logging into a directory the device
+   does not guarantee: the recipes now log project-locally (`>serve.log`)
+   and the quirks section teaches `mkdir -p "$TMPDIR"` before any scratch
+   use. EnvironmentBriefTest pins both (mkdir guard present,
+   `$TMPDIR/serve.log` banned).
+
+Honesty: compaction itself costs one summarize turn and its quality depends
+on the model writing the summary; the ~780-token brief and the per-step
+resend of conversation+images are the remaining floor - the brief already
+teaches the image-read discipline that keeps that floor low. No gate was
+added or changed: the chip cannot appear in fixtures (no fixture reaches
+60k input tokens), and the menu gained one defaulted, untested entry.

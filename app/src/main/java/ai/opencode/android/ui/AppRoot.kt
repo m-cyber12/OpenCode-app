@@ -1284,6 +1284,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     // sent with the next prompt (PromptInput.agent / .variant).
                     onPickMode = { mode -> repository.setAgentMode(mode) },
                     onPickThinking = { variant -> repository.setThinkingVariant(variant) },
+                    // v9.19 token saver: upstream /compact - the server summarizes
+                    // the history so later turns stop resending the whole transcript.
+                    onCompactSession = { repository.compactSession() },
                     onPermissionReply = { id, reply -> repository.replyPermission(id, reply) },
                     onQuestionSubmit = { id, answers -> repository.replyQuestion(id, answers) },
                     onQuestionSkip = { id -> repository.rejectQuestion(id) },

@@ -154,6 +154,20 @@ class OpenCodeApi(
         request("DELETE", "/session/$sessionID")
     }
 
+    /**
+     * POST /session/:id/summarize — upstream's `/compact` (v9.19 token saver).
+     * The server runs AI compaction over the history: later turns resend the
+     * short summary instead of the full transcript. Payload per upstream
+     * `SummarizePayload` (httpapi/groups/session.ts): providerID + modelID of
+     * the model that writes the summary.
+     */
+    fun summarizeSession(sessionID: String, providerID: String, modelID: String) {
+        val body = org.json.JSONObject()
+            .put("providerID", providerID)
+            .put("modelID", modelID)
+        request("POST", "/session/$sessionID/summarize", body.toString())
+    }
+
     /** GET /session/:id/message?limit= — history with parts. */
     fun messages(sessionID: String, limit: Int = 200): List<MessageInfo> {
         val arr = org.json.JSONArray(

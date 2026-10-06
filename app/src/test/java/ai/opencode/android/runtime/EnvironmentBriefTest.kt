@@ -118,6 +118,11 @@ class EnvironmentBriefTest {
         // v9.15: geometry is text first - the VIEWPORT line beats an image read.
         assertTrue(text.contains("VIEWPORT"))
         assertTrue(text.contains("html,body{height:100%;margin:0}"))
+        // v9.19 (FocusList run's honest failure: $TMPDIR did not exist and the
+        // first serve died on its log file): the brief must teach the mkdir
+        // guard, and no recipe may log into $TMPDIR any more.
+        assertTrue(text.contains("mkdir -p \"\$TMPDIR\""))
+        assertFalse(text.contains("\$TMPDIR/serve.log"))
         assertTrue(EnvironmentBrief.briefText("com.test.webview 123.4.5").contains("com.test.webview 123.4.5"))
         // And never promises what the device cannot do.
         assertFalse(text.contains("<device-ip>:port rendered as reachable"))
