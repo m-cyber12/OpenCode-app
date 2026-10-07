@@ -1,7 +1,7 @@
-=== Phase 10 static checks 2026-10-07T03:32:02Z ===
+=== Phase 10 static checks 2026-10-07T13:31:27Z ===
 
 === phase 9 static checks (not weakened) ===
-=== Phase 9 static checks 2026-10-07T03:32:02Z ===
+=== Phase 9 static checks 2026-10-07T13:31:27Z ===
 OK   bash -n on 42 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8/phase9 driver
@@ -15,11 +15,11 @@ NOTE phase9 workflow trigger branch is the Phase 9 session's (expected when read
 NOTE workflow check rc=1 (see above)
 
 === kotlin nested-block-comment scan (phase5 lesson) ===
-checked 124 kotlin files, 0 with block-comment anomalies
+checked 126 kotlin files, 0 with block-comment anomalies
 OK   kotlin nested-block-comment scan (phase5 lesson)
 
 === kotlin bracket/annotation balance ===
-check-kotlin-balance: 124 files, 0 findings
+check-kotlin-balance: 126 files, 0 findings
 OK   kotlin bracket/annotation balance
 
 === androidTest method names are dex-safe identifiers (D8 rule) ===
@@ -27,14 +27,14 @@ OK   androidTest method names are dex-safe identifiers (D8 rule)
 
 === ui strings + resources ===
 --- check-ui-strings (hardcoded copy + URL literals)
-check-ui-strings: 76 kotlin files, 0 hardcoded-copy findings, 0 url findings
+check-ui-strings: 77 kotlin files, 0 hardcoded-copy findings, 0 url findings
 --- strings.xml sanity: every referenced R.string.* must exist
-strings.xml: 489 defined, 451 referenced, 0 missing, 38 unused (action_close, action_copy, ask_permission_metadata, ask_permission_request, ask_permission_waiting, availability_detail_label, availability_provider_note, chat_attachment_size)
+strings.xml: 499 defined, 461 referenced, 0 missing, 38 unused (action_close, action_copy, ask_permission_metadata, ask_permission_request, ask_permission_waiting, availability_detail_label, availability_provider_note, chat_attachment_size)
 check-ui-strings.sh rc=0
 OK   ui strings + resources
 
 === ui accessibility (contentDescription / labels) ===
-check-ui-a11y: 24 files, 36 icon/image, 82 button, 16 field call sites, 0 findings
+check-ui-a11y: 24 files, 36 icon/image, 85 button, 17 field call sites, 0 findings
 OK   ui accessibility (contentDescription / labels)
 
 === ui lazy lists (no take(8), no eager forEach) ===
@@ -103,7 +103,7 @@ PASS a visible match is not flagged (rc=0) (rc=0 out='1020 1740')
 PASS has still finds an off-screen node (a tag being present is news) (rc=0)
 PASS a device that marks everything not-shown does not blind the reader (rc=0)
 PASS attrs reports the attribute set and the hidden count (rc=0 out='nodes=4 2 node(s) marked shown=false\nbounds:4 class:4 clickable:4 content-desc:4 enabled:4 index:4 package:4 resource-id:4 shown:4 text:4')
-PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmp3jdaf07v/broken.xml')
+PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmpmte16qre/broken.xml')
 p10d-ui selftest: 20 checks, 0 failed
 SELFTEST PASS
 OK   uiautomator dump reader self-test (tap targets, disabled states, diagnostics)
@@ -118,7 +118,7 @@ NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/
 NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:556 Icons.Filled.ArrowBack (use AutoMirrored.Filled.ArrowBack)
 NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:781 Icons.Filled.ArrowBack (use AutoMirrored.Filled.ArrowBack)
 NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:1346 Icons.Filled.Send (use AutoMirrored.Filled.Send)
-check-compose-icons: 76 kotlin files, 0 not-in-core, 6 deprecated references
+check-compose-icons: 77 kotlin files, 0 not-in-core, 6 deprecated references
 OK   compose icon availability (material-icons-core only)
 
 === harness/app contract (v4 fixtures, driver needles, gate tags) ===
