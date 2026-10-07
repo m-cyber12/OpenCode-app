@@ -350,16 +350,37 @@
     <!-- v9.23: connectors - GitHub first. No bare apostrophes (aapt2). -->
     <string name="settings_section_connectors">Connectors</string>
     <!-- Classic token page: `scopes`/`description` query params pre-select the
-         scope; the fine-grained page prefills nothing, hence the classic flow. -->
-    <string name="github_token_url" translatable="false">https://github.com/settings/tokens/new?scopes=repo&amp;description=OpenCode+Android</string>
+         scopes; the fine-grained page prefills nothing, hence the classic flow.
+         v9.24 (owner): repo + workflow - "access like Arena's": contents, PRs,
+         Actions, AND pushing .github/workflows files (repo alone gets 403 there). -->
+    <string name="github_token_url" translatable="false">https://github.com/settings/tokens/new?scopes=repo,workflow&amp;description=OpenCode+Android</string>
     <string name="settings_connectors_body">Accounts the agent can use from this device. Tokens live in the Android Keystore and never leave the phone.</string>
-    <string name="github_connector_explain">GitHub, via a personal access token. Tap the button below: the token page opens with the required scope already ticked (if GitHub shows the scope list, select repo - it covers clone, pull and push). Paste the token here; the agent reads it only as the environment value key.</string>
+    <string name="github_connector_explain">GitHub, via a personal access token. Tap the button below: the token page opens with the required scopes already ticked (if GitHub shows the scope list, select repo and workflow - together they cover clone, pull, push, pull requests, Actions and workflow files). Paste the token here; the agent reads it only as the environment value key.</string>
     <string name="github_create_token">Create token on GitHub</string>
     <string name="github_token_hint">Paste the token</string>
     <string name="github_token_save">Connect GitHub</string>
     <string name="github_token_remove">Disconnect GitHub</string>
     <string name="github_connected">GitHub is connected. The agent can clone and push with the env value key.</string>
     <string name="github_token_invalid">That does not look like a token (too short or contains spaces)</string>
+    <!-- v9.24: Add-ons - app-downloaded artifacts agents reuse without tokens. -->
+    <string name="chat_open_addons">Add-ons</string>
+    <string name="addons_title">Add-ons</string>
+    <string name="addons_registry_url" translatable="false">https://registry.npmjs.org</string>
+    <string name="addons_wasm_title">Next.js wasm compiler</string>
+    <string name="addons_wasm_body">Makes live previews of Next.js projects start fast. Without it, the agent downloads hundreds of MB mid-chat on every fresh project, burning time and tokens. The app downloads it once here; agents then reuse it instantly from the .addons folder of your workspace.</string>
+    <string name="addons_add">Download</string>
+    <string name="addons_retry">Retry download</string>
+    <string name="addons_cancel">Cancel download</string>
+    <string name="addons_resolving">Contacting the npm registry\u2026</string>
+    <string name="addons_progress">%1$d MB of %2$d MB</string>
+    <string name="addons_progress_unknown">%1$d MB downloaded</string>
+    <string name="addons_error">Download failed: %1$s</string>
+    <string name="addons_installed_hint">Already downloaded. Downloading again fetches the newest version alongside it.</string>
+    <string name="addons_installed_title">Downloaded add-ons</string>
+    <string name="addons_installed_body">Stored in the .addons folder of your workspace. Agents extract them with tar - no network, no tokens.</string>
+    <string name="addons_installed_empty">Nothing downloaded yet.</string>
+    <string name="addons_size_mb">%1$d MB</string>
+    <string name="addons_delete">Delete</string>
     <string name="settings_section_mcp">MCP servers</string>
     <string name="settings_mcp_body">These statuses are the agent own. Remote HTTP or SSE servers are not supported by this runtime, which is an upstream restriction rather than an app bug; servers the agent starts as a local process work.</string>
     <string name="settings_mcp_empty">No MCP servers are configured.</string>

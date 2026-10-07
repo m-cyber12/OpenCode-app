@@ -300,6 +300,22 @@ placeholder status pages.
    return `Buffer.from(await res.arrayBuffer())`, throw unless status
    200. A few woff2 misses afterwards are fine - dev falls back to a
    system font by design.
+12. BEFORE any big in-chat download, check the add-on store:
+   `ls ../.addons/` (it sits in the workspace root, one level above
+   every project). A `next-swc-wasm-<version>.tgz` there is the wasm
+   SWC compiler, pre-downloaded by the app. Use it instead of letting
+   Next download hundreds of MB:
+   `tar -xzf ../.addons/next-swc-wasm-<version>.tgz` (extracts to
+   ./package), then `mkdir -p node_modules/@next && mv package
+   node_modules/@next/swc-wasm-nodejs`. Next resolves that package from
+   node_modules before its own downloader runs; if the version does not
+   match and Next downloads anyway, let it - the attempt cost nothing.
+13. When the user wants to SEE a framework app, name the cheap paths
+   BEFORE compiling anything: 1) the Add-ons entry in the app menu -
+   the app itself downloads the wasm compiler once, token-free, and
+   every later preview starts fast; 2) if GitHub is connected (env
+   `key`), push and let a GitHub Pages workflow build and host it (the
+   token covers workflow files). Without GitHub, offer only option 1.
 """.trimIndent() + "\n"
 
         return linkedMapOf(

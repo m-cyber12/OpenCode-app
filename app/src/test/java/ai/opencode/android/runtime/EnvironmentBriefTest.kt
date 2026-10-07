@@ -242,4 +242,20 @@ class EnvironmentBriefTest {
         assertTrue(main.contains("BRIEF-SUGGESTIONS.md"))
         assertTrue(main.contains("never\nedit them") || main.contains("never edit them"))
     }
+
+    @Test
+    fun v924WebappBriefTeachesTheAddonStoreAndTheCheapPreviewPaths() {
+        // v9.24 (owner): the app pre-downloads the wasm SWC compiler into
+        // <workspace>/.addons; the brief must (a) point agents at it BEFORE
+        // they re-download hundreds of MB mid-chat, and (b) make them OFFER
+        // the cheap paths (add-on, GitHub Pages) before compiling anything.
+        val webapp = EnvironmentBrief.topicBriefs().getValue("webapp.md")
+        assertTrue(webapp.contains("../.addons"))
+        // The filename contract must match Addons.tarballName exactly.
+        assertTrue(webapp.contains("next-swc-wasm-<version>.tgz"))
+        assertTrue(webapp.contains("node_modules/@next/swc-wasm-nodejs"))
+        assertTrue(webapp.contains("GitHub Pages"))
+        // The GitHub option is gated on the connector being present.
+        assertTrue(webapp.contains("Without GitHub, offer only option 1"))
+    }
 }

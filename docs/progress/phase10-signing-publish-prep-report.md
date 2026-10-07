@@ -4587,3 +4587,64 @@ INSIDE bun and is exactly the loophole that still works. Options go to
 the owner before any code. Also: the brief additions are pinned field
 notes from ONE project class (Next 15); the acceptance test remains a
 fresh CreatorsHub run on this build.
+
+## B.44 v9.24 - Add-ons (app-downloaded wasm), repo+workflow scopes, cheap-preview protocol (2026-10-07)
+
+Owner feedback round (with on-device screenshots proving the v9.23
+connector works: the agent answered "GitHub is connected (connector
+token available)"). Owner picked, via four explicit answers: app-direct
+download (NOT prompting a model), Add-ons first / Arena-style repo UX
+next (v9.25), branch scheme `opencode/chat-<short-id>`, and "like
+Arena" for cloning - which means the APP pre-clones before the chat,
+exactly as the Arena platform does for its own agents.
+
+**Add-ons.** New surface behind the hamburger menu (`open_addons` ->
+`addons_screen`). The app itself downloads big agent-consumables into
+`<workspace>/.addons/` - today one catalog entry, the wasm SWC compiler
+(`@next/swc-wasm-nodejs`) that Next needs where native bindings cannot
+dlopen. Decisions and why:
+- the APP downloads (HttpURLConnection, 0.5 MB-step progress into a
+  DETERMINATE bar - finite animations only; byte text when the size is
+  unknown; cancel; delete) - a download needs no intelligence and must
+  not depend on a funded API key;
+- only the npm TARBALL is stored (`next-swc-wasm-<version>.tgz`);
+  extraction is the agent's `tar -xzf` one-liner - toybox tar is
+  device-verified, a Java tar walker would be new untested surface;
+- `.part` suffix until complete, so a crashed download never shows up
+  as an installed add-on; version strings are safety-checked before
+  they become filenames;
+- W^X unchanged: add-ons are DATA consumed inside bun, never native
+  executables.
+
+**Briefs (webapp.md 12-13).** 12: check `ls ../.addons/` BEFORE any big
+in-chat download; extract + `mv package node_modules/@next/
+swc-wasm-nodejs`. 13: when the user wants to SEE a framework app, offer
+the cheap paths FIRST - 1) the Add-ons menu entry, 2) GitHub Pages via
+a workflow if the connector is present (`key` set); without GitHub,
+option 1 only - the owner's exact protocol.
+
+**Scopes.** `github_token_url` now prefills `repo,workflow` and the
+explain text names both ("access like Arena's": contents, PRs, Actions,
+and pushing .github/workflows files - `repo` alone 403s on workflow
+pushes, the precise failure this session's own bot token demonstrates).
+The owner must mint a NEW token once to pick up `workflow`.
+
+Tests: AddonsTest (6: catalog names pinned to the brief's contract,
+scoped-slash URL escaping, manifest parsing incl. missing size, version
+safety, tarball naming, installed-list truth incl. `.part` exclusion),
+GithubConnectorTest URL pin -> `scopes=repo,workflow`, EnvironmentBrief
+v9.24 pin set (5 literals). Assertion replay of all rendered briefs:
+PASS (main untouched at 481 words). Static checks rc=0 - the lazy-list
+gate rejected my first `item(...)` shape and the strings gate had
+already rejected a Kotlin URL literal in v9.23; both gates earned their
+keep.
+
+Honesty: (1) "Next resolves node_modules/@next/swc-wasm-nodejs before
+its own downloader runs" is from Next's loadWasm resolution order as I
+know it, NOT yet device-verified - the brief hedges ("if it downloads
+anyway, let it") and the owner's next CreatorsHub run is the real test;
+(2) the ~570 MB figure is the owner's observation, the UI shows real
+registry sizes instead of promising one; (3) no instrumented test was
+added (the smoke suite stays at exactly 20 gates), so the Add-ons
+screen itself is JVM-pinned + owner-verified on device, not gate-
+verified.

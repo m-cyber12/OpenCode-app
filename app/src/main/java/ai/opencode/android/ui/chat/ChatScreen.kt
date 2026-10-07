@@ -54,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Menu
@@ -148,6 +149,8 @@ fun ChatScreen(
     onOpenSettings: () -> Unit,
     /** v9.1: providers manage themselves on their own surface; defaulted so the gates' call sites stay valid. */
     onOpenProviders: () -> Unit = onOpenSettings,
+    /** v9.24: the Add-ons surface (app-downloaded artifacts agents reuse). */
+    onOpenAddons: () -> Unit = {},
     onOpenFiles: () -> Unit = {},
     /** v7 redesign: the Changes and Terminal tabs under the project header. */
     onOpenChanges: () -> Unit = {},
@@ -209,6 +212,7 @@ fun ChatScreen(
             onNewSession = onNewSession,
             onOpenSettings = onOpenSettings,
             onOpenProviders = onOpenProviders,
+            onOpenAddons = onOpenAddons,
             onCompactSession = onCompactSession,
         )
 
@@ -313,12 +317,14 @@ private fun ChatHeader(
     onNewSession: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenProviders: () -> Unit,
+    onOpenAddons: () -> Unit,
     onCompactSession: () -> Unit,
 ) {
     val chat = ChatTheme.chat
     val newLabel = stringResource(R.string.chat_new_conversation)
     val settingsLabel = stringResource(R.string.chat_open_settings)
     val providersLabel = stringResource(R.string.chat_open_providers)
+    val addonsLabel = stringResource(R.string.chat_open_addons)
     val compactLabel = stringResource(R.string.chat_compact_session)
     val menuLabel = stringResource(R.string.chat_open_menu)
     Row(
@@ -452,6 +458,27 @@ private fun ChatHeader(
                     // v9.19 token saver: upstream's /compact, always reachable
                     // from the menu (the smart chip above the composer only
                     // appears once the conversation is actually heavy).
+                    // v9.24 (owner): Add-ons - the app downloads big artifacts
+                    // (the Next wasm compiler) once, agents reuse them free.
+                    DropdownMenuItem(
+                        text = { Text(addonsLabel) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Build,
+                                contentDescription = null,
+                                tint = chat.muted,
+                                modifier = Modifier.clearAndSetSemantics { },
+                            )
+                        },
+                        onClick = {
+                            menuOpen = false
+                            onOpenAddons()
+                        },
+                        modifier = Modifier.semantics {
+                            testTagsAsResourceId = true
+                            testTag = "open_addons"
+                        },
+                    )
                     DropdownMenuItem(
                         text = { Text(compactLabel) },
                         leadingIcon = {

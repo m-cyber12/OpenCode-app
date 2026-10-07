@@ -33,8 +33,11 @@ class GithubConnectorTest {
             .find(xml)?.groupValues?.get(1)?.replace("&amp;", "&")
         assertTrue("github_token_url missing from strings.xml", url != null)
         assertTrue(url!!.startsWith("https://github.com/settings/tokens/new"))
-        // The owner's requirement: the needed scope arrives pre-selected.
-        assertTrue(url.contains("scopes=repo"))
+        // The owner's requirement: the needed scopes arrive pre-selected.
+        // v9.24: repo AND workflow - "access like Arena's" (contents, PRs,
+        // Actions, and pushing .github/workflows files; repo alone gets 403
+        // on workflow pushes - the exact failure this session's bot token hits).
+        assertTrue(url.contains("scopes=repo,workflow"))
         assertTrue(url.contains("description="))
     }
 

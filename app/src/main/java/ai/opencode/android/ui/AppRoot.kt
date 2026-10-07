@@ -17,6 +17,7 @@ import ai.opencode.android.projects.StorageController
 import ai.opencode.android.runtime.RuntimeManager
 import ai.opencode.android.runtime.RuntimePaths
 import ai.opencode.android.runtime.StorageChoice
+import ai.opencode.android.ui.addons.AddonsScreen
 import ai.opencode.android.ui.changes.ChangesScreen
 import ai.opencode.android.ui.chat.ChatScreen
 import ai.opencode.android.ui.chat.SessionPanel
@@ -100,6 +101,10 @@ private const val ROUTE_SETTINGS = "settings"
 private const val ROUTE_PROVIDERS = "providers"
 private const val ROUTE_FILES = "files"
 
+// v9.24 (owner): Add-ons - the app downloads big agent-consumables (the Next
+// wasm compiler) once into <workspace>/.addons, agents reuse them token-free.
+private const val ROUTE_ADDONS = "addons"
+
 // v7 redesign: two more project surfaces beside the chat - the agent's file
 // changes stage by stage, and the shell commands it ran, as a console.
 private const val ROUTE_CHANGES = "changes"
@@ -124,6 +129,13 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val runtime = remember { RuntimeManager.get(context) }
     val store = remember { ProjectStore.get(context) }
     val secrets = remember { container.secrets }
+    // v9.24: Add-ons downloader. Root is a lambda - the workspace can move.
+    val addonManager = remember {
+        ai.opencode.android.addons.AddonManager(
+            workspaceRoot = { container.workspacesRoot() },
+            registryBase = context.getString(R.string.addons_registry_url),
+        )
+    }
     // v9.23: whether a GitHub token is on file (Keystore). Read once at
     // composition; flipped by the Settings save/disconnect callbacks.
     var githubConnected by remember {
@@ -847,7 +859,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val turnAvailability = uiState.turnError?.kind ?: AgentAvailability.READY
     val availability = UiError.combine(summary.availability, serverAvailability, turnAvailability)
 
-    BackHandler(enabled = route == ROUTE_SESSIONS || route == ROUTE_SETTINGS || route == ROUTE_PROVIDERS || route == ROUTE_PROJECTS || route == ROUTE_FILES || route == ROUTE_CHANGES || route == ROUTE_TERMINAL) {
+    BackHandler(enabled = route == ROUTE_SESSIONS || route == ROUTE_SETTINGS || route == ROUTE_PROVIDERS || route == ROUTE_PROJECTS || route == ROUTE_FILES || route == ROUTE_CHANGES || route == ROUTE_TERMINAL || route == ROUTE_ADDONS) {
         route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT
     }
 
@@ -1260,6 +1272,20 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onBack = { route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT },
                 )
 
+                // v9.24: Add-ons. The manager lives at the top of AppRoot so a
+                // download survives navigating away from this screen.
+                ROUTE_ADDONS -> {
+                    LaunchedEffect(Unit) { addonManager.refresh() }
+                    val addonState by addonManager.state.collectAsState()
+                    AddonsScreen(
+                        state = addonState,
+                        onDownload = { spec -> addonManager.download(spec) },
+                        onCancel = { addonManager.cancel() },
+                        onDelete = { name -> addonManager.delete(name) },
+                        onBack = { route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT },
+                    )
+                }
+
                 ROUTE_CHANGES -> {
                     val view = remember(uiState.transcript, uiState.selectedSession) {
                         uiState.transcript.session(uiState.selectedSession)
@@ -1305,6 +1331,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onOpenSettings = { route = ROUTE_SETTINGS },
                     // v9.1: provider management has its own surface behind the menu.
                     onOpenProviders = { route = ROUTE_PROVIDERS },
+                    onOpenAddons = { route = ROUTE_ADDONS },
                     onOpenFiles = {
                         filesPath = ""
                         route = ROUTE_FILES
