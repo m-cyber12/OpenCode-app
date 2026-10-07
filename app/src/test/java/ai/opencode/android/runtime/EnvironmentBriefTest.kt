@@ -171,21 +171,41 @@ class EnvironmentBriefTest {
     @Test
     fun webappBriefCarriesTheCreatorsHubLessons() {
         // v9.21: a cloned Next.js 15 site cost ~400k tokens of trial and
-        // error on-device. The distilled steps must stay taught: no node
-        // binary -> --bun pattern, background install with log polling,
-        // readiness from the log, placeholder env, no build/lint detours.
+        // error on-device. v9.22: replaced my distillation with the MODEL'S
+        // OWN verified setup log (owner-provided) - it corrected one piece
+        // (shared storage never links node_modules/.bin, so `bun --bun run`
+        // cannot resolve; the absolute-path JS entry is the working route)
+        // and added the discoveries below. Each is pinned because each one
+        // cost real turns to find.
         val webapp = EnvironmentBrief.topicBriefs().getValue("webapp.md")
         assertTrue(webapp.contains("package.json"))
         assertTrue(webapp.contains("#!/usr/bin/env node"))
-        assertTrue(webapp.contains("bun --bun run dev"))
-        assertTrue(webapp.contains("bun node_modules/next/dist/bin/next dev"))
         assertTrue(webapp.contains("bun install"))
         assertTrue(webapp.contains("install.log"))
+        // Shared-storage install truth: EACCES link failures are harmless,
+        // .bin never exists - so tools start by ABSOLUTE path under bun.
+        assertTrue(webapp.contains("EACCES"))
+        assertTrue(webapp.contains("node_modules/.bin"))
+        assertTrue(webapp.contains("CouldntReadCurrentDirectory"))
+        assertTrue(webapp.contains("bun /abs/project/node_modules/next/dist/bin/next dev -p 8080 -H 127.0.0.1"))
+        // Native addons cannot dlopen; the verified Next 15 stub set.
+        assertTrue(webapp.contains("@parcel/watcher"))
+        assertTrue(webapp.contains("@swc/core"))
+        assertTrue(webapp.contains("get-registry.js"))
+        assertTrue(webapp.contains("rm -rf node_modules/next/wasm"))
+        // The fonts-TLS flake self-heals; nobody should chase env flags.
+        assertTrue(webapp.contains("fonts.gstatic.com"))
+        // Hand-off and cleanup truths.
+        assertTrue(webapp.contains("{\"port\": 8080, \"path\": \"/en\"}"))
+        assertTrue(webapp.contains("nc -w 2 127.0.0.1 8080"))
         assertTrue(webapp.contains(".env.local"))
-        assertTrue(webapp.contains("nc -w 2 127.0.0.1 3000"))
-        assertTrue(webapp.contains("{\"port\": 3000, \"path\": \"/\"}"))
+        assertTrue(webapp.contains("pkill"))
         // The main brief's index warns about the node trap BEFORE the agent
         // ever opens the topic file - that is where the 400k went.
         assertTrue(EnvironmentBrief.briefText().contains("#!/usr/bin/env node"))
+        // And screenshots.md carries the capture-under-HMR truths.
+        val shots = EnvironmentBrief.topicBriefs().getValue("screenshots.md")
+        assertTrue(shots.contains("mtime"))
+        assertTrue(shots.contains("timeout"))
     }
 }

@@ -201,38 +201,66 @@ Each capture confirms itself ~5s after the write, at the end of
 FAILED report the reason, do not improvise workarounds. Name shots after
 the stage they document, and remember the cost rule: each image you read
 rides along on every later step.
+Under a dev server's cold compile or HMR churn a capture can report
+`timeout` - retry once the route is warm. `.preview/latest.png` can lag
+the live pane; check its mtime before trusting it.
 """.trimIndent() + "\n"
 
         val webapp = """
 # Running a real project (package.json exists) - read BEFORE the first command
 
-Verified on this device with a cloned Next.js 15 + React 19 site. Follow
-the order; every skipped step below was paid for in wasted turns once.
+Verified on-device end to end: a cloned Next.js 15 + React 19 + next-intl
+site served into the Live preview. Follow the order - every skipped step
+was once paid for in wasted turns. And serve the user's REAL site: no
+placeholder status pages.
 
 1. Read package.json FIRST - `scripts` and `engines`. Never guess the
-   toolchain, never run a script you have not read.
-2. Install once, in the background, and WAIT:
+   toolchain.
+2. Install once, in the background, then WAIT (big trees: ~10 min,
+   hundreds of MB):
    `mkdir -p "${'$'}TMPDIR" 2>/dev/null; setsid bun install </dev/null >install.log 2>&1 &`
-   then poll `tail -3 install.log`. A big dependency tree takes minutes on
-   a phone - waiting is correct, re-running is not. bun reads
-   package-lock.json / yarn.lock fine.
-3. There is NO node binary. Every node_modules/.bin CLI starts with
-   `#!/usr/bin/env node` and dies when run directly or via plain
-   `bun run`. Start dev servers as:
-   `setsid bun --bun run dev </dev/null >dev.log 2>&1 &`
-   (`--bun` forces the bin scripts onto bun). If a tool still execs node,
-   call its JS entry directly: `bun node_modules/next/dist/bin/next dev`.
-4. Readiness lives in the log, not in your patience: poll `tail -5 dev.log`
-   until the framework prints its ready/port line (first compile can take
-   a minute+), then confirm: `nc -w 2 127.0.0.1 3000 < /dev/null`.
-5. Only then hand off: `.preview/serve.json` {"port": 3000, "path": "/"}.
-   If the log printed a DIFFERENT port than you expected, trust the log
-   and put that port in serve.json.
-6. Crash on missing env vars (API keys, database URLs): create
-   `.env.local` with placeholder values and restart - a dev preview does
-   not need real secrets to render pages.
-7. Serving needs NONE of: lint, typecheck, test, e2e, `next build`. Do
-   not run them unless the user asked for them.
+   Poll `du -sh node_modules` and `tail -3 install.log`. On shared
+   storage the install ENDS with `Failed to link <pkg>: EACCES` lines -
+   HARMLESS: packages extract fully, only `node_modules/.bin` is never
+   created. Do not reinstall.
+3. Starting tools: there is NO node (`#!/usr/bin/env node` shebangs
+   cannot run) and no `.bin`, so `bun run dev` / `next dev` will not
+   resolve. Run the tool's JS entry under bun by ABSOLUTE path (relative
+   script paths die with `CouldntReadCurrentDirectory`; `bun -e` is
+   unaffected):
+   `setsid bun /abs/project/node_modules/next/dist/bin/next dev -p 8080 -H 127.0.0.1 </dev/null >dev.log 2>&1 &`
+4. Native addons (`.node` prebuilds) cannot dlopen inside the app. When
+   a dep crashes on one, stub THAT module's JS entry inside node_modules
+   (no-op or passthrough) - never touch project source; stubs die with
+   node_modules, so re-apply after any reinstall. Verified Next 15 set:
+   - `@parcel/watcher` -> no-op stub (file-watching is optional in dev);
+   - `@swc/core` -> passthrough stub (only next-intl's message extractor
+     uses it);
+   - Next itself falls back to wasm SWC automatically, but first patch
+     `node_modules/next/dist/lib/helpers/get-registry.js` to return
+     `https://registry.npmjs.org/` directly (it shells out to npm, which
+     does not exist), and `rm -rf node_modules/next/wasm
+     node_modules/next/next-swc-fallback` if an interrupted run left
+     empty dirs there - the downloader sees them and silently skips.
+5. Readiness lives in the log, not in your patience: poll `tail -5
+   dev.log` for the ready/port line, then warm the REAL route - first
+   compile per route is slow (can be 60-90 s cold, seconds warm):
+   `bun -e 'const r=await fetch("http://127.0.0.1:8080/en");console.log(r.status)'`
+   TLS to fonts.gstatic.com (next/font) can flake mid-compile with
+   `unknown certificate verification error` + retries; it recovers BY
+   ITSELF - wait or re-request, and do not chase TLS env flags (Bun
+   ignores them).
+6. Hand off with the ROUTE, not a file: `.preview/serve.json`
+   {"port": 8080, "path": "/en"} - when "port" is set, "path" is a URL
+   route on YOUR server (locale prefix and all); trust the port the log
+   printed over the one you expected. Confirm first:
+   `nc -w 2 127.0.0.1 8080 < /dev/null`.
+7. Crash on missing env vars (API keys, database URLs): `.env.local`
+   with placeholder values, restart - a dev preview needs no real
+   secrets.
+8. Never `pkill -f "next dev"` - the pattern matches your own shell;
+   kill by PID from `ps -o PID,ARGS`. Serving needs NONE of: lint,
+   typecheck, test, e2e, `next build`. Do not run them unless asked.
 """.trimIndent() + "\n"
 
         return linkedMapOf(

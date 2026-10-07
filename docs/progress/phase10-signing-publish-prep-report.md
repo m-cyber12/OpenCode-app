@@ -4477,3 +4477,47 @@ newline, breaking two substring pins - my own tests caught my own
 prose edit, which is precisely what they are for. Fixed by rewording the
 paragraph (431 words, still under the 480 budget); the assertion replay
 now passes clean. No code-path change.
+
+## B.42 v9.22 - webapp.md rebuilt from the model's own setup log (2026-10-06)
+
+The owner recovered and pasted the agent's complete on-device write-up
+from the 400k CreatorsHub run (ANDROID-DEV-SERVER-FA.md; the attachment
+itself was wiped by the sandbox before it could be read - the pasted
+text survived). It is better evidence than my repo-side distillation,
+and it CORRECTED one of my v9.21 claims:
+
+**Corrected:** on shared storage (`/storage/emulated/0/...`, FUSE,
+foreign-UID files) `bun install` cannot link `node_modules/.bin` at all
+(~30 `Failed to link <pkg>: EACCES`, harmless, extraction completes) -
+so my `bun --bun run dev` advice could never work there. The verified
+route is the tool's JS entry by ABSOLUTE path under bun (relative
+script paths die with `CouldntReadCurrentDirectory`).
+
+**New, all device-verified by the model, now in webapp.md:**
+- install reality: ~10 min / hundreds of MB; poll `du -sh node_modules`;
+  never reinstall over EACCES link noise;
+- native addons (`.node` prebuilds) cannot dlopen in the app namespace ->
+  stub the module's JS entry inside node_modules, never project source;
+  verified Next 15 set: `@parcel/watcher` no-op, `@swc/core` passthrough,
+  `get-registry.js` patched to the default registry (it shells to npm,
+  which does not exist), `rm -rf node_modules/next/wasm
+  node_modules/next/next-swc-fallback` before retrying the wasm-SWC
+  download (leftover empty dirs make it skip SILENTLY);
+- fonts.gstatic.com TLS flake under Bun's node:https self-heals through
+  Next's retries - wait, do not chase TLS env flags (Bun ignores them);
+- hand-off is a ROUTE when "port" is set ({"port": 8080, "path": "/en"});
+- never `pkill -f` (matches the invoking shell) - kill by PID;
+- first compile per route 60-90 s cold; and in screenshots.md: captures
+  may time out during cold compile/HMR churn, latest.png can lag -
+  check its mtime.
+
+Tests: the v9.21 webapp pins were REPLACED to match the corrected
+reality (the --bun pin was wrong in the .bin-less world the projects
+actually live in) and extended - 17 webapp literals + 2 screenshot
+literals, each one a discovery that cost real turns. Assertion replay
+(the B.41.1 technique) passes clean; main brief untouched at 431 words.
+
+Honesty: the stub/patch recipes are Next-15-specific field notes, not
+universal law; the brief frames them as the verified instance of the
+general rule (stub the crashing addon's JS entry in node_modules). The
+true acceptance test remains a fresh CreatorsHub run on this build.
