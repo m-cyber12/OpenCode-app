@@ -4521,3 +4521,69 @@ Honesty: the stub/patch recipes are Next-15-specific field notes, not
 universal law; the brief frames them as the verified instance of the
 general rule (stub the crashing addon's JS entry in node_modules). The
 true acceptance test remains a fresh CreatorsHub run on this build.
+
+## B.43 v9.23 - second-run lessons folded into briefs + GitHub connector (2026-10-07)
+
+Owner message (3 asks + 1 question): fold the model's SECOND CreatorsHub
+run report into the briefs; an "Add-on" section for downloadable
+runtimes (answered separately - see Honesty below); a GitHub connector
+("key"); and whether a model editing the briefs itself is dangerous.
+
+**Briefs (v9.23).** webapp.md gained steps 9-11, all from the model's
+own verified log of run #2 (~100k tokens, ~80% burned on ONE silent
+hang):
+- 9: `Ready` is not "site up" - routes compile on FIRST request; warm in
+  the background (`setsid bun -e 'fetch(..., {signal:
+  AbortSignal.timeout(420000)})'`) because the harness kills the WHOLE
+  process tree on a command timeout - servers live in their OWN setsid
+  command, polled separately.
+- 10: slow-vs-stuck in cheap text: `grep -c '"name":"build-module'
+  .next/trace` sampled 45 s apart + CPU ticks from `/proc/PID/stat`;
+  prove the toolchain with a light API route first; verify installs by
+  the TREE (`[ -d node_modules/next ]`), never install.log; `pgrep
+  -f`/`pkill -f` self-match -> `ps -o PID,ARGS | grep "[n]ext"`.
+- 11: the font stall root cause: next/font/google's fetch-resource.js
+  uses node:https whose socket timeout never arms under Bun ("unknown
+  certificate verification error" + "Retrying 1/3..." then silence);
+  patch it once per install to global fetch + AbortSignal.timeout(8000).
+preview.md: hand-offs go STALE - re-verify ps+nc+one fetch, then rewrite
+serve.json. Main brief: GitHub section (below) + the governance rule
+"briefs are OVERWRITTEN at every app start - never edit them; put
+suggestions in BRIEF-SUGGESTIONS.md" (the owner caught a model editing
+them; edits silently revert at the next app start, which is worse than
+being forbidden - the model would believe a fix it no longer has).
+Main brief 481 words; test budget raised 480 -> 485 with a comment
+naming the two owner-mandated additions that justified it.
+
+**GitHub connector.** Owner contract implemented exactly: Settings >
+Connectors links the CLASSIC token page with the scope pre-selected
+(`settings/tokens/new?scopes=repo&description=OpenCode+Android` - the
+fine-grained page prefills nothing), the UI text still names `repo` in
+words in case GitHub ignores the prefill, the token is Keystore-held
+(`connector:github` via SecretStore), and it reaches the model ONLY as
+the env value literally named `key` on the local server process - the
+agent's shells inherit it for `https://x-access-token:$key@github.com/
+owner/repo.git`. Deliberately ABSENT (not empty) when disconnected.
+Save/disconnect triggers resetAndRestart so the env is correct
+immediately. The token is never logged (the one log line says "value
+withheld"), never travels through chat/config/remote. Shape check is
+length+no-whitespace, deliberately NOT a prefix whitelist (GitHub has
+changed prefixes before). The URL lives in strings.xml per the
+check-ui-strings gate (first draft had it as a Kotlin literal; the
+repo's own gate caught it - good gate).
+
+Tests: +1 RuntimeEnv pin (key present only when connected, absent not
+empty), new GithubConnectorTest (5: secret-name policy, URL prefill read
+from the shipped strings.xml, env-var name, token shapes, normalize),
++1 EnvironmentBrief pin set (14 literals across webapp/preview/main).
+Assertion replay of all 4 rendered briefs vs every test literal: PASS.
+phase10 static checks: rc=0.
+
+Honesty: the Add-on request (downloadable Node/Python/Perl runtimes) is
+NOT in this commit because downloaded native executables cannot run on
+the device (W^X, API 29+: exec only from the APK's own lib dir) - the
+model's celebrated "download" in run #1 was a wasm SWC, which runs
+INSIDE bun and is exactly the loophole that still works. Options go to
+the owner before any code. Also: the brief additions are pinned field
+notes from ONE project class (Next 15); the acceptance test remains a
+fresh CreatorsHub run on this build.

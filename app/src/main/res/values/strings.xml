@@ -347,6 +347,19 @@
     <string name="settings_keys_hardware_label">Hardware-backed</string>
     <string name="settings_keys_hardware">Hardware-backed Keystore: %1$s</string>
 
+    <!-- v9.23: connectors - GitHub first. No bare apostrophes (aapt2). -->
+    <string name="settings_section_connectors">Connectors</string>
+    <!-- Classic token page: `scopes`/`description` query params pre-select the
+         scope; the fine-grained page prefills nothing, hence the classic flow. -->
+    <string name="github_token_url" translatable="false">https://github.com/settings/tokens/new?scopes=repo&amp;description=OpenCode+Android</string>
+    <string name="settings_connectors_body">Accounts the agent can use from this device. Tokens live in the Android Keystore and never leave the phone.</string>
+    <string name="github_connector_explain">GitHub, via a personal access token. Tap the button below: the token page opens with the required scope already ticked (if GitHub shows the scope list, select repo - it covers clone, pull and push). Paste the token here; the agent reads it only as the environment value key.</string>
+    <string name="github_create_token">Create token on GitHub</string>
+    <string name="github_token_hint">Paste the token</string>
+    <string name="github_token_save">Connect GitHub</string>
+    <string name="github_token_remove">Disconnect GitHub</string>
+    <string name="github_connected">GitHub is connected. The agent can clone and push with the env value key.</string>
+    <string name="github_token_invalid">That does not look like a token (too short or contains spaces)</string>
     <string name="settings_section_mcp">MCP servers</string>
     <string name="settings_mcp_body">These statuses are the agent own. Remote HTTP or SSE servers are not supported by this runtime, which is an upstream restriction rather than an app bug; servers the agent starts as a local process work.</string>
     <string name="settings_mcp_empty">No MCP servers are configured.</string>

@@ -68,6 +68,21 @@ class RuntimeEnvTest {
     }
 
     @Test
+    fun githubTokenLandsInEnvOnlyWhenConnected() {
+        // v9.23 connector contract: the token is exposed to the agent as the
+        // env value literally named `key`, and is ABSENT (not empty) when the
+        // user has not connected GitHub - the brief tells the model that an
+        // unset `key` means "not connected, ask the user".
+        val p = paths()
+        val without = RuntimeEnv.build(p, "arm64-v8a", "pw")
+        assertFalse(without.containsKey("key"))
+        val blank = RuntimeEnv.build(p, "arm64-v8a", "pw", githubToken = "  ")
+        assertFalse(blank.containsKey("key"))
+        val with = RuntimeEnv.build(p, "arm64-v8a", "pw", githubToken = "ghp_example1234567890abcd")
+        assertEquals("ghp_example1234567890abcd", with["key"])
+    }
+
+    @Test
     fun buildCarriesTheServerAuthAndIdentity() {
         val p = paths()
         val env = RuntimeEnv.build(p, "arm64-v8a", "the-loopback-password")

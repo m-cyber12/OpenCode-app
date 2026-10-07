@@ -112,7 +112,9 @@ class EnvironmentBriefTest {
         }
         // The main brief is the only always-paid text; keep it lean forever.
         val words = main.split(Regex("\\s+")).count { it.isNotBlank() }
-        assertTrue("main brief grew to $words words - split or trim it", words < 480)
+        // v9.23: budget raised 480 -> 485 for the GitHub connector section +
+        // the do-not-edit-briefs rule; both are owner-mandated content.
+        assertTrue("main brief grew to $words words - split or trim it", words < 485)
         // The core product loop and cost discipline stay in the always-read part.
         assertTrue(main.contains("serve.json"))
         assertTrue(main.contains("EXISTS"))
@@ -207,5 +209,37 @@ class EnvironmentBriefTest {
         val shots = EnvironmentBrief.topicBriefs().getValue("screenshots.md")
         assertTrue(shots.contains("mtime"))
         assertTrue(shots.contains("timeout"))
+    }
+
+    @Test
+    fun v923BriefsCarrySecondRunLessonsAndGithubContract() {
+        // v9.23: the model's SECOND CreatorsHub run (owner-provided report)
+        // burned ~100k tokens, ~80% of it on one silent font-loader hang and
+        // on process-tree kills. Each lesson below cost real turns; pin them.
+        val webapp = EnvironmentBrief.topicBriefs().getValue("webapp.md")
+        // Ready != compiled; warm in background with a long fetch timeout.
+        assertTrue(webapp.contains("AbortSignal.timeout(420000)"))
+        // Slow-vs-stuck probes are text, not screenshots.
+        assertTrue(webapp.contains(".next/trace"))
+        assertTrue(webapp.contains("build-module"))
+        assertTrue(webapp.contains("/proc/PID/stat"))
+        // The font stall: symptom line, patched file, and the fix's shape.
+        assertTrue(webapp.contains("unknown certificate verification error"))
+        assertTrue(webapp.contains("fetch-resource.js"))
+        assertTrue(webapp.contains("AbortSignal.timeout(8000)"))
+        // Process hygiene: no self-matching pgrep/pkill, tree-based verify.
+        assertTrue(webapp.contains("ps -o PID,ARGS | grep \"[n]ext\""))
+        assertTrue(webapp.contains("[ -d node_modules/next ]"))
+        // Preview hand-offs can go stale; re-verify before trusting them.
+        val preview = EnvironmentBrief.topicBriefs().getValue("preview.md")
+        assertTrue(preview.contains("go STALE"))
+        // Main brief: the GitHub connector contract + the no-self-edit rule
+        // (the owner caught a model editing the briefs; they are app-owned).
+        val main = EnvironmentBrief.briefText()
+        assertTrue(main.contains("x-access-token"))
+        assertTrue(main.contains("\$key@github.com"))
+        assertTrue(main.contains("Never print or commit it"))
+        assertTrue(main.contains("BRIEF-SUGGESTIONS.md"))
+        assertTrue(main.contains("never\nedit them") || main.contains("never edit them"))
     }
 }

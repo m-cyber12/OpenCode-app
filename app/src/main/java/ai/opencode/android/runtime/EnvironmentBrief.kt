@@ -98,7 +98,8 @@ object EnvironmentBrief {
 
 You run INSIDE an Android app on the user's phone (no root, no VM). All
 facts here and in the topic briefs are enforced or device-verified - trust
-them, never probe.
+them, never probe. Briefs are OVERWRITTEN at every app start: never
+edit them - put suggestions in BRIEF-SUGGESTIONS.md at the project root.
 
 ## Tools
 On PATH: `bun` (full runtime - `bun -e`, scripts, `Bun.serve`, `fetch`,
@@ -125,6 +126,12 @@ by itself; or hand off explicitly by writing `.preview/serve.json`
 EXISTS; omit "port" for plain HTML/CSS/JS: the app serves the project
 itself, do NOT start your own server). Read the preview brief ONCE
 before your first hand-off.
+
+## GitHub
+If GitHub is connected (Settings > Connectors), env value `key` is the
+token: clone/push with
+`https://x-access-token:${'$'}key@github.com/<owner>/<repo>.git`.
+Never print or commit it; unset = not connected - ask the user.
 
 ## Cost - every wasted step is billed
 The whole conversation, including EVERY image ever read, is re-sent to the
@@ -169,6 +176,10 @@ Re-writing serve.json after edits RELOADS the preview with fresh bytes
   1. `path` must name a file that EXISTS ("/" needs index.html).
   2. Confirm the server answers BEFORE the hand-off:
      `nc -w 2 127.0.0.1 8080 < /dev/null`.
+A previous hand-off can go STALE - the server may have died since.
+Before trusting one, confirm in a single step: `ps -o PID,ARGS | grep
+"[y]ourserver"`, the `nc` probe above, and one fetch for status/bytes -
+then rewrite serve.json to reload the pane with fresh bytes.
 
 After each load the app saves the frame to `.preview/latest.png` and
 mirrors the page's JS console + load errors + a geometry line
@@ -261,6 +272,34 @@ placeholder status pages.
 8. Never `pkill -f "next dev"` - the pattern matches your own shell;
    kill by PID from `ps -o PID,ARGS`. Serving needs NONE of: lint,
    typecheck, test, e2e, `next build`. Do not run them unless asked.
+9. `Ready` is NOT "site up": each route compiles on its FIRST request (an
+   idle server shows zero progress - that means nothing). Warm routes in
+   the BACKGROUND with a long timeout, so a slow first paint cannot hit a
+   command timeout - the harness KILLS YOUR WHOLE PROCESS TREE when a
+   command times out, so servers start with setsid in their OWN short
+   command and you poll in separate commands:
+   `setsid bun -e 'const r=await fetch("http://127.0.0.1:8080/",{signal:AbortSignal.timeout(420000)});console.log(r.status,(await r.text()).length)' </dev/null >warm.log 2>&1 &`
+   First page-graph compile can be minutes; first render after compile
+   can be minutes more; steady state is seconds.
+10. Slow vs stuck, in cheap text (never screenshots): sample
+   `grep -c '"name":"build-module' .next/trace` twice, 45 s apart -
+   rising = working; flat plus ~0 CPU growth in
+   `awk '{print ${'$'}14+${'$'}15}' /proc/PID/stat` = blocked, not slow. Prove
+   the toolchain with a light API route FIRST: if it compiles, only the
+   page graph is stuck. Verify installs by the TREE
+   (`[ -d node_modules/next ]`), never by install.log (it ends in EACCES
+   noise by design). `pgrep -f`/`pkill -f` match your own shell - use
+   `ps -o PID,ARGS | grep "[n]ext"`.
+11. A Next compile stall is almost always next/font/google: dev.log shows
+   `unknown certificate verification error` + `Retrying 1/3...` then
+   silence - node:https hangs in the font loader (its socket timeout
+   never arms) while Bun's global fetch is reliable. Fix once per
+   install: rewrite
+   `node_modules/next/dist/compiled/@next/font/dist/google/fetch-resource.js`
+   to use global `fetch(url, {signal: AbortSignal.timeout(8000)})`,
+   return `Buffer.from(await res.arrayBuffer())`, throw unless status
+   200. A few woff2 misses afterwards are fine - dev falls back to a
+   system font by design.
 """.trimIndent() + "\n"
 
         return linkedMapOf(

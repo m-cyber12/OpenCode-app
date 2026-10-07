@@ -222,7 +222,15 @@ class RuntimeManager private constructor(private val appContext: Context) {
             // NOTE: no model API key travels through the environment any more —
             // provider credentials are Keystore-held and pushed over the loopback
             // API after each healthy start (ai.opencode.android.integration).
-            val env = RuntimeEnv.build(paths, ok.abi, password, bindHost)
+            // v9.23 exception, owner-specified: the GitHub connector token IS
+            // environment ("key"), because the consumer is the agent's own
+            // shell (git), not the server API. Keystore-held, device-local.
+            val githubToken = runCatching {
+                ai.opencode.android.security.SecretStore.get(appContext)
+                    .get(ai.opencode.android.security.GithubConnector.SECRET_NAME)
+            }.getOrNull()
+            if (githubToken != null) logger.host("github connector: token -> env 'key' (value withheld)")
+            val env = RuntimeEnv.build(paths, ok.abi, password, bindHost, githubToken = githubToken)
 
             // ---- 4. start / health / crash loop --------------------------
             var attempts = 0

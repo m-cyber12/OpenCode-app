@@ -124,6 +124,15 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val runtime = remember { RuntimeManager.get(context) }
     val store = remember { ProjectStore.get(context) }
     val secrets = remember { container.secrets }
+    // v9.23: whether a GitHub token is on file (Keystore). Read once at
+    // composition; flipped by the Settings save/disconnect callbacks.
+    var githubConnected by remember {
+        mutableStateOf(
+            runCatching {
+                secrets.get(ai.opencode.android.security.GithubConnector.SECRET_NAME) != null
+            }.getOrDefault(false),
+        )
+    }
 
     val runtimeState by runtime.state.collectAsState()
     val summary = remember(runtimeState) { runtimeState.toSummary() }
@@ -1191,6 +1200,30 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onCopyDiagnostics = { copyToClipboard(context, diagnosticsLines.joinToString("\n")) },
                     onRefreshDiagnostics = { loadDiagnostics() },
                     onRestartRuntime = { runtime.resetAndRestart() },
+                    // v9.23 GitHub connector: Keystore in, env `key` out. A save
+                    // or disconnect restarts the local server so the agent's
+                    // environment is correct IMMEDIATELY, not after the next
+                    // app launch.
+                    githubConnected = githubConnected,
+                    onSaveGithubToken = save@{ raw ->
+                        if (!ai.opencode.android.security.GithubConnector.looksLikeToken(raw)) return@save false
+                        val ok = runCatching {
+                            secrets.put(
+                                ai.opencode.android.security.GithubConnector.SECRET_NAME,
+                                ai.opencode.android.security.GithubConnector.normalize(raw),
+                            )
+                        }.isSuccess
+                        if (ok) {
+                            githubConnected = true
+                            runtime.resetAndRestart()
+                        }
+                        ok
+                    },
+                    onRemoveGithubToken = {
+                        runCatching { secrets.delete(ai.opencode.android.security.GithubConnector.SECRET_NAME) }
+                        githubConnected = false
+                        runtime.resetAndRestart()
+                    },
                     // Phase 10: the About / open-source section opens external pages
                     // (upstream project, licence texts, this project's own notices).
                     // The URL itself comes from strings.xml - the UI layer never

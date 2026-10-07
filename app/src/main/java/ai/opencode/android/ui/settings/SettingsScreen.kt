@@ -139,6 +139,10 @@ fun SettingsScreen(
     onRefreshDiagnostics: () -> Unit,
     onRestartRuntime: () -> Unit,
     onBack: () -> Unit,
+    /** v9.23: the GitHub connector (defaulted - the gates' call sites stay valid). */
+    githubConnected: Boolean = false,
+    onSaveGithubToken: (String) -> Boolean = { false },
+    onRemoveGithubToken: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     // A fixed, bounded list of sections rendered by a lazy list: the diagnostics
@@ -156,6 +160,7 @@ fun SettingsScreen(
             "runtime",
             "workspace",
             "diagnostics",
+            "connectors",
             "mcp",
             "permissions",
             "memory",
@@ -200,6 +205,12 @@ fun SettingsScreen(
                         onShare = onShareDiagnostics,
                         onCopy = onCopyDiagnostics,
                         onRefresh = onRefreshDiagnostics,
+                    )
+                    "connectors" -> ConnectorsSection(
+                        githubConnected = githubConnected,
+                        onSaveGithubToken = onSaveGithubToken,
+                        onRemoveGithubToken = onRemoveGithubToken,
+                        onOpenUrl = onOpenUrl,
                     )
                     "mcp" -> McpSection(
                         entries = state.mcp,
@@ -941,6 +952,87 @@ private fun KeysSection(
             modifier = Modifier.height(46.dp).fillMaxWidth().semantics { testTag = "custom_provider_save" },
         ) {
             Text(stringResource(R.string.settings_custom_save))
+        }
+    }
+}
+
+// ---- Connectors (v9.23: GitHub first) ---------------------------------------
+
+/**
+ * The owner's contract: a link that opens GitHub's token page with the needed
+ * scope pre-selected, the scope ALSO named in words (in case GitHub ignores
+ * the prefill), the token Keystore-held on the device, and the agent reading
+ * it only as the environment value `key`.
+ */
+@Composable
+private fun ConnectorsSection(
+    githubConnected: Boolean,
+    onSaveGithubToken: (String) -> Boolean,
+    onRemoveGithubToken: () -> Unit,
+    onOpenUrl: (String) -> Unit,
+) {
+    val chat = ChatTheme.chat
+    var token by remember { mutableStateOf("") }
+    var rejected by remember { mutableStateOf(false) }
+    SectionCard(
+        title = stringResource(R.string.settings_section_connectors),
+        body = stringResource(R.string.settings_connectors_body),
+        collapsible = true,
+    ) {
+        Text(
+            text = stringResource(R.string.github_connector_explain),
+            style = MaterialTheme.typography.bodySmall,
+            color = chat.muted,
+        )
+        Spacer(Modifier.height(8.dp))
+        val tokenUrl = stringResource(R.string.github_token_url)
+        OutlinedButton(
+            onClick = { onOpenUrl(tokenUrl) },
+            modifier = Modifier.fillMaxWidth().semantics { testTag = "github_create_token" },
+        ) {
+            Text(stringResource(R.string.github_create_token))
+        }
+        Spacer(Modifier.height(8.dp))
+        if (githubConnected) {
+            Text(
+                text = stringResource(R.string.github_connected),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.semantics { testTag = "github_connected_line" },
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = onRemoveGithubToken,
+                modifier = Modifier.fillMaxWidth().semantics { testTag = "github_token_remove" },
+            ) {
+                Text(stringResource(R.string.github_token_remove))
+            }
+        } else {
+            OutlinedTextField(
+                value = token,
+                onValueChange = { token = it; rejected = false },
+                label = { Text(stringResource(R.string.github_token_hint)) },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                isError = rejected,
+                supportingText = if (rejected) {
+                    { Text(stringResource(R.string.github_token_invalid)) }
+                } else {
+                    null
+                },
+                modifier = Modifier.fillMaxWidth().semantics { testTag = "github_token_field" },
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = {
+                    val ok = onSaveGithubToken(token)
+                    rejected = !ok
+                    if (ok) token = ""
+                },
+                enabled = token.isNotBlank(),
+                modifier = Modifier.height(46.dp).fillMaxWidth().semantics { testTag = "github_token_save" },
+            ) {
+                Text(stringResource(R.string.github_token_save))
+            }
         }
     }
 }

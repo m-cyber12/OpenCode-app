@@ -36,6 +36,7 @@ object RuntimeEnv {
         abi: String,
         password: String,
         hostname: String = SERVER_BIND_HOSTNAME,
+        githubToken: String? = null,
     ): Map<String, String> {
         val env = HashMap(System.getenv())
         // Wipe anything from the app process that could confuse a Linux userspace.
@@ -68,6 +69,15 @@ object RuntimeEnv {
         // constructor is active before native startup. launcher.js also tries
         // bun:ffi as a backstop where that Bun build provides it.
         env["OPENCODE_SECCOMP_SHIM"] = File(paths.nativeLibraryDir, "libseccompshim.so").absolutePath
+        // v9.23 (owner): the GitHub connector. The Keystore-held token rides
+        // ONLY here - as the env value `key` of the local server process, so
+        // the agent's shells inherit it (git clone/push via
+        // https://x-access-token:$key@github.com/...). Deliberately absent
+        // when not connected: an empty var would read as "connected but
+        // broken" to the model.
+        if (!githubToken.isNullOrBlank()) {
+            env[ai.opencode.android.security.GithubConnector.ENV_VAR] = githubToken
+        }
         return env
     }
 }
