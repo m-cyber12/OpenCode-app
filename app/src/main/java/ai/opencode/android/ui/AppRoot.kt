@@ -136,6 +136,23 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             registryBase = context.getString(R.string.addons_registry_url),
         )
     }
+    // v9.25: Arena-style repo UX - the app lists repos and clones with the
+    // SAME git binary + env the runtime's own children use (field-proven).
+    val githubClone = remember {
+        ai.opencode.android.github.GithubCloneManager(
+            apiBase = context.getString(R.string.github_api_url),
+            webBase = context.getString(R.string.github_web_url),
+            git = { ai.opencode.android.runtime.RuntimePaths.get(context).gitLink },
+            baseEnv = {
+                val p = ai.opencode.android.runtime.RuntimePaths.get(context)
+                ai.opencode.android.github.GitClone.baseEnv(p.home, p.binDir, p.tmp)
+            },
+        )
+    }
+    val githubCloneState by githubClone.state.collectAsState()
+    /** The connector token, read fresh per use - never cached in state. */
+    fun githubToken(): String? =
+        runCatching { secrets.get(ai.opencode.android.security.GithubConnector.SECRET_NAME) }.getOrNull()
     // v9.23: whether a GitHub token is on file (Keystore). Read once at
     // composition; flipped by the Settings save/disconnect callbacks.
     var githubConnected by remember {
@@ -944,6 +961,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onNewSession = { name ->
                         store.select(name)
                         projectName = name
+                        // v9.25 (owner): every chat gets its own branch in a
+                        // git project, like Arena. No-op for non-git projects.
+                        githubClone.branchForNewChat(File(container.workspacesRoot(), name))
                         repository.newSession(null)
                         route = ROUTE_CHAT
                     },
@@ -986,6 +1006,31 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     },
                     importing = importing,
                     importError = importError,
+                    // v9.25: the Arena-style repo picker (visible only when the
+                    // GitHub connector is on). The app clones BEFORE the chat.
+                    githubConnected = githubConnected,
+                    githubRepos = githubCloneState.repos,
+                    githubBusy = githubCloneState.phase == ai.opencode.android.github.GithubCloneManager.Phase.LISTING ||
+                        githubCloneState.phase == ai.opencode.android.github.GithubCloneManager.Phase.CLONING,
+                    githubProgress = githubCloneState.progress,
+                    githubError = githubCloneState.error,
+                    onLoadGithubRepos = {
+                        githubToken()?.let { githubClone.listRepos(it) }
+                    },
+                    onCloneGithubRepo = { repo ->
+                        val token = githubToken()
+                        if (token != null) {
+                            // A fresh, unique, EMPTY project dir - create() dedupes.
+                            val created = store.create(repo.name)
+                            projects = store.projects()
+                            githubClone.clone(repo, token, created.dir) {
+                                // Cloned and branched: surface it like any new project.
+                                projects = store.projects()
+                                projectName = created.name
+                                expandedProject = created.name
+                            }
+                        }
+                    },
                     sessionCounts = sessionCounts,
                     // A refused folder pick (SD card, cloud provider, unwritable) must
                     // be visible on the page that asked - the owner's fourth device
@@ -1006,6 +1051,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         route = ROUTE_CHAT
                     },
                     onNew = {
+                        githubClone.branchForNewChat(projectDir)
                         repository.newSession(null)
                         route = ROUTE_CHAT
                     },
@@ -1279,7 +1325,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     val addonState by addonManager.state.collectAsState()
                     AddonsScreen(
                         state = addonState,
-                        onDownload = { spec -> addonManager.download(spec) },
+                        onDownload = { spec, version -> addonManager.download(spec, version) },
                         onCancel = { addonManager.cancel() },
                         onDelete = { name -> addonManager.delete(name) },
                         onBack = { route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT },
@@ -1322,7 +1368,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onRetry = { repository.retryLastTurn() },
                     onUndo = { repository.undoLastTurn() },
                     onRedo = { repository.redoLastTurn() },
-                    onNewSession = { repository.newSession(null) },
+                    onNewSession = {
+                        githubClone.branchForNewChat(projectDir)
+                        repository.newSession(null)
+                    },
                     onOpenSessions = { route = ROUTE_SESSIONS },
                     onOpenProjects = {
                         projects = store.projects()

@@ -4648,3 +4648,63 @@ registry sizes instead of promising one; (3) no instrumented test was
 added (the smoke suite stays at exactly 20 gates), so the Add-ons
 screen itself is JVM-pinned + owner-verified on device, not gate-
 verified.
+
+## B.45 v9.25 - Arena-style repo UX: app clones, chat branches (2026-10-07)
+
+Owner: "it looks good / how it's 6mb? / if everything is ok, go" - with
+four device screenshots proving v9.24 end-to-end (Add-ons downloaded
+next-swc-wasm-16.4.0.tgz; agent verified WebAssembly runs under bun;
+agent sees the connector).
+
+**The 6 MB question - answered with registry evidence, not reasoning:**
+fetched the actual manifest and tarball from the sandbox. The 16.4.0
+tarball is exactly 6,872,363 bytes; inside is wasm_bg.wasm at 30.7 MB
+uncompressed (wasm gzips ~5:1). The download is complete and correct.
+The ~570 MB the owner watched mid-chat was the whole node_modules
+install, not the wasm. Side-finding folded in: `latest` is 16.4.0 but
+CreatorsHub is Next 15 - the Add-ons card gained a version/tag field
+(empty = latest) so a matching 15.x wasm can be fetched.
+
+**v9.25, decisions all owner-confirmed last round:** repo picker when
+the connector is on; the APP clones before the chat (what Arena itself
+does - checkout and branch exist before the agent's first command);
+`opencode/chat-<short-id>` branches; no branch selector.
+
+How it works:
+- Projects page grows a "Clone from GitHub" card (only when connected):
+  one tap lists the viewer's 100 most recently pushed repos
+  (`/user/repos?per_page=100&sort=pushed`, Bearer header - the token is
+  never URL material); tapping a repo creates a fresh deduped project
+  dir and clones into it, streaming git's own progress line ("Receiving
+  objects: 42%") - no indeterminate spinner, git counts for us.
+- THE SECURITY PROPERTY, JVM-pinned: the token never touches argv
+  (visible in `ps`) and never enters the clone URL (git would persist
+  it into .git/config). It rides as a one-shot `http.extraHeader` via
+  GIT_CONFIG_COUNT/KEY_0/VALUE_0 env (git 2.31+; bundled git is
+  2.48.1), Basic x-access-token:<token>. Origin stays token-free; the
+  agent pushes with the `$key` URL form the brief already teaches.
+- The clone runs the SAME git binary through the SAME env shape the
+  runtime's children use (bin symlink, HOME, PATH, TMPDIR) - the setup
+  whose on-device clones the field reports already proved.
+- Every new chat in a git project = `git checkout -b opencode/chat-<6
+  hex>` fired at all three new-session call sites (projects page,
+  session panel, chat menu); silently a no-op for non-git projects.
+- Main brief: app-cloned projects "already sit on an opencode/chat-<id>
+  branch with a token-free origin - commit there, push with the URL
+  form". Budget 485 -> 515 (owner-mandated content), now 507 words.
+
+Tests: GithubReposTest (4: list URL, headers, parsing incl. missing
+default_branch, token-free clone URL), GitCloneTest (5: no token in
+argv/URL, exact GIT_CONFIG_* env, runtime-mirror base env, branch
+scheme, chat-id shape/entropy), EnvironmentBrief pins
+(opencode/chat-<id>, token-free origin) + budget. Replay: ALL PINS
+PASS. Static checks rc=0.
+
+Honesty: (1) the app-side git exec (same binary, same env, app process
+instead of the runtime supervisor) is argued from symmetry, not yet
+device-proven - if the owner's first clone fails, Diagnostics plus the
+on-screen git error line will say why; (2) repo list is one page of
+100 by design (a picker, not a browser); (3) the chat-branch hook fires
+at new-session taps - the FIRST session of a non-GitHub project created
+before v9.25 keeps whatever branch it was on; (4) no instrumented tests
+added, smoke suite stays at exactly 20 gates.

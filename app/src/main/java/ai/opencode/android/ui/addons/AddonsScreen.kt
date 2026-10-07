@@ -14,8 +14,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -41,7 +46,7 @@ import ai.opencode.android.ui.theme.ChatTheme
 @Composable
 fun AddonsScreen(
     state: AddonManager.State,
-    onDownload: (Addons.AddonSpec) -> Unit,
+    onDownload: (Addons.AddonSpec, String) -> Unit,
     onCancel: () -> Unit,
     onDelete: (String) -> Unit,
     onBack: () -> Unit,
@@ -63,6 +68,10 @@ fun AddonsScreen(
                     body = stringResource(R.string.addons_wasm_body),
                 ) {
                     val spec = Addons.CATALOG.first()
+                    // v9.25 (owner question "how is it 6 MB?" follow-up): wasm is
+                    // version-matched to the project's Next major - let the user
+                    // pick 15.x for a Next 15 project instead of only `latest`.
+                    var version by remember { mutableStateOf("") }
                     val busy = state.phase == AddonManager.Phase.RESOLVING ||
                         state.phase == AddonManager.Phase.DOWNLOADING
                     val alreadyInstalled = state.installed.any { it.fileName.startsWith(spec.id + "-") }
@@ -122,8 +131,16 @@ fun AddonsScreen(
                                 )
                                 Spacer(Modifier.height(8.dp))
                             }
+                            OutlinedTextField(
+                                value = version,
+                                onValueChange = { version = it },
+                                label = { Text(stringResource(R.string.addons_version_hint)) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth().semantics { testTag = "addon_version" },
+                            )
+                            Spacer(Modifier.height(8.dp))
                             OutlinedButton(
-                                onClick = { onDownload(spec) },
+                                onClick = { onDownload(spec, version) },
                                 enabled = !busy,
                                 modifier = Modifier.fillMaxWidth().semantics { testTag = "addon_add_wasm" },
                             ) {

@@ -113,8 +113,11 @@ class EnvironmentBriefTest {
         // The main brief is the only always-paid text; keep it lean forever.
         val words = main.split(Regex("\\s+")).count { it.isNotBlank() }
         // v9.23: budget raised 480 -> 485 for the GitHub connector section +
-        // the do-not-edit-briefs rule; both are owner-mandated content.
-        assertTrue("main brief grew to $words words - split or trim it", words < 485)
+        // the do-not-edit-briefs rule. v9.25: -> 515 for the app-cloned-repo
+        // branch contract (opencode/chat-<id>, token-free origin). All three
+        // are owner-mandated content; everything else must still fight for
+        // every word.
+        assertTrue("main brief grew to $words words - split or trim it", words < 515)
         // The core product loop and cost discipline stay in the always-read part.
         assertTrue(main.contains("serve.json"))
         assertTrue(main.contains("EXISTS"))
@@ -257,5 +260,11 @@ class EnvironmentBriefTest {
         assertTrue(webapp.contains("GitHub Pages"))
         // The GitHub option is gated on the connector being present.
         assertTrue(webapp.contains("Without GitHub, offer only option 1"))
+        // v9.25: app-cloned repos - the agent must know it is ALREADY on the
+        // chat branch with a token-free origin (so it pushes the URL form,
+        // never writes the token into .git/config itself).
+        val main = EnvironmentBrief.briefText()
+        assertTrue(main.contains("opencode/chat-<id>"))
+        assertTrue(main.contains("token-free origin"))
     }
 }

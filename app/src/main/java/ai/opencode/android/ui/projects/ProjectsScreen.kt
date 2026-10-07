@@ -13,6 +13,8 @@ import ai.opencode.android.ui.theme.MonoSmall
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -147,6 +149,14 @@ fun ProjectsScreen(
      */
     notice: String = "",
     sessionCounts: Map<String, Int> = emptyMap(),
+    /** v9.25: Arena-style repo UX - all defaulted so gate call sites stay valid. */
+    githubConnected: Boolean = false,
+    githubRepos: List<ai.opencode.android.github.GithubRepos.Repo> = emptyList(),
+    githubBusy: Boolean = false,
+    githubProgress: String = "",
+    githubError: String = "",
+    onLoadGithubRepos: () -> Unit = {},
+    onCloneGithubRepo: (ai.opencode.android.github.GithubRepos.Repo) -> Unit = {},
     modifier: Modifier = Modifier,
     now: Long = System.currentTimeMillis(),
 ) {
@@ -171,6 +181,16 @@ fun ProjectsScreen(
             onImport = onImport,
             importing = importing,
         )
+        if (githubConnected) {
+            GithubCard(
+                repos = githubRepos,
+                busy = githubBusy,
+                progress = githubProgress,
+                error = githubError,
+                onLoad = onLoadGithubRepos,
+                onClone = onCloneGithubRepo,
+            )
+        }
         CreateProjectCard(onCreate = onCreate, existing = projects.map { it.name })
         if (importError.isNotBlank()) {
             Text(
@@ -749,6 +769,109 @@ private fun SessionRow(
  * it, and the (small) import action. Every speech- and touch-path names what the
  * path is; nothing here is only visual.
  */
+/**
+ * v9.25 (owner): "like Arena" - pick a repository, the APP clones it before
+ * any agent runs, and the chat lives on its own `opencode/chat-<id>` branch.
+ * Collapsed by default: the list is a picker, not a browser. The card only
+ * exists when the GitHub connector is on.
+ */
+@Composable
+private fun GithubCard(
+    repos: List<ai.opencode.android.github.GithubRepos.Repo>,
+    busy: Boolean,
+    progress: String,
+    error: String,
+    onLoad: () -> Unit,
+    onClone: (ai.opencode.android.github.GithubRepos.Repo) -> Unit,
+) {
+    val chat = ChatTheme.chat
+    var open by rememberSaveable { mutableStateOf(false) }
+    SectionCard(
+        title = stringResource(R.string.projects_github_label),
+        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.projects_github_body),
+            style = MaterialTheme.typography.bodySmall,
+            color = chat.muted,
+        )
+        Spacer(Modifier.height(8.dp))
+        if (error.isNotBlank()) {
+            Text(
+                text = stringResource(R.string.projects_github_error, error),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.semantics { testTag = "github_clone_error" },
+            )
+            Spacer(Modifier.height(6.dp))
+        }
+        if (busy && progress.isNotBlank()) {
+            // git's own progress line ("Receiving objects: 42% ..."), plain
+            // text - finite animations only, and git already counts for us.
+            Text(
+                text = progress,
+                style = MonoSmall,
+                color = chat.muted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.semantics { testTag = "github_clone_progress" },
+            )
+            Spacer(Modifier.height(6.dp))
+        }
+        if (!open || repos.isEmpty()) {
+            OutlinedButton(
+                onClick = {
+                    open = true
+                    if (repos.isEmpty()) onLoad()
+                },
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth().height(42.dp).semantics { testTag = "github_load_repos" },
+            ) {
+                Text(
+                    stringResource(
+                        if (busy) R.string.projects_github_loading else R.string.projects_github_browse,
+                    ),
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 260.dp)
+                    .verticalScroll(rememberScrollState())
+                    .semantics { testTag = "github_repo_list" },
+            ) {
+                for (repo in repos) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 40.dp)
+                            .clickable(enabled = !busy) { onClone(repo) }
+                            .padding(horizontal = 4.dp, vertical = 4.dp),
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                text = repo.fullName,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        if (repo.private) {
+                            Text(
+                                text = stringResource(R.string.projects_github_private),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = chat.muted,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun WorkspaceCard(
     workspacePath: String,
