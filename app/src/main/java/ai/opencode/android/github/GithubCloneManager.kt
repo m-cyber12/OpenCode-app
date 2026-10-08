@@ -12,36 +12,38 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * v9.25/v9.26: the I/O half of the GitHub project UX (pure half:
- * [GithubRepos], [GitClone]). Lists the user's repositories and clones one
- * into a fresh project directory BEFORE any agent runs, then puts it on the
- * project's own `opencode/<project>` branch - every chat of the project
- * works on that one branch, so the whole project is followable on GitHub.
+ * v9.25/v9.26/v9.27: the I/O half of the GitHub project UX (pure half:
+ * [GithubRepos]; transport: [GitSync] on JGit). Lists the user's
+ * repositories, clones one into a fresh project directory BEFORE any agent
+ * runs, parks it on the project's own `opencode/<project>` branch - and
+ * AUTO-PUSHES that branch after each completed agent reply (owner's v9.27
+ * decision), so the project's progress lives on GitHub, not in the sandbox.
  *
- * The token is read per call and handed only to [GitClone.authEnv]; it is
- * never stored here, never in a URL, never in argv, never in state.
+ * The token is read per call and handed only to [GitSync]; it is never
+ * stored here, never in a URL, never in argv, never in state.
  */
 class GithubCloneManager(
     private val apiBase: String,
     private val webBase: String,
-    private val git: () -> File,
-    private val baseEnv: () -> Map<String, String>,
 ) {
 
     data class State(
         val phase: Phase = Phase.IDLE,
         val repos: List<GithubRepos.Repo> = emptyList(),
-        /** Last progress line from git, for the UI ("Receiving objects: 42%"). */
+        /** Last progress line for the UI ("Receiving objects: 42% ..."). */
         val progress: String = "",
         /** Project name being cloned / just cloned (phase tells which). */
         val project: String = "",
         val error: String = "",
+        /** Outcome of the last auto-push ("pushed opencode/site", or the error). */
+        val pushNote: String = "",
     )
 
     enum class Phase { IDLE, LISTING, CLONING, DONE, ERROR }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var job: Job? = null
+    private var pushJob: Job? = null
 
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state
@@ -64,7 +66,7 @@ class GithubCloneManager(
 
     /**
      * Clone [repo] into [targetDir] (an EMPTY directory the project store
-     * just created) and create the chat branch. [onDone] fires with the
+     * just created) and create the project branch. [onDone] fires with the
      * branch name on success.
      */
     fun clone(repo: GithubRepos.Repo, token: String, targetDir: File, onDone: (String) -> Unit) {
@@ -74,26 +76,44 @@ class GithubCloneManager(
         )
         job = scope.launch {
             try {
-                val env = baseEnv() + GitClone.authEnv(token)
-                val rcClone = GitClone.run(
-                    GitClone.cloneCommand(git(), GithubRepos.cloneUrl(webBase, repo.fullName), targetDir),
-                    env,
-                    targetDir.parentFile,
-                ) { line -> _state.value = _state.value.copy(progress = line) }
-                if (rcClone != 0) error("git clone exited with $rcClone (${_state.value.progress})")
                 // v9.26 (owner): ONE branch per project, created here, worked
-                // on by every chat of the project - the repo on GitHub shows
-                // the whole project's progress, not per-chat shards.
+                // on by every chat of the project.
                 val branch = GitClone.projectBranch(targetDir.name)
-                // Branch creation is local-only; no auth env needed.
-                val rcBranch = GitClone.run(GitClone.branchCommand(git(), branch), baseEnv(), targetDir)
-                if (rcBranch != 0) error("git checkout -b exited with $rcBranch")
+                GitSync.cloneAndBranch(
+                    cloneUrl = GithubRepos.cloneUrl(webBase, repo.fullName),
+                    targetDir = targetDir,
+                    branch = branch,
+                    token = token,
+                ) { line -> _state.value = _state.value.copy(progress = line) }
                 _state.value = _state.value.copy(phase = Phase.DONE, progress = branch)
                 onDone(branch)
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(
                     phase = Phase.ERROR,
                     error = t.message ?: t.javaClass.simpleName,
+                )
+            }
+        }
+    }
+
+    /**
+     * v9.27 (owner): called when an agent reply completes. Pushes the
+     * project branch IF this is a GitHub project with unpushed commits.
+     * Silent on success ([State.pushNote] records it); failures land in
+     * [State.pushNote] too - never interrupting the chat.
+     */
+    fun autoPush(projectDir: File?, token: String?) {
+        if (projectDir == null || token == null) return
+        if (pushJob?.isActive == true) return
+        pushJob = scope.launch {
+            runCatching {
+                if (!GitSync.isGithubProject(projectDir)) return@launch
+                if (!GitSync.needsPush(projectDir)) return@launch
+                val note = GitSync.pushCurrentBranch(projectDir, token)
+                _state.value = _state.value.copy(pushNote = note)
+            }.onFailure { t ->
+                _state.value = _state.value.copy(
+                    pushNote = "push failed: ${t.message ?: t.javaClass.simpleName}",
                 )
             }
         }

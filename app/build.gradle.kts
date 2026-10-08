@@ -263,6 +263,16 @@ dependencies {
     // standard AndroidX wrapper over DocumentsContract — importing a folder the user
     // picked (or exporting a project as a zip) without any storage permission.
     implementation("androidx.documentfile:documentfile:1.0.1")
+    // v9.27 - JGit: the app's OWN GitHub transport. The bundled libgit.so is
+    // deliberately NO_CURL/NO_OPENSSL ("local repo ops only", ARCHITECTURE.md),
+    // so NOTHING on the device can speak https git - the owner's clone failed
+    // with "remote helper 'https' aborted session" because git re-exec'd
+    // itself as the missing helper. JGit is pure Java: clone/fetch/push ride
+    // Android's platform TLS (the same stack the repo LIST already proved on
+    // the owner's device), no helpers, no cert bundle, no seccomp exposure -
+    // and the whole flow is testable in plain JVM unit tests against local
+    // repos, which exec-ing a native git never was.
+    implementation("org.eclipse.jgit:org.eclipse.jgit:6.10.0.202406032230-r")
 
     testImplementation("junit:junit:4.13.2")
     // Instrumentation only: the runner + junit3 extension. No production dep is

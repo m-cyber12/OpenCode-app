@@ -136,30 +136,13 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             registryBase = context.getString(R.string.addons_registry_url),
         )
     }
-    // v9.25: Arena-style repo UX - the app lists repos and clones with the
-    // SAME git binary + env the runtime's own children use (field-proven).
+    // v9.25/v9.27: GitHub project UX - the app lists repos, clones and
+    // pushes with JGit over Android's platform TLS. The bundled git cannot
+    // do https (NO_CURL build) and is never exec'd by the app.
     val githubClone = remember {
         ai.opencode.android.github.GithubCloneManager(
             apiBase = context.getString(R.string.github_api_url),
             webBase = context.getString(R.string.github_web_url),
-            git = { ai.opencode.android.runtime.RuntimePaths.get(context).gitLink },
-            baseEnv = {
-                val p = ai.opencode.android.runtime.RuntimePaths.get(context)
-                // v9.26: WITH the seccomp shim (LD_PRELOAD) and the runtime's
-                // XDG dirs. Without the shim, git's `remote-https` helper died
-                // on the owner's device ("remote helper 'https' aborted
-                // session"): the server tree inherits the shim from the exec
-                // shim, a bare app-side git did not.
-                ai.opencode.android.github.GitClone.baseEnv(
-                    home = p.home,
-                    binDir = p.binDir,
-                    tmp = p.tmp,
-                    xdgConfig = p.xdgConfig,
-                    xdgData = p.xdgData,
-                    xdgCache = p.xdgCache,
-                    seccompShim = java.io.File(p.nativeLibraryDir, "libseccompshim.so"),
-                )
-            },
         )
     }
     val githubCloneState by githubClone.state.collectAsState()
@@ -311,6 +294,16 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     var openFile by remember { mutableStateOf<OpenFile?>(null) }
     val projectDir = remember(projectName) {
         if (projectName.isEmpty()) null else File(container.workspacesRoot(), projectName)
+    }
+
+    // v9.27 (owner): auto-push after each completed agent reply. When the
+    // stream flips busy -> idle, the app pushes the project branch IF this is
+    // a GitHub project with unpushed commits (cheap local check first; no-op
+    // otherwise). Failures land in the manager's pushNote, never in the chat.
+    LaunchedEffect(uiState.streaming) {
+        if (!uiState.streaming) {
+            githubClone.autoPush(projectDir, githubToken())
+        }
     }
 
     // Where the projects live, and the actions that can change it. The snapshot is

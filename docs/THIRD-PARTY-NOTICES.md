@@ -26,6 +26,7 @@ the shipped artifact by `phase10/scripts/check-apk.py` and the device gate
 | AndroidX (core-ktx, activity-compose, lifecycle, documentfile) | Apache-2.0 |
 | Jetpack Compose (UI, Material 3, Foundation, tooling) | Apache-2.0 |
 | Kotlin standard library and coroutines | Apache-2.0 |
+| Eclipse JGit (`org.eclipse.jgit` 6.10.0; the app's own GitHub clone/push transport - the bundled Git binary is local-only by design) + its `slf4j-api` dependency | EDL-1.0 (BSD-3-Clause); slf4j: MIT |
 
 ## GPL compliance for the bundled Git binary
 

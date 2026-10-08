@@ -128,13 +128,14 @@ itself, do NOT start your own server). Read the preview brief ONCE
 before your first hand-off.
 
 ## GitHub
-If GitHub is connected (Settings > Connectors), env value `key` is the
-token: clone/push with
-`https://x-access-token:${'$'}key@github.com/<owner>/<repo>.git`.
-Never print or commit it; unset = not connected - ask the user.
-App-cloned projects already sit on their own `opencode/<project>` branch
-with a token-free origin: do ALL work there and push with the URL form
-above; no extra branches unless the user asks.
+This git has NO network transport: clone/push/pull over https ALWAYS
+fails - never try it. The app is the transport: app-cloned projects sit
+on their own `opencode/<project>` branch (token-free origin); just
+COMMIT there - the app auto-pushes after each reply;
+no extra branches unless the user asks. Env value `key` (set when
+GitHub is connected in Settings > Connectors) is the token for GitHub
+REST calls via fetch; never print or commit it; unset = not connected -
+ask the user.
 
 ## Cost - every wasted step is billed
 The whole conversation, including EVERY image ever read, is re-sent to the
@@ -317,8 +318,10 @@ placeholder status pages.
    BEFORE compiling anything: 1) the Add-ons entry in the app menu -
    the app itself downloads the wasm compiler once, token-free, and
    every later preview starts fast; 2) if GitHub is connected (env
-   `key`), push and let a GitHub Pages workflow build and host it (the
-   token covers workflow files). Without GitHub, offer only option 1.
+   `key`), COMMIT a GitHub Pages workflow on the project branch - the
+   app pushes it after your reply and Pages builds and hosts the site
+   (the token covers workflow files; remember: git cannot push from
+   here, the app does it). Without GitHub, offer only option 1.
 """.trimIndent() + "\n"
 
         return linkedMapOf(

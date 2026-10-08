@@ -114,10 +114,11 @@ class EnvironmentBriefTest {
         val words = main.split(Regex("\\s+")).count { it.isNotBlank() }
         // v9.23: budget raised 480 -> 485 for the GitHub connector section +
         // the do-not-edit-briefs rule. v9.25: -> 515 for the app-cloned-repo
-        // branch contract (opencode/chat-<id>, token-free origin). All three
-        // are owner-mandated content; everything else must still fight for
-        // every word.
-        assertTrue("main brief grew to $words words - split or trim it", words < 515)
+        // branch contract. v9.27: -> 535 for the transport truth: the bundled
+        // git has NO https - a model that tries to push burns tokens on a
+        // guaranteed failure, so the brief must say the app is the transport.
+        // All owner-mandated content; everything else still fights per word.
+        assertTrue("main brief grew to $words words - split or trim it", words < 535)
         // The core product loop and cost discipline stay in the always-read part.
         assertTrue(main.contains("serve.json"))
         assertTrue(main.contains("EXISTS"))
@@ -239,9 +240,14 @@ class EnvironmentBriefTest {
         // Main brief: the GitHub connector contract + the no-self-edit rule
         // (the owner caught a model editing the briefs; they are app-owned).
         val main = EnvironmentBrief.briefText()
-        assertTrue(main.contains("x-access-token"))
-        assertTrue(main.contains("\$key@github.com"))
-        assertTrue(main.contains("Never print or commit it"))
+        // v9.27: the bundled git is NO_CURL/NO_OPENSSL - the brief must state
+        // the transport truth (the app pushes; git-over-https always fails)
+        // and must NOT contain the old push-it-yourself URL recipe.
+        assertTrue(main.contains("NO network transport"))
+        assertTrue(main.contains("auto-pushes"))
+        assertFalse(main.contains("x-access-token"))
+        assertFalse(main.contains("\$key@github.com"))
+        assertTrue(main.contains("never print or commit it"))
         assertTrue(main.contains("BRIEF-SUGGESTIONS.md"))
         assertTrue(main.contains("never\nedit them") || main.contains("never edit them"))
     }

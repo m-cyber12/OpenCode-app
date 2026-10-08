@@ -4813,3 +4813,58 @@ preloaded, the next suspects are the helper's resolution path
 cloned by v9.25 keep their old chat branch - nothing migrates them to the
 new scheme; (c) UI gates stay at exactly 20 - the new toggle/dropdown has
 testTags but no instrumented coverage.
+
+## B.48 — v9.27 (2026-10-08): the clone could NEVER work - the bundled git has no HTTPS; JGit becomes the app's transport + auto-push after each reply
+
+Owner's v9.26 pass: new create-card structure works, clone still
+"git clone exited with 128".
+
+ROOT CAUSE, this time from the build system, not a theory: phase4/
+scripts/10-build-payload.sh builds libgit.so with NO_CURL=YesPlease
+NO_OPENSSL=YesPlease — ARCHITECTURE.md even says "local repo ops only".
+The bundled git HAS NO HTTPS TRANSPORT AT ALL. The "remote helper 'https'
+aborted session" message was git re-exec'ing ITSELF as `git remote-https`,
+printing "not a git command", and exiting - which also means my B.47
+seccomp-shim diagnosis was WRONG (plausible, but wrong; the B.47 honesty
+flag said exactly where to look next and that is where the truth was).
+Corollary: the brief's "push with https://x-access-token:$key@..."
+instruction could never have worked on-device either - models following
+it were burning tokens on guaranteed failures.
+
+DECISIONS (owner, ask_user): auto-push after each completed agent reply;
+TLS-capable git rebuild PARKED as a separate later project.
+
+WHAT SHIPPED:
+1. JGit 6.10.0 (EDL/BSD-3; notices updated) is the app's OWN GitHub
+   transport: clone/fetch/push over Android's platform TLS - the exact
+   stack the repo LIST already proved on the owner's device. No helpers,
+   no CA bundle, no seccomp, no exec. GitSync.kt: cloneAndBranch,
+   isGithubProject, needsPush (cheap local ahead/upstream check),
+   pushCurrentBranch (records upstream on first push). The exec-git
+   plumbing (baseEnv/authEnv/GIT_CONFIG_*/LD_PRELOAD) is deleted;
+   GitClone keeps only the projectBranch naming rule.
+2. AUTO-PUSH: when the chat stream flips busy->idle, the app pushes the
+   project branch IF it is a GitHub project with unpushed commits (first
+   push publishes the branch; in-sync = no network). Failures land in
+   the manager's pushNote, never interrupting the chat.
+3. BRIEF made truthful (main 533 words, budget 535): "This git has NO
+   network transport ... The app is the transport ... just COMMIT there -
+   the app auto-pushes after each reply"; `key` documented for GitHub
+   REST via fetch only; the $key push URL recipe is REMOVED and the test
+   now asserts its ABSENCE. Webapp brief's Pages option reworded: commit
+   the workflow, the app pushes it.
+4. REAL TESTS, finally: GitSyncTest runs the actual clone -> branch ->
+   needs-push -> push -> up-to-date -> commit -> re-push lifecycle
+   against local bare repos on the JVM - the same code paths the device
+   executes, minus only the TLS socket. The exec-git design was
+   untestable off-device by construction; this one is not.
+
+HONESTY: (a) JGit-on-Android is the remaining device risk (posix
+attribute quirks on FUSE storage are the known sharp edge); the JVM suite
+proves the logic, the owner's pass must prove the platform; (b) the
+token now also rides in a JGit credentials object in app memory during
+transfers - still never in URLs, argv, state, or disk; (c) auto-push
+success is silent by design - verification is the repo on github.com;
+pushNote carries failures but no UI surfaces it prominently yet; (d) the
+model must configure its own git identity before committing (the brief
+does not mention it; models handle this routinely - watch the field).
