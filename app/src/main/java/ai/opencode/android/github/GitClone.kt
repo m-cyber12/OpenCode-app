@@ -1,7 +1,6 @@
 package ai.opencode.android.github
 
 import java.io.File
-import java.security.SecureRandom
 
 /**
  * v9.25: argv/env construction for the app-side `git` runs (clone, branch).
@@ -19,14 +18,38 @@ import java.security.SecureRandom
  */
 object GitClone {
 
-    /** Base env for an app-side git process; mirrors RuntimeEnv's choices. */
-    fun baseEnv(home: File, binDir: File, tmp: File): Map<String, String> = mapOf(
-        "HOME" to home.absolutePath,
-        "PATH" to binDir.absolutePath + ":/system/bin:/system/xbin",
-        "TMPDIR" to tmp.absolutePath,
-        "LANG" to "C.UTF-8",
-        "SHELL" to "/system/bin/sh",
-    )
+    /**
+     * Base env for an app-side git process; mirrors RuntimeEnv's choices.
+     *
+     * v9.26 (owner device, "remote helper 'https' aborted session"): the env
+     * must ALSO carry the seccomp shim as LD_PRELOAD. The opencode server
+     * tree gets it from the exec shim, which is why the MODEL's git pushes
+     * work on the device - but a bare app-side exec of git spawned a
+     * `git-remote-https` helper with no shim, and Android's seccomp filter
+     * killed it mid-session. Same XDG dirs as the runtime too, so git reads
+     * exactly the config the field-proven runs read.
+     */
+    fun baseEnv(
+        home: File,
+        binDir: File,
+        tmp: File,
+        xdgConfig: File? = null,
+        xdgData: File? = null,
+        xdgCache: File? = null,
+        seccompShim: File? = null,
+    ): Map<String, String> = buildMap {
+        put("HOME", home.absolutePath)
+        put("PATH", binDir.absolutePath + ":/system/bin:/system/xbin")
+        put("TMPDIR", tmp.absolutePath)
+        put("LANG", "C.UTF-8")
+        put("SHELL", "/system/bin/sh")
+        // Never let a git subprocess sit waiting for a terminal that is not there.
+        put("GIT_TERMINAL_PROMPT", "0")
+        if (xdgConfig != null) put("XDG_CONFIG_HOME", xdgConfig.absolutePath)
+        if (xdgData != null) put("XDG_DATA_HOME", xdgData.absolutePath)
+        if (xdgCache != null) put("XDG_CACHE_HOME", xdgCache.absolutePath)
+        if (seccompShim != null) put("LD_PRELOAD", seccompShim.absolutePath)
+    }
 
     /** One-shot auth: Basic x-access-token:<token>, via env - never argv. */
     fun authEnv(token: String): Map<String, String> {
@@ -46,15 +69,13 @@ object GitClone {
     fun branchCommand(git: File, branch: String): List<String> =
         listOf(git.absolutePath, "checkout", "-b", branch)
 
-    /** The owner's chosen scheme: `opencode/chat-<short-id>`, like Arena's. */
-    fun branchName(chatId: String): String = "opencode/chat-$chatId"
-
-    private val random = SecureRandom()
-
-    /** Six lowercase hex chars - short enough to read, unique enough per repo. */
-    fun newChatId(): String = buildString {
-        repeat(6) { append("0123456789abcdef"[random.nextInt(16)]) }
-    }
+    /**
+     * v9.26 (owner): ONE branch per project - `opencode/<project>` - created
+     * at clone time; every chat of that project works on it, so the whole
+     * project is followable on GitHub (the sandbox is just where it runs).
+     * Replaces the v9.25 per-chat `opencode/chat-<id>` scheme.
+     */
+    fun projectBranch(project: String): String = "opencode/" + project.lowercase()
 
     /**
      * Run one git command to completion. Returns exit code; streams each

@@ -132,9 +132,9 @@ If GitHub is connected (Settings > Connectors), env value `key` is the
 token: clone/push with
 `https://x-access-token:${'$'}key@github.com/<owner>/<repo>.git`.
 Never print or commit it; unset = not connected - ask the user.
-App-cloned projects (picked on the Projects page) already sit on an
-`opencode/chat-<id>` branch with a token-free origin: commit there and
-push with the URL form above.
+App-cloned projects already sit on their own `opencode/<project>` branch
+with a token-free origin: do ALL work there and push with the URL form
+above; no extra branches unless the user asks.
 
 ## Cost - every wasted step is billed
 The whole conversation, including EVERY image ever read, is re-sent to the

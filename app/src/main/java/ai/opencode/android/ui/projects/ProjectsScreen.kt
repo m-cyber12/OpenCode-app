@@ -13,8 +13,6 @@ import ai.opencode.android.ui.theme.MonoSmall
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +42,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -149,14 +148,15 @@ fun ProjectsScreen(
      */
     notice: String = "",
     sessionCounts: Map<String, Int> = emptyMap(),
-    /** v9.25: Arena-style repo UX - all defaulted so gate call sites stay valid. */
+    /** v9.26: GitHub-in-create-card UX - all defaulted so gate call sites stay valid. */
     githubConnected: Boolean = false,
     githubRepos: List<ai.opencode.android.github.GithubRepos.Repo> = emptyList(),
     githubBusy: Boolean = false,
     githubProgress: String = "",
     githubError: String = "",
     onLoadGithubRepos: () -> Unit = {},
-    onCloneGithubRepo: (ai.opencode.android.github.GithubRepos.Repo) -> Unit = {},
+    onConnectGithub: () -> Unit = {},
+    onCreateFromRepo: (ai.opencode.android.github.GithubRepos.Repo, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     now: Long = System.currentTimeMillis(),
 ) {
@@ -181,30 +181,19 @@ fun ProjectsScreen(
             onImport = onImport,
             importing = importing,
         )
-        if (githubConnected) {
-            GithubCard(
-                repos = githubRepos,
-                busy = githubBusy,
-                progress = githubProgress,
-                error = githubError,
-                onLoad = onLoadGithubRepos,
-                onClone = onCloneGithubRepo,
-            )
-        } else {
-            // v9.25.1: when the connector is OFF the feature is no longer
-            // invisible - one muted line says where to turn it on. This also
-            // makes "card missing" instantly diagnosable on a device.
-            Text(
-                text = stringResource(R.string.projects_github_connect_hint),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 2.dp)
-                    .semantics { testTag = "github_connect_hint" },
-            )
-        }
-        CreateProjectCard(onCreate = onCreate, existing = projects.map { it.name })
+
+        CreateProjectCard(
+            onCreate = onCreate,
+            existing = projects.map { it.name },
+            githubConnected = githubConnected,
+            githubRepos = githubRepos,
+            githubBusy = githubBusy,
+            githubProgress = githubProgress,
+            githubError = githubError,
+            onLoadRepos = onLoadGithubRepos,
+            onConnectGithub = onConnectGithub,
+            onCreateFromRepo = onCreateFromRepo,
+        )
         if (importError.isNotBlank()) {
             Text(
                 text = stringResource(R.string.projects_import_failed, importError),
@@ -484,8 +473,25 @@ private fun RenameDialog(
 private fun CreateProjectCard(
     onCreate: (String) -> Unit,
     existing: List<String>,
+    githubConnected: Boolean = false,
+    githubRepos: List<ai.opencode.android.github.GithubRepos.Repo> = emptyList(),
+    githubBusy: Boolean = false,
+    githubProgress: String = "",
+    githubError: String = "",
+    onLoadRepos: () -> Unit = {},
+    onConnectGithub: () -> Unit = {},
+    onCreateFromRepo: (ai.opencode.android.github.GithubRepos.Repo, String) -> Unit = { _, _ -> },
 ) {
     var name by rememberSaveable { mutableStateOf("") }
+    // v9.26 (owner): GitHub lives in THIS card. Toggle on -> pick a repo ->
+    // Create clones it as the project (one opencode/<project> branch for all
+    // its chats). Not saveable on purpose: a fresh visit starts plain.
+    var fromGithub by remember { mutableStateOf(false) }
+    var pickOpen by remember { mutableStateOf(false) }
+    var pickedRepo by remember {
+        mutableStateOf<ai.opencode.android.github.GithubRepos.Repo?>(null)
+    }
+    val githubMode = githubConnected && fromGithub
     // ProjectStore.sanitize is the pure name rule (no storage access), used here so
     // the hint matches what create() will actually do with the typed name.
     val taken = name.isNotBlank() && existing.contains(ProjectStore.sanitize(name))
@@ -539,13 +545,144 @@ private fun CreateProjectCard(
             Spacer(Modifier.height(10.dp))
             Button(
                 onClick = {
-                    onCreate(name)
-                    name = ""
+                    val repo = pickedRepo
+                    if (githubMode) {
+                        if (repo != null) {
+                            onCreateFromRepo(repo, name)
+                            name = ""
+                            pickedRepo = null
+                            pickOpen = false
+                        }
+                    } else {
+                        onCreate(name)
+                        name = ""
+                    }
                 },
+                // GitHub mode needs a picked repo; a running clone/list blocks
+                // double-submission. Plain mode is unchanged.
+                enabled = !githubBusy && (!githubMode || pickedRepo != null),
                 shape = RoundedCornerShape(50),
                 modifier = Modifier.fillMaxWidth().height(50.dp).semantics { testTag = "project_create" },
             ) {
                 Text(stringResource(R.string.projects_create), style = MaterialTheme.typography.labelLarge)
+            }
+            // -------- GitHub, UNDER the create button (owner's v9.26 layout):
+            // before first setup a Connect key (goes to Settings > Connectors);
+            // after it, a toggle; toggled on, a repository dropdown.
+            Spacer(Modifier.height(12.dp))
+            HorizontalDivider(color = chat.toolBorder)
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.projects_github_label),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = stringResource(R.string.projects_github_setup_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = chat.muted,
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                if (githubConnected) {
+                    Switch(
+                        checked = fromGithub,
+                        onCheckedChange = { on ->
+                            fromGithub = on
+                            if (on && githubRepos.isEmpty()) onLoadRepos()
+                        },
+                        modifier = Modifier.semantics { testTag = "github_toggle" },
+                    )
+                } else {
+                    OutlinedButton(
+                        onClick = onConnectGithub,
+                        modifier = Modifier.heightIn(min = 40.dp).semantics { testTag = "github_connect" },
+                    ) {
+                        Text(stringResource(R.string.projects_github_connect))
+                    }
+                }
+            }
+            if (githubMode) {
+                Spacer(Modifier.height(10.dp))
+                Box(Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = {
+                            if (githubRepos.isEmpty()) onLoadRepos() else pickOpen = true
+                        },
+                        enabled = !githubBusy || githubRepos.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)
+                            .semantics { testTag = "github_repo_dropdown" },
+                    ) {
+                        Text(
+                            text = pickedRepo?.fullName ?: stringResource(
+                                if (githubBusy && githubRepos.isEmpty()) {
+                                    R.string.projects_github_loading
+                                } else {
+                                    R.string.projects_github_pick
+                                },
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = pickOpen,
+                        onDismissRequest = { pickOpen = false },
+                        modifier = Modifier.semantics { testTag = "github_repo_list" },
+                    ) {
+                        for (repo in githubRepos) {
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = repo.fullName,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        if (repo.private) {
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(
+                                                text = stringResource(R.string.projects_github_private),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = chat.muted,
+                                            )
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    pickedRepo = repo
+                                    pickOpen = false
+                                },
+                            )
+                        }
+                    }
+                }
+                if (githubBusy && githubProgress.isNotBlank()) {
+                    Spacer(Modifier.height(6.dp))
+                    // git's own progress line ("Receiving objects: 42% ..."),
+                    // plain text - finite animations only; git counts for us.
+                    Text(
+                        text = githubProgress,
+                        style = MonoSmall,
+                        color = chat.muted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.semantics { testTag = "github_clone_progress" },
+                    )
+                }
+                if (githubError.isNotBlank()) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = stringResource(R.string.projects_github_error, githubError),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.semantics { testTag = "github_clone_error" },
+                    )
+                }
             }
         }
     }
@@ -782,109 +919,6 @@ private fun SessionRow(
  * it, and the (small) import action. Every speech- and touch-path names what the
  * path is; nothing here is only visual.
  */
-/**
- * v9.25 (owner): "like Arena" - pick a repository, the APP clones it before
- * any agent runs, and the chat lives on its own `opencode/chat-<id>` branch.
- * Collapsed by default: the list is a picker, not a browser. The card only
- * exists when the GitHub connector is on.
- */
-@Composable
-private fun GithubCard(
-    repos: List<ai.opencode.android.github.GithubRepos.Repo>,
-    busy: Boolean,
-    progress: String,
-    error: String,
-    onLoad: () -> Unit,
-    onClone: (ai.opencode.android.github.GithubRepos.Repo) -> Unit,
-) {
-    val chat = ChatTheme.chat
-    var open by rememberSaveable { mutableStateOf(false) }
-    SectionCard(
-        title = stringResource(R.string.projects_github_label),
-        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.projects_github_body),
-            style = MaterialTheme.typography.bodySmall,
-            color = chat.muted,
-        )
-        Spacer(Modifier.height(8.dp))
-        if (error.isNotBlank()) {
-            Text(
-                text = stringResource(R.string.projects_github_error, error),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.semantics { testTag = "github_clone_error" },
-            )
-            Spacer(Modifier.height(6.dp))
-        }
-        if (busy && progress.isNotBlank()) {
-            // git's own progress line ("Receiving objects: 42% ..."), plain
-            // text - finite animations only, and git already counts for us.
-            Text(
-                text = progress,
-                style = MonoSmall,
-                color = chat.muted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.semantics { testTag = "github_clone_progress" },
-            )
-            Spacer(Modifier.height(6.dp))
-        }
-        if (!open || repos.isEmpty()) {
-            OutlinedButton(
-                onClick = {
-                    open = true
-                    if (repos.isEmpty()) onLoad()
-                },
-                enabled = !busy,
-                modifier = Modifier.fillMaxWidth().height(42.dp).semantics { testTag = "github_load_repos" },
-            ) {
-                Text(
-                    stringResource(
-                        if (busy) R.string.projects_github_loading else R.string.projects_github_browse,
-                    ),
-                )
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 260.dp)
-                    .verticalScroll(rememberScrollState())
-                    .semantics { testTag = "github_repo_list" },
-            ) {
-                for (repo in repos) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 40.dp)
-                            .clickable(enabled = !busy) { onClone(repo) }
-                            .padding(horizontal = 4.dp, vertical = 4.dp),
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                text = repo.fullName,
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                        if (repo.private) {
-                            Text(
-                                text = stringResource(R.string.projects_github_private),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = chat.muted,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 @Composable
 private fun WorkspaceCard(
     workspacePath: String,

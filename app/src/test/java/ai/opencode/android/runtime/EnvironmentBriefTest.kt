@@ -260,11 +260,13 @@ class EnvironmentBriefTest {
         assertTrue(webapp.contains("GitHub Pages"))
         // The GitHub option is gated on the connector being present.
         assertTrue(webapp.contains("Without GitHub, offer only option 1"))
-        // v9.25: app-cloned repos - the agent must know it is ALREADY on the
-        // chat branch with a token-free origin (so it pushes the URL form,
-        // never writes the token into .git/config itself).
+        // v9.26: app-cloned repos - the agent must know it is ALREADY on the
+        // project's ONE branch (opencode/<project>) with a token-free origin
+        // (so it pushes the URL form, never writes the token into .git/config,
+        // and does not shard the project across per-chat branches).
         val main = EnvironmentBrief.briefText()
-        assertTrue(main.contains("opencode/chat-<id>"))
+        assertTrue(main.contains("opencode/<project>"))
         assertTrue(main.contains("token-free origin"))
+        assertTrue(main.contains("no extra branches"))
     }
 }

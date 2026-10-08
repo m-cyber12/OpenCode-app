@@ -12,11 +12,11 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * v9.25: the I/O half of the Arena-style repo UX (pure half: [GithubRepos],
- * [GitClone]). Lists the user's repositories and clones one into a fresh
- * project directory BEFORE the chat starts, then puts it on its own
- * `opencode/chat-<id>` branch - the same order of events the Arena platform
- * gives its agents (checkout and branch exist before the first command).
+ * v9.25/v9.26: the I/O half of the GitHub project UX (pure half:
+ * [GithubRepos], [GitClone]). Lists the user's repositories and clones one
+ * into a fresh project directory BEFORE any agent runs, then puts it on the
+ * project's own `opencode/<project>` branch - every chat of the project
+ * works on that one branch, so the whole project is followable on GitHub.
  *
  * The token is read per call and handed only to [GitClone.authEnv]; it is
  * never stored here, never in a URL, never in argv, never in state.
@@ -81,7 +81,10 @@ class GithubCloneManager(
                     targetDir.parentFile,
                 ) { line -> _state.value = _state.value.copy(progress = line) }
                 if (rcClone != 0) error("git clone exited with $rcClone (${_state.value.progress})")
-                val branch = GitClone.branchName(GitClone.newChatId())
+                // v9.26 (owner): ONE branch per project, created here, worked
+                // on by every chat of the project - the repo on GitHub shows
+                // the whole project's progress, not per-chat shards.
+                val branch = GitClone.projectBranch(targetDir.name)
                 // Branch creation is local-only; no auth env needed.
                 val rcBranch = GitClone.run(GitClone.branchCommand(git(), branch), baseEnv(), targetDir)
                 if (rcBranch != 0) error("git checkout -b exited with $rcBranch")
@@ -91,20 +94,6 @@ class GithubCloneManager(
                 _state.value = _state.value.copy(
                     phase = Phase.ERROR,
                     error = t.message ?: t.javaClass.simpleName,
-                )
-            }
-        }
-    }
-
-    /** New chat in an app-cloned (or any git) project = new branch, like Arena. */
-    fun branchForNewChat(projectDir: File?) {
-        if (projectDir == null || !File(projectDir, ".git").isDirectory) return
-        scope.launch {
-            runCatching {
-                GitClone.run(
-                    GitClone.branchCommand(git(), GitClone.branchName(GitClone.newChatId())),
-                    baseEnv(),
-                    projectDir,
                 )
             }
         }

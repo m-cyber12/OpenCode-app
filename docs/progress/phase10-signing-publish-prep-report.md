@@ -4766,3 +4766,50 @@ must uninstall once, reinstall, and re-paste the token — after that,
 never again; (c) a committed public key means anyone with the APK + repo
 could sign a look-alike TEST-ONLY build; acceptable only because these
 artifacts are sideloaded by the owner from CI and never published.
+
+## B.47 — v9.26 (2026-10-08): clone fix (seccomp shim) + GitHub moves into the create card, one branch per project
+
+Owner's v9.25.1 device pass: token re-pasted, card showed, repo list
+loaded — and `git clone` failed with exit 128, "fatal: remote helper
+'https' aborted session".
+
+ROOT CAUSE: the opencode server tree runs with `libseccompshim.so`
+LD_PRELOADed (the exec shim installs the SIGSYS->ENOSYS handler before bun
+starts, and every child inherits it) — that is exactly why the MODEL's git
+pushes work on this device. The app-side git had no shim: the
+`git-remote-https` helper it spawned was killed by Android's seccomp
+filter mid-session. FIX: `GitClone.baseEnv` now carries LD_PRELOAD
+(shim) plus the runtime's XDG dirs and GIT_TERMINAL_PROMPT=0 — the
+app-side env now mirrors the field-proven child env for real.
+
+UX RESTRUCTURE (owner's spec, implemented exactly):
+- The standalone "Clone from GitHub" card and the v9.25.1 hint line are
+  GONE. GitHub lives INSIDE the New-project card, UNDER the Create button:
+  * not connected -> a "Connect" key (testTag `github_connect`) that opens
+    Settings (connectors);
+  * connected -> a toggle (testTag `github_toggle`); toggled on, a
+    repository dropdown appears (anchor `github_repo_dropdown`, menu
+    `github_repo_list`), auto-loading the repo list on first flip;
+  * Create with a repo picked -> the app clones it as the project (typed
+    name wins, empty = repo name); Create is disabled while a repo is
+    unpicked in GitHub mode or a clone runs. Progress/error lines keep
+    tags `github_clone_progress` / `github_clone_error`.
+- ONE BRANCH PER PROJECT: clone creates `opencode/<project>` (lowercased
+  project name) and every chat of the project works on it. The v9.25
+  per-chat `opencode/chat-<id>` scheme and all three branchForNewChat hooks
+  are REMOVED - the owner wants the whole project followable on GitHub,
+  the sandbox demoted to "where it runs".
+- Brief updated to match (main 512 words, budget 515; replay ALL PINS
+  PASS; `opencode/chat-<id>` verified absent). Tests updated:
+  GitCloneTest pins LD_PRELOAD/XDG/terminal-prompt env and the
+  project-branch scheme; EnvironmentBriefTest pins `opencode/<project>`,
+  "no extra branches".
+
+HONESTY: (a) the seccomp diagnosis fits the evidence (model git works,
+app git helper aborts, the shim is the documented delta) but the proof is
+the owner's next device pass — if the clone still aborts with the shim
+preloaded, the next suspects are the helper's resolution path
+(GIT_EXEC_PATH) and the git build's cert store; (b) existing projects
+cloned by v9.25 keep their old chat branch - nothing migrates them to the
+new scheme; (c) UI gates stay at exactly 20 - the new toggle/dropdown has
+testTags but no instrumented coverage.

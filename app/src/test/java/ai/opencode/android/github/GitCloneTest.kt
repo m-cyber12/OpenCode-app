@@ -42,19 +42,39 @@ class GitCloneTest {
         assertTrue(env["PATH"]!!.contains("/system/bin"))
         assertEquals("/data/tmp", env["TMPDIR"])
         assertEquals("C.UTF-8", env["LANG"])
+        // Never wait on a terminal that is not there.
+        assertEquals("0", env["GIT_TERMINAL_PROMPT"])
+        // Optional dirs omitted -> keys absent (never empty strings).
+        assertFalse(env.containsKey("LD_PRELOAD"))
+        assertFalse(env.containsKey("XDG_CONFIG_HOME"))
     }
 
     @Test
-    fun branchSchemeIsTheOwnersChoice() {
-        assertEquals("opencode/chat-a1b2c3", GitClone.branchName("a1b2c3"))
-        val cmd = GitClone.branchCommand(File("/g"), "opencode/chat-a1b2c3")
-        assertEquals(listOf("/g", "checkout", "-b", "opencode/chat-a1b2c3"), cmd)
+    fun seccompShimRidesAsLdPreloadLikeTheServerTree() {
+        // v9.26 (owner device): without the shim, git's remote-https helper
+        // was seccomp-killed ("remote helper 'https' aborted session"). The
+        // app-side env must carry it exactly like the server tree does.
+        val env = GitClone.baseEnv(
+            home = File("/data/home"),
+            binDir = File("/data/bin"),
+            tmp = File("/data/tmp"),
+            xdgConfig = File("/data/xdg/config"),
+            xdgData = File("/data/xdg/data"),
+            xdgCache = File("/data/xdg/cache"),
+            seccompShim = File("/lib/libseccompshim.so"),
+        )
+        assertEquals("/lib/libseccompshim.so", env["LD_PRELOAD"])
+        assertEquals("/data/xdg/config", env["XDG_CONFIG_HOME"])
+        assertEquals("/data/xdg/data", env["XDG_DATA_HOME"])
+        assertEquals("/data/xdg/cache", env["XDG_CACHE_HOME"])
     }
 
     @Test
-    fun chatIdsAreShortLowercaseHexAndNotConstant() {
-        val ids = (1..50).map { GitClone.newChatId() }
-        for (id in ids) assertTrue(id.matches(Regex("^[0-9a-f]{6}$")))
-        assertTrue("50 draws produced one value - RNG broken", ids.toSet().size > 1)
+    fun oneBranchPerProjectNamedAfterIt() {
+        // v9.26 (owner): the WHOLE project - every chat - works on one
+        // `opencode/<project>` branch created at clone time.
+        assertEquals("opencode/creatorshub", GitClone.projectBranch("CreatorsHub"))
+        val cmd = GitClone.branchCommand(File("/g"), GitClone.projectBranch("site"))
+        assertEquals(listOf("/g", "checkout", "-b", "opencode/site"), cmd)
     }
 }

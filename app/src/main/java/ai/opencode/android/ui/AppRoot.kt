@@ -145,7 +145,20 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             git = { ai.opencode.android.runtime.RuntimePaths.get(context).gitLink },
             baseEnv = {
                 val p = ai.opencode.android.runtime.RuntimePaths.get(context)
-                ai.opencode.android.github.GitClone.baseEnv(p.home, p.binDir, p.tmp)
+                // v9.26: WITH the seccomp shim (LD_PRELOAD) and the runtime's
+                // XDG dirs. Without the shim, git's `remote-https` helper died
+                // on the owner's device ("remote helper 'https' aborted
+                // session"): the server tree inherits the shim from the exec
+                // shim, a bare app-side git did not.
+                ai.opencode.android.github.GitClone.baseEnv(
+                    home = p.home,
+                    binDir = p.binDir,
+                    tmp = p.tmp,
+                    xdgConfig = p.xdgConfig,
+                    xdgData = p.xdgData,
+                    xdgCache = p.xdgCache,
+                    seccompShim = java.io.File(p.nativeLibraryDir, "libseccompshim.so"),
+                )
             },
         )
     }
@@ -972,9 +985,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onNewSession = { name ->
                         store.select(name)
                         projectName = name
-                        // v9.25 (owner): every chat gets its own branch in a
-                        // git project, like Arena. No-op for non-git projects.
-                        githubClone.branchForNewChat(File(container.workspacesRoot(), name))
+                        // v9.26 (owner): a git project lives on ONE branch
+                        // (opencode/<project>, created at clone) - new chats
+                        // stay on it instead of branching per chat.
                         repository.newSession(null)
                         route = ROUTE_CHAT
                     },
@@ -1017,8 +1030,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     },
                     importing = importing,
                     importError = importError,
-                    // v9.25: the Arena-style repo picker (visible only when the
-                    // GitHub connector is on). The app clones BEFORE the chat.
+                    // v9.26 (owner): GitHub lives INSIDE the create card - a
+                    // toggle (or, before first setup, a Connect key) and a
+                    // repository dropdown; Create then clones the repo as the
+                    // project and parks it on its opencode/<project> branch.
                     githubConnected = githubConnected,
                     githubRepos = githubCloneState.repos,
                     githubBusy = githubCloneState.phase == ai.opencode.android.github.GithubCloneManager.Phase.LISTING ||
@@ -1028,14 +1043,17 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onLoadGithubRepos = {
                         githubToken()?.let { githubClone.listRepos(it) }
                     },
-                    onCloneGithubRepo = { repo ->
+                    onConnectGithub = { route = ROUTE_SETTINGS },
+                    onCreateFromRepo = { repo, typedName ->
                         val token = githubToken()
                         if (token != null) {
                             // A fresh, unique, EMPTY project dir - create() dedupes.
-                            val created = store.create(repo.name)
+                            // The typed name wins; empty = the repo's own name.
+                            val created = store.create(typedName.ifBlank { repo.name })
                             projects = store.projects()
                             githubClone.clone(repo, token, created.dir) {
-                                // Cloned and branched: surface it like any new project.
+                                // Cloned and on its project branch: surface it
+                                // like any new project.
                                 projects = store.projects()
                                 projectName = created.name
                                 expandedProject = created.name
@@ -1062,7 +1080,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         route = ROUTE_CHAT
                     },
                     onNew = {
-                        githubClone.branchForNewChat(projectDir)
                         repository.newSession(null)
                         route = ROUTE_CHAT
                     },
@@ -1380,7 +1397,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onUndo = { repository.undoLastTurn() },
                     onRedo = { repository.redoLastTurn() },
                     onNewSession = {
-                        githubClone.branchForNewChat(projectDir)
                         repository.newSession(null)
                     },
                     onOpenSessions = { route = ROUTE_SESSIONS },
