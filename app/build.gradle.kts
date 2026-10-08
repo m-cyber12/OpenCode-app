@@ -141,6 +141,27 @@ android {
 
     logger.lifecycle(signingLine)
 
+    // v9.25.1 - STABLE test-only signing. The debug/smoke artifacts used to be
+    // signed by the CI runner's auto-generated ~/.android/debug.keystore, which
+    // is DIFFERENT on every run: Android then refuses to install one CI build
+    // over the previous one, and the forced uninstall wipes app data - the
+    // owner lost the Keystore-held GitHub connector token exactly this way.
+    // The fix is a COMMITTED, deliberately PUBLIC test-only key (the universal
+    // Android debug password; check-release-invariants.py pins the file by
+    // SHA-256 so it is tamper-evident and remains the ONLY key file allowed in
+    // the tree). It signs nothing anyone should trust - TEST-ONLY artifacts
+    // only; release signing above is untouched and stays env/properties-fed.
+    val testOnlyStorePassword = "android" // public by design, NOT a secret
+    signingConfigs {
+        create("testOnly") {
+            storeFile = file("testonly-debug-signing.p12")
+            storePassword = testOnlyStorePassword
+            keyAlias = "androiddebugkey"
+            keyPassword = testOnlyStorePassword
+            storeType = "PKCS12"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -155,13 +176,16 @@ android {
         }
         debug {
             applicationIdSuffix = ".debug"   // debug coexists; run-as works on debuggable builds
+            signingConfig = signingConfigs.getByName("testOnly") // stable across CI runs (v9.25.1)
         }
         // PHASE 10 — `smoke`: the RELEASE configuration, made runnable by the
         // device gates. Same applicationId as release, same payload, same
         // (unminified) code shape, same proguard/no-proguard decision — the only
         // differences are `debuggable=true` (so `am instrument` + `run-as` can see
-        // into it) and the signing key (the public AOSP debug key, because CI must
-        // never touch the real release keystore).
+        // into it) and the signing key (the committed PUBLIC test-only key, because
+        // CI must never touch the real release keystore - and because a key that is
+        // stable across runs is what lets the owner install one CI build over the
+        // previous one without losing app data; see the testOnly config above).
         //
         // Why this exists: every gate in Phases 4-9 ran against the *debug*
         // applicationId, so "the release build does something different" was an
@@ -172,7 +196,7 @@ android {
         create("smoke") {
             initWith(getByName("release"))
             isDebuggable = true
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("testOnly")
             matchingFallbacks += listOf("release")
         }
     }

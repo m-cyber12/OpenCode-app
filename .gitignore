@@ -32,6 +32,12 @@ keystore.properties
 *.jks
 *.keystore
 *.p12
+# ...EXCEPT the one committed PUBLIC test-only signing key. It is not a secret
+# (password "android", zero trust - see check-release-invariants.py, which pins
+# it by SHA-256): it exists only so successive TEST-ONLY CI builds share a
+# signature, letting the owner install updates without an uninstall that wipes
+# app data (v9.25: that wipe cost the Keystore-held GitHub token).
+!app/testonly-debug-signing.p12
 *.pepk
 # the AAB/APK signing outputs of a local release build
 phase10/out/

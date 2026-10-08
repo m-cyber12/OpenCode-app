@@ -82,7 +82,11 @@ class ProjectStore internal constructor(
      * directory shows up instead of being orphaned.
      */
     fun projects(): List<Project> {
-        val dirs = root.listFiles { f -> f.isDirectory }?.toList() ?: emptyList()
+        // v9.25.1: dot-directories are infrastructure, not projects. The add-on
+        // store (`.addons`, v9.24) lives beside the projects in the workspace
+        // root and was showing up in the list as a bogus "Not opened yet"
+        // project on the owner's device.
+        val dirs = root.listFiles { f -> f.isDirectory && !f.name.startsWith(".") }?.toList() ?: emptyList()
         return dirs
             .map { d ->
                 Project(

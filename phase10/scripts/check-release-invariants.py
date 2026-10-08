@@ -40,6 +40,16 @@ FORBIDDEN_FILE_PATTERNS = [
     r".*\.jks$", r".*\.keystore$", r".*\.p12$", r".*\.pfx$", r".*\.pepk$",
     r"(^|/)keystore\.properties$", r".*\.b64\.keystore$",
 ]
+# v9.25.1 - ONE exception, pinned by content hash, owner-reported data loss:
+# the TEST-ONLY debug signing key is deliberately PUBLIC (password "android",
+# zero trust; never used for release artifacts, which stay env/properties
+# signed). Its only job is a STABLE signature across CI runs: the runner's
+# auto-generated ~/.android/debug.keystore changed every run, so every
+# sideloaded update forced an uninstall that wiped app data - including the
+# Keystore-held GitHub connector token. Any OTHER key file still fails, and a
+# MODIFIED version of this one fails too (hash mismatch = tamper-evident).
+ALLOWED_TESTONLY_KEY = "app/testonly-debug-signing.p12"
+ALLOWED_TESTONLY_KEY_SHA256 = "1df00833f386ebfb4961a3c31db47df2ce96cb4aa0968d6278e0e978becbc46b"
 # Things that look like a real secret in a text file.
 SECRET_IN_TEXT = [
     re.compile(r"-----BEGIN (RSA|EC|DSA|OPENSSH|PGP) PRIVATE KEY-----"),
@@ -62,6 +72,18 @@ PRIVACY_REQUIRED_PHRASES = [
 COPY_LIMITS = {"short": 80, "full": 4000}
 
 SKIP_DIRS = {".git", "build", "out", "node_modules", ".gradle", "dist", ".idea"}
+
+
+def _sha256(path):
+    import hashlib
+    h = hashlib.sha256()
+    try:
+        with open(path, "rb") as fh:
+            for chunk in iter(lambda: fh.read(65536), b""):
+                h.update(chunk)
+    except OSError:
+        return ""
+    return h.hexdigest()
 
 
 def read(path):
@@ -115,7 +137,11 @@ def main():
         rel = os.path.relpath(path, root)
         for pat in FORBIDDEN_FILE_PATTERNS:
             if re.match(pat, rel):
-                fail("key material in the tree: %s" % rel)
+                if rel.replace(os.sep, "/") == ALLOWED_TESTONLY_KEY and _sha256(path) == ALLOWED_TESTONLY_KEY_SHA256:
+                    notes.append("pinned TEST-ONLY signing key accepted: %s" % rel)
+                else:
+                    fail("key material in the tree: %s" % rel)
+                break
         if os.path.getsize(path) > 2_000_000:
             continue
         text = read(path)

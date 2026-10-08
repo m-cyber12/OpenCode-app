@@ -4708,3 +4708,61 @@ on-screen git error line will say why; (2) repo list is one page of
 at new-session taps - the FIRST session of a non-GitHub project created
 before v9.25 keeps whatever branch it was on; (4) no instrumented tests
 added, smoke suite stays at exactly 20 gates.
+
+## B.46 — v9.25.1 (2026-10-08): owner-reported bugs — the missing GitHub card was a SIGNING problem, not a UI problem
+
+Owner installed v9.25 (screenshot-verified: Add-ons version field present)
+and reported: (A) no "Clone from GitHub" card on Projects despite the
+connector having been on; (B) `.addons` listed as a project.
+
+ROOT CAUSE of (A) — found by elimination, then confirmed in the build
+system: the v9.25 Projects code on `origin` was correct (GithubCard gated
+on `githubConnected`, call-site args correct). The gate was false on the
+device because the TOKEN WAS GONE: the TEST-ONLY smoke APK was signed with
+the CI runner's `~/.android/debug.keystore`, which is auto-generated FRESH
+ON EVERY RUN. Different signature => Android refuses install-over => the
+owner had to uninstall => app data (Android Keystore secrets, prefs) wiped
+=> GitHub token deleted => card correctly hidden. The `.addons` tarball and
+all projects survived because shared storage outlives an uninstall — which
+is exactly the pattern the owner's screenshots show.
+
+FIXES:
+1. STABLE TEST-ONLY SIGNING KEY, committed at `app/testonly-debug-signing.p12`
+   (PKCS12, alias `androiddebugkey`, password `android` — deliberately
+   PUBLIC, zero trust; signs only debug/smoke TEST-ONLY artifacts; release
+   signing untouched, still env/properties-fed). From the first v9.25.1
+   artifact onward, every CI build shares one signature and installs OVER
+   the previous one; app data and the token survive updates.
+   SECURITY GATE, changed EXPLICITLY (not silently): check-release-invariants
+   "NO KEY MATERIAL" now allows exactly this ONE path, and only when its
+   SHA-256 equals the pinned constant
+   1df00833f386ebfb4961a3c31db47df2ce96cb4aa0968d6278e0e978becbc46b.
+   Verified by experiment, not reasoning: a copy planted as `evil.p12`
+   FAILS the gate; appending one byte to the pinned file FAILS the gate;
+   the pristine file passes with a NOTE. The owner can veto this and we
+   revert — the cost of the veto is that every future update again
+   requires uninstall + token re-paste.
+2. SELF-HEALING CONNECTOR FLAG: `githubConnected` was a one-shot
+   `remember{}` Keystore read frozen for the process lifetime; it now
+   re-reads the Keystore (IO dispatcher) every time Projects or Settings
+   opens, so paste/disconnect/cold-start glitches can no longer strand the
+   UI in a stale state.
+3. DISCONNECTED HINT: when the connector is off, Projects now shows one
+   muted line ("Connect GitHub in Settings…", testTag
+   `github_connect_hint`) instead of nothing — the feature is discoverable
+   and "card missing" is diagnosable at a glance.
+4. DOT-DIRECTORIES HIDDEN: `ProjectStore.projects()` skips names starting
+   with `.` (fixes `.addons`-as-project). `sanitize` already strips leading
+   dots, so no real project can be hidden. Pinned by a new JVM test
+   (`dotDirectoriesAreInfrastructureNotProjects`).
+
+HONESTY: (a) the uninstall-wiped-token chain is the only explanation that
+fits all the evidence (correct code on origin, token present on v9.23/24,
+`.addons` surviving in shared storage), but I cannot read the owner's
+device — if Settings still says "GitHub is connected" on the v9.25 build,
+this diagnosis is wrong and I need to look again; (b) ONE more uninstall
+is unavoidable: v9.25.1 changes the signing key a final time, so the owner
+must uninstall once, reinstall, and re-paste the token — after that,
+never again; (c) a committed public key means anyone with the APK + repo
+could sign a look-alike TEST-ONLY build; acceptable only because these
+artifacts are sideloaded by the owner from CI and never published.

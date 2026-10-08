@@ -856,6 +856,17 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             storedIdList = withContext(Dispatchers.IO) { container.storedProviderIds() }
             hardwareBacked = withContext(Dispatchers.IO) { container.hardwareBackedLabel() }
         }
+        // v9.25.1: the GitHub-connector flag re-reads the Keystore whenever a
+        // surface that depends on it opens. The one-shot `remember` read froze
+        // whatever a cold start saw for the whole process lifetime - so a token
+        // pasted (or lost) later never changed the Projects page until relaunch.
+        if (route == ROUTE_PROJECTS || route == ROUTE_SETTINGS) {
+            githubConnected = withContext(Dispatchers.IO) {
+                runCatching {
+                    secrets.get(ai.opencode.android.security.GithubConnector.SECRET_NAME) != null
+                }.getOrDefault(githubConnected)
+            }
+        }
     }
     // "Is a model actually configured" - derived only from server + Keystore facts.
     val providerSetup = ProviderSetupClassifier.classify(

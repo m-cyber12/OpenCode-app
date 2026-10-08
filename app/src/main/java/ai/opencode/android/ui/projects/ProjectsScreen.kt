@@ -190,6 +190,19 @@ fun ProjectsScreen(
                 onLoad = onLoadGithubRepos,
                 onClone = onCloneGithubRepo,
             )
+        } else {
+            // v9.25.1: when the connector is OFF the feature is no longer
+            // invisible - one muted line says where to turn it on. This also
+            // makes "card missing" instantly diagnosable on a device.
+            Text(
+                text = stringResource(R.string.projects_github_connect_hint),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 2.dp)
+                    .semantics { testTag = "github_connect_hint" },
+            )
         }
         CreateProjectCard(onCreate = onCreate, existing = projects.map { it.name })
         if (importError.isNotBlank()) {

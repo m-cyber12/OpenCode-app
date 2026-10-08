@@ -25,6 +25,22 @@ class ProjectStoreLifecycleTest {
     private fun store(): ProjectStore = ProjectStore(tmp.newFolder("workspaces"), FakePrefs())
 
     @Test
+    fun dotDirectoriesAreInfrastructureNotProjects() {
+        // v9.25.1 (owner device report): the add-on store `.addons` (v9.24)
+        // lives beside the projects in the workspace root and was listed as a
+        // bogus "Not opened yet" project. Dot-directories must never appear.
+        // `sanitize` trims leading dots, so no REAL project can start with one.
+        val root = tmp.newFolder("workspaces")
+        val s = ProjectStore(root, FakePrefs())
+        s.create("site")
+        File(root, ".addons").mkdirs()
+        File(root, ".cache").mkdirs()
+        assertEquals(listOf("site"), s.projects().map { it.name })
+        // ...and no user-typed name can BECOME a dot-directory:
+        assertEquals("addons", ProjectStore.sanitize(".addons"))
+    }
+
+    @Test
     fun createSuffixesCollisions() {
         val s = store()
         val a = s.create("app")
