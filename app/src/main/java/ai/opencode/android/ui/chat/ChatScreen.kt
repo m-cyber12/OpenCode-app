@@ -952,7 +952,7 @@ private fun BusyBar(todos: List<TodoItem> = emptyList()) {
                                 style = MaterialTheme.typography.bodySmall,
                                 color = when (todo.status) {
                                     "in_progress" -> MaterialTheme.colorScheme.onSurface
-                                    else -> chat.muted,
+                                    else -> chat.muted
                                 },
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
