@@ -251,7 +251,7 @@ class EnvironmentBriefTest {
         assertFalse(main.contains("NO network transport"))
         assertFalse(main.contains("auto-push"))
         // Non-GitHub projects have no token AT ALL now - the brief says so.
-        assertTrue(main.contains("no GitHub\naccess BY DESIGN") || main.contains("BY DESIGN"))
+        assertTrue(main.contains("BY DESIGN"))
         assertTrue(main.contains("never print or commit it"))
         assertTrue(main.contains("BRIEF-SUGGESTIONS.md"))
         assertTrue(main.contains("never\nedit them") || main.contains("never edit them"))

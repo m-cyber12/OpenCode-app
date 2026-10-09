@@ -43,6 +43,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
     @Volatile private var userStopRequested = false
     @Volatile private var generation = 0   // bumped on stop/reset; invalidates old supervisor loops
     @Volatile var abi: String? = null
+        private set
 
     /**
      * v9.29: whether the LAST-built server environment carries the GitHub
@@ -51,7 +52,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
      */
     @Volatile var envHasGithubToken: Boolean = false
         private set
-        private set
+
     @Volatile var manifest: RuntimeManifest? = null
         private set
     private val restartLock = Any()

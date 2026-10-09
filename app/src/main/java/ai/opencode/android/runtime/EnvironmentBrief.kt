@@ -132,10 +132,11 @@ Env value `key` set = GitHub project: the checkout is on its
 `opencode/<project>` branch (token-free origin) and git speaks https.
 YOU push your work: set git user.name/email once, commit, then
 `git push https://x-access-token:${'$'}key@github.com/<owner>/<repo>.git HEAD`
-(owner/repo: `git remote get-url origin`). Stay there - no extra
-branches unless the user asks; never print or commit it; `key` also
-works for GitHub REST via fetch. Unset `key` = no GitHub access BY
-DESIGN - don't try; connecting happens in Settings > Connectors.
+(owner/repo: `git remote get-url origin`). Stay there -
+no extra branches unless the user asks; never print or commit it;
+`key` also works for GitHub REST via fetch. Unset `key` = no GitHub
+access BY DESIGN - don't try; connecting happens in
+Settings > Connectors.
 
 ## Cost - every wasted step is billed
 The whole conversation, including EVERY image ever read, is re-sent to the
