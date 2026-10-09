@@ -35,15 +35,12 @@ class GithubCloneManager(
         /** Project name being cloned / just cloned (phase tells which). */
         val project: String = "",
         val error: String = "",
-        /** Outcome of the last auto-push ("pushed opencode/site", or the error). */
-        val pushNote: String = "",
     )
 
     enum class Phase { IDLE, LISTING, CLONING, DONE, ERROR }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var job: Job? = null
-    private var pushJob: Job? = null
 
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state
@@ -96,28 +93,11 @@ class GithubCloneManager(
         }
     }
 
-    /**
-     * v9.27 (owner): called when an agent reply completes. Pushes the
-     * project branch IF this is a GitHub project with unpushed commits.
-     * Silent on success ([State.pushNote] records it); failures land in
-     * [State.pushNote] too - never interrupting the chat.
-     */
-    fun autoPush(projectDir: File?, token: String?) {
-        if (projectDir == null || token == null) return
-        if (pushJob?.isActive == true) return
-        pushJob = scope.launch {
-            runCatching {
-                if (!GitSync.isGithubProject(projectDir)) return@launch
-                if (!GitSync.needsPush(projectDir)) return@launch
-                val note = GitSync.pushCurrentBranch(projectDir, token)
-                _state.value = _state.value.copy(pushNote = note)
-            }.onFailure { t ->
-                _state.value = _state.value.copy(
-                    pushNote = "push failed: ${t.message ?: t.javaClass.simpleName}",
-                )
-            }
-        }
-    }
+    // v9.29 (owner): the app-side auto-push is GONE. The owner's device pass
+    // proved the bundled git speaks https, so the MODEL pushes its own work
+    // (the environment brief carries the x-access-token URL recipe). The
+    // JGit-based autoPush had failed silently on device - its invisible
+    // pushNote was exactly the weakness §B.49 flagged.
 
     /**
      * v9.28 (owner): every session of a GitHub project stays on the project

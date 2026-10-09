@@ -43,6 +43,14 @@ class RuntimeManager private constructor(private val appContext: Context) {
     @Volatile private var userStopRequested = false
     @Volatile private var generation = 0   // bumped on stop/reset; invalidates old supervisor loops
     @Volatile var abi: String? = null
+
+    /**
+     * v9.29: whether the LAST-built server environment carries the GitHub
+     * token (`key`). AppRoot compares this against what the active project
+     * deserves and restarts when a project switch crosses the boundary.
+     */
+    @Volatile var envHasGithubToken: Boolean = false
+        private set
         private set
     @Volatile var manifest: RuntimeManifest? = null
         private set
@@ -225,11 +233,26 @@ class RuntimeManager private constructor(private val appContext: Context) {
             // v9.23 exception, owner-specified: the GitHub connector token IS
             // environment ("key"), because the consumer is the agent's own
             // shell (git), not the server API. Keystore-held, device-local.
+            // v9.29 (owner): GITHUB-PROJECTS-ONLY. A project created without
+            // GitHub must not be able to touch the user's repositories, so
+            // `key` enters the environment ONLY when the ACTIVE project is a
+            // git checkout whose origin is github.com (the app-cloned kind).
+            // AppRoot restarts the server when a project switch crosses that
+            // boundary, so the env always matches the project on screen.
             val githubToken = runCatching {
-                ai.opencode.android.security.SecretStore.get(appContext)
-                    .get(ai.opencode.android.security.GithubConnector.SECRET_NAME)
+                val active = ai.opencode.android.projects.ProjectStore.get(appContext).active()
+                if (active != null && ai.opencode.android.github.GitSync.isGithubProject(active.dir)) {
+                    ai.opencode.android.security.SecretStore.get(appContext)
+                        .get(ai.opencode.android.security.GithubConnector.SECRET_NAME)
+                } else {
+                    null
+                }
             }.getOrNull()
-            if (githubToken != null) logger.host("github connector: token -> env 'key' (value withheld)")
+            envHasGithubToken = githubToken != null
+            logger.host(
+                if (githubToken != null) "github connector: token -> env 'key' (github project; value withheld)"
+                else "github connector: env 'key' ABSENT (no token, or active project is not a GitHub project)",
+            )
             val env = RuntimeEnv.build(paths, ok.abi, password, bindHost, githubToken = githubToken)
 
             // ---- 4. start / health / crash loop --------------------------

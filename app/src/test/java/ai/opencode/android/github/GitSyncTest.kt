@@ -4,7 +4,6 @@ import java.io.File
 import org.eclipse.jgit.api.Git
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -68,37 +67,10 @@ class GitSyncTest {
         assertTrue(GitSync.isGithubProject(project).not()) // local origin, not github.com
     }
 
-    @Test
-    fun autoPushLifecycleFirstPushThenUpToDateThenNewCommit() {
-        val origin = bareOrigin()
-        val project = tmp.newFolder("app")
-        GitSync.cloneAndBranch(
-            origin.absolutePath, project, GitClone.projectBranch("app"), "unused",
-        ) { }
-        // Fresh project branch: never pushed -> needs a push even with no new work.
-        assertTrue(GitSync.needsPush(project))
-        assertEquals("pushed opencode/app", GitSync.pushCurrentBranch(project, "unused"))
-        Git.open(File(origin.path)).use { bare ->
-            assertNotNull(bare.repository.resolve("refs/heads/opencode/app"))
-        }
-        // Upstream recorded -> in-sync branch does not spam the network.
-        assertFalse(GitSync.needsPush(project))
-        assertEquals("up to date", GitSync.pushCurrentBranch(project, "unused"))
-        // The agent commits (bundled git on device; JGit stands in here)...
-        Git.open(project).use { git ->
-            File(project, "work.txt").writeText("done\n")
-            git.add().addFilepattern("work.txt").call()
-            git.commit().setMessage("agent work").setCommitter("t", "t@test").setSign(false).call()
-        }
-        // ...and the post-reply auto-push moves the remote.
-        assertTrue(GitSync.needsPush(project))
-        assertEquals("pushed opencode/app", GitSync.pushCurrentBranch(project, "unused"))
-        Git.open(File(origin.path)).use { bare ->
-            val tip = bare.repository.resolve("refs/heads/opencode/app")
-            val commit = bare.repository.parseCommit(tip)
-            assertEquals("agent work", commit.shortMessage)
-        }
-    }
+    // v9.29 (owner): the autoPush lifecycle test went with the feature -
+    // pushing is now the MODEL's job via the bundled https-capable git,
+    // which JGit-in-JVM cannot stand in for. Clone, branch creation and
+    // branch stickiness remain covered below.
 
     @Test
     fun ensureProjectBranchPutsAStrayCheckoutBack() {

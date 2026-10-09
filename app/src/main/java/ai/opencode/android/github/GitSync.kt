@@ -3,8 +3,6 @@ package ai.opencode.android.github
 import java.io.File
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.BatchingProgressMonitor
-import org.eclipse.jgit.lib.BranchTrackingStatus
-import org.eclipse.jgit.transport.RemoteRefUpdate
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 
 /**
@@ -108,60 +106,7 @@ object GitSync {
         }.getOrDefault(false)
     }
 
-    /**
-     * How many commits the current branch is AHEAD of its upstream; 0 when
-     * in sync, and ALSO when the branch has no upstream yet (first push) -
-     * callers that need "is there anything to push" should use [needsPush].
-     */
-    private fun aheadCount(git: Git): Int? {
-        val branch = git.repository.branch ?: return null
-        return BranchTrackingStatus.of(git.repository, branch)?.aheadCount
-    }
-
-    /**
-     * True when pushing would move the remote: the branch has local commits
-     * its upstream lacks, or it has never been pushed at all (no upstream).
-     */
-    fun needsPush(dir: File): Boolean = runCatching {
-        Git.open(dir).use { git ->
-            if (git.repository.resolve("HEAD") == null) return@use false // empty repo
-            val ahead = aheadCount(git)
-            ahead == null || ahead > 0
-        }
-    }.getOrDefault(false)
-
-    /**
-     * Push the CURRENT branch to origin under its own name, creating it
-     * remotely on first push and recording the upstream so [needsPush] can
-     * answer cheaply next time. Returns a one-line human summary.
-     * Throws on transport/auth failures - callers surface the message.
-     */
-    fun pushCurrentBranch(dir: File, token: String, onLine: (String) -> Unit = {}): String {
-        Git.open(dir).use { git ->
-            val branch = git.repository.branch ?: error("no current branch")
-            val results = git.push()
-                .setRemote("origin")
-                .add(branch)
-                .setCredentialsProvider(credentials(token))
-                .setProgressMonitor(monitor(onLine))
-                .call()
-            // Record branch.<name>.remote/merge once, so tracking status works.
-            val cfg = git.repository.config
-            if (cfg.getString("branch", branch, "remote") == null) {
-                cfg.setString("branch", branch, "remote", "origin")
-                cfg.setString("branch", branch, "merge", "refs/heads/$branch")
-                cfg.save()
-            }
-            for (result in results) {
-                for (update in result.remoteUpdates) {
-                    when (update.status) {
-                        RemoteRefUpdate.Status.OK -> return "pushed $branch"
-                        RemoteRefUpdate.Status.UP_TO_DATE -> return "up to date"
-                        else -> error("push $branch: ${update.status}${update.message?.let { " - $it" } ?: ""}")
-                    }
-                }
-            }
-            return "nothing to push"
-        }
-    }
+    // v9.29 (owner): pushCurrentBranch / needsPush REMOVED. JGit now only
+    // CLONES (device-proven); pushing is the model's job via the bundled
+    // https-capable git - see the environment brief's GitHub section.
 }

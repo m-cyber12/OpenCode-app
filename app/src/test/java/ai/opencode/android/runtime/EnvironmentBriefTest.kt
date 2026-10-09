@@ -117,6 +117,8 @@ class EnvironmentBriefTest {
         // branch contract. v9.27: -> 535 for the transport truth: the bundled
         // git has NO https - a model that tries to push burns tokens on a
         // guaranteed failure, so the brief must say the app is the transport.
+        // v9.29 REVERSED that: https git is device-proven, the model pushes
+        // itself - the section was rewritten within the same 535 budget.
         // All owner-mandated content; everything else still fights per word.
         assertTrue("main brief grew to $words words - split or trim it", words < 535)
         // The core product loop and cost discipline stay in the always-read part.
@@ -240,13 +242,16 @@ class EnvironmentBriefTest {
         // Main brief: the GitHub connector contract + the no-self-edit rule
         // (the owner caught a model editing the briefs; they are app-owned).
         val main = EnvironmentBrief.briefText()
-        // v9.27: the bundled git is NO_CURL/NO_OPENSSL - the brief must state
-        // the transport truth (the app pushes; git-over-https always fails)
-        // and must NOT contain the old push-it-yourself URL recipe.
-        assertTrue(main.contains("NO network transport"))
-        assertTrue(main.contains("auto-pushes"))
-        assertFalse(main.contains("x-access-token"))
-        assertFalse(main.contains("\$key@github.com"))
+        // v9.29 (owner): git speaks https on device (proven 2026-10-09) and
+        // the model pushes its own work - the brief must carry the URL push
+        // recipe and must NOT claim the old no-transport/auto-push world.
+        assertTrue(main.contains("x-access-token"))
+        assertTrue(main.contains("\$key@github.com"))
+        assertTrue(main.contains("git remote get-url origin"))
+        assertFalse(main.contains("NO network transport"))
+        assertFalse(main.contains("auto-push"))
+        // Non-GitHub projects have no token AT ALL now - the brief says so.
+        assertTrue(main.contains("no GitHub\naccess BY DESIGN") || main.contains("BY DESIGN"))
         assertTrue(main.contains("never print or commit it"))
         assertTrue(main.contains("BRIEF-SUGGESTIONS.md"))
         assertTrue(main.contains("never\nedit them") || main.contains("never edit them"))

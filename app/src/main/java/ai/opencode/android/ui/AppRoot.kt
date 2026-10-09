@@ -296,19 +296,23 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         if (projectName.isEmpty()) null else File(container.workspacesRoot(), projectName)
     }
 
-    // v9.27 (owner): auto-push after each completed agent reply. When the
-    // stream flips busy -> idle, the app pushes the project branch IF this is
-    // a GitHub project with unpushed commits (cheap local check first; no-op
-    // otherwise). Failures land in the manager's pushNote, never in the chat.
-    LaunchedEffect(uiState.streaming) {
-        if (!uiState.streaming) {
-            githubClone.autoPush(projectDir, githubToken())
-        }
-    }
     // v9.28 (owner): a GitHub project is ALWAYS on its project branch - the
     // moment it becomes the active project, the checkout is re-asserted.
+    // v9.29 (owner): auto-push is GONE - the model pushes itself (the brief
+    // teaches the $key URL form; device-proven via git-remote-https). The
+    // app's job here is token ISOLATION instead: `key` may exist in the
+    // server env only while a GITHUB project is active, so switching across
+    // the GitHub/non-GitHub boundary restarts the server with the right env
+    // (same restart the Settings token save already uses).
     LaunchedEffect(projectName) {
         githubClone.ensureProjectBranch(projectDir)
+        if (projectName.isNotEmpty() && summary.ready) {
+            val want = withContext(Dispatchers.IO) {
+                githubToken() != null &&
+                    ai.opencode.android.github.GitSync.isGithubProject(projectDir)
+            }
+            if (want != runtime.envHasGithubToken) runtime.resetAndRestart()
+        }
     }
 
     // Where the projects live, and the actions that can change it. The snapshot is

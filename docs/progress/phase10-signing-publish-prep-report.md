@@ -4917,3 +4917,54 @@ but this exact combination first compiles on THIS CI run - a build
 failure here is possible and will be iterated; (c) auto-push remains the
 primary transport either way - model-side https is autonomy, not a
 replacement.
+
+## B.50 - 2026-10-09: v9.29 - model-side push + token scoped to GitHub projects (owner device pass)
+
+OWNER DEVICE PASS (4 screenshots): `git ls-remote
+https://github.com/octocat/Hello-World.git` returned the full ref list
+ON DEVICE - the v9.28 https stack (curl 8.10.1 + Mbed TLS 3.6.2 ->
+libgitremotehttp.so) is PROVEN, first try. The model even self-set
+git user.name/email and committed. BUT the GitHub repo showed only
+`main`: the v9.27 JGit auto-push NEVER DELIVERED `opencode/roz` - it
+failed silently, exactly the invisible-pushNote weakness B.49 flagged.
+Owner: items 1+2 approved; "let the model push itself"; projects
+created without GitHub must not access the token or user repos.
+
+1. AUTO-PUSH REMOVED (owner reversal of v9.27). Gone: the
+   LaunchedEffect(streaming) hook in AppRoot, GithubCloneManager.autoPush
+   + pushNote + pushJob, GitSync.pushCurrentBranch/needsPush/aheadCount,
+   and the autoPushLifecycle JVM test. JGit now only CLONES (that part
+   is device-proven); clone/branch/stickiness tests stay.
+2. MODEL PUSHES ITSELF - brief GitHub section REWRITTEN (the flip B.49
+   promised): `key` set = GitHub project; push recipe
+   `git push https://x-access-token:$key@github.com/<owner>/<repo>.git HEAD`,
+   owner/repo read from `git remote get-url origin`; stay on
+   `opencode/<project>`; never print or commit the token. The
+   "NO network transport"/auto-push claims are DELETED; pin tests
+   flipped (x-access-token now REQUIRED, auto-push now FORBIDDEN).
+   webapp.md item 13 updated: the model pushes the Pages workflow
+   itself. Brief budget respected: 531 words < 535 after trimming.
+3. TOKEN SCOPED TO GITHUB PROJECTS (owner). RuntimeManager now injects
+   env `key` ONLY when ProjectStore.active() is a GitSync.isGithubProject
+   checkout AND the secret exists; it logs which way it decided and
+   records envHasGithubToken. AppRoot's project-switch effect compares
+   that flag with what the incoming project deserves and calls
+   runtime.resetAndRestart() when the GitHub/non-GitHub boundary is
+   crossed - the same restart the Settings token save already used, so
+   the env always matches the project on screen. Non-GitHub projects
+   get NO token BY DESIGN (and the brief says so). Rejected designs:
+   token in .git/config (plaintext on shared storage) and a
+   GIT_ASKPASS helper (callable from any same-uid shell in any project).
+   Settings strings updated to state the scoping truthfully.
+
+HONESTY: (a) the push recipe is brief-taught, not app-enforced - a
+model can still forget to push; the difference from v9.27 is that a
+push FAILURE is now visible in the chat instead of swallowed by a
+silent pushNote; (b) ls-remote (fetch path) is device-proven, an actual
+authenticated PUSH over the bundled stack is not yet - next owner pass
+should ask the agent to push and then check the branch on github.com;
+(c) crossing the project boundary restarts the local server, which
+drops any in-flight agent run in the project being left - accepted,
+isolation was the owner's requirement; (d) the token-presence check at
+restart runs JGit on the main-thread effect only via Dispatchers.IO -
+the RuntimeManager side runs on its own supervisor thread already.
