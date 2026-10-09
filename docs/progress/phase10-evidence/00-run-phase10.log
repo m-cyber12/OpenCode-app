@@ -1,9 +1,9 @@
-=== PHASE 10 START 2026-10-08T14:28:08Z ===
+=== PHASE 10 START 2026-10-09T08:29:27Z ===
 ########## 1/9 static checks (phase 9 invariants + phase 10 release invariants) ##########
-=== Phase 10 static checks 2026-10-08T14:28:08Z ===
+=== Phase 10 static checks 2026-10-09T08:29:27Z ===
 
 === phase 9 static checks (not weakened) ===
-=== Phase 9 static checks 2026-10-08T14:28:08Z ===
+=== Phase 9 static checks 2026-10-09T08:29:27Z ===
 OK   bash -n on 42 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8/phase9 driver
@@ -36,7 +36,7 @@ check-ui-strings.sh rc=0
 OK   ui strings + resources
 
 === ui accessibility (contentDescription / labels) ===
-check-ui-a11y: 25 files, 37 icon/image, 90 button, 18 field call sites, 0 findings
+check-ui-a11y: 25 files, 38 icon/image, 90 button, 18 field call sites, 0 findings
 OK   ui accessibility (contentDescription / labels)
 
 === ui lazy lists (no take(8), no eager forEach) ===
@@ -106,7 +106,7 @@ PASS a visible match is not flagged (rc=0) (rc=0 out='1020 1740')
 PASS has still finds an off-screen node (a tag being present is news) (rc=0)
 PASS a device that marks everything not-shown does not blind the reader (rc=0)
 PASS attrs reports the attribute set and the hidden count (rc=0 out='nodes=4 2 node(s) marked shown=false\nbounds:4 class:4 clickable:4 content-desc:4 enabled:4 index:4 package:4 resource-id:4 shown:4 text:4')
-PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmpsr792mu4/broken.xml')
+PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmpkzaux82l/broken.xml')
 p10d-ui selftest: 20 checks, 0 failed
 SELFTEST PASS
 OK   uiautomator dump reader self-test (tap targets, disabled states, diagnostics)
@@ -194,7 +194,7 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   model marker written for the x86_64 carry-forward
   ok   a POSIX host says so, instead of leaving the path question open
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-142846/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-082959/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
   ok   v4: the storage screen no longer shows copy-path, export or the folder choosers
@@ -366,9 +366,9 @@ PAYLOAD STAGING SKIPPED: compile/test-only run, no APK was produced.
 > Task :app:mapDebugSourceSetPaths
 > Task :app:generateDebugResources
 > Task :app:packageDebugResources
+> Task :app:mergeDebugResources
 > Task :app:createDebugCompatibleScreenManifests
 > Task :app:extractDeepLinksDebug
-> Task :app:mergeDebugResources
 > Task :app:parseDebugLocalResources
 
 > Task :app:processDebugMainManifest
@@ -405,7 +405,7 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:493:56 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:556:52 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:781:48 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/projects/ProjectsScreen.kt:122:5 Parameter 'onOpen' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/projects/ProjectsScreen.kt:123:5 Parameter 'onOpen' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:256:5 Parameter 'availability' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:259:9 Variable 'chat' is never used
 
@@ -765,6 +765,8 @@ WorkLogTest > turnsWithoutFileChangesAreOmittedAndNewestStageLeads PASSED
 GitSyncTest > cloneLandsOnTheProjectBranchWithTheFilesPresent PASSED
 
 GitSyncTest > oneBranchPerProjectNamedAfterIt PASSED
+
+GitSyncTest > ensureProjectBranchPutsAStrayCheckoutBack PASSED
 
 GitSyncTest > autoPushLifecycleFirstPushThenUpToDateThenNewCommit PASSED
 
@@ -1250,9 +1252,9 @@ MarkdownTest > atxHeadingsCarryTheirLevel PASSED
 
 MarkdownTest > unterminatedLinkStaysLiteralWhileStreaming PASSED
 
-BUILD SUCCESSFUL in 2m 46s
+BUILD SUCCESSFUL in 2m 7s
 35 actionable tasks: 33 executed, 2 from cache
-P10-UNIT PASS: JVM tests=408 failures=0 errors=0 skipped=0 (unit tests are NOT runtime evidence - the device gates below are)
+P10-UNIT PASS: JVM tests=409 failures=0 errors=0 skipped=0 (unit tests are NOT runtime evidence - the device gates below are)
 ########## 3/9 embedded runtime payload (pinned upstream; reused by every build below) ##########
 === [1/6] bun host (for building the bundle) ===
 1.3.14
@@ -1333,60 +1335,190 @@ Turn off this advice by setting config variable advice.detachedHead to false
 
 git source: f93ff170b93a1782659637824b25923245ac9dd1
 --- Android Git (arm64-v8a, CC=/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang) ---
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 8 but initializer has size 9 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:14:40: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   14 |     MBEDTLS_SSL_TLS1_3_LABEL(finished, "finished") \
+      |                                        ^~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 10 but initializer has size 11 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:15:42: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   15 |     MBEDTLS_SSL_TLS1_3_LABEL(resumption, "resumption") \
+      |                                          ^~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 11 but initializer has size 12 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:16:43: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   16 |     MBEDTLS_SSL_TLS1_3_LABEL(traffic_upd, "traffic upd") \
+      |                                           ^~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 8 but initializer has size 9 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:17:40: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   17 |     MBEDTLS_SSL_TLS1_3_LABEL(exporter, "exporter") \
+      |                                        ^~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 3 but initializer has size 4 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:18:35: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   18 |     MBEDTLS_SSL_TLS1_3_LABEL(key, "key") \
+      |                                   ^~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 2 but initializer has size 3 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:19:34: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   19 |     MBEDTLS_SSL_TLS1_3_LABEL(iv, "iv") \
+      |                                  ^~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 12 but initializer has size 13 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:20:44: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   20 |     MBEDTLS_SSL_TLS1_3_LABEL(c_hs_traffic, "c hs traffic") \
+      |                                            ^~~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 12 but initializer has size 13 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:21:44: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   21 |     MBEDTLS_SSL_TLS1_3_LABEL(c_ap_traffic, "c ap traffic") \
+      |                                            ^~~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 11 but initializer has size 12 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:22:43: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   22 |     MBEDTLS_SSL_TLS1_3_LABEL(c_e_traffic, "c e traffic") \
+      |                                           ^~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 12 but initializer has size 13 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:23:44: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   23 |     MBEDTLS_SSL_TLS1_3_LABEL(s_hs_traffic, "s hs traffic") \
+      |                                            ^~~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 12 but initializer has size 13 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:24:44: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   24 |     MBEDTLS_SSL_TLS1_3_LABEL(s_ap_traffic, "s ap traffic") \
+      |                                            ^~~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 11 but initializer has size 12 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:25:43: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   25 |     MBEDTLS_SSL_TLS1_3_LABEL(s_e_traffic, "s e traffic") \
+      |                                           ^~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 12 but initializer has size 13 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:26:44: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   26 |     MBEDTLS_SSL_TLS1_3_LABEL(e_exp_master, "e exp master") \
+      |                                            ^~~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 10 but initializer has size 11 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:27:42: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   27 |     MBEDTLS_SSL_TLS1_3_LABEL(res_master, "res master") \
+      |                                          ^~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 10 but initializer has size 11 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:28:42: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   28 |     MBEDTLS_SSL_TLS1_3_LABEL(exp_master, "exp master") \
+      |                                          ^~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 10 but initializer has size 11 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:29:42: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   29 |     MBEDTLS_SSL_TLS1_3_LABEL(ext_binder, "ext binder") \
+      |                                          ^~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 10 but initializer has size 11 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:30:42: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   30 |     MBEDTLS_SSL_TLS1_3_LABEL(res_binder, "res binder") \
+      |                                          ^~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 7 but initializer has size 8 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:31:39: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   31 |     MBEDTLS_SSL_TLS1_3_LABEL(derived, "derived") \
+      |                                       ^~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 33 but initializer has size 34 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:32:41: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   32 |     MBEDTLS_SSL_TLS1_3_LABEL(client_cv, "TLS 1.3, client CertificateVerify") \
+      |                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 33 but initializer has size 34 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:33:41: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   33 |     MBEDTLS_SSL_TLS1_3_LABEL(server_cv, "TLS 1.3, server CertificateVerify")
+      |                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ssl_tls13_keys.c:84:43: warning: initializer-string for character array is too long, array size is 6 but initializer has size 7 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   84 | static const char tls13_label_prefix[6] = "tls13 ";
+      |                                           ^~~~~~~~
+21 warnings generated.
+configure: WARNING: using cross tools not prefixed with host triplet
+configure: WARNING: the previous check could not be made default was used
+configure: WARNING: skipped the ca-cert path detection when cross-compiling
+configure: WARNING: libgsasl was not found
+tool_dirhie.c:120:13: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+  120 |   tempdir = strtok(outdup, PATH_DELIMITERS);
+      |             ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+tool_dirhie.c:124:16: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+  124 |     tempdir2 = strtok(NULL, PATH_DELIMITERS);
+      |                ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+2 warnings generated.
+tool_getparam.c:692:11: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+  692 |   token = strtok(tmp, ", ");
+      |           ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+tool_getparam.c:727:13: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+  727 |     token = strtok(NULL, ", ");
+      |             ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+tool_getparam.c:2211:23: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+ 2211 |             char *h = strtok(string, "\r\n");
+      |                       ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+tool_getparam.c:2219:19: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+ 2219 |               h = strtok(NULL, "\r\n");
+      |                   ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+tool_paramhlp.c:400:15: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+  400 |   for(token = strtok(buffer, sep);
+      |               ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+tool_paramhlp.c:402:15: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+  402 |       token = strtok(NULL, sep)) {
+      |               ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+4 warnings generated.
+2 warnings generated.
 GIT_VERSION=2.48.1
     * new build flags
-    CC builtin/add.o
     * new prefix flags
-    CC builtin/am.o
     * new link flags
-    CC builtin/annotate.o
-    CC builtin/apply.o
-    CC builtin/archive.o
-    CC builtin/bisect.o
-    CC builtin/blame.o
-    CC builtin/branch.o
     GEN hook-list.h
-    CC builtin/bundle.o
-    CC builtin/cat-file.o
-    CC builtin/check-attr.o
-    CC builtin/check-ignore.o
-    CC builtin/check-mailmap.o
-    CC builtin/check-ref-format.o
-    CC builtin/checkout--worker.o
-    CC builtin/checkout-index.o
-    CC builtin/checkout.o
-    CC builtin/clean.o
-    CC builtin/clone.o
-    CC builtin/column.o
-    CC builtin/commit-graph.o
-    CC builtin/commit-tree.o
-    CC builtin/commit.o
-    CC builtin/config.o
-    CC builtin/count-objects.o
-    CC builtin/credential-cache--daemon.o
-    CC builtin/credential-cache.o
-    CC builtin/credential-store.o
-    CC builtin/credential.o
-    CC builtin/describe.o
-    CC builtin/diagnose.o
-    CC builtin/diff-files.o
-    CC builtin/diff-index.o
-    CC builtin/diff-tree.o
-    CC builtin/diff.o
-    CC builtin/difftool.o
-    CC builtin/fast-export.o
-    CC builtin/fast-import.o
-    CC builtin/fetch-pack.o
-    CC builtin/fetch.o
-    CC builtin/fmt-merge-msg.o
-    CC builtin/for-each-ref.o
-    CC builtin/for-each-repo.o
-    CC builtin/fsck.o
-    CC builtin/fsmonitor--daemon.o
-    CC builtin/gc.o
-    CC builtin/get-tar-commit-id.o
-    CC builtin/grep.o
-    CC builtin/hash-object.o
     GEN config-list.h
     CC builtin/hook.o
     CC builtin/index-pack.o
@@ -1437,10 +1569,10 @@ GIT_VERSION=2.48.1
     CC builtin/rev-parse.o
     CC builtin/revert.o
     CC builtin/rm.o
-    CC builtin/send-pack.o
 builtin/revert.c:114:13: warning: default initialization of an object of type 'const char' leaves the object uninitialized [-Wdefault-const-init-var-unsafe]
   114 |         const char sentinel_value;
       |                    ^
+    CC builtin/send-pack.o
 1 warning generated.
     CC builtin/shortlog.o
     CC builtin/show-branch.o
@@ -1741,8 +1873,60 @@ builtin/revert.c:114:13: warning: default initialization of an object of type 'c
     CC reftable/system.o
     CC reftable/tree.o
     CC reftable/writer.o
+    CC remote-curl.o
+    CC http.o
+    CC http-walker.o
     CC git.o
+    CC builtin/add.o
+    CC builtin/am.o
+    CC builtin/annotate.o
+    CC builtin/apply.o
+    CC builtin/archive.o
+    CC builtin/bisect.o
+    CC builtin/blame.o
+    CC builtin/branch.o
     CC builtin/bugreport.o
+    CC builtin/bundle.o
+    CC builtin/cat-file.o
+    CC builtin/check-attr.o
+    CC builtin/check-ignore.o
+    CC builtin/check-mailmap.o
+    CC builtin/check-ref-format.o
+    CC builtin/checkout--worker.o
+    CC builtin/checkout-index.o
+    CC builtin/checkout.o
+    CC builtin/clean.o
+    CC builtin/clone.o
+    CC builtin/column.o
+    CC builtin/commit-graph.o
+    CC builtin/commit-tree.o
+    CC builtin/commit.o
+    CC builtin/config.o
+    CC builtin/count-objects.o
+    CC builtin/credential-cache--daemon.o
+    CC builtin/credential-cache.o
+    CC builtin/credential-store.o
+    CC builtin/credential.o
+    CC builtin/describe.o
+    CC builtin/diagnose.o
+    CC builtin/diff-files.o
+    CC builtin/diff-index.o
+    CC builtin/diff-tree.o
+    CC builtin/diff.o
+    CC builtin/difftool.o
+    CC builtin/fast-export.o
+    CC builtin/fast-import.o
+    CC builtin/fetch-pack.o
+    CC builtin/fetch.o
+    CC builtin/fmt-merge-msg.o
+    CC builtin/for-each-ref.o
+    CC builtin/for-each-repo.o
+    CC builtin/fsck.o
+    CC builtin/fsmonitor--daemon.o
+    CC builtin/gc.o
+    CC builtin/get-tar-commit-id.o
+    CC builtin/grep.o
+    CC builtin/hash-object.o
     CC builtin/help.o
     CC help.o
     GEN version-def.h
@@ -1751,16 +1935,196 @@ builtin/revert.c:114:13: warning: default initialization of an object of type 'c
     CC version.o
     AR libgit.a
     LINK git
+    LINK git-remote-http
 arm64-v8a Android Git built (cross-ABI host execution skipped)
 --- Android Git (x86_64, CC=/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android29-clang) ---
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 8 but initializer has size 9 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:14:40: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   14 |     MBEDTLS_SSL_TLS1_3_LABEL(finished, "finished") \
+      |                                        ^~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 10 but initializer has size 11 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:15:42: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   15 |     MBEDTLS_SSL_TLS1_3_LABEL(resumption, "resumption") \
+      |                                          ^~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 11 but initializer has size 12 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:16:43: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   16 |     MBEDTLS_SSL_TLS1_3_LABEL(traffic_upd, "traffic upd") \
+      |                                           ^~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 8 but initializer has size 9 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:17:40: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   17 |     MBEDTLS_SSL_TLS1_3_LABEL(exporter, "exporter") \
+      |                                        ^~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 3 but initializer has size 4 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:18:35: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   18 |     MBEDTLS_SSL_TLS1_3_LABEL(key, "key") \
+      |                                   ^~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 2 but initializer has size 3 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:19:34: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   19 |     MBEDTLS_SSL_TLS1_3_LABEL(iv, "iv") \
+      |                                  ^~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 12 but initializer has size 13 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:20:44: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   20 |     MBEDTLS_SSL_TLS1_3_LABEL(c_hs_traffic, "c hs traffic") \
+      |                                            ^~~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 12 but initializer has size 13 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:21:44: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   21 |     MBEDTLS_SSL_TLS1_3_LABEL(c_ap_traffic, "c ap traffic") \
+      |                                            ^~~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 11 but initializer has size 12 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:22:43: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   22 |     MBEDTLS_SSL_TLS1_3_LABEL(c_e_traffic, "c e traffic") \
+      |                                           ^~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 12 but initializer has size 13 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:23:44: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   23 |     MBEDTLS_SSL_TLS1_3_LABEL(s_hs_traffic, "s hs traffic") \
+      |                                            ^~~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 12 but initializer has size 13 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:24:44: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   24 |     MBEDTLS_SSL_TLS1_3_LABEL(s_ap_traffic, "s ap traffic") \
+      |                                            ^~~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 11 but initializer has size 12 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:25:43: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   25 |     MBEDTLS_SSL_TLS1_3_LABEL(s_e_traffic, "s e traffic") \
+      |                                           ^~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 12 but initializer has size 13 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:26:44: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   26 |     MBEDTLS_SSL_TLS1_3_LABEL(e_exp_master, "e exp master") \
+      |                                            ^~~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 10 but initializer has size 11 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:27:42: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   27 |     MBEDTLS_SSL_TLS1_3_LABEL(res_master, "res master") \
+      |                                          ^~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 10 but initializer has size 11 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:28:42: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   28 |     MBEDTLS_SSL_TLS1_3_LABEL(exp_master, "exp master") \
+      |                                          ^~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 10 but initializer has size 11 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:29:42: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   29 |     MBEDTLS_SSL_TLS1_3_LABEL(ext_binder, "ext binder") \
+      |                                          ^~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 10 but initializer has size 11 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:30:42: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   30 |     MBEDTLS_SSL_TLS1_3_LABEL(res_binder, "res binder") \
+      |                                          ^~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 7 but initializer has size 8 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:31:39: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   31 |     MBEDTLS_SSL_TLS1_3_LABEL(derived, "derived") \
+      |                                       ^~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 33 but initializer has size 34 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:32:41: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   32 |     MBEDTLS_SSL_TLS1_3_LABEL(client_cv, "TLS 1.3, client CertificateVerify") \
+      |                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ssl_tls13_keys.c:44:5: warning: initializer-string for character array is too long, array size is 33 but initializer has size 34 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   44 |     MBEDTLS_SSL_TLS1_3_LABEL_LIST
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./ssl_tls13_keys.h:33:41: note: expanded from macro 'MBEDTLS_SSL_TLS1_3_LABEL_LIST'
+   33 |     MBEDTLS_SSL_TLS1_3_LABEL(server_cv, "TLS 1.3, server CertificateVerify")
+      |                                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ssl_tls13_keys.c:84:43: warning: initializer-string for character array is too long, array size is 6 but initializer has size 7 (including the null terminating character); did you mean to use the 'nonstring' attribute? [-Wunterminated-string-initialization]
+   84 | static const char tls13_label_prefix[6] = "tls13 ";
+      |                                           ^~~~~~~~
+21 warnings generated.
+configure: WARNING: using cross tools not prefixed with host triplet
+configure: WARNING: the previous check could not be made default was used
+configure: WARNING: skipped the ca-cert path detection when cross-compiling
+configure: WARNING: libgsasl was not found
+tool_dirhie.c:120:13: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+  120 |   tempdir = strtok(outdup, PATH_DELIMITERS);
+      |             ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+tool_dirhie.c:124:16: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+  124 |     tempdir2 = strtok(NULL, PATH_DELIMITERS);
+      |                ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+2 warnings generated.
+tool_getparam.c:692:11: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+  692 |   token = strtok(tmp, ", ");
+      |           ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+tool_getparam.c:727:13: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+  727 |     token = strtok(NULL, ", ");
+      |             ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+tool_getparam.c:2211:23: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+ 2211 |             char *h = strtok(string, "\r\n");
+      |                       ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+tool_getparam.c:2219:19: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+ 2219 |               h = strtok(NULL, "\r\n");
+      |                   ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+tool_paramhlp.c:400:15: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+  400 |   for(token = strtok(buffer, sep);
+      |               ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+tool_paramhlp.c:402:15: warning: 'strtok' is deprecated: strtok() is not thread-safe; use strtok_r() instead [-Wdeprecated-declarations]
+  402 |       token = strtok(NULL, sep)) {
+      |               ^
+/usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
+  125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
+      |                    ^
+4 warnings generated.
+2 warnings generated.
 GIT_VERSION=2.48.1
     * new build flags
     GEN hook-list.h
+    * new prefix flags
     * new link flags
     GEN config-list.h
-    * new prefix flags
-    CC builtin/index-pack.o
     CC builtin/hook.o
+    CC builtin/index-pack.o
     CC builtin/init-db.o
     CC builtin/interpret-trailers.o
     CC builtin/log.o
@@ -2089,8 +2453,8 @@ builtin/revert.c:114:13: warning: default initialization of an object of type 'c
     CC sha256/block/sha256.o
     CC compat/linux/procinfo.o
     CC compat/fopen.o
-    CC compat/strlcpy.o
     CC compat/qsort_s.o
+    CC compat/strlcpy.o
     CC compat/regex/regex.o
     CC xdiff/xdiffi.o
     CC xdiff/xemit.o
@@ -2112,6 +2476,9 @@ builtin/revert.c:114:13: warning: default initialization of an object of type 'c
     CC reftable/system.o
     CC reftable/tree.o
     CC reftable/writer.o
+    CC remote-curl.o
+    CC http.o
+    CC http-walker.o
     CC git.o
     CC builtin/add.o
     CC builtin/am.o
@@ -2171,6 +2538,7 @@ builtin/revert.c:114:13: warning: default initialization of an object of type 'c
     CC version.o
     AR libgit.a
     LINK git
+    LINK git-remote-http
 x86_64 Android Git built (cross-ABI host execution skipped)
 === [4/6] ripgrep 15.1.0 per ABI (Android/Bionic source build) ===
 --- Android ripgrep (arm64-v8a, target=aarch64-linux-android) ---
@@ -2196,80 +2564,80 @@ Turn off this advice by setting config variable advice.detachedHead to false
     Updating crates.io index
  Downloading crates ...
   Downloaded cfg-if v1.0.4
-  Downloaded same-file v1.0.6
   Downloaded itoa v1.0.15
-  Downloaded termcolor v1.4.1
-  Downloaded walkdir v2.5.0
-  Downloaded lexopt v0.3.1
-  Downloaded shlex v1.3.0
-  Downloaded jobserver v0.1.34
-  Downloaded find-msvc-tools v0.1.4
+  Downloaded same-file v1.0.6
   Downloaded pkg-config v0.3.32
   Downloaded crossbeam-deque v0.8.6
-  Downloaded cc v1.2.41
   Downloaded encoding_rs_io v0.1.7
-  Downloaded pcre2 v0.2.11
-  Downloaded crossbeam-utils v0.8.21
-  Downloaded anyhow v1.0.100
-  Downloaded ryu v1.0.20
-  Downloaded textwrap v0.16.2
-  Downloaded crossbeam-epoch v0.9.18
-  Downloaded serde_core v1.0.228
-  Downloaded log v0.4.28
+  Downloaded find-msvc-tools v0.1.4
+  Downloaded termcolor v1.4.1
+  Downloaded jobserver v0.1.34
+  Downloaded lexopt v0.3.1
+  Downloaded walkdir v2.5.0
   Downloaded memmap2 v0.9.9
+  Downloaded pcre2 v0.2.11
+  Downloaded ryu v1.0.20
+  Downloaded shlex v1.3.0
+  Downloaded crossbeam-epoch v0.9.18
+  Downloaded anyhow v1.0.100
+  Downloaded crossbeam-utils v0.8.21
   Downloaded aho-corasick v1.1.3
-  Downloaded serde v1.0.228
+  Downloaded textwrap v0.16.2
+  Downloaded log v0.4.28
+  Downloaded serde_core v1.0.228
+  Downloaded cc v1.2.41
   Downloaded memchr v2.7.6
+  Downloaded serde v1.0.228
   Downloaded serde_json v1.0.145
   Downloaded bstr v1.12.0
   Downloaded regex-syntax v0.8.8
   Downloaded regex-automata v0.4.13
-  Downloaded libc v0.2.177
   Downloaded pcre2-sys v0.2.10
+  Downloaded libc v0.2.177
   Downloaded encoding_rs v0.8.35
    Compiling libc v0.2.177
    Compiling memchr v2.7.6
-   Compiling regex-syntax v0.8.8
    Compiling log v0.4.28
+   Compiling regex-syntax v0.8.8
    Compiling aho-corasick v1.1.3
-   Compiling regex-automata v0.4.13
-   Compiling jobserver v0.1.34
-   Compiling shlex v1.3.0
    Compiling find-msvc-tools v0.1.4
+   Compiling regex-automata v0.4.13
+   Compiling bstr v1.12.0
+   Compiling shlex v1.3.0
    Compiling pkg-config v0.3.32
-   Compiling cc v1.2.41
    Compiling serde_core v1.0.228
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/matcher)
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/matcher)
    Compiling cfg-if v1.0.4
    Compiling crossbeam-utils v0.8.21
    Compiling encoding_rs v0.8.35
-   Compiling bstr v1.12.0
-   Compiling pcre2-sys v0.2.10
+   Compiling jobserver v0.1.34
+   Compiling cc v1.2.41
    Compiling serde_json v1.0.145
+   Compiling pcre2-sys v0.2.10
    Compiling serde v1.0.228
-   Compiling globset v0.4.18 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/globset)
    Compiling encoding_rs_io v0.1.7
    Compiling memmap2 v0.9.9
+   Compiling globset v0.4.18 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/globset)
    Compiling itoa v1.0.15
    Compiling termcolor v1.4.1
    Compiling ryu v1.0.20
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/searcher)
    Compiling same-file v1.0.6
    Compiling anyhow v1.0.100
+   Compiling grep-printer v0.3.1 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/printer)
    Compiling walkdir v2.5.0
-   Compiling grep-printer v0.3.1 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-cli v0.1.12 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.9dcHZbQlVv/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/ignore)
+   Compiling grep-cli v0.1.12 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.S3SLvVm9RZ/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/ignore)
    Compiling textwrap v0.16.2
-   Compiling pcre2 v0.2.11
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/grep)
    Compiling lexopt v0.3.1
-    Finished `release` profile [optimized + debuginfo] target(s) in 37.82s
+   Compiling pcre2 v0.2.11
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/grep)
+    Finished `release` profile [optimized + debuginfo] target(s) in 36.55s
 arm64-v8a Android ripgrep OK:  ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 --- Android ripgrep (x86_64, target=x86_64-linux-android) ---
 info: downloading component rust-std
@@ -2295,45 +2663,45 @@ Turn off this advice by setting config variable advice.detachedHead to false
    Compiling memchr v2.7.6
    Compiling log v0.4.28
    Compiling regex-syntax v0.8.8
-   Compiling shlex v1.3.0
    Compiling aho-corasick v1.1.3
    Compiling jobserver v0.1.34
    Compiling find-msvc-tools v0.1.4
+   Compiling shlex v1.3.0
    Compiling cc v1.2.41
    Compiling serde_core v1.0.228
    Compiling pkg-config v0.3.32
    Compiling regex-automata v0.4.13
    Compiling pcre2-sys v0.2.10
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/matcher)
-   Compiling cfg-if v1.0.4
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/matcher)
    Compiling crossbeam-utils v0.8.21
+   Compiling cfg-if v1.0.4
    Compiling encoding_rs v0.8.35
    Compiling bstr v1.12.0
    Compiling serde_json v1.0.145
    Compiling serde v1.0.228
-   Compiling globset v0.4.18 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/globset)
+   Compiling globset v0.4.18 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/globset)
    Compiling encoding_rs_io v0.1.7
    Compiling memmap2 v0.9.9
-   Compiling termcolor v1.4.1
    Compiling ryu v1.0.20
    Compiling itoa v1.0.15
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/searcher)
+   Compiling termcolor v1.4.1
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
    Compiling same-file v1.0.6
    Compiling anyhow v1.0.100
-   Compiling walkdir v2.5.0
-   Compiling grep-printer v0.3.1 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-cli v0.1.12 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.9dcHZbQlVv/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/ignore)
-   Compiling lexopt v0.3.1
+   Compiling walkdir v2.5.0
+   Compiling grep-printer v0.3.1 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/printer)
+   Compiling grep-cli v0.1.12 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.S3SLvVm9RZ/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/ignore)
    Compiling textwrap v0.16.2
+   Compiling lexopt v0.3.1
    Compiling pcre2 v0.2.11
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.9dcHZbQlVv/rg-src/crates/grep)
-    Finished `release` profile [optimized + debuginfo] target(s) in 39.80s
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.S3SLvVm9RZ/rg-src/crates/grep)
+    Finished `release` profile [optimized + debuginfo] target(s) in 26.76s
 x86_64 Android ripgrep OK:  ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, with debug_info, not stripped
 === [5/6] OpenCode server bundle @ 05ea5073be967c779d326929b2de6228dda4159d (pinned, fail-loud) ===
 upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
@@ -2341,30 +2709,32 @@ bundle build complete
 === [6/6] stage payload, compute manifest ===
 === plugin seed: @opencode-ai/plugin@1.18.23 ===
 plugin seed: 1032 files, 18376 KB, plugin 1.18.23
-payload tarball: 20061174 bytes sha256=daa7af30179df33ac70242c7e0e51e744b7551f66b9f0fa9a3d469609c5c3d44
+payload tarball: 20065847 bytes sha256=b98967c02598e72f96193792d72761b24a3de0d44ffa6cc178e01d3e958ff6f8
 manifest: 1062 files -> /home/runner/work/OpenCode-app/OpenCode-app/phase4/out/engine/assets/runtime-manifest.json
 === engine layout ===
-20061174 ./assets/runtime-payload.tar.gz
+20065847 ./assets/runtime-payload.tar.gz
 187351 ./assets/runtime-manifest.json
 11737 ./build.status
 41 ./git.upstream.commit.txt
-36486840 ./jniLibs/x86_64/librg.so
+36486752 ./jniLibs/x86_64/librg.so
+3854128 ./jniLibs/x86_64/libgitremotehttp.so
 8080 ./jniLibs/x86_64/libchildshim.so
-4140304 ./jniLibs/x86_64/libgit.so
+4140528 ./jniLibs/x86_64/libgit.so
 91788816 ./jniLibs/x86_64/libbun.so
 8368 ./jniLibs/x86_64/libexecshim.so
 7936 ./jniLibs/x86_64/libseccompshim.so
-34912936 ./jniLibs/arm64-v8a/librg.so
+34913056 ./jniLibs/arm64-v8a/librg.so
+3814688 ./jniLibs/arm64-v8a/libgitremotehttp.so
 8792 ./jniLibs/arm64-v8a/libchildshim.so
-4004016 ./jniLibs/arm64-v8a/libgit.so
+4004120 ./jniLibs/arm64-v8a/libgit.so
 89796776 ./jniLibs/arm64-v8a/libbun.so
 8200 ./jniLibs/arm64-v8a/libexecshim.so
 7280 ./jniLibs/arm64-v8a/libseccompshim.so
 PAYLOAD_READY
-P10-PAYLOAD PASS: payloadVersion=7 opencode=1.18.23@05ea5073be96 bun=1.3.14 git=v2.48.1 rg=15.1.0 sha256=daa7af30179df33a files=1062
+P10-PAYLOAD PASS: payloadVersion=7 opencode=1.18.23@05ea5073be96 bun=1.3.14 git=v2.48.1 rg=15.1.0 sha256=b98967c02598e72f files=1062
 ########## 4/9 fresh emulator at a phone-sized screen (1080x1920 @ 420dpi) ##########
 --- downloading cmdline-tools
--rw-r--r-- 1 runner runner 153607504 Oct  8 15:04 cmdtools.zip
+-rw-r--r-- 1 runner runner 153607504 Oct  9 09:04 cmdtools.zip
 /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
 /usr/local/lib/android/sdk/cmdline-tools/bin/avdmanager
 --- sdkmanager licenses
@@ -2382,10 +2752,10 @@ accel:
 KVM (version 12) is installed and usable.
 accel
 --- starting emulator (headless)
-emulator pid=44886
+emulator pid=79108
 * daemon not running; starting now at tcp:5037
 * daemon started successfully
-BOOT_COMPLETED after ~48s
+BOOT_COMPLETED after ~36s
 --- boot state
 List of devices attached
 emulator-5554	device
@@ -2410,10 +2780,10 @@ RELEASE SIGNING: not configured -> release artifacts are UNSIGNED (CI behavior; 
 
 > Task :app:verifyAndStagePayload
 PAYLOAD STAGING: -PskipPayload=null SKIP_PAYLOAD=null
-PAYLOAD_SOURCE runtime-payload.tar.gz=20061174B runtime-manifest.json=187351B
+PAYLOAD_SOURCE runtime-payload.tar.gz=20065847B runtime-manifest.json=187351B
 Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/assets / /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/jniLibs
-STAGED_ASSETS n=2 runtime-manifest.json(187351B), runtime-payload.tar.gz(20061174B)
-STAGED_JNILIBS n=12 x86_64/libbun.so, arm64-v8a/libbun.so, x86_64/libchildshim.so, arm64-v8a/libchildshim.so, x86_64/libexecshim.so, arm64-v8a/libexecshim.so, x86_64/libgit.so, arm64-v8a/libgit.so, x86_64/librg.so, arm64-v8a/librg.so, x86_64/libseccompshim.so, arm64-v8a/libseccompshim.so
+STAGED_ASSETS n=2 runtime-manifest.json(187351B), runtime-payload.tar.gz(20065847B)
+STAGED_JNILIBS n=14 x86_64/libbun.so, arm64-v8a/libbun.so, x86_64/libchildshim.so, arm64-v8a/libchildshim.so, x86_64/libexecshim.so, arm64-v8a/libexecshim.so, x86_64/libgit.so, arm64-v8a/libgit.so, x86_64/libgitremotehttp.so, arm64-v8a/libgitremotehttp.so, x86_64/librg.so, arm64-v8a/librg.so, x86_64/libseccompshim.so, arm64-v8a/libseccompshim.so
 
 > Task :app:preBuild
 > Task :app:preDebugBuild
@@ -2447,8 +2817,8 @@ STAGED_JNILIBS n=12 x86_64/libbun.so, arm64-v8a/libbun.so, x86_64/libchildshim.s
 > Task :app:processDebugJavaRes UP-TO-DATE
 > Task :app:mergeDebugStartupProfile
 > Task :app:checkDebugDuplicateClasses
-> Task :app:mergeDebugJniLibFolders
 > Task :app:mergeDebugJavaResource
+> Task :app:mergeDebugJniLibFolders
 > Task :app:mergeLibDexDebug
 > Task :app:validateSigningDebug
 > Task :app:writeDebugAppMetadata
@@ -2473,11 +2843,11 @@ STAGED_JNILIBS n=12 x86_64/libbun.so, arm64-v8a/libbun.so, x86_64/libchildshim.s
 > Task :app:generateDebugAndroidTestAssets
 > Task :app:mergeDebugAndroidTestAssets
 > Task :app:compressDebugAndroidTestAssets
-> Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
 
 > Task :app:stripDebugDebugSymbols
-Unable to strip the following libraries, packaging them as they are: libbun.so, libchildshim.so, libexecshim.so, libgit.so, librg.so, libseccompshim.so.
+Unable to strip the following libraries, packaging them as they are: libbun.so, libchildshim.so, libexecshim.so, libgit.so, libgitremotehttp.so, librg.so, libseccompshim.so.
 
+> Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
 > Task :app:dexBuilderDebugAndroidTest
 > Task :app:mergeExtDexDebug
 > Task :app:mergeDebugAndroidTestGlobalSynthetics FROM-CACHE
@@ -2485,8 +2855,8 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:mergeDebugAndroidTestJniLibFolders
 > Task :app:checkDebugAndroidTestDuplicateClasses
 > Task :app:mergeDebugAndroidTestJavaResource
-> Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
 > Task :app:mergeLibDexDebugAndroidTest FROM-CACHE
+> Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
 > Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
 > Task :app:validateSigningDebugAndroidTest
 > Task :app:writeDebugAndroidTestSigningConfigVersions
@@ -2499,56 +2869,56 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 2m
+BUILD SUCCESSFUL in 1m 16s
 69 actionable tasks: 37 executed, 4 from cache, 28 up-to-date
-[2026-10-08T15:08:46Z] === stage A: deterministic chat UI gates (no runtime, no model, no key) ===
-[2026-10-08T15:08:46Z] uninstalling io.github.mcyber12.opencode.debug / io.github.mcyber12.opencode.debug.test so the next gate really is a first run
+[2026-10-09T09:07:46Z] === stage A: deterministic chat UI gates (no runtime, no model, no key) ===
+[2026-10-09T09:07:46Z] uninstalling io.github.mcyber12.opencode.debug / io.github.mcyber12.opencode.debug.test so the next gate really is a first run
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-10-08T15:08:54Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
-[2026-10-08T15:10:08Z] instrument rc=0 (chat-ui)
-[2026-10-08T15:10:09Z] chat-ui runner trailer: OK
-[2026-10-08T15:10:10Z] screenshots pulled: 19
-[2026-10-08T15:10:10Z] P6-U1 PASS :: :: rows=602 composedAtBottom=46 composedAtTop=41 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
-[2026-10-08T15:10:10Z] P6-U2 PASS :: :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true todoChecklist=true(collapsed=true)
-[2026-10-08T15:10:10Z] P6-U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
-[2026-10-08T15:10:10Z] P6-U4 PASS :: :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=true,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
-[2026-10-08T15:10:10Z] P6-U5 PASS :: :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true noActionsWhileStreaming=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true cal
-[2026-10-08T15:10:10Z] P6-U6 PASS :: :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
-[2026-10-08T15:10:10Z] P6-U7 PASS :: :: interactive={chat=25, sessions=11, projects=8, welcome=2, welcome-unsupported=2, settings=15, files=4} total=67 unnamed=0 filesControls=[Back, Up one level Up one level, main.kt, Folder app]
-[2026-10-08T15:10:10Z] P6-U8 PASS :: :: rowsComposedBefore=23 after=23 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true rever
-[2026-10-08T15:10:10Z] P6-U9 PASS :: :: listed=true pathShown=true locationCopy=true openedDir=true upShown=true upWorks=true openedFile=true viewer=true body=true preview=true/true/true/true/true sandbox=true/true/true/true/true/true/true/true/true saveCop
-[2026-10-08T15:10:10Z] P6-U10 PASS :: :: shown=true label=true menu=true listed=true/true picked=true/[google/gemini-2.5-flash] settingsTrip=true thinking=true/true/[high] thinkingEmpty=true mode=true/true/true/[plan, build] label=true planApprove=true/true 
-[2026-10-08T15:10:10Z] P6-U11 PASS :: :: surface=true search=true/true/true keyOnly=true/true activated=true star=true/true/true/true collapsedFirst=true custom=true/true/true reported=(openrouter, openai/gpt-4o-mini, false)
-[2026-10-08T15:10:10Z] P6-U12 PASS :: :: onboarding=true/true/true/true v4Removed=true/true wired=true/true message=true hidden=true controls=true settings=true/true/true/true note=true
-[2026-10-08T15:10:10Z] P6-U13 PASS :: :: tabs=true chip=true wired=true screen=true stages=true newestFirst=true rows=2 counts=true patch=hidden:true,shown:true empty=true
-[2026-10-08T15:10:10Z] P6-U14 PASS :: :: screen=true rows=3 command=true output=true exit=true running=true failed=true log=hidden:true,shown:true tabBack=true empty=true
-[2026-10-08T15:10:10Z] === stage B: first-run experience on a freshly installed APK ===
-[2026-10-08T15:10:10Z] uninstalling io.github.mcyber12.opencode.debug / io.github.mcyber12.opencode.debug.test so the next gate really is a first run
+[2026-10-09T09:07:53Z] === am instrument ai.opencode.android.ui.ChatUiGatesTest ===
+[2026-10-09T09:08:42Z] instrument rc=0 (chat-ui)
+[2026-10-09T09:08:43Z] chat-ui runner trailer: OK
+[2026-10-09T09:08:44Z] screenshots pulled: 19
+[2026-10-09T09:08:44Z] P6-U1 PASS :: :: rows=602 composedAtBottom=46 composedAtTop=41 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
+[2026-10-09T09:08:44Z] P6-U2 PASS :: :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true todoChecklist=true(collapsed=true)
+[2026-10-09T09:08:44Z] P6-U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[stag
+[2026-10-09T09:08:44Z] P6-U4 PASS :: :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=true,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
+[2026-10-09T09:08:44Z] P6-U5 PASS :: :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true noActionsWhileStreaming=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true cal
+[2026-10-09T09:08:44Z] P6-U6 PASS :: :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
+[2026-10-09T09:08:44Z] P6-U7 PASS :: :: interactive={chat=25, sessions=11, projects=8, welcome=2, welcome-unsupported=2, settings=15, files=4} total=67 unnamed=0 filesControls=[Back, Up one level Up one level, main.kt, Folder app]
+[2026-10-09T09:08:44Z] P6-U8 PASS :: :: rowsComposedBefore=23 after=23 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true rever
+[2026-10-09T09:08:44Z] P6-U9 PASS :: :: listed=true pathShown=true locationCopy=true openedDir=true upShown=true upWorks=true openedFile=true viewer=true body=true preview=true/true/true/true/true sandbox=true/true/true/true/true/true/true/true/true saveCop
+[2026-10-09T09:08:44Z] P6-U10 PASS :: :: shown=true label=true menu=true listed=true/true picked=true/[google/gemini-2.5-flash] settingsTrip=true thinking=true/true/[high] thinkingEmpty=true mode=true/true/true/[plan, build] label=true planApprove=true/true 
+[2026-10-09T09:08:44Z] P6-U11 PASS :: :: surface=true search=true/true/true keyOnly=true/true activated=true star=true/true/true/true collapsedFirst=true custom=true/true/true reported=(openrouter, openai/gpt-4o-mini, false)
+[2026-10-09T09:08:44Z] P6-U12 PASS :: :: onboarding=true/true/true/true v4Removed=true/true wired=true/true message=true hidden=true controls=true settings=true/true/true/true note=true
+[2026-10-09T09:08:44Z] P6-U13 PASS :: :: tabs=true chip=true wired=true screen=true stages=true newestFirst=true rows=2 counts=true patch=hidden:true,shown:true empty=true
+[2026-10-09T09:08:44Z] P6-U14 PASS :: :: screen=true rows=3 command=true output=true exit=true running=true failed=true log=hidden:true,shown:true tabBack=true empty=true
+[2026-10-09T09:08:44Z] === stage B: first-run experience on a freshly installed APK ===
+[2026-10-09T09:08:44Z] uninstalling io.github.mcyber12.opencode.debug / io.github.mcyber12.opencode.debug.test so the next gate really is a first run
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-10-08T15:10:17Z] === am instrument ai.opencode.android.ui.FirstRunUiGatesTest ===
-[2026-10-08T15:10:49Z] instrument rc=0 (first-run)
-[2026-10-08T15:10:49Z] first-run runner trailer: OK
-[2026-10-08T15:10:50Z] screenshots pulled: 4
-[2026-10-08T15:10:50Z] P6-F1 PASS :: :: firstScreen=welcome workspaceStep=true stages=[extracting, starting, healthy] welcomeCopy=4/4 sampledLines=19 leakedTokens=[] continueBecameEnabled=false advancedToProjects=false advancedToChat=false supervisor=HEALTH
-[2026-10-08T15:10:50Z] P6-F2 PASS :: :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=false,chat=false,workspace=true) leakedTokens=[] screenshot=43356
-[2026-10-08T15:10:50Z] P6-F3 PASS :: :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:43356,projects
-[2026-10-08T15:10:50Z] P6-F4 PASS :: :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=35787, 02-first-run-ready.png=43356, 02b-first-run-workspace.png=43356, 04-first-run-projects.png=76985]
-[2026-10-08T15:10:50Z] === stage C: live turn through the UI (key-free default model) ===
-[2026-10-08T15:10:50Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
-[2026-10-08T15:11:34Z] instrument rc=0 (live-chat)
-[2026-10-08T15:11:35Z] live-chat runner trailer: OK
-[2026-10-08T15:11:36Z] screenshots pulled: 7
-[2026-10-08T15:11:36Z] P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=4 replyShownInUi=true(needle='Blue') newScreenLines=15 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBann
-[2026-10-08T15:11:36Z] P6-L2 PASS :: :: tool=bash status=completed partId=prt_11c11c46f0017YOJcdDZSTev61 cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1
-[2026-10-08T15:11:36Z] === evidence pull ===
-[2026-10-08T15:11:37Z] === SUMMARY ===
-P6_SUMMARY 2026-10-08T15:11:37Z
+[2026-10-09T09:08:51Z] === am instrument ai.opencode.android.ui.FirstRunUiGatesTest ===
+[2026-10-09T09:09:11Z] instrument rc=0 (first-run)
+[2026-10-09T09:09:12Z] first-run runner trailer: OK
+[2026-10-09T09:09:12Z] screenshots pulled: 4
+[2026-10-09T09:09:12Z] P6-F1 PASS :: :: firstScreen=welcome workspaceStep=true stages=[extracting, starting, healthy] welcomeCopy=4/4 sampledLines=19 leakedTokens=[] continueBecameEnabled=false advancedToProjects=false advancedToChat=false supervisor=HEALTH
+[2026-10-09T09:09:12Z] P6-F2 PASS :: :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=false,chat=false,workspace=true) leakedTokens=[] screenshot=43356
+[2026-10-09T09:09:12Z] P6-F3 PASS :: :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:43356,projects
+[2026-10-09T09:09:12Z] P6-F4 PASS :: :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=35787, 02-first-run-ready.png=43356, 02b-first-run-workspace.png=43356, 04-first-run-projects.png=74914]
+[2026-10-09T09:09:12Z] === stage C: live turn through the UI (key-free default model) ===
+[2026-10-09T09:09:12Z] === am instrument ai.opencode.android.ui.LiveChatUiGatesTest ===
+[2026-10-09T09:09:35Z] instrument rc=0 (live-chat)
+[2026-10-09T09:09:35Z] live-chat runner trailer: OK
+[2026-10-09T09:09:35Z] screenshots pulled: 7
+[2026-10-09T09:09:35Z] P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=11 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBann
+[2026-10-09T09:09:35Z] P6-L2 PASS :: :: tool=bash status=completed partId=prt_11fecbf5d0013hpTHJ5oo6zKxh cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1
+[2026-10-09T09:09:35Z] === evidence pull ===
+[2026-10-09T09:09:37Z] === SUMMARY ===
+P6_SUMMARY 2026-10-09T09:09:37Z
 ui_gates_pass=20 ui_gates_fail=0 ui_gates_skip=0
 chat_ui_instrument_rc=0 first_run_instrument_rc=0 live_chat_instrument_rc=0
 screenshots=27
@@ -2557,65 +2927,66 @@ device_abi=x86_64
 android_sdk=34
 phase6 UI gates rc=0
 ########## 5b/9 workspace location + visibility (Phase 10 continuation: files must not be a black box) ##########
-[2026-10-08T15:11:37Z] installing io.github.mcyber12.opencode.debug + its test APK (keeps data: the runtime the gates talk to is already up)
-[2026-10-08T15:11:40Z] appops MANAGE_EXTERNAL_STORAGE: MANAGE_EXTERNAL_STORAGE: allow
-[2026-10-08T15:11:40Z] shared-storage default: ls: /storage/emulated/0/Documents/OpenCode: No such file or directory
-[2026-10-08T15:11:40Z] === am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest (W1-W7) ===
-[2026-10-08T15:11:51Z] instrument rc=0
-[2026-10-08T15:11:52Z] --- verdict lines ---
+[2026-10-09T09:09:37Z] installing io.github.mcyber12.opencode.debug + its test APK (keeps data: the runtime the gates talk to is already up)
+[2026-10-09T09:09:39Z] appops MANAGE_EXTERNAL_STORAGE: MANAGE_EXTERNAL_STORAGE: allow
+[2026-10-09T09:09:39Z] shared-storage default: ls: /storage/emulated/0/Documents/OpenCode: No such file or directory
+[2026-10-09T09:09:39Z] === am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest (W1-W7) ===
+[2026-10-09T09:09:48Z] instrument rc=0
+[2026-10-09T09:09:48Z] --- verdict lines ---
 P7_W1_PROJECT_LIFECYCLE PASS :: c
-P7_W1_PROJECT_LIFECYCLE PASS :: created=p7-life-1791472310552 renamed=p7-renamed-1791472310552 adopted=p7-adopted-1791472310552 delete=true
+P7_W1_PROJECT_LIFECYCLE PASS :: created=p7-life-1791536986922 renamed=p7-renamed-1791536986922 adopted=p7-adopted-1791536986922 delete=true
 P7_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=t
-P7_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_a43f7be5"}'
+P7_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_b8fde0bc"}'
 P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: p
-P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1791472310581/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
+P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1791536986947/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
 P7_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/sto
-P7_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces serverWrote=true readBack=true marker=P10_VISIBLE_1791472309305 project=w4-storage-1791472309303 shellStatus=200 dirOnDisk=true size=26
+P7_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces serverWrote=true readBack=true marker=P10_VISIBLE_1791536986354 project=w4-storage-1791536986345 shellStatus=200 dirOnDisk=true size=26
 P7_W5_SIBLING_PROJECT_CONFINEMENT PASS :: wsRoot=/sto
-P7_W5_SIBLING_PROJECT_CONFINEMENT PASS :: wsRoot=/storage/emulated/0/Documents/OpenCode/p10ws-1791472307485 project=1 seesOwn=true seesSibling=false seesWorkspaceFile=false refused=sibling:true,workspace:true,deep:true readOwn=true/true chatNoFolder=true shape=true chatOwned=true session=ses_ee3eded2bffejQTJLPPevlepZW siblingBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server ' workspaceBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server ' deepBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server '
+P7_W5_SIBLING_PROJECT_CONFINEMENT PASS :: wsRoot=/storage/emulated/0/Documents/OpenCode/p10ws-1791536984097 project=1 seesOwn=true seesSibling=false seesWorkspaceFile=false refused=sibling:true,workspace:true,deep:true readOwn=true/true chatNoFolder=true shape=true chatOwned=true session=ses_ee0130817ffewADWze6402wv3C siblingBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server ' workspaceBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server ' deepBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server '
 P7_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: f
-P7_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w6-workspace mode=CHOSEN whenSwitched=[] hid=true oldStillOnDisk=true markerIntact=true pendingProjects=3 pendingNamesOldRoot=true movedBack=3 rootNow=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w6-workspace namesAfterMove=[p10w6, w4-storage-1791472309303, 1] contentKept=true before=[p10w6, w4-storage-1791472309303]
+P7_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w6-workspace mode=CHOSEN whenSwitched=[] hid=true oldStillOnDisk=true markerIntact=true pendingProjects=3 pendingNamesOldRoot=true movedBack=3 rootNow=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w6-workspace namesAfterMove=[p10w6, w4-storage-1791536986345, 1] contentKept=true before=[p10w6, w4-storage-1791536986345]
 P7_W7_PICKER_FOLDER_SWITCHES PASS :: u
 P7_W7_PICKER_FOLDER_SWITCHES PASS :: uri=content://com.android.externalstorage.documents/tree/primary%3AAndroid%2Fdata%2Fio.github.mcyber12.opencode.debug%2Ffiles%2Fp10w7-picked resolved=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w7-picked ok=true from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w7-picked rootNow=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w7-picked pinned=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w7-picked
-W1_PROJECT_LIFECYCLE PASS :: :: created=p7-life-1791472310552 renamed=p7-renamed-1791472310552 adopted=p7-adopted-1791472310552 delete=true
-W2_WORKSPACE_ISOLATION PASS :: :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_a43f7be5"}'
-W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1791472310581/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
-W4_WORKSPACE_VISIBLE PASS :: :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces serverWrote=true readBack=true marker=P10_VISIBLE_1791472309305 project=w4-storage-1791472309303 shellStatus=200 dirOnDisk=true size=26
-W5_SIBLING_PROJECT_CONFINEMENT PASS :: :: wsRoot=/storage/emulated/0/Documents/OpenCode/p10ws-1791472307485 project=1 seesOwn=true seesSibling=false seesWorkspaceFile=false refused=sibling:true,workspace:true,deep:true readOwn=true/true chatNoFolder=true shape=true chatOwned=true session=ses_ee3eded2bffejQTJLPPevlepZW siblingBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server ' workspaceBody='{"name":"
+W1_PROJECT_LIFECYCLE PASS :: :: created=p7-life-1791536986922 renamed=p7-renamed-1791536986922 adopted=p7-adopted-1791536986922 delete=true
+W2_WORKSPACE_ISOLATION PASS :: :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_b8fde0bc"}'
+W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1791536986947/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
+W4_WORKSPACE_VISIBLE PASS :: :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces serverWrote=true readBack=true marker=P10_VISIBLE_1791536986354 project=w4-storage-1791536986345 shellStatus=200 dirOnDisk=true size=26
+W5_SIBLING_PROJECT_CONFINEMENT PASS :: :: wsRoot=/storage/emulated/0/Documents/OpenCode/p10ws-1791536984097 project=1 seesOwn=true seesSibling=false seesWorkspaceFile=false refused=sibling:true,workspace:true,deep:true readOwn=true/true chatNoFolder=true shape=true chatOwned=true session=ses_ee0130817ffewADWze6402wv3C siblingBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server ' workspaceBody='{"name":"
 W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: :: from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w6-workspace mode=CHOSEN whenSwitched=[] hid=true oldStillOnDisk=true markerIntact=true pendingProjects=3 pendingNamesOldRoot=true movedBack=3 rootNow=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w6-workspace namesAfterMove=[p10w6, w4-storage-
 W7_PICKER_FOLDER_SWITCHES PASS :: :: uri=content://com.android.externalstorage.documents/tree/primary%3AAndroid%2Fdata%2Fio.github.mcyber12.opencode.debug%2Ffiles%2Fp10w7-picked resolved=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w7-picked ok=true from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w7-picked rootNow=/storage/emu
-[2026-10-08T15:11:52Z] === visibility from outside the app (non-root adb shell), project='w4-storage-1791472309303' root='/storage/emulated/0/Documents/OpenCode' ===
-[2026-10-08T15:11:53Z] pass=14 fail=0 skip=1
+[2026-10-09T09:09:48Z] === visibility from outside the app (non-root adb shell), project='w4-storage-1791536986345' root='/storage/emulated/0/Documents/OpenCode' ===
+[2026-10-09T09:09:49Z] pass=14 fail=0 skip=1
 ########## 6/9 release-shaped SMOKE build (release applicationId + packaging, debug-key signed) ##########
-[2026-10-08T15:11:53Z] === building the smoke variant (release configuration, debug-key signed) ===
-[2026-10-08T15:13:40Z] smoke apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/smoke/app-smoke.apk
-[2026-10-08T15:13:40Z] smoke testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/smoke/app-smoke-androidTest.apk
-[2026-10-08T15:13:40Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/smoke/INSTALL-README.txt (which artifact file is installable, and why)
-[2026-10-08T15:13:40Z] === inspecting the smoke APK (identity, payload, abis, signing) ===
+[2026-10-09T09:09:49Z] === building the smoke variant (release configuration, debug-key signed) ===
+[2026-10-09T09:10:52Z] smoke apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/smoke/app-smoke.apk
+[2026-10-09T09:10:52Z] smoke testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/smoke/app-smoke-androidTest.apk
+[2026-10-09T09:10:52Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/smoke/INSTALL-README.txt (which artifact file is installable, and why)
+[2026-10-09T09:10:53Z] === inspecting the smoke APK (identity, payload, abis, signing) ===
 P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=True
-[2026-10-08T15:13:40Z] P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=True
+[2026-10-09T09:10:53Z] P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=True
 P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
-[2026-10-08T15:13:40Z] P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
-[2026-10-08T15:13:40Z] === installing the smoke build (fresh) ===
+[2026-10-09T09:10:53Z] P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
+[2026-10-09T09:10:53Z] === installing the smoke build (fresh) ===
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-10-08T15:13:43Z] === Phase 6 UI gates against the SMOKE build (P6_PKG=io.github.mcyber12.opencode) ===
+[2026-10-09T09:10:55Z] === Phase 6 UI gates against the SMOKE build (P6_PKG=io.github.mcyber12.opencode) ===
 P10_SMOKE_UI PASS :: pass=20 fail=0 skip=0 on the release-shaped build (identical gates to the debug run)
-[2026-10-08T15:16:06Z] P10_SMOKE_UI PASS :: pass=20 fail=0 skip=0 on the release-shaped build (identical gates to the debug run)
+[2026-10-09T09:12:35Z] P10_SMOKE_UI PASS :: pass=20 fail=0 skip=0 on the release-shaped build (identical gates to the debug run)
 P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
-[2026-10-08T15:16:06Z] P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
+[2026-10-09T09:12:35Z] P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
 
 P10_SMOKE_SUMMARY pass=4 fail=0 skip=0
 ########## 7/9 store screenshots from the real app on a phone-sized screen ##########
-[2026-10-08T15:16:07Z] === launching io.github.mcyber12.opencode ===
-[2026-10-08T15:16:13Z] captured 01-welcome.png (1080x1920)
-[2026-10-08T15:16:15Z] tapping 'Continue' at 540 402 (welcome action)
-[2026-10-08T15:16:22Z] captured 02-projects.png (1080x1920)
-[2026-10-08T15:16:24Z] could not find 'New project' on screen (projects action)
-[2026-10-08T15:16:27Z] could not find 'Settings' on screen (settings action)
-[2026-10-08T15:16:27Z] captured=2
+[2026-10-09T09:12:35Z] === launching io.github.mcyber12.opencode ===
+[2026-10-09T09:12:41Z] captured 01-welcome.png (1080x1920)
+[2026-10-09T09:12:44Z] could not find 'Continue' on screen (welcome action)
+[2026-10-09T09:12:44Z] no 'Continue' on screen - the app already advanced past the welcome (capturing where it landed)
+[2026-10-09T09:12:49Z] captured 02-projects.png (1080x1920)
+[2026-10-09T09:12:51Z] could not find 'New project' on screen (projects action)
+[2026-10-09T09:12:53Z] could not find 'Settings' on screen (settings action)
+[2026-10-09T09:12:53Z] captured=2
 P10_SHOTS PASS: captured=2 screenshots into /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/screenshots (validated by 60-store-assets.sh)
 sources:
   /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/screenshots (2 png)
@@ -2628,183 +2999,44 @@ STORE-ASSETS PASS: 2 screenshots in /home/runner/work/OpenCode-app/OpenCode-app/
 NOTE: these files are store assets, not evidence. The gate verdicts that
       produced them are in docs/progress/phase10-evidence/.
 ########## 8/9 release APK + AAB (CI produces them UNSIGNED) + byte-level inspection ##########
-[2026-10-08T15:16:28Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=1.18.23-phase10 versionCode=8
-[2026-10-08T15:16:28Z] === gradle :app:assembleRelease :app:bundleRelease ===
-[2026-10-08T15:19:37Z] apk=app-release-unsigned.apk (134971842 bytes)
-[2026-10-08T15:19:37Z] aab=app-release.aab (121231022 bytes)
+[2026-10-09T09:12:53Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=1.18.23-phase10 versionCode=8
+[2026-10-09T09:12:53Z] === gradle :app:assembleRelease :app:bundleRelease ===
+[2026-10-09T09:14:52Z] apk=app-release-unsigned.apk (138686229 bytes)
+[2026-10-09T09:14:52Z] aab=app-release.aab (124942894 bytes)
 P10_RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
-[2026-10-08T15:19:37Z] RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
-P10_RELEASE_APK_DETAIL PASS :: CONTENTS entries=310 native_abis=arm64-v8a(6 libs,122.8MB),x86_64(6 libs,126.3MB) payload=True manifest_asset=True
-[2026-10-08T15:19:37Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=310 native_abis=arm64-v8a(6 libs,122.8MB),x86_64(6 libs,126.3MB) payload=True manifest_asset=True
+[2026-10-09T09:14:53Z] RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
+P10_RELEASE_APK_DETAIL PASS :: CONTENTS entries=313 native_abis=arm64-v8a(7 libs,126.4MB),x86_64(7 libs,130.0MB) payload=True manifest_asset=True
+[2026-10-09T09:14:53Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=313 native_abis=arm64-v8a(7 libs,126.4MB),x86_64(7 libs,130.0MB) payload=True manifest_asset=True
 P10_UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
-[2026-10-08T15:19:37Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
-P10_RELEASE_AAB PASS :: CONTENTS entries=315 native_abis=arm64-v8a(6 libs,122.8MB),x86_64(6 libs,126.3MB) payload=True manifest_asset=True
-[2026-10-08T15:19:38Z] RELEASE_AAB PASS :: CONTENTS entries=315 native_abis=arm64-v8a(6 libs,122.8MB),x86_64(6 libs,126.3MB) payload=True manifest_asset=True
-[2026-10-08T15:19:38Z] sha256:
-52828a760a18afa48b7ecf8578e329e90c0fb84b484fca96f4fe4ea50ee13fd1  ./app-release-unsigned.apk
-25377ad5065f33667bb935dbd42bc7c1322eb5a7976cbbe548d38a2a0e9915bb  ./app-release.aab
-[2026-10-08T15:19:38Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/release/HOW-TO-SIGN-ON-PHONE.txt + sha256.txt (phone-signing rules + this build's exact bytes)
+[2026-10-09T09:14:53Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
+P10_RELEASE_AAB PASS :: CONTENTS entries=318 native_abis=arm64-v8a(7 libs,126.4MB),x86_64(7 libs,130.0MB) payload=True manifest_asset=True
+[2026-10-09T09:14:53Z] RELEASE_AAB PASS :: CONTENTS entries=318 native_abis=arm64-v8a(7 libs,126.4MB),x86_64(7 libs,130.0MB) payload=True manifest_asset=True
+[2026-10-09T09:14:53Z] sha256:
+f90a3c6a55527c22711389d8f088fce2acf1baec85e47971ed315e463d774c92  ./app-release-unsigned.apk
+222cba68088b16da9adab8a98037097b05a6d022c41f317cf653a051caacba83  ./app-release.aab
+[2026-10-09T09:14:53Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/release/HOW-TO-SIGN-ON-PHONE.txt + sha256.txt (phone-signing rules + this build's exact bytes)
 
 P10_RELEASE_SUMMARY pass=4 fail=0
 ########## 9/9 Phase 9 gates on the same device (provider selection, plugin seed, version, lock) ##########
 p9 preamble: removing the smoke build so port 4111 belongs to the debug runtime again
-[2026-10-08T15:19:42Z] === P9 stage 1: provider selection (the carried defect, reproduced then fixed) ===
-[2026-10-08T15:20:04Z] === am instrument ai.opencode.android.client.ProviderSelectionGatesTest ===
-[2026-10-08T15:20:23Z] instrument rc=0 (provsel)
-[2026-10-08T15:20:23Z] P9_PROVSEL_STALE PASS :: :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
-[2026-10-08T15:20:23Z] P9_PROVSEL_REBUILT PASS :: :: after POST /global/dispose: connected=true instanceSource=api models=391 (was instanceSource=custom before the dispose)
-[2026-10-08T15:20:23Z] P9_PROVSEL_TURN PASS :: :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode d
-[2026-10-08T15:20:23Z] P9_PROVSEL_CLEANUP PASS :: :: dummy credential removed: connected=false
-[2026-10-08T15:20:23Z] === P9 stage 2: runtime version string + plugin install ===
-[2026-10-08T15:20:46Z] P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
-[2026-10-08T15:20:46Z] npm registry probe from the app uid: none
-[2026-10-08T15:23:18Z] P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
-[2026-10-08T15:23:18Z] === P9 stage 3: versions.lock == manifest == RuntimeVersion.kt == APK ===
-OK lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=daa7af30179df33a 
-[2026-10-08T15:23:18Z] P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=daa7af30179df33a 
-[2026-10-08T15:23:18Z] === evidence pull ===
-[2026-10-08T15:23:19Z] === P9 SUMMARY ===
-P9_SUMMARY 2026-10-08T15:23:19Z
+[2026-10-09T09:14:57Z] === P9 stage 1: provider selection (the carried defect, reproduced then fixed) ===
+[2026-10-09T09:15:14Z] === am instrument ai.opencode.android.client.ProviderSelectionGatesTest ===
+[2026-10-09T09:15:28Z] instrument rc=0 (provsel)
+[2026-10-09T09:15:28Z] P9_PROVSEL_STALE PASS :: :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
+[2026-10-09T09:15:28Z] P9_PROVSEL_REBUILT PASS :: :: after POST /global/dispose: connected=true instanceSource=api models=390 (was instanceSource=custom before the dispose)
+[2026-10-09T09:15:28Z] P9_PROVSEL_TURN PASS :: :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode d
+[2026-10-09T09:15:28Z] P9_PROVSEL_CLEANUP PASS :: :: dummy credential removed: connected=false
+[2026-10-09T09:15:28Z] === P9 stage 2: runtime version string + plugin install ===
+[2026-10-09T09:15:45Z] P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
+[2026-10-09T09:15:45Z] npm registry probe from the app uid: none
+[2026-10-09T09:18:19Z] P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
+[2026-10-09T09:18:19Z] === P9 stage 3: versions.lock == manifest == RuntimeVersion.kt == APK ===
+OK lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=b98967c02598e72f 
+[2026-10-09T09:18:19Z] P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=b98967c02598e72f 
+[2026-10-09T09:18:19Z] === evidence pull ===
+[2026-10-09T09:18:19Z] === P9 SUMMARY ===
+P9_SUMMARY 2026-10-09T09:18:19Z
 gates_pass=7 gates_fail=0 gates_skip=0
 device_abi=x86_64
 android_sdk=34
 ########## summary ##########
-P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, published identity, store package) + apk inspector self-test
-P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone (16 scenarios, pass=136 fail=0 - the scenario list and every check are in p10-driver-selftest.log)
-P10-UNIT PASS: JVM tests=408 failures=0 errors=0 skipped=0 (unit tests are NOT runtime evidence - the device gates below are)
-P10-PAYLOAD PASS: payloadVersion=7 opencode=1.18.23@05ea5073be96 bun=1.3.14 git=v2.48.1 rg=15.1.0 sha256=daa7af30179df33a files=1062
-P10-DEVICE PASS: fresh AVD on 14 (Physical size: 1080x1920 density=Physical density: 160)
-P6_U1 PASS ::
-P6_U1 PASS :: rows=602 composedAtBottom=46 composedAtTop=41 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
-P6_U10 PASS :: shown=t
-P6_U10 PASS :: shown=true label=true menu=true listed=true/true picked=true/[google/gemini-2.5-flash] settingsTrip=true thinking=true/true/[high] thinkingEmpty=true mode=true/true/true/[plan, build] label=true planApprove=true/true emptyExplained=true offered=true
-P6_U11 PASS :: su
-P6_U11 PASS :: surface=true search=true/true/true keyOnly=true/true activated=true star=true/true/true/true collapsedFirst=true custom=true/true/true reported=(openrouter, openai/gpt-4o-mini, false)
-P6_U12 PASS :: onboa
-P6_U12 PASS :: onboarding=true/true/true/true v4Removed=true/true wired=true/true message=true hidden=true controls=true settings=true/true/true/true note=true
-P6_U13 PASS :: tabs=t
-P6_U13 PASS :: tabs=true chip=true wired=true screen=true stages=true newestFirst=true rows=2 counts=true patch=hidden:true,shown:true empty=true
-P6_U14 PASS :: sc
-P6_U14 PASS :: screen=true rows=3 command=true output=true exit=true running=true failed=true log=hidden:true,shown:true tabBack=true empty=true
-P6_U2 PASS :: collapsedByDefault=t
-P6_U2 PASS :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true todoChecklist=true(collapsed=true)
-P6_U3 PASS :: ask=t
-P6_U3 PASS :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[staging]])] submitEnabledAtTap=true submitClicks=1 scrolledIntoView=true
-P6_U4 PASS ::
-P6_U4 PASS :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=true,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
-P6_U5 PASS :: busyBa
-P6_U5 PASS :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true noActionsWhileStreaming=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true copy=true/true like=true dislike=true turnErrorKept=true 
-P6_U6 PASS :: heading=t
-P6_U6 PASS :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
-P6_U7 PASS :: inte
-P6_U7 PASS :: interactive={chat=25, sessions=11, projects=8, welcome=2, welcome-unsupported=2, settings=15, files=4} total=67 unnamed=0 filesControls=[Back, Up one level Up one level, main.kt, Folder app]
-P6_U8 PASS ::
-P6_U8 PASS :: rowsComposedBefore=23 after=23 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true revertNote=true emptyState=true/true
-P6_U9 PASS :: listed=t
-P6_U9 PASS :: listed=true pathShown=true locationCopy=true openedDir=true upShown=true upWorks=true openedFile=true viewer=true body=true preview=true/true/true/true/true sandbox=true/true/true/true/true/true/true/true/true saveCopy=true/true closed=true empty=true v4Removed=copyPath:true,export:tru
-P6_F1 PASS :: fi
-P6_F1 PASS :: firstScreen=welcome workspaceStep=true stages=[extracting, starting, healthy] welcomeCopy=4/4 sampledLines=19 leakedTokens=[] continueBecameEnabled=false advancedToProjects=false advancedToChat=false supervisor=HEALTHY(restarts=0) screenshots=welcome:35787,projects:-1,chat:-1 detailLen
-P6_F2 PASS :: status=HEALTHY
-P6_F2 PASS :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=false,chat=false,workspace=true) leakedTokens=[] screenshot=43356
-P6_F3 PASS :: wo
-P6_F3 PASS :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:43356,projects:76985
-P6_F4 PASS :: count=4 usable=4 welcome=t
-P6_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=35787, 02-first-run-ready.png=43356, 02b-first-run-workspace.png=43356, 04-first-run-projects.png=76985]
-P6_L1 PASS :: p
-P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=4 replyShownInUi=true(needle='Blue') newScreenLines=15 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=586
-P6_L2 PASS :: tool=bash status=completed pa
-P6_L2 PASS :: tool=bash status=completed partId=prt_11c11c46f0017YOJcdDZSTev61 cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1 marker=P6LIVE281827 screenshots[bytes=88120 ink=0.377 via=compose | 
-P6-UI totals: ui_gates_pass=20 ui_gates_fail=0 ui_gates_skip=0
-P9_PROVSEL_CLEANUP PASS :: dummy c
-P9_PROVSEL_CLEANUP PASS :: dummy credential removed: connected=false
-P9_PROVSEL_REBUILT PASS :: afte
-P9_PROVSEL_REBUILT PASS :: after POST /global/dispose: connected=true instanceSource=api models=391 (was instanceSource=custom before the dispose)
-P9_PROVSEL_STALE PASS :: afte
-P9_PROVSEL_STALE PASS :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
-P9_PROVSEL_TURN PASS :: p
-P9_PROVSEL_TURN PASS :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode default
-P9_PROVSEL_STALE PASS :: :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
-P9_PROVSEL_REBUILT PASS :: :: after POST /global/dispose: connected=true instanceSource=api models=391 (was instanceSource=custom before the dispose)
-P9_PROVSEL_TURN PASS :: :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode d
-P9_PROVSEL_CLEANUP PASS :: :: dummy credential removed: connected=false
-P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
-P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
-P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=daa7af30179df33a 
-P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
-P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
-P10_RELEASE_AAB PASS :: CONTENTS entries=315 native_abis=arm64-v8a(6 libs,122.8MB),x86_64(6 libs,126.3MB) payload=True manifest_asset=True
-P10_RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=False
-P10_RELEASE_APK_DETAIL PASS :: CONTENTS entries=310 native_abis=arm64-v8a(6 libs,122.8MB),x86_64(6 libs,126.3MB) payload=True manifest_asset=True
-P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=True
-P10_SMOKE_UI PASS :: pass=20 fail=0 skip=0 on the release-shaped build (identical gates to the debug run)
-P10_SMOKE_UI_F1 PASS :: fi
-P10_SMOKE_UI_F1 PASS :: firstScreen=welcome workspaceStep=true stages=[extracting, starting, healthy] welcomeCopy=4/4 sampledLines=19 leakedTokens=[] continueBecameEnabled=false advancedToProjects=false advancedToChat=false supervisor=HEALTHY(restarts=0) screenshots=welcome:35787,projects:-1,chat:-1
-P10_SMOKE_UI_F2 PASS :: status=HEALTHY
-P10_SMOKE_UI_F2 PASS :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=false,chat=false,workspace=true) leakedTokens=[] screenshot=43267
-P10_SMOKE_UI_F3 PASS :: wo
-P10_SMOKE_UI_F3 PASS :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:43267,projects:76359
-P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=t
-P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=35787, 02-first-run-ready.png=43267, 02b-first-run-workspace.png=43267, 04-first-run-projects.png=76359]
-P10_SMOKE_UI_L1 PASS :: p
-P10_SMOKE_UI_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=15 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot
-P10_SMOKE_UI_L2 PASS :: tool=bash status=completed pa
-P10_SMOKE_UI_L2 PASS :: tool=bash status=completed partId=prt_11c15dcd0001GhxeX7ZH75YR2Z cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1 marker=P6LIVE551807 screenshots[bytes=91781 ink=0.357 via=
-P10_SMOKE_UI_U1 PASS ::
-P10_SMOKE_UI_U1 PASS :: rows=602 composedAtBottom=46 composedAtTop=41 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
-P10_SMOKE_UI_U10 PASS :: shown=t
-P10_SMOKE_UI_U10 PASS :: shown=true label=true menu=true listed=true/true picked=true/[google/gemini-2.5-flash] settingsTrip=true thinking=true/true/[high] thinkingEmpty=true mode=true/true/true/[plan, build] label=true planApprove=true/true emptyExplained=true offered=true
-P10_SMOKE_UI_U11 PASS :: su
-P10_SMOKE_UI_U11 PASS :: surface=true search=true/true/true keyOnly=true/true activated=true star=true/true/true/true collapsedFirst=true custom=true/true/true reported=(openrouter, openai/gpt-4o-mini, false)
-P10_SMOKE_UI_U12 PASS :: onboa
-P10_SMOKE_UI_U12 PASS :: onboarding=true/true/true/true v4Removed=true/true wired=true/true message=true hidden=true controls=true settings=true/true/true/true note=true
-P10_SMOKE_UI_U13 PASS :: tabs=t
-P10_SMOKE_UI_U13 PASS :: tabs=true chip=true wired=true screen=true stages=true newestFirst=true rows=2 counts=true patch=hidden:true,shown:true empty=true
-P10_SMOKE_UI_U14 PASS :: sc
-P10_SMOKE_UI_U14 PASS :: screen=true rows=3 command=true output=true exit=true running=true failed=true log=hidden:true,shown:true tabBack=true empty=true
-P10_SMOKE_UI_U2 PASS :: collapsedByDefault=t
-P10_SMOKE_UI_U2 PASS :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true todoChecklist=true(collapsed=true)
-P10_SMOKE_UI_U3 PASS :: ask=t
-P10_SMOKE_UI_U3 PASS :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[staging]])] submitEnabledAtTap=true submitClicks=1 scrolledInto
-P10_SMOKE_UI_U4 PASS ::
-P10_SMOKE_UI_U4 PASS :: runtimeDown=true(body=true,send=false) serverUnreachable=true(send=false) providerAuth=true(rawKept=true,send=true) starting=true(send=false) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
-P10_SMOKE_UI_U5 PASS :: busyBa
-P10_SMOKE_UI_U5 PASS :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true noActionsWhileStreaming=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true copy=true/true like=true dislike=true turnError
-P10_SMOKE_UI_U6 PASS :: heading=t
-P10_SMOKE_UI_U6 PASS :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true
-P10_SMOKE_UI_U7 PASS :: inte
-P10_SMOKE_UI_U7 PASS :: interactive={chat=25, sessions=11, projects=11, welcome=2, welcome-unsupported=2, settings=15, files=4} total=70 unnamed=0 filesControls=[Back, Up one level Up one level, main.kt, Folder app]
-P10_SMOKE_UI_U8 PASS ::
-P10_SMOKE_UI_U8 PASS :: rowsComposedBefore=23 after=23 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true revertNote=true emptyState=true/true
-P10_SMOKE_UI_U9 PASS :: listed=t
-P10_SMOKE_UI_U9 PASS :: listed=true pathShown=true locationCopy=true openedDir=true upShown=true upWorks=true openedFile=true viewer=true body=true preview=true/true/true/true/true sandbox=true/true/true/true/true/true/true/true/true saveCopy=true/true closed=true empty=true v4Removed=copyPath:true,
-P10_STORE_ASSETS PASS :: 512 icon + 1024x500 feature graphic + 2 screenshots at a real screen size
-P10_UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
-P10_WS_VISIBILITY_DOCUMENTS_PROVIDER SKIP :: this device does not let a shell query the Documents provider (Error while accessing provider:com.android.externalstorage.documents)
-P10_WS_VISIBILITY_LOCATION PASS :: the project root exists and holds 2 project(s): /storage/emulated/0/Documents/OpenCode (source: app-reported (W4 gate), Android 14)
-P10_WS_VISIBILITY_PRIVATE_ROOT_NOT_LIVE PASS :: the live project root is outside /data: /storage/emulated/0/Documents/OpenCode
-P10_WS_VISIBILITY_SHARED_ROOT PASS :: the project root is on shared storage and outside Android/data: /storage/emulated/0/Documents/OpenCode (Android 14)
-P10_WS_VISIBILITY_SHELL_BASELINE PASS :: baseline holds: an unprivileged shell cannot read /data/data/io.github.mcyber12.opencode.debug at all, so the PASSs above are real
-P10_WS_VISIBILITY_SHELL_LIST PASS :: a non-root shell lists the project directory (/storage/emulated/0/Documents/OpenCode/w4-storage-1791472309303): 2 lines
-P10_WS_VISIBILITY_SHELL_READ PASS :: read p10-visible.txt from outside the app: 'P10_VISIBLE_1791472309305' (matches /P10_VISIBLE_/)
-P10_WS_VISIBILITY_SHELL_WRITE PASS :: a file written by the non-root shell in /storage/emulated/0/Documents/OpenCode/w4-storage-1791472309303 was readable back: the directory is shared, ordinary storage
-P10_WS_W1_PROJECT_LIFECYCLE PASS :: c
-P10_WS_W1_PROJECT_LIFECYCLE PASS :: created=p7-life-1791472310552 renamed=p7-renamed-1791472310552 adopted=p7-adopted-1791472310552 delete=true
-P10_WS_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=t
-P10_WS_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_a43f7be5"}'
-P10_WS_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: p
-P10_WS_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1791472310581/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
-P10_WS_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/sto
-P10_WS_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces se
-P10_WS_W5_SIBLING_PROJECT_CONFINEMENT PASS :: wsRoot=/sto
-P10_WS_W5_SIBLING_PROJECT_CONFINEMENT PASS :: wsRoot=/storage/emulated/0/Documents/OpenCode/p10ws-1791472307485 project=1 seesOwn=true seesSibling=false seesWorkspaceFile=false refused=sibling:true,workspace:true,deep:true readOwn=true/true chatNoFolder=true shape=true chatOwned=true session=ses_ee3
-P10_WS_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: f
-P10_WS_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w6-workspace mode=CHOSEN whenSwitched=[] hid=true oldStillOnDisk=true markerIntact=true pendingProjects=3 pendingNam
-P10_WS_W7_PICKER_FOLDER_SWITCHES PASS :: u
-P10_WS_W7_PICKER_FOLDER_SWITCHES PASS :: uri=content://com.android.externalstorage.documents/tree/primary%3AAndroid%2Fdata%2Fio.github.mcyber12.opencode.debug%2Ffiles%2Fp10w7-picked resolved=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w7-picked ok=true from=/storage/e
-STORE-ASSETS PASS: 2 screenshots in /home/runner/work/OpenCode-app/OpenCode-app/docs/store/screenshots (0 rejected)
-P10_SUMMARY 2026-10-08T15:23:19Z
-phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0
-NOTE: PASS lines above are real gate executions on the emulator/device. Unit and
-      compile lines are NOT runtime evidence. UNSIGNED release artifacts are
-      expected in CI: signing is the human step (docs/RELEASE.md).
-=== PHASE 10 END 2026-10-08T15:23:19Z rc=0 ===
