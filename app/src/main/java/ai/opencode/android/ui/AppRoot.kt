@@ -305,6 +305,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             githubClone.autoPush(projectDir, githubToken())
         }
     }
+    // v9.28 (owner): a GitHub project is ALWAYS on its project branch - the
+    // moment it becomes the active project, the checkout is re-asserted.
+    LaunchedEffect(projectName) {
+        githubClone.ensureProjectBranch(projectDir)
+    }
 
     // Where the projects live, and the actions that can change it. The snapshot is
     // rebuilt from the platform on every entry to the Files screen, so a grant made
@@ -978,9 +983,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onNewSession = { name ->
                         store.select(name)
                         projectName = name
-                        // v9.26 (owner): a git project lives on ONE branch
-                        // (opencode/<project>, created at clone) - new chats
-                        // stay on it instead of branching per chat.
+                        // v9.26/v9.28 (owner): a git project lives on ONE
+                        // branch (opencode/<project>) and every session must
+                        // be ON it - re-assert, never assume.
+                        githubClone.ensureProjectBranch(File(container.workspacesRoot(), name))
                         repository.newSession(null)
                         route = ROUTE_CHAT
                     },
@@ -1073,6 +1079,8 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         route = ROUTE_CHAT
                     },
                     onNew = {
+                        // v9.28 (owner): sessions never leave the project branch.
+                        githubClone.ensureProjectBranch(projectDir)
                         repository.newSession(null)
                         route = ROUTE_CHAT
                     },
@@ -1390,6 +1398,8 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onUndo = { repository.undoLastTurn() },
                     onRedo = { repository.redoLastTurn() },
                     onNewSession = {
+                        // v9.28 (owner): sessions never leave the project branch.
+                        githubClone.ensureProjectBranch(projectDir)
                         repository.newSession(null)
                     },
                     onOpenSessions = { route = ROUTE_SESSIONS },

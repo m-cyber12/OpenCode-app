@@ -4868,3 +4868,52 @@ success is silent by design - verification is the repo on github.com;
 pushNote carries failures but no UI surfaces it prominently yet; (d) the
 model must configure its own git identity before committing (the brief
 does not mention it; models handle this routinely - watch the field).
+
+## B.49 — v9.28 (2026-10-09): owner verified the clone works; project-branch stickiness, the "GitHub" card, and the PARKED ITEM STARTED - git rebuilt WITH https
+
+Owner's device pass: v9.27 clone WORKED (screenshot: agent on
+`opencode/rubika-api-bot`, `git branch -a` proof). Owner: "good" + three
+instructions + "start parked item".
+
+1. ALWAYS ON THE PROJECT BRANCH (owner): GitSync.ensureProjectBranch
+   re-asserts `opencode/<project>` at project open (LaunchedEffect on
+   projectName) and at all three new-session sites. Never destructive: a
+   dirty-tree conflict aborts the checkout (JGit throws, we swallow) -
+   enforcing a branch must not eat uncommitted work. Pinned by
+   ensureProjectBranchPutsAStrayCheckoutBack (real repos, stray checkout,
+   no-op/null/non-git cases).
+2. CARD REBRAND (owner's words): section title "GitHub", body "This
+   project works on your GitHub repository.", GitHub mark icon (octicon
+   path, vector drawable, gold tint, testTag github_mark). The a11y gate
+   caught contentDescription=null on the first attempt - fixed to a real
+   label; the gate earned its keep.
+3. SAME-REPO QUESTION answered for the owner: a second project from the
+   same repo dedupes to `<repo>-2` -> branch `opencode/<repo>-2`; two
+   projects = two branches, one repository, no collisions.
+4. PARKED ITEM STARTED - git with real HTTPS:
+   - payload build now cross-compiles Mbed TLS 3.6.2 + curl 8.10.1
+     (static, http(s)-only) per ABI and builds git's `git-remote-http`
+     against them -> shipped as `libgitremotehttp.so`; NO_CURL is gone.
+   - LICENSING drove the TLS choice: git is GPL-2.0-only; OpenSSL 3
+     (Apache-2.0) is GPLv2-INCOMPATIBLE; Mbed TLS is dual
+     Apache-2.0/GPL-2.0-or-later and is used under its GPL option.
+     Notices, versions.lock and ARCHITECTURE.md updated accordingly.
+   - app side: bin/git-remote-https + bin/git-remote-http symlinks ->
+     the helper; RuntimeEnv sets GIT_EXEC_PATH=bin and GIT_SSL_CAPATH=
+     the DEVICE's own CA store (Conscrypt APEX path first, /system
+     fallback) - trust follows the device, no baked CA bundle.
+   - payload step timeout 3600->5400 (the two extra cross-compiles);
+     gradle staging now REQUIRES libgitremotehttp.so per built ABI.
+
+HONESTY: (a) git-over-https is CI-built but NOT device-proven in this
+turn - and the BRIEF STILL SAYS "never try git over https" ON PURPOSE:
+a model told "it works" before the owner proves it would burn tokens on
+my optimism. The owner's test: ask the agent to run
+`git ls-remote https://github.com/octocat/Hello-World.git` (a direct
+user instruction overrides the brief's default). When that returns refs,
+the brief gets rewritten and model git autonomy becomes real; (b) the
+curl/mbedTLS configure flags are from documented cross-compile practice
+but this exact combination first compiles on THIS CI run - a build
+failure here is possible and will be iterated; (c) auto-push remains the
+primary transport either way - model-side https is autonomy, not a
+replacement.

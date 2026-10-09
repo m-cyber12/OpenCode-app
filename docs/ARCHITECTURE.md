@@ -44,7 +44,7 @@ model provider is the only remote party.
 | Artifact | Packaging | Why |
 |---|---|---|
 | `libbun.so` | JNI lib per ABI (`@oven/bun-linux-{x64,aarch64}-android` 1.3.14) | Android only allows `exec` from `nativeLibraryDir` (W^X, API 29+); JNI libs land there automatically. Bun's Android build is bionic-linked, so the zygote seccomp policy is satisfied. |
-| `libgit.so`, `librg.so` | JNI libs, built from source with NDK 28.2.13676358 | real git 2.48.1 (`NO_PERL`, no curl/openssl: local repo ops only) and ripgrep 15.1.0 (OpenCode expects an `rg` binary). |
+| `libgit.so`, `libgitremotehttp.so`, `librg.so` | JNI libs, built from source with NDK 28.2.13676358 | real git 2.48.1 (`NO_PERL`; since v9.28 WITH smart-HTTP(S): `git-remote-http` built against static curl 8.10.1 + Mbed TLS 3.6.2 under its GPL option, cert trust from Android's own CA store via `GIT_SSL_CAPATH`) and ripgrep 15.1.0 (OpenCode expects an `rg` binary). |
 | `libexecshim.so`, `libchildshim.so`, `libseccompshim.so` | JNI libs | exec shim launches Bun with `LD_PRELOAD` set; the seccomp shim neutralises syscalls Android's app policy forbids (BPF child filter on x86_64, preload on arm64). See RUNTIME.md. |
 | `runtime-payload.tar.gz` | asset | `opencode/dist/node/node.js` (Bun.build of upstream `packages/opencode`, target `bun`, defines `OPENCODE_VERSION="1.18.23"`, `OPENCODE_CHANNEL="android"`), `*.wasm` (tree-sitter, photon), `node_modules` needed at runtime, `launcher.js`. |
 | `runtime-manifest.json` | asset | pins (`opencodeCommit/opencodeVersion/bunVersion/gitVersion/rgVersion/payloadVersion`), per-file sha256 + size, tarball sha256. Extraction is refused on mismatch; `payloadVersion` bump forces re-extraction. |

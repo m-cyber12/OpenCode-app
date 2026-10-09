@@ -102,7 +102,13 @@ native_components:
     note: "real upstream source built for x86_64-linux-android and aarch64-linux-android with Cargo + NDK/Bionic; avoids static desktop binaries that SIGSYS under Android's zygote policy"
   - name: git                         # external, resolved at runtime; bundled Android executable
     version: v2.48.1                  # real Git source built with the Android NDK/Bionic toolchain
-    note: "Phase 2 NO_PERL blocker fixed: build the Makefile directly with NO_PERL=YesPlease. HTTPS/curl disabled — local repo ops only (init/status/add/commit/diff/branches/log). Bionic-linked rather than static-musl because Android's app seccomp policy cannot be repaired after a static exec."
+    note: "Phase 2 NO_PERL blocker fixed: build the Makefile directly with NO_PERL=YesPlease. v9.28: HTTPS ENABLED - git-remote-http built against static curl + Mbed TLS (GPLv2 option), shipped as libgitremotehttp.so; cert trust from the device CA store (GIT_SSL_CAPATH). Bionic-linked rather than static-musl because Android's app seccomp policy cannot be repaired after a static exec."
+  - name: curl                        # static lib inside libgitremotehttp.so (v9.28)
+    version: 8.10.1
+    note: "http(s)-only configure; TLS via Mbed TLS; no baked CA defaults - CAPATH comes from the runtime env"
+  - name: mbedtls                     # static lib inside libgitremotehttp.so (v9.28)
+    version: 3.6.2
+    note: "dual Apache-2.0/GPL-2.0-or-later; the GPL option keeps the combined helper compatible with git's GPL-2.0-only"
   - name: posix-shell                 # sh/bash/zsh/dash/ksh; must be bundled (static)
     version: android-system           # Android's own /system/bin/sh (mksh, MIRBSD KSH R59) — real shell, TESTED
     note: "config shell: /system/bin/sh (Shell.preferred honors config 'shell')"

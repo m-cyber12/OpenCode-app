@@ -210,11 +210,18 @@ class RuntimePaths private constructor(
     val bunLink: File = File(binDir, "bun")
     val gitLink: File = File(binDir, "git")
     val rgLink: File = File(binDir, "rg")
+    // v9.28: git's smart-HTTP(S) helper. BOTH scheme names link at the same
+    // binary (upstream ships git-remote-https as a copy of git-remote-http).
+    val gitRemoteHttpsLink: File = File(binDir, "git-remote-https")
+    val gitRemoteHttpLink: File = File(binDir, "git-remote-http")
 
     /** The actual bun executable in nativeLibraryDir (installed by the package manager). */
     fun bunBinary(): File = File(nativeLibraryDir, "libbun.so")
     /** Real Git executable built against the Android NDK/Bionic libc. */
     fun gitBinary(): File = File(nativeLibraryDir, "libgit.so")
+
+    /** v9.28: git's https transport helper (curl + Mbed TLS, static). */
+    fun gitRemoteHttpBinary(): File = File(nativeLibraryDir, "libgitremotehttp.so")
     /** Real ripgrep executable built for the Android ABI with the NDK linker. */
     fun rgBinary(): File = File(nativeLibraryDir, "librg.so")
     /** Retained diagnostic compatibility wrapper; tool lookup does not use it. */

@@ -78,6 +78,25 @@ object GitSync {
             }
     }
 
+    /**
+     * v9.28 (owner): a GitHub project is ALWAYS on its own branch - every
+     * session works on `opencode/<project>`. If something (a model command,
+     * a crash mid-rebase) left the checkout elsewhere, this puts it back;
+     * a dirty-tree conflict aborts the checkout harmlessly (JGit throws,
+     * we swallow - never destroy uncommitted work to enforce a branch).
+     */
+    fun ensureProjectBranch(dir: File?) {
+        if (dir == null || !File(dir, ".git").isDirectory) return
+        runCatching {
+            Git.open(dir).use { git ->
+                val want = GitClone.projectBranch(dir.name)
+                if (git.repository.branch == want) return
+                val exists = git.repository.resolve("refs/heads/$want") != null
+                git.checkout().setName(want).setCreateBranch(!exists).call()
+            }
+        }
+    }
+
     /** True when [dir] is a git work tree whose `origin` points at GitHub. */
     fun isGithubProject(dir: File?): Boolean {
         if (dir == null || !File(dir, ".git").isDirectory) return false

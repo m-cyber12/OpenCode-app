@@ -351,6 +351,11 @@ class RuntimeManager private constructor(private val appContext: Context) {
             Link(paths.bunLink, paths.bunBinary(), "bun"),
             Link(paths.gitLink, paths.gitBinary(), "git"),
             Link(paths.rgLink, paths.rgBinary(), "rg"),
+            // v9.28: git finds its https transport by NAME (git-remote-https)
+            // via GIT_EXEC_PATH/PATH; both scheme names resolve to the one
+            // helper binary, exactly as upstream installs it.
+            Link(paths.gitRemoteHttpsLink, paths.gitRemoteHttpBinary(), "git-remote-https"),
+            Link(paths.gitRemoteHttpLink, paths.gitRemoteHttpBinary(), "git-remote-http"),
         )
         for (l in links) {
             try {

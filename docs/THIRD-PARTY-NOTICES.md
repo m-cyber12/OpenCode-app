@@ -17,6 +17,8 @@ the shipped artifact by `phase10/scripts/check-apk.py` and the device gate
 | **Bun** (the JavaScript runtime that executes it) | 1.3.14 | **MIT** | `arm64-v8a` and `x86_64` bionic-linked executables (from the official `@oven/bun-*-android` packages), packaged as `libbun.so` so Android will exec them | <https://github.com/oven-sh/bun> |
 | **Git** (the agent's version-control tool) | v2.48.1 | **GPL-2.0-only** | statically built for Android from the official release tarball with the NDK toolchain, packaged as `libgit.so` | <https://github.com/git/git/releases/tag/v2.48.1> |
 | **ripgrep** (the agent's search tool) | 15.1.0 | **MIT** (or the Unlicense, at your option) | built for Android with Cargo + NDK, packaged as `librg.so` | <https://github.com/BurntSushi/ripgrep/releases/tag/15.1.0> |
+| **curl (libcurl)** (HTTP engine of git's `remote-https` helper) | 8.10.1 | **curl licence** (MIT-like) | static library linked into `libgitremotehttp.so` | <https://github.com/curl/curl/releases/tag/curl-8_10_1> |
+| **Mbed TLS** (TLS for libcurl above) | 3.6.2 | dual **Apache-2.0 OR GPL-2.0-or-later** — used under the **GPL-2.0-or-later** option so the combined `libgitremotehttp.so` (git GPL-2.0-only + curl + Mbed TLS) is licence-consistent | static library linked into `libgitremotehttp.so` | <https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.2> |
 | **@opencode-ai/plugin** (+ its dependencies: `@opencode-ai/sdk`, `zod`, `effect`, `@ai-sdk/provider`) | 1.18.23 | MIT (and the respective licences of each package) | pre-installed plugin tree in the runtime payload (`plugin-seed/` → `xdg/config/opencode/node_modules`) | <https://registry.npmjs.org/@opencode-ai/plugin> |
 
 ## Linked into the app

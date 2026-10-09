@@ -101,6 +101,30 @@ class GitSyncTest {
     }
 
     @Test
+    fun ensureProjectBranchPutsAStrayCheckoutBack() {
+        // v9.28 (owner): every session of a GitHub project stays on
+        // opencode/<project>. A model command may wander off; opening the
+        // project or a new session puts the checkout back - and a dirty
+        // conflict must abort harmlessly rather than destroy work.
+        val origin = bareOrigin()
+        val project = tmp.newFolder("site")
+        GitSync.cloneAndBranch(
+            origin.absolutePath, project, GitClone.projectBranch("site"), "unused",
+        ) { }
+        Git.open(project).use { git ->
+            git.checkout().setName("main").call() // the stray move
+            assertEquals("main", git.repository.branch)
+        }
+        GitSync.ensureProjectBranch(project)
+        Git.open(project).use { git -> assertEquals("opencode/site", git.repository.branch) }
+        // Already on it: a no-op. Null and non-git dirs: no-ops too.
+        GitSync.ensureProjectBranch(project)
+        GitSync.ensureProjectBranch(null)
+        GitSync.ensureProjectBranch(tmp.newFolder("notgit"))
+        Git.open(project).use { git -> assertEquals("opencode/site", git.repository.branch) }
+    }
+
+    @Test
     fun githubOriginDetectionReadsTheRemoteUrl() {
         val project = tmp.newFolder("gh")
         Git.init().setInitialBranch("main").setDirectory(project).call().use { git ->

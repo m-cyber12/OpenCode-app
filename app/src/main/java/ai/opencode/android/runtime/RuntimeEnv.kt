@@ -31,6 +31,19 @@ object RuntimeEnv {
     fun hostname(requested: String? = null): Pair<String, String?> =
         ai.opencode.android.client.LoopbackGuard.bindHostname(requested)
 
+    /**
+     * v9.28: the device's CA-certificate directory, newest location first.
+     * Returns null when neither exists (then git simply has no CAPATH and
+     * https verification fails loudly instead of silently trusting nothing).
+     */
+    fun systemCaDir(): String? = listOf(
+        "/apex/com.android.conscrypt/cacerts",
+        "/system/etc/security/cacerts",
+    ).firstOrNull { dir ->
+        val f = File(dir)
+        f.isDirectory && !f.list().isNullOrEmpty()
+    }
+
     fun build(
         paths: RuntimePaths,
         abi: String,
@@ -53,6 +66,14 @@ object RuntimeEnv {
         ).joinToString(File.pathSeparator)
         env["SHELL"] = "/system/bin/sh"
         env["LANG"] = "C.UTF-8"
+        // v9.28: the rebuilt git speaks https (curl + Mbed TLS). Its helper
+        // (bin/git-remote-https -> libgitremotehttp.so) is found here, and
+        // certificate trust comes from ANDROID'S OWN CA store - a directory
+        // of PEM certs the TLS library loads wholesale, so trust follows the
+        // device, not our build (Android 14+ keeps it in the Conscrypt APEX,
+        // older in /system).
+        env["GIT_EXEC_PATH"] = paths.binDir.absolutePath
+        systemCaDir()?.let { env["GIT_SSL_CAPATH"] = it }
         // Loopback only: the value comes from RuntimeEnv.hostname(), which can
         // never return a non-loopback address (and the launcher re-checks it).
         env["OPENCODE_SERVER_HOSTNAME"] = hostname

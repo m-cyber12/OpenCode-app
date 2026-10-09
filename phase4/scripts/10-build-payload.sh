@@ -45,6 +45,13 @@ mkdir -p "$ENGINE/jniLibs/arm64-v8a" "$ENGINE/jniLibs/x86_64" "$ENGINE/assets"
 PINNED_COMMIT="05ea5073be967c779d326929b2de6228dda4159d"
 GIT_PIN="v2.48.1"
 ZLIB_PIN="v1.3.1"
+# v9.28 (owner: "start the parked item") - HTTPS transport for the bundled
+# git. curl is the only http backend git supports; Mbed TLS is the TLS
+# library BECAUSE OF LICENSING: git is GPL-2.0-only, OpenSSL 3 is
+# Apache-2.0 (GPLv2-incompatible), while Mbed TLS is dual Apache-2.0 /
+# GPL-2.0-or-later - we use its GPL option, which composes cleanly.
+CURL_PIN="8.10.1"
+MBEDTLS_PIN="3.6.2"
 BUN_PIN="1.3.14"
 RG_PIN="15.1.0"
 PAYLOAD_VERSION=7   # 7 = Phase 9: bare OPENCODE_VERSION + pre-seeded @opencode-ai/plugin tree (plugin-seed/); 6 = bare version only; 5 = Phase 5 launcher/Keystore layout
@@ -187,6 +194,17 @@ timeout 300 git clone -q --depth 1 --branch "$GIT_PIN" https://github.com/git/gi
 (cd "$WORK/git-src" && git rev-parse HEAD > "$ENGINE/git.upstream.commit.txt")
 note "git source: $(cat "$ENGINE/git.upstream.commit.txt")"
 
+# v9.28: TLS + http sources for git's remote-https helper (release tarballs,
+# self-contained - the mbedTLS git tree needs submodules, its tarball does not).
+curl -fsSL --retry 3 --max-time 180 -o "$WORK/mbedtls.tar.bz2" \
+  "https://github.com/Mbed-TLS/mbedtls/releases/download/mbedtls-${MBEDTLS_PIN}/mbedtls-${MBEDTLS_PIN}.tar.bz2"
+rm -rf "$WORK/mbedtls-src" && mkdir -p "$WORK/mbedtls-src"
+tar xjf "$WORK/mbedtls.tar.bz2" -C "$WORK/mbedtls-src" --strip-components=1
+curl -fsSL --retry 3 --max-time 180 -o "$WORK/curl.tgz" \
+  "https://github.com/curl/curl/releases/download/curl-${CURL_PIN//./_}/curl-${CURL_PIN}.tar.gz"
+rm -rf "$WORK/curl-src" && mkdir -p "$WORK/curl-src"
+tar xzf "$WORK/curl.tgz" -C "$WORK/curl-src" --strip-components=1
+
 build_git_android() {  # $1=abi $2=target triple $3=lib dir
   local abi="$1" triple="$2" outdir="$3"
   local cc="$NDK_BIN/${triple}29-clang"
@@ -201,21 +219,65 @@ build_git_android() {  # $1=abi $2=target triple $3=lib dir
     make install >/dev/null
   ) || { note "FATAL: Android zlib build failed for $abi"; return 1; }
 
+  # ---- v9.28: Mbed TLS (static libs only; GPL-2.0-or-later option) --------
+  local mprefix="$WORK/mbedtls-$abi-android"
+  ( cd "$WORK/mbedtls-src"
+    make clean >/dev/null 2>&1 || true
+    timeout 900 make -j4 lib CC="$cc" AR="$ar" CFLAGS="-O2 -fPIC" >/dev/null
+    rm -rf "$mprefix" && mkdir -p "$mprefix/lib" "$mprefix/include"
+    cp library/libmbedtls.a library/libmbedx509.a library/libmbedcrypto.a "$mprefix/lib/"
+    cp -r include/mbedtls include/psa "$mprefix/include/"
+  ) || { note "FATAL: Android Mbed TLS build failed for $abi"; return 1; }
+
+  # ---- v9.28: curl, static, http(s)-only, TLS = Mbed TLS ------------------
+  # No baked-in CA defaults: the runtime env points git at Android's own CA
+  # store (GIT_SSL_CAPATH), so cert trust follows the DEVICE, not our build.
+  local cprefix="$WORK/curl-$abi-android"
+  ( cd "$WORK/curl-src"
+    make distclean >/dev/null 2>&1 || true
+    ./configure --host="$triple" --prefix="$cprefix" \
+      --disable-shared --enable-static \
+      --with-mbedtls="$mprefix" --with-zlib="$zprefix" \
+      --without-ca-bundle --without-ca-path \
+      --without-brotli --without-zstd --without-libpsl --without-libidn2 \
+      --without-nghttp2 --disable-ldap --disable-ldaps --disable-ftp \
+      --disable-file --disable-telnet --disable-tftp --disable-pop3 \
+      --disable-imap --disable-smb --disable-smtp --disable-gopher \
+      --disable-mqtt --disable-rtsp --disable-dict --disable-manual \
+      --disable-docs --disable-threaded-resolver \
+      CC="$cc" AR="$ar" RANLIB="$ranlib" >/dev/null
+    timeout 900 make -j4 >/dev/null
+    make install >/dev/null
+  ) || { note "FATAL: Android curl build failed for $abi"; return 1; }
+
   ( cd "$WORK/git-src"
     make clean >/dev/null 2>&1 || true
+    # v9.28: NO_CURL is GONE - git builds its smart-HTTP transport
+    # (git-remote-http) against the static curl above. NO_OPENSSL stays:
+    # git itself never links a TLS library; only curl does (Mbed TLS).
+    # NO_EXPAT stays: it only disables dumb DAV push; GitHub is smart HTTP.
     timeout 1200 make -j4 \
       CC="$cc" AR="$ar" RANLIB="$ranlib" NEEDS_LIBRT= \
       CFLAGS="-O2 -I$zprefix/include" \
       LDFLAGS="-L$zprefix/lib -Wl,-z,max-page-size=16384" \
       ZLIB_PATH="$zprefix" \
+      CURL_CFLAGS="-I$cprefix/include" \
+      CURL_LDFLAGS="-L$cprefix/lib -lcurl -L$mprefix/lib -lmbedtls -lmbedx509 -lmbedcrypto -lz" \
       NO_REGEX=NeedsStartEnd \
       NO_PERL=YesPlease NO_PYTHON=YesPlease NO_TCLTK=YesPlease NO_GETTEXT=YesPlease \
-      NO_ICONV=YesPlease NO_CURL=YesPlease NO_OPENSSL=YesPlease NO_EXPAT=YesPlease \
-      NO_LIBPCRE2=YesPlease NO_PTHREADS=YesPlease NO_INSTALL_HARDLINKS=YesPlease git
+      NO_ICONV=YesPlease NO_OPENSSL=YesPlease NO_EXPAT=YesPlease \
+      NO_LIBPCRE2=YesPlease NO_PTHREADS=YesPlease NO_INSTALL_HARDLINKS=YesPlease \
+      git git-remote-http
   ) || { note "FATAL: Android Git build failed for $abi"; return 1; }
   [ -x "$WORK/git-src/git" ] || { note "FATAL: Android Git binary missing for $abi"; return 1; }
+  [ -x "$WORK/git-src/git-remote-http" ] || { note "FATAL: git-remote-http missing for $abi"; return 1; }
   cp "$WORK/git-src/git" "$outdir/libgit.so"
   chmod 755 "$outdir/libgit.so"
+  # One helper binary serves both schemes; the app symlinks
+  # bin/git-remote-https AND bin/git-remote-http at it (upstream ships the
+  # https name as a copy/hardlink of the same executable).
+  cp "$WORK/git-src/git-remote-http" "$outdir/libgitremotehttp.so"
+  chmod 755 "$outdir/libgitremotehttp.so"
   if git_version=$("$outdir/libgit.so" --version 2>&1 | head -1); then
     note "$abi Android Git host execution: $git_version"
   else

@@ -198,7 +198,10 @@ fi
 
 step "3/9 embedded runtime payload (pinned upstream; reused by every build below)"
 if [ ! -f "$ROOT/phase4/out/engine/assets/runtime-manifest.json" ]; then
-  run_c 3600 "bash '$ROOT/phase4/scripts/10-build-payload.sh'" || record_fatal "payload build failed"
+  # v9.28: 3600 -> 5400 - the payload now also cross-compiles Mbed TLS and
+  # curl per ABI (git's https transport); measured headroom, not a guess that
+  # the old cap still fits.
+  run_c 5400 "bash '$ROOT/phase4/scripts/10-build-payload.sh'" || record_fatal "payload build failed"
 else
   echo "reusing phase4/out/engine payload" | tee -a "$MAINLOG"
 fi

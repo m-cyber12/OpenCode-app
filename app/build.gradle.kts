@@ -370,7 +370,10 @@ val verifyAndStagePayload = tasks.register("verifyAndStagePayload") {
             )
         }
         println("PAYLOAD_SOURCE runtime-payload.tar.gz=${payloadTgz.length()}B runtime-manifest.json=${mf.length()}B")
-        val libs = listOf("libbun.so", "libgit.so", "librg.so", "libseccompshim.so", "libexecshim.so", "libchildshim.so")
+        // v9.28: + libgitremotehttp.so - git's smart-HTTP(S) helper (curl +
+        // Mbed TLS, static). An ABI missing it must FAIL staging loudly: an
+        // APK without the helper reverts GitHub transport to "aborted session".
+        val libs = listOf("libbun.so", "libgit.so", "librg.so", "libgitremotehttp.so", "libseccompshim.so", "libexecshim.so", "libchildshim.so")
         val abis = listOf("arm64-v8a", "x86_64")
         var completeAbis = 0
         for (abi in abis) {

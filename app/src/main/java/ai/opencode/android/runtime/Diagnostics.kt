@@ -74,6 +74,7 @@ data class Diagnostics(
             listOf(
                 "bun" to paths.bunBinary(),
                 "git(libgit.so)" to File(paths.nativeLibraryDir, "libgit.so"),
+                "git-remote-https(libgitremotehttp.so)" to File(paths.nativeLibraryDir, "libgitremotehttp.so"),
                 "rg(librg.so)" to File(paths.nativeLibraryDir, "librg.so"),
                 "child-shim" to paths.childShimBinary(),
                 "server bundle" to paths.serverBundle, "launcher" to paths.launcher,

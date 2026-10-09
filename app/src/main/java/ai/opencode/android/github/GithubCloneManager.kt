@@ -119,6 +119,15 @@ class GithubCloneManager(
         }
     }
 
+    /**
+     * v9.28 (owner): every session of a GitHub project stays on the project
+     * branch. Called at project open and at each new-session tap; no-op for
+     * non-git projects, never destructive (see [GitSync.ensureProjectBranch]).
+     */
+    fun ensureProjectBranch(projectDir: File?) {
+        scope.launch { GitSync.ensureProjectBranch(projectDir) }
+    }
+
     fun dismissError() {
         if (_state.value.phase == Phase.ERROR || _state.value.phase == Phase.DONE) {
             _state.value = _state.value.copy(phase = Phase.IDLE, error = "")
