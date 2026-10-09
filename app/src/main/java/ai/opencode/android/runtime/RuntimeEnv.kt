@@ -81,6 +81,12 @@ object RuntimeEnv {
         env["OPENCODE_SERVER_USERNAME"] = SERVER_USER
         env["OPENCODE_SERVER_PASSWORD"] = password
         env["OPENCODE_CLIENT"] = "android"
+        // v9.31 (owner): upstream registers the `question` tool only for the
+        // app/cli/desktop clients - OPENCODE_CLIENT=android silently dropped
+        // it, so models "asking with options" got Invalid Tool on device.
+        // The explicit flag turns it on regardless of the client name
+        // (registry.ts: `... || flags.enableQuestionTool`).
+        env["OPENCODE_ENABLE_QUESTION_TOOL"] = "1"
         env["OPENCODE_RUNTIME_ABI"] = abi
         // Explicit absolute paths for the launcher glue.
         env["OPENCODE_FILES_DIR"] = paths.filesDir.absolutePath

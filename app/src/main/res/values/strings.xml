@@ -188,6 +188,8 @@
     <string name="chat_dislike_response">Mark this response as bad</string>
     <string name="chat_redo_turn">Redo</string>
     <string name="chat_working">The agent is working</string>
+    <!-- v9.31: the working bar doubles as the collapsible task list. -->
+    <string name="chat_todo_count" translatable="false">%1$d/%2$d</string>
     <string name="chat_retrying">Retrying, attempt %1$d</string>
     <string name="chat_retrying_detail">Attempt %1$d of the agent retrying on its own: %2$s</string>
     <string name="chat_new_messages">%1$d new</string>
@@ -579,9 +581,12 @@
     <string name="chat_mode_plan">Plan</string>
     <string name="chat_mode_build_body">Edits files and runs tools</string>
     <string name="chat_mode_plan_body">Plan first, edit nothing until you approve</string>
-    <string name="chat_plan_ready">Plan ready</string>
-    <string name="chat_plan_ready_body">Review the plan above. Approving switches to Build and starts execution.</string>
-    <string name="chat_plan_approve">Approve and build</string>
+    <!-- v9.31 (owner): the auto approve-bar is gone; the model asks for plan
+         approval itself through the question tool. The option label below is
+         the contract between the brief and the app: submitting an answer with
+         this exact label (case-insensitive) in Plan mode switches the agent to
+         Build, and the approved prompt is sent once the plan turn ends. -->
+    <string name="chat_plan_approve_option" translatable="false">Approve plan</string>
     <string name="chat_plan_approved_prompt">I approve the plan above. Switch to implementation and carry it out exactly as written, step by step. If reality forces a deviation from the plan, stop and explain before continuing.</string>
     <string name="chat_model_empty">No starred model yet. Star models in Settings and they appear here.</string>
     <string name="chat_model_open_settings">Choose models in Settings</string>

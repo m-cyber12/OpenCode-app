@@ -195,6 +195,7 @@ class ChatUiGatesTest {
     private var modelPicks = 0
     private val pickedModels = mutableListOf<String>()
     private val modePicks = mutableListOf<String>()
+    private var planApprovals = 0
     private val thinkingPicks = mutableListOf<String>()
     private var projectMoves = 0
     private val storageMessage = mutableStateOf("")
@@ -480,6 +481,7 @@ class ChatUiGatesTest {
             onPermissionReply = { id, response -> replies.add(id to response) },
             onQuestionSubmit = { id, answers -> questionAnswers.add(id to answers) },
             onQuestionSkip = { questionSkips.add(it) },
+            onPlanApproved = { planApprovals++ },
             onAttach = { attaches++ },
             onRemoveAttachment = { removedAttachments.add(it) },
             onDismissBanner = { dismissals++ },
@@ -2044,16 +2046,59 @@ class ChatUiGatesTest {
             AgentAvailability.READY,
         )
         val modeLabelled = onScreenText().contains(context.getString(R.string.chat_mode_plan))
-        // v9.4 (owner's bug 4): plan mode is the plan-then-approve workflow.
-        // With a COMPLETED assistant turn on screen in plan mode, the approve
-        // bar is offered; the tap switches the agent to build AND sends the
-        // approval prompt verbatim - execution starts from the approved plan.
-        val approveOffered = exists("plan_ready_bar") && exists("plan_approve")
-        sent.clear()
-        if (approveOffered) rule.onAllNodesWithTag("plan_approve")[0].performClick()
+        // v9.31 (owner): the OLD auto approve-bar fired after ANY completed
+        // plan-mode reply, even with no plan - it must stay gone. The plan
+        // confirmation is the MODEL's question-tool ask now: submitting an
+        // answer that carries the approve option (the pinned label) switches
+        // the agent to build and raises onPlanApproved - AppRoot sends the
+        // approved prompt once the plan turn ends.
+        val approveOffered = !exists("plan_ready_bar") && !exists("plan_approve")
+        val approveOption = context.getString(R.string.chat_plan_approve_option)
+        val planQuestion = Transcript.Question(
+            id = "que_plan1",
+            sessionID = SES,
+            items = listOf(
+                Transcript.QuestionItem(
+                    header = "Plan",
+                    question = "Proceed with this plan?",
+                    options = listOf(
+                        Transcript.QuestionOption(approveOption, "switch to build and execute"),
+                        Transcript.QuestionOption("Revise", "change the plan first"),
+                    ),
+                    multiple = false,
+                    custom = false,
+                ),
+            ),
+        )
+        renderChat(
+            uiState(
+                sessionView(
+                    messages = listOf(
+                        message("msg_up", "user", listOf(textPart("pp0", "msg_up", "plan a feature"))),
+                        message("msg_ap", "assistant", listOf(textPart("pp1", "msg_ap", "1. step one 2. step two"))),
+                    ),
+                    busy = true,
+                    questions = listOf(planQuestion),
+                ),
+                busy = true,
+                model = starred[0],
+                starred = starred,
+                providers = providers,
+                agentMode = OpenCodeRepository.AGENT_PLAN,
+            ),
+            AgentAvailability.READY,
+        )
+        rule.waitForIdle()
+        planApprovals = 0
+        rule.onAllNodes(textMatcher(approveOption))[0].performClick()
+        rule.waitForIdle()
+        runCatching { rule.onNodeWithTag(TAG_QUESTION_SUBMIT).performScrollTo() }
+        rule.waitForIdle()
+        rule.onNodeWithTag(TAG_QUESTION_SUBMIT).performClick()
         rule.waitForIdle()
         val approveWired = modePicks.lastOrNull() == OpenCodeRepository.AGENT_BUILD &&
-            sent.lastOrNull() == context.getString(R.string.chat_plan_approved_prompt)
+            planApprovals == 1 &&
+            questionAnswers.any { it.first == "que_plan1" && it.second.any { a -> a.contains(approveOption) } }
         shot("30-mode-switch.png")
 
         // with nothing starred the menu says what to do and offers the one place

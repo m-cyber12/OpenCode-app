@@ -11,11 +11,16 @@ import ai.opencode.android.ui.common.ProjectTab
 import ai.opencode.android.ui.common.ProjectTabs
 import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.client.OpenCodeApi
+import ai.opencode.android.client.TodoItem
+import ai.opencode.android.client.TodoParser
+import ai.opencode.android.client.ToolKind
+import ai.opencode.android.client.ToolKinds
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
 import ai.opencode.android.ui.theme.goldAccentBrush
 import ai.opencode.android.ui.theme.goldenBackdrop
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
@@ -95,6 +100,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -166,6 +172,15 @@ fun ChatScreen(
     onPermissionReply: (String, String) -> Unit,
     onQuestionSubmit: (String, List<List<String>>) -> Unit,
     onQuestionSkip: (String) -> Unit,
+    /**
+     * v9.31 (owner): plan approval is the MODEL's ask now, via the question
+     * tool. Fired when, in Plan mode, the user submits an answer carrying
+     * the approve option - AppRoot sends the execution prompt once the plan
+     * turn has ended.
+     */
+    onPlanApproved: () -> Unit = {},
+    /** v9.31 (owner): GitHub projects carry the mark in the menu tile too. */
+    githubProject: Boolean = false,
     onAttach: () -> Unit,
     onRemoveAttachment: (String) -> Unit,
     onDismissBanner: () -> Unit,
@@ -198,6 +213,7 @@ fun ChatScreen(
             projectLabel = projectLabel,
             sessionTitle = sessionTitle,
             projectsDescription = projectsDescription,
+            githubProject = githubProject,
             busy = state.busy,
             availability = availability,
             model = state.model,
@@ -228,31 +244,28 @@ fun ChatScreen(
             modifier = Modifier.weight(1f),
         )
 
+        // v9.31 (owner): the OLD auto approve-bar fired after ANY completed
+        // plan-mode reply, plan or not. Gone. The plan confirmation is the
+        // MODEL's ask now, through the question tool; when the user submits
+        // an answer that selects the approve option (brief-pinned label),
+        // the app switches the agent to build and - via onPlanApproved -
+        // AppRoot sends the execution prompt once this turn has ended.
+        val approveOption = stringResource(R.string.chat_plan_approve_option)
         AskArea(
             asks = state.pendingAsks,
             questions = state.pendingQuestions,
             onPermissionReply = onPermissionReply,
-            onQuestionSubmit = onQuestionSubmit,
+            onQuestionSubmit = { id, answers ->
+                onQuestionSubmit(id, answers)
+                if (state.agentMode == OpenCodeRepository.AGENT_PLAN &&
+                    answers.any { group -> group.any { it.equals(approveOption, ignoreCase = true) } }
+                ) {
+                    onPickMode(OpenCodeRepository.AGENT_BUILD)
+                    onPlanApproved()
+                }
+            },
             onQuestionSkip = onQuestionSkip,
         )
-
-        // v9.4 (owner's bug 4): plan mode as the well-known workflow, not just a
-        // tool restriction. The plan agent answers read-only (upstream enforces
-        // that server-side); once its turn is COMPLETE, this bar offers the
-        // approval step: one tap switches the agent to build and sends the
-        // approval prompt, so execution starts from the plan the user just read.
-        val lastRole = messages.lastOrNull()?.role
-        if (state.agentMode == OpenCodeRepository.AGENT_PLAN && !state.busy &&
-            lastRole != null && lastRole != "user" && UiError.canSend(availability)
-        ) {
-            val approvedPrompt = stringResource(R.string.chat_plan_approved_prompt)
-            PlanApproveBar(
-                onApprove = {
-                    onPickMode(OpenCodeRepository.AGENT_BUILD)
-                    onSend(approvedPrompt)
-                },
-            )
-        }
 
         AttachmentTray(attachments = state.attachments, onRemove = onRemoveAttachment)
 
@@ -303,6 +316,7 @@ private fun ChatHeader(
     projectLabel: String,
     sessionTitle: String,
     projectsDescription: String,
+    githubProject: Boolean,
     busy: Boolean,
     availability: AgentAvailability,
     model: OpenCodeApi.ModelRef?,
@@ -390,12 +404,24 @@ private fun ChatHeader(
                                     .background(goldAccentBrush(), RoundedCornerShape(13.dp)),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Text(
-                                    text = stringResource(R.string.project_glyph),
-                                    style = MonoSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                )
+                                // v9.31 (owner): the menu's identity tile shows
+                                // the SAME mark as the projects page - a GitHub
+                                // project is recognizable everywhere.
+                                if (githubProject) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_github_mark),
+                                        contentDescription = stringResource(R.string.projects_github_label),
+                                        modifier = Modifier.size(22.dp),
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                    )
+                                } else {
+                                    Text(
+                                        text = stringResource(R.string.project_glyph),
+                                        style = MonoSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                    )
+                                }
                             }
                             Spacer(Modifier.width(10.dp))
                             Column {
@@ -547,56 +573,9 @@ private fun ChatHeader(
     }
 }
 
-/**
- * v9.4 (owner's bug 4): the approval step that makes plan mode the well-known
- * plan-then-execute workflow. Shown between the transcript and the composer
- * only while the app is in Plan mode with a COMPLETED assistant turn on
- * screen: one glass bar naming the state (plan ready), one line of what
- * approving does, one gold action. The tap flips the agent to build and sends
- * the approval prompt - the reply that follows is the execution.
- */
-@Composable
-private fun PlanApproveBar(onApprove: () -> Unit) {
-    val chat = ChatTheme.chat
-    val approveLabel = stringResource(R.string.chat_plan_approve)
-    Surface(
-        color = chat.toolContainer,
-        shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, chat.toolBorder),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 4.dp)
-            .semantics { testTag = "plan_ready_bar" },
-    ) {
-        Row(
-            modifier = Modifier.padding(start = 14.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.chat_plan_ready),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = stringResource(R.string.chat_plan_ready_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = chat.muted,
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-            TextButton(
-                onClick = onApprove,
-                modifier = Modifier.semantics {
-                    testTag = "plan_approve"
-                    contentDescription = approveLabel
-                },
-            ) {
-                Text(approveLabel, color = MaterialTheme.colorScheme.primary)
-            }
-        }
-    }
-}
+// v9.31 (owner): PlanApproveBar REMOVED - it appeared after any first
+// plan-mode reply even when no plan existed. The confirmation is the model's
+// own question-tool ask now; see the AskArea wiring above.
 
 /**
  * The build/plan switch: a glass capsule to the LEFT of the status orb (the
@@ -846,15 +825,43 @@ private fun StatusArea(
         RetryBanner(retry)
         return
     }
-    if (state.busy) BusyBar()
+    if (state.busy) {
+        // v9.31 (owner): the working bar names the task actually running.
+        // Source of truth: the CURRENT turn's latest `todowrite` call -
+        // messages after the last user prompt, newest tool part first -
+        // parsed by the same TodoParser the tool card uses. Nothing from
+        // older turns (a finished task list must not haunt the next one).
+        val todos = remember(state.messages) {
+            val msgs = state.messages
+            val turnStart = msgs.indexOfLast { it.role == "user" }
+            val turn = if (turnStart >= 0) msgs.subList(turnStart + 1, msgs.size) else emptyList()
+            turn.asReversed().firstNotNullOfOrNull { m ->
+                m.parts.lastOrNull { p ->
+                    ToolKinds.of(p.tool) == ToolKind.TODO && p.input.isNotBlank()
+                }
+            }?.let { TodoParser.parse(it.input, it.metadata) } ?: emptyList()
+        }
+        BusyBar(todos)
+    }
 }
 
+/**
+ * v9.31 (owner): "turn the working bar into a collapsible TODO panel". While
+ * the agent runs with a task list, the bar shows the task in progress and a
+ * done-counter; tapping unfolds the full list - done tasks checked off,
+ * the current one marked, pending ones waiting. Without todos it is the v8
+ * bar, word for word. The task hand-off is a [Crossfade] and the unfold an
+ * [animateContentSize] - both FINITE, the standing UI-gate animation rule.
+ */
 @Composable
-private fun BusyBar() {
-    // v8: a floating rounded card in the reference's voice ("* Agent is
-    // working"), not a full-width strip - same tag, same label, same signal.
+private fun BusyBar(todos: List<TodoItem> = emptyList()) {
     val chat = ChatTheme.chat
     val label = stringResource(R.string.chat_working)
+    val done = todos.count { it.status == "completed" }
+    val current = todos.firstOrNull { it.status == "in_progress" }
+        ?: todos.firstOrNull { it.status == "pending" }
+    val headline = current?.content?.takeIf { it.isNotBlank() } ?: label
+    var expanded by remember { mutableStateOf(false) }
     Surface(
         color = chat.toolContainer,
         shape = RoundedCornerShape(16.dp),
@@ -862,29 +869,98 @@ private fun BusyBar() {
         shadowElevation = 8.dp,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .let { if (todos.isEmpty()) it else it.clickable { expanded = !expanded } }
                 .padding(horizontal = 14.dp, vertical = 10.dp)
+                .animateContentSize()
                 .semantics {
                     testTag = "busy_bar"
                     contentDescription = label
+                    if (todos.isNotEmpty()) role = Role.Button
                 },
-            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                Modifier
-                    .size(8.dp)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape),
-            )
-            Spacer(Modifier.width(10.dp))
-            Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
-            Spacer(Modifier.weight(1f))
-            CircularProgressIndicator(
-                modifier = Modifier.size(14.dp),
-                strokeWidth = 2.dp,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(8.dp)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                )
+                Spacer(Modifier.width(10.dp))
+                Box(Modifier.weight(1f)) {
+                    Crossfade(targetState = headline, label = "busy_task") { text ->
+                        Text(
+                            text = text,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+                if (todos.isNotEmpty()) {
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = stringResource(R.string.chat_todo_count, done, todos.size),
+                        style = MonoSmall,
+                        color = chat.muted,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    // Decorative fold marker; the Column row itself carries the
+                    // accessible name and the Button role.
+                    Text(
+                        text = if (expanded) "\u25B4" else "\u25BE",
+                        style = MonoSmall,
+                        color = chat.muted,
+                        modifier = Modifier.clearAndSetSemantics { },
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                CircularProgressIndicator(
+                    modifier = Modifier.size(14.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            if (expanded && todos.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Column(Modifier.semantics { testTag = "busy_todo_list" }) {
+                    for (todo in todos) {
+                        Row(
+                            modifier = Modifier.padding(vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            val glyph = when (todo.status) {
+                                "completed" -> "\u2713"
+                                "in_progress" -> "\u25CF"
+                                "cancelled" -> "\u00D7"
+                                else -> "\u25CB"
+                            }
+                            Text(
+                                text = glyph,
+                                style = MonoSmall,
+                                color = when (todo.status) {
+                                    "completed" -> chat.success
+                                    "in_progress" -> MaterialTheme.colorScheme.primary
+                                    else -> chat.muted
+                                },
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = todo.content,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = when (todo.status) {
+                                    "in_progress" -> MaterialTheme.colorScheme.onSurface
+                                    else -> chat.muted,
+                                },
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

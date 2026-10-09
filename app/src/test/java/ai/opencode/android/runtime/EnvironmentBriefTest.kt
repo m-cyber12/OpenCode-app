@@ -122,8 +122,12 @@ class EnvironmentBriefTest {
         // v9.30: -> 550 for the owner's correction: a model in a default
         // project blamed a "missing token" instead of knowing the absence is
         // the design and pointing at Create project > GitHub.
+        // v9.31: -> 620 for the question-tool section (batch asks with
+        // options; the Plan-mode approval contract). Models tried to ask
+        // structured questions on device and hit Invalid Tool - now the tool
+        // is enabled AND named, and plan approval rides on it.
         // All owner-mandated content; everything else still fights per word.
-        assertTrue("main brief grew to $words words - split or trim it", words < 550)
+        assertTrue("main brief grew to $words words - split or trim it", words < 620)
         // The core product loop and cost discipline stay in the always-read part.
         assertTrue(main.contains("serve.json"))
         assertTrue(main.contains("EXISTS"))
@@ -261,6 +265,14 @@ class EnvironmentBriefTest {
         assertTrue(main.contains("BY DESIGN"))
         assertTrue(main.contains("never a missing token"))
         assertTrue(main.contains("Create project > GitHub"))
+        // v9.31: the question tool is enabled for the android client (the
+        // env flag) and the brief must teach it by NAME - batched questions
+        // with options - plus the plan-approval contract: the option label
+        // the app watches for, and ending the turn so the app can execute.
+        assertTrue(main.contains("`question` tool"))
+        assertTrue(main.contains("ONE call"))
+        assertTrue(main.contains("Approve plan"))
+        assertTrue(main.contains("END YOUR TURN"))
         assertTrue(main.contains("never print or commit it"))
         assertTrue(main.contains("BRIEF-SUGGESTIONS.md"))
         assertTrue(main.contains("never\nedit them") || main.contains("never edit them"))

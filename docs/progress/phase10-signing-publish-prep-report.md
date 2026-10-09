@@ -5001,3 +5001,69 @@ github.com remote in a default project WILL get the mark - that is
 truthful (the row reflects the checkout, not the creation path), but
 note the token still only follows app-recognized GitHub checkouts,
 which is the same isGithubProject check, so mark and token agree.
+
+## B.52 - 2026-10-09: v9.31 - question tool enabled, plan mode model-driven, TODO working-bar, menu mark (owner pass on v9.30)
+
+OWNER DEVICE PASS: model-side PUSH WORKS (branch, PR, merge - the
+GitHub architecture is device-proven end to end); the default-project
+redirect reads right; the list mark is right. New items below.
+
+1. QUESTION TOOL - ROOT CAUSE FOUND. A device model tried to ask a
+   structured multi-option question and got "Invalid Tool". The app
+   has rendered upstream's question asks since the restyle (QuestionAsk:
+   several questions per ask, options, multi-select, custom text,
+   submit/skip - the Arena-style system the owner asked for), but
+   upstream REGISTERS the `question` tool only for clients app/cli/
+   desktop (registry.ts) - and we set OPENCODE_CLIENT=android, so the
+   tool silently did not exist server-side. Fix: RuntimeEnv now also
+   sets OPENCODE_ENABLE_QUESTION_TOOL=1 (upstream's explicit enable
+   flag, same registry line) + RuntimeEnvTest pins it. The brief
+   teaches the tool BY NAME: all questions in ONE call, options not
+   prose.
+2. PLAN MODE (owner): the auto approve-bar fired after ANY first
+   plan-mode reply, plan or not. REMOVED (PlanApproveBar + strings).
+   The confirmation is the model's own question-tool ask now; contract:
+   an option labelled exactly "Approve plan" (brief-pinned). Submitting
+   it in Plan mode makes ChatScreen switch the agent to build and raise
+   onPlanApproved; AppRoot sends the approved-execution prompt the
+   moment the plan turn ends (never mid-turn - the reply continues the
+   plan agent's turn). Gate u10's plan section rewritten: bar must be
+   GONE, question path must wire approve -> build + onPlanApproved.
+3. TODO WORKING-BAR (owner): the busy bar now names the task actually
+   in progress, from the CURRENT turn's latest todowrite call (same
+   TodoParser as the tool card; messages after the last user prompt
+   only, so a finished list cannot haunt the next turn). Done-counter
+   k/n; tap unfolds the full list (done checked, current marked,
+   pending hollow, cancelled crossed). Task hand-off = Crossfade,
+   unfold = animateContentSize - both finite per the UI-gate rule.
+   No todos = the v8 bar verbatim (gate-compatible). testTags: busy_bar
+   (unchanged), busy_todo_list.
+4. MENU MARK (owner): the hamburger identity tile shows the GitHub
+   mark for GitHub projects (same octicon, same isGithubProject fact,
+   AppRoot passes projectName-in-githubProjects).
+5. SPEED (owner: "sometimes a minute between two tasks"). Looked for
+   app-side contributors with evidence, found none: the app sits on
+   the SSE stream (no polling, no sleeps, no debounce in the event
+   path - OpenCodeApi read timeout is effectively infinite for the
+   event stream); between two tool calls the app only renders. The gap
+   lives in the agent loop itself: each step re-sends the WHOLE
+   conversation to the provider (upstream design), so step latency =
+   full-context upload over the phone's uplink + provider thinking
+   time + on-device bun. That is why the brief's cost section and the
+   40k auto-compaction exist. What would actually help on device:
+   compacting earlier in long sessions and models with smaller
+   contexts; an app-side fix would be guesswork and I did not fake
+   one.
+
+HONESTY: (a) OPENCODE_ENABLE_QUESTION_TOOL is verified against the
+pinned registry.ts source, but the end-to-end proof (model calls
+`question`, card renders, answer returns) needs the next device pass -
+ask the agent to "ask me a multi-choice question before you start";
+(b) the plan contract depends on the model using the pinned label; a
+model that free-texts "approve?" still works as plain text but skips
+the auto-switch - the user can still flip to Build by hand, nothing is
+lost versus v9.30; (c) the TODO bar reads ONLY todowrite state -
+models that never call todowrite still get the plain working label;
+(d) the speed verdict is a finding, not a fix - if the owner sees a
+minute-long gap with NO network wait on the provider side, new
+evidence changes the analysis.

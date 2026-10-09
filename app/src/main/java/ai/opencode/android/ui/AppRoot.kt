@@ -174,6 +174,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // is computed off the main thread; re-keyed on the clone phase so a repo
     // that JUST finished cloning gets its mark without waiting for a reload.
     var githubProjects by remember { mutableStateOf(emptySet<String>()) }
+    // v9.31 (owner): plan approval comes from the MODEL's question-tool ask.
+    // When the user picks the approve option, ChatScreen flips the agent to
+    // build and raises this flag; the moment the plan turn actually ENDS,
+    // the approved-execution prompt goes out as the first build-mode turn.
+    var planExecutePending by remember { mutableStateOf(false) }
     LaunchedEffect(projects, githubCloneState.phase) {
         githubProjects = withContext(Dispatchers.IO) {
             projects.filter { ai.opencode.android.github.GitSync.isGithubProject(it.dir) }
@@ -207,6 +212,17 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val repository = remember(workspaceDir, credentialReady) { container.repositoryFor(workspaceDir) }
     val stateFlow = remember(repository) { repository.state }
     val uiState by stateFlow.collectAsState()
+
+    // v9.31 (owner): the approved plan executes as soon as the plan turn is
+    // over - not mid-turn (the question reply continues the PLAN agent's
+    // turn; sending while busy would race it). One shot: flag down first.
+    val planApprovedPrompt = stringResource(R.string.chat_plan_approved_prompt)
+    LaunchedEffect(uiState.busy, planExecutePending) {
+        if (planExecutePending && !uiState.busy) {
+            planExecutePending = false
+            repository.sendPrompt(planApprovedPrompt)
+        }
+    }
 
     // Diagnostics are collected off the main thread and handed down as plain lines:
     // no screen ever calls the collector itself.
@@ -1409,6 +1425,8 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     runtime = summary,
                     availability = availability,
                     projectName = projectName,
+                    githubProject = projectName in githubProjects,
+                    onPlanApproved = { planExecutePending = true },
                     onSend = { text -> repository.sendPrompt(text) },
                     onDraftChange = { text -> repository.setDraft(text) },
                     onStop = { repository.abort() },

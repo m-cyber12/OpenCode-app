@@ -92,6 +92,9 @@ class RuntimeEnvTest {
         assertEquals(RuntimeEnv.SERVER_PORT.toString(), env["OPENCODE_SERVER_PORT"])
         assertEquals(LoopbackGuard.SERVER_BIND_HOSTNAME, env["OPENCODE_SERVER_HOSTNAME"])
         assertEquals("android", env["OPENCODE_CLIENT"])
+        // v9.31: android is not in upstream's question-tool client allowlist,
+        // so the explicit enable flag must ALWAYS ride along.
+        assertEquals("1", env["OPENCODE_ENABLE_QUESTION_TOOL"])
         assertEquals("arm64-v8a", env["OPENCODE_RUNTIME_ABI"])
 
         // The launcher glue paths must point at the flat, validated payload.
