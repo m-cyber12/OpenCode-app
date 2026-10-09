@@ -119,8 +119,11 @@ class EnvironmentBriefTest {
         // guaranteed failure, so the brief must say the app is the transport.
         // v9.29 REVERSED that: https git is device-proven, the model pushes
         // itself - the section was rewritten within the same 535 budget.
+        // v9.30: -> 550 for the owner's correction: a model in a default
+        // project blamed a "missing token" instead of knowing the absence is
+        // the design and pointing at Create project > GitHub.
         // All owner-mandated content; everything else still fights per word.
-        assertTrue("main brief grew to $words words - split or trim it", words < 535)
+        assertTrue("main brief grew to $words words - split or trim it", words < 550)
         // The core product loop and cost discipline stay in the always-read part.
         assertTrue(main.contains("serve.json"))
         assertTrue(main.contains("EXISTS"))
@@ -251,7 +254,13 @@ class EnvironmentBriefTest {
         assertFalse(main.contains("NO network transport"))
         assertFalse(main.contains("auto-push"))
         // Non-GitHub projects have no token AT ALL now - the brief says so.
+        // v9.30 (owner device pass): a model in a default project told the
+        // user "you didn't set the token". Wrong lesson. The brief must say
+        // absence is the DESIGN, never a user mistake, and must point at the
+        // create-a-GitHub-project path instead of Settings.
         assertTrue(main.contains("BY DESIGN"))
+        assertTrue(main.contains("never a missing token"))
+        assertTrue(main.contains("Create project > GitHub"))
         assertTrue(main.contains("never print or commit it"))
         assertTrue(main.contains("BRIEF-SUGGESTIONS.md"))
         assertTrue(main.contains("never\nedit them") || main.contains("never edit them"))

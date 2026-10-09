@@ -169,6 +169,18 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     var dynamicColor by rememberSaveable { mutableStateOf(false) }
     var projectName by rememberSaveable { mutableStateOf(store.activeName()) }
     var projects by remember { mutableStateOf(emptyList<Project>()) }
+    // v9.30 (owner): GitHub projects must LOOK different on the projects page.
+    // Which names are GitHub checkouts is an on-disk fact (origin URL), so it
+    // is computed off the main thread; re-keyed on the clone phase so a repo
+    // that JUST finished cloning gets its mark without waiting for a reload.
+    var githubProjects by remember { mutableStateOf(emptySet<String>()) }
+    LaunchedEffect(projects, githubCloneState.phase) {
+        githubProjects = withContext(Dispatchers.IO) {
+            projects.filter { ai.opencode.android.github.GitSync.isGithubProject(it.dir) }
+                .map { it.name }
+                .toSet()
+        }
+    }
     // v6: the projects page is a workspace view. The expanded row, the sessions
     // under each project (same server list the session panel reads), the folders
     // the page can switch to, and a tick that re-reads the sessions after a
@@ -1037,6 +1049,8 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     // toggle (or, before first setup, a Connect key) and a
                     // repository dropdown; Create then clones the repo as the
                     // project and parks it on its opencode/<project> branch.
+                    // v9.30 (owner): GitHub projects carry the mark in the list.
+                    githubProjects = githubProjects,
                     githubConnected = githubConnected,
                     githubRepos = githubCloneState.repos,
                     githubBusy = githubCloneState.phase == ai.opencode.android.github.GithubCloneManager.Phase.LISTING ||

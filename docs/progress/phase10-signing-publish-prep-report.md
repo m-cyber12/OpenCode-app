@@ -4968,3 +4968,36 @@ drops any in-flight agent run in the project being left - accepted,
 isolation was the owner's requirement; (d) the token-presence check at
 restart runs JGit on the main-thread effect only via Dispatchers.IO -
 the RuntimeManager side runs on its own supervisor thread already.
+
+## B.51 - 2026-10-09: v9.30 - absent-token lesson + GitHub mark on project rows (owner pass on v9.29)
+
+Owner verified v9.29's scoping works (default project: no token) but
+caught the WRONG LESSON being taught: the model in a default project
+told the user "you didn't set the token". The brief said absence = off
+by design, but not loudly enough that it is NEVER a user mistake, and
+it pointed nowhere. Second item: GitHub projects were indistinguishable
+from default ones in the projects list.
+
+1. BRIEF: the GitHub section's unset-`key` sentence now reads
+   "NOT a GitHub project: off BY DESIGN, never a missing token - don't
+   tell the user to set one; GitHub work needs a GitHub project
+   (Create project > GitHub)". Pins added for "never a missing token"
+   and "Create project > GitHub"; budget 535 -> 550 (546 used),
+   precedent: every owner-mandated correction raised it explicitly.
+2. UI: ProjectGlyph now renders the GitHub mark (ic_github_mark,
+   octicon) inside the project tile for GitHub projects - same
+   active/inactive tinting as the "</>" glyph, labelled for TalkBack,
+   testTag project_github_mark. Which rows get it is an on-disk fact
+   (GitSync.isGithubProject per project), computed on Dispatchers.IO
+   and re-keyed on the clone phase so a freshly cloned repo is marked
+   immediately. Param defaulted (gate call sites stay valid).
+
+HONESTY: (a) the brief fix is a taught lesson, not an enforced one - a
+model can still phrase it badly; what changed is that the correct
+answer ("this project type has no GitHub by design, create a GitHub
+project") is now IN the always-read text with pinned phrases; (b) the
+mark is driven by the origin URL, so a user who hand-creates a
+github.com remote in a default project WILL get the mark - that is
+truthful (the row reflects the checkout, not the creation path), but
+note the token still only follows app-recognized GitHub checkouts,
+which is the same isGithubProject check, so mark and token agree.

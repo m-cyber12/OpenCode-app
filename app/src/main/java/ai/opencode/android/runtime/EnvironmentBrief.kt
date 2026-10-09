@@ -134,9 +134,10 @@ YOU push your work: set git user.name/email once, commit, then
 `git push https://x-access-token:${'$'}key@github.com/<owner>/<repo>.git HEAD`
 (owner/repo: `git remote get-url origin`). Stay there -
 no extra branches unless the user asks; never print or commit it;
-`key` also works for GitHub REST via fetch. Unset `key` = no GitHub
-access BY DESIGN - don't try; connecting happens in
-Settings > Connectors.
+`key` also works for GitHub REST via fetch. Unset `key` = NOT a
+GitHub project: off BY DESIGN, never a missing token - don't tell
+the user to set one; GitHub work needs a GitHub project
+(Create project > GitHub).
 
 ## Cost - every wasted step is billed
 The whole conversation, including EVERY image ever read, is re-sent to the

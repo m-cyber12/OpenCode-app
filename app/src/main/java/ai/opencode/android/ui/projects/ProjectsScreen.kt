@@ -150,6 +150,8 @@ fun ProjectsScreen(
     notice: String = "",
     sessionCounts: Map<String, Int> = emptyMap(),
     /** v9.26: GitHub-in-create-card UX - all defaulted so gate call sites stay valid. */
+    /** v9.30 (owner): GitHub projects LOOK different - these names get the mark. */
+    githubProjects: Set<String> = emptySet(),
     githubConnected: Boolean = false,
     githubRepos: List<ai.opencode.android.github.GithubRepos.Repo> = emptyList(),
     githubBusy: Boolean = false,
@@ -245,6 +247,7 @@ fun ProjectsScreen(
                     is PageRow.Header -> ProjectRow(
                         project = row.project,
                         active = row.project.name == activeName,
+                        github = row.project.name in githubProjects,
                         expanded = row.project.name == expandedName,
                         sessionCount = sessionCounts[row.project.name]
                             ?: (sessions[row.project.name]?.size ?: 0),
@@ -400,7 +403,7 @@ fun ProjectsScreen(
  * asset: material-icons-core has no code glyph, and a mono "</>" IS the brand.
  */
 @Composable
-private fun ProjectGlyph(active: Boolean, modifier: Modifier = Modifier) {
+private fun ProjectGlyph(active: Boolean, github: Boolean = false, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .size(40.dp)
@@ -414,16 +417,33 @@ private fun ProjectGlyph(active: Boolean, modifier: Modifier = Modifier) {
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = stringResource(R.string.project_glyph),
-            style = MonoSmall,
-            fontWeight = FontWeight.Bold,
-            color = if (active) {
-                MaterialTheme.colorScheme.onPrimary
-            } else {
-                MaterialTheme.colorScheme.onPrimaryContainer
-            },
-        )
+        // v9.30 (owner): a GitHub project must LOOK different from a default
+        // one - its tile carries the GitHub mark instead of the "</>" glyph.
+        if (github) {
+            Icon(
+                painter = painterResource(R.drawable.ic_github_mark),
+                contentDescription = stringResource(R.string.projects_github_label),
+                modifier = Modifier
+                    .size(22.dp)
+                    .semantics { testTag = "project_github_mark" },
+                tint = if (active) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                },
+            )
+        } else {
+            Text(
+                text = stringResource(R.string.project_glyph),
+                style = MonoSmall,
+                fontWeight = FontWeight.Bold,
+                color = if (active) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                },
+            )
+        }
     }
 }
 
@@ -701,6 +721,7 @@ private fun CreateProjectCard(
 private fun ProjectRow(
     project: Project,
     active: Boolean,
+    github: Boolean,
     expanded: Boolean,
     sessionCount: Int,
     now: Long,
@@ -741,7 +762,7 @@ private fun ProjectRow(
                     },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                ProjectGlyph(active = active)
+                ProjectGlyph(active = active, github = github)
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
