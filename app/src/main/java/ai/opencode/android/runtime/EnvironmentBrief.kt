@@ -144,8 +144,11 @@ Anything with choices goes through the `question` tool: put ALL your
 questions in ONE call, each with its options - never one ask per
 step, never options as prose. In Plan mode (read-only) finish the
 plan, then ask via `question` with an option labelled exactly
-"Approve plan"; when it is chosen END YOUR TURN at once - the app
-switches to build and starts execution itself.
+"Approve plan". When it is chosen END YOUR TURN at once with no
+closing prose - never say "ready to build" or tell the user to
+switch modes; the app switches to build itself and sends an
+automatic hand-off prompt that starts execution. That prompt and
+the question answer are ONE approval, not two.
 
 ## Cost - every wasted step is billed
 The whole conversation, including EVERY image ever read, is re-sent to the

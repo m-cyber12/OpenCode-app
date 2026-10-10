@@ -590,7 +590,12 @@
          this exact label (case-insensitive) in Plan mode switches the agent to
          Build, and the approved prompt is sent once the plan turn ends. -->
     <string name="chat_plan_approve_option" translatable="false">Approve plan</string>
-    <string name="chat_plan_approved_prompt">I approve the plan above. Switch to implementation and carry it out exactly as written, step by step. If reality forces a deviation from the plan, stop and explain before continuing.</string>
+    <!-- v9.33 (owner): the model receives the approval twice by construction -
+         once as the question answer (which unblocks its plan turn), once as this
+         prompt (which starts the build turn; a turn cannot start without a user
+         message). The prompt therefore names itself as the app's hand-off and
+         says it is the SAME approval, so the model never reads a contradiction. -->
+    <string name="chat_plan_approved_prompt">Automatic hand-off from the app: the user approved your plan by answering your question with \"Approve plan\" - this is that same approval, not a second one. You are now in build mode. Execute the approved plan exactly as written, step by step. If reality forces a deviation from the plan, stop and explain before continuing.</string>
     <string name="chat_model_empty">No starred model yet. Star models in Settings and they appear here.</string>
     <string name="chat_model_open_settings">Choose models in Settings</string>
 

@@ -126,8 +126,13 @@ class EnvironmentBriefTest {
         // options; the Plan-mode approval contract). Models tried to ask
         // structured questions on device and hit Invalid Tool - now the tool
         // is enabled AND named, and plan approval rides on it.
+        // v9.33: -> 665. Device run: the model answered the approval with
+        // "Ready to build when you switch to build mode" - wrong (the app
+        // switches itself), and the owner flagged the double approval
+        // (question answer + hand-off prompt) as a contradiction. The brief
+        // now forbids closing prose and names the two as ONE approval.
         // All owner-mandated content; everything else still fights per word.
-        assertTrue("main brief grew to $words words - split or trim it", words < 620)
+        assertTrue("main brief grew to $words words - split or trim it", words < 665)
         // The core product loop and cost discipline stay in the always-read part.
         assertTrue(main.contains("serve.json"))
         assertTrue(main.contains("EXISTS"))
@@ -273,6 +278,13 @@ class EnvironmentBriefTest {
         assertTrue(main.contains("ONE call"))
         assertTrue(main.contains("Approve plan"))
         assertTrue(main.contains("END YOUR TURN"))
+        // v9.33: the approval hand-off is ONE approval through two channels
+        // (the question answer unblocks the plan turn; the app's hand-off
+        // prompt starts the build turn) - the brief must say so and forbid
+        // the model's own "ready to build"/"switch modes" closing prose.
+        assertTrue(main.contains("hand-off prompt"))
+        assertTrue(main.contains("ONE approval, not two"))
+        assertTrue(main.contains("closing prose"))
         assertTrue(main.contains("never print or commit it"))
         assertTrue(main.contains("BRIEF-SUGGESTIONS.md"))
         assertTrue(main.contains("never\nedit them") || main.contains("never edit them"))

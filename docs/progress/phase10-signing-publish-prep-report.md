@@ -5109,3 +5109,57 @@ Checks this round: phase9 + phase10 static checks rc=0 (the phase9-workflow-bran
 line remains permanent noise); strings.xml parses; brace/paren balance delta 0 vs HEAD on
 all three edited Kotlin files; manual sweep for when-arm trailing commas clean. CI is the
 compiler, as always — the verdict below this section is the evidence.
+
+## B.54 v9.33 — stepper polish, plan hand-off de-contradicted, scroll mechanics (2026-10-10)
+
+Owner device pass of v9.32 (portfolio project, plan flow end to end on a real
+model). Two bugs, two UX reports; all four addressed.
+
+**1. Next button outline (bug).** Back and Skip were `OutlinedButton`, Next was
+`TextButton` - inconsistent dress on one card. Next now carries the same gold
+outline.
+
+**2. Plan approval arrived twice (structural bug).** By construction the model
+hears the approval through two channels: the question answer (which unblocks
+the blocked plan turn - upstream requires an answer) and the app's follow-up
+prompt (which starts the build turn - a turn cannot start without a user
+message). Device evidence: the model replied "Plan approved. Ready to build
+when you switch to build mode" (wrong - the app switches itself) and then
+received what read as a SECOND approval. Neither channel can be removed, so
+both were rewritten to name the handshake: the brief now orders END YOUR TURN
+with no closing prose (never "ready to build", never telling the user to
+switch modes) and says the hand-off prompt and the answer are ONE approval,
+not two; the prompt itself now opens with "Automatic hand-off from the app"
+and states it is the same approval. Brief 649 words, budget raised 620 -> 665
+(v9.33 comment + three new pins: `hand-off prompt`, `ONE approval, not two`,
+`closing prose`).
+
+**3. "Everything pops into existence" (report).** Entrances softened: the
+per-part fade/slide went 200/240 ms -> 320/380 ms with a slightly deeper
+settle, and the reasoning block gained `animateContentSize` (opening,
+closing, and the text growing while the model reasons). All finite, per the
+standing gate rule. Honest caveat: feel is a device judgment - this is a
+tuning step, not a proof.
+
+**4. Scroll mechanics (two reports, one root).** (a) "The chat jumps back up
+while I read the streaming reasoning": `atBottom` counted the last item as
+"at bottom" whenever it was visible at all - during a long streaming reply
+the last item fills the screen, so reading mid-reply kept the pin and every
+delta snapped the view to `scrollToItem(last)` = the item's TOP (the jump
+UP). Fixes: at-bottom now requires the last item's bottom edge inside the
+viewport (+48 dp slack), so reading mid-reply unpins; and every programmatic
+scroll targets the tail via a large clamped item offset, never the item top.
+(b) "The chat always opens at the very top": the initial scroll ran only
+`if (pinned)`, and the pin observer could read "not at bottom" off the first
+layout frame first - a race the emulator won and the phone lost. A one-shot
+jump-to-tail on first content now runs regardless of the pin and re-arms it.
+Gate U1's contract (newest visible at first render; no yank when scrolled
+away; jump-to-latest works) covers all three paths and stayed green.
+
+Also answered this round (no code): the owner asked about agent-visible
+preview feedback - console capture, screenshots, reload. Already shipped in
+v9.12-v9.14: `.preview/capture.json` -> headless WebView -> project-root
+`screenshots/NNN-<name>.png`, page console + load errors + viewport geometry
+mirrored to `.preview/console.log`, every capture is a fresh load, and the
+brief's screenshots.md topic file teaches the protocol with read-once cost
+discipline.

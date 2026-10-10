@@ -90,6 +90,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -1078,12 +1079,29 @@ private fun TranscriptPane(
     var pinned by rememberSaveable { mutableStateOf(true) }
     var seenCount by remember { mutableStateOf(messages.size) }
     val count = messages.size
+    // v9.33: scrolling to the conversation's tail means the BOTTOM of the last
+    // item, not its top. scrollToItem(last) aligns the item's TOP with the
+    // viewport - mid-stream that "jumped back up" to the start of a long
+    // reply every time new text arrived (the owner's report). A large item
+    // offset lands at the end instead; the lazy list clamps it to the real
+    // bounds. Bounded well below Int overflow in layout arithmetic.
+    val tailOffsetPx = 1 shl 20
 
+    // v9.33 (owner): "at the bottom" now means the last item's bottom EDGE is
+    // inside the viewport (with a little slack), not merely "the last item is
+    // visible". During a long streaming reply the last item fills the whole
+    // screen, so the old test stayed true even when the reader had scrolled
+    // up inside it - and every delta yanked the view back. Reading mid-reply
+    // now unpins; returning to the true bottom re-pins.
+    val bottomSlackPx = with(LocalDensity.current) { 48.dp.toPx() }.toInt()
     val atBottom by remember {
         derivedStateOf {
             val info = listState.layoutInfo
             val last = info.visibleItemsInfo.lastOrNull()
-            info.totalItemsCount == 0 || (last != null && last.index >= info.totalItemsCount - 1)
+            info.totalItemsCount == 0 || (
+                last != null && last.index >= info.totalItemsCount - 1 &&
+                    last.offset + last.size <= info.viewportEndOffset + bottomSlackPx
+                )
         }
     }
 
@@ -1098,6 +1116,23 @@ private fun TranscriptPane(
         "${last?.id ?: ""}|${last?.parts?.size ?: 0}|${tail?.text?.length ?: 0}|${tail?.status ?: ""}|q=${question?.id ?: ""}"
     }
 
+    // v9.33 (owner): entering the chat lands on the LATEST messages, always.
+    // The old behaviour relied on `pinned` still being true when the initial
+    // scroll effect ran - but the pin observer could read "not at bottom"
+    // from the first layout (index 0 of a long list) and falsify it first,
+    // so navigating back to a long conversation opened at the very top.
+    // This one-shot does not depend on that race: first time content exists
+    // after entering the screen, jump to the tail and re-arm the pin.
+    var openedAtBottom by remember { mutableStateOf(false) }
+    LaunchedEffect(count) {
+        if (!openedAtBottom && count > 0) {
+            openedAtBottom = true
+            pinned = true
+            seenCount = count
+            listState.scrollToItem(count - 1 + (if (question != null) 1 else 0), tailOffsetPx)
+        }
+    }
+
     LaunchedEffect(atBottom) {
         pinned = atBottom
         if (atBottom) seenCount = count
@@ -1106,7 +1141,7 @@ private fun TranscriptPane(
     LaunchedEffect(streamKey, count) {
         // The question card is one extra trailing item beyond the messages.
         val lastIndex = count - 1 + (if (question != null) 1 else 0)
-        if (count > 0 && pinned) listState.scrollToItem(lastIndex)
+        if (count > 0 && pinned) listState.scrollToItem(lastIndex, tailOffsetPx)
     }
 
     val unseen = if (pinned) 0 else (count - seenCount).coerceAtLeast(0)
@@ -1271,7 +1306,11 @@ private fun TranscriptPane(
                     onClick = {
                         pinned = true
                         seenCount = count
-                        scope.launch { if (count > 0) listState.scrollToItem(count - 1) }
+                        scope.launch {
+                            if (count > 0) {
+                                listState.scrollToItem(count - 1 + (if (question != null) 1 else 0), tailOffsetPx)
+                            }
+                        }
                     },
                     modifier = Modifier
                         .height(40.dp)

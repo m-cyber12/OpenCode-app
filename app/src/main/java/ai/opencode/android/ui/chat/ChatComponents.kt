@@ -470,8 +470,12 @@ private fun EnterFromAbove(content: @Composable () -> Unit) {
     val entered = remember { MutableTransitionState(false).apply { targetState = true } }
     AnimatedVisibility(
         visibleState = entered,
-        enter = fadeIn(animationSpec = tween(durationMillis = 200)) +
-            slideInVertically(animationSpec = tween(durationMillis = 240)) { full -> -full / 6 },
+        // v9.33 (owner): "tool cards, messages and reasoning just pop into
+        // existence" - the old 200/240 ms entrance read as a pop on a real
+        // phone. Longer, softer (still FINITE one-shot tweens; the gates'
+        // test clock reaches idle exactly as before).
+        enter = fadeIn(animationSpec = tween(durationMillis = 320)) +
+            slideInVertically(animationSpec = tween(durationMillis = 380)) { full -> -full / 5 },
         exit = ExitTransition.None,
     ) {
         content()
@@ -528,7 +532,10 @@ private fun ReasoningBlock(part: Transcript.Part) {
     val toggleLabel = stringResource(
         if (open) R.string.chat_hide_reasoning else R.string.chat_show_reasoning,
     )
-    Column(Modifier.fillMaxWidth()) {
+    // v9.33 (owner smoothness pass): opening/closing the block and the text
+    // growing while the model reasons both animate instead of snapping
+    // (finite tween, same rule as the tool cards' animateContentSize).
+    Column(Modifier.fillMaxWidth().animateContentSize(animationSpec = tween(220))) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1165,9 +1172,12 @@ fun QuestionAsk(
                     }
                 }
                 if (step < lastStep) {
-                    TextButton(
+                    // v9.33 (owner): same dress as Back and Skip - every
+                    // navigation button on this card carries the gold outline.
+                    OutlinedButton(
                         onClick = { step += 1 },
                         modifier = Modifier.height(48.dp).weight(1f).semantics { testTag = TAG_QUESTION_NEXT },
+                        border = BorderStroke(1.dp, chat.attention),
                     ) {
                         Text(stringResource(R.string.ask_question_next), style = MaterialTheme.typography.labelLarge)
                     }
