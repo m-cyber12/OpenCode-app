@@ -28,6 +28,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.MutableTransitionState
@@ -133,6 +134,9 @@ const val TAG_PERMISSION_REJECT = "permission_reject"
 const val TAG_QUESTION_ASK = "question_ask"
 const val TAG_QUESTION_SUBMIT = "question_submit"
 const val TAG_QUESTION_SKIP = "question_skip"
+// v9.32 (owner): the inline question stepper's navigation.
+const val TAG_QUESTION_BACK = "question_back"
+const val TAG_QUESTION_NEXT = "question_next"
 const val TAG_TRANSCRIPT = "transcript"
 const val TAG_COMPOSER_INPUT = "composer_input"
 const val TAG_COMPOSER_SEND = "composer_send"
@@ -287,6 +291,10 @@ fun MessageRow(
         }
 
         for (part in message.parts) {
+            // v9.32 (owner): todowrite/todoread cards stay OUT of the chat -
+            // the working bar IS the task panel now, and the same list twice
+            // (card in the transcript + panel above the composer) was noise.
+            if (part.type == "tool" && ToolKinds.of(part.tool) == ToolKind.TODO) continue
             // v8 fix round: a freshly streamed part used to pop into place with
             // no transition at all - the owner called it jarring. Each part now
             // fades and settles in from slightly above, once, when it first
@@ -1023,10 +1031,18 @@ fun PermissionAsk(
 }
 
 /**
- * A question ask (`question.asked`). Upstream's question tool blocks a turn the
- * same way a permission does, and its reply shape is `answers: string[][]` - one
- * array of chosen labels per question, in order. A custom answer is simply a label
- * the user typed, which is what upstream expects for `custom` questions.
+ * A question ask (`question.asked`), rendered INLINE in the transcript.
+ *
+ * v9.32 (owner): questions live in the chat itself - a small card at the tail
+ * of the conversation, right below whatever the agent just said (for a plan,
+ * right below the plan) - never a sheet pinned over the composer that hides
+ * the text the user is being asked about. And it is a stepper, one question
+ * at a time: picking a single-choice option advances to the next question on
+ * its own; Back returns; Next moves past a multiple/custom question; Submit
+ * appears only on the last step. The reply shape is unchanged - upstream's
+ * question tool blocks the turn the same way a permission does, and the
+ * answer is `answers: string[][]`, one array of chosen labels per question,
+ * in order. A custom answer is simply a label the user typed.
  */
 @Composable
 fun QuestionAsk(
@@ -1035,97 +1051,134 @@ fun QuestionAsk(
     onReject: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (question.items.isEmpty()) return
     val chat = ChatTheme.chat
+    var step by rememberSaveable(question.id) { mutableStateOf(0) }
     val chosen = remember(question.id) { mutableStateOf(List(question.items.size) { emptyList<String>() }) }
     val custom = remember(question.id) { mutableStateOf(List(question.items.size) { "" }) }
+    val lastStep = question.items.size - 1
+    if (step > lastStep) step = lastStep
+
+    val answers = question.items.mapIndexed { index, _ ->
+        val picked = chosen.value.getOrElse(index) { emptyList() }
+        val own = custom.value.getOrElse(index) { "" }.trim()
+        when {
+            picked.isNotEmpty() -> picked
+            own.isNotEmpty() -> listOf(own)
+            else -> emptyList()
+        }
+    }
+
     Surface(
         modifier = modifier.fillMaxWidth().semantics { testTag = "${TAG_QUESTION_ASK}_${question.id}" },
         color = chat.attentionContainer,
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(1.dp, chat.attention),
     ) {
-        Column(Modifier.padding(14.dp)) {
-            Text(
-                text = stringResource(R.string.ask_question_title),
-                style = MaterialTheme.typography.titleSmall,
-                color = chat.onAttentionContainer,
-            )
-            for ((index, item) in question.items.withIndex()) {
-                Spacer(Modifier.height(10.dp))
+        Column(Modifier.padding(14.dp).animateContentSize()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.ask_question_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = chat.onAttentionContainer,
+                    modifier = Modifier.weight(1f),
+                )
                 if (question.items.size > 1) {
                     Text(
-                        text = stringResource(R.string.ask_question_of, index + 1, question.items.size),
-                        style = MaterialTheme.typography.labelSmall,
+                        text = stringResource(R.string.ask_question_of, step + 1, question.items.size),
+                        style = MonoSmall,
                         color = chat.onAttentionContainer,
-                    )
-                }
-                if (item.header.isNotBlank()) {
-                    Text(
-                        text = item.header,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = chat.onAttentionContainer,
-                    )
-                }
-                Text(
-                    text = item.question,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = chat.onAttentionContainer,
-                )
-                Text(
-                    text = stringResource(
-                        if (item.multiple) R.string.ask_question_pick_many else R.string.ask_question_pick_one,
-                    ),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = chat.onAttentionContainer,
-                )
-                Spacer(Modifier.height(6.dp))
-                for (option in item.options) {
-                    OptionRow(
-                        label = option.label,
-                        description = option.description,
-                        selected = chosen.value.getOrElse(index) { emptyList() }.contains(option.label),
-                        multiple = item.multiple,
-                        onClick = {
-                            val current = chosen.value.getOrElse(index) { emptyList() }
-                            val next = when {
-                                current.contains(option.label) -> current - option.label
-                                item.multiple -> current + option.label
-                                else -> listOf(option.label)
-                            }
-                            chosen.value = chosen.value.setAt(index, next)
-                        },
-                    )
-                }
-                if (item.custom) {
-                    Spacer(Modifier.height(6.dp))
-                    OutlinedTextField(
-                        value = custom.value.getOrElse(index) { "" },
-                        onValueChange = { text -> custom.value = custom.value.setAt(index, text) },
-                        label = { Text(stringResource(R.string.ask_question_custom_label)) },
-                        placeholder = { Text(stringResource(R.string.ask_question_custom_placeholder)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
                     )
                 }
             }
-            val answers = question.items.mapIndexed { index, item ->
-                val picked = chosen.value.getOrElse(index) { emptyList() }
-                val own = custom.value.getOrElse(index) { "" }.trim()
-                when {
-                    picked.isNotEmpty() -> picked
-                    own.isNotEmpty() -> listOf(own)
-                    item.options.isNotEmpty() -> emptyList()
-                    else -> emptyList()
+            // One step at a time; the hand-off is a Crossfade - FINITE, per the
+            // standing UI-gate animation rule.
+            Crossfade(targetState = step, label = "question_step") { index ->
+                val item = question.items[index]
+                Column {
+                    Spacer(Modifier.height(10.dp))
+                    if (item.header.isNotBlank()) {
+                        Text(
+                            text = item.header,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = chat.onAttentionContainer,
+                        )
+                    }
+                    Text(
+                        text = item.question,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = chat.onAttentionContainer,
+                    )
+                    Text(
+                        text = stringResource(
+                            if (item.multiple) R.string.ask_question_pick_many else R.string.ask_question_pick_one,
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = chat.onAttentionContainer,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    for (option in item.options) {
+                        OptionRow(
+                            label = option.label,
+                            description = option.description,
+                            selected = chosen.value.getOrElse(index) { emptyList() }.contains(option.label),
+                            multiple = item.multiple,
+                            onClick = {
+                                val current = chosen.value.getOrElse(index) { emptyList() }
+                                val next = when {
+                                    current.contains(option.label) -> current - option.label
+                                    item.multiple -> current + option.label
+                                    else -> listOf(option.label)
+                                }
+                                chosen.value = chosen.value.setAt(index, next)
+                                // Arena-style: a single-choice pick IS the answer -
+                                // advance on its own. Multiple/custom steps keep the
+                                // explicit Next, and the last step keeps Submit.
+                                if (!item.multiple && !item.custom && next.isNotEmpty() && index < lastStep) {
+                                    step = index + 1
+                                }
+                            },
+                        )
+                    }
+                    if (item.custom) {
+                        Spacer(Modifier.height(6.dp))
+                        OutlinedTextField(
+                            value = custom.value.getOrElse(index) { "" },
+                            onValueChange = { text -> custom.value = custom.value.setAt(index, text) },
+                            label = { Text(stringResource(R.string.ask_question_custom_label)) },
+                            placeholder = { Text(stringResource(R.string.ask_question_custom_placeholder)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                        )
+                    }
                 }
             }
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(
-                    onClick = { onSubmit(question.id, answers) },
-                    enabled = answers.any { it.isNotEmpty() },
-                    modifier = Modifier.height(48.dp).weight(1f).semantics { testTag = TAG_QUESTION_SUBMIT },
-                ) {
-                    Text(stringResource(R.string.ask_question_submit), style = MaterialTheme.typography.labelLarge)
+                if (step > 0) {
+                    OutlinedButton(
+                        onClick = { step -= 1 },
+                        modifier = Modifier.height(48.dp).semantics { testTag = TAG_QUESTION_BACK },
+                        border = BorderStroke(1.dp, chat.attention),
+                    ) {
+                        Text(stringResource(R.string.ask_question_back), style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+                if (step < lastStep) {
+                    TextButton(
+                        onClick = { step += 1 },
+                        modifier = Modifier.height(48.dp).weight(1f).semantics { testTag = TAG_QUESTION_NEXT },
+                    ) {
+                        Text(stringResource(R.string.ask_question_next), style = MaterialTheme.typography.labelLarge)
+                    }
+                } else {
+                    TextButton(
+                        onClick = { onSubmit(question.id, answers) },
+                        enabled = answers.any { it.isNotEmpty() },
+                        modifier = Modifier.height(48.dp).weight(1f).semantics { testTag = TAG_QUESTION_SUBMIT },
+                    ) {
+                        Text(stringResource(R.string.ask_question_submit), style = MaterialTheme.typography.labelLarge)
+                    }
                 }
                 OutlinedButton(
                     onClick = { onReject(question.id) },

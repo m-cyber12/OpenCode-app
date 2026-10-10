@@ -994,13 +994,15 @@ class ChatUiGatesTest {
         val statusDone = countText(context.getString(R.string.chat_tool_status_completed)) >= 2
         val expandLabel = context.getString(R.string.chat_tool_expand)
 
-        // The plan checklist is the todo card's collapsed face: every row readable
-        // with the card still collapsed (no tool_output node yet).
+        // v9.32 (owner): todowrite cards stay OUT of the chat entirely - the
+        // collapsible working-bar panel is the one task list. The transcript
+        // must render NO card and NO rows for the todo part.
         val todoText = onScreenText()
-        val todoCollapsed = !exists("$TAG_TOOL_OUTPUT" + "_prt_todo")
-        val todoRows = todoText.contains("Design the login screen") &&
-            todoText.contains("Wire up the form state") &&
-            todoText.contains("Add validation errors")
+        val todoCollapsed = !exists("$TAG_TOOL_OUTPUT" + "_prt_todo") &&
+            !exists("$TAG_TOOL_CARD" + "_prt_todo")
+        val todoRows = !todoText.contains("Design the login screen") &&
+            !todoText.contains("Wire up the form state") &&
+            !todoText.contains("Add validation errors")
 
         rule.onNodeWithTag("$TAG_TOOL_HEADER" + "_prt_shell").performClick()
         rule.waitForIdle()
@@ -1078,13 +1080,17 @@ class ChatUiGatesTest {
                 ),
             ),
         )
+        // v9.32 (owner): the permission sheet and the inline question are
+        // separate surfaces now - a permission is a modal interruption, a
+        // question lives IN the conversation. Rendering them together would
+        // put the question behind the sheet's scrim, so each gets its own
+        // render, exactly as each reaches a user.
         renderChat(
             uiState(
                 sessionView(
                     messages = listOf(message("msg_u1", "user", listOf(textPart("p", "msg_u1", "ship it")))),
                     busy = true,
                     pending = listOf(prompt),
-                    questions = listOf(question),
                 ),
                 busy = true,
             ),
@@ -1096,9 +1102,6 @@ class ChatUiGatesTest {
         val commandVerbatim = onScreenText().contains("git push origin main")
         val alwaysScope = onScreenText().contains(context.getString(R.string.ask_permission_always_scope, "git push"))
         val kindLine = onScreenText().contains(context.getString(R.string.ask_permission_kind_bash))
-        val questionShown = exists("$TAG_QUESTION_ASK" + "_que_gate1")
-        val questionText = onScreenText().contains("Which target should this go to?")
-        val optionShown = onScreenText().contains("the staging box")
 
         rule.onNodeWithTag(TAG_PERMISSION_ONCE).performClick()
         rule.waitForIdle()
@@ -1109,6 +1112,30 @@ class ChatUiGatesTest {
         val onceOk = replies.contains("per_gate1" to "once")
         val alwaysOk = replies.contains("per_gate1" to "always")
         val rejectOk = replies.contains("per_gate1" to "reject")
+
+        // The question renders INLINE: a card at the tail of the transcript,
+        // below the conversation it belongs to - not a sheet over the composer.
+        renderChat(
+            uiState(
+                sessionView(
+                    messages = listOf(message("msg_u1", "user", listOf(textPart("p", "msg_u1", "ship it")))),
+                    busy = true,
+                    questions = listOf(question),
+                ),
+                busy = true,
+            ),
+            availability = AgentAvailability.READY,
+        )
+        rule.waitForIdle()
+        val questionShown = exists("$TAG_QUESTION_ASK" + "_que_gate1")
+        val questionText = onScreenText().contains("Which target should this go to?")
+        val optionShown = onScreenText().contains("the staging box")
+        // Structural proof of the inline contract: the card is reachable by
+        // scrolling the TRANSCRIPT list itself - it is a transcript item.
+        val inlineInTranscript = runCatching {
+            rule.onNodeWithTag(TAG_TRANSCRIPT)
+                .performScrollToNode(hasTestTag("$TAG_QUESTION_ASK" + "_que_gate1"))
+        }.isSuccess
 
         // The question card: pick an option (submit is disabled until one is
         // picked), then send it. Upstream's question tool blocks the turn, so the
@@ -1124,10 +1151,9 @@ class ChatUiGatesTest {
         // record whether the button was actually clickable at tap time, and tap
         // again (as a user would) if the first tap was lost to a race - without
         // ever hiding what happened: both facts land in the gate detail.
-        // Phase 7 moves the asks into a bottom sheet whose content column is
-        // verticalScroll: the submit row can sit below the sheet's fold, and
-        // performClick does not scroll (it injects the tap at the node's bounds,
-        // which would be outside the sheet). Scroll the row into view first,
+        // v9.32: the card is a transcript item now, so the submit row can sit
+        // below the list's fold, and performClick does not scroll (it injects
+        // the tap at the node's bounds). Scroll the row into view first,
         // exactly as a thumb would - and if the scroll action is not exposed,
         // keep going so the tap itself reports what happened.
         val scrolledIntoView = runCatching {
@@ -1161,14 +1187,14 @@ class ChatUiGatesTest {
 
         shot("12-chat-asks.png")
         val ok = askShown && commandVerbatim && alwaysScope && kindLine && onceOk && alwaysOk && rejectOk &&
-            questionShown && questionText && optionShown && picked && answered && skipped
+            questionShown && questionText && optionShown && inlineInTranscript && picked && answered && skipped
         gate(
             "U3",
             ok,
             "ask=$askShown commandVerbatim=$commandVerbatim alwaysScope=$alwaysScope kind=$kindLine " +
                 "once=$onceOk always=$alwaysOk reject=$rejectOk question=$questionShown " +
-                "questionText=$questionText optionShown=$optionShown optionClicked=$picked " +
-                "answered=$answered skipped=$skipped answersSeen=$questionAnswers " +
+                "questionText=$questionText optionShown=$optionShown inlineInTranscript=$inlineInTranscript " +
+                "optionClicked=$picked answered=$answered skipped=$skipped answersSeen=$questionAnswers " +
                 "submitEnabledAtTap=$submitEnabled submitClicks=$submitClicks scrolledIntoView=$scrolledIntoView",
         )
     }

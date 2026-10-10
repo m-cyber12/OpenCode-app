@@ -95,6 +95,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -234,6 +235,20 @@ fun ChatScreen(
 
         StatusArea(state = state, runtime = runtime, availability = availability, onDismissBanner = onDismissBanner)
 
+        // v9.32 (owner): questions render INLINE in the chat - a small card at
+        // the tail of the transcript, right below whatever the agent just said.
+        // For a plan that means directly below the plan text, so the user can
+        // read the whole plan and then decide (the old sheet pinned the card
+        // over the composer and HID the plan it asked about). Permissions stay
+        // in the AskArea sheet - they are interruptions, not conversation.
+        //
+        // v9.31 (owner) plan contract, unchanged - only WHERE it renders moved:
+        // the plan confirmation is the MODEL's ask through the question tool;
+        // when the user submits an answer that selects the approve option
+        // (brief-pinned label), the app switches the agent to build and - via
+        // onPlanApproved - AppRoot sends the execution prompt once this turn
+        // has ended.
+        val approveOption = stringResource(R.string.chat_plan_approve_option)
         TranscriptPane(
             messages = messages,
             busy = state.busy,
@@ -241,20 +256,7 @@ fun ChatScreen(
             listState = listState,
             onRetry = if (state.canRetryTurn) onRetry else null,
             onUndo = if (state.canRetryTurn) onUndo else null,
-            modifier = Modifier.weight(1f),
-        )
-
-        // v9.31 (owner): the OLD auto approve-bar fired after ANY completed
-        // plan-mode reply, plan or not. Gone. The plan confirmation is the
-        // MODEL's ask now, through the question tool; when the user submits
-        // an answer that selects the approve option (brief-pinned label),
-        // the app switches the agent to build and - via onPlanApproved -
-        // AppRoot sends the execution prompt once this turn has ended.
-        val approveOption = stringResource(R.string.chat_plan_approve_option)
-        AskArea(
-            asks = state.pendingAsks,
-            questions = state.pendingQuestions,
-            onPermissionReply = onPermissionReply,
+            question = state.pendingQuestions.firstOrNull(),
             onQuestionSubmit = { id, answers ->
                 onQuestionSubmit(id, answers)
                 if (state.agentMode == OpenCodeRepository.AGENT_PLAN &&
@@ -265,6 +267,12 @@ fun ChatScreen(
                 }
             },
             onQuestionSkip = onQuestionSkip,
+            modifier = Modifier.weight(1f),
+        )
+
+        AskArea(
+            asks = state.pendingAsks,
+            onPermissionReply = onPermissionReply,
         )
 
         AttachmentTray(attachments = state.attachments, onRemove = onRemoveAttachment)
@@ -831,15 +839,23 @@ private fun StatusArea(
         // messages after the last user prompt, newest tool part first -
         // parsed by the same TodoParser the tool card uses. Nothing from
         // older turns (a finished task list must not haunt the next one).
+        // v9.32 (owner): while a NEW todowrite call is still streaming, its
+        // input is non-blank but PARTIAL JSON - parsing it yields an empty
+        // list, and picking merely the newest non-blank input made the bar
+        // fall back to "The agent is working" for seconds between phases.
+        // So: walk ALL of the turn's todo calls newest-first and keep the
+        // first one whose PARSE is non-empty - the previous complete list
+        // stays on the bar until the new one has fully arrived.
         val todos = remember(state.messages) {
             val msgs = state.messages
             val turnStart = msgs.indexOfLast { it.role == "user" }
             val turn = if (turnStart >= 0) msgs.subList(turnStart + 1, msgs.size) else emptyList()
-            turn.asReversed().firstNotNullOfOrNull { m ->
-                m.parts.lastOrNull { p ->
-                    ToolKinds.of(p.tool) == ToolKind.TODO && p.input.isNotBlank()
-                }
-            }?.let { TodoParser.parse(it.input, it.metadata) } ?: emptyList()
+            turn.asReversed().asSequence()
+                .flatMap { m -> m.parts.asReversed().asSequence() }
+                .filter { p -> ToolKinds.of(p.tool) == ToolKind.TODO && p.input.isNotBlank() }
+                .map { p -> TodoParser.parse(p.input, p.metadata) }
+                .firstOrNull { it.isNotEmpty() }
+                ?: emptyList()
         }
         BusyBar(todos)
     }
@@ -862,6 +878,30 @@ private fun BusyBar(todos: List<TodoItem> = emptyList()) {
         ?: todos.firstOrNull { it.status == "pending" }
     val headline = current?.content?.takeIf { it.isNotBlank() } ?: label
     var expanded by remember { mutableStateOf(false) }
+
+    // v9.32 (owner): a finished phase deserves its moment. When the named task
+    // changes and the OLD task is now marked completed, the bar holds
+    // "✓ old task" in the success colour for a beat before crossfading to the
+    // next task - a FINITE delay inside a LaunchedEffect, not an animation
+    // loop, so the gates' test clock stays idle. rememberUpdatedState lets the
+    // running effect read the freshest todo list without restarting.
+    val latestTodos by rememberUpdatedState(todos)
+    var shown by remember { mutableStateOf(headline) }
+    var showingDone by remember { mutableStateOf(false) }
+    LaunchedEffect(headline) {
+        if (shown != headline) {
+            val old = shown
+            val oldCompleted = old != label &&
+                latestTodos.any { it.content == old && it.status == "completed" }
+            if (oldCompleted) {
+                showingDone = true
+                delay(900L)
+                showingDone = false
+            }
+            shown = headline
+        }
+    }
+    val displayText = if (showingDone) "\u2713 $shown" else shown
     Surface(
         color = chat.toolContainer,
         shape = RoundedCornerShape(16.dp),
@@ -885,15 +925,21 @@ private fun BusyBar(todos: List<TodoItem> = emptyList()) {
                 Box(
                     Modifier
                         .size(8.dp)
-                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                        .background(
+                            if (showingDone) chat.success else MaterialTheme.colorScheme.primary,
+                            CircleShape,
+                        ),
                 )
                 Spacer(Modifier.width(10.dp))
                 Box(Modifier.weight(1f)) {
-                    Crossfade(targetState = headline, label = "busy_task") { text ->
+                    Crossfade(targetState = displayText, label = "busy_task") { text ->
                         Text(
                             text = text,
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            // The colour is read off the text being drawn (both
+                            // sides compose during the crossfade): the ✓ frame is
+                            // success-green, every other frame is plain.
+                            color = if (text.startsWith("\u2713 ")) chat.success else MaterialTheme.colorScheme.onSurface,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -1018,6 +1064,10 @@ private fun TranscriptPane(
     listState: LazyListState,
     onRetry: (() -> Unit)?,
     onUndo: (() -> Unit)?,
+    /** v9.32 (owner): the pending question renders as the transcript's tail. */
+    question: Transcript.Question? = null,
+    onQuestionSubmit: (String, List<List<String>>) -> Unit = { _, _ -> },
+    onQuestionSkip: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val emptyTitle = stringResource(R.string.chat_empty_title)
@@ -1040,10 +1090,12 @@ private fun TranscriptPane(
     // Streaming text grows the LAST part of the LAST message without changing the
     // message count, so the scroll key includes it: the view follows the reply as
     // it arrives, and only while the user is at the bottom.
-    val streamKey = remember(messages) {
+    val streamKey = remember(messages, question) {
         val last = messages.lastOrNull()
         val tail = last?.parts?.lastOrNull()
-        "${last?.id ?: ""}|${last?.parts?.size ?: 0}|${tail?.text?.length ?: 0}|${tail?.status ?: ""}"
+        // v9.32: the inline question card is part of the key, so a question
+        // arriving scrolls into view exactly like a streaming part would.
+        "${last?.id ?: ""}|${last?.parts?.size ?: 0}|${tail?.text?.length ?: 0}|${tail?.status ?: ""}|q=${question?.id ?: ""}"
     }
 
     LaunchedEffect(atBottom) {
@@ -1052,7 +1104,9 @@ private fun TranscriptPane(
     }
 
     LaunchedEffect(streamKey, count) {
-        if (count > 0 && pinned) listState.scrollToItem(count - 1)
+        // The question card is one extra trailing item beyond the messages.
+        val lastIndex = count - 1 + (if (question != null) 1 else 0)
+        if (count > 0 && pinned) listState.scrollToItem(lastIndex)
     }
 
     val unseen = if (pinned) 0 else (count - seenCount).coerceAtLeast(0)
@@ -1186,6 +1240,22 @@ private fun TranscriptPane(
                     )
                 }
             }
+            // v9.32 (owner): the pending question is the transcript's tail -
+            // a small card right below whatever the agent just said (for a
+            // plan, directly below the plan), so the whole context stays
+            // readable above the ask.
+            if (question != null) {
+                item(key = "question_${question.id}") {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                        QuestionAsk(
+                            question = question,
+                            onSubmit = onQuestionSubmit,
+                            onReject = onQuestionSkip,
+                            modifier = Modifier.widthIn(max = 760.dp),
+                        )
+                    }
+                }
+            }
         }
 
         if (unseen > 0) {
@@ -1223,37 +1293,38 @@ private fun TranscriptPane(
 // ---- blocking asks ---------------------------------------------------------
 
 /**
- * Permissions and questions the agent is waiting on, presented as a bottom
- * sheet rather than a card buried in the scroll.
+ * Permissions the agent is waiting on, presented as a bottom sheet rather than
+ * a card buried in the scroll.
  *
- * Upstream blocks the turn until one of these is answered, so the sheet is not
+ * v9.32 (owner): QUESTIONS left this sheet - they render inline in the
+ * transcript now (see [TranscriptPane]), because a question is part of the
+ * conversation and must sit below the text it asks about. A permission is an
+ * interruption, so the sheet remains its home.
+ *
+ * Upstream blocks the turn until a permission is answered, so the sheet is not
  * dismissible: tapping the scrim or the back button does nothing, and the only
  * ways out are the answers the agent is waiting for (allow once / always allow /
- * reject, or submit / skip for a question). This is a restyle of the same
- * upstream mechanism — the three permission replies and the question reply shape
- * are unchanged, and OpenCode's permission model is fully preserved.
+ * reject). This is a restyle of the same upstream mechanism — the three
+ * permission replies are unchanged, and OpenCode's permission model is fully
+ * preserved.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AskArea(
     asks: List<Transcript.Prompt>,
-    questions: List<Transcript.Question>,
     onPermissionReply: (String, String) -> Unit,
-    onQuestionSubmit: (String, List<List<String>>) -> Unit,
-    onQuestionSkip: (String) -> Unit,
 ) {
-    if (asks.isEmpty() && questions.isEmpty()) return
+    if (asks.isEmpty()) return
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = { /* non-dismissible: the turn is blocked until answered */ },
         sheetState = sheetState,
     ) {
-        // Scrollable on purpose: when a permission ask and a question stack up
-        // (or a question carries a long option list + custom field), every answer
-        // the agent is waiting for must stay reachable by scrolling the sheet.
-        // The sheet provides bounded height, so a verticalScroll column here cannot
-        // hit the unbounded-height crash a lazy list would.
+        // Scrollable on purpose: when several permission asks stack up, every
+        // answer the agent is waiting for must stay reachable by scrolling the
+        // sheet. The sheet provides bounded height, so a verticalScroll column
+        // here cannot hit the unbounded-height crash a lazy list would.
         Column(
             Modifier
                 .fillMaxWidth()
@@ -1264,13 +1335,6 @@ private fun AskArea(
         ) {
             for (ask in asks) {
                 PermissionAsk(prompt = ask, onReply = onPermissionReply)
-            }
-            for (question in questions) {
-                QuestionAsk(
-                    question = question,
-                    onSubmit = onQuestionSubmit,
-                    onReject = onQuestionSkip,
-                )
             }
         }
     }

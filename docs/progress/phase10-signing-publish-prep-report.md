@@ -5067,3 +5067,45 @@ models that never call todowrite still get the plain working label;
 (d) the speed verdict is a finding, not a fix - if the owner sees a
 minute-long gap with NO network wait on the provider side, new
 evidence changes the analysis.
+
+## B.53 v9.32 — working-bar hand-off, todo cards out of the chat, inline question stepper (2026-10-10)
+
+Owner device review of v9.31 produced three orders; all three shipped in this round.
+
+**1. Working-bar flicker + completion checkmark.** Device evidence: between phases the
+bar's task name and dot fell back to "The agent is working" for seconds before the next
+phase appeared. Root cause: the bar took the NEWEST todowrite part whose `input` was
+non-blank — but while a new call streams, its input is non-blank PARTIAL JSON, so
+`TodoParser.parse` returns an empty list and the `?: emptyList()` fallback blanked the
+bar. Fix (ChatScreen `StatusArea`): walk ALL current-turn todo parts newest-first and
+keep the first whose PARSE is non-empty — the previous complete list holds the bar until
+the new one has fully arrived. On top of that, a finite completion beat (`BusyBar`): when
+the named task changes and the old task is now `completed`, the bar holds "✓ old task"
+in the success colour for ~900 ms (LaunchedEffect + delay; `rememberUpdatedState` for the
+todo list) before crossfading to the next task. No new infinite animations.
+
+**2. Todo cards removed from the transcript.** The collapsible working-bar panel is the
+one task display now; `MessageRow` skips `ToolKind.TODO` parts entirely. Gate U2 flipped:
+it now asserts the todo part renders NO card and NO rows (`todoCollapsed` checks both
+`tool_card_prt_todo` and `tool_output_prt_todo` absent; `todoRows` asserts the three
+fixture rows are NOT on screen).
+
+**3. Questions inline in the chat, Arena-style stepper.** Questions left the AskArea
+bottom sheet (permissions stay there — they are interruptions, not conversation). The
+pending question renders as the transcript's TAIL item (`TranscriptPane`), so a plan
+confirmation sits directly BELOW the plan text — the owner could not read the plan under
+the old pinned card ("could have caused a major UX disaster"). `QuestionAsk` is a stepper
+now: one question at a time with an i/n counter, a single-choice tap auto-advances,
+Back (`question_back`) returns, Next (`question_next`) moves past multiple/custom steps,
+Submit only on the last step, Skip always available. Tags `question_ask_<id>`/
+`question_submit`/`question_skip` unchanged; the v9.31 plan-approve intercept moved
+verbatim from the AskArea wiring to the TranscriptPane wiring (contract untouched).
+Gate U3 split its fixtures (permission render and question render are separate surfaces
+now — together the sheet's scrim would cover the inline card) and gained a structural
+pin: `inlineInTranscript` proves the card is reachable by scrolling the transcript list
+itself. U10's plan-approve flow runs against the inline card unchanged.
+
+Checks this round: phase9 + phase10 static checks rc=0 (the phase9-workflow-branch FAIL
+line remains permanent noise); strings.xml parses; brace/paren balance delta 0 vs HEAD on
+all three edited Kotlin files; manual sweep for when-arm trailing commas clean. CI is the
+compiler, as always — the verdict below this section is the evidence.
