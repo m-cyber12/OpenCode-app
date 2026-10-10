@@ -174,13 +174,6 @@ fun ChatScreen(
     onPermissionReply: (String, String) -> Unit,
     onQuestionSubmit: (String, List<List<String>>) -> Unit,
     onQuestionSkip: (String) -> Unit,
-    /**
-     * v9.31 (owner): plan approval is the MODEL's ask now, via the question
-     * tool. Fired when, in Plan mode, the user submits an answer carrying
-     * the approve option - AppRoot sends the execution prompt once the plan
-     * turn has ended.
-     */
-    onPlanApproved: () -> Unit = {},
     /** v9.31 (owner): GitHub projects carry the mark in the menu tile too. */
     githubProject: Boolean = false,
     onAttach: () -> Unit,
@@ -243,13 +236,15 @@ fun ChatScreen(
         // over the composer and HID the plan it asked about). Permissions stay
         // in the AskArea sheet - they are interruptions, not conversation.
         //
-        // v9.31 (owner) plan contract, unchanged - only WHERE it renders moved:
-        // the plan confirmation is the MODEL's ask through the question tool;
-        // when the user submits an answer that selects the approve option
-        // (brief-pinned label), the app switches the agent to build and - via
-        // onPlanApproved - AppRoot sends the execution prompt once this turn
-        // has ended.
-        val approveOption = stringResource(R.string.chat_plan_approve_option)
+        // v9.34 (owner: "when the user approves, the model sees the answer and
+        // CONTINUES working - don't stop it, don't send a prompt"). The plan
+        // approval is upstream's own `plan_exit` tool now (experimental plan
+        // mode): the plan agent calls it, plan_exit asks the Yes/No question
+        // rendered here, and a "Yes" makes the SERVER append a synthetic
+        // build-agent message so the same turn keeps running with build
+        // permissions. The app's only job left is cosmetic: flip the visible
+        // mode chip to Build so the next prompt the USER types also builds.
+        val pendingQuestion = state.pendingQuestions.firstOrNull()
         TranscriptPane(
             messages = messages,
             busy = state.busy,
@@ -257,14 +252,15 @@ fun ChatScreen(
             listState = listState,
             onRetry = if (state.canRetryTurn) onRetry else null,
             onUndo = if (state.canRetryTurn) onUndo else null,
-            question = state.pendingQuestions.firstOrNull(),
+            question = pendingQuestion,
             onQuestionSubmit = { id, answers ->
                 onQuestionSubmit(id, answers)
+                val q = pendingQuestion
                 if (state.agentMode == OpenCodeRepository.AGENT_PLAN &&
-                    answers.any { group -> group.any { it.equals(approveOption, ignoreCase = true) } }
+                    q != null && q.id == id && isPlanExitQuestion(q) &&
+                    answers.any { group -> group.any { it.equals("Yes", ignoreCase = true) } }
                 ) {
                     onPickMode(OpenCodeRepository.AGENT_BUILD)
-                    onPlanApproved()
                 }
             },
             onQuestionSkip = onQuestionSkip,
@@ -1050,6 +1046,19 @@ private fun RetryBanner(retry: Transcript.RetryInfo) {
         }
     }
 }
+
+/**
+ * v9.34: recognise upstream `plan_exit`'s own approval ask (tool/plan.ts at
+ * the pinned commit: header "Build Agent", question "... switch to the build
+ * agent and start implementing?"). Only THIS question's "Yes" flips the
+ * visible mode chip to Build - any other Yes/No the model asks in plan mode
+ * must leave the mode alone.
+ */
+internal fun isPlanExitQuestion(question: Transcript.Question): Boolean =
+    question.items.any { item ->
+        item.header.equals("Build Agent", ignoreCase = true) ||
+            item.question.contains("switch to the build agent", ignoreCase = true)
+    }
 
 // ---- transcript ------------------------------------------------------------
 

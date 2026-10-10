@@ -80,12 +80,24 @@ object RuntimeEnv {
         env["OPENCODE_SERVER_PORT"] = SERVER_PORT.toString()
         env["OPENCODE_SERVER_USERNAME"] = SERVER_USER
         env["OPENCODE_SERVER_PASSWORD"] = password
-        env["OPENCODE_CLIENT"] = "android"
+        // v9.34 (owner: approving a plan must let the model CONTINUE working in
+        // the same turn - no stop, no hand-off prompt). Upstream's experimental
+        // plan mode is exactly that flow: the plan agent writes a plan file,
+        // calls `plan_exit`, plan_exit itself asks the user the approve
+        // question, and on "Yes" the server appends a synthetic build-agent
+        // user message so the SAME busy loop continues with build permissions
+        // (session/prompt.ts: the loop only exits when the last assistant's
+        // parentID equals the last user message). The tool is registered only
+        // for `client === "cli"` (registry.ts), and flags.client is otherwise
+        // used for nothing but the `x-opencode-client` request header and the
+        // question-tool enablement (where cli qualifies too) - verified at the
+        // pinned commit, so "cli" is safe here.
+        env["OPENCODE_CLIENT"] = "cli"
+        env["OPENCODE_EXPERIMENTAL_PLAN_MODE"] = "true"
         // v9.31 (owner): upstream registers the `question` tool only for the
-        // app/cli/desktop clients - OPENCODE_CLIENT=android silently dropped
-        // it, so models "asking with options" got Invalid Tool on device.
-        // The explicit flag turns it on regardless of the client name
-        // (registry.ts: `... || flags.enableQuestionTool`).
+        // app/cli/desktop clients. OPENCODE_CLIENT=cli already qualifies; the
+        // explicit flag stays as a belt-and-braces pin of the behaviour the
+        // brief teaches (registry.ts: `... || flags.enableQuestionTool`).
         env["OPENCODE_ENABLE_QUESTION_TOOL"] = "1"
         env["OPENCODE_RUNTIME_ABI"] = abi
         // Explicit absolute paths for the launcher glue.

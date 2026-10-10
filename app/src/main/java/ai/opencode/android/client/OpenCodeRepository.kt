@@ -148,6 +148,14 @@ class OpenCodeRepository(
         directory = workspaceDir,
         onEvent = { ev ->
             transcript.apply(ev.type, ev.properties)
+            // v9.34 (owner: the Stop key stayed stuck until leaving the page).
+            // `publishTranscript` ORs in `sessionStatus[...]?.busy`, but that
+            // map was only ever written by the bootstrap `refresh()` - a
+            // snapshot taken while a turn ran said busy FOREVER, because
+            // `session.idle` only cleared the transcript's own busy flag.
+            // Live frames are newer truth than any snapshot: mirror them into
+            // the map so both sources agree.
+            reconcileSessionStatus(ev.type, ev.properties)
             publishTranscript("event ${ev.type}")
             // The transcript is built from live frames, so a frame that was emitted
             // before this client subscribed is lost for good - and a prompt can be
@@ -1150,6 +1158,40 @@ class OpenCodeRepository(
             errorKind = UiError.classifyServerCall(status, t.message ?: ""),
             serverReachable = status != -1,
         )
+    }
+
+    /**
+     * v9.34: keep the polled `sessionStatus` snapshot in step with the live
+     * stream. The snapshot exists so a turn already running at startup is
+     * visible immediately; once frames flow, `session.status`/`session.idle`
+     * are the authoritative state and must overwrite the stale entry -
+     * otherwise `busy` (an OR of both sources) can never fall back to false
+     * and the composer shows Stop until the screen is rebuilt.
+     */
+    private fun reconcileSessionStatus(type: String, props: JSONObject) {
+        val sid = props.optString("sessionID")
+        if (sid.isEmpty()) return
+        val st = _state.value
+        when {
+            EventFrame.isSessionIdle(type) -> {
+                if (st.sessionStatus.containsKey(sid)) {
+                    _state.value = st.copy(sessionStatus = st.sessionStatus - sid)
+                }
+            }
+            EventFrame.isSessionStatus(type) -> {
+                val status = props.optJSONObject("status") ?: return
+                _state.value = st.copy(
+                    sessionStatus = st.sessionStatus + (
+                        sid to OpenCodeApi.SessionStatusInfo(
+                            type = status.optString("type"),
+                            attempt = status.optInt("attempt"),
+                            message = status.optString("message"),
+                            nextMs = status.optLong("next"),
+                        )
+                        ),
+                )
+            }
+        }
     }
 
     private fun publishTranscript(status: String) {

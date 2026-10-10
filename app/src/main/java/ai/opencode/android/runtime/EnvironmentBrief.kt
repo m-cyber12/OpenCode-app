@@ -142,13 +142,13 @@ the user to set one; GitHub work needs a GitHub project
 ## Asking the user
 Anything with choices goes through the `question` tool: put ALL your
 questions in ONE call, each with its options - never one ask per
-step, never options as prose. In Plan mode (read-only) finish the
-plan, then ask via `question` with an option labelled exactly
-"Approve plan". When it is chosen END YOUR TURN at once with no
+step, never options as prose. In Plan mode follow the plan workflow
+the system gives you: write the plan file, then call `plan_exit` -
+that tool asks the user for approval itself, so never ask "is this
+plan okay" through `question`. On approval you continue IN THIS SAME
+TURN as the build agent: start executing immediately, with no
 closing prose - never say "ready to build" or tell the user to
-switch modes; the app switches to build itself and sends an
-automatic hand-off prompt that starts execution. That prompt and
-the question answer are ONE approval, not two.
+switch modes.
 
 ## Cost - every wasted step is billed
 The whole conversation, including EVERY image ever read, is re-sent to the

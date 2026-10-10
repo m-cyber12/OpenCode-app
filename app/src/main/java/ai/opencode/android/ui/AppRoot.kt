@@ -44,6 +44,8 @@ import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -174,11 +176,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // is computed off the main thread; re-keyed on the clone phase so a repo
     // that JUST finished cloning gets its mark without waiting for a reload.
     var githubProjects by remember { mutableStateOf(emptySet<String>()) }
-    // v9.31 (owner): plan approval comes from the MODEL's question-tool ask.
-    // When the user picks the approve option, ChatScreen flips the agent to
-    // build and raises this flag; the moment the plan turn actually ENDS,
-    // the approved-execution prompt goes out as the first build-mode turn.
-    var planExecutePending by remember { mutableStateOf(false) }
     LaunchedEffect(projects, githubCloneState.phase) {
         githubProjects = withContext(Dispatchers.IO) {
             projects.filter { ai.opencode.android.github.GitSync.isGithubProject(it.dir) }
@@ -213,16 +210,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val stateFlow = remember(repository) { repository.state }
     val uiState by stateFlow.collectAsState()
 
-    // v9.31 (owner): the approved plan executes as soon as the plan turn is
-    // over - not mid-turn (the question reply continues the PLAN agent's
-    // turn; sending while busy would race it). One shot: flag down first.
-    val planApprovedPrompt = stringResource(R.string.chat_plan_approved_prompt)
-    LaunchedEffect(uiState.busy, planExecutePending) {
-        if (planExecutePending && !uiState.busy) {
-            planExecutePending = false
-            repository.sendPrompt(planApprovedPrompt)
-        }
-    }
+    // v9.34 (owner): the v9.31-v9.33 app-side hand-off (flip mode, wait for
+    // the plan turn to end, send an "execute the plan" prompt) is GONE.
+    // Upstream's experimental plan mode continues the SAME turn as the build
+    // agent the moment the user answers plan_exit's question with Yes - the
+    // server does the hand-off, the app only mirrors the mode chip.
 
     // Diagnostics are collected off the main thread and handed down as plain lines:
     // no screen ever calls the collector itself.
@@ -951,7 +943,19 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             // Edge-to-edge: the Surface paints under the system bars; the content
             // pads by the safe-drawing insets (status bar, gesture bar, IME).
             Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
-            when (route) {
+            // v9.34 (owner: the auto-jump to the live preview "has no
+            // animation, it's not a smooth transition"). EVERY route change
+            // now crossfades - one finite 240ms tween, so the UI gates'
+            // waitForIdle still settles and the no-infinite-animation rule
+            // holds. The lambda switches on its own parameter: during the
+            // fade both screens are composed, and the outgoing one must keep
+            // rendering its OWN route, not the new value of `route`.
+            Crossfade(
+                targetState = route,
+                animationSpec = tween(durationMillis = 240),
+                label = "route_transition",
+            ) { screen ->
+            when (screen) {
                 ROUTE_WELCOME -> WelcomeScreen(
                     runtime = summary,
                     // Same decision as the automatic advance below: on a first run the
@@ -1138,6 +1142,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     // browser keeps working after leaving the pane; loopback
                     // only, one project folder, read-only.
                     onClosePreview = { previewOpen = false },
+                    // v9.34: back on the preview (web history exhausted) goes
+                    // to the screen the hand-off interrupted - the chat - and
+                    // leaves the preview itself openable from the Sandbox tab.
+                    onPreviewBack = { route = ROUTE_CHAT },
                     onOpenInBrowser = {
                         runCatching {
                             context.startActivity(
@@ -1426,7 +1434,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     availability = availability,
                     projectName = projectName,
                     githubProject = projectName in githubProjects,
-                    onPlanApproved = { planExecutePending = true },
                     onSend = { text -> repository.sendPrompt(text) },
                     onDraftChange = { text -> repository.setDraft(text) },
                     onStop = { repository.abort() },
@@ -1469,6 +1476,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onRemoveAttachment = { url -> repository.detach(url) },
                     onDismissBanner = { repository.clearBanner() },
                 )
+            }
             }
             }
         }

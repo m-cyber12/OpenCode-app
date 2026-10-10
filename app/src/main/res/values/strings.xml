@@ -584,18 +584,12 @@
     <string name="chat_mode_plan">Plan</string>
     <string name="chat_mode_build_body">Edits files and runs tools</string>
     <string name="chat_mode_plan_body">Plan first, edit nothing until you approve</string>
-    <!-- v9.31 (owner): the auto approve-bar is gone; the model asks for plan
-         approval itself through the question tool. The option label below is
-         the contract between the brief and the app: submitting an answer with
-         this exact label (case-insensitive) in Plan mode switches the agent to
-         Build, and the approved prompt is sent once the plan turn ends. -->
-    <string name="chat_plan_approve_option" translatable="false">Approve plan</string>
-    <!-- v9.33 (owner): the model receives the approval twice by construction -
-         once as the question answer (which unblocks its plan turn), once as this
-         prompt (which starts the build turn; a turn cannot start without a user
-         message). The prompt therefore names itself as the app's hand-off and
-         says it is the SAME approval, so the model never reads a contradiction. -->
-    <string name="chat_plan_approved_prompt">Automatic hand-off from the app: the user approved your plan by answering your question with \"Approve plan\" - this is that same approval, not a second one. You are now in build mode. Execute the approved plan exactly as written, step by step. If reality forces a deviation from the plan, stop and explain before continuing.</string>
+    <!-- v9.34 (owner: approval must not stop the model's work): the v9.31
+         "Approve plan" option label and the v9.33 hand-off prompt are gone.
+         Upstream's experimental plan mode owns the approval now - the plan
+         agent calls plan_exit, plan_exit asks the Yes/No question, and a Yes
+         continues the SAME turn as the build agent server-side. The app only
+         mirrors the mode chip (ChatScreen.isPlanExitQuestion). -->
     <string name="chat_model_empty">No starred model yet. Star models in Settings and they appear here.</string>
     <string name="chat_model_open_settings">Choose models in Settings</string>
 

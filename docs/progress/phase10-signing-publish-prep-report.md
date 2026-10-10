@@ -5163,3 +5163,132 @@ v9.12-v9.14: `.preview/capture.json` -> headless WebView -> project-root
 mirrored to `.preview/console.log`, every capture is a fresh load, and the
 brief's screenshots.md topic file teaches the protocol with read-once cost
 discipline.
+
+## B.55 v9.34 — plan approval continues the turn, stop-state fixes, brief privacy, preview back, tables (2026-10-10)
+
+Owner's device pass of v9.33 returned six items. All six are in this round.
+
+### 1. "Send answer" gets the gold outline (missed in v9.33)
+The v9.33 pass dressed Back/Next/Skip as gold OutlinedButtons but left Submit
+("Send answer") a TextButton - the owner's screenshot shows the bare label.
+Now it is the same OutlinedButton; the border follows the enabled state
+(gold when submittable, muted while empty) so a disabled submit does not
+shout in accent colour. (ChatComponents.kt, QuestionAsk.)
+
+### 2. Plan approval: the model sees the answer and KEEPS WORKING
+Owner: "when the user approves and taps send, the model should see the
+answer and continue its work - we don't need to stop it and send a prompt."
+The v9.33 hand-off (flip mode -> wait for turn end -> send an execution
+prompt) was exactly that stop, and the device screenshots show its cost: a
+visible synthetic user bubble, and models still emitting "Plan approved -
+ready to build" closing prose.
+
+Upstream recon at the pinned commit (anomalyco/opencode@05ea5073) before
+redesigning - every claim below is from the actual sources, fetched raw:
+- `agent/agent.ts`: the plan agent's edit permission is a hard `"*": deny`
+  (not ask - no permission.asked to auto-allow), BUT `plan_exit: allow`,
+  and edits to the plan file itself (`.opencode/plans/*.md` / the global
+  plans dir) are allowed.
+- `tool/plan.ts` (PlanExitTool): plan_exit ASKS THE APPROVAL QUESTION
+  ITSELF through the Question service (header "Build Agent", options
+  Yes/No), and on Yes appends a SYNTHETIC user message with agent=build:
+  "The plan at <path> has been approved... Execute the plan".
+- `session/prompt.ts` loop-exit condition: the loop only breaks when
+  `lastAssistant.parentID === lastUser.id`. plan_exit's synthetic user
+  message changes lastUser, so the loop DOES NOT exit - it continues in
+  the same busy turn, re-reading the agent from `lastUser.agent` = build.
+  Same turn, build permissions, no app involvement. Exactly the owner's ask.
+- `session/reminders.ts`: with the flag on, upstream injects the full plan
+  workflow prompt (plan-mode.txt: explore -> design -> write plan file ->
+  call plan_exit; "do NOT use question tool to ask 'is this plan okay' -
+  that's what plan_exit does") and a build-switch reminder after approval.
+- `tool/registry.ts`: plan_exit registers only when
+  `experimentalPlanMode && client === "cli"`. A full-tree grep at the
+  pinned commit shows flags.client is used for exactly three things:
+  the `x-opencode-client` request header, the question-tool allowlist
+  (cli qualifies), and this plan-tool gate - so switching OPENCODE_CLIENT
+  from "android" to "cli" changes nothing else.
+
+Shipped accordingly:
+- RuntimeEnv: `OPENCODE_CLIENT=cli` + `OPENCODE_EXPERIMENTAL_PLAN_MODE=true`
+  (question-tool flag kept as belt-and-braces).
+- The whole v9.31-v9.33 app-side machinery is DELETED: planExecutePending,
+  onPlanApproved, chat_plan_approved_prompt, chat_plan_approve_option.
+  ChatScreen's only remaining job is cosmetic: a Yes to plan_exit's own
+  question (recognised by isPlanExitQuestion - header "Build Agent" or the
+  pinned question text) flips the visible mode chip to Build so the USER's
+  next prompt also builds.
+- MessageRow hides synthetic user text parts and fully-synthetic user
+  messages: upstream's plan-mode reminder, build-switch note and the
+  "Execute the plan" hand-off are server-to-model plumbing, not the user
+  talking (upstream's own composer-refill treats synthetic the same way).
+- Brief rewrite: the plan paragraph now teaches plan_exit (write the plan
+  file, call plan_exit, never duplicate the approval through `question`,
+  continue IN THIS SAME TURN, no closing prose). Pins updated; word budget
+  647/665.
+Known contract pin: isPlanExitQuestion matches upstream's question text at
+the PINNED server commit; a server upgrade that rewords it degrades
+gracefully (approval still works server-side - only the chip mirror would
+lag until the user flips it).
+
+### 3. Stop key stuck + manual stop painted as failure
+Root cause found by reading, confirmed by the symptom's shape: `busy` is an
+OR of the transcript's live busy set and `sessionStatus[selected]?.busy` -
+and that second map was written ONLY by bootstrap `refresh()`. A snapshot
+taken while a turn ran said busy forever; `session.idle` cleared only the
+transcript flag, so Stop + "The agent is working" stuck until navigating
+away rebuilt the state. Fix: reconcileSessionStatus mirrors every live
+`session.status`/`session.idle` frame into that map (events are newer truth
+than any poll).
+Second half: tapping Stop rendered a red "This turn failed /
+MessageAbortedError" card. An abort is always something this side asked for
+(Stop, undo, an interrupting prompt), so TurnErrorCard now renders the
+ABORTED kind as the quiet gold "Stopped" note (availability_aborted strings)
+with the raw upstream name kept one tap away in the disclosure - honest,
+not alarming. Non-abort errors keep the red card unchanged.
+
+### 4. Brief reads hidden from the transcript
+The model reading `.../files/xdg/config/opencode/briefs/preview.md` showed
+as a read card on device. Briefs are the app's own instructions to the
+model; the card is plumbing. MessageRow now skips read-tool parts whose
+filePath sits under the XDG config dir (`/xdg/config/opencode/`), same
+pattern as the v9.32 todo-card skip. Model access unchanged.
+
+### 5. Live preview: smooth entry + browser-like back
+- Every route change (including the serve.json auto-jump into the preview)
+  now crossfades: one finite 240ms tween around AppRoot's route switch; the
+  lambda renders its own target so the outgoing screen stays itself during
+  the fade. No infinite animation introduced.
+- Back on the preview walks the WebView's own history first (a preview IS a
+  browser); only with no history left does it return to the chat - and the
+  preview stays openable from the Sandbox tab (previewOpen is not cleared).
+  Inner BackHandler in PreviewPane out-prioritises the route-level one.
+
+### 6. Markdown tables render as real tables
+The old TableBlock laid each row out as an independent Row - columns never
+lined up, and the result read as the cramped cut-off block in the owner's
+screenshot. Rewritten COLUMN-MAJOR: one Column per table column inside a
+horizontally scrollable Row; every cell is a single non-wrapping line, so
+rows share heights, each column is exactly as wide as its widest cell, and
+wide tables pan sideways instead of truncating. Ragged rows (missing
+trailing cells) render as empty cells instead of shifting the grid.
+
+### Tests & gates
+- U2: fixture gains a brief-read part; gate asserts no card/header/path.
+- U6: fixture gains a pipe table; gate asserts all four cells render and no
+  raw `|`/separator row survives as prose.
+- U10: plan fixture now upstream plan_exit's own question (Build Agent,
+  Yes/No); asserts Yes -> mode chip Build, answer submitted, and the old
+  approve-bar still absent. planApprovals/onPlanApproved removed.
+- RuntimeEnvTest pins OPENCODE_CLIENT=cli + OPENCODE_EXPERIMENTAL_PLAN_MODE.
+- EnvironmentBriefTest: pins `plan_exit`/same-turn/`start executing
+  immediately`; asserts "Approve plan" and "hand-off prompt" are GONE.
+- Gate count unchanged (20); no new infinite animations; brace balance and
+  brief pin simulation run clean locally (no JVM in this sandbox - compile
+  proof is the CI run recorded below).
+
+### Also noted
+Owner: "animation looks okay for now" - the v9.33 entrance tuning stands.
+
+CI evidence: recorded after the run on this commit (see GATES_SUMMARY in
+phase10-evidence for the run on this SHA).

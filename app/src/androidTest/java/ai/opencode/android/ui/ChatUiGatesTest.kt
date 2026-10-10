@@ -195,7 +195,6 @@ class ChatUiGatesTest {
     private var modelPicks = 0
     private val pickedModels = mutableListOf<String>()
     private val modePicks = mutableListOf<String>()
-    private var planApprovals = 0
     private val thinkingPicks = mutableListOf<String>()
     private var projectMoves = 0
     private val storageMessage = mutableStateOf("")
@@ -481,7 +480,6 @@ class ChatUiGatesTest {
             onPermissionReply = { id, response -> replies.add(id to response) },
             onQuestionSubmit = { id, answers -> questionAnswers.add(id to answers) },
             onQuestionSkip = { questionSkips.add(it) },
-            onPlanApproved = { planApprovals++ },
             onAttach = { attaches++ },
             onRemoveAttachment = { removedAttachments.add(it) },
             onDismissBanner = { dismissals++ },
@@ -977,7 +975,20 @@ class ChatUiGatesTest {
             input = todoInput,
             output = "",
         )
-        val assistant = message("msg_a1", "assistant", listOf(shell, edit, todo))
+        // v9.34 (owner): a read of the app's own brief files is internal
+        // plumbing - the card must not render at all.
+        val briefRead = toolPart(
+            id = "prt_brief",
+            messageID = "msg_a1",
+            tool = "read",
+            status = "completed",
+            title = "preview.md",
+            input = JSONObject()
+                .put("filePath", "/data/user/0/io.github.mcyber12.opencode/files/xdg/config/opencode/briefs/preview.md")
+                .toString(),
+            output = "# Preview & layout",
+        )
+        val assistant = message("msg_a1", "assistant", listOf(shell, edit, todo, briefRead))
         val failedTurn = message("msg_a2", "assistant", listOf(failed), error = null)
         renderChat(
             uiState(sessionView(messages = listOf(message("msg_u1", "user", listOf(textPart("p", "msg_u1", "list the project"))), assistant, failedTurn))),
@@ -1003,6 +1014,11 @@ class ChatUiGatesTest {
         val todoRows = !todoText.contains("Design the login screen") &&
             !todoText.contains("Wire up the form state") &&
             !todoText.contains("Add validation errors")
+        // v9.34: the brief-read card is skipped the same way - no card, no
+        // header, no path leaking into the transcript.
+        val briefHidden = !exists("$TAG_TOOL_CARD" + "_prt_brief") &&
+            !exists("$TAG_TOOL_HEADER" + "_prt_brief") &&
+            !todoText.contains("briefs/preview.md")
 
         rule.onNodeWithTag("$TAG_TOOL_HEADER" + "_prt_shell").performClick()
         rule.waitForIdle()
@@ -1039,7 +1055,7 @@ class ChatUiGatesTest {
         val ok = collapsedShell && collapsedEdit && headlineShell && headlineEdit && statusDone &&
             shellExpanded && outputShown && inputShown && exitShown && collapseLabel &&
             diffSummary && diffFile && diffBody && diagnostics && failedExpanded && failedStatus &&
-            todoCollapsed && todoRows && expandLabel.isNotEmpty()
+            todoCollapsed && todoRows && briefHidden && expandLabel.isNotEmpty()
         gate(
             "U2",
             ok,
@@ -1047,7 +1063,7 @@ class ChatUiGatesTest {
                 "expandedShowsOutput=$shellExpanded output=$outputShown input=$inputShown exit=$exitShown " +
                 "diff=$diffSummary/$diffFile/$diffBody diagnostics=$diagnostics " +
                 "failedCardOpen=$failedExpanded failedStatus=$failedStatus " +
-                "todoChecklist=$todoRows(collapsed=$todoCollapsed)",
+                "todoChecklist=$todoRows(collapsed=$todoCollapsed) briefHidden=$briefHidden",
         )
     }
 
@@ -1456,6 +1472,10 @@ class ChatUiGatesTest {
             append("- first bullet\n")
             append("- second bullet\n\n")
             append("> quoted line\n\n")
+            append("| Feature | Verdict |\n")
+            append("|---|---|\n")
+            append("| TablesAligned | ShipIt |\n")
+            append("| WideContent | PansSideways |\n\n")
             append("```kotlin\n")
             append("fun main() {\n")
             append("    val greeting = \"hello there\"\n")
@@ -1492,16 +1512,23 @@ class ChatUiGatesTest {
         // No markdown syntax may survive into the rendered text.
         val rendered = onScreenText()
         val noSyntaxLeak = !rendered.contains("**bold text**") && !rendered.contains("```kotlin")
+        // v9.34 (owner: comparison tables came out as a cramped block): the
+        // pipe table renders as real cells - every header and body cell
+        // readable, and no raw pipe/separator row surviving as prose.
+        val tableCells = countText("Feature") > 0 && countText("Verdict") > 0 &&
+            countText("TablesAligned") > 0 && countText("PansSideways") > 0
+        val tableNoLeak = !rendered.contains("|---|") && !rendered.contains("| Feature |")
 
         shot("16-chat-markdown.png")
         val ok = heading && bold && inlineCode && bullets && quote && codeBlocks >= 2 && codeBodies >= 2 &&
-            codeText && colors >= 3 && streamingAsCode && noSyntaxLeak
+            codeText && colors >= 3 && streamingAsCode && noSyntaxLeak && tableCells && tableNoLeak
         gate(
             "U6",
             ok,
             "heading=$heading boldWithWeight=$bold inlineCode=$inlineCode bullets=$bullets quote=$quote " +
                 "codeBlocks=$codeBlocks codeBodies=$codeBodies codeText=$codeText distinctColors=$colors " +
-                "unterminatedFenceIsCode=$streamingAsCode noSyntaxLeak=$noSyntaxLeak",
+                "unterminatedFenceIsCode=$streamingAsCode noSyntaxLeak=$noSyntaxLeak " +
+                "table=$tableCells/$tableNoLeak",
         )
     }
 
@@ -2073,23 +2100,25 @@ class ChatUiGatesTest {
         )
         val modeLabelled = onScreenText().contains(context.getString(R.string.chat_mode_plan))
         // v9.31 (owner): the OLD auto approve-bar fired after ANY completed
-        // plan-mode reply, even with no plan - it must stay gone. The plan
-        // confirmation is the MODEL's question-tool ask now: submitting an
-        // answer that carries the approve option (the pinned label) switches
-        // the agent to build and raises onPlanApproved - AppRoot sends the
-        // approved prompt once the plan turn ends.
+        // plan-mode reply, even with no plan - it must stay gone.
+        // v9.34 (owner): plan approval is upstream plan_exit's OWN question
+        // now (header "Build Agent", Yes/No). Answering Yes keeps the turn
+        // running server-side as the build agent; the app's whole remaining
+        // job is flipping the visible mode chip to Build - with NO hand-off
+        // prompt machinery behind it.
         val approveOffered = !exists("plan_ready_bar") && !exists("plan_approve")
-        val approveOption = context.getString(R.string.chat_plan_approve_option)
+        val approveOption = "Yes"
         val planQuestion = Transcript.Question(
             id = "que_plan1",
             sessionID = SES,
             items = listOf(
                 Transcript.QuestionItem(
-                    header = "Plan",
-                    question = "Proceed with this plan?",
+                    header = "Build Agent",
+                    question = "Plan at .opencode/plans/1-feature.md is complete. " +
+                        "Would you like to switch to the build agent and start implementing?",
                     options = listOf(
-                        Transcript.QuestionOption(approveOption, "switch to build and execute"),
-                        Transcript.QuestionOption("Revise", "change the plan first"),
+                        Transcript.QuestionOption(approveOption, "Switch to build agent and start implementing the plan"),
+                        Transcript.QuestionOption("No", "Stay with plan agent to continue refining the plan"),
                     ),
                     multiple = false,
                     custom = false,
@@ -2115,7 +2144,6 @@ class ChatUiGatesTest {
             AgentAvailability.READY,
         )
         rule.waitForIdle()
-        planApprovals = 0
         rule.onAllNodes(textMatcher(approveOption))[0].performClick()
         rule.waitForIdle()
         runCatching { rule.onNodeWithTag(TAG_QUESTION_SUBMIT).performScrollTo() }
@@ -2123,7 +2151,6 @@ class ChatUiGatesTest {
         rule.onNodeWithTag(TAG_QUESTION_SUBMIT).performClick()
         rule.waitForIdle()
         val approveWired = modePicks.lastOrNull() == OpenCodeRepository.AGENT_BUILD &&
-            planApprovals == 1 &&
             questionAnswers.any { it.first == "que_plan1" && it.second.any { a -> a.contains(approveOption) } }
         shot("30-mode-switch.png")
 

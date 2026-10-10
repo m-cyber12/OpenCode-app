@@ -246,38 +246,55 @@ private fun ListRow(item: MdBlock.ListItem, style: TextStyle, color: Color) {
 
 @Composable
 private fun TableBlock(table: MdBlock.Table, color: Color) {
+    // v9.34 (owner: a model's comparison table rendered as a cramped block cut
+    // off at the right edge). The old renderer laid every row out as an
+    // independent Row, so nothing lined up into columns. Now the table is
+    // built COLUMN-MAJOR: one Column composable per table column inside a
+    // horizontally scrollable Row. Every cell is a single non-wrapping line
+    // (inside the scroller width is unbounded, so softWrap could never help
+    // anyway) - which makes all rows the same height, keeps each column
+    // exactly as wide as its widest cell, and lines the grid up like a real
+    // table. Wide tables pan sideways instead of truncating.
     val bodyStyle = MaterialTheme.typography.bodySmall
+    val columns = table.header.size
+    if (columns == 0) return
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant,
         shape = MaterialTheme.shapes.small,
     ) {
-        Column(Modifier.padding(10.dp).horizontalScroll(rememberScrollState())) {
-            TableRow(table.header, bodyStyle, color, bold = true)
-            Spacer(Modifier.height(4.dp))
-            HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
-            Spacer(Modifier.height(4.dp))
-            for (row in table.rows) {
-                TableRow(row, bodyStyle, color, bold = false)
-                Spacer(Modifier.height(3.dp))
+        Row(Modifier.padding(10.dp).horizontalScroll(rememberScrollState())) {
+            for (col in 0 until columns) {
+                if (col > 0) Spacer(Modifier.width(16.dp))
+                Column {
+                    TableCell(cellAt(table.header, col), bodyStyle, color, bold = true)
+                    Spacer(Modifier.height(4.dp))
+                    HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                    Spacer(Modifier.height(4.dp))
+                    for (row in table.rows) {
+                        TableCell(cellAt(row, col), bodyStyle, color, bold = false)
+                        Spacer(Modifier.height(3.dp))
+                    }
+                }
             }
         }
     }
 }
 
+/** A ragged row (the model dropped a trailing pipe) still renders: missing cells are empty. */
+private fun cellAt(row: List<List<MdSpan>>, col: Int): String =
+    if (col < row.size) Markdown.plainText(row[col]) else ""
+
 @Composable
-private fun TableRow(cells: List<List<MdSpan>>, style: TextStyle, color: Color, bold: Boolean) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        for (cell in cells) {
-            val text = Markdown.plainText(cell)
-            Text(
-                text = text,
-                style = style,
-                color = color,
-                fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal,
-            )
-        }
-    }
+private fun TableCell(text: String, style: TextStyle, color: Color, bold: Boolean) {
+    Text(
+        text = text,
+        style = style,
+        color = color,
+        fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal,
+        maxLines = 1,
+        softWrap = false,
+    )
 }
 
 // ---- pure helpers (no composition) -----------------------------------------

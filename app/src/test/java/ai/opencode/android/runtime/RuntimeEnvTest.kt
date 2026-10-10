@@ -91,9 +91,14 @@ class RuntimeEnvTest {
         assertEquals("the-loopback-password", env["OPENCODE_SERVER_PASSWORD"])
         assertEquals(RuntimeEnv.SERVER_PORT.toString(), env["OPENCODE_SERVER_PORT"])
         assertEquals(LoopbackGuard.SERVER_BIND_HOSTNAME, env["OPENCODE_SERVER_HOSTNAME"])
-        assertEquals("android", env["OPENCODE_CLIENT"])
-        // v9.31: android is not in upstream's question-tool client allowlist,
-        // so the explicit enable flag must ALWAYS ride along.
+        // v9.34: plan approval rides upstream's experimental plan mode, whose
+        // plan_exit tool registers only for client "cli" (registry.ts at the
+        // pinned commit; flags.client otherwise only names the request header
+        // and the question-tool allowlist, where cli qualifies too).
+        assertEquals("cli", env["OPENCODE_CLIENT"])
+        assertEquals("true", env["OPENCODE_EXPERIMENTAL_PLAN_MODE"])
+        // v9.31: the explicit question-tool flag stays as a belt-and-braces
+        // pin even though client=cli already enables it.
         assertEquals("1", env["OPENCODE_ENABLE_QUESTION_TOOL"])
         assertEquals("arm64-v8a", env["OPENCODE_RUNTIME_ABI"])
 

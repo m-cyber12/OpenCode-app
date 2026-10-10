@@ -270,20 +270,21 @@ class EnvironmentBriefTest {
         assertTrue(main.contains("BY DESIGN"))
         assertTrue(main.contains("never a missing token"))
         assertTrue(main.contains("Create project > GitHub"))
-        // v9.31: the question tool is enabled for the android client (the
-        // env flag) and the brief must teach it by NAME - batched questions
-        // with options - plus the plan-approval contract: the option label
-        // the app watches for, and ending the turn so the app can execute.
+        // v9.31: the question tool is enabled (client allowlist + env flag)
+        // and the brief must teach it by NAME - batched questions with
+        // options.
         assertTrue(main.contains("`question` tool"))
         assertTrue(main.contains("ONE call"))
-        assertTrue(main.contains("Approve plan"))
-        assertTrue(main.contains("END YOUR TURN"))
-        // v9.33: the approval hand-off is ONE approval through two channels
-        // (the question answer unblocks the plan turn; the app's hand-off
-        // prompt starts the build turn) - the brief must say so and forbid
-        // the model's own "ready to build"/"switch modes" closing prose.
-        assertTrue(main.contains("hand-off prompt"))
-        assertTrue(main.contains("ONE approval, not two"))
+        // v9.34: plan approval is upstream plan_exit's own ask now (the
+        // experimental plan mode the app enables). The brief must name the
+        // tool, forbid a duplicate question-tool approval, and demand
+        // same-turn continuation with no closing prose - the v9.33 hand-off
+        // prompt and the "Approve plan" label are gone WITH the machinery.
+        assertTrue(main.contains("`plan_exit`"))
+        assertTrue(main.contains("SAME\nTURN") || main.contains("SAME TURN"))
+        assertTrue(main.contains("start executing immediately"))
+        assertFalse(main.contains("Approve plan"))
+        assertFalse(main.contains("hand-off prompt"))
         assertTrue(main.contains("closing prose"))
         assertTrue(main.contains("never print or commit it"))
         assertTrue(main.contains("BRIEF-SUGGESTIONS.md"))

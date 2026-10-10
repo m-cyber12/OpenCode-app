@@ -8,6 +8,7 @@ import ai.opencode.android.ui.common.ProjectTabs
 import ai.opencode.android.ui.markdown.MarkdownText
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
+import androidx.activity.compose.BackHandler
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -175,6 +176,13 @@ fun FilesScreen(
      */
     previewReload: Long = 0L,
     onClosePreview: () -> Unit = {},
+    /**
+     * v9.34 (owner): the hardware/gesture back key on the live preview must
+     * behave like a browser - previous web page first, and only once the
+     * pane's history is empty does it leave the preview (AppRoot returns to
+     * the chat, keeping the preview openable from the Sandbox tab).
+     */
+    onPreviewBack: () -> Unit = {},
     onOpenInBrowser: () -> Unit = {},
     /** The captured preview frame - AppRoot writes it into the project for the agent. */
     onCapturePreview: (android.graphics.Bitmap) -> Unit = {},
@@ -376,6 +384,7 @@ fun FilesScreen(
                     url = previewUrl,
                     reloadStamp = previewReload,
                     onClose = onClosePreview,
+                    onBack = onPreviewBack,
                     onOpenInBrowser = onOpenInBrowser,
                     onCapture = onCapturePreview,
                     onConsole = onConsolePreview,
@@ -739,6 +748,7 @@ private fun PreviewPane(
     url: String,
     reloadStamp: Long,
     onClose: () -> Unit,
+    onBack: () -> Unit,
     onOpenInBrowser: () -> Unit,
     onCapture: (android.graphics.Bitmap) -> Unit,
     onConsole: (String) -> Unit,
@@ -747,6 +757,15 @@ private fun PreviewPane(
     val latestCapture = rememberUpdatedState(onCapture)
     val latestConsole = rememberUpdatedState(onConsole)
     val webRef = remember { mutableStateOf<WebView?>(null) }
+    // v9.34 (owner: "back on the live preview closes it completely instead of
+    // the previous page"). A preview is a browser: back walks the WebView's
+    // own history first; only with nothing left to go back to does it leave
+    // the pane. This inner handler out-prioritises AppRoot's route-level one
+    // while the pane is composed.
+    BackHandler {
+        val web = webRef.value
+        if (web != null && web.canGoBack()) web.goBack() else onBack()
+    }
     // v9.16 (owner's third FocusList screenshot): REUSING one WebView was the
     // last bug standing. Chromium restores a history entry's scroll offset
     // ASYNCHRONOUSLY AFTER onPageFinished, overwriting the v9.15

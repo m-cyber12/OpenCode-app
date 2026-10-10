@@ -1,6 +1,7 @@
 package ai.opencode.android.ui.chat
 
 import ai.opencode.android.R
+import ai.opencode.android.client.AgentAvailability
 import ai.opencode.android.client.OpenCodeApi
 import ai.opencode.android.client.ToolKind
 import ai.opencode.android.client.ToolKinds
@@ -190,8 +191,15 @@ fun MessageRow(
     val chat = ChatTheme.chat
     val tag = "${TAG_MESSAGE}_${message.id}"
     if (message.role == "user") {
-        val text = message.parts.filter { it.type == "text" }.joinToString("\n") { it.text }
+        // v9.34: upstream's experimental plan mode appends SYNTHETIC text parts
+        // to user messages (the plan-mode workflow reminder, the build-switch
+        // note) and inserts a whole synthetic "Execute the plan" user message
+        // on plan_exit approval. Those are the server talking to the model,
+        // not the user talking - the bubble shows only what the user typed,
+        // and a message that was never typed at all renders nothing.
+        val text = message.parts.filter { it.type == "text" && !it.synthetic }.joinToString("\n") { it.text }
         val files = message.parts.filter { it.type == "file" }
+        if (text.isBlank() && files.isEmpty()) return
         Column(
             modifier = modifier.fillMaxWidth().semantics { testTag = tag },
             horizontalAlignment = Alignment.End,
@@ -295,6 +303,11 @@ fun MessageRow(
             // the working bar IS the task panel now, and the same list twice
             // (card in the transcript + panel above the composer) was noise.
             if (part.type == "tool" && ToolKinds.of(part.tool) == ToolKind.TODO) continue
+            // v9.34 (owner): the environment brief and its topic files are the
+            // app's own instructions to the model - a visible "read .../briefs/
+            // preview.md" card leaks plumbing the user never wrote. The model
+            // keeps full access; only the card is skipped.
+            if (isInternalConfigRead(part)) continue
             // v8 fix round: a freshly streamed part used to pop into place with
             // no transition at all - the owner called it jarring. Each part now
             // fades and settles in from slightly above, once, when it first
@@ -935,6 +948,36 @@ private fun Chevron(up: Boolean) {
 @Composable
 fun TurnErrorCard(error: Transcript.TurnError, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
+    // v9.34 (owner: tapping Stop painted a red "This turn failed /
+    // MessageAbortedError" card - "it was me who stopped it"). An abort is
+    // always something this side asked for (the Stop key, an undo, a new
+    // prompt interrupting), so it renders as a quiet gold "Stopped" note, not
+    // a failure. Honesty holds: the card still says the turn ended early, and
+    // the raw upstream name stays one tap away in the disclosure.
+    if (error.kind == AgentAvailability.ABORTED) {
+        val chat = ChatTheme.chat
+        Surface(
+            modifier = modifier.fillMaxWidth().semantics { testTag = TAG_TURN_ERROR },
+            color = chat.attentionContainer,
+            shape = MaterialTheme.shapes.medium,
+        ) {
+            Column(Modifier.padding(12.dp)) {
+                Text(
+                    text = stringResource(R.string.availability_aborted),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = chat.onAttentionContainer,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = stringResource(R.string.availability_aborted_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = chat.onAttentionContainer,
+                )
+                DetailDisclosure(listOf(error.name, error.message).filter { it.isNotEmpty() }.joinToString(": "))
+            }
+        }
+        return
+    }
     val raw = buildString {
         if (error.name.isNotEmpty()) append(error.name)
         if (error.name.isNotEmpty() && error.message.isNotEmpty()) append(": ")
@@ -1182,10 +1225,16 @@ fun QuestionAsk(
                         Text(stringResource(R.string.ask_question_next), style = MaterialTheme.typography.labelLarge)
                     }
                 } else {
-                    TextButton(
+                    // v9.34 (owner): "Send answer" was the one button missed in
+                    // the v9.33 outline pass - same gold dress as Back/Next/Skip.
+                    // The border follows the enabled state so a disabled submit
+                    // does not shout in accent gold.
+                    val canSubmit = answers.any { it.isNotEmpty() }
+                    OutlinedButton(
                         onClick = { onSubmit(question.id, answers) },
-                        enabled = answers.any { it.isNotEmpty() },
+                        enabled = canSubmit,
                         modifier = Modifier.height(48.dp).weight(1f).semantics { testTag = TAG_QUESTION_SUBMIT },
+                        border = BorderStroke(1.dp, if (canSubmit) chat.attention else chat.muted),
                     ) {
                         Text(stringResource(R.string.ask_question_submit), style = MaterialTheme.typography.labelLarge)
                     }
@@ -1404,6 +1453,19 @@ internal fun jsonField(json: String, key: String): String {
         i += 1
     }
     return sb.toString()
+}
+
+/**
+ * v9.34: a read-tool call aimed at the app's own config directory (the
+ * environment brief, the topic briefs). Those files are HOW the app talks to
+ * the model; a user never wrote them and their card is pure plumbing noise.
+ * The path is the one the device runtime actually uses -
+ * `<filesDir>/xdg/config/opencode/...` - matched on the stable XDG suffix.
+ */
+internal fun isInternalConfigRead(part: Transcript.Part): Boolean {
+    if (part.type != "tool" || part.tool != "read") return false
+    val path = jsonField(part.input, "filePath").ifBlank { jsonField(part.input, "path") }
+    return path.contains("/xdg/config/opencode/")
 }
 
 /** The first command/path-like value in a tool input document. */
