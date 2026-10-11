@@ -1223,7 +1223,11 @@ class ChatUiGatesTest {
         val overlayShown = exists("sandbox_preview") && exists("sandbox_preview_close") &&
             exists("sandbox_open_browser") && exists("sandbox_preview_reload")
         val portNamed = onScreenText().contains(":8080")
-        rule.onAllNodesWithTag("sandbox_preview_close")[0].performClick()
+        // The console behind the overlay carries the same tag; a touch at ITS
+        // bounds would land on the overlay's dim layer. Tap the TOPMOST node -
+        // the overlay header's close, exactly what a thumb hits.
+        val closeNodes = rule.onAllNodesWithTag("sandbox_preview_close")
+        closeNodes[closeNodes.fetchSemanticsNodes().size - 1].performClick()
         rule.waitForIdle()
         val overlayClosable = previewCloses == 1
         chatPreview.value = ai.opencode.android.ui.chat.PreviewUi()
