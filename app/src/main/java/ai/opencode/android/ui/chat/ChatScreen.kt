@@ -278,7 +278,12 @@ fun ChatScreen(
                     // Keep the last real bounds: the door and the live bar
                     // differ by a few dp, and the morph must never start from
                     // a zero rect on the frame the branch flips.
-                    if (it.size.height > 0) consoleSize = it.size
+                    if (it.size.height > 0) {
+                        consoleSize = androidx.compose.ui.geometry.Size(
+                            it.size.width.toFloat(),
+                            it.size.height.toFloat(),
+                        )
+                    }
                 }
                 .alpha(if (preview.phase == PreviewState.CLOSED) 1f else 0f),
         )

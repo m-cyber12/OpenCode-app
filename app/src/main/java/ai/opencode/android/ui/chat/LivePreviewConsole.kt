@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -20,7 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.BorderStroke
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
@@ -210,6 +211,8 @@ fun ChatPreviewOverlay(
 ) {
     val chat = ChatTheme.chat
     val density = LocalDensity.current
+    // Hoisted: semantics blocks are not composable scopes.
+    val reloadDesc = stringResource(R.string.sandbox_console_reload)
     val latestCapture = remember { mutableStateOf(onCapture) }
     latestCapture.value = onCapture
     val latestConsole = remember { mutableStateOf(onConsole) }
@@ -239,10 +242,10 @@ fun ChatPreviewOverlay(
     val cardCornerPx = with(density) { 16.dp.toPx() }
     val circleD = if (origin.height > 0f) origin.height else with(density) { 56.dp.toPx() }
     val circleRect = Rect(
-        left = origin.centerX - circleD / 2f,
-        top = origin.centerY - circleD / 2f,
-        right = origin.centerX + circleD / 2f,
-        bottom = origin.centerY + circleD / 2f,
+        left = origin.center.x - circleD / 2f,
+        top = origin.center.y - circleD / 2f,
+        right = origin.center.x + circleD / 2f,
+        bottom = origin.center.y + circleD / 2f,
     )
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -296,7 +299,7 @@ fun ChatPreviewOverlay(
                         onClick = onReload,
                         modifier = Modifier.semantics {
                             testTag = "sandbox_preview_reload"
-                            contentDescription = stringResource(R.string.sandbox_console_reload)
+                            contentDescription = reloadDesc
                         },
                     ) {
                         Icon(
