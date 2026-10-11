@@ -5376,3 +5376,35 @@ eight changes. All shipped in this section.
    no-infinite-animation rule and the compose test clock quiet; the gates
    switch it off via TypewriterConfig, pinned off in all three gate
    classes). Three lines of vertical air are reserved so nothing bounces.
+
+## B.57 — v9.35.4 owner corrections: console = TODO-container clone; the bar itself morphs (2026-10-11)
+
+Owner review of v9.35 ordered two corrections and confirmed one contract:
+
+1. **The console is a clone of the TODO panel's container.** Same Surface
+   recipe as BusyBar (toolContainer fill, 16dp radius, toolBorder stroke,
+   8dp elevation, 14/10dp padding), directly below the TODO panel, with the
+   server name (127.0.0.1:PORT) inside; a green live dot leads and a tap
+   re-opens the preview. The port door uses the same cloned container with
+   one clickable row per port.
+
+2. **The morph starts where the console sits.** ChatScreen measures the
+   console's bounds (onGloballyPositioned + positionInRoot delta against the
+   root box) and hands them to the overlay. The morph shape begins at exactly
+   those bounds: stage 1 collapses the rounded rectangle into a circle at ITS
+   OWN centre (colour blends container->gold, a ghost of the bar row folds
+   away), stage 2 expands that circle into the page; exit is the same
+   sequence in reverse. No separate circle ever appears mid-screen. The
+   phase machine gives the 460ms tween its window (500ms hops).
+
+3. **Closing the overlay no longer kills the preview.** It morphs back to
+   the LIVE console bar; the server stays open and the bar re-opens it.
+   "Reloaded" now lives inside the bar as a finite Crossfade; a server
+   restart or serve.json write while the bar is live flashes it and bumps
+   the reload stamp.
+
+U3 extended with consoleBarShown + barReopens. Owner language note,
+confirmed: ordinary `question` cards arrive in whatever language the model
+writes; the plan approval card is the bundled upstream server's fixed
+English ask, and its Yes/No are protocol values the server matches - they
+must stay verbatim, by design.

@@ -179,6 +179,7 @@ class ChatUiGatesTest {
     // these two states on ChatScreen.
     private val chatPreview = mutableStateOf(ai.opencode.android.ui.chat.PreviewUi())
     private val chatLivePorts = mutableStateOf(listOf<Int>())
+    private var previewShows = 0
     // The empty-chat typewriter's delay loop would keep the compose test
     // clock busy forever; the gates render the line fully typed instead.
     private val typewriterOff =
@@ -495,6 +496,7 @@ class ChatUiGatesTest {
             onOpenPreviewPort = { portOpens.add(it) },
             onPreviewClose = { previewCloses++ },
             onPreviewBrowser = { browserOpens++ },
+            onPreviewShow = { previewShows++ },
         )
     }
 
@@ -1230,6 +1232,22 @@ class ChatUiGatesTest {
         closeNodes[closeNodes.fetchSemanticsNodes().size - 1].performClick()
         rule.waitForIdle()
         val overlayClosable = previewCloses == 1
+        // v9.35.4 (owner): closing morphs back to the LIVE console - the
+        // cloned TODO container with the server name inside; tapping it
+        // re-opens the preview.
+        chatPreview.value = ai.opencode.android.ui.chat.PreviewUi(
+            phase = ai.opencode.android.ui.chat.PreviewState.CLOSED,
+            url = "http://127.0.0.1:8080/",
+            port = 8080,
+        )
+        renderChat(
+            uiState(sessionView(messages = emptyList(), busy = false), busy = false),
+            availability = AgentAvailability.READY,
+        )
+        val consoleBarShown = exists("sandbox_console_bar") && onScreenText().contains(":8080")
+        rule.onAllNodesWithTag("sandbox_console_bar")[0].performClick()
+        rule.waitForIdle()
+        val barReopens = previewShows == 1
         chatPreview.value = ai.opencode.android.ui.chat.PreviewUi()
         chatLivePorts.value = listOf(8080)
         renderChat(
@@ -1245,7 +1263,8 @@ class ChatUiGatesTest {
         shot("12-chat-asks.png")
         val ok = askShown && commandVerbatim && alwaysScope && kindLine && onceOk && alwaysOk && rejectOk &&
             questionShown && questionText && optionShown && inlineInTranscript && picked && answered && skipped &&
-            overlayShown && portNamed && overlayClosable && chatDoorShown && chatDoorWired
+            overlayShown && portNamed && overlayClosable && consoleBarShown && barReopens &&
+            chatDoorShown && chatDoorWired
         gate(
             "U3",
             ok,
@@ -1253,7 +1272,8 @@ class ChatUiGatesTest {
                 "once=$onceOk always=$alwaysOk reject=$rejectOk question=$questionShown " +
                 "questionText=$questionText optionShown=$optionShown inlineInTranscript=$inlineInTranscript " +
                 "optionClicked=$picked answered=$answered skipped=$skipped answersSeen=$questionAnswers " +
-                "preview=$overlayShown/$portNamed/$overlayClosable/$chatDoorShown/$chatDoorWired " +
+                "preview=$overlayShown/$portNamed/$overlayClosable/$consoleBarShown/$barReopens/" +
+                "$chatDoorShown/$chatDoorWired " +
                 "submitEnabledAtTap=$submitEnabled submitClicks=$submitClicks scrolledIntoView=$scrolledIntoView",
         )
     }

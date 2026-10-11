@@ -435,12 +435,14 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
 
     LaunchedEffect(previewPhase) {
         if (previewPhase == ai.opencode.android.ui.chat.PreviewState.OPENING) {
-            kotlinx.coroutines.delay(200)
+            // The overlay's morph tween runs 460ms; give it the full window.
+            kotlinx.coroutines.delay(500)
             previewPhase = ai.opencode.android.ui.chat.PreviewState.OPEN
         } else if (previewPhase == ai.opencode.android.ui.chat.PreviewState.CLOSING) {
-            kotlinx.coroutines.delay(200)
-            previewOpen = false
-            previewUrl = ""
+            kotlinx.coroutines.delay(500)
+            // v9.35.4 (owner): exit is the same morph in reverse and lands on
+            // the LIVE console - the server stays open; only the overlay
+            // closes. Tapping the bar opens it again.
             previewPhase = ai.opencode.android.ui.chat.PreviewState.CLOSED
         }
     }
@@ -472,16 +474,13 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         route = ROUTE_CHAT
     }
 
-    /** v9.35: the same sequence in reverse - page fades, circle shrinks. */
+    /** v9.35.4: the same sequence in reverse - the overlay morphs back into
+     *  the console bar; the preview session itself stays live. */
     fun closeChatPreview() {
         if (previewPhase == ai.opencode.android.ui.chat.PreviewState.OPEN ||
             previewPhase == ai.opencode.android.ui.chat.PreviewState.OPENING
         ) {
             previewPhase = ai.opencode.android.ui.chat.PreviewState.CLOSING
-        } else {
-            previewOpen = false
-            previewUrl = ""
-            previewPhase = ai.opencode.android.ui.chat.PreviewState.CLOSED
         }
     }
 
@@ -624,8 +623,13 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 val fresh = current - before
                 // Only once a project is actually open - a stray server on
                 // the loopback must never drag the onboarding into the chat.
-                if (fresh.isNotEmpty() && !previewOpen && projectName.isNotEmpty()) {
-                    if (autoOpenedOnce) {
+                if (fresh.isNotEmpty() && projectName.isNotEmpty()) {
+                    if (previewOpen) {
+                        previewReload = System.currentTimeMillis()
+                        if (previewPhase == ai.opencode.android.ui.chat.PreviewState.CLOSED) {
+                            flashReloaded()
+                        }
+                    } else if (autoOpenedOnce) {
                         flashReloaded()
                     } else {
                         openChatPreview(
@@ -669,6 +673,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 // the chat stays the chat, no more tab-grabbing.
                 if (previewOpen) {
                     previewReload = stamp
+                    // v9.35.4: the console bar is live but the overlay is
+                    // closed - acknowledge the fresh bytes with the flash.
+                    if (previewPhase == ai.opencode.android.ui.chat.PreviewState.CLOSED) {
+                        flashReloaded()
+                    }
                 } else if (autoOpenedOnce) {
                     flashReloaded()
                 } else if (declaredPort in 1..65535) {
@@ -1533,6 +1542,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     livePorts = livePorts,
                     onOpenPreviewPort = { port ->
                         openChatPreview("http://127.0.0.1:$port/", port, projectDir)
+                    },
+                    onPreviewShow = {
+                        if (previewUrl.isNotEmpty()) {
+                            openChatPreview(previewUrl, previewPort, previewProjectDir)
+                        }
                     },
                     onPreviewClose = { closeChatPreview() },
                     onPreviewReload = { previewReload = System.currentTimeMillis() },
