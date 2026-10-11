@@ -157,41 +157,13 @@ fun FilesScreen(
     onMoveProjects: () -> Unit,
     onBack: () -> Unit,
     /**
-     * v9.7 Sandbox: the live-preview state. Empty [previewUrl] = closed; a
-     * non-empty url (the app-owned loopback static server) replaces the
-     * listing with the rendered project. The screen stays a pure function of
-     * these - the server itself lives with AppRoot.
-     */
-    previewUrl: String = "",
-    /**
      * v9.9 (owner): the door only exists while something actually answers on
      * a loopback port. The app's PortScanner feeds this; empty = no door at
-     * all ("I don't want the Preview button to be visible all the time").
+     * all. v9.35 (owner): tapping a port now walks the user to the CHAT,
+     * where the preview console and the morph overlay live.
      */
     livePorts: List<Int> = emptyList(),
     onOpenPort: (Int) -> Unit = {},
-    /**
-     * v9.10: bumped by AppRoot when the agent re-writes serve.json for the
-     * SAME url - the pane must reload fresh bytes, not sit on its last frame.
-     */
-    previewReload: Long = 0L,
-    onClosePreview: () -> Unit = {},
-    /**
-     * v9.34 (owner): the hardware/gesture back key on the live preview must
-     * behave like a browser - previous web page first, and only once the
-     * pane's history is empty does it leave the preview (AppRoot returns to
-     * the chat, keeping the preview openable from the Sandbox tab).
-     */
-    onPreviewBack: () -> Unit = {},
-    onOpenInBrowser: () -> Unit = {},
-    /** The captured preview frame - AppRoot writes it into the project for the agent. */
-    onCapturePreview: (android.graphics.Bitmap) -> Unit = {},
-    /**
-     * v9.11: one line per page console message / load error - AppRoot mirrors
-     * them into the project (.preview/console.log) so the agent reads WHY a
-     * page misrendered instead of debugging a phantom from latest.png alone.
-     */
-    onConsolePreview: (String) -> Unit = {},
     /**
      * v7 redesign: when non-null, the Chat/Files/Changes/Terminal strip renders
      * under the bar and this callback handles a tab tap. Nullable so every
@@ -201,18 +173,12 @@ fun FilesScreen(
 ) {
     val chat = ChatTheme.chat
     val where = if (currentPath.isEmpty()) "/" else "/$currentPath"
-    // v9.10 (owner): the live preview owns the WHOLE screen. The half-pane
-    // squeezed under the storage card misrepresented the page (and the agent
-    // then read that misrepresentation back via latest.png) - so while the
-    // preview is open, the top bar, the location card and the door all yield.
-    val inPreview = previewUrl.isNotEmpty()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .semantics { testTag = "files_screen" },
     ) {
-        if (!inPreview) {
         AppTopBar(
             title = projectName,
             subtitle = stringResource(R.string.files_subtitle) + where,
@@ -317,7 +283,7 @@ fun FilesScreen(
         // server is actually answering on the loopback - the agent opening
         // any watched port is what makes the button appear. One row per live
         // port; no port, no door.
-        if (previewUrl.isEmpty() && openFile == null && livePorts.isNotEmpty()) {
+        if (openFile == null && livePorts.isNotEmpty()) {
             val chat = ChatTheme.chat
             val openLabel = stringResource(R.string.sandbox_preview_open)
             Surface(
@@ -373,23 +339,12 @@ fun FilesScreen(
             }
         }
 
-        } // end !inPreview: bar, location card and door yield to the preview
-
         // Either one file is open, or the folder is listed - never both, so the
-        // screen has exactly one scrollable region at a time.
+        // screen has exactly one scrollable region at a time. v9.35: the
+        // preview pane itself moved into the chat screen.
         val file = openFile
         Box(Modifier.fillMaxWidth().weight(1f)) {
-            if (previewUrl.isNotEmpty()) {
-                PreviewPane(
-                    url = previewUrl,
-                    reloadStamp = previewReload,
-                    onClose = onClosePreview,
-                    onBack = onPreviewBack,
-                    onOpenInBrowser = onOpenInBrowser,
-                    onCapture = onCapturePreview,
-                    onConsole = onConsolePreview,
-                )
-            } else if (file != null) {
+            if (file != null) {
                 FileViewer(
                     file = file,
                     projectPath = projectPath,
@@ -732,286 +687,4 @@ private fun storageExplanation(
         },
     )
     StorageMode.INTERNAL -> stringResource(R.string.files_location_internal)
-}
-
-/**
- * v9.7 Sandbox: the live preview - the project rendered from the app's own
- * loopback static server (a real http origin, so pages behave exactly as they
- * would deployed). One header row: back, the url, Browser (the same url in
- * the phone's browser - loopback is reachable device-wide) and Snapshot,
- * which hands the current frame to AppRoot to store inside the project so
- * the agent can read what the user is seeing. Page loads also snapshot
- * themselves once settled - the "agent eyes" the owner asked for.
- */
-@Composable
-private fun PreviewPane(
-    url: String,
-    reloadStamp: Long,
-    onClose: () -> Unit,
-    onBack: () -> Unit,
-    onOpenInBrowser: () -> Unit,
-    onCapture: (android.graphics.Bitmap) -> Unit,
-    onConsole: (String) -> Unit,
-) {
-    val chat = ChatTheme.chat
-    val latestCapture = rememberUpdatedState(onCapture)
-    val latestConsole = rememberUpdatedState(onConsole)
-    val webRef = remember { mutableStateOf<WebView?>(null) }
-    // v9.34 (owner: "back on the live preview closes it completely instead of
-    // the previous page"). A preview is a browser: back walks the WebView's
-    // own history first; only with nothing left to go back to does it leave
-    // the pane. This inner handler out-prioritises AppRoot's route-level one
-    // while the pane is composed.
-    BackHandler {
-        val web = webRef.value
-        if (web != null && web.canGoBack()) web.goBack() else onBack()
-    }
-    // v9.16 (owner's third FocusList screenshot): REUSING one WebView was the
-    // last bug standing. Chromium restores a history entry's scroll offset
-    // ASYNCHRONOUSLY AFTER onPageFinished, overwriting the v9.15
-    // scrollTo(0,0); reload() keeps scroll by design. The headless capture
-    // was correct on the same device/engine/settings every single time for
-    // one reason only: its WebView is born fresh per capture. So the pane
-    // now gets the same semantics - key(url, reloadStamp) below tears the
-    // WebView down and builds a virgin one per agent handoff/reload. No
-    // history, nothing to restore, loads start at the top like a new tab.
-    fun snap(web: WebView?) {
-        val w = web ?: return
-        if (w.width > 0 && w.height > 0) {
-            val bmp = android.graphics.Bitmap.createBitmap(w.width, w.height, android.graphics.Bitmap.Config.ARGB_8888)
-            w.draw(android.graphics.Canvas(bmp))
-            latestCapture.value(bmp)
-        }
-    }
-    // v9.17 (owner: "we need a real change, a real debug"): the geometry the
-    // page ACTUALLY rendered against, shown IN the pane - every screenshot of
-    // a wrong layout now carries its own diagnosis. Reset per load.
-    val paneInfo = remember(url, reloadStamp) { mutableStateOf("") }
-    Column(Modifier.fillMaxSize()) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(
-                onClick = onClose,
-                modifier = Modifier.semantics { testTag = "sandbox_preview_close" },
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.sandbox_preview_close),
-                )
-            }
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.sandbox_preview_title),
-                    style = MaterialTheme.typography.titleSmall,
-                    maxLines = 1,
-                )
-                Text(
-                    text = url,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = chat.muted,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            TextButton(
-                onClick = onOpenInBrowser,
-                modifier = Modifier.semantics { testTag = "sandbox_open_browser" },
-            ) {
-                Text(stringResource(R.string.sandbox_open_browser))
-            }
-            // v9.8 (owner): NO user-facing snapshot - seeing the page is the
-            // AGENT'S capability. Every settled page load self-captures into
-            // the project (.preview/latest.png) silently; the button is gone.
-        }
-        // v9.18: ALWAYS composed, from the first frame - in v9.17 this strip
-        // appeared only after the page loaded, which RESIZED the WebView
-        // mid-render and fed the exact bug it was built to diagnose.
-        // Constant one-line height; only the text changes.
-        Text(
-            text = paneInfo.value.ifEmpty { "viewport: measuring..." },
-            style = MaterialTheme.typography.labelSmall,
-            color = chat.muted,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 12.dp),
-        )
-        Surface(
-            color = MaterialTheme.colorScheme.surface,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .padding(horizontal = 8.dp, vertical = 4.dp)
-                .semantics { testTag = "sandbox_preview" },
-        ) {
-            key(url, reloadStamp) {
-            AndroidView(
-                factory = { ctx ->
-                    // v9.18 (owner: "search for html viewer and rewrite"):
-                    // two community-documented WebView-in-Compose defects
-                    // match the device evidence (layout numbers correct,
-                    // paint at the wrong place):
-                    //   1. WebView is inherently UNCLIPPED - it draws
-                    //      outside its own bounds as a direct Compose child
-                    //      (stackoverflow 79547984).
-                    //   2. WebView is an AbsoluteLayout descendant that
-                    //      resolves its geometry "too late" without a real
-                    //      ViewGroup parent (kotlinlang #compose-android).
-                    // The rewrite: a plain FrameLayout host - the
-                    // conventional hierarchy every production WebView sits
-                    // in - which clips children by default, plus
-                    // clipToBounds() on the Compose side.
-                    val web = WebView(ctx).apply {
-                        settings.javaScriptEnabled = true
-                        settings.domStorageEnabled = true
-                        // v9.10 (owner's "still no clock" spiral): a dev
-                        // preview must NEVER serve yesterday's bytes. The
-                        // agent edits files between loads; the http cache
-                        // showed a stale page, the auto-snapshot wrote that
-                        // stale page into latest.png, and the agent debugged
-                        // a phantom. Fresh network fetch, always.
-                        settings.cacheMode = WebSettings.LOAD_NO_CACHE
-                        // v9.12 (owner: clock centred in Chrome, top-anchored
-                        // in the pane): the wide-viewport/overview emulation
-                        // distorts CSS viewport units in an embedded WebView.
-                        // Off - the layout viewport IS the pane, which is what
-                        // a page with a proper <meta viewport> gets in Chrome;
-                        // the brief now tells the agent to always include that
-                        // meta, so pane and Chrome agree.
-                        settings.useWideViewPort = false
-                        settings.loadWithOverviewMode = false
-                        // v9.11: Chrome does NOT run the legacy TEXT_AUTOSIZING
-                        // re-layout; a live-app preview must not either - it
-                        // rescales and reflows modern pages into something the
-                        // real browser never shows. Chrome-default layout.
-                        settings.layoutAlgorithm = WebSettings.LayoutAlgorithm.NORMAL
-                        settings.builtInZoomControls = true
-                        settings.displayZoomControls = false
-                        settings.mediaPlaybackRequiresUserGesture = false
-                        // v9.11 (owner's clock page: every JS-generated element
-                        // missing in the pane while Chrome renders them all):
-                        // stop guessing WHY a page misbehaves - mirror the
-                        // page's own console and load errors out to AppRoot,
-                        // which stores them in the project for the agent.
-                        webChromeClient = object : android.webkit.WebChromeClient() {
-                            override fun onConsoleMessage(msg: android.webkit.ConsoleMessage): Boolean {
-                                runCatching {
-                                    latestConsole.value(
-                                        "${msg.messageLevel()} ${msg.sourceId()}:${msg.lineNumber()} ${msg.message()}",
-                                    )
-                                }
-                                return true
-                            }
-                        }
-                        webViewClient = object : WebViewClient() {
-                            override fun onPageFinished(view: WebView, finished: String?) {
-                                // v9.13: name the engine - a rendering gap vs
-                                // Chrome often means an outdated WebView provider.
-                                val engine = runCatching {
-                                    WebView.getCurrentWebViewPackage()?.let { "${it.packageName} ${it.versionName}" }
-                                }.getOrNull() ?: "unknown"
-                                runCatching { latestConsole.value("LOADED ${finished ?: ""} [webview: $engine]") }
-                                // v9.15 (FocusList run): WebView preserves the
-                                // scroll offset across reloads and link hops -
-                                // the pane looked "broken" because it showed an
-                                // OLD scroll position of a correct page (the
-                                // headless capture of the same URL was perfect).
-                                // A fresh load starts at the top, like Chrome.
-                                runCatching { view.scrollTo(0, 0) }
-                                // ...and the geometry stops being a guess: one
-                                // line of real numbers per load, next to LOADED.
-                                val viewportJs =
-                                    "innerWidth+'x'+innerHeight+' dpr='+devicePixelRatio+" +
-                                        "' page='+document.documentElement.scrollHeight+' scrollY='+scrollY"
-                                runCatching {
-                                    view.evaluateJavascript(viewportJs) { v ->
-                                        runCatching {
-                                            val line = "VIEWPORT " + (v ?: "?").trim('"')
-                                            latestConsole.value(line)
-                                            paneInfo.value = "$line | view=${view.width}x${view.height}px"
-                                        }
-                                    }
-                                }
-                                // One deferred self-snapshot per load: the page
-                                // settles, the frame lands in the project, the
-                                // agent can read what is on screen. Finite by
-                                // construction - a single delayed runnable.
-                                // v9.17: re-measure the settled geometry too -
-                                // if it DRIFTED since load, that drift is the bug.
-                                view.postDelayed({
-                                    runCatching {
-                                        view.evaluateJavascript(viewportJs) { v ->
-                                            runCatching {
-                                                val line = "VIEWPORT(settled) " + (v ?: "?").trim('"')
-                                                latestConsole.value(line)
-                                                paneInfo.value = "$line | view=${view.width}x${view.height}px"
-                                            }
-                                        }
-                                    }
-                                    runCatching { snap(view) }
-                                }, 600)
-                            }
-
-                            override fun onReceivedError(
-                                view: WebView,
-                                request: android.webkit.WebResourceRequest,
-                                error: android.webkit.WebResourceError,
-                            ) {
-                                runCatching {
-                                    latestConsole.value(
-                                        "LOAD_ERROR ${request.url} code=${error.errorCode} ${error.description}",
-                                    )
-                                }
-                            }
-                        }
-                        webRef.value = this
-                        // v9.17: the LAST difference to the always-correct
-                        // headless engine was load ORDER. Headless sizes the
-                        // WebView BEFORE loadUrl; v9.16 loaded here at 0x0,
-                        // unattached - Chromium laid the page out against
-                        // provisional geometry and the real size arrived
-                        // underneath it (owner's screenshot: clipped title,
-                        // inflated gaps = a layout against wrong viewport
-                        // numbers, not a scroll). The single load now fires
-                        // only when the view has its real, attached,
-                        // non-zero size - identical ordering to headless.
-                        var loadedOnce = false
-                        addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
-                            if (!loadedOnce && v.width > 0 && v.height > 0) {
-                                loadedOnce = true
-                                (v as WebView).loadUrl(url)
-                            }
-                        }
-                        // No white flash over the themed Surface while the
-                        // first frame arrives (kotlinlang #compose-android).
-                        setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                    }
-                    android.widget.FrameLayout(ctx).apply {
-                        clipChildren = true
-                        clipToPadding = true
-                        addView(
-                            web,
-                            android.widget.FrameLayout.LayoutParams(
-                                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                            ),
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxSize().clipToBounds(),
-                // The instances this key block created die with the block -
-                // the next handoff/reload gets a WebView with no history at
-                // all. onRelease hands back exactly the discarded host, so a
-                // freshly created successor is never touched.
-                onRelease = { host ->
-                    val w = host.getChildAt(0) as? WebView
-                    runCatching { host.removeAllViews() }
-                    runCatching { w?.destroy() }
-                    if (webRef.value === w) webRef.value = null
-                },
-            )
-            }
-        }
-    }
 }

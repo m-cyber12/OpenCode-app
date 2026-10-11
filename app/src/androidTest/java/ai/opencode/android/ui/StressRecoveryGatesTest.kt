@@ -66,6 +66,10 @@ class StressRecoveryGatesTest {
     val rule = createAndroidComposeRule<MainActivity>()
 
     private val context: Context = ApplicationProvider.getApplicationContext()
+    // v9.35: the empty-chat typewriter's delay loop must not run under the
+    // compose test clock - render the line fully typed instead.
+    private val typewriterOff =
+        ai.opencode.android.ui.chat.TypewriterConfig.also { it.animate = false }
     private val probe = P8ServerProbe(context)
 
     /** Provider id for this run: "openrouter" by default, "google" (Gemini)

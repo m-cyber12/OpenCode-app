@@ -281,6 +281,11 @@ class EnvironmentBriefTest {
         // same-turn continuation with no closing prose - the v9.33 hand-off
         // prompt and the "Approve plan" label are gone WITH the machinery.
         assertTrue(main.contains("`plan_exit`"))
+        // v9.35 (owner): the plan is presented IN THE CHAT - the plan file is
+        // plumbing the user never reads, and no other file appears unless the
+        // user asked for one.
+        assertTrue(main.contains("post the FULL plan in the chat"))
+        assertTrue(main.contains("no extra files unless asked"))
         assertTrue(main.contains("SAME\nTURN") || main.contains("SAME TURN"))
         assertTrue(main.contains("start executing immediately"))
         assertFalse(main.contains("Approve plan"))

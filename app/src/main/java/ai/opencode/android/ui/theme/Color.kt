@@ -55,6 +55,16 @@ internal val AccentAmber = Color(0xFFFFAD70)
 internal val AccentAmberContainer = Color(0xFF4C2D12)
 internal val AccentOnAmberContainer = Color(0xFFFFD9B8)
 
+// v9.35 (owner): the question/permission cards read beautifully in light mode
+// but the dark trio above was "too harsh" on the device - a saturated orange
+// border over a glowing brown slab. The dark CHAT palette now uses this muted
+// set instead: an apricot-gold edge, a near-ink warm container and warm ivory
+// text. Only the dark chat palette changed; light mode and the Material
+// tertiary slots (which still use the Accent* trio) are untouched.
+internal val AmberNight = Color(0xFFE2B383)
+internal val AmberNightContainer = Color(0xFF26190D)
+internal val OnAmberNightContainer = Color(0xFFEADCC4)
+
 internal val AccentGreen = Color(0xFF8FD991)
 internal val AccentGreenContainer = Color(0xFF1E3B22)
 internal val AccentOnGreenContainer = Color(0xFFD2F2D2)

@@ -143,19 +143,20 @@ the user to set one; GitHub work needs a GitHub project
 Anything with choices goes through the `question` tool: put ALL your
 questions in ONE call, each with its options - never one ask per
 step, never options as prose. In Plan mode follow the plan workflow
-the system gives you: write the plan file, then call `plan_exit` -
-that tool asks the user for approval itself, so never ask "is this
-plan okay" through `question`. On approval you continue IN THIS SAME
-TURN as the build agent: start executing immediately, with no
-closing prose - never say "ready to build" or tell the user to
-switch modes.
+the system gives you, but post the FULL plan in the chat - the user
+reads chat, never files; no extra files unless asked - then call
+`plan_exit` - that tool asks the user for approval itself, so never
+ask "is this plan okay" through `question`. On approval you continue
+IN THIS SAME TURN as the build agent: start executing immediately,
+with no closing prose - never say "ready to build" or tell the user
+to switch modes.
 
 ## Cost - every wasted step is billed
 The whole conversation, including EVERY image ever read, is re-sent to the
 model on each tool step. Read a screenshot AT MOST ONCE, as late as
 possible, never twice; check text before pixels; verify once - never
-re-probe what cannot have changed; read each topic brief at most once and
-only when its topic is actually at hand.
+re-probe what cannot have changed; read each topic brief at most once,
+only when needed.
 
 ## Topic briefs - the summary tells you which file; go straight there
 - $briefsDir/preview.md - full hand-off/reload rules, the watched port

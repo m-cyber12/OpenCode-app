@@ -143,13 +143,13 @@ def build(root):
             # hamburger. Its own rectangle in the header gap between the project
             # affordance (ends at x=400) and the menu (starts at x=820).
             node("open_providers", text="Providers", desc="Providers", bounds="[440,120][800,220]"),
-            text_node("Start a conversation", "[40,300][1040,380]"),
+            node("chat_empty_headline", text="Let's build something great.", bounds="[40,300][1040,380]"),
             # v7: the project tab strip (v8: + Files, since the header icon is
             # gone). Distinct rectangles (hit() takes the FIRST node whose bounds
             # contain a tap, so tabs must never overlap).
             node("project_tab_chat", text="Chat", desc="Chat", bounds="[40,390][260,470]"),
             node("project_tab_files", text="Files", desc="Files", bounds="[280,390][500,470]"),
-            node("project_tab_changes", text="Changes", desc="Changes", bounds="[520,390][740,470]"),
+            node("project_tab_changes", text="Diff", desc="Diff", bounds="[520,390][740,470]"),
             node("project_tab_terminal", text="Terminal", desc="Terminal", bounds="[760,390][1000,470]"),
             node("composer_attach", text="Attach a file", bounds="[40,1700][300,1780]"),
             node("composer_input", text="Message the agent", bounds="[320,1690][820,1790]",
@@ -330,7 +330,7 @@ def build(root):
     # stage asserts on a phone before any turn has run.
     screens_changes = screen("changes", [
         node("changes_screen", text="", bounds="[0,0][1080,1920]", clickable="false"),
-        text_node("Changes", "[40,120][400,200]"),
+        text_node("Diff", "[40,120][400,200]"),
         node("project_tab_chat", text="Chat", desc="Chat", bounds="[40,390][280,470]"),
         node("project_tab_terminal", text="Terminal", desc="Terminal", bounds="[640,390][1000,470]"),
         text_node("No file changes yet", "[40,600][1040,680]"),
@@ -339,7 +339,7 @@ def build(root):
         node("terminal_screen", text="", bounds="[0,0][1080,1920]", clickable="false"),
         text_node("Terminal", "[40,120][400,200]"),
         node("project_tab_chat", text="Chat", desc="Chat", bounds="[40,390][280,470]"),
-        node("project_tab_changes", text="Changes", desc="Changes", bounds="[300,390][620,470]"),
+        node("project_tab_changes", text="Diff", desc="Diff", bounds="[300,390][620,470]"),
         text_node("Nothing has run yet", "[40,600][1040,680]"),
     ])
 

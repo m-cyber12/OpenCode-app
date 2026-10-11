@@ -331,7 +331,7 @@ set_swipe_geometry() {
 # screen.
 NEEDLE_WELCOME='welcome_screen|welcome_continue|Continue|Settings and diagnostics'
 NEEDLE_PROJECTS='projects_screen|project_list|project_name_input|project_create|New project|Create project|Create New Project|Project name'
-NEEDLE_CHAT='chat_screen|composer_input|composer_send|Start a conversation|Message the agent'
+NEEDLE_CHAT='chat_screen|composer_input|composer_send|chat_empty_headline|Message the agent'
 NEEDLE_FILES='files_screen|files_list|files_location|Where these files are|files_storage_mode'
 # v4 item 4: the first-run workspace step. It is what a first run now reaches
 # instead of the project list, so the driver has to know it by name and by copy.
@@ -657,7 +657,7 @@ return_to_conversation() { # bounded: press BACK until a conversation surface is
   local i
   for i in 1 2 3; do
     ui_dump "return-to-chat-$i" >/dev/null 2>&1
-    if ui_has_any "chat_screen" "composer_input" "Start a conversation" "Message the agent"; then
+    if ui_has_any "chat_screen" "composer_input" "chat_empty_headline" "Message the agent"; then
       [ "$i" = 1 ] || log "return_to_conversation: back on the conversation surface after $i BACK presses"
       return 0
     fi
@@ -665,7 +665,7 @@ return_to_conversation() { # bounded: press BACK until a conversation surface is
     sleep 1
   done
   ui_dump "return-to-chat-final" >/dev/null 2>&1
-  if ui_has_any "chat_screen" "composer_input" "Start a conversation" "Message the agent"; then
+  if ui_has_any "chat_screen" "composer_input" "chat_empty_headline" "Message the agent"; then
     return 0
   fi
   diag "return_to_conversation: the conversation was not reachable after 3 BACK presses (see ui/ui-leave-settings-final.xml)"
@@ -1178,7 +1178,7 @@ if wait_for "app-window" "$NEEDLE_WELCOME|OpenCode" "$(tmo 300)"; then
         FIRST_RUN_MODE="workspace-step"
       elif ui_has_any "project_name_input" "New project" "Create project"; then
         FIRST_RUN_MODE="fresh-projects"
-      elif ui_has_any "chat_screen" "composer_input" "model_quick_switch" "Start a conversation"; then
+      elif ui_has_any "chat_screen" "composer_input" "model_quick_switch" "chat_empty_headline"; then
         FIRST_RUN_MODE="returning"
       elif ui_has "Projects" && ui_has "New conversation"; then
         FIRST_RUN_MODE="returning"
@@ -1438,7 +1438,7 @@ fi
 # themselves, so the walk works before any turn has run.
 step "R5t v7: the Changes and Terminal tabs on the conversation"
 if [ "$FIRST_RUN_OK" = 1 ] && ui_has "project_tab_changes"; then
-  if tap_any "project_tab_changes" "Changes"; then
+  if tap_any "project_tab_changes" "Diff"; then
     sleep 1
     if wait_for "changes-surface" "changes_screen|No file changes yet" "$(tmo 90)"; then
       shot "changes-surface" || true

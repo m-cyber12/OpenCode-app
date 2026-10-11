@@ -411,8 +411,78 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // v9.10: bumped on every serve.json write so the pane reloads fresh bytes
     // even when the url stays the same (the agent edited the page in place).
     var previewReload by remember { mutableStateOf(0L) }
+    // v9.35 (owner): the preview lives in the CHAT now - a console under the
+    // TODO panel plus a full-screen morph overlay (circle -> page -> circle).
+    // The phase machine: CLOSED -> OPENING -> OPEN -> CLOSING -> CLOSED, each
+    // hop a finite ~200ms tween window owned by the LaunchedEffect below.
+    var previewPhase by remember {
+        mutableStateOf(ai.opencode.android.ui.chat.PreviewState.CLOSED)
+    }
+    var previewPort by remember { mutableStateOf(0) }
+    var reloadedFlash by remember { mutableStateOf(false) }
+    // "the preview should open automatically only the first time a port is
+    // opened" - persisted, so an app RELOAD never grabs the screen again; the
+    // console shows the animated "Reloaded" chip instead.
+    var autoOpenedOnce by remember {
+        mutableStateOf(
+            context.getSharedPreferences("opencode", 0)
+                .getBoolean("preview_auto_opened", false),
+        )
+    }
     DisposableEffect(Unit) {
         onDispose { previewServer?.stop() }
+    }
+
+    LaunchedEffect(previewPhase) {
+        if (previewPhase == ai.opencode.android.ui.chat.PreviewState.OPENING) {
+            kotlinx.coroutines.delay(200)
+            previewPhase = ai.opencode.android.ui.chat.PreviewState.OPEN
+        } else if (previewPhase == ai.opencode.android.ui.chat.PreviewState.CLOSING) {
+            kotlinx.coroutines.delay(200)
+            previewOpen = false
+            previewUrl = ""
+            previewPhase = ai.opencode.android.ui.chat.PreviewState.CLOSED
+        }
+    }
+
+    fun flashReloaded() {
+        reloadedFlash = true
+        scope.launch {
+            kotlinx.coroutines.delay(1600)
+            reloadedFlash = false
+        }
+    }
+
+    /** v9.35: open the chat preview with the circle-to-page morph. */
+    fun openChatPreview(url: String, port: Int, dir: File?) {
+        previewUrl = url
+        previewPort = port
+        if (dir != null) previewProjectDir = dir
+        previewOpen = true
+        if (!autoOpenedOnce) {
+            autoOpenedOnce = true
+            context.getSharedPreferences("opencode", 0).edit()
+                .putBoolean("preview_auto_opened", true).apply()
+        }
+        previewPhase = if (previewPhase == ai.opencode.android.ui.chat.PreviewState.CLOSED) {
+            ai.opencode.android.ui.chat.PreviewState.OPENING
+        } else {
+            ai.opencode.android.ui.chat.PreviewState.OPEN
+        }
+        route = ROUTE_CHAT
+    }
+
+    /** v9.35: the same sequence in reverse - page fades, circle shrinks. */
+    fun closeChatPreview() {
+        if (previewPhase == ai.opencode.android.ui.chat.PreviewState.OPEN ||
+            previewPhase == ai.opencode.android.ui.chat.PreviewState.OPENING
+        ) {
+            previewPhase = ai.opencode.android.ui.chat.PreviewState.CLOSING
+        } else {
+            previewOpen = false
+            previewUrl = ""
+            previewPhase = ai.opencode.android.ui.chat.PreviewState.CLOSED
+        }
     }
 
     /**
@@ -451,9 +521,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             val server = ensureServerFor(dir)
             if (server != null) {
                 val cleanPath = if (startPath.startsWith("/")) startPath else "/$startPath"
-                previewUrl = "http://127.0.0.1:${server.port}$cleanPath"
-                previewProjectDir = dir
-                previewOpen = true
+                // v9.35: the app's static server opens through the same chat
+                // morph as the agent's own server.
+                openChatPreview("http://127.0.0.1:${server.port}$cleanPath", server.port, dir)
             } else {
                 storageMessage = context.getString(R.string.sandbox_preview_failed)
             }
@@ -539,8 +609,34 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     var livePorts by remember { mutableStateOf(listOf<Int>()) }
     LaunchedEffect(Unit) {
         val scanner = ai.opencode.android.preview.PortScanner()
+        var seen: Set<Int>? = null
         while (true) {
             livePorts = withContext(Dispatchers.IO) { scanner.scan() }
+            // v9.35 (owner): the preview auto-opens ONLY on the first port
+            // open of the app's life (persisted flag). Every later NEW port -
+            // a server start, or an app reload finding one already up - must
+            // not grab the screen: the console flashes "Reloaded" instead.
+            val current = livePorts.toSet()
+            val before = seen
+            if (before == null) {
+                if (current.isNotEmpty() && !previewOpen && autoOpenedOnce) flashReloaded()
+            } else {
+                val fresh = current - before
+                // Only once a project is actually open - a stray server on
+                // the loopback must never drag the onboarding into the chat.
+                if (fresh.isNotEmpty() && !previewOpen && projectName.isNotEmpty()) {
+                    if (autoOpenedOnce) {
+                        flashReloaded()
+                    } else {
+                        openChatPreview(
+                            "http://127.0.0.1:${fresh.first()}/",
+                            fresh.first(),
+                            null,
+                        )
+                    }
+                }
+            }
+            seen = current
             kotlinx.coroutines.delay(2500)
         }
     }
@@ -566,18 +662,26 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 val declaredPort = declared?.optInt("port", 0) ?: 0
                 val requested = (declared?.optString("path", "/") ?: "/").ifEmpty { "/" }
                 val cleanPath = if (requested.startsWith("/")) requested else "/$requested"
-                if (declaredPort in 1..65535) {
-                    // The agent runs its own server - just point the pane at it.
-                    previewUrl = "http://127.0.0.1:$declaredPort$cleanPath"
-                    previewProjectDir = dir
-                    previewOpen = true
+                // v9.35 (owner): a NEW serve.json write opens the preview only
+                // while it has never been opened (the one auto-open); an
+                // already-open preview just reloads fresh bytes; afterwards a
+                // closed preview answers the write with the "Reloaded" chip -
+                // the chat stays the chat, no more tab-grabbing.
+                if (previewOpen) {
+                    previewReload = stamp
+                } else if (autoOpenedOnce) {
+                    flashReloaded()
+                } else if (declaredPort in 1..65535) {
+                    openChatPreview(
+                        "http://127.0.0.1:$declaredPort$cleanPath",
+                        declaredPort,
+                        dir,
+                    )
+                    previewReload = stamp
                 } else {
                     openPreviewFor(dir, cleanPath)
+                    previewReload = stamp
                 }
-                // Same url or not: the write says the content is new - the
-                // marker's mtime is a ready-made monotonic reload stamp.
-                previewReload = stamp
-                route = ROUTE_FILES
             }
         }
     }
@@ -1127,76 +1231,17 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 )
 
                 ROUTE_FILES -> FilesScreen(
-                    previewUrl = if (previewOpen) previewUrl else "",
-                    previewReload = previewReload,
+                    // v9.35 (owner): the preview itself moved into the chat
+                    // screen (console under the TODO panel + morph overlay);
+                    // the Sandbox keeps the port door, and opening it now
+                    // walks the user to the chat where the preview lives.
                     livePorts = livePorts,
-                    // v9.9: the door lists what is actually listening; opening
-                    // it is just pointing the pane at that port - the server
-                    // (the agent's own, or the app's static one) already runs.
                     onOpenPort = { port ->
-                        previewUrl = "http://127.0.0.1:$port/"
-                        previewProjectDir = projectDir
-                        previewOpen = true
-                    },
-                    // The server stays up while the app lives so the phone's
-                    // browser keeps working after leaving the pane; loopback
-                    // only, one project folder, read-only.
-                    onClosePreview = { previewOpen = false },
-                    // v9.34: back on the preview (web history exhausted) goes
-                    // to the screen the hand-off interrupted - the chat - and
-                    // leaves the preview itself openable from the Sandbox tab.
-                    onPreviewBack = { route = ROUTE_CHAT },
-                    onOpenInBrowser = {
-                        runCatching {
-                            context.startActivity(
-                                android.content.Intent(
-                                    android.content.Intent.ACTION_VIEW,
-                                    android.net.Uri.parse(previewUrl),
-                                ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
-                            )
-                        }
-                    },
-                    onCapturePreview = { bitmap ->
-                        val dir = projectDir
-                        if (dir != null) {
-                            scope.launch {
-                                val outcome = withContext(Dispatchers.IO) {
-                                    runCatching {
-                                        val folder = File(dir, ".preview")
-                                        folder.mkdirs()
-                                        File(folder, "latest.png").outputStream().use { out ->
-                                            bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 90, out)
-                                        }
-                                    }
-                                }
-                                // Silent on purpose (v9.8): the snapshot is the
-                                // AGENT'S eye, not a user event - no banner spam
-                                // on every page load.
-                                outcome.getOrNull()
-                            }
-                        }
-                    },
-                    // v9.11: the preview's own console, mirrored into the
-                    // project. latest.png shows WHAT rendered; console.log
-                    // says WHY it did not - one SyntaxError kills a whole
-                    // script, and until now nobody could see it.
-                    onConsolePreview = { line ->
-                        val dir = previewProjectDir ?: projectDir
-                        if (dir != null) {
-                            scope.launch {
-                                withContext(Dispatchers.IO) {
-                                    runCatching {
-                                        val folder = File(dir, ".preview")
-                                        folder.mkdirs()
-                                        val log = File(folder, "console.log")
-                                        // Rolling: a chatty page must not grow a
-                                        // file forever. 64 KB cap, then restart.
-                                        if (log.length() > 64_000) log.writeText("")
-                                        log.appendText(line + "\n")
-                                    }
-                                }
-                            }
-                        }
+                        openChatPreview(
+                            "http://127.0.0.1:$port/",
+                            port,
+                            projectDir,
+                        )
                     },
                     onSelectTab = { tab -> route = routeForTab(tab) },
                     projectName = projectName.ifEmpty { stringResource(R.string.projects_title) },
@@ -1475,6 +1520,67 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onAttach = { picker.launch(ANY_CONTENT) },
                     onRemoveAttachment = { url -> repository.detach(url) },
                     onDismissBanner = { repository.clearBanner() },
+                    // v9.35 (owner): the live preview is a chat surface now -
+                    // the console sits under the TODO panel and the overlay
+                    // morphs circle -> page over the conversation.
+                    preview = ai.opencode.android.ui.chat.PreviewUi(
+                        phase = previewPhase,
+                        url = previewUrl,
+                        port = previewPort,
+                        reloadStamp = previewReload,
+                        reloadedFlash = reloadedFlash,
+                    ),
+                    livePorts = livePorts,
+                    onOpenPreviewPort = { port ->
+                        openChatPreview("http://127.0.0.1:$port/", port, projectDir)
+                    },
+                    onPreviewClose = { closeChatPreview() },
+                    onPreviewReload = { previewReload = System.currentTimeMillis() },
+                    onPreviewBrowser = {
+                        runCatching {
+                            context.startActivity(
+                                android.content.Intent(
+                                    android.content.Intent.ACTION_VIEW,
+                                    android.net.Uri.parse(previewUrl),
+                                ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+                            )
+                        }
+                    },
+                    onPreviewCapture = { bitmap ->
+                        val dir = projectDir
+                        if (dir != null) {
+                            scope.launch {
+                                val outcome = withContext(Dispatchers.IO) {
+                                    runCatching {
+                                        val folder = File(dir, ".preview")
+                                        folder.mkdirs()
+                                        File(folder, "latest.png").outputStream().use { out ->
+                                            bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 90, out)
+                                        }
+                                    }
+                                }
+                                // Silent on purpose (v9.8): the snapshot is the
+                                // AGENT'S eye, not a user event.
+                                outcome.getOrNull()
+                            }
+                        }
+                    },
+                    onPreviewConsole = { line ->
+                        val dir = previewProjectDir ?: projectDir
+                        if (dir != null) {
+                            scope.launch {
+                                withContext(Dispatchers.IO) {
+                                    runCatching {
+                                        val folder = File(dir, ".preview")
+                                        folder.mkdirs()
+                                        val log = File(folder, "console.log")
+                                        if (log.length() > 64_000) log.writeText("")
+                                        log.appendText(line + "\n")
+                                    }
+                                }
+                            }
+                        }
+                    },
                 )
             }
             }

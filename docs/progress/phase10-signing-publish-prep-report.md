@@ -5292,3 +5292,87 @@ Owner: "animation looks okay for now" - the v9.33 entrance tuning stands.
 
 CI evidence: recorded after the run on this commit (see GATES_SUMMARY in
 phase10-evidence for the run on this SHA).
+
+## B.56 — v9.35 device-pass round: preview console in chat, Diff page, dark-mode questions, living empty state (2026-10-11)
+
+Owner device pass on v9.34 confirmed tables, stop behaviour, Send answer and
+the plan flow ("the plan has also become really impressive"), then ordered
+eight changes. All shipped in this section.
+
+1. **Plan in the chat, not in a file.** The brief now tells the plan agent:
+   "post the FULL plan in the chat - the user reads chat, never files; no
+   extra files unless asked", then `plan_exit`. Word budget re-checked:
+   main brief 658 words (< 665). The upstream plan file remains plumbing.
+   Additionally the plan_exit question card no longer leaks the internal
+   plan path ("Plan at data/user/0/.../plans/....md is complete." seen on
+   device): `questionDisplayText` rewrites exactly that leading sentence to
+   "The plan is ready." for display (server contract untouched). U10 now
+   asserts the path never renders and the friendly line does; new JVM pin
+   in EmptyChatCopyTest.
+
+2. **Live preview rebuilt as a chat surface.** The Sandbox pane is gone.
+   ChatScreen gains a console card DIRECTLY below the TODO panel
+   (LivePreviewConsole): while a preview is live it names the port
+   ("Live preview · :PORT"), shows the url and Reload/Close/Browser; while
+   closed it is the port door (same v9.9 gating: no live port, no door; one
+   row per port, tap walks to the chat preview). The preview itself is a
+   full-screen overlay over the whole chat (header and tabs included) with
+   the owner's morph: console -> small circle badge scales up -> circle
+   expands into the rendered page; exit plays the same sequence in reverse
+   (page fades, circle returns and shrinks). Implemented as two layers with
+   FINITE enter/exit tweens (AnimatedVisibility + scaleIn/scaleOut, 140-200
+   ms), driven by a CLOSED/OPENING/OPEN/CLOSING phase machine in AppRoot -
+   no infinite animation, compose-test safe. WebView recipe carried over
+   (no cache, console mirror to .preview/console.log, one deferred
+   self-snapshot per load, back key walks web history first).
+   **Auto-open rule (owner):** the preview opens automatically ONLY on the
+   first port open of the app's life (persisted preference
+   `preview_auto_opened`); every later new port - server start, app reload
+   finding a server up, new serve.json write - shows an animated
+   "Reloaded" chip in the console instead and leaves the user on the chat.
+   An already-open preview still reloads fresh bytes on serve.json writes.
+   U3 now drives the chat preview (overlay tags, port visible on the
+   console, close wired, door wired); U9 keeps the Sandbox door and drops
+   the pane assertions.
+
+3. **Changes renamed to Diff.** `project_tab_changes` and `changes_title`
+   now read "Diff".
+
+4. **New-file rows in Diff show their lines.** A `write` tool call carries
+   no server diff for a brand-new file, so the row framed "+0 -0" around
+   nothing (device evidence: Stage 23/24/26 writes all +0 -0). WorkLog now
+   synthesizes the honest diff when the server gave none: every line of the
+   write's `content` input is an addition (`@@ -0,0 +1,N @@` + lines).
+   Server-provided diffs still win; `edit` without metadata is never
+   synthesized. JVM-pinned in WorkLogDiffTest.
+
+5. **Dark-mode question colors softened.** The dark chat palette's
+   attention trio (saturated #FFAD70 edge over a glowing #4C2D12 slab -
+   "too harsh" on device) is replaced by AmberNight #E2B383 /
+   AmberNightContainer #26190D / OnAmberNightContainer #EADCC4. Light mode
+   untouched; Material tertiary slots keep the old Accent trio so the
+   identity tile and gold accents are unchanged.
+
+6. **Sandbox top copy reviewed.** "Where these files are" -> "Your project,
+   on your device"; the public/chosen explanations now lead with what the
+   sandbox IS (the live project folder, exactly what is on disk) instead of
+   repeating the file-manager list; internal-storage line no longer offers
+   the long-gone project export.
+
+7. **Empty chat: 30 daily headlines.** "Start a conversation" is gone. The
+   headline is one of the owner's 30 messages verbatim (EmptyChatCopy.
+   HEADLINES), picked by epoch day - stable all day, rotating daily
+   (headlineFor pinned by EmptyChatCopyTest). The 90-driver needles and
+   fixtures now use the `chat_empty_headline` tag (selfcheck PASS).
+
+8. **Typewriter subtitle + tip carousel.** In the FIRST chat of a freshly
+   created project (sessions <= 1) the polished subtitle types in character
+   by character, holds 15 s ONCE FULLY TYPED, deletes itself; then - and
+   immediately in every later chat - 30 short tips about the app and the
+   craft type in, hold 7.5 s fully displayed, delete, next (starting index
+   rotates with the day). Type/delete time does NOT count against the hold
+   (owner's explicit timing rule). Implemented as a delay-driven coroutine
+   mutating a string (NOT a Compose animation - keeps the repo-wide
+   no-infinite-animation rule and the compose test clock quiet; the gates
+   switch it off via TypewriterConfig, pinned off in all three gate
+   classes). Three lines of vertical air are reserved so nothing bounces.

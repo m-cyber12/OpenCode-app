@@ -179,6 +179,19 @@ fun ChatScreen(
     onAttach: () -> Unit,
     onRemoveAttachment: (String) -> Unit,
     onDismissBanner: () -> Unit,
+    /**
+     * v9.35 (owner): the live preview moved into the chat - a console card
+     * directly below the TODO panel (port visible, Reload/Close, the door
+     * while closed) and a full-screen morph overlay above everything.
+     */
+    preview: PreviewUi = PreviewUi(),
+    livePorts: List<Int> = emptyList(),
+    onOpenPreviewPort: (Int) -> Unit = {},
+    onPreviewClose: () -> Unit = {},
+    onPreviewReload: () -> Unit = {},
+    onPreviewBrowser: () -> Unit = {},
+    onPreviewCapture: (android.graphics.Bitmap) -> Unit = {},
+    onPreviewConsole: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     now: Long = System.currentTimeMillis(),
     listState: LazyListState = rememberLazyListState(),
@@ -189,7 +202,9 @@ fun ChatScreen(
     val projectLabel = projectName.ifEmpty { stringResource(R.string.projects_title) }
     val projectsDescription = stringResource(R.string.chat_open_projects)
 
-    Column(
+    // v9.35: root is a Box now - the conversation column underneath, the
+    // preview morph overlay on top of EVERYTHING (header, tabs included).
+    Box(
         modifier = modifier
             .fillMaxSize()
             // v9: the whole conversation floats over true black that settles
@@ -199,6 +214,7 @@ fun ChatScreen(
             .background(goldenBackdrop())
             .semantics { testTag = "chat_screen" },
     ) {
+    Column(Modifier.fillMaxSize()) {
         // v9 premium pass, after the Gemini reference: ONE header row - the
         // hamburger leads, the model capsule sits beside it, the status orb
         // holds the far right. The project/session identity moved INSIDE the
@@ -229,6 +245,18 @@ fun ChatScreen(
 
         StatusArea(state = state, runtime = runtime, availability = availability, onDismissBanner = onDismissBanner)
 
+        // v9.35 (owner): the preview console sits DIRECTLY below the TODO
+        // panel - the port is named on it, and it is the door while nothing
+        // is live. The "Reloaded" flash animates here too.
+        LivePreviewConsole(
+            preview = preview,
+            livePorts = livePorts,
+            onOpenPort = onOpenPreviewPort,
+            onReload = onPreviewReload,
+            onClose = onPreviewClose,
+            onBrowser = onPreviewBrowser,
+        )
+
         // v9.32 (owner): questions render INLINE in the chat - a small card at
         // the tail of the transcript, right below whatever the agent just said.
         // For a plan that means directly below the plan text, so the user can
@@ -247,6 +275,9 @@ fun ChatScreen(
         val pendingQuestion = state.pendingQuestions.firstOrNull()
         TranscriptPane(
             messages = messages,
+            // v9.35 (owner): the typed subtitle belongs ONLY to the first chat
+            // of a freshly created project - later chats go straight to tips.
+            firstChatOfProject = state.sessions.size <= 1,
             busy = state.busy,
             now = now,
             listState = listState,
@@ -299,6 +330,18 @@ fun ChatScreen(
                 }
             },
         )
+    }
+    // v9.35: the morph overlay composes last, above the whole column.
+    if (preview.phase != PreviewState.CLOSED) {
+        ChatPreviewOverlay(
+            preview = preview,
+            onClose = onPreviewClose,
+            onBrowser = onPreviewBrowser,
+            onReload = onPreviewReload,
+            onCapture = onPreviewCapture,
+            onConsole = onPreviewConsole,
+        )
+    }
     }
 }
 
@@ -1063,12 +1106,98 @@ internal fun isPlanExitQuestion(question: Transcript.Question): Boolean =
 // ---- transcript ------------------------------------------------------------
 
 /**
+ * Test seam for the empty-state typewriter: the deterministic UI gates flip
+ * [animate] off so the line renders fully and instantly (a character-by-
+ * character coroutine would leave the on-screen text mid-word at assert
+ * time). The real app never touches this.
+ */
+object TypewriterConfig {
+    @Volatile
+    var animate: Boolean = true
+}
+
+/**
+ * v9.35 (owner): the line under the empty-chat headline is ALIVE now.
+ *
+ *  * First chat of a freshly created project: the polished subtitle types in
+ *    character by character, stays for 15 seconds ONCE FULLY TYPED (the
+ *    typing and deleting time does not count against the hold - the owner
+ *    was explicit), then deletes itself the same way.
+ *  * Then - and immediately, in every later chat - the tip carousel: one of
+ *    the 30 short tips types in, holds for 7.5 seconds fully displayed,
+ *    deletes, and the next one follows. The day picks where the carousel
+ *    starts so it does not always open on tip one.
+ *
+ * Deliberately NOT a Compose animation API: a plain coroutine mutating a
+ * string state. The repo-wide static check forbids new infinite animations
+ * (rememberInfiniteTransition and friends spin the test clock forever); a
+ * delay-driven loop never touches the animation clock, and the gates switch
+ * it off entirely via [TypewriterConfig].
+ */
+@Composable
+private fun EmptyChatTypewriter(firstChat: Boolean) {
+    val animate = TypewriterConfig.animate
+    var text by remember {
+        mutableStateOf(if (animate) "" else EmptyChatCopy.SUBTITLE)
+    }
+    var caret by remember { mutableStateOf(false) }
+    if (animate) {
+        LaunchedEffect(firstChat) {
+            val typeMs = 26L
+            val wipeMs = 13L
+            suspend fun type(line: String) {
+                caret = true
+                for (i in 1..line.length) {
+                    text = line.substring(0, i)
+                    delay(typeMs)
+                }
+                caret = false
+            }
+            suspend fun wipe() {
+                caret = true
+                while (text.isNotEmpty()) {
+                    text = text.dropLast(1)
+                    delay(wipeMs)
+                }
+                caret = false
+            }
+            if (firstChat) {
+                type(EmptyChatCopy.SUBTITLE)
+                delay(15_000L) // fully-visible hold; type/delete time excluded
+                wipe()
+                delay(400L)
+            }
+            var index = (java.time.LocalDate.now().toEpochDay() % EmptyChatCopy.TIPS.size).toInt()
+            while (true) {
+                type(EmptyChatCopy.TIPS[index])
+                delay(7_500L) // fully-visible hold per tip
+                wipe()
+                delay(400L)
+                index = (index + 1) % EmptyChatCopy.TIPS.size
+            }
+        }
+    }
+    Text(
+        text = if (caret) text + "\u258D" else text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = ChatTheme.chat.muted,
+        textAlign = TextAlign.Center,
+        // Three lines of air reserved up front, so the glyph and headline do
+        // not bounce while the line grows and shrinks underneath them.
+        modifier = Modifier
+            .heightIn(min = 60.dp)
+            .semantics { testTag = "chat_empty_hint" },
+    )
+}
+
+/**
  * The scrolling transcript, with pin-to-bottom while streaming and a "N new"
  * affordance once the user has scrolled away.
  */
 @Composable
 private fun TranscriptPane(
     messages: List<Transcript.Message>,
+    firstChatOfProject: Boolean,
     busy: Boolean,
     now: Long,
     listState: LazyListState,
@@ -1080,8 +1209,6 @@ private fun TranscriptPane(
     onQuestionSkip: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val emptyTitle = stringResource(R.string.chat_empty_title)
-    val emptyBody = stringResource(R.string.chat_empty_body)
     val jumpLabel = stringResource(R.string.chat_jump_to_latest)
 
     val scope = rememberCoroutineScope()
@@ -1168,10 +1295,13 @@ private fun TranscriptPane(
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             if (messages.isEmpty()) {
-                // v9.1: an intentional idle state - a golden glyph and the two
-                // lines, centred in the viewport - instead of copy stranded at
-                // the top of a dark void. Same strings as before (the driver
-                // reads the title as a chat needle).
+                // v9.1: an intentional idle state - a golden glyph and copy
+                // centred in the viewport. v9.35 (owner): the headline is one
+                // of the owner's 30 messages, rotating once per day, and under
+                // it a typewriter line - the polished subtitle in a brand-new
+                // project's first chat (held 15s once fully typed), then the
+                // tip carousel. The driver never depended on this copy: it
+                // navigates by the `chat_screen`/`composer_input` tags.
                 item(key = "empty") {
                     Box(
                         modifier = Modifier.fillParentMaxHeight(0.68f).fillMaxWidth(),
@@ -1196,18 +1326,16 @@ private fun TranscriptPane(
                             }
                             Spacer(Modifier.height(16.dp))
                             Text(
-                                text = emptyTitle,
+                                text = EmptyChatCopy.headlineFor(
+                                    remember { java.time.LocalDate.now().toEpochDay() },
+                                ),
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 textAlign = TextAlign.Center,
+                                modifier = Modifier.semantics { testTag = "chat_empty_headline" },
                             )
                             Spacer(Modifier.height(8.dp))
-                            Text(
-                                text = emptyBody,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = ChatTheme.chat.muted,
-                                textAlign = TextAlign.Center,
-                            )
+                            EmptyChatTypewriter(firstChat = firstChatOfProject)
                         }
                     }
                 }

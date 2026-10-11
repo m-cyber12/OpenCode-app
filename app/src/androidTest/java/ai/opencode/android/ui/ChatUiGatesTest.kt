@@ -175,7 +175,14 @@ class ChatUiGatesTest {
     private var previewCloses = 0
     private var browserOpens = 0
     private val capturedFrames = mutableListOf<Pair<Int, Int>>()
-    private val filesPreviewUrl = mutableStateOf("")
+    // v9.35: the preview is a CHAT surface now - the gates drive it through
+    // these two states on ChatScreen.
+    private val chatPreview = mutableStateOf(ai.opencode.android.ui.chat.PreviewUi())
+    private val chatLivePorts = mutableStateOf(listOf<Int>())
+    // The empty-chat typewriter's delay loop would keep the compose test
+    // clock busy forever; the gates render the line fully typed instead.
+    private val typewriterOff =
+        ai.opencode.android.ui.chat.TypewriterConfig.also { it.animate = false }
     private val filesLivePorts = mutableStateOf(listOf<Int>())
     private var workspacePicks = 0
     private var workspaceUse = 0
@@ -483,6 +490,11 @@ class ChatUiGatesTest {
             onAttach = { attaches++ },
             onRemoveAttachment = { removedAttachments.add(it) },
             onDismissBanner = { dismissals++ },
+            preview = chatPreview.value,
+            livePorts = chatLivePorts.value,
+            onOpenPreviewPort = { portOpens.add(it) },
+            onPreviewClose = { previewCloses++ },
+            onPreviewBrowser = { browserOpens++ },
         )
     }
 
@@ -590,12 +602,8 @@ class ChatUiGatesTest {
             onRequestAllFilesAccess = { allFilesRequests++ },
             onMoveProjects = { projectMoves++ },
             onBack = { filesBack++ },
-            previewUrl = filesPreviewUrl.value,
             livePorts = filesLivePorts.value,
             onOpenPort = { portOpens.add(it) },
-            onClosePreview = { previewCloses++ },
-            onOpenInBrowser = { browserOpens++ },
-            onCapturePreview = { capturedFrames.add(it.width to it.height) },
         )
     }
 
@@ -605,14 +613,12 @@ class ChatUiGatesTest {
         open: OpenFile? = null,
         loading: Boolean = false,
         error: String = "",
-        previewUrl: String = "",
         livePorts: List<Int> = emptyList(),
     ) {
         filesPath.value = path
         filesNodes.clear()
         filesNodes.addAll(nodes)
         filesOpen.value = open
-        filesPreviewUrl.value = previewUrl
         filesLivePorts.value = livePorts
         filesLoading.value = loading
         filesError.value = error
@@ -1201,9 +1207,41 @@ class ChatUiGatesTest {
         rule.waitForIdle()
         val skipped = questionSkips.contains("que_gate1")
 
+        // v9.35 (owner): the live preview is a chat surface now - a console
+        // directly below the TODO panel (the port is named on it) and a full-
+        // screen morph overlay over the conversation. Closed, the console is
+        // the port door.
+        chatPreview.value = ai.opencode.android.ui.chat.PreviewUi(
+            phase = ai.opencode.android.ui.chat.PreviewState.OPEN,
+            url = "http://127.0.0.1:8080/",
+            port = 8080,
+        )
+        renderChat(
+            uiState(sessionView(messages = emptyList(), busy = false), busy = false),
+            availability = AgentAvailability.READY,
+        )
+        val overlayShown = exists("sandbox_preview") && exists("sandbox_preview_close") &&
+            exists("sandbox_open_browser") && exists("sandbox_preview_reload")
+        val portNamed = onScreenText().contains(":8080")
+        rule.onAllNodesWithTag("sandbox_preview_close")[0].performClick()
+        rule.waitForIdle()
+        val overlayClosable = previewCloses == 1
+        chatPreview.value = ai.opencode.android.ui.chat.PreviewUi()
+        chatLivePorts.value = listOf(8080)
+        renderChat(
+            uiState(sessionView(messages = emptyList(), busy = false), busy = false),
+            availability = AgentAvailability.READY,
+        )
+        val chatDoorShown = exists("sandbox_preview_open") && exists("sandbox_port_8080")
+        rule.onAllNodesWithTag("sandbox_port_8080")[0].performClick()
+        rule.waitForIdle()
+        val chatDoorWired = portOpens == listOf(8080)
+        chatLivePorts.value = emptyList()
+
         shot("12-chat-asks.png")
         val ok = askShown && commandVerbatim && alwaysScope && kindLine && onceOk && alwaysOk && rejectOk &&
-            questionShown && questionText && optionShown && inlineInTranscript && picked && answered && skipped
+            questionShown && questionText && optionShown && inlineInTranscript && picked && answered && skipped &&
+            overlayShown && portNamed && overlayClosable && chatDoorShown && chatDoorWired
         gate(
             "U3",
             ok,
@@ -1211,6 +1249,7 @@ class ChatUiGatesTest {
                 "once=$onceOk always=$alwaysOk reject=$rejectOk question=$questionShown " +
                 "questionText=$questionText optionShown=$optionShown inlineInTranscript=$inlineInTranscript " +
                 "optionClicked=$picked answered=$answered skipped=$skipped answersSeen=$questionAnswers " +
+                "preview=$overlayShown/$portNamed/$overlayClosable/$chatDoorShown/$chatDoorWired " +
                 "submitEnabledAtTap=$submitEnabled submitClicks=$submitClicks scrolledIntoView=$scrolledIntoView",
         )
     }
@@ -1892,25 +1931,10 @@ class ChatUiGatesTest {
         if (doorShown) rule.onAllNodesWithTag("sandbox_port_8080")[0].performClick()
         rule.waitForIdle()
         val doorWired = portOpens == listOf(8080)
-        // Ports still live, but the pane owns the screen: the door must yield
-        // even while something listens.
-        renderFiles(path = "", previewUrl = "http://127.0.0.1:1/", livePorts = listOf(8080))
-        val paneShown = exists("sandbox_preview") && exists("sandbox_open_browser") &&
-            exists("sandbox_preview_close")
-        val doorHiddenInPane = !exists("sandbox_preview_open")
-        // v9.10 (owner): the preview owns the WHOLE screen - the half-pane
-        // under the storage card misrepresented pages. While the pane is open
-        // the location card (and with it the top chrome) must be gone.
-        val paneFullPage = !exists("files_location")
-        rule.onAllNodesWithTag("sandbox_open_browser")[0].performClick()
-        rule.waitForIdle()
-        val browserWired = browserOpens == 1
-        // v9.8 (owner): the snapshot is the AGENT'S capability - no user
-        // button exists; the pane self-captures after page loads instead.
-        val captureWired = !exists("sandbox_capture")
-        rule.onAllNodesWithTag("sandbox_preview_close")[0].performClick()
-        rule.waitForIdle()
-        val paneClosable = previewCloses == 1
+        // v9.35 (owner): the preview pane left this screen entirely - the
+        // chat owns it now (console + morph overlay, asserted in U3). The
+        // Sandbox keeps the port door, and tapping it walks the user to the
+        // chat preview.
 
         // closing returns to the listing
         renderFiles(path = "src", nodes = listOf(FileNode(name = "main.kt", path = "src/main.kt", isDirectory = false)))
@@ -1988,8 +2012,7 @@ class ChatUiGatesTest {
         val ok = listed && pathShown && locationCopy && openedDir && upShown && upWorks && openedFile &&
             viewer && bodyText && saveCopyShown && saveCopyWired && closed && emptyShown &&
             noToggleForPlain && previewOffered && sourceDefault && previewShown && sourceBack &&
-            doorShown && doorWired && paneShown && doorHiddenInPane && browserWired &&
-            captureWired && paneClosable &&
+            doorShown && doorWired &&
             noCopyPath && noExport && noChoose && noReset &&
             goodPanelVisible && goodExplanation && goodNoGrant &&
             fallbackVisible && fallbackExplained && pendingShown && grantShown && grantWired &&
@@ -2000,7 +2023,7 @@ class ChatUiGatesTest {
             "listed=$listed pathShown=$pathShown locationCopy=$locationCopy openedDir=$openedDir " +
                 "upShown=$upShown upWorks=$upWorks openedFile=$openedFile viewer=$viewer body=$bodyText " +
                 "preview=$noToggleForPlain/$previewOffered/$sourceDefault/$previewShown/$sourceBack " +
-                "sandbox=$doorGated/$doorShown/$doorWired/$paneShown/$doorHiddenInPane/$paneFullPage/$browserWired/$captureWired/$paneClosable " +
+                "sandbox=$doorGated/$doorShown/$doorWired " +
                 "saveCopy=$saveCopyShown/$saveCopyWired closed=$closed empty=$emptyShown " +
                 "v4Removed=copyPath:$noCopyPath,export:$noExport,choose:$noChoose,reset:$noReset " +
                 "panel=$goodPanelVisible/$goodExplanation/$goodNoGrant " +
@@ -2144,6 +2167,11 @@ class ChatUiGatesTest {
             AgentAvailability.READY,
         )
         rule.waitForIdle()
+        // v9.35 (owner): the internal plan-file path leaked into the question
+        // card ("Plan at .opencode/plans/... is complete."). The card renders
+        // the friendly sentence instead - the path never reaches the user.
+        val planPathHidden = !onScreenText().contains(".opencode/plans") &&
+            onScreenText().contains("The plan is ready.")
         rule.onAllNodes(textMatcher(approveOption))[0].performClick()
         rule.waitForIdle()
         runCatching { rule.onNodeWithTag(TAG_QUESTION_SUBMIT).performScrollTo() }
@@ -2173,13 +2201,13 @@ class ChatUiGatesTest {
             shown && labelNamesCurrent && menuOpen && listed && idsShown && picked && noSettingsTrip &&
                 thinkingListed && thinkingPicked && thinkingEmptyExplained &&
                 modeShown && modeMenu && modePicked && modeLabelled &&
-                approveOffered && approveWired &&
+                approveOffered && approveWired && planPathHidden &&
                 emptyExplained && settingsOffered && settled,
             "shown=$shown label=$labelNamesCurrent menu=$menuOpen listed=$listed/$idsShown " +
                 "picked=$picked/$pickedModels settingsTrip=$noSettingsTrip " +
                 "thinking=$thinkingListed/$thinkingPicked/$thinkingPicks thinkingEmpty=$thinkingEmptyExplained " +
                 "mode=$modeShown/$modeMenu/$modePicked/$modePicks label=$modeLabelled " +
-                "planApprove=$approveOffered/$approveWired " +
+                "planApprove=$approveOffered/$approveWired pathHidden=$planPathHidden " +
                 "emptyExplained=$emptyExplained offered=$settingsOffered",
         )
     }

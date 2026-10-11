@@ -158,8 +158,8 @@
     <string name="chat_open_projects">Projects</string>
     <string name="chat_open_files">Project files</string>
     <string name="chat_untitled">New conversation</string>
-    <string name="chat_empty_title">Start a conversation</string>
-    <string name="chat_empty_body">Ask for a change, a fix or an explanation. The agent works inside this project folder and shows every step it takes, including the commands it runs and the files it edits.</string>
+    <!-- v9.35: the empty-chat copy moved to EmptyChatCopy.kt - a daily
+         headline from the owner's 30 messages plus the typewriter line. -->
     <string name="chat_composer_label">Message</string>
     <string name="chat_composer_placeholder">Message the agent</string>
     <string name="chat_send">Send</string>
@@ -220,7 +220,8 @@
     <string name="chat_tool_status_error">Failed</string>
     <string name="chat_tool_section_input">Requested</string>
     <string name="chat_tool_section_output">Result</string>
-    <string name="chat_tool_section_diff">Changes</string>
+    <!-- v9.35 (owner): the surface is named Diff. -->
+    <string name="chat_tool_section_diff">Diff</string>
     <string name="chat_tool_exit_code">Exit code %1$s</string>
     <string name="chat_tool_truncated">The agent truncated this output.</string>
     <string name="chat_tool_output_file">The agent saved the full output to %1$s</string>
@@ -488,11 +489,13 @@
 
     <!-- ========================================================== files -->
     <string name="files_subtitle">Sandbox: </string>
-    <string name="files_location_title">Where these files are</string>
-    <string name="files_location_public">A normal folder on shared storage. Every file manager, the Files app, a USB connection and adb can open it while the agent works - no export step.</string>
-    <string name="files_location_chosen">The folder you chose. Every file manager, a USB connection and adb can open it while the agent works - no export step.</string>
+    <!-- v9.35 (owner): the workspace description at the top of the Sandbox
+         page, rewritten - lead with what the sandbox IS, then where it lives. -->
+    <string name="files_location_title">Your project, on your device</string>
+    <string name="files_location_public">Everything the agent builds lands in this ordinary folder on shared storage - live, while it works. Open it with any file manager, the Files app, a USB cable or adb; what you see here is exactly what is on disk.</string>
+    <string name="files_location_chosen">Everything the agent builds lands in this folder you picked - live, while it works. Open it with any file manager, a USB cable or adb; what you see here is exactly what is on disk.</string>
     <string name="files_location_app_external">Android 11 and newer stop apps (including file managers) from browsing Android/data, so a phone file manager cannot open this folder. adb and a PC still can. Put the projects in Documents/OpenCode to make them visible everywhere.</string>
-    <string name="files_location_internal">This device reported no usable external storage, so the project is in app-private storage that only this app can read. Export a copy to get it out.</string>
+    <string name="files_location_internal">This device reported no usable external storage, so the project is in app-private storage that only this app can read. Save a copy of a file to get it out.</string>
     <string name="files_location_app_external_android10">This folder is browsable by file managers on this Android version, and by adb on any version.</string>
     <string name="files_storage_make_visible">Put projects where file managers can see them</string>
     <string name="files_storage_make_visible_body">Android only allows an app to write to Documents/OpenCode if you grant "All files access". Without it your projects stay in Android/data, which file managers cannot open on Android 11+.</string>
@@ -525,6 +528,12 @@
     <string name="sandbox_preview_close">Close preview</string>
     <string name="sandbox_open_browser">Browser</string>
     <string name="sandbox_preview_failed">The preview server could not start</string>
+    <!-- v9.35: the preview console in the chat screen. -->
+    <string name="sandbox_console_title">Live preview · :%1$d</string>
+    <string name="sandbox_console_reload">Reload preview</string>
+    <string name="sandbox_console_close">Close preview</string>
+    <string name="sandbox_console_reloaded">Reloaded</string>
+    <string name="sandbox_console_show">Show</string>
     <string name="files_viewer_binary">This looks like a binary file, so it is not shown here. Save a copy to open it with another app.</string>
     <string name="files_viewer_truncated">Showing the first part of the file; save a copy for the whole thing.</string>
     <string name="files_load_failed">Could not read the project files: %1$s</string>
@@ -596,10 +605,11 @@
     <!-- v7 redesign: project tabs + the Changes and Terminal surfaces -->
     <string name="project_tab_chat">Chat</string>
     <string name="project_tab_files">Sandbox</string>
-    <string name="project_tab_changes">Changes</string>
+    <!-- v9.35 (owner): the surface is named after what it shows - the diff. -->
+    <string name="project_tab_changes">Diff</string>
     <string name="project_tab_terminal">Terminal</string>
 
-    <string name="changes_title">Changes</string>
+    <string name="changes_title">Diff</string>
     <string name="changes_empty_title">No file changes yet</string>
     <string name="changes_empty_body">When the agent writes or edits files in this conversation, every stage shows up here with its diff.</string>
     <string name="changes_turn_label">Stage %1$d</string>

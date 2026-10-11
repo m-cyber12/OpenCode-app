@@ -1094,6 +1094,20 @@ fun PermissionAsk(
  * answer is `answers: string[][]`, one array of chosen labels per question,
  * in order. A custom answer is simply a label the user typed.
  */
+/**
+ * v9.35 (owner): the plan lives in the CHAT - the plan file is internal
+ * plumbing. Upstream's `plan_exit` question still leads with "Plan at
+ * <internal path> is complete.", which leaked a filesystem path the user was
+ * never meant to see (device screenshot evidence). Rewrite exactly that
+ * sentence for display; every other question renders verbatim.
+ */
+internal fun questionDisplayText(raw: String): String {
+    val leak = Regex("^\\s*Plan at .+? is complete\\.\\s*", RegexOption.IGNORE_CASE)
+    if (!leak.containsMatchIn(raw)) return raw
+    val rest = leak.replaceFirst(raw, "")
+    return if (rest.isBlank()) "The plan is ready." else "The plan is ready. $rest"
+}
+
 @Composable
 fun QuestionAsk(
     question: Transcript.Question,
@@ -1155,7 +1169,7 @@ fun QuestionAsk(
                         )
                     }
                     Text(
-                        text = item.question,
+                        text = questionDisplayText(item.question),
                         style = MaterialTheme.typography.bodyMedium,
                         color = chat.onAttentionContainer,
                     )

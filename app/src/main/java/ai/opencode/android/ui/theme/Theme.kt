@@ -121,9 +121,11 @@ internal val DarkChatPalette = ChatPalette(
     selectedContainer = AccentGoldContainer,
     agentBubble = InkSurface,
     onAgentBubble = InkOnSurface,
-    attention = AccentAmber,
-    attentionContainer = AccentAmberContainer,
-    onAttentionContainer = AccentOnAmberContainer,
+    // v9.35 (owner): softened for dark mode - the saturated amber trio was
+    // too harsh on question cards at night. Light mode keeps its DayAmber set.
+    attention = AmberNight,
+    attentionContainer = AmberNightContainer,
+    onAttentionContainer = OnAmberNightContainer,
     toolContainer = InkSurfaceHigh,
     onToolContainer = InkOnSurface,
     toolBorder = InkHairline,

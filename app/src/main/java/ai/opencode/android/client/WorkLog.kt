@@ -75,15 +75,34 @@ object WorkLog {
                 val writes = kind == ToolKind.FILE_WRITE || kind == ToolKind.FILE_EDIT
                 if (!writes && !meta.hasDiff) continue
                 val file = meta.diffFile.ifBlank { inputField(part.input, "filePath", "path") }
+                // v9.35 (owner): a brand-new file written by the `write` tool
+                // carried no server-side diff metadata, so the Diff page framed
+                // the file with "+0 -0" and nothing inside - a created file IS
+                // its whole content added. When the server gave us no patch,
+                // synthesize one from the write input: every line of `content`
+                // is an addition.
+                var additions = meta.additions
+                var deletions = meta.deletions
+                var patch = meta.diff
+                if (kind == ToolKind.FILE_WRITE && patch.isBlank()) {
+                    val content = inputField(part.input, "content")
+                    if (content.isNotEmpty()) {
+                        val lines = content.split("\n")
+                        additions = lines.size
+                        deletions = 0
+                        patch = "@@ -0,0 +1,${lines.size} @@\n" +
+                            lines.joinToString("\n") { "+$it" }
+                    }
+                }
                 turn.add(
                     Change(
                         partId = part.id,
                         file = file.ifBlank { part.title },
                         tool = part.tool,
                         status = part.status,
-                        additions = meta.additions,
-                        deletions = meta.deletions,
-                        patch = meta.diff,
+                        additions = additions,
+                        deletions = deletions,
+                        patch = patch,
                         atMs = if (part.timeStart > 0) part.timeStart else message.createdMs,
                     ),
                 )
