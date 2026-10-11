@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import ai.opencode.android.R
 import ai.opencode.android.ui.theme.ChatTheme
+import ai.opencode.android.ui.theme.MonoSmall
 
 /**
  * v9.35 (owner): the live preview moved OUT of the Sandbox tab and INTO the
@@ -105,6 +106,7 @@ fun LivePreviewConsole(
     modifier: Modifier = Modifier,
 ) {
     val chat = ChatTheme.chat
+    val reloadDesc = stringResource(R.string.sandbox_console_reload)
     Column(modifier = modifier.fillMaxWidth()) {
         if (preview.phase != PreviewState.CLOSED) {
             Surface(
@@ -156,7 +158,7 @@ fun LivePreviewConsole(
                         onClick = onReload,
                         modifier = Modifier.semantics {
                             testTag = "sandbox_preview_reload"
-                            contentDescription = stringResource(R.string.sandbox_console_reload)
+                            contentDescription = reloadDesc
                         },
                     ) {
                         Icon(
@@ -278,6 +280,7 @@ fun ChatPreviewOverlay(
     onConsole: (String) -> Unit,
 ) {
     val chat = ChatTheme.chat
+    val reloadDesc = stringResource(R.string.sandbox_console_reload)
     val latestCapture = rememberUpdatedState(onCapture)
     val latestConsole = rememberUpdatedState(onConsole)
     val webRef = remember { mutableStateOf<WebView?>(null) }
@@ -349,7 +352,7 @@ fun ChatPreviewOverlay(
                         onClick = onReload,
                         modifier = Modifier.semantics {
                             testTag = "sandbox_preview_reload"
-                            contentDescription = stringResource(R.string.sandbox_console_reload)
+                            contentDescription = reloadDesc
                         },
                     ) {
                         Icon(
