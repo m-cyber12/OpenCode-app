@@ -1129,10 +1129,10 @@ object TypewriterConfig {
  *    starts so it does not always open on tip one.
  *
  * Deliberately NOT a Compose animation API: a plain coroutine mutating a
- * string state. The repo-wide static check forbids new infinite animations
- * (rememberInfiniteTransition and friends spin the test clock forever); a
- * delay-driven loop never touches the animation clock, and the gates switch
- * it off entirely via [TypewriterConfig].
+ * string state. The repo-wide static check forbids new infinite animation
+ * primitives (they spin the test clock forever); a delay-driven loop never
+ * touches the animation clock, and the gates switch it off entirely via
+ * [TypewriterConfig].
  */
 @Composable
 private fun EmptyChatTypewriter(firstChat: Boolean) {
