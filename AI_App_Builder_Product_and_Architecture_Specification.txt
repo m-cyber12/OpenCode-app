@@ -1,0 +1,3338 @@
+# AI App Builder
+## Product Requirements Document, System Architecture, Feature Specification, and Development Roadmap
+
+**Document Type:** Product Requirements Document (PRD) + Software Architecture Specification  
+**Project Category:** AI-powered application development platform  
+**Primary Platform:** Android  
+**Secondary Platforms:** Web and desktop development  
+**AI Architecture:** Model-agnostic LLM + Agent Harness + Tool System  
+**Build Infrastructure:** GitHub + GitHub Actions  
+**Primary Development Languages:** Kotlin, Jetpack Compose, TypeScript, and other languages supported by selected project templates  
+**Document Status:** Proposed product specification  
+**Version:** 1.0
+
+---
+
+# 1. Executive Summary
+
+## 1.1 Product Overview
+
+The project is an AI-powered application builder that enables users to create, modify, test, debug, and build real software applications through natural-language conversations.
+
+Users describe an application they want to create, and the platform transforms their requirements into a structured software project. The AI agent plans the implementation, generates source code, creates and modifies project files, runs validation tools, analyzes build errors, applies fixes, and produces downloadable application artifacts.
+
+The platform is designed around an extensible agent harness rather than a single specialized AI model.
+
+The system combines:
+
+- A conversational AI interface.
+- A model-agnostic AI integration layer.
+- An agent runtime and orchestration engine.
+- A persistent project workspace.
+- A structured tool-calling system.
+- Reusable development skills.
+- Project templates and technology-specific knowledge.
+- Git and GitHub integration.
+- Automated cloud builds through GitHub Actions.
+- Automated error analysis and repair.
+- Application preview and testing capabilities.
+- Project history, checkpoints, and rollback.
+- Secure authentication and secret management.
+- A modular architecture that supports future expansion.
+
+The initial product will focus on generating native Android applications using Kotlin and Jetpack Compose.
+
+Over time, it should expand into web applications, backend services, cross-platform applications, and full-stack software projects.
+
+## 1.2 Product Vision
+
+**Make software development accessible through conversation while preserving the flexibility, transparency, and control of a real software development environment.**
+
+Users should be able to move from an idea to a working application without manually managing every implementation detail.
+
+Unlike simple code-generation chatbots, the product must operate on real project files, use development tools, execute builds, inspect errors, and iteratively improve its output.
+
+The platform should not merely generate code that appears correct. It should establish a reliable workflow for generating, validating, building, and delivering software.
+
+## 1.3 Product Mission
+
+The mission is to create an accessible, reliable, and extensible AI software development environment that combines the usability of visual AI app builders with the flexibility of coding agents.
+
+The platform should serve both beginners who want to describe an application in plain language and advanced developers who want AI-assisted implementation with direct access to project files, Git history, build logs, and technical configuration.
+
+## 1.4 Core Product Promise
+
+A user should be able to:
+
+1. Describe an application in natural language.
+2. Answer clarification questions when necessary.
+3. Review the proposed implementation plan.
+4. Generate the application project.
+5. Inspect and modify the generated source code.
+6. Request changes through conversation.
+7. Build the application remotely.
+8. Receive detailed build progress and error explanations.
+9. Allow the agent to repair supported build failures.
+10. Download the resulting APK.
+11. Continue improving the same project without starting over.
+
+The long-term objective is to make the entire workflow feel like working with a capable software engineering team.
+
+---
+
+# 2. Competitive Positioning
+
+## 2.1 Competitive Landscape
+
+The product will compete with several categories of tools.
+
+### AI-powered app builders
+
+Examples include Lovable and Base44.
+
+These products emphasize rapid application creation, natural-language instructions, and reduced technical complexity.
+
+### AI coding environments
+
+Examples include Replit and tools built around agentic software development.
+
+These environments emphasize code generation, tool execution, project modification, debugging, and iterative development.
+
+### General-purpose AI development tools
+
+Examples include Google AI Studio and coding agents such as OpenCode and Claude Code.
+
+These tools demonstrate different approaches to AI-assisted coding, model integration, development tools, and agent orchestration.
+
+The proposed product should learn from these categories without attempting to reproduce every feature of every competitor in its initial release.
+
+## 2.2 Primary Differentiation
+
+The product should differentiate itself through the following capabilities.
+
+**1. Mobile-first development experience**
+
+Users can create and manage projects from an Android device instead of requiring a desktop development environment.
+
+**2. Model independence**
+
+The product should support multiple compatible AI providers through a common interface.
+
+**3. Real software project ownership**
+
+Generated projects should be stored in standard repositories with conventional source code and build systems.
+
+**4. GitHub-native development workflow**
+
+Users can connect repositories, inspect changes, review commits, and maintain control over their source code.
+
+**5. Managed cloud builds**
+
+GitHub Actions can provide the initial build infrastructure without requiring the product team to operate a dedicated fleet of Android build servers.
+
+**6. Automated build repair**
+
+Build failures should become structured feedback for the agent rather than dead ends for the user.
+
+**7. Extensible agent harness**
+
+Tools, skills, models, project templates, and validation strategies should be independently replaceable.
+
+**8. Transparent development**
+
+Users should be able to inspect plans, code changes, build logs, validation results, and agent actions.
+
+**9. Reproducible outputs**
+
+The same project should be buildable outside the platform using conventional development tools.
+
+**10. A path toward broader development capabilities**
+
+The architecture should support future web, backend, and cross-platform projects without requiring a complete rewrite of the agent runtime.
+
+## 2.3 Competitive Parity Strategy
+
+The platform should aim for functional parity in key workflows rather than claiming complete parity with every competitor.
+
+| Capability | Initial Target | Long-Term Target |
+|---|---|---|
+| Natural-language app generation | Required | Advanced |
+| Multi-turn editing | Required | Advanced |
+| Real source-code generation | Required | Required |
+| Project file management | Required | Advanced |
+| Cloud builds | Required | Required |
+| Build-error repair | Required | Advanced |
+| GitHub integration | Required | Advanced |
+| Version history and rollback | Required | Advanced |
+| Android APK export | Required | Required |
+| App preview | Basic | Interactive |
+| Model-provider selection | Basic | Advanced |
+| Reusable agent skills | Required | Advanced |
+| Web application generation | Limited | Required |
+| Backend generation | Template-based | Advanced |
+| Automated UI testing | Basic | Advanced |
+| Visual design-to-code | Limited | Advanced |
+| Team collaboration | Deferred | Planned |
+| Deployment integrations | Deferred | Planned |
+| Custom agent extensions | Planned | Advanced |
+
+These targets describe the intended product roadmap, not capabilities that already exist.
+
+---
+
+# 3. Target Users
+
+## 3.1 Nontechnical Creators
+
+These users have an application idea but limited programming experience.
+
+They need:
+
+- Natural-language project creation.
+- Guided requirement gathering.
+- Useful design defaults.
+- Simple project configuration.
+- Clear build status.
+- Easy APK downloads.
+- Understandable error explanations.
+- Minimal exposure to technical complexity.
+
+## 3.2 Independent Developers
+
+These users understand programming but want to reduce implementation time.
+
+They need:
+
+- Direct access to source code.
+- Flexible model selection.
+- Repository integration.
+- Git diffs and commits.
+- Control over dependencies.
+- Build logs.
+- Custom prompts and agent instructions.
+- Reliable project recovery.
+
+## 3.3 Students and Learners
+
+These users want to create projects while learning software development.
+
+They need:
+
+- Explanations of generated code.
+- Step-by-step implementation plans.
+- Readable project structures.
+- Error explanations.
+- Optional educational modes.
+- Clear separation between generated code and user changes.
+
+## 3.4 Product Prototypers
+
+These users want to validate ideas quickly.
+
+They need:
+
+- Fast initial project generation.
+- Reusable templates.
+- Rapid iteration.
+- Mock data and prototype backends.
+- UI previews.
+- Shareable project repositories.
+- Quick APK generation.
+
+## 3.5 Advanced Developers
+
+These users need greater control over the agent and build pipeline.
+
+They need:
+
+- Custom skills.
+- Configurable model providers.
+- Tool permissions.
+- Branch-based workflows.
+- Build configuration overrides.
+- Environment-specific settings.
+- CI integration.
+- Detailed logs and structured outputs.
+
+---
+
+# 4. Product Scope
+
+## 4.1 Initial Scope
+
+The first release should focus on a reliable end-to-end Android development workflow.
+
+The MVP should support:
+
+- Creating an Android project from a prompt.
+- Generating Kotlin and Jetpack Compose code.
+- Editing existing project files.
+- Maintaining project context across multiple conversations.
+- Connecting to an AI model provider.
+- Connecting a project to GitHub.
+- Creating or updating a development branch.
+- Triggering GitHub Actions builds.
+- Tracking build status.
+- Retrieving build logs.
+- Sending build errors back to the agent.
+- Applying corrective changes.
+- Rebuilding the project.
+- Downloading the resulting debug APK.
+- Reviewing changes and reverting to checkpoints.
+
+The initial release should prioritize build reliability, project consistency, and security over a large collection of superficial features.
+
+## 4.2 Explicitly Deferred Features
+
+The following should not be required for the first usable version:
+
+- A proprietary foundation model.
+- A custom cloud build farm.
+- A fully integrated Android emulator.
+- Automatic publication to Google Play.
+- Full visual editing comparable to professional design tools.
+- Enterprise collaboration features.
+- Support for every programming language.
+- Unlimited autonomous agent execution.
+- Guaranteed generation of production-ready applications from a single prompt.
+
+These features may become valuable later, but they significantly increase cost and complexity.
+
+---
+
+# 5. Product Principles
+
+The architecture and user experience should follow these principles.
+
+## 5.1 Model-Agnostic Design
+
+The application must not depend on one specific LLM provider.
+
+A common model interface should support multiple providers and, where technically compatible, local or self-hosted models.
+
+## 5.2 Tool-Driven Execution
+
+The agent should interact with the project through explicit tools rather than relying exclusively on generated conversational text.
+
+## 5.3 Persistent Project State
+
+The agent should maintain structured information about the project, its files, dependencies, build configuration, and implementation status.
+
+## 5.4 Incremental Changes
+
+The agent should prefer targeted edits over unnecessarily regenerating the entire project.
+
+## 5.5 Observable Execution
+
+Every meaningful action should produce an inspectable event or result.
+
+## 5.6 Recoverability
+
+Users should be able to recover from failed generations, incorrect edits, and unsuccessful builds.
+
+## 5.7 Secure by Default
+
+AI-generated code must be treated as untrusted input.
+
+The system should use least-privilege permissions, protect secrets, and isolate execution where applicable.
+
+## 5.8 Real Build Validation
+
+The platform must distinguish between code generation, static validation, successful compilation, successful testing, and verified runtime behavior.
+
+A successful build must not be presented as proof that every application feature works correctly.
+
+---
+
+# 6. System Architecture Overview
+
+## 6.1 High-Level Architecture
+
+The architecture consists of three major environments:
+
+1. Client Application.
+2. Agent Runtime and Project Services.
+3. External Development Infrastructure.
+
+The system should also distinguish the logical responsibilities of the agent runtime, project workspace, and build service.
+
+### A. Client Application
+
+The client provides the interface through which users manage projects and interact with the agent.
+
+Responsibilities include:
+
+- Chat interface.
+- Project dashboard.
+- File explorer.
+- Diff viewer.
+- Build status display.
+- Build log viewer.
+- Project settings.
+- Provider configuration.
+- Repository connection.
+- Artifact downloads.
+- User consent and permission prompts.
+
+The client should remain relatively lightweight.
+
+It should not need to run a full Android SDK, Gradle build environment, or emulator.
+
+### B. Agent Runtime
+
+The agent runtime is the core intelligence and orchestration layer.
+
+Responsibilities include:
+
+- Receiving user instructions.
+- Loading project context.
+- Selecting the appropriate model.
+- Planning changes.
+- Selecting tools.
+- Executing permitted actions.
+- Managing multi-step tasks.
+- Validating results.
+- Interpreting errors.
+- Requesting additional model reasoning.
+- Managing retry policies.
+- Enforcing budgets and execution limits.
+- Maintaining task state.
+
+The agent runtime can initially run inside the client process if the implementation is small and local-only operations are sufficient.
+
+However, a backend-hosted runtime is recommended for production capabilities requiring secure credentials, webhook processing, reliable background execution, or coordination across multiple devices.
+
+### C. Project Workspace
+
+The project workspace stores the actual application being developed.
+
+It contains:
+
+- Source code.
+- Resources.
+- Project configuration.
+- Dependency declarations.
+- Build scripts.
+- Tests.
+- Project-specific instructions.
+- Generated documentation.
+- Relevant metadata.
+
+The workspace should support local project state and a remote Git repository.
+
+The workspace is not the same thing as the agent's conversation history.
+
+### D. Build Service
+
+The build service executes project validation and compilation.
+
+For the MVP, GitHub Actions can provide the build workers.
+
+Responsibilities include:
+
+- Selecting the correct repository and commit.
+- Running the project's build commands.
+- Collecting compiler output.
+- Running configured tests.
+- Producing APK artifacts.
+- Publishing build status.
+- Preserving relevant logs.
+- Reporting structured results to the agent runtime.
+
+### E. AI Model Providers
+
+Model providers perform reasoning and code-generation tasks.
+
+The provider interface should support:
+
+- Text generation.
+- Tool calling where available.
+- Streaming responses where available.
+- Token and usage reporting where available.
+- Provider-specific capability declarations.
+- Configurable context limits.
+- Error normalization.
+
+The platform should not assume that every provider supports identical features.
+
+---
+
+# 7. Recommended Deployment Architecture
+
+## 7.1 MVP Architecture
+
+The initial system can use the following arrangement:
+
+**Android Client**
+- Chat UI.
+- Project management.
+- Lightweight agent orchestration.
+- Local workspace metadata.
+- File editing and diff presentation.
+- AI provider configuration.
+- GitHub integration.
+- Build status monitoring.
+- Artifact downloads.
+
+**AI Provider**
+- Planning.
+- Code generation.
+- Code editing suggestions.
+- Error analysis.
+- Repair proposals.
+
+**GitHub Repository**
+- Source-code storage.
+- Branches and commits.
+- Version history.
+- Collaboration.
+- Workflow configuration.
+
+**GitHub Actions**
+- Dependency setup.
+- Static checks.
+- Gradle compilation.
+- Tests.
+- APK packaging.
+- Artifact upload.
+
+This arrangement minimizes initial infrastructure costs and avoids the need to maintain dedicated build machines.
+
+However, it does not eliminate the need for secure credential management, API access, persistent task state, and reliable asynchronous operations.
+
+## 7.2 Production Architecture
+
+As usage grows, introduce a backend that manages long-running tasks and trusted integrations.
+
+Recommended services:
+
+1. API Gateway.
+2. Authentication Service.
+3. Project Service.
+4. Agent Orchestration Service.
+5. Model Gateway.
+6. GitHub Integration Service.
+7. Build Orchestration Service.
+8. Webhook Receiver.
+9. Artifact Metadata Service.
+10. Usage and Billing Service.
+11. Observability Service.
+
+A relational database should store durable metadata, while object storage can be used for files or artifacts where appropriate.
+
+The backend should not automatically become a remote execution environment for arbitrary generated code. Code execution must remain isolated and explicitly controlled.
+
+## 7.3 Architectural Diagram
+
+```text
++------------------------------------------------------+
+|                  ANDROID CLIENT                     |
+|                                                      |
+|  Chat UI | Project Dashboard | File Explorer         |
+|  Diff Viewer | Build Monitor | Artifact Manager       |
++---------------------------+--------------------------+
+                            |
+                            v
++------------------------------------------------------+
+|                AGENT RUNTIME                        |
+|                                                      |
+|  Task Planner                                        |
+|  Context Manager                                     |
+|  Tool Router                                         |
+|  Permission Manager                                  |
+|  Model Gateway                                       |
+|  Validation Engine                                   |
+|  Repair Controller                                   |
+|  Execution Budget Manager                            |
++------------------+-------------------+---------------+
+                   |                   |
+                   v                   v
++---------------------------+  +-----------------------+
+|      PROJECT WORKSPACE    |  |     AI PROVIDERS      |
+|                           |  |                       |
+| Source Files              |  | Planning              |
+| Project Metadata          |  | Code Generation       |
+| Dependency Information    |  | Error Analysis        |
+| Git State                 |  | Repair Proposals      |
+| Checkpoints               |  |                       |
++-------------+-------------+  +-----------------------+
+              |
+              v
++------------------------------------------------------+
+|                  GITHUB INTEGRATION                 |
+|                                                      |
+| Repositories | Branches | Commits | Pull Requests     |
++---------------------------+--------------------------+
+                            |
+                            v
++------------------------------------------------------+
+|                GITHUB ACTIONS                       |
+|                                                      |
+| Checkout | Setup | Validate | Build | Test            |
+| Collect Logs | Upload APK | Report Status             |
++---------------------------+--------------------------+
+                            |
+                            v
++------------------------------------------------------+
+|                  BUILD RESULTS                      |
+|                                                      |
+| Status | Logs | Test Results | APK Artifact           |
++---------------------------+--------------------------+
+                            |
+                            v
++------------------------------------------------------+
+|               AGENT FEEDBACK LOOP                   |
+|                                                      |
+| Analyze Result -> Repair -> Validate -> Rebuild       |
++------------------------------------------------------+
+```
+
+---
+
+# 8. The Agent Harness
+
+## 8.1 Definition
+
+The agent harness is the software system that controls how an AI model interacts with a project and its development tools.
+
+The model provides reasoning and generation capabilities.
+
+The harness determines:
+
+- What information the model receives.
+- What tasks it may perform.
+- Which tools it can use.
+- How tool calls are validated.
+- How changes are applied.
+- How results are checked.
+- When execution should continue.
+- When to stop and ask the user.
+- How failures are handled.
+- How usage limits are enforced.
+
+The harness should be treated as an independent, reusable subsystem.
+
+## 8.2 Harness Components
+
+### 8.2.1 Task Manager
+
+Creates and tracks user tasks.
+
+Each task should have:
+
+- A unique identifier.
+- Project identifier.
+- User request.
+- Current status.
+- Execution plan.
+- Progress information.
+- Start and completion timestamps.
+- Tool execution history.
+- Model usage metadata.
+- Result summary.
+- Error details where applicable.
+
+Suggested task states:
+
+```text
+CREATED
+  |
+  v
+ANALYZING
+  |
+  v
+PLANNING
+  |
+  v
+AWAITING_APPROVAL
+  |
+  v
+EXECUTING
+  |
+  v
+VALIDATING
+  |
+  v
+COMPLETED
+```
+
+Additional terminal or intermediate states should include:
+
+```text
+FAILED
+CANCELLED
+WAITING_FOR_BUILD
+WAITING_FOR_USER
+NEEDS_REVIEW
+```
+
+The task state machine should be explicit rather than inferred from chat messages.
+
+### 8.2.2 Planning Engine
+
+Converts natural-language requirements into structured implementation steps.
+
+For example:
+
+```text
+User Request:
+Create a task management application.
+
+Plan:
+1. Inspect the existing project.
+2. Identify the application architecture.
+3. Define the task data model.
+4. Implement the main screen.
+5. Add task creation and editing.
+6. Persist tasks locally.
+7. Add navigation.
+8. Run static validation.
+9. Trigger an Android build.
+10. Analyze and resolve supported failures.
+11. Report the final result.
+```
+
+The planner should adapt the plan to the current project instead of applying the same template to every request.
+
+### 8.2.3 Context Manager
+
+Collects the relevant information needed by the model.
+
+It should manage:
+
+- User instructions.
+- Project specification.
+- Project-specific agent instructions.
+- File tree.
+- Relevant source files.
+- Recent changes.
+- Dependency information.
+- Build configuration.
+- Previous task summaries.
+- Recent compiler errors.
+- Relevant tool results.
+- Applicable development skills.
+
+The context manager should avoid sending the entire repository to the model on every turn.
+
+### 8.2.4 Tool Router
+
+Selects and invokes tools through a controlled interface.
+
+The router should validate:
+
+- Tool existence.
+- Argument schemas.
+- Permission requirements.
+- Path restrictions.
+- Execution budgets.
+- User approval requirements.
+- Result size limits.
+- Timeouts.
+
+### 8.2.5 Execution Controller
+
+Runs the agent loop.
+
+A simplified loop:
+
+```text
+1. Receive task.
+2. Load project context.
+3. Select model.
+4. Ask model to plan or act.
+5. Validate the requested action.
+6. Execute permitted tools.
+7. Record tool results.
+8. Update project and task state.
+9. Evaluate whether more work is required.
+10. Repeat within configured limits.
+11. Validate the final result.
+12. Return a summary.
+```
+
+The model should not be allowed to continue indefinitely.
+
+The controller must enforce maximum iterations, time limits, usage budgets, and cancellation.
+
+### 8.2.6 Validation Engine
+
+Checks whether an action achieved its intended result.
+
+Possible checks include:
+
+- File existence.
+- Expected file structure.
+- Patch validity.
+- Syntax checks.
+- Formatting checks.
+- Unit tests.
+- Dependency resolution.
+- Gradle compilation.
+- Artifact existence.
+- APK metadata checks.
+- Instrumentation tests where configured.
+
+### 8.2.7 Repair Controller
+
+Coordinates the recovery workflow when validation fails.
+
+It should:
+
+1. Collect the relevant error information.
+2. Classify the failure.
+3. Select the appropriate diagnostic tools.
+4. Prepare a focused context package.
+5. Ask the model for a correction.
+6. Validate the proposed changes.
+7. Apply the approved changes.
+8. Rerun relevant checks.
+9. Stop after a configured retry limit.
+10. Present unresolved issues clearly.
+
+The repair controller should avoid repeatedly submitting identical errors without new information.
+
+### 8.2.8 Execution Budget Manager
+
+Controls cost and resource consumption.
+
+It should enforce limits for:
+
+- Model calls.
+- Token usage.
+- Build retries.
+- Tool invocations.
+- Task duration.
+- Concurrent builds.
+- Maximum generated files.
+- Maximum patch size.
+- Total execution cost where estimable.
+
+---
+
+# 9. Agent Operating Modes
+
+The product should support several operating modes.
+
+## 9.1 Plan Mode
+
+The agent analyzes the request and presents a proposed implementation plan without modifying project files.
+
+Suitable for complex or risky changes.
+
+## 9.2 Agent Mode
+
+The agent executes permitted tasks and validates its work.
+
+Users can observe progress and approve sensitive actions.
+
+## 9.3 Build and Repair Mode
+
+The agent focuses on validating an existing project, interpreting failures, and fixing supported problems.
+
+## 9.4 Explain Mode
+
+The agent explains code, architecture, dependencies, or errors without changing the project unless explicitly requested.
+
+## 9.5 Ask Before Editing Mode
+
+The agent proposes changes and waits for user approval before applying them.
+
+## 9.6 Autonomous Mode
+
+The agent performs multiple steps with limited interaction, subject to configured permissions and execution budgets.
+
+Autonomous mode should be opt-in and should never bypass security restrictions.
+
+---
+
+# 10. Tool System
+
+## 10.1 Tool Registry
+
+Every tool should have a stable identifier and a machine-readable specification.
+
+Example:
+
+```json
+{
+  "name": "read_file",
+  "description": "Read a text file from the current project workspace.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string"
+      }
+    },
+    "required": ["path"],
+    "additionalProperties": false
+  }
+}
+```
+
+The registry should also define:
+
+- Permission requirements.
+- Side effects.
+- Timeout.
+- Output size limits.
+- Whether user approval is required.
+- Whether the tool is available for a particular project type.
+- Whether the operation is reversible.
+
+## 10.2 Core Tools
+
+### Project inspection
+
+- `list_files`
+- `read_file`
+- `search_files`
+- `search_symbols`
+- `inspect_project`
+- `get_project_metadata`
+- `get_dependency_tree`
+- `get_git_status`
+
+### File modification
+
+- `create_file`
+- `edit_file`
+- `apply_patch`
+- `delete_file`
+- `move_file`
+- `rename_file`
+- `format_file`
+
+### Project management
+
+- `create_project`
+- `select_project_template`
+- `update_project_metadata`
+- `update_dependency`
+- `manage_project_instructions`
+
+### Validation
+
+- `validate_project_structure`
+- `run_static_checks`
+- `run_unit_tests`
+- `validate_gradle_configuration`
+- `inspect_build_output`
+- `inspect_apk_metadata`
+
+### Git and GitHub
+
+- `create_branch`
+- `get_diff`
+- `commit_changes`
+- `push_branch`
+- `create_pull_request`
+- `get_workflow_status`
+- `get_workflow_logs`
+- `download_build_artifact`
+
+### User interaction
+
+- `request_clarification`
+- `request_approval`
+- `present_diff`
+- `report_progress`
+
+Some operations should be implemented as trusted application services rather than tools directly exposed to arbitrary model-generated commands.
+
+## 10.3 Tool Execution Policy
+
+Tools must not receive unrestricted access to the host operating system.
+
+The system should validate paths, arguments, and permissions before execution.
+
+For example, a file-editing tool should only access the authorized project workspace.
+
+A command-execution tool, if added later, should operate within an isolated execution environment with restricted filesystem, network, CPU, memory, and time limits.
+
+---
+
+# 11. Skills System
+
+## 11.1 Purpose
+
+Skills provide reusable development knowledge and workflows.
+
+A skill should teach the agent how to perform a particular category of task using the tools available to it.
+
+Skills are not separate AI models.
+
+They are structured instructions, references, validation procedures, and sometimes executable helper workflows.
+
+## 11.2 Initial Skills
+
+The MVP should include the following skills.
+
+### Android Project Creation
+
+Covers:
+
+- Kotlin.
+- Jetpack Compose.
+- Android project structure.
+- Gradle configuration.
+- Manifest configuration.
+- Resource management.
+- Activity setup.
+- Application identifiers.
+- SDK compatibility.
+
+### Compose UI Development
+
+Covers:
+
+- Screen composition.
+- Reusable components.
+- State management.
+- Navigation.
+- Themes.
+- Material Design components.
+- Accessibility.
+- Responsive layouts.
+
+### Android Persistence
+
+Covers:
+
+- DataStore.
+- Room.
+- Repository patterns.
+- Local data models.
+- Schema migrations.
+- Data access testing.
+
+### API Integration
+
+Covers:
+
+- HTTP clients.
+- Serialization.
+- Loading states.
+- Error states.
+- Network permissions.
+- API configuration.
+- Secure handling of credentials.
+
+### Build Troubleshooting
+
+Covers:
+
+- Gradle errors.
+- Kotlin compiler errors.
+- Dependency conflicts.
+- SDK mismatches.
+- Manifest issues.
+- Resource compilation errors.
+- Common packaging failures.
+
+### GitHub Actions
+
+Covers:
+
+- Workflow creation.
+- Build triggers.
+- JDK setup.
+- Android SDK setup.
+- Gradle caching.
+- Test execution.
+- Artifact upload.
+- Failure diagnostics.
+
+### Code Quality
+
+Covers:
+
+- Naming conventions.
+- File organization.
+- Separation of concerns.
+- Testability.
+- Maintainability.
+- Avoidance of unnecessary dependencies.
+
+### Security Review
+
+Covers:
+
+- Secret detection.
+- Unsafe configuration.
+- Permission review.
+- Dependency risk checks.
+- Sensitive-data handling.
+- Insecure network configuration.
+
+## 11.3 Skill Structure
+
+A skill can use a structure such as:
+
+```text
+skills/
+  android-project-creation/
+    SKILL.md
+    references/
+      project-structure.md
+      gradle-configuration.md
+    examples/
+      minimal-compose-project/
+    checks/
+      validate-project.sh
+```
+
+Each skill should define:
+
+- Purpose.
+- Applicable project types.
+- Required context.
+- Recommended workflow.
+- Tool requirements.
+- Constraints.
+- Validation steps.
+- Failure-handling guidance.
+- Version information.
+
+## 11.4 Skill Selection
+
+The runtime should select skills based on:
+
+- User intent.
+- Project type.
+- Existing dependencies.
+- Planned actions.
+- Relevant build errors.
+- Project configuration.
+
+The agent should load only relevant skills to control context size and reduce conflicting instructions.
+
+Skills must not be allowed to override platform security policies or tool permission rules.
+
+---
+
+# 12. Model Gateway
+
+## 12.1 Objective
+
+The Model Gateway separates the product from individual LLM providers.
+
+It should provide a consistent interface for sending requests, handling responses, invoking tools where supported, and recording usage.
+
+## 12.2 Provider Interface
+
+Conceptually:
+
+```typescript
+interface ModelProvider {
+  generateResponse(
+    request: ModelRequest
+  ): Promise<ModelResponse>;
+
+  streamResponse?(
+    request: ModelRequest
+  ): AsyncIterable<ModelStreamEvent>;
+
+  getCapabilities(): ModelCapabilities;
+
+  estimateUsage?(
+    request: ModelRequest
+  ): UsageEstimate;
+}
+```
+
+This is an architectural example, not a complete implementation.
+
+## 12.3 Provider Capabilities
+
+The platform should maintain capability metadata for each configured model.
+
+Possible capabilities include:
+
+- Tool calling.
+- Streaming.
+- Structured output.
+- Large context windows.
+- Multimodal input.
+- Code-focused generation.
+- Image understanding.
+- Usage reporting.
+- Provider-side caching.
+
+The runtime should not assume that all providers implement these features identically.
+
+## 12.4 Model Routing
+
+Different tasks may benefit from different models.
+
+Example routing policy:
+
+| Task | Preferred Capability |
+|---|---|
+| Requirement clarification | Strong instruction following |
+| Project planning | Strong reasoning |
+| Large-scale code generation | Strong coding and context handling |
+| Small file edits | Low latency and cost |
+| Build-error analysis | Strong debugging |
+| UI screenshot analysis | Image understanding |
+| Final review | Strong code analysis |
+
+The routing engine should support:
+
+- User-selected default models.
+- Task-specific model selection.
+- Explicit fallbacks.
+- Provider availability checks.
+- Configurable cost and latency preferences.
+- Capability-based routing.
+
+Automatic routing should remain transparent and configurable.
+
+## 12.5 Provider Failure Handling
+
+The Model Gateway should handle:
+
+- Rate limits.
+- Network failures.
+- Authentication failures.
+- Context-limit errors.
+- Invalid tool-call responses.
+- Provider outages.
+- Unsupported model capabilities.
+
+Fallback should occur only when the alternative provider is configured and authorized.
+
+The system must not silently change providers in ways that violate user settings or data-sharing preferences.
+
+---
+
+# 13. Project Context and Memory
+
+## 13.1 Context Layers
+
+The platform should distinguish several forms of context.
+
+### Conversation Context
+
+Recent messages and relevant interaction history.
+
+### Project Context
+
+Persistent information about the application, including:
+
+- Project purpose.
+- Supported platforms.
+- Architecture decisions.
+- Important dependencies.
+- Data models.
+- Navigation structure.
+- Known limitations.
+- Development conventions.
+
+### Repository Context
+
+Current files, directory structure, Git status, and relevant source code.
+
+### Task Context
+
+The active plan, completed steps, pending actions, tool results, and validation failures.
+
+### Build Context
+
+Recent build logs, compiler diagnostics, dependency resolution issues, and test results.
+
+### User Preferences
+
+Preferences such as:
+
+- Preferred language.
+- Default model.
+- Preferred UI style.
+- Confirmation requirements.
+- Preferred project templates.
+- Coding conventions.
+
+Only store preferences that are useful to the product and consistent with the user's consent and privacy settings.
+
+## 13.2 Project Instructions File
+
+Each project should support a dedicated instruction file, such as:
+
+```text
+PROJECT_GUIDELINES.md
+```
+
+It may specify:
+
+- Project goals.
+- Architecture.
+- Coding conventions.
+- Required dependencies.
+- Build commands.
+- Testing requirements.
+- Files that should not be modified without approval.
+- Design preferences.
+
+The system should also support conventional instruction files where practical.
+
+## 13.3 Context Compression
+
+For long-running projects, the system should summarize completed work and preserve important decisions.
+
+It should retain:
+
+- Architectural decisions.
+- Outstanding tasks.
+- Recent failures.
+- User-approved changes.
+- Known constraints.
+- Important file locations.
+
+It should not rely exclusively on a compressed summary when precise current file contents are available.
+
+---
+
+# 14. Project Workspace and File Management
+
+## 14.1 Workspace Requirements
+
+The workspace should provide:
+
+- A normalized project root.
+- Safe file operations.
+- File indexing.
+- Search.
+- Project metadata.
+- Change tracking.
+- Checkpoints.
+- Git integration.
+- Workspace recovery.
+- File size limits.
+- Validation of paths.
+
+## 14.2 Local and Remote State
+
+The system should distinguish between:
+
+1. Local working state.
+2. Committed repository state.
+3. Remote build state.
+4. Generated build artifacts.
+
+These states may temporarily differ.
+
+For example, a user may have uncommitted local changes while a remote workflow is building an earlier commit.
+
+Every build must therefore record the exact commit or immutable source snapshot it used.
+
+## 14.3 Checkpoints
+
+Before substantial modifications, the system should create a recoverable checkpoint.
+
+A checkpoint may include:
+
+- Current Git commit.
+- Local change snapshot.
+- Task identifier.
+- Change summary.
+- Timestamp.
+- Relevant configuration.
+
+The system should provide:
+
+- View checkpoint.
+- Compare checkpoint.
+- Restore checkpoint.
+- Revert last task.
+- Recover interrupted operation.
+
+Rollback should preserve the user's ability to recover later work and should not silently overwrite newer changes.
+
+## 14.4 Diff Viewer
+
+Users should be able to inspect:
+
+- Added files.
+- Modified files.
+- Deleted files.
+- Line-level changes.
+- Change summaries.
+- Files affected by a task.
+
+The user should be able to approve, reject, or revert changes where the workflow supports these actions.
+
+---
+
+# 15. Android Application Development
+
+## 15.1 Initial Technology Stack
+
+The initial Android project generator should use:
+
+- Kotlin.
+- Jetpack Compose.
+- Material 3.
+- Android Gradle Plugin.
+- Gradle.
+- JDK version compatible with the selected Android Gradle Plugin.
+- Android SDK versions defined by the chosen template.
+- Kotlin serialization or another compatible serialization library when needed.
+- A navigation solution appropriate to the project.
+- Room or DataStore when persistent storage is required.
+- A suitable HTTP client for network-enabled applications.
+
+Dependencies should be selected deliberately rather than added to every project by default.
+
+## 15.2 Project Templates
+
+The platform should maintain tested starter templates.
+
+Recommended initial templates:
+
+1. Minimal Compose App.
+2. Multi-Screen App.
+3. Local Database App.
+4. API-Connected App.
+5. Authentication UI Prototype.
+6. Settings and Preferences App.
+7. Dashboard App.
+8. Media or Content Browser.
+9. Form-Based Business App.
+10. Custom Blank Project.
+
+Templates should be versioned and tested against known-compatible toolchain combinations.
+
+## 15.3 Template Requirements
+
+Every template should include:
+
+- A known-good build configuration.
+- A minimal working application.
+- Required resources.
+- Basic navigation where appropriate.
+- A predictable directory structure.
+- A build workflow.
+- Basic validation checks.
+- A documented dependency baseline.
+
+The generator should begin with a stable template and modify it incrementally.
+
+This reduces the likelihood of creating incomplete Gradle projects from scratch.
+
+## 15.4 UI Generation
+
+The agent should support:
+
+- Creating screens.
+- Modifying layouts.
+- Creating reusable components.
+- Applying themes.
+- Changing colors and typography.
+- Adding navigation.
+- Adding loading and error states.
+- Improving accessibility.
+- Supporting different screen sizes.
+- Generating previewable Compose components.
+
+The system should separate visual styling from business logic whenever practical.
+
+## 15.5 Android App Configuration
+
+The agent should be able to configure:
+
+- Application name.
+- Application identifier.
+- Minimum SDK.
+- Target SDK.
+- Version code.
+- Version name.
+- App icon.
+- Permissions.
+- Package structure.
+- Build variants.
+- Debug and release settings.
+
+Changes to sensitive configuration should be surfaced clearly to the user.
+
+## 15.6 APK Generation
+
+The initial target is a debug APK produced by Gradle.
+
+The workflow should verify that:
+
+- The build succeeded.
+- The expected APK exists.
+- The artifact corresponds to the intended commit.
+- The file is nonempty.
+- The artifact can be downloaded.
+- The artifact metadata matches the expected project where feasible.
+
+The platform must not claim that an APK has been tested on a real device unless an appropriate test actually ran.
+
+## 15.7 Future Android Features
+
+Potential later capabilities include:
+
+- Emulator-based UI testing.
+- Screenshot capture.
+- Screenshot-driven design refinement.
+- Instrumentation testing.
+- App startup verification.
+- Crash-log analysis.
+- Release build generation.
+- Signing configuration.
+- Multiple build variants.
+- AAB generation.
+- Play Store preparation.
+
+Release signing and publishing require additional security controls and should not be mixed casually with the initial debug-build workflow.
+
+---
+
+# 16. GitHub Integration
+
+## 16.1 Goals
+
+GitHub should act as the primary source-control and collaboration layer.
+
+Users should retain ownership of their repositories and be able to work on generated projects outside the product.
+
+## 16.2 Required Features
+
+- Connect a GitHub account.
+- List authorized repositories.
+- Create a repository where authorized.
+- Select an existing repository.
+- Clone or synchronize project contents.
+- Create development branches.
+- Commit generated changes.
+- Push approved changes.
+- Inspect commit history.
+- View diffs.
+- Track workflow runs.
+- Retrieve build logs.
+- Download workflow artifacts.
+- Create pull requests where appropriate.
+- Recover repository synchronization errors.
+
+## 16.3 Recommended Branch Strategy
+
+Use a dedicated branch for agent changes.
+
+For example:
+
+```text
+main
+  |
+  +-- ai/development
+        |
+        +-- generated changes
+        +-- validation
+        +-- build attempts
+```
+
+The actual naming convention should be configurable.
+
+For established repositories, the agent should not push directly to the default branch unless the user has explicitly authorized that behavior.
+
+## 16.4 Commit Strategy
+
+Commits should represent understandable units of work.
+
+Examples:
+
+```text
+feat: add task creation screen
+feat: implement local task storage
+fix: resolve Compose compilation errors
+test: add repository unit tests
+```
+
+The agent should not create excessive commits for every tiny internal operation.
+
+Users should be able to review the accumulated changes before committing or pushing, depending on their configured workflow.
+
+## 16.5 GitHub App Versus Personal Access Token
+
+For a production service, a GitHub App is generally preferable to distributing long-lived personal access tokens.
+
+A GitHub App can support installation-scoped access and short-lived installation tokens.
+
+For an MVP, OAuth-based account linking or a carefully scoped user-authorized integration may be sufficient, depending on the exact architecture.
+
+Credentials must never be embedded in generated application source code or committed to the user's repository.
+
+---
+
+# 17. GitHub Actions Build System
+
+## 17.1 Objective
+
+GitHub Actions provides a managed execution environment for building and validating projects.
+
+The product can initially avoid operating dedicated Android build servers.
+
+## 17.2 Build Workflow
+
+The normal workflow should be:
+
+```text
+Agent modifies project
+        |
+        v
+Changes are committed or pushed
+        |
+        v
+Build workflow is triggered
+        |
+        v
+Workflow checks out an immutable commit
+        |
+        v
+Environment and dependencies are prepared
+        |
+        v
+Static checks and tests run
+        |
+        v
+Gradle assembles the APK
+        |
+        v
+Build results are collected
+        |
+        +----------------------+
+        |                      |
+        v                      v
+     Success                Failure
+        |                      |
+        v                      v
+ Upload APK             Collect diagnostics
+        |                      |
+        v                      v
+ Notify client           Agent analyzes errors
+        |                      |
+        v                      v
+ Download APK           Apply corrective changes
+                               |
+                               v
+                         Retry if permitted
+```
+
+## 17.3 Workflow Responsibilities
+
+The workflow should:
+
+1. Check out a specific source revision.
+2. Configure the required JDK.
+3. Configure Android SDK components as required.
+4. Set up Gradle.
+5. Restore safe caches.
+6. Run configured validation checks.
+7. Run unit tests.
+8. Build the requested variant.
+9. Preserve useful diagnostic logs.
+10. Upload build artifacts when appropriate.
+11. Publish a clear success or failure status.
+
+## 17.4 Version Compatibility
+
+The JDK version, Gradle version, Android Gradle Plugin, Kotlin version, and Android SDK configuration must be compatible.
+
+The platform should derive toolchain requirements from the project template or project configuration.
+
+It should not assume that one JDK version works for every project.
+
+## 17.5 Build Job Isolation
+
+Generated code should be treated as untrusted.
+
+Build jobs should use appropriate isolation and least-privilege permissions.
+
+The workflow should not expose deployment secrets, signing credentials, repository administration permissions, or unrelated account credentials to untrusted pull-request code.
+
+For private repositories and sensitive workloads, runner configuration and workflow permissions must be reviewed carefully.
+
+## 17.6 Artifact Handling
+
+Each artifact record should include:
+
+- Artifact identifier.
+- Project identifier.
+- Repository.
+- Commit SHA.
+- Workflow run identifier.
+- Build variant.
+- File name.
+- File size.
+- Creation time.
+- Expiration time.
+- Build status.
+
+The application should associate the downloaded APK with the exact build that generated it.
+
+## 17.7 Quotas and Cost
+
+GitHub Actions has usage limits, concurrency limits, and artifact retention policies that depend on account and repository configuration.
+
+The product should not assume unlimited free builds.
+
+It should track build usage, enforce sensible retry limits, and provide clear information about external service requirements.
+
+---
+
+# 18. Build-Error Analysis and Automated Repair
+
+## 18.1 Objective
+
+Build failures should become structured input for the agent's diagnostic workflow.
+
+The platform should not merely return an unfiltered wall of terminal output.
+
+## 18.2 Error Processing Pipeline
+
+When a build fails:
+
+1. Retrieve the workflow conclusion.
+2. Retrieve relevant logs.
+3. Identify the failing step.
+4. Extract compiler and Gradle diagnostics.
+5. Classify the error.
+6. Identify likely relevant source files.
+7. Retrieve those files and their current contents.
+8. Prepare a focused diagnostic context.
+9. Ask the model to propose a fix.
+10. Validate the proposed change.
+11. Apply the change if authorized.
+12. Commit or push according to policy.
+13. Trigger a new build.
+14. Evaluate the result.
+15. Stop after the retry budget is exhausted.
+
+## 18.3 Error Categories
+
+Initial categories should include:
+
+- Kotlin compilation failure.
+- Gradle configuration failure.
+- Dependency resolution failure.
+- Android resource compilation failure.
+- Manifest configuration failure.
+- Missing resource.
+- Incorrect import.
+- Type mismatch.
+- Unresolved reference.
+- SDK or toolchain mismatch.
+- Unit-test failure.
+- Packaging failure.
+- Artifact upload failure.
+- Workflow permission failure.
+- Network or external-service failure.
+
+## 18.4 Diagnostic Context
+
+The agent should receive a concise, structured package rather than unnecessarily large logs.
+
+Example:
+
+```json
+{
+  "build_status": "failure",
+  "failed_step": "assembleDebug",
+  "error_category": "kotlin_compilation",
+  "source_file": "app/src/main/java/example/HomeScreen.kt",
+  "diagnostics": [
+    {
+      "message": "Unresolved reference",
+      "line": 42,
+      "column": 17
+    }
+  ],
+  "commit_sha": "example-commit-sha"
+}
+```
+
+This is an illustrative schema, not a literal expected build response.
+
+The runtime should verify that the error corresponds to the current project revision before applying a fix.
+
+## 18.5 Retry Policy
+
+A reasonable starting policy is to allow a small number of automatic repair attempts per build task.
+
+For example:
+
+- One initial build.
+- Up to three repair attempts.
+- A final verification build when appropriate.
+
+The limit should be configurable.
+
+The agent must stop when:
+
+- The error is outside supported categories.
+- The same failure repeats without meaningful changes.
+- The budget is exhausted.
+- A required secret or permission is missing.
+- The next action is destructive or unsafe.
+- User intervention is necessary.
+
+## 18.6 Repair Quality
+
+A successful compilation is necessary but insufficient.
+
+The system should also evaluate:
+
+- Whether the original request was implemented.
+- Whether unrelated files were modified.
+- Whether existing behavior was preserved.
+- Whether tests pass.
+- Whether the fix introduces obvious security problems.
+- Whether the final output matches the intended project configuration.
+
+The final response should distinguish verified outcomes from unverified assumptions.
+
+---
+
+# 19. User Experience and Interface
+
+## 19.1 Main Navigation
+
+The Android application should provide a clear primary navigation structure.
+
+Suggested sections:
+
+- Home.
+- Projects.
+- Activity.
+- Templates.
+- Settings.
+
+Project-specific navigation can include:
+
+- Chat.
+- Files.
+- Preview.
+- Builds.
+- Git.
+- Settings.
+
+The interface should remain usable on small mobile screens.
+
+## 19.2 Home Screen
+
+The home screen should provide:
+
+- A prominent project-creation prompt.
+- Recent projects.
+- Create New Project.
+- Import Existing Project.
+- Connect GitHub.
+- Recent builds.
+- Project templates.
+- Account and usage information where applicable.
+
+## 19.3 Project Creation Flow
+
+The user should be able to create a project through a guided process.
+
+### Step 1: Describe the application
+
+Example:
+
+"I want a habit-tracking app with daily reminders, progress charts, and offline storage."
+
+### Step 2: Clarify requirements
+
+The agent asks only the questions that materially affect the implementation.
+
+Possible questions:
+
+- Should the app work offline?
+- Should user data remain on the device?
+- Is authentication required?
+- What visual style do you prefer?
+- Is a backend required?
+
+### Step 3: Select a project configuration
+
+The user can choose:
+
+- Platform.
+- Template.
+- Design direction.
+- Optional capabilities.
+- Model.
+- Repository destination.
+
+### Step 4: Review the plan
+
+The agent presents:
+
+- Main screens.
+- Data model.
+- Architecture.
+- Dependencies.
+- Planned implementation steps.
+- Build strategy.
+
+### Step 5: Generate the project
+
+The system creates the project and reports progress.
+
+### Step 6: Build and validate
+
+The platform triggers a build and displays its status.
+
+### Step 7: Download and iterate
+
+The user downloads the APK or requests additional changes.
+
+## 19.4 Chat Interface
+
+The chat should support:
+
+- Streaming responses.
+- Message history.
+- Task progress.
+- Plan previews.
+- Approval prompts.
+- Diff summaries.
+- Build status cards.
+- Error explanations.
+- Retry controls.
+- Cancel controls.
+- Artifact links.
+
+The agent should distinguish between a conversational response and an operation that has actually executed.
+
+## 19.5 Progress Reporting
+
+Progress should be tied to real execution events.
+
+Example:
+
+```text
+Analyzing project
+      |
+      v
+Creating implementation plan
+      |
+      v
+Generating files
+      |
+      v
+Validating project structure
+      |
+      v
+Pushing changes
+      |
+      v
+Waiting for cloud build
+      |
+      v
+Analyzing build result
+      |
+      v
+APK ready
+```
+
+The UI should not display a fabricated percentage for operations whose progress cannot be measured.
+
+## 19.6 Build Dashboard
+
+The build dashboard should show:
+
+- Current status.
+- Workflow run identifier.
+- Commit SHA.
+- Start time.
+- Duration.
+- Failed step.
+- Error summary.
+- Test results.
+- Artifact availability.
+- Retry controls.
+- Links to the GitHub workflow.
+
+## 19.7 File Explorer
+
+The file explorer should support:
+
+- Directory navigation.
+- File viewing.
+- Search.
+- Syntax highlighting where practical.
+- File editing.
+- Change indicators.
+- File diffs.
+- Revert actions.
+- Read-only inspection modes.
+
+Large files should be loaded selectively rather than automatically inserted into every model request.
+
+---
+
+# 20. Visual Design and UI Generation
+
+## 20.1 Design Goals
+
+The generated applications should look intentional rather than like generic collections of default components.
+
+The design system should encourage:
+
+- Clear hierarchy.
+- Consistent spacing.
+- Readable typography.
+- Appropriate contrast.
+- Predictable navigation.
+- Responsive layouts.
+- Accessible controls.
+- Meaningful empty states.
+- Loading and error states.
+- Consistent iconography.
+
+## 20.2 Design Specification
+
+For complex projects, the agent should create a design specification before implementing the screens.
+
+It may contain:
+
+- Color palette.
+- Typography scale.
+- Spacing system.
+- Shape and corner-radius rules.
+- Component inventory.
+- Navigation model.
+- Screen descriptions.
+- Interaction states.
+- Accessibility requirements.
+
+## 20.3 Visual Iteration
+
+The long-term product should support a feedback loop:
+
+1. Generate UI.
+2. Build the application.
+3. Run it in an emulator or other suitable environment.
+4. Capture screenshots.
+5. Compare the rendered output against the design specification.
+6. Identify visual problems.
+7. Apply targeted fixes.
+8. Repeat within a configured budget.
+
+This capability requires actual rendering and screenshot capture infrastructure.
+
+The agent must not claim to have visually inspected an application when it has only read the source code.
+
+## 20.4 Design Input
+
+Future releases may support:
+
+- Reference screenshots.
+- Image-based design instructions.
+- Brand colors.
+- User-provided logos.
+- UI reference collections.
+- Design tokens.
+- Existing website screenshots.
+
+Image-based generation should respect applicable intellectual property and privacy requirements.
+
+---
+
+# 21. Security Architecture
+
+Security must be treated as a foundational requirement.
+
+## 21.1 Trust Boundaries
+
+The system should distinguish between:
+
+- User input.
+- Model output.
+- Generated source code.
+- Repository contents.
+- External dependencies.
+- Build workflows.
+- Application credentials.
+- Platform credentials.
+- Build artifacts.
+
+Neither model output nor repository content should be assumed to be trustworthy.
+
+## 21.2 API Key Handling
+
+The product must never hardcode private model-provider API keys into generated application source code.
+
+Preferred options include:
+
+1. A backend-hosted model gateway that keeps provider credentials server-side.
+2. User-supplied provider credentials stored securely on the device, if direct client-to-provider access is intentionally supported.
+3. Short-lived credentials where the provider supports them.
+
+If credentials are stored locally, use platform-appropriate secure storage.
+
+The application must never send its own backend administrative credentials or GitHub integration secrets to the model.
+
+## 21.3 GitHub Credential Security
+
+Use the smallest practical permission scope.
+
+Credentials should:
+
+- Be encrypted at rest when stored by a backend.
+- Never be written to logs.
+- Never be included in model prompts.
+- Never be embedded in generated APKs.
+- Be revocable.
+- Be rotated or expire where supported.
+- Be isolated by user and project.
+
+## 21.4 Generated Code Security
+
+Generated code must be reviewed and tested according to the risk level of the project.
+
+The system should detect or flag:
+
+- Hardcoded credentials.
+- Dangerous permission requests.
+- Insecure network configurations.
+- Obvious sensitive-data exposure.
+- Unnecessary privileged dependencies.
+- Suspicious build-script behavior.
+- Unsafe deserialization patterns where detectable.
+- Insecure storage practices.
+
+Automated scanning cannot guarantee that code is secure.
+
+## 21.5 Workflow Security
+
+Build workflows should:
+
+- Use minimal token permissions.
+- Avoid exposing secrets to untrusted code.
+- Pin third-party actions to reviewed commit SHAs in production.
+- Use trusted workflow definitions.
+- Validate webhook signatures.
+- Validate repository and workflow identifiers.
+- Restrict artifact access.
+- Apply appropriate execution limits.
+- Avoid executing arbitrary privileged commands supplied directly by the model.
+
+The platform should carefully distinguish trusted project-owner actions from untrusted pull-request or generated-code execution.
+
+## 21.6 Build Artifact Security
+
+The system should validate the association between an artifact, workflow run, repository, and source revision.
+
+Artifacts should not be treated as trusted merely because they were uploaded by a workflow.
+
+## 21.7 User Approval
+
+Require explicit confirmation for high-impact operations such as:
+
+- Deleting substantial project content.
+- Overwriting important user files.
+- Changing repository visibility.
+- Publishing a release.
+- Modifying production deployment configuration.
+- Using signing credentials.
+- Triggering externally billable services beyond configured limits.
+
+## 21.8 Threat Modeling
+
+Before production release, conduct a threat-modeling exercise covering:
+
+- Prompt injection.
+- Malicious repository instructions.
+- Dependency supply-chain attacks.
+- Credential leakage.
+- Unauthorized repository access.
+- Workflow permission escalation.
+- Malicious build scripts.
+- Artifact substitution.
+- Cross-user data exposure.
+- Denial of service through repeated model or build requests.
+
+---
+
+# 22. Authentication and Account Management
+
+## 22.1 Account Features
+
+A production version may support:
+
+- Account creation.
+- Sign-in.
+- Secure session management.
+- GitHub account linking.
+- Provider configuration.
+- Usage limits.
+- Project synchronization.
+- Account deletion.
+- Credential revocation.
+
+The MVP may initially use device-local projects and direct GitHub authorization, provided the security model is explicit.
+
+## 22.2 Identity Separation
+
+The system should distinguish:
+
+- The user's product account.
+- The user's GitHub identity.
+- The user's AI provider credentials.
+- Any project-specific external-service credentials.
+
+These are different authorization domains and should not be treated as interchangeable.
+
+## 22.3 Multi-Device Synchronization
+
+Future versions should support accessing the same project from multiple devices.
+
+The system must reconcile:
+
+- Local changes.
+- Remote commits.
+- Concurrent edits.
+- Running agent tasks.
+- Build results.
+- Project metadata.
+
+Conflicting edits should be surfaced instead of silently discarded.
+
+---
+
+# 23. Data Model
+
+The application should use a clear domain model.
+
+## 23.1 Core Entities
+
+### User
+
+Represents a platform user.
+
+Fields may include:
+
+- `id`
+- `created_at`
+- `account_status`
+- `preferences`
+
+### Project
+
+Represents an application project.
+
+Fields may include:
+
+- `id`
+- `owner_id`
+- `name`
+- `description`
+- `platform`
+- `template_id`
+- `repository_id`
+- `default_branch`
+- `created_at`
+- `updated_at`
+- `project_status`
+
+### Task
+
+Represents an agent operation.
+
+Fields may include:
+
+- `id`
+- `project_id`
+- `user_id`
+- `task_type`
+- `user_request`
+- `status`
+- `plan`
+- `result_summary`
+- `iteration_count`
+- `created_at`
+- `completed_at`
+
+### Conversation
+
+Represents a conversation associated with a project.
+
+Fields may include:
+
+- `id`
+- `project_id`
+- `user_id`
+- `created_at`
+- `updated_at`
+
+### Message
+
+Represents an individual conversation message.
+
+Fields may include:
+
+- `id`
+- `conversation_id`
+- `role`
+- `content`
+- `created_at`
+- `metadata`
+
+### Tool Execution
+
+Represents a tool invocation.
+
+Fields may include:
+
+- `id`
+- `task_id`
+- `tool_name`
+- `input_summary`
+- `output_summary`
+- `status`
+- `started_at`
+- `completed_at`
+- `error`
+
+Sensitive tool arguments must be redacted before logging.
+
+### Build
+
+Represents a build attempt.
+
+Fields may include:
+
+- `id`
+- `project_id`
+- `task_id`
+- `repository_id`
+- `commit_sha`
+- `workflow_run_id`
+- `build_variant`
+- `status`
+- `started_at`
+- `completed_at`
+- `error_summary`
+
+### Artifact
+
+Represents a generated deliverable.
+
+Fields may include:
+
+- `id`
+- `build_id`
+- `file_name`
+- `artifact_type`
+- `size_bytes`
+- `storage_reference`
+- `expires_at`
+
+### Checkpoint
+
+Represents a recoverable project state.
+
+Fields may include:
+
+- `id`
+- `project_id`
+- `task_id`
+- `commit_sha`
+- `snapshot_reference`
+- `created_at`
+- `description`
+
+### Skill
+
+Represents a reusable development workflow.
+
+Fields may include:
+
+- `id`
+- `name`
+- `version`
+- `supported_platforms`
+- `content_reference`
+- `validation_rules`
+
+### Model Configuration
+
+Represents an authorized model-provider configuration.
+
+Fields may include:
+
+- `id`
+- `owner_id`
+- `provider`
+- `model_identifier`
+- `capabilities`
+- `configuration_metadata`
+
+Secret values should be stored separately from ordinary configuration metadata.
+
+---
+
+# 24. Backend API Design
+
+If a backend is introduced, it should expose a versioned API.
+
+Example endpoints:
+
+```text
+POST   /api/v1/projects
+GET    /api/v1/projects
+GET    /api/v1/projects/{projectId}
+PATCH  /api/v1/projects/{projectId}
+DELETE /api/v1/projects/{projectId}
+
+POST   /api/v1/projects/{projectId}/tasks
+GET    /api/v1/tasks/{taskId}
+POST   /api/v1/tasks/{taskId}/cancel
+GET    /api/v1/tasks/{taskId}/events
+
+GET    /api/v1/projects/{projectId}/files
+GET    /api/v1/projects/{projectId}/files/content
+POST   /api/v1/projects/{projectId}/files/patch
+
+GET    /api/v1/projects/{projectId}/builds
+POST   /api/v1/projects/{projectId}/builds
+GET    /api/v1/builds/{buildId}
+GET    /api/v1/builds/{buildId}/logs
+GET    /api/v1/builds/{buildId}/artifacts
+
+GET    /api/v1/projects/{projectId}/checkpoints
+POST   /api/v1/projects/{projectId}/checkpoints
+POST   /api/v1/projects/{projectId}/checkpoints/{checkpointId}/restore
+
+POST   /api/v1/integrations/github/connect
+GET    /api/v1/integrations/github/repositories
+POST   /api/v1/integrations/github/webhook
+```
+
+These endpoints are illustrative.
+
+The final API should follow consistent authorization, validation, pagination, idempotency, and error-reporting conventions.
+
+Long-running operations should return task or build identifiers instead of keeping HTTP requests open until completion.
+
+---
+
+# 25. Real-Time Events and Background Jobs
+
+## 25.1 Real-Time Updates
+
+The client should receive progress updates through an appropriate mechanism, such as:
+
+- Server-Sent Events.
+- WebSockets.
+- Polling as a simpler initial implementation.
+
+The choice should reflect the deployment architecture and mobile network conditions.
+
+## 25.2 Event Types
+
+Examples:
+
+```text
+task.created
+task.planning_started
+task.plan_ready
+task.awaiting_approval
+task.execution_started
+tool.started
+tool.completed
+file.changed
+validation.started
+validation.failed
+build.queued
+build.started
+build.completed
+build.failed
+repair.started
+repair.completed
+artifact.available
+task.completed
+task.failed
+task.cancelled
+```
+
+## 25.3 Event Reliability
+
+The backend should persist critical task and build events.
+
+The client should be able to reconnect and recover the latest state after:
+
+- App restarts.
+- Network interruptions.
+- Device suspension.
+- Background execution limits.
+- Temporary service failures.
+
+A transient notification should not be the only record of a completed build.
+
+---
+
+# 26. Observability and Reliability
+
+## 26.1 Logging
+
+The system should log:
+
+- Task lifecycle events.
+- Tool execution outcomes.
+- Model-provider errors.
+- Build lifecycle events.
+- Validation outcomes.
+- Retry decisions.
+- Artifact creation.
+- Authentication failures.
+
+Logs should not contain secrets, private keys, access tokens, or unnecessary sensitive source code.
+
+## 26.2 Metrics
+
+Recommended metrics include:
+
+- Time to first generated file.
+- Project generation success rate.
+- First-build success rate.
+- Build repair success rate.
+- Median build duration.
+- Median task duration.
+- Average model cost per task.
+- Average number of repair attempts.
+- Task cancellation rate.
+- Provider error rate.
+- Artifact download success rate.
+- User-requested rollback rate.
+
+## 26.3 Reliability Targets
+
+Initial targets should be measured rather than assumed.
+
+Potential objectives include:
+
+- No silent loss of committed project state.
+- Reliable recovery of task status after app restarts.
+- Clear differentiation between running, failed, and completed builds.
+- Idempotent processing of duplicate webhook events.
+- Safe recovery after interrupted tool execution.
+- Bounded retries for external-service failures.
+
+Specific availability and latency targets should be set after measuring real workloads.
+
+## 26.4 Failure Recovery
+
+The system should recover from:
+
+- Model request timeouts.
+- Build queue delays.
+- GitHub API rate limits.
+- Expired authorization.
+- Duplicate webhook delivery.
+- Partial file operations.
+- Client disconnection.
+- Failed artifact downloads.
+- Interrupted agent tasks.
+
+Operations that may be retried should use idempotency keys or equivalent safeguards where appropriate.
+
+---
+
+# 27. Performance and Cost Management
+
+## 27.1 Model Cost
+
+Model costs should be controlled through:
+
+- Context selection.
+- Prompt caching where supported.
+- Small-model routing for simple tasks.
+- Incremental edits.
+- Bounded repair loops.
+- Duplicate-request prevention.
+- Token and task budgets.
+
+## 27.2 Build Cost
+
+Build costs should be controlled through:
+
+- Build deduplication.
+- Cancellation of obsolete builds.
+- Dependency caching.
+- Reuse of compatible artifacts.
+- Reasonable retry limits.
+- Usage tracking.
+- Configurable concurrency.
+
+## 27.3 Context Efficiency
+
+The system should prefer:
+
+- File summaries before full-file reads.
+- Symbol search.
+- Relevant snippets.
+- Focused compiler diagnostics.
+- Task summaries.
+- Incremental context refresh.
+
+However, context reduction must not omit essential code or configuration needed to make a correct change.
+
+## 27.4 User-Visible Limits
+
+Users should understand when a task is limited by:
+
+- Model usage.
+- Build quotas.
+- Provider rate limits.
+- Repository permissions.
+- Execution time.
+- Artifact expiration.
+
+The platform should explain the constraint and offer a clear recovery path.
+
+---
+
+# 28. Testing Strategy
+
+Testing must cover both the generated applications and the AI development platform itself.
+
+## 28.1 Unit Tests
+
+Test:
+
+- Tool argument validation.
+- Path security.
+- Task state transitions.
+- Context assembly.
+- Model response parsing.
+- Retry logic.
+- Permission checks.
+- Git operations.
+- Build-result parsing.
+- Artifact metadata.
+
+## 28.2 Integration Tests
+
+Test:
+
+- Model provider integration.
+- GitHub authorization.
+- Repository creation.
+- Branch creation.
+- Commit and push.
+- Workflow triggering.
+- Webhook handling.
+- Artifact download.
+- Repair-loop execution.
+
+## 28.3 End-to-End Tests
+
+Test a complete workflow:
+
+1. Create a new project.
+2. Generate a simple screen.
+3. Commit the source code.
+4. Trigger a cloud build.
+5. Retrieve the build status.
+6. Download the APK.
+7. Verify artifact metadata.
+8. Introduce a controlled compilation error.
+9. Confirm that the agent identifies the failure.
+10. Confirm that the repair workflow restores a successful build.
+
+## 28.4 Regression Suite
+
+Maintain a collection of representative prompts and projects.
+
+Examples:
+
+- Minimal counter app.
+- Multi-screen notes app.
+- Local database app.
+- API-connected list.
+- Settings screen.
+- Form validation.
+- Navigation changes.
+- Dependency updates.
+- Manifest permission changes.
+- Known compiler failures.
+
+Each case should have explicit acceptance criteria.
+
+## 28.5 AI Evaluation
+
+Evaluate the agent on:
+
+- Requirement adherence.
+- Build success.
+- Test success.
+- Number of unnecessary file changes.
+- Repair success rate.
+- Regression rate.
+- Security violations.
+- Model usage.
+- User approval frequency.
+- Recovery success.
+
+Evaluation should measure actual tool results rather than relying solely on model self-assessment.
+
+---
+
+# 29. Product Analytics
+
+The product should measure user experience and system reliability while respecting privacy.
+
+Useful events include:
+
+```text
+project.created
+project.imported
+github.connected
+task.created
+plan.approved
+file.generated
+file.modified
+build.started
+build.succeeded
+build.failed
+repair.started
+repair.succeeded
+artifact.downloaded
+checkpoint.restored
+task.cancelled
+```
+
+Analytics should answer questions such as:
+
+- How often do users reach a successful APK?
+- How many attempts are required?
+- Which project templates perform best?
+- Which build failures occur most frequently?
+- How often do users need to edit generated code manually?
+- Which features are used most often?
+- What is the average cost of producing a working project?
+
+Source code and sensitive user content should not be collected for analytics without an appropriate purpose, disclosure, and authorization.
+
+---
+
+# 30. Monetization Strategy
+
+The product can use a hybrid pricing model.
+
+## 30.1 Free Tier
+
+Possible features:
+
+- Limited projects.
+- Limited AI usage.
+- Limited cloud builds.
+- Basic Android templates.
+- Debug APK downloads.
+- Public or user-connected repositories.
+- Standard support.
+
+The exact limits should be based on real infrastructure costs.
+
+## 30.2 Pro Tier
+
+Possible features:
+
+- Higher model usage limits.
+- More cloud builds.
+- Longer artifact retention.
+- More project history.
+- Advanced models.
+- Additional templates.
+- Advanced repair workflows.
+- Private project management features.
+- Greater concurrency.
+
+## 30.3 Team Tier
+
+Possible features:
+
+- Shared projects.
+- Team roles.
+- Shared templates.
+- Shared usage budgets.
+- Review and approval workflows.
+- Centralized project policies.
+- Team-level audit logs.
+
+## 30.4 Usage-Based Costs
+
+Costs may arise from:
+
+- Model inference.
+- GitHub Actions usage.
+- Backend infrastructure.
+- Artifact storage.
+- External services.
+- Premium integrations.
+
+The pricing system should clearly distinguish platform fees from costs billed directly by external providers.
+
+The product should avoid promising unlimited AI or build usage unless the economics genuinely support it.
+
+---
+
+# 31. Development Roadmap
+
+The roadmap should be organized around verified end-to-end capabilities.
+
+## Phase 1: Technical Foundation
+
+Objectives:
+
+- Establish the application architecture.
+- Implement the project data model.
+- Create the model-provider interface.
+- Build a minimal conversational interface.
+- Implement safe project file operations.
+- Add task state management.
+- Create a stable Android starter template.
+
+Deliverable:
+
+A working prototype that generates and modifies project files.
+
+## Phase 2: Agent Harness
+
+Objectives:
+
+- Implement planning.
+- Add the tool registry.
+- Add structured tool calling.
+- Implement context assembly.
+- Add task progress reporting.
+- Add execution budgets.
+- Implement checkpoints and rollback.
+
+Deliverable:
+
+A usable coding agent that can make controlled changes to a real project.
+
+## Phase 3: GitHub Integration
+
+Objectives:
+
+- Implement secure GitHub authorization.
+- Connect repositories.
+- Create development branches.
+- Commit and push changes.
+- Display diffs and history.
+- Handle synchronization errors.
+
+Deliverable:
+
+Generated projects can be stored and versioned in real repositories.
+
+## Phase 4: Cloud Build Pipeline
+
+Objectives:
+
+- Create the Android build workflow.
+- Trigger workflow runs.
+- Track build status.
+- Retrieve logs.
+- Upload APK artifacts.
+- Download artifacts from the client.
+- Associate every build with an immutable source revision.
+
+Deliverable:
+
+A complete generate-to-APK workflow.
+
+## Phase 5: Automated Repair
+
+Objectives:
+
+- Parse build failures.
+- Classify diagnostics.
+- Retrieve relevant source files.
+- Generate corrective patches.
+- Validate patches.
+- Retry builds within configured limits.
+- Report unresolved failures.
+
+Deliverable:
+
+The agent can automatically resolve supported build errors.
+
+## Phase 6: Product Polish
+
+Objectives:
+
+- Improve project creation.
+- Add tested templates.
+- Improve file browsing.
+- Add model selection.
+- Improve progress reporting.
+- Add onboarding.
+- Add usage tracking.
+- Improve error explanations.
+
+Deliverable:
+
+A reliable MVP suitable for real-world testing.
+
+## Phase 7: Advanced Development Features
+
+Objectives:
+
+- Add screenshot-based UI iteration.
+- Add emulator testing.
+- Add richer automated evaluation.
+- Add more project types.
+- Improve dependency management.
+- Add advanced GitHub workflows.
+
+Deliverable:
+
+A more capable AI development environment.
+
+## Phase 8: Production Platform
+
+Objectives:
+
+- Introduce or harden the backend.
+- Add durable task queues.
+- Implement billing.
+- Add multi-device synchronization.
+- Improve security monitoring.
+- Add team features.
+- Add administrative controls.
+- Establish service reliability objectives.
+
+Deliverable:
+
+A scalable commercial product.
+
+---
+
+# 32. MVP Acceptance Criteria
+
+The MVP should not be considered complete until it satisfies the following criteria.
+
+## Project Creation
+
+- A user can create an Android project from natural-language instructions.
+- The project uses a tested starter template.
+- Generated files follow a valid project structure.
+- The application contains the requested core functionality to the extent supported by the generator.
+
+## Agent Execution
+
+- The agent can inspect existing files.
+- The agent can create and edit files.
+- Tool calls are validated.
+- Project changes are visible.
+- Long-running tasks have explicit states.
+- Execution limits are enforced.
+
+## GitHub
+
+- The user can authorize the integration.
+- The agent can work on an authorized repository.
+- Changes are associated with identifiable commits.
+- The system does not expose credentials to generated source code.
+- Repository permissions are checked before sensitive operations.
+
+## Cloud Builds
+
+- A build can be triggered for a specific revision.
+- Build status is available to the client.
+- Failures expose useful diagnostics.
+- Successful builds produce downloadable APK artifacts.
+- Artifact metadata identifies the corresponding source revision.
+
+## Repair Loop
+
+- The system can identify supported compilation failures.
+- The agent receives relevant diagnostics.
+- Corrective changes are validated.
+- Retry limits are enforced.
+- Unresolved failures are reported honestly.
+
+## Recovery
+
+- Project state can be recovered after an interrupted task.
+- Users can inspect changes.
+- Users can revert to a checkpoint.
+- Failed builds do not silently destroy source code.
+
+## Security
+
+- Secrets are excluded from model context and logs.
+- Tool permissions are enforced.
+- GitHub access is scoped appropriately.
+- Generated code is treated as untrusted.
+- High-impact actions require the appropriate authorization.
+
+---
+
+# 33. Critical Engineering Decisions
+
+The following decisions should be made explicitly before implementation.
+
+## Decision 1: Local Harness or Backend Harness?
+
+**Recommendation:** Begin with a lightweight client-side harness if the initial implementation can operate securely without privileged backend access. Introduce a backend for durable orchestration and trusted integrations as production requirements emerge.
+
+A client-only architecture reduces initial infrastructure but makes secure credential management, reliable background execution, and centralized task coordination more difficult.
+
+## Decision 2: Direct Model Calls or Model Gateway?
+
+**Recommendation:** Define a provider abstraction immediately. Use a backend model gateway when shared service credentials, centralized billing, provider routing, or durable execution are required.
+
+Avoid hardwiring the application to a single provider's API.
+
+## Decision 3: Local Android SDK or GitHub Actions?
+
+**Recommendation:** Use GitHub Actions for the initial cloud build workflow.
+
+Do not require a complete Android build toolchain on the user's phone.
+
+Local compilation can be explored later for environments where it is practical.
+
+## Decision 4: Generate From Scratch or Use Templates?
+
+**Recommendation:** Use tested templates as the default.
+
+The agent should adapt a known-good project instead of inventing every build configuration from scratch.
+
+## Decision 5: Automatic Push or Approval Before Push?
+
+**Recommendation:** Make the policy configurable.
+
+For a beginner-friendly workflow, automatically push to a dedicated agent branch may be appropriate after initial authorization.
+
+For established repositories, use explicit approval or pull requests.
+
+## Decision 6: Unlimited Repair or Bounded Repair?
+
+**Recommendation:** Use bounded repair loops with a configurable retry budget.
+
+Repeated builds without meaningful progress should stop and request intervention.
+
+## Decision 7: Store Source Code Locally or Remotely?
+
+**Recommendation:** Support local workspace state and GitHub-backed persistence.
+
+A production backend may store metadata and snapshots, but GitHub should remain a conventional source-control option rather than a proprietary lock-in mechanism.
+
+## Decision 8: Build Infrastructure Ownership
+
+**Recommendation:** Start with GitHub Actions.
+
+Introduce dedicated build infrastructure only when cost, latency, concurrency, availability, or product-control requirements justify it.
+
+---
+
+# 34. Main Risks and Mitigations
+
+## Risk: Incorrect Code Generation
+
+Mitigation:
+
+- Use stable templates.
+- Apply incremental patches.
+- Run static checks.
+- Build early.
+- Maintain regression tests.
+- Track repair success rates.
+
+## Risk: Expensive Repair Loops
+
+Mitigation:
+
+- Set retry limits.
+- Classify errors.
+- Avoid repeated identical requests.
+- Track model usage.
+- Cache suitable intermediate results.
+
+## Risk: GitHub Rate Limits
+
+Mitigation:
+
+- Use webhooks where appropriate.
+- Cache metadata.
+- Apply exponential backoff.
+- Handle rate-limit responses.
+- Avoid unnecessary polling.
+
+## Risk: Credential Exposure
+
+Mitigation:
+
+- Use scoped credentials.
+- Keep secrets outside source code.
+- Redact logs.
+- Isolate user authorization.
+- Avoid exposing secrets to generated workflows.
+
+## Risk: Generated Code Executes Unsafe Commands
+
+Mitigation:
+
+- Treat generated code as untrusted.
+- Use isolated runners.
+- Restrict permissions.
+- Validate workflow changes.
+- Avoid unnecessary secrets.
+- Review dangerous build-script modifications.
+
+## Risk: Poor Visual Quality
+
+Mitigation:
+
+- Use design specifications.
+- Maintain reusable components.
+- Add visual regression tests.
+- Introduce screenshot-based iteration when infrastructure is available.
+
+## Risk: Inconsistent Project State
+
+Mitigation:
+
+- Use immutable build revisions.
+- Maintain checkpoints.
+- Track Git status.
+- Validate workspace synchronization.
+- Recover interrupted tasks explicitly.
+
+## Risk: Vendor Lock-In
+
+Mitigation:
+
+- Use standard source code.
+- Keep model integrations modular.
+- Use conventional Git repositories.
+- Preserve standard Gradle buildability.
+- Separate orchestration logic from provider-specific APIs.
+
+---
+
+# 35. Recommended Repository Structure
+
+A possible initial repository structure is:
+
+```text
+ai-app-builder/
+|
++-- android-client/
+|   +-- app/
+|   +-- core/
+|   |   +-- model/
+|   |   +-- agent/
+|   |   +-- project/
+|   |   +-- github/
+|   |   +-- build/
+|   |   +-- security/
+|   +-- feature/
+|   |   +-- home/
+|   |   +-- chat/
+|   |   +-- projects/
+|   |   +-- files/
+|   |   +-- builds/
+|   |   +-- settings/
+|   +-- data/
+|   +-- domain/
+|   +-- ui/
+|
++-- backend/
+|   +-- api/
+|   +-- auth/
+|   +-- projects/
+|   +-- agent-runtime/
+|   +-- model-gateway/
+|   +-- github-integration/
+|   +-- build-orchestrator/
+|   +-- artifact-service/
+|   +-- observability/
+|
++-- agent/
+|   +-- runtime/
+|   +-- planning/
+|   +-- context/
+|   +-- tools/
+|   +-- permissions/
+|   +-- validation/
+|   +-- repair/
+|   +-- evaluation/
+|
++-- skills/
+|   +-- android-project-creation/
+|   +-- compose-ui/
+|   +-- persistence/
+|   +-- api-integration/
+|   +-- build-troubleshooting/
+|   +-- github-actions/
+|   +-- code-quality/
+|   +-- security-review/
+|
++-- templates/
+|   +-- android-compose-basic/
+|   +-- android-compose-navigation/
+|   +-- android-room/
+|   +-- android-api-client/
+|
++-- workflows/
+|   +-- android-build.yml
+|
++-- tests/
+|   +-- unit/
+|   +-- integration/
+|   +-- end-to-end/
+|   +-- regression/
+|
++-- docs/
+|   +-- architecture/
+|   +-- api/
+|   +-- security/
+|   +-- product/
+|
++-- README.md
++-- CONTRIBUTING.md
++-- SECURITY.md
+```
+
+This is a conceptual structure. The repository should not be split into unnecessary modules until the implementation requires them.
+
+---
+
+# 36. Recommended Technology Choices
+
+The exact stack should be validated against the team's skills and deployment requirements.
+
+| Component | Recommended Starting Point |
+|---|---|
+| Android client | Kotlin |
+| Android UI | Jetpack Compose |
+| Android design system | Material 3 |
+| Android project builds | Gradle |
+| Source control | Git |
+| Repository hosting | GitHub |
+| Cloud build workers | GitHub Actions |
+| Model integration | Provider abstraction |
+| Backend language | Kotlin, TypeScript, or another well-supported server language |
+| Backend API | REST initially |
+| Real-time updates | Polling initially; SSE or WebSockets as needed |
+| Metadata database | PostgreSQL for a hosted backend |
+| Artifact storage | GitHub Actions artifacts initially; object storage if needed |
+| Authentication | Secure OAuth-based integration where applicable |
+| Background jobs | Durable queue or job system when backend orchestration is introduced |
+| Testing | Unit, integration, end-to-end, and generated-project regression tests |
+| Observability | Structured logs, metrics, traces, and error reporting |
+
+These are recommendations, not mandatory dependencies.
+
+The architecture should avoid introducing infrastructure that does not solve an immediate product requirement.
+
+---
+
+# 37. Definition of Success
+
+The product should be evaluated primarily on whether users can successfully create and improve real applications.
+
+Important measures include:
+
+### First-Build Success Rate
+
+The percentage of generated projects that compile successfully on the first build.
+
+### Final Build Success Rate
+
+The percentage of project-generation tasks that eventually produce a successful build within the configured retry budget.
+
+### Repair Success Rate
+
+The percentage of supported build failures resolved by the agent.
+
+### Time to Working Application
+
+The elapsed time between the user's initial request and the first verified successful build.
+
+### Requirement Fulfillment
+
+The degree to which the resulting application implements the user's requested functionality.
+
+### Regression Rate
+
+The percentage of changes that unintentionally break previously working functionality.
+
+### Cost per Successful Build
+
+The total model, infrastructure, and build-service cost associated with successfully producing a build.
+
+### User Retention
+
+The percentage of users who return to improve existing projects or create additional applications.
+
+### Project Portability
+
+The percentage of generated projects that can be built outside the platform using their documented standard toolchain.
+
+These metrics should be measured over real usage rather than inferred from model confidence.
+
+---
+
+# 38. Final Product Strategy
+
+The project should not attempt to become a complete competitor to every AI coding platform in its first release.
+
+Its strongest initial strategy is to deliver one complete, reliable, differentiated workflow:
+
+**Natural-language idea → AI planning → real Android project → controlled file editing → GitHub synchronization → cloud build → automated repair → downloadable APK.**
+
+This workflow should be reliable before adding more project types or advanced visual features.
+
+The agent harness should remain the central architectural asset.
+
+The model is replaceable. Build infrastructure is replaceable. Templates are replaceable. Individual tools are replaceable.
+
+The orchestration system, project-state management, validation pipeline, security model, and feedback loop are the components that turn a general-purpose LLM into a dependable application-building product.
+
+The product should therefore invest early in:
+
+1. Reliable agent execution.
+2. Correct project context.
+3. Safe file operations.
+4. Tested templates.
+5. Immutable build revisions.
+6. Structured error analysis.
+7. Bounded automated repair.
+8. GitHub integration.
+9. Secure credential handling.
+10. Measurable end-to-end quality.
+
+The long-term vision is a model-independent AI development platform that can transform natural-language requirements into maintainable, testable, portable software projects while giving users meaningful control over their code, repositories, and generated artifacts.
+
+---
+
+# 39. Immediate Implementation Recommendations
+
+The project should be developed in the following order:
+
+1. **Choose the execution architecture:** Decide which responsibilities belong on the Android client and which require a backend.
+2. **Build a minimal Android client:** Implement the project list, chat interface, file viewer, and task status UI.
+3. **Create a model-provider abstraction:** Avoid coupling the agent to one provider's API.
+4. **Implement the smallest useful harness:** Add planning, file tools, tool validation, and bounded execution.
+5. **Start from a tested Android template:** Generate projects by adapting a known-good Kotlin and Jetpack Compose project.
+6. **Integrate GitHub securely:** Use narrowly scoped authorization and a dedicated development branch.
+7. **Create the Actions workflow:** Build a specific commit, run tests, and upload the debug APK.
+8. **Implement build monitoring:** Track workflow state, logs, and artifact metadata.
+9. **Add automated repair:** Feed structured build diagnostics back into the agent and enforce retry limits.
+10. **Evaluate end-to-end quality:** Measure build success, repair success, cost, and requirement fulfillment before expanding scope.
+
+## Recommended MVP Definition
+
+The first release should be considered successful when a user can describe a simple Android application, review the plan, generate and modify a real Kotlin/Compose project, push it to GitHub, build it through GitHub Actions, receive a useful explanation if the build fails, and download a verified APK when it succeeds.
+
+That end-to-end workflow is the foundation on which more advanced features should be built.
