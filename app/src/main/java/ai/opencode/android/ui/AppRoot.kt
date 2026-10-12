@@ -435,14 +435,14 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
 
     LaunchedEffect(previewPhase) {
         if (previewPhase == ai.opencode.android.ui.chat.PreviewState.OPENING) {
-            // The overlay's morph tween runs 460ms; give it the full window.
-            kotlinx.coroutines.delay(500)
+            // The overlay's fade tween runs 240ms; give it the window.
+            kotlinx.coroutines.delay(300)
             previewPhase = ai.opencode.android.ui.chat.PreviewState.OPEN
         } else if (previewPhase == ai.opencode.android.ui.chat.PreviewState.CLOSING) {
-            kotlinx.coroutines.delay(500)
-            // v9.35.4 (owner): exit is the same morph in reverse and lands on
-            // the LIVE console - the server stays open; only the overlay
-            // closes. Tapping the bar opens it again.
+            kotlinx.coroutines.delay(300)
+            // v9.35.4 (owner): exit fades back to the LIVE console - the
+            // server stays open; only the overlay closes. Tapping the bar
+            // opens it again.
             previewPhase = ai.opencode.android.ui.chat.PreviewState.CLOSED
         }
     }

@@ -57,8 +57,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -207,22 +205,14 @@ fun ChatScreen(
     val projectLabel = projectName.ifEmpty { stringResource(R.string.projects_title) }
     val projectsDescription = stringResource(R.string.chat_open_projects)
 
-    // v9.35.4 (owner): the morph must start at the console's OWN bounds - the
-    // rounded rectangle collapses where it sits. Measure the root and the
-    // console in the same coordinate space and hand the delta to the overlay.
-    var rootPos by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
-    var consolePos by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
-    var consoleSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
-    val previewOrigin = androidx.compose.ui.geometry.Rect(
-        offset = consolePos - rootPos,
-        size = consoleSize,
-    )
+    // v9.35.6 (owner): the circle morph is gone - the preview page arrives
+    // with one simple finite fade. The console only hides while the overlay
+    // owns the screen.
 
     // v9.35: root is a Box now - the conversation column underneath, the
-    // preview morph overlay on top of EVERYTHING (header, tabs included).
+    // preview page overlay on top of EVERYTHING (header, tabs included).
     Box(
         modifier = modifier
-            .onGloballyPositioned { rootPos = it.positionInRoot() }
             .fillMaxSize()
             // v9: the whole conversation floats over true black that settles
             // into a faint golden bloom at the base (a static brush - the
@@ -265,26 +255,13 @@ fun ChatScreen(
         // v9.35 (owner): the preview console sits DIRECTLY below the TODO
         // panel - a clone of its rounded container with the server name
         // inside; the door while nothing is live. While the overlay owns the
-        // screen the console hides (alpha 0) but stays measured, because the
-        // morph shape must occupy exactly its bounds.
+        // screen the console hides.
         LivePreviewConsole(
             preview = preview,
             livePorts = livePorts,
             onOpenPort = onOpenPreviewPort,
             onShow = onPreviewShow,
             modifier = Modifier
-                .onGloballyPositioned {
-                    consolePos = it.positionInRoot()
-                    // Keep the last real bounds: the door and the live bar
-                    // differ by a few dp, and the morph must never start from
-                    // a zero rect on the frame the branch flips.
-                    if (it.size.height > 0) {
-                        consoleSize = androidx.compose.ui.geometry.Size(
-                            it.size.width.toFloat(),
-                            it.size.height.toFloat(),
-                        )
-                    }
-                }
                 .alpha(if (preview.phase == PreviewState.CLOSED) 1f else 0f),
         )
 
@@ -366,7 +343,6 @@ fun ChatScreen(
     if (preview.phase != PreviewState.CLOSED) {
         ChatPreviewOverlay(
             preview = preview,
-            origin = previewOrigin,
             onClose = onPreviewClose,
             onBrowser = onPreviewBrowser,
             onReload = onPreviewReload,

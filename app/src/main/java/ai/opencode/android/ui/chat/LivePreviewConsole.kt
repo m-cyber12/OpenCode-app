@@ -8,14 +8,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -38,18 +36,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import ai.opencode.android.R
 import ai.opencode.android.ui.theme.ChatTheme
@@ -57,7 +51,6 @@ import ai.opencode.android.ui.theme.MonoSmall
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import kotlin.math.roundToInt
 
 /**
  * v9.35 (owner): the live preview is a chat surface.
@@ -65,17 +58,17 @@ import kotlin.math.roundToInt
  *  * The console is a CLONE of the TODO panel's rounded-rectangle container
  *    (same surface, radius, border, elevation, padding), directly below it,
  *    with the server name inside. With no preview open it is the port door.
- *  * Opening plays the owner's morph: the rounded rectangle itself collapses
- *    into a circle at ITS OWN position (like the status orb), then the circle
- *    expands into the full-screen preview. Exit is the same sequence in
- *    reverse. No separate circle ever appears mid-screen - the morph shape
- *    starts at the measured console bounds.
+ *  * Opening the preview is a SIMPLE smooth transition (v9.35.6 owner: "not
+ *    a teleport" and no circle morph either): the full-screen page fades and
+ *    settles over the chat with one finite tween; closing fades it back out.
+ *    The page layer is OPAQUE and owns the whole screen, so the chat header
+ *    never shows through it.
  *
- * Every step is a finite tween; the WebView recipe (no cache, console mirror,
- * one deferred self-snapshot per load, web-history-aware back) carries over.
+ * The WebView recipe (no cache, console mirror, one deferred self-snapshot
+ * per load, web-history-aware back) carries over from the old Sandbox pane.
  */
 
-/** The overlay's morph phase machine, owned by AppRoot. */
+/** The overlay's phase machine, owned by AppRoot. */
 enum class PreviewState { CLOSED, OPENING, OPEN, CLOSING }
 
 /** Everything the chat screen needs to render console + overlay. */
@@ -88,9 +81,8 @@ data class PreviewUi(
 )
 
 /**
- * The console under the TODO panel. [modifier] lets ChatScreen measure the
- * container's bounds (the morph origin) and hide it while the overlay owns
- * the screen.
+ * The console under the TODO panel. [modifier] lets ChatScreen hide it while
+ * the overlay owns the screen.
  */
 @Composable
 fun LivePreviewConsole(
@@ -104,7 +96,7 @@ fun LivePreviewConsole(
     Column(modifier = modifier) {
         if (preview.url.isNotEmpty()) {
             // The live bar: the TODO container, cloned, with the server name
-            // inside. Tapping it re-opens the preview with the morph.
+            // inside. Tapping it re-opens the preview.
             val serverName = stringResource(R.string.sandbox_port_row, preview.port)
             val reloaded = stringResource(R.string.sandbox_console_reloaded)
             Surface(
@@ -194,15 +186,15 @@ fun LivePreviewConsole(
 }
 
 /**
- * The full-screen morph overlay. [origin] is the console's bounds in this
- * overlay's coordinate space - the shape the morph grows out of and returns
- * to. Progress 0 = the rounded rectangle, ~0.45 = the circle at the console
- * position, 1 = the preview page.
+ * The full-screen preview page. v9.35.6 (owner): a simple smooth transition -
+ * one finite fade + settle tween in, the same out. No circle morph, and the
+ * page layer paints the whole screen opaque so nothing of the chat shows
+ * through it (the device screenshot showed the chat header bleeding through
+ * the transparent page header).
  */
 @Composable
 fun ChatPreviewOverlay(
     preview: PreviewUi,
-    origin: Rect,
     onClose: () -> Unit,
     onBrowser: () -> Unit,
     onReload: () -> Unit,
@@ -210,8 +202,6 @@ fun ChatPreviewOverlay(
     onConsole: (String) -> Unit,
 ) {
     val chat = ChatTheme.chat
-    val density = LocalDensity.current
-    // Hoisted: semantics blocks are not composable scopes.
     val reloadDesc = stringResource(R.string.sandbox_console_reload)
     val latestCapture = remember { mutableStateOf(onCapture) }
     latestCapture.value = onCapture
@@ -219,7 +209,7 @@ fun ChatPreviewOverlay(
     latestConsole.value = onConsole
     val webRef = remember { mutableStateOf<WebView?>(null) }
     // Back walks the page's own history first; only an empty history leaves
-    // the preview - morphing back to the console, which stays live.
+    // the preview - fading back to the chat, console still live.
     BackHandler(preview.phase != PreviewState.CLOSED) {
         val web = webRef.value
         if (web != null && web.canGoBack()) web.goBack() else onClose()
@@ -228,149 +218,86 @@ fun ChatPreviewOverlay(
     val progress = remember { Animatable(0f) }
     LaunchedEffect(preview.phase) {
         when (preview.phase) {
-            PreviewState.OPENING -> progress.animateTo(1f, tween(460))
-            PreviewState.CLOSING -> progress.animateTo(0f, tween(460))
+            PreviewState.OPENING -> progress.animateTo(1f, tween(240))
+            PreviewState.CLOSING -> progress.animateTo(0f, tween(240))
             PreviewState.OPEN -> progress.snapTo(1f)
             PreviewState.CLOSED -> progress.snapTo(0f)
         }
     }
     val p = progress.value
-    // Stage 1 (0..0.45): the rounded rectangle collapses into the circle at
-    // its own centre. Stage 2 (0.45..1): the circle expands into the page.
-    val t1 = (p / 0.45f).coerceIn(0f, 1f)
-    val t2 = ((p - 0.45f) / 0.55f).coerceIn(0f, 1f)
-    val cardCornerPx = with(density) { 16.dp.toPx() }
-    val circleD = if (origin.height > 0f) origin.height else with(density) { 56.dp.toPx() }
-    val circleRect = Rect(
-        left = origin.center.x - circleD / 2f,
-        top = origin.center.y - circleD / 2f,
-        right = origin.center.x + circleD / 2f,
-        bottom = origin.center.y + circleD / 2f,
-    )
-
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val full = Rect(
-            0f,
-            0f,
-            constraints.maxWidth.toFloat(),
-            constraints.maxHeight.toFloat(),
-        )
-        val startRect = if (origin.width > 0f) origin else circleRect
-        val midRect = lerpRect(startRect, circleRect, t1)
-        val morphRect = lerpRect(midRect, full, t2)
-        val cornerPx = (cardCornerPx + (circleD / 2f - cardCornerPx) * t1) * (1f - t2)
-        val cornerDp = with(density) { cornerPx.toDp() }
-
-        // The page layer appears while the circle expands, and fades back
-        // while the circle collapses on exit.
-        if (p > 0.5f) {
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .alpha(((t2 - 0.1f) / 0.9f).coerceIn(0f, 1f)),
+    if (p > 0f) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer(
+                    alpha = p,
+                    // A whisper of settle so the fade reads as a page
+                    // arriving, not a blink - still one finite tween.
+                    scaleX = 0.985f + 0.015f * p,
+                    scaleY = 0.985f + 0.015f * p,
+                )
+                .background(MaterialTheme.colorScheme.surface),
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier.semantics { testTag = "sandbox_preview_close" },
                 ) {
-                    IconButton(
-                        onClick = onClose,
-                        modifier = Modifier.semantics { testTag = "sandbox_preview_close" },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.sandbox_preview_close),
-                        )
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.sandbox_console_title, preview.port),
-                            style = MaterialTheme.typography.titleSmall,
-                            maxLines = 1,
-                        )
-                        Text(
-                            text = preview.url,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = chat.muted,
-                            maxLines = 1,
-                        )
-                    }
-                    IconButton(
-                        onClick = onReload,
-                        modifier = Modifier.semantics {
-                            testTag = "sandbox_preview_reload"
-                            contentDescription = reloadDesc
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Refresh,
-                            contentDescription = stringResource(R.string.sandbox_console_reload),
-                        )
-                    }
-                    TextButton(
-                        onClick = onBrowser,
-                        modifier = Modifier.semantics { testTag = "sandbox_open_browser" },
-                    ) {
-                        Text(stringResource(R.string.sandbox_open_browser))
-                    }
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.sandbox_preview_close),
+                    )
                 }
-                Surface(
-                    color = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                        .semantics { testTag = "sandbox_preview" },
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.sandbox_console_title, preview.port),
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 1,
+                    )
+                    Text(
+                        text = preview.url,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = chat.muted,
+                        maxLines = 1,
+                    )
+                }
+                IconButton(
+                    onClick = onReload,
+                    modifier = Modifier.semantics {
+                        testTag = "sandbox_preview_reload"
+                        contentDescription = reloadDesc
+                    },
                 ) {
-                    key(preview.url, preview.reloadStamp) {
-                        WebPage(
-                            url = preview.url,
-                            webRef = webRef,
-                            onCapture = { bmp -> latestCapture.value(bmp) },
-                            onConsole = { line -> latestConsole.value(line) },
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Filled.Refresh,
+                        contentDescription = reloadDesc,
+                    )
+                }
+                TextButton(
+                    onClick = onBrowser,
+                    modifier = Modifier.semantics { testTag = "sandbox_open_browser" },
+                ) {
+                    Text(stringResource(R.string.sandbox_open_browser))
                 }
             }
-        }
-
-        // The morph shape: the console container itself, collapsing into the
-        // circle and expanding into the page (the same sequence in reverse on
-        // exit). Hidden once the page fully owns the screen.
-        if (p < 0.999f && morphRect.width > 0f && morphRect.height > 0f) {
-            val shapeColor = lerp(chat.toolContainer, chat.goldBright, t1)
-            Box(
-                Modifier
-                    .offset {
-                        IntOffset(morphRect.left.roundToInt(), morphRect.top.roundToInt())
-                    }
-                    .then(
-                        with(density) {
-                            Modifier
-                                .width(morphRect.width.toDp())
-                                .height(morphRect.height.toDp())
-                        },
-                    )
-                    .clip(RoundedCornerShape(cornerDp))
-                    .background(shapeColor),
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .semantics { testTag = "sandbox_preview" },
             ) {
-                // Ghost of the bar's row, so the container visibly folds into
-                // itself; gone by the time the circle forms.
-                if (t1 < 1f) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .alpha(1f - t1)
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                    ) {
-                        Box(Modifier.size(8.dp).background(chat.success, CircleShape))
-                        Spacer(Modifier.width(10.dp))
-                        Text(
-                            text = stringResource(R.string.sandbox_port_row, preview.port),
-                            style = MaterialTheme.typography.labelMedium,
-                            maxLines = 1,
-                        )
-                    }
+                key(preview.url, preview.reloadStamp) {
+                    WebPage(
+                        url = preview.url,
+                        webRef = webRef,
+                        onCapture = { bmp -> latestCapture.value(bmp) },
+                        onConsole = { line -> latestConsole.value(line) },
+                    )
                 }
             }
         }
@@ -405,7 +332,7 @@ private fun WebPage(
             latestCapture.value(bmp)
         }
     }
-    AndroidViewHost(
+    androidx.compose.ui.viewinterop.AndroidView(
         factory = { ctx ->
             val web = WebView(ctx).apply {
                 settings.javaScriptEnabled = true
@@ -476,32 +403,12 @@ private fun WebPage(
                 )
             }
         },
+        modifier = Modifier.fillMaxSize().clipToBounds(),
         onRelease = { host ->
             val w = host.getChildAt(0) as? WebView
             runCatching { host.removeAllViews() }
             runCatching { w?.destroy() }
             webRef.value = null
         },
-    )
-}
-
-/** Component-wise rect interpolation, so the morph needs no extra API. */
-private fun lerpRect(a: Rect, b: Rect, t: Float): Rect = Rect(
-    left = a.left + (b.left - a.left) * t,
-    top = a.top + (b.top - a.top) * t,
-    right = a.right + (b.right - a.right) * t,
-    bottom = a.bottom + (b.bottom - a.bottom) * t,
-)
-
-/** The FrameLayout-hosted AndroidView, clipped on both sides. */
-@Composable
-private fun AndroidViewHost(
-    factory: (android.content.Context) -> android.widget.FrameLayout,
-    onRelease: (android.widget.FrameLayout) -> Unit,
-) {
-    androidx.compose.ui.viewinterop.AndroidView(
-        factory = factory,
-        modifier = Modifier.fillMaxSize().clipToBounds(),
-        onRelease = onRelease,
     )
 }

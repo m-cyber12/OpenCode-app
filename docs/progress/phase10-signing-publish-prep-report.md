@@ -5408,3 +5408,23 @@ confirmed: ordinary `question` cards arrive in whatever language the model
 writes; the plan approval card is the bundled upstream server's fixed
 English ask, and its Yes/No are protocol values the server matches - they
 must stay verbatim, by design.
+
+## B.58 — v9.35.6 device pass: opaque preview page + simple fade instead of the circle morph (2026-10-12)
+
+The owner's first v9.35.4 device pass showed two problems, both fixed here:
+
+1. **Chat header bled through the preview page.** The overlay's page layer
+   had no background of its own, so the transparent header strip showed the
+   hamburger/project/mode/orb row underneath the preview's own header
+   (screenshot evidence). The page Column now paints
+   `MaterialTheme.colorScheme.surface` across the whole screen - the page
+   owns every pixel above the chat.
+
+2. **The circle morph is gone.** Owner: "remove circle animation and make a
+   simple transition - a smooth page changing, not a teleport". The overlay
+   is now one finite 240ms fade with a 1.5% settle scale in, the same out;
+   AppRoot's phase hops match (300ms). All bounds measurement (console
+   origin, positionInRoot plumbing) was deleted with it. Everything else
+   from v9.35.4 stands: cloned TODO container console with the server name,
+   tap-to-reopen, live close, Reloaded flash in the bar, first-open-only
+   auto-open.
