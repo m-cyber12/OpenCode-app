@@ -19,6 +19,11 @@ import java.io.File
 object ShotStore {
 
     const val SHOTS_DIR = "screenshots"
+
+    /** v9.36: the downscaled agent view, refreshed by every capture/pane load. */
+    const val AGENT_VIEW = "latest.jpg"
+    private const val AGENT_MAX_W = 720
+    private const val AGENT_JPEG_Q = 72
     private const val MAX_SLUG = 48
 
     /** Lowercase, `[a-z0-9-]` only, runs collapsed, trimmed; "shot" when nothing survives. */
@@ -40,5 +45,47 @@ object ShotStore {
         val existing = shots.listFiles { f -> f.isFile && f.name.endsWith(".png") }?.size ?: 0
         val seq = (existing + 1).toString().padStart(3, '0')
         return File(shots, "$seq-${slug(name)}.png")
+    }
+
+    /**
+     * v9.36 (owner): the agent's cheap pixel channel. The full-size PNG is
+     * the human gallery artifact; what the model may read is this downscaled
+     * JPEG - same frame, a fraction of the bytes, and upstream re-sends
+     * every read image on every later step, so the small copy is not a
+     * nicety, it is the difference between an affordable loop and the
+     * 20-screenshot spiral the owner hit.
+     */
+    fun writeAgentJpeg(bitmap: android.graphics.Bitmap, previewDir: File, maxWidth: Int = AGENT_MAX_W): File {
+        previewDir.mkdirs()
+        val scale = if (bitmap.width > maxWidth) maxWidth.toFloat() / bitmap.width else 1f
+        val w = (bitmap.width * scale).toInt().coerceAtLeast(1)
+        val h = (bitmap.height * scale).toInt().coerceAtLeast(1)
+        val small = if (scale < 1f) {
+            android.graphics.Bitmap.createScaledBitmap(bitmap, w, h, true)
+        } else {
+            bitmap
+        }
+        val out = File(previewDir, AGENT_VIEW)
+        out.outputStream().use { o ->
+            small.compress(android.graphics.Bitmap.CompressFormat.JPEG, AGENT_JPEG_Q, o)
+        }
+        if (small !== bitmap) small.recycle()
+        return out
+    }
+
+    /**
+     * v9.36: a signature of what the frame LOOKS like - 16x16 downsample,
+     * SHA-1, first 12 hex. `unchanged-vs-prev` between two captures means
+     * the edit did not reach the render (stale server, wrong path): the one
+     * fact that stops the recapture spiral dead.
+     */
+    fun frameSig(bitmap: android.graphics.Bitmap): String {
+        val tiny = android.graphics.Bitmap.createScaledBitmap(bitmap, 16, 16, true)
+        val px = IntArray(16 * 16)
+        tiny.getPixels(px, 0, 16, 0, 0, 16, 16)
+        if (tiny !== bitmap) tiny.recycle()
+        val bytes = java.nio.ByteBuffer.allocate(px.size * 4).asIntBuffer().put(px).array()
+        val md5 = java.security.MessageDigest.getInstance("SHA-1").digest(bytes)
+        return md5.joinToString("") { b -> "%02x".format(b) }.take(12)
     }
 }

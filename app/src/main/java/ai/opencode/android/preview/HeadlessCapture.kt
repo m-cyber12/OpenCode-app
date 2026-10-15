@@ -36,12 +36,19 @@ class HeadlessCapture(private val context: Context) {
     /**
      * Load [url] off-screen at [width]x[height] and hand back the settled
      * frame plus a reason string ("ok", "timeout", "draw-failed",
-     * "bad-size"). [onDone] arrives on the main thread; bitmap is null
+     * "bad-size") plus the raw [RenderProbe] JSON (null when the probe did
+     * not answer). [onDone] arrives on the main thread; bitmap is null
      * exactly when the reason is not "ok".
      */
-    fun capture(url: String, width: Int, height: Int, settleMs: Long = 800, onDone: (Bitmap?, String) -> Unit) {
+    fun capture(
+        url: String,
+        width: Int,
+        height: Int,
+        settleMs: Long = 800,
+        onDone: (Bitmap?, String, String?) -> Unit,
+    ) {
         if (width <= 0 || height <= 0) {
-            onDone(null, "bad-size")
+            onDone(null, "bad-size", null)
             return
         }
         val handler = Handler(Looper.getMainLooper())
@@ -78,8 +85,29 @@ class HeadlessCapture(private val context: Context) {
                         view.draw(Canvas(target))
                         target
                     }.getOrNull()
-                    runCatching { view.destroy() }
-                    onDone(bmp, if (bmp != null) "ok" else "draw-failed")
+                    // v9.36 (owner): before this WebView dies, ask the page
+                    // what it measures - the text digest that lets the agent
+                    // verify a layout WITHOUT pixels. One evaluation, one
+                    // fallback timer: finite by construction.
+                    var probed = false
+                    val finish: (Bitmap?, String, String?) -> Unit = { b, r, raw ->
+                        if (!probed) {
+                            probed = true
+                            runCatching { view.destroy() }
+                            onDone(b, r, raw)
+                        }
+                    }
+                    val probeStarted = runCatching {
+                        view.evaluateJavascript(RenderProbe.JS) { raw -> finish(bmp, if (bmp != null) "ok" else "draw-failed", raw) }
+                    }.isSuccess
+                    if (!probeStarted) {
+                        finish(bmp, if (bmp != null) "ok" else "draw-failed", null)
+                    } else {
+                        handler.postDelayed(
+                            { finish(bmp, if (bmp != null) "ok" else "draw-failed", null) },
+                            PROBE_TIMEOUT_MS,
+                        )
+                    }
                 }, settleMs)
             }
         }
@@ -88,7 +116,7 @@ class HeadlessCapture(private val context: Context) {
             if (!finished) {
                 finished = true
                 runCatching { web.destroy() }
-                onDone(null, "timeout")
+                onDone(null, "timeout", null)
             }
         }, TIMEOUT_MS)
         web.loadUrl(url)
@@ -96,5 +124,9 @@ class HeadlessCapture(private val context: Context) {
 
     companion object {
         private const val TIMEOUT_MS = 15_000L
+
+        /** A page that hangs its JS must not hang the capture: the bitmap is
+         * still worth reporting, with `REPORT unavailable`. */
+        private const val PROBE_TIMEOUT_MS = 2_500L
     }
 }

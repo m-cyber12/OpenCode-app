@@ -561,7 +561,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     "http://127.0.0.1:${server.port}$cleanPath"
                 }
                 val metrics = context.resources.displayMetrics
-                headlessCapture.capture(url, metrics.widthPixels, metrics.heightPixels) { bitmap, reason ->
+                headlessCapture.capture(url, metrics.widthPixels, metrics.heightPixels) { bitmap, reason, probeRaw ->
                     scope.launch {
                         val resultLine = withContext(Dispatchers.IO) {
                             runCatching {
@@ -575,7 +575,32 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                                     File(preview, "latest.png").outputStream().use { out ->
                                         bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 90, out)
                                     }
-                                    "CAPTURE saved ${ai.opencode.android.preview.ShotStore.SHOTS_DIR}/${shot.name} (${bitmap.width}x${bitmap.height}) url=$url"
+                                    // v9.36 (owner): the agent's cheap loop -
+                                    // the small JPEG it may read, the text
+                                    // report it should read FIRST, and the
+                                    // frame hash that catches "my edit did
+                                    // not reach the render" before another
+                                    // screenshot is ever burned.
+                                    ai.opencode.android.preview.ShotStore.writeAgentJpeg(bitmap, preview)
+                                    val sig = ai.opencode.android.preview.ShotStore.frameSig(bitmap)
+                                    val sigFile = File(preview, "frame.sig")
+                                    val frame = when {
+                                        !sigFile.isFile -> "first"
+                                        runCatching { sigFile.readText().trim() }.getOrNull() == sig -> "unchanged-vs-prev"
+                                        else -> "changed"
+                                    }
+                                    runCatching { sigFile.writeText(sig + "\n") }
+                                    if (probeRaw != null) {
+                                        runCatching { File(preview, ai.opencode.android.preview.RenderProbe.REPORT_FILE).writeText(probeRaw + "\n") }
+                                    }
+                                    val seq = shot.name.take(3).toIntOrNull() ?: 0
+                                    val budget = if (seq > 8) {
+                                        "\nBUDGET shot #$seq this project: every image read rides on ALL later steps - verify with the REPORT line and report.json; read .preview/${ai.opencode.android.preview.ShotStore.AGENT_VIEW} at most once per fix round, never a PNG."
+                                    } else {
+                                        ""
+                                    }
+                                    "CAPTURE saved ${ai.opencode.android.preview.ShotStore.SHOTS_DIR}/${shot.name} (${bitmap.width}x${bitmap.height}) view=${ai.opencode.android.preview.ShotStore.AGENT_VIEW} url=$url\n" +
+                                        ai.opencode.android.preview.RenderProbe.digest(probeRaw, frame) + budget
                                 } else {
                                     "CAPTURE FAILED name=$name url=$url reason=$reason"
                                 }
@@ -1571,6 +1596,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                                         File(folder, "latest.png").outputStream().use { out ->
                                             bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 90, out)
                                         }
+                                        // v9.36: the pane refresh also keeps
+                                        // the agent's cheap view current.
+                                        ai.opencode.android.preview.ShotStore.writeAgentJpeg(bitmap, folder)
                                     }
                                 }
                                 // Silent on purpose (v9.8): the snapshot is the

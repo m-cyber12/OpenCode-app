@@ -153,18 +153,21 @@ to switch modes.
 
 ## Cost - every wasted step is billed
 The whole conversation, including EVERY image ever read, is re-sent to the
-model on each tool step. Read a screenshot AT MOST ONCE, as late as
-possible, never twice; check text before pixels; verify once - never
-re-probe what cannot have changed; read each topic brief at most once,
-only when needed.
+model on each tool step. Read at most ONE image per fix round, and only
+`.preview/latest.jpg` - never a `screenshots/*.png` (human gallery,
+multi-MB, rides forever). Text first: every load appends a `REPORT` line
+(viewport, doc, overflowX, broken imgs) to `.preview/console.log` - a
+layout verdict in ~40 tokens; overflowX=0 with no errors means move on.
+Verify once - never re-probe what cannot have changed; read each topic
+brief at most once, only when needed.
 
 ## Topic briefs - the summary tells you which file; go straight there
 - $briefsDir/preview.md - full hand-off/reload rules, the watched port
   list, rendering engine + layout rules (viewport meta, vh not dvh), the
   no-dependency static-server recipe. Read before the FIRST preview
   hand-off, or when the pane looks wrong.
-- $briefsDir/screenshots.md - stage screenshots via `.preview/capture.json`,
-  the self-confirming CAPTURE log lines, latest.png/console.log debugging.
+- $briefsDir/screenshots.md - the capture loop: capture.json, CAPTURE +
+  REPORT lines, report.json, latest.jpg and the per-round image budget.
   Read before taking or reading any screenshot.
 - $briefsDir/webapp.md - running a real/cloned framework project (Next,
   Vite, ...): install, starting dev servers WITHOUT node, readiness,
@@ -199,12 +202,15 @@ Before trusting one, confirm in a single step: `ps -o PID,ARGS | grep
 "[y]ourserver"`, the `nc` probe above, and one fetch for status/bytes -
 then rewrite serve.json to reload the pane with fresh bytes.
 
-After each load the app saves the frame to `.preview/latest.png` and
-mirrors the page's JS console + load errors + a geometry line
-(`VIEWPORT WxH dpr=... page=... scrollY=...`) to `.preview/console.log`.
-Debug in that order: console.log and the VIEWPORT text are cheap, a
-screenshot read is expensive. Preview and screenshots render with THIS
-engine, not the Chrome app: $engine - target it.
+After each load the app saves `.preview/latest.png` and the small agent
+copy `.preview/latest.jpg`, and mirrors the page's JS console + load
+errors + a `REPORT viewport=... doc=... overflowX=... imgs=ok/total
+broken=... text=...` digest line to `.preview/console.log`. Debug order:
+REPORT + console lines first (cheap text), latest.jpg only when LOOKS
+must be judged - never read a PNG. A `REPORT` with overflowX=0 and no
+errors means the page is structurally sound: trust it and move on.
+Preview and screenshots render with THIS engine, not the Chrome app:
+$engine - target it.
 Layout rules (pane == browser):
 - Always `<meta name="viewport" content="width=device-width, initial-scale=1">`.
 - Full-height/centered layouts: plain `vh` + `html,body{height:100%;margin:0}`.
@@ -216,23 +222,41 @@ Static server recipe (bun, 8080, serves cwd; "/" falls back to the first
 """.trimIndent() + "\n"
 
         val screenshots = """
-# Stage screenshots - read once, before the first screenshot
+# The capture loop - read once, before your first screenshot
 
 Write `.preview/capture.json`:
   {"name": "02-after-login-fix", "path": "/login.html", "port": 8080}
 (omit "port" -> the app serves the project). The page renders off-screen
-at device size into `screenshots/NNN-<name>.png` at the PROJECT ROOT
-(NNN = capture order), plus a refreshed `.preview/latest.png`. This is
-the ONLY way to take stage shots - never copy latest.png around by hand.
-Each capture confirms itself ~5s after the write, at the end of
-`.preview/console.log`: `CAPTURE saved screenshots/NNN-<name>.png ...` or
-`CAPTURE FAILED ... reason=...` - check that line instead of assuming; on
-FAILED report the reason, do not improvise workarounds. Name shots after
-the stage they document, and remember the cost rule: each image you read
-rides along on every later step.
+at device size and the app files, per capture:
+  screenshots/NNN-<name>.png - the HUMAN gallery at the project root
+  .preview/latest.jpg        - the small copy: the ONLY image you read
+  .preview/report.json       - the same frame's layout numbers (text)
+This is the ONLY way to take stage shots - never copy files by hand.
+
+~5s after each write, `.preview/console.log` ends with the confirmation:
+  CAPTURE saved screenshots/NNN-<name>.png (...) view=latest.jpg url=...
+  REPORT viewport=412x915 doc=412x2350 overflowX=0px imgs=4/5 broken=1 text=1810ch frame=changed
+or `CAPTURE FAILED ... reason=...` - read those lines instead of
+assuming; on FAILED report the reason, never improvise workarounds.
+
+THE LOOP (why it exists: every image you read rides on EVERY later step -
+pixels are a once-per-round luxury, not a feedback channel):
+1. Batch your edits. One capture per fix round, never per CSS tweak.
+2. Read the REPORT line (or report.json) FIRST: overflowX>0 = horizontal
+   scroll bug; broken>0 = wrong image paths; text near 0 or doc height
+   ~0 = empty render. Structure verdicts are FREE - make them, fix, done.
+   Do NOT screenshot to hunt which element overflows - the numbers say
+   whether the layout is sound; your CSS says which box is wrong.
+3. Read latest.jpg ONLY to judge LOOKS (spacing, taste, "is this the
+   design") - at most once per round, as late as possible, never a PNG.
+   The user watches the Live preview pane live: for taste, one question
+   beats ten self-captures.
+4. frame=unchanged-vs-prev means your edit did NOT reach the render -
+   stale server or wrong path. Fix that; capturing again proves nothing.
 Under a dev server's cold compile or HMR churn a capture can report
-`timeout` - retry once the route is warm. `.preview/latest.png` can lag
-the live pane; check its mtime before trusting it.
+`timeout` - retry once the route is warm. `.preview/latest.jpg` can lag
+the live pane; check its mtime before trusting it. The app appends a
+BUDGET line when captures pile up - treat it as "switch to REPORT text".
 """.trimIndent() + "\n"
 
         val webapp = """

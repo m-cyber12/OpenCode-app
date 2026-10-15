@@ -131,14 +131,22 @@ class EnvironmentBriefTest {
         // switches itself), and the owner flagged the double approval
         // (question answer + hand-off prompt) as a contradiction. The brief
         // now forbids closing prose and names the two as ONE approval.
+        // v9.36: -> 700. The owner's real web-design run burned 20-30
+        // screenshots on ONE page because every read image rides on every
+        // later step - the cost section now carries the structural answer
+        // (per-round image budget, latest.jpg-only, REPORT text first).
         // All owner-mandated content; everything else still fights per word.
-        assertTrue("main brief grew to $words words - split or trim it", words < 665)
+        assertTrue("main brief grew to $words words - split or trim it", words < 700)
         // The core product loop and cost discipline stay in the always-read part.
         assertTrue(main.contains("serve.json"))
         assertTrue(main.contains("EXISTS"))
         assertTrue(main.contains("/page.html"))
         assertTrue(main.contains("do NOT start your own server"))
-        assertTrue(main.contains("AT MOST ONCE"))
+        // v9.36: the pixel budget lives in the ALWAYS-read cost section -
+        // one image per fix round, only the small .jpg, REPORT text first.
+        assertTrue(main.contains("at most ONE"))
+        assertTrue(main.contains(".preview/latest.jpg"))
+        assertTrue(main.contains("REPORT"))
         assertTrue(main.contains("mkdir -p \"\$TMPDIR\""))
         assertTrue(main.contains("seccomp"))
         assertTrue(main.contains("setsid"))
@@ -169,12 +177,19 @@ class EnvironmentBriefTest {
         assertTrue(text.contains("capture.json"))
         assertTrue(text.contains("screenshots/NNN-<name>.png"))
         assertTrue(text.contains("width=device-width"))
-        assertTrue(text.contains("AT MOST ONCE"))
+        assertTrue(text.contains("at most ONE"))
         assertTrue(text.contains("do NOT start your own server"))
+        // v9.36: the capture loop must document its cheap channels.
+        assertTrue(text.contains(".preview/latest.jpg"))
+        assertTrue(text.contains("report.json"))
+        assertTrue(text.contains("overflowX"))
+        assertTrue(text.contains("frame=unchanged-vs-prev"))
         assertTrue(text.contains("CAPTURE saved screenshots/"))
         assertTrue(text.contains("CAPTURE FAILED"))
         assertTrue(text.contains("NEVER use dvh/svh/lvh"))
-        assertTrue(text.contains("VIEWPORT"))
+        // v9.36: the geometry line was a PROMISE with no emitter; the REPORT
+        // digest now actually exists (RenderProbe), so pin its name.
+        assertTrue(text.contains("REPORT"))
         assertTrue(text.contains("html,body{height:100%;margin:0}"))
         // v9.19 (FocusList honest failure): no recipe may log into $TMPDIR.
         assertTrue(text.contains("mkdir -p \"\$TMPDIR\""))

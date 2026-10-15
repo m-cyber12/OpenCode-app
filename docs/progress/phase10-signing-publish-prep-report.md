@@ -5428,3 +5428,65 @@ The owner's first v9.35.4 device pass showed two problems, both fixed here:
    from v9.35.4 stands: cloned TODO container console with the server name,
    tap-to-reopen, live close, Reloaded flash in the bar, first-open-only
    auto-open.
+
+## B.59 — v9.36: the REPORT-first capture loop + the product spec parked (2026-10-13)
+
+The owner ran a REAL medium web-design project on v9.35.6 and had to stop
+it: the agent burned 20-30 screenshots on the FIRST page and a huge number
+of tokens. Demand: "a very comfortable and easy env for model". Diagnosis
+and fix:
+
+Root cause - a feedback channel made of bricks. Every image the agent READS
+rides on every later step (upstream re-sends read images in full), and the
+agent's only "did my edit render?" probe was pixels: capture -> read a
+multi-MB device-size PNG -> edit -> capture ... The circle animation
+decision (B.58) was unrelated; the loop itself was the cost.
+
+Structural changes (all app-side, no upstream fork):
+1. `RenderProbe` (new, preview/): a guarded JS snippet evaluated in the
+   SAME WebView, on-screen pane and headless capture alike, ONE time per
+   load (PROBE_TIMEOUT_MS 2.5s fallback; a hanging page yields
+   `REPORT unavailable`, never a silent miss or a second exception).
+2. Every capture now appends `REPORT viewport=... doc=... overflowX=...
+   imgs=n/m broken=n text=Nch frame=<first|changed|unchanged-vs-prev>` to
+   `.preview/console.log` and writes the raw numbers to
+   `.preview/report.json`. overflowX/broken/text answer "is the layout
+   structurally sound?" for ~40 tokens - the verdict that used to cost a
+   screenshot. `frame=` is a 16x16 SHA-1 signature: unchanged-vs-prev
+   tells the agent its edit did NOT reach the render (stale server/wrong
+   path) BEFORE it captures again - the recapture spiral is cut at its
+   root.
+3. Every capture AND every pane load also writes `.preview/latest.jpg` - a
+   720px-wide JPEG q72 agent copy (ShotStore.writeAgentJpeg). Same frame,
+   a fraction of the bytes; the brief now forbids reading PNGs (gallery
+   files are for humans) and budgets ONE image read per fix round.
+4. Shot budget note: past shot #008 of a project, the CAPTURE block itself
+   appends the "switch to REPORT text" reminder, and the main brief's Cost
+   section carries the rule permanently (budget raised 665 -> 700 for it).
+5. The screenshots topic brief was rewritten as "THE LOOP": batch edits ->
+   read REPORT first -> read latest.jpg only for LOOKS, once -> the
+   BUDGET/timeout lines. The invisible VIEWPORT promise in the old preview
+   brief (never actually emitted) is replaced by the real REPORT emitter -
+   the test now pins that.
+
+Spec parking (owner: "look at this file, if it's possible so park it"):
+`AI_App_Builder_Product_and_Architecture_Specification.txt` (3338 lines,
+uploaded to the repo root on 2026-10-12 via GitHub web UI) moved to
+`docs/parked/` with a README stating it is a reference library, not a task
+list. Reviewed in full: the MVP (sections 1-39 incl. acceptance criteria
+section 32) maps to what the app already ships - plan/agent modes and the
+plan_exit approval flow (9.1), the tool registry and execution policy via
+the upstream tools + the app's question tool (10), briefs = the Skills
+system delivered as the always-injected environment docs (11), provider
+gateway + failover + keyring (12), memory/AGENTS.md contract (13),
+workspace + diff viewer (14), GitHub branch + model-push + scoped PAT
+(16), Actions-built signed artifacts through this very pipeline (17),
+honest failure reporting in build/repair (18), plan approval + inline
+cards for the UX (19-20), secret exclusion from context (21), and the
+screenshot loop with an enforced budget (20.3 - strengthened by this
+section's REPORT-first design). What is genuinely NOT built and now parked
+for possible future pickup: hosted multi-user backend + accounts (22-25),
+analytics + monetization (29-30), Android-app-from-prompt as a dedicated
+template gallery (15.2 - today the agent scaffolds projects freely), and
+checkpoint UI rollback (14.3 - git history covers it, no UI). The
+document itself stays untouched in content; only its home moved.

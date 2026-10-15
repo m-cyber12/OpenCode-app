@@ -366,7 +366,18 @@ private fun WebPage(
                         // settles, the frame lands in the project, the agent
                         // can read what is on screen. A single delayed
                         // runnable - finite by construction.
-                        view.postDelayed({ runCatching { snap(view) } }, 600)
+                        // v9.36 (owner): the same tick also runs the text
+                        // render probe, so the agent gets the REPORT digest
+                        // into console.log for EVERY load - capture or not -
+                        // and can verify layouts without touching pixels.
+                        view.postDelayed({
+                            runCatching { snap(view) }
+                            runCatching {
+                                view.evaluateJavascript(ai.opencode.android.preview.RenderProbe.JS) { raw ->
+                                    runCatching { latestConsole.value(ai.opencode.android.preview.RenderProbe.digest(raw)) }
+                                }
+                            }
+                        }, 600)
                     }
 
                     override fun onReceivedError(
