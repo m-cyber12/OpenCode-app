@@ -5490,3 +5490,9 @@ analytics + monetization (29-30), Android-app-from-prompt as a dedicated
 template gallery (15.2 - today the agent scaffolds projects freely), and
 checkpoint UI rollback (14.3 - git history covers it, no UI). The
 document itself stays untouched in content; only its home moved.
+
+CI board for this batch: run 38714817201 (a69089d) FAIL - one Kotlin compile
+error (IntBuffer.array() typed IntArray), fixed in 145cf5e; run 38718800728
+SUCCESS with JVM 420/420 (+4 new RenderProbeTest cases, EnvironmentBriefTest
+10/10 at the raised 700-word budget), smoke 20/20 fail=0, U3/U9 full-chain
+PASS, live gates L1/L2 PASS (4/4), all in evidence commit 817080d.
