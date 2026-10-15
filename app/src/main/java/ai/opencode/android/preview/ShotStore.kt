@@ -84,8 +84,9 @@ object ShotStore {
         val px = IntArray(16 * 16)
         tiny.getPixels(px, 0, 16, 0, 0, 16, 16)
         if (tiny !== bitmap) tiny.recycle()
-        val bytes = java.nio.ByteBuffer.allocate(px.size * 4).asIntBuffer().put(px).array()
-        val md5 = java.security.MessageDigest.getInstance("SHA-1").digest(bytes)
+        val buf = java.nio.ByteBuffer.allocate(px.size * 4)
+        buf.asIntBuffer().put(px)
+        val md5 = java.security.MessageDigest.getInstance("SHA-1").digest(buf.array())
         return md5.joinToString("") { b -> "%02x".format(b) }.take(12)
     }
 }
