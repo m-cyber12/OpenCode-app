@@ -120,12 +120,19 @@ pattern before you touch any package.json project.
   `setsid sh serve.sh </dev/null >serve.log 2>&1 &`
 
 ## Live preview, in one line
-A server on a watched loopback port shows the user a "Live preview" button
-by itself; or hand off explicitly by writing `.preview/serve.json`
+Nothing auto-opens, ever. Hand off by writing `.preview/serve.json`
 ({"port": 8080, "path": "/page.html"} - the path must name a file that
 EXISTS; omit "port" for plain HTML/CSS/JS: the app serves the project
-itself, do NOT start your own server). Read the preview brief ONCE
-before your first hand-off.
+itself, do NOT start your own server). A watched port already taken
+belongs to ANOTHER project - never kill it; take the next free one and
+record it. A hand-off lights the user's "See What You've Made" console
+with "Project updated" - they tap when ready; announce it, never grab.
+Read the preview brief ONCE before your first hand-off.
+
+## Ship clean
+Raw providers can leak chat markers (pipe-wrapped tokens, stray fences)
+into files you write, breaking the user's page in EVERY browser. After
+big writes grep them for '<|'; any hit - rewrite that file clean.
 
 ## GitHub
 Env value `key` set = GitHub project: the checkout is on its
@@ -153,13 +160,14 @@ to switch modes.
 
 ## Cost - every wasted step is billed
 The whole conversation, including EVERY image ever read, is re-sent to the
-model on each tool step. Read at most ONE image per fix round, and only
-`.preview/latest.jpg` - never a `screenshots/*.png` (human gallery,
-multi-MB, rides forever). Text first: every load appends a `REPORT` line
-(viewport, doc, overflowX, broken imgs) to `.preview/console.log` - a
-layout verdict in ~40 tokens; overflowX=0 with no errors means move on.
-Verify once - never re-probe what cannot have changed; read each topic
-brief at most once, only when needed.
+model on each tool step. This steers READING, never your tools: capture
+ANY page/route any time - writes cost nothing. But read the small
+`.preview/latest.jpg` by default; a full `screenshots/*.png` only when
+pixel detail truly matters - roughly one read per fix round. Text first:
+every load appends a `REPORT` line (viewport, doc, overflowX, meta,
+broken imgs) to `.preview/console.log` - a layout verdict in ~40 tokens;
+overflowX=0 with no errors means move on. Verify once - never re-probe
+what cannot have changed; read each topic brief at most once.
 
 ## Topic briefs - the summary tells you which file; go straight there
 - $briefsDir/preview.md - full hand-off/reload rules, the watched port
@@ -186,8 +194,9 @@ brief at most once, only when needed.
 # Preview & layout - read once, before the first hand-off
 
 The app watches these loopback ports: $watched.
-A server listening on any of them makes a "Live preview" button appear by
-itself. To hand off explicitly (ANY port, opens immediately), write
+A server on one lights the user's console - it NEVER opens the page by
+itself (v9.37, owner's rule); a tap on "See What You've Made" does. Hand
+off (or retarget an open pane) by writing
 `.preview/serve.json` at the project root:
   {"port": 8080, "path": "/page.html"} -> show the server you started
   {"path": "/page.html"}               -> no server: the app serves this
@@ -204,11 +213,12 @@ then rewrite serve.json to reload the pane with fresh bytes.
 
 After each load the app saves `.preview/latest.png` and the small agent
 copy `.preview/latest.jpg`, and mirrors the page's JS console + load
-errors + a `REPORT viewport=... doc=... overflowX=... imgs=ok/total
-broken=... text=...` digest line to `.preview/console.log`. Debug order:
-REPORT + console lines first (cheap text), latest.jpg only when LOOKS
-must be judged - never read a PNG. A `REPORT` with overflowX=0 and no
-errors means the page is structurally sound: trust it and move on.
+errors + a `REPORT viewport=... doc=... overflowX=... meta=ok|missing
+imgs=ok/total broken=... text=...` digest line to `.preview/console.log`.
+Debug order: REPORT + console lines first (cheap text), latest.jpg when
+LOOKS must be judged, a full PNG only for true pixel detail. A `REPORT`
+with meta=ok, overflowX=0 and no errors means the page is structurally
+sound: trust it and move on - no screenshot needed to feel confident.
 Preview and screenshots render with THIS engine, not the Chrome app:
 $engine - target it.
 Layout rules (pane == browser):
@@ -229,27 +239,32 @@ Write `.preview/capture.json`:
 (omit "port" -> the app serves the project). The page renders off-screen
 at device size and the app files, per capture:
   screenshots/NNN-<name>.png - the HUMAN gallery at the project root
-  .preview/latest.jpg        - the small copy: the ONLY image you read
+  .preview/latest.jpg        - the small copy: your default pixel read
   .preview/report.json       - the same frame's layout numbers (text)
 This is the ONLY way to take stage shots - never copy files by hand.
+Capturing is UNLIMITED: any page, any route, any port, any time - a
+capture is a file write, free for your context. Only READING costs.
 
 ~5s after each write, `.preview/console.log` ends with the confirmation:
   CAPTURE saved screenshots/NNN-<name>.png (...) view=latest.jpg url=...
-  REPORT viewport=412x915 doc=412x2350 overflowX=0px imgs=4/5 broken=1 text=1810ch frame=changed
+  REPORT viewport=412x915 doc=412x2350 overflowX=0px meta=ok imgs=4/5 broken=1 text=1810ch frame=changed
 or `CAPTURE FAILED ... reason=...` - read those lines instead of
 assuming; on FAILED report the reason, never improvise workarounds.
 
 THE LOOP (why it exists: every image you read rides on EVERY later step -
 pixels are a once-per-round luxury, not a feedback channel):
 1. Batch your edits. One capture per fix round, never per CSS tweak.
-2. Read the REPORT line (or report.json) FIRST: overflowX>0 = horizontal
-   scroll bug; broken>0 = wrong image paths; text near 0 or doc height
-   ~0 = empty render. Structure verdicts are FREE - make them, fix, done.
-   Do NOT screenshot to hunt which element overflows - the numbers say
-   whether the layout is sound; your CSS says which box is wrong.
-3. Read latest.jpg ONLY to judge LOOKS (spacing, taste, "is this the
-   design") - at most once per round, as late as possible, never a PNG.
-   The user watches the Live preview pane live: for taste, one question
+2. Read the REPORT line (or report.json) FIRST: meta=missing = page
+   renders desktop-wide/tiny in EVERY browser (add the viewport meta);
+   overflowX>0 = horizontal scroll bug; broken>0 = wrong image paths;
+   text near 0 or doc height ~0 = empty render. Structure verdicts are
+   FREE - make them, fix, done. Do NOT screenshot to hunt which element
+   overflows - the numbers say if the layout is sound; your CSS says
+   which box is wrong.
+3. Read latest.jpg to judge LOOKS (spacing, taste, "is this the
+   design") - about once per round, as late as possible; the full PNG
+   only when pixel detail truly matters (priced per read, not banned).
+   The user watches the pane live: for taste, one question to the user
    beats ten self-captures.
 4. frame=unchanged-vs-prev means your edit did NOT reach the render -
    stale server or wrong path. Fix that; capturing again proves nothing.

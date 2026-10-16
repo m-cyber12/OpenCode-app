@@ -253,9 +253,9 @@ fun ChatScreen(
         StatusArea(state = state, runtime = runtime, availability = availability, onDismissBanner = onDismissBanner)
 
         // v9.35 (owner): the preview console sits DIRECTLY below the TODO
-        // panel - a clone of its rounded container with the server name
-        // inside; the door while nothing is live. While the overlay owns the
-        // screen the console hides.
+        // panel - a clone of its rounded container, asking "See What You've
+        // Made" (v9.37); the door while nothing is live. While the overlay
+        // owns the screen the console hides.
         LivePreviewConsole(
             preview = preview,
             livePorts = livePorts,

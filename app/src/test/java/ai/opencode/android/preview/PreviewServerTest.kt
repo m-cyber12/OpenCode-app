@@ -55,6 +55,38 @@ class PreviewServerTest {
     }
 
     @Test
+    fun mediaRevalidatesAndTextStaysNoStore() {
+        // v9.37 (owner: "slow image loading"): binary media answers with an
+        // ETag and may revalidate (304 = bytes stay where they are); text -
+        // whatever the model might still be editing - never caches.
+        File(root, "logo.png").writeBytes(byteArrayOf(1, 2, 3, 4))
+        val png = URL("http://127.0.0.1:${server.port}/logo.png").openConnection() as HttpURLConnection
+        assertEquals(200, png.responseCode)
+        assertEquals("no-cache", png.getHeaderField("Cache-Control"))
+        val etag = png.getHeaderField("ETag")
+        assertTrue("media carries a weak ETag", etag != null && etag.startsWith("W/\""))
+        png.disconnect()
+        val html = URL("http://127.0.0.1:${server.port}/index.html").openConnection() as HttpURLConnection
+        assertEquals(200, html.responseCode)
+        assertEquals("no-store", html.getHeaderField("Cache-Control"))
+        assertNull("text never advertises an ETag", html.getHeaderField("ETag"))
+        html.disconnect()
+
+        val reval = URL("http://127.0.0.1:${server.port}/logo.png").openConnection() as HttpURLConnection
+        reval.setRequestProperty("If-None-Match", etag!!)
+        assertEquals("unchanged media answers 304", 304, reval.responseCode)
+        reval.disconnect()
+
+        // A replaced file is NEVER served stale: new bytes move the ETag.
+        File(root, "logo.png").writeBytes(byteArrayOf(9))
+        val changed = URL("http://127.0.0.1:${server.port}/logo.png").openConnection() as HttpURLConnection
+        changed.setRequestProperty("If-None-Match", etag)
+        assertEquals("changed media re-serves 200", 200, changed.responseCode)
+        assertEquals(1, changed.inputStream.readBytes().size)
+        changed.disconnect()
+    }
+
+    @Test
     fun servesTheRootIndexForSlash() {
         val (code, payload) = get("/")
         assertEquals(200, code)

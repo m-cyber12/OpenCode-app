@@ -135,18 +135,29 @@ class EnvironmentBriefTest {
         // screenshots on ONE page because every read image rides on every
         // later step - the cost section now carries the structural answer
         // (per-round image budget, latest.jpg-only, REPORT text first).
-        // All owner-mandated content; everything else still fights per word.
-        assertTrue("main brief grew to $words words - split or trim it", words < 700)
+        // v9.37: -> 780. Three owner-mandated contracts landed in the
+        // always-read part: nothing auto-opens (the console asks, "See What
+        // You've Made"), ports belong to the project that opened them (a
+        // foreign server is never killed nor offered), and "Ship clean" -
+        // leaked chat markers ride into written files and break the page in
+        // every browser, so the grep rule must be impossible to miss.
+        // All owner-driven content; everything else still fights per word.
+        assertTrue("main brief grew to $words words - split or trim it", words < 780)
         // The core product loop and cost discipline stay in the always-read part.
         assertTrue(main.contains("serve.json"))
         assertTrue(main.contains("EXISTS"))
         assertTrue(main.contains("/page.html"))
         assertTrue(main.contains("do NOT start your own server"))
-        // v9.36: the pixel budget lives in the ALWAYS-read cost section -
-        // one image per fix round, only the small .jpg, REPORT text first.
-        assertTrue(main.contains("at most ONE"))
+        // v9.36/v9.37: the pixel budget lives in the ALWAYS-read cost
+        // section - reads rare, latest.jpg default, PNG priced-not-banned.
+        assertTrue(main.contains("roughly one read per fix round"))
         assertTrue(main.contains(".preview/latest.jpg"))
         assertTrue(main.contains("REPORT"))
+        // v9.37 owner contracts, pinned where the model can never miss them.
+        assertTrue(main.contains("Nothing auto-opens"))
+        assertTrue(main.contains("See What You've Made"))
+        assertTrue("foreign servers are never killed", main.contains("never kill it"))
+        assertTrue("the leak grep ships in the main brief", main.contains("'<|'"))
         assertTrue(main.contains("mkdir -p \"\$TMPDIR\""))
         assertTrue(main.contains("seccomp"))
         assertTrue(main.contains("setsid"))
@@ -177,7 +188,7 @@ class EnvironmentBriefTest {
         assertTrue(text.contains("capture.json"))
         assertTrue(text.contains("screenshots/NNN-<name>.png"))
         assertTrue(text.contains("width=device-width"))
-        assertTrue(text.contains("at most ONE"))
+        assertTrue(text.contains("roughly one read per fix round"))
         assertTrue(text.contains("do NOT start your own server"))
         // v9.36: the capture loop must document its cheap channels.
         assertTrue(text.contains(".preview/latest.jpg"))

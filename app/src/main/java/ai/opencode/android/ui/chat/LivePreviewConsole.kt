@@ -56,16 +56,22 @@ import android.webkit.WebViewClient
  * v9.35 (owner): the live preview is a chat surface.
  *
  *  * The console is a CLONE of the TODO panel's rounded-rectangle container
- *    (same surface, radius, border, elevation, padding), directly below it,
- *    with the server name inside. With no preview open it is the port door.
+ *    (same surface, radius, border, elevation, padding), directly below it.
+ *    v9.37 (owner): instead of a server name it asks "See What You've
+ *    Made", and acknowledges model updates with a finite "Project updated"
+ *    flash. With no preview open it is the port door - and nothing here
+ *    ever opens the page by itself.
  *  * Opening the preview is a SIMPLE smooth transition (v9.35.6 owner: "not
  *    a teleport" and no circle morph either): the full-screen page fades and
  *    settles over the chat with one finite tween; closing fades it back out.
  *    The page layer is OPAQUE and owns the whole screen, so the chat header
  *    never shows through it.
  *
- * The WebView recipe (no cache, console mirror, one deferred self-snapshot
- * per load, web-history-aware back) carries over from the old Sandbox pane.
+ * The WebView recipe (console mirror, one deferred self-snapshot per load,
+ * web-history-aware back) carries over from the old Sandbox pane; v9.37
+ * swaps no-cache for revalidating cache so image-heavy pages stop
+ * re-fetching the world on every reload (text stays fresh via the server's
+ * no-store).
  */
 
 /** The overlay's phase machine, owned by AppRoot. */
@@ -77,7 +83,9 @@ data class PreviewUi(
     val url: String = "",
     val port: Int = 0,
     val reloadStamp: Long = 0L,
-    val reloadedFlash: Boolean = false,
+    /** v9.37 (owner): a string res to flash on the bar when the project moved
+     *  under the user's nose ("Project updated"/"Reloaded"); 0 = no flash. */
+    val flashLabelRes: Int = 0,
 )
 
 /**
@@ -95,10 +103,12 @@ fun LivePreviewConsole(
     val chat = ChatTheme.chat
     Column(modifier = modifier) {
         if (preview.url.isNotEmpty()) {
-            // The live bar: the TODO container, cloned, with the server name
-            // inside. Tapping it re-opens the preview.
-            val serverName = stringResource(R.string.sandbox_port_row, preview.port)
-            val reloaded = stringResource(R.string.sandbox_console_reloaded)
+            // v9.37 (owner): the bar asks - "See What You've Made" replaces
+            // the server name; a flash label ("Project updated" / "Reloaded")
+            // is the acknowledgement when the model moves the page under the
+            // user's nose. The port still names the OVERLAY header; here it
+            // would just be plumbing.
+            val cta = stringResource(R.string.sandbox_console_cta)
             Surface(
                 color = chat.toolContainer,
                 shape = RoundedCornerShape(16.dp),
@@ -116,13 +126,13 @@ fun LivePreviewConsole(
                 ) {
                     Box(Modifier.size(8.dp).background(chat.success, CircleShape))
                     Spacer(Modifier.width(10.dp))
-                    // The "Reloaded" word arrives and leaves with a finite
-                    // Crossfade - the owner's reload acknowledgement.
-                    Crossfade(targetState = preview.reloadedFlash, label = "console_line") { flash ->
+                    // The flash word arrives and leaves with a finite
+                    // Crossfade - the owner's update acknowledgement.
+                    Crossfade(targetState = preview.flashLabelRes, label = "console_line") { flashRes ->
                         Text(
-                            text = if (flash) reloaded else serverName,
+                            text = if (flashRes != 0) stringResource(flashRes) else cta,
                             style = MaterialTheme.typography.labelMedium,
-                            color = if (flash) chat.success else MaterialTheme.colorScheme.onSurface,
+                            color = if (flashRes != 0) chat.success else MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                         )
                     }
@@ -306,7 +316,9 @@ fun ChatPreviewOverlay(
 
 /**
  * The rendered page - the v9.18 WebView recipe, carried over from the old
- * Sandbox pane: FrameLayout host, no cache, console mirrored to the project,
+ * Sandbox pane: FrameLayout host, revalidating cache (v9.37 - text stays
+ * fresh via the server's no-store; media answers 304), console mirrored
+ * to the project,
  * one deferred self-snapshot per settled load, load only at real size.
  */
 @Composable
@@ -337,7 +349,14 @@ private fun WebPage(
             val web = WebView(ctx).apply {
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
-                settings.cacheMode = WebSettings.LOAD_NO_CACHE
+                // v9.37 (owner: "slow image loading" in preview and Chrome):
+                // NO_CACHE re-fetched EVERY logo/video on every reload;
+                // LOAD_DEFAULT lets the HTTP cache work. Freshness stays
+                // honest: the app's own server answers edited files with
+                // `no-store` (PreviewServer), dev servers revalidate, and
+                // reloads are stamp-keyed - the page bytes are always new,
+                // the immutable assets load from cache.
+                settings.cacheMode = WebSettings.LOAD_DEFAULT
                 settings.useWideViewPort = false
                 settings.loadWithOverviewMode = false
                 settings.layoutAlgorithm = WebSettings.LayoutAlgorithm.NORMAL

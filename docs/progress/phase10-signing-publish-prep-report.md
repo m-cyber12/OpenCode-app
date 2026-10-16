@@ -5496,3 +5496,73 @@ error (IntBuffer.array() typed IntArray), fixed in 145cf5e; run 38718800728
 SUCCESS with JVM 420/420 (+4 new RenderProbeTest cases, EnvironmentBriefTest
 10/10 at the raised 700-word budget), smoke 20/20 fail=0, U3/U9 full-chain
 PASS, live gates L1/L2 PASS (4/4), all in evidence commit 817080d.
+
+## B.60 — v9.37: the console era per the owner's real-project run (2026-10-15)
+
+The owner's v9.36 device run: "it delivered the desired result without
+taking even a single screenshot" - the REPORT-first loop works. Five
+follow-ups from the same run, all shipped here:
+
+1. No auto-open, ever. "The app shouldn't automatically open the preview
+   when a server starts." The first-and-only auto-open (v9.35's
+   autoOpenedOnce) is deleted with its persisted flag; a server appearing
+   or a serve.json re-write only arms/updates the console. Opening is a
+   tap, always. The brief tells the model the same ("announce it, never
+   grab") and to EXPECT the tap - the pane still reloads live while open.
+2. Servers are per project. "Its server option should not be displayed in
+   the new project's interface... if the new project also needs a server,
+   it should open one on a different port." The app's static server is now
+   a per-directory map (opening a project never kills another's server;
+   the port is taken, so the next one gets a different port by itself).
+   Every scanned port is attributed to the project open when it appeared
+   (persisted across restarts; freed when the port closes) and
+   re-declaration via serve.json (a stronger claim) wins - the console and
+   the door of project A never list project B's live server. The brief
+   teaches the other half: never kill a foreign server, take the next
+   free watched port and record it.
+3. Console text. "Instead of displaying the server name on the console,
+   change the text to 'See What You've Made'" - done (sandbox_console_cta;
+   the port still names the overlay header, and door rows name ports to
+   disambiguate the list). U3's bar assertion moved from ":8080" to the
+   new sentence, so the gate pins the contract.
+4. Update indicator. "When the model updates the project and refreshes the
+   server... show a message or indicator on the console" - the bar's flash
+   is now a label: "Project updated" on every serve.json re-write / new /
+   restarted port, "Reloaded" on app-restart reconnects; finite Crossfade,
+   gone after ~2.4s.
+5. Slow image loading - root-caused in OUR code: the pane, the headless
+   capture and the app's static server were all no-cache, so every reload
+   re-fetched every logo and video over the phone network. The server now
+   answers binary media with a weak ETag + no-cache (unchanged files reply
+   304, changed files NEVER serve stale - pinned by a new
+   PreviewServerTest case), text/html/css/js stays no-store (the "fresh
+   bytes" contract survives), and both WebViews moved to the revalidating
+   HTTP cache.
+
+The "extra text" (``` Write file... and ChatML markers rendered INTO the
+page, visible in Chrome too) is a provider leak that rode into the
+PROJECT FILES, not a preview artifact - at 18:09 the page carried it, by
+18:11 the model's own rewrite fixed the file; that arc is why the answer
+is structural, not cosmetic: the app now (a) never renders such markers in
+chat (Markdown.parse scrubs display-side; files on disk are untouched -
+honesty rule), and (b) the main brief gained "Ship clean": grep big writes
+for '<|' and rewrite any hit. REPORT gained meta=ok|missing so the "zoom"
+class (a page without the viewport meta renders desktop-wide/tiny in
+EVERY browser) is a word the agent can act on without pixels - the one
+brief promise that had never actually had an emitter (VIEWPORT) was
+already replaced by the real REPORT in v9.36.
+
+Capability answer to the owner's direct question: NO - nothing was
+restricted. capture.json still shoots any page, route and port at device
+size, on demand, forever; the v9.36 additions (latest.jpg, REPORT,
+frame=, BUDGET) only steer READING into the conversation, which is what
+costs tokens. v9.37 makes that explicit in the brief ("Capturing is
+UNLIMITED... Only READING costs"; the full PNG is "priced per read, not
+banned"), and all dev tools (bash/inspect/navigate/edit) are untouched.
+
+Gates touched: U3's console-bar text; EnvironmentBriefTest budgets
+(700 -> 780, reason logged) and needles (new: CTA, no-auto-open, never-
+kill, leak grep; "at most ONE" -> "roughly one read per fix round");
+RenderProbeTest pinned against the new meta field; a cache/revalidation
+case added to PreviewServerTest. All 20 UI gates + 20 smoke + driver
+selftest remain the contract for CI.

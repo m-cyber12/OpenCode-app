@@ -396,13 +396,35 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // bug 1): when the trip was triggered by a CUSTOM folder the app could not
     // write, the exact folder the user picked is retried on return instead of
     // bouncing them back to the same error.
-    // v9.7 Sandbox: the loopback static preview server. Owned here (the
-    // screens stay pure functions of state); started on demand, kept for the
-    // app's lifetime so the phone's browser can keep the tab open, stopped
-    // with the composition.
-    var previewServer by remember { mutableStateOf<ai.opencode.android.preview.PreviewServer?>(null) }
+    // v9.7 Sandbox: the loopback static preview servers. Owned here (the
+    // screens stay pure functions of state); v9.37 (owner): ONE PER PROJECT -
+    // opening another project never kills a running server ("it's fine for
+    // the server from the previous project to remain running"), and a second
+    // project naturally gets a DIFFERENT port because the first still holds
+    // the preferred one. Stopped with the composition.
+    val previewServers = remember {
+        androidx.compose.runtime.mutableStateMapOf<String, ai.opencode.android.preview.PreviewServer>()
+    }
+    // v9.37 (owner): "its server option should not be displayed in the new
+    // project's interface." A port belongs to the project that was open when
+    // it appeared (that is who started it); the mapping survives app
+    // restarts and is forgotten when the port closes.
+    val portOwners = remember { mutableStateMapOf<Int, String>() }
+    fun persistPortOwners() {
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                runCatching {
+                    val o = org.json.JSONObject()
+                    portOwners.forEach { (p, n) -> o.put(p.toString(), n) }
+                    context.getSharedPreferences("opencode", 0).edit()
+                        .putString("preview_port_owner", o.toString()).apply()
+                }
+            }
+        }
+    }
+    // v9.37: a non-empty url IS the state "this project has something to
+    // show" - the old previewOpen flag became exactly that, so it is gone.
     var previewUrl by remember { mutableStateOf("") }
-    var previewOpen by remember { mutableStateOf(false) }
     // v9.14: the project whose page the PANE is actually showing - console
     // lines must land in THAT project's console.log, not in whichever
     // project happens to be selected when a late message arrives (the
@@ -411,26 +433,24 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // v9.10: bumped on every serve.json write so the pane reloads fresh bytes
     // even when the url stays the same (the agent edited the page in place).
     var previewReload by remember { mutableStateOf(0L) }
-    // v9.35 (owner): the preview lives in the CHAT now - a console under the
-    // TODO panel plus a full-screen morph overlay (circle -> page -> circle).
-    // The phase machine: CLOSED -> OPENING -> OPEN -> CLOSING -> CLOSED, each
-    // hop a finite ~200ms tween window owned by the LaunchedEffect below.
+    // v9.35: the preview lives in the CHAT now - a console under the TODO
+    // panel plus a full-screen overlay fading over the conversation.
+    // The phase machine: CLOSED -> OPENING -> OPEN -> CLOSING -> CLOSED,
+    // each hop a finite 240ms fade window owned by the LaunchedEffect below.
     var previewPhase by remember {
         mutableStateOf(ai.opencode.android.ui.chat.PreviewState.CLOSED)
     }
     var previewPort by remember { mutableStateOf(0) }
-    var reloadedFlash by remember { mutableStateOf(false) }
-    // "the preview should open automatically only the first time a port is
-    // opened" - persisted, so an app RELOAD never grabs the screen again; the
-    // console shows the animated "Reloaded" chip instead.
-    var autoOpenedOnce by remember {
-        mutableStateOf(
-            context.getSharedPreferences("opencode", 0)
-                .getBoolean("preview_auto_opened", false),
-        )
-    }
+    // v9.37 (owner): "show a message or indicator on the console to let the
+    // user know that the project has been updated" - a label res id
+    // ("Project updated" for a fresh hand-off/restarted server, "Reloaded"
+    // for reconnects after an app restart) that arrives and leaves.
+    var previewFlashRes by remember { mutableStateOf(0) }
     DisposableEffect(Unit) {
-        onDispose { previewServer?.stop() }
+        onDispose {
+            previewServers.values.forEach { runCatching { it.stop() } }
+            previewServers.clear()
+        }
     }
 
     LaunchedEffect(previewPhase) {
@@ -447,25 +467,37 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         }
     }
 
-    fun flashReloaded() {
-        reloadedFlash = true
-        scope.launch {
-            kotlinx.coroutines.delay(1600)
-            reloadedFlash = false
+    // v9.37: a port's owner was persisted before this process started -
+    // rehydrate the map so a restart neither forgets project ports nor
+    // re-attributes an old project's server to whichever project opens.
+    LaunchedEffect(Unit) {
+        val raw = withContext(Dispatchers.IO) {
+            runCatching {
+                context.getSharedPreferences("opencode", 0).getString("preview_port_owner", "{}")
+            }.getOrNull().orEmpty()
+        }
+        runCatching {
+            val o = org.json.JSONObject(raw)
+            for (k in o.keys()) portOwners[k.toInt()] = o.getString(k)
         }
     }
 
-    /** v9.35: open the chat preview with the circle-to-page morph. */
+    /** v9.37 (owner): the console's acknowledgement - a label that arrives,
+     * stays ~2.4s, and leaves. Finite by construction (one delayed reset). */
+    fun flash(resId: Int) {
+        previewFlashRes = resId
+        scope.launch {
+            kotlinx.coroutines.delay(2400)
+            if (previewFlashRes == resId) previewFlashRes = 0
+        }
+    }
+
+    /** v9.35: open the chat preview page - ONLY ever from a user tap
+     *  (v9.37: a server starting never opens it; the console asks instead). */
     fun openChatPreview(url: String, port: Int, dir: File?) {
         previewUrl = url
         previewPort = port
         if (dir != null) previewProjectDir = dir
-        previewOpen = true
-        if (!autoOpenedOnce) {
-            autoOpenedOnce = true
-            context.getSharedPreferences("opencode", 0).edit()
-                .putBoolean("preview_auto_opened", true).apply()
-        }
         previewPhase = if (previewPhase == ai.opencode.android.ui.chat.PreviewState.CLOSED) {
             ai.opencode.android.ui.chat.PreviewState.OPENING
         } else {
@@ -474,7 +506,20 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         route = ROUTE_CHAT
     }
 
-    /** v9.35.4: the same sequence in reverse - the overlay morphs back into
+    /**
+     * v9.37 (owner): a project got something to show - light the console,
+     * reload an open pane, but NEVER grab the screen. The user's tap on
+     * "See What You've Made" decides when the page appears.
+     */
+    fun setPreviewTarget(url: String, port: Int, dir: File?, stamp: Long, flashRes: Int) {
+        previewUrl = url
+        previewPort = port
+        if (dir != null) previewProjectDir = dir
+        previewReload = stamp
+        if (flashRes != 0) flash(flashRes)
+    }
+
+    /** v9.35.4: the same sequence in reverse - the overlay fades back into
      *  the console bar; the preview session itself stays live. */
     fun closeChatPreview() {
         if (previewPhase == ai.opencode.android.ui.chat.PreviewState.OPEN ||
@@ -488,48 +533,50 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
      * Start (or reuse) the loopback server for [dir] off the main thread.
      * v9.12: extracted from openPreviewFor so the headless capture engine can
      * get a server WITHOUT flipping any preview UI state. Returns null when
-     * the server could not start.
+     * the server could not start. v9.37: one server per directory - opening
+     * another project never stops this one, and a fresh project's server
+     * lands on a different port by itself (the preferred one is taken).
      */
     suspend fun ensureServerFor(dir: File): ai.opencode.android.preview.PreviewServer? {
-        val existing = previewServer
+        val key = dir.absolutePath
+        val existing = previewServers[key]
         val server = withContext(Dispatchers.IO) {
-            if (existing != null && existing.running && existing.root == dir) {
+            if (existing != null && existing.running) {
                 existing
             } else {
-                existing?.stop()
+                runCatching { existing?.stop() }
                 ai.opencode.android.preview.PreviewServer(dir).also { fresh ->
                     runCatching { fresh.start() }
                 }
             }
         }
         return if (server.running) {
-            previewServer = server
+            previewServers[key] = server
             server
         } else {
-            previewServer = null
+            previewServers.remove(key)
             null
         }
     }
 
     /**
-     * Start (or reuse) the loopback server for [dir], then open the pane.
-     * Shared by the user's door on the Sandbox tab and the AGENT'S door below.
+     * v9.37: resolve what a project's serve.json points at: a declared port
+     * is the agent's own server; without one, the app serves the project
+     * statically. Returns null when the static server could not start.
      */
-    fun openPreviewFor(dir: File, startPath: String = "/") {
-        scope.launch {
-            val server = ensureServerFor(dir)
-            if (server != null) {
-                val cleanPath = if (startPath.startsWith("/")) startPath else "/$startPath"
-                // v9.35: the app's static server opens through the same chat
-                // morph as the agent's own server.
-                openChatPreview("http://127.0.0.1:${server.port}$cleanPath", server.port, dir)
-            } else {
-                storageMessage = context.getString(R.string.sandbox_preview_failed)
-            }
+    suspend fun previewTargetFor(
+        dir: File,
+        declaredPort: Int,
+        cleanPath: String,
+    ): Pair<String, Int>? {
+        return if (declaredPort in 1..65535) {
+            "http://127.0.0.1:$declaredPort$cleanPath" to declaredPort
+        } else {
+            val server = ensureServerFor(dir) ?: return null
+            "http://127.0.0.1:${server.port}$cleanPath" to server.port
         }
     }
 
-    // v9.12 (owner): organized, any-stage screenshots. The agent writes
     // .preview/capture.json {"name": "02-after-login-fix", "path": "/x.html",
     // "port": 8080} and the app loads that page in an OFF-SCREEN WebView at
     // device size - no pane needs to be open, no tab needs to be visible -
@@ -623,46 +670,87 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         }
     }
 
-    // v9.9 (owner): the app WATCHES the loopback instead of assuming its own
-    // server is the only preview source. Any server the agent starts on a
-    // watched port (the list is documented to the agent in the environment
-    // brief) makes the Preview door appear on the Sandbox tab; no live port,
-    // no door. A connect-probe of ~15 loopback ports every 2.5s is microseconds
-    // of kernel work - Android denies /proc/net/tcp to apps, so probing is
-    // the honest way to know.
+    // v9.9 (owner): the app WATCHES the loopback - a connect-probe of ~15
+    // ports every 2.5s is microseconds of kernel work (Android denies
+    // /proc/net/tcp, so probing is the honest way to know). v9.37 (owner):
+    // a server appearing NEVER opens the preview - "the app shouldn't
+    // automatically open the preview when a server starts." It is instead
+    // attributed to the project that was open when it appeared (persisted, so
+    // other projects' consoles never list it), and the console asks.
     var livePorts by remember { mutableStateOf(listOf<Int>()) }
     LaunchedEffect(Unit) {
         val scanner = ai.opencode.android.preview.PortScanner()
         var seen: Set<Int>? = null
         while (true) {
             livePorts = withContext(Dispatchers.IO) { scanner.scan() }
-            // v9.35 (owner): the preview auto-opens ONLY on the first port
-            // open of the app's life (persisted flag). Every later NEW port -
-            // a server start, or an app reload finding one already up - must
-            // not grab the screen: the console flashes "Reloaded" instead.
             val current = livePorts.toSet()
             val before = seen
+            val project = projectName
             if (before == null) {
-                if (current.isNotEmpty() && !previewOpen && autoOpenedOnce) flashReloaded()
+                // App (re)start: a server still up from before reconnects the
+                // console of ITS project only, with the "Reloaded" nod.
+                // A live target the serve.json watcher already armed is kept
+                // (it carries the PATH the port scan cannot know).
+                if (project.isNotEmpty()) {
+                    val mine = current.filter { portOwners[it] == project }.sorted()
+                    if (mine.isNotEmpty()) {
+                        if (previewUrl.isEmpty() || previewPort !in current) {
+                            val target = mine.first()
+                            setPreviewTarget(
+                                "http://127.0.0.1:$target/",
+                                target,
+                                null,
+                                System.currentTimeMillis(),
+                                R.string.sandbox_console_reloaded,
+                            )
+                        } else {
+                            flash(R.string.sandbox_console_reloaded)
+                        }
+                    }
+                }
             } else {
                 val fresh = current - before
-                // Only once a project is actually open - a stray server on
-                // the loopback must never drag the onboarding into the chat.
-                if (fresh.isNotEmpty() && projectName.isNotEmpty()) {
-                    if (previewOpen) {
-                        previewReload = System.currentTimeMillis()
-                        if (previewPhase == ai.opencode.android.ui.chat.PreviewState.CLOSED) {
-                            flashReloaded()
+                if (fresh.isNotEmpty()) {
+                    // The project that is open when a port APPEARS is the one
+                    // whose agent started the server - that is the ownership
+                    // signal, and the answer to "a new project should open its
+                    // server on a different port": 8080 was taken by the old
+                    // project, so a model following its brief lands on the
+                    // next free one, and the brief says to record it in
+                    // serve.json.
+                    if (project.isNotEmpty()) {
+                        fresh.forEach { portOwners[it] = project }
+                        persistPortOwners()
+                        if (previewUrl.isEmpty() || previewPort !in current) {
+                            // No target yet, or the old one's server died -
+                            // this project's fresh port becomes the target.
+                            val firstPort = fresh.min()
+                            setPreviewTarget(
+                                "http://127.0.0.1:$firstPort/",
+                                firstPort,
+                                null,
+                                System.currentTimeMillis(),
+                                R.string.sandbox_console_updated,
+                            )
+                        } else if (previewPort in fresh) {
+                            // Same port came back (restart) - an open pane
+                            // reloads; a closed one just lights the bar.
+                            setPreviewTarget(
+                                previewUrl, previewPort, null,
+                                System.currentTimeMillis(),
+                                R.string.sandbox_console_updated,
+                            )
+                        } else {
+                            flash(R.string.sandbox_console_updated)
                         }
-                    } else if (autoOpenedOnce) {
-                        flashReloaded()
-                    } else {
-                        openChatPreview(
-                            "http://127.0.0.1:${fresh.first()}/",
-                            fresh.first(),
-                            null,
-                        )
                     }
+                }
+                val gone = before - current
+                if (gone.isNotEmpty()) {
+                    // A closed port is unowned again - the next project to
+                    // see it appear owns it.
+                    gone.forEach { portOwners.remove(it) }
+                    persistPortOwners()
                 }
             }
             seen = current
@@ -670,16 +758,33 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         }
     }
 
-    // v9.8/v9.9: the AGENT'S explicit door. Writing .preview/serve.json into
-    // the project opens the preview in front of the user within ~1.5s:
+    // v9.8/v9.9: the AGENT'S hand-off. Writing .preview/serve.json into the
+    // project is how it says "there is something to look at":
     //   {"port": 8080, "path": "/"} -> preview the agent's OWN server (any port)
     //   {"path": "/index.html"}     -> the app serves the project statically
-    // Only writes NEWER than the app's launch (or the last handled one)
-    // trigger, so stale markers from old sessions do nothing.
+    // v9.37 (owner): a write never opens the page - it updates the console
+    // target, reloads an OPEN pane with fresh bytes, and flashes "Project
+    // updated" so the user knows the model moved something. An EXISTING
+    // marker still arms the console when the project opens (quietly, no
+    // flash), so the bar survives app restarts.
     LaunchedEffect(projectDir) {
         val dir = projectDir ?: return@LaunchedEffect
         val marker = File(dir, ".preview/serve.json")
         var handled = withContext(Dispatchers.IO) { if (marker.exists()) marker.lastModified() else 0L }
+        if (handled > 0L) {
+            val declared = withContext(Dispatchers.IO) {
+                runCatching { org.json.JSONObject(marker.readText()) }.getOrNull()
+            }
+            val p = declared?.optInt("port", 0) ?: 0
+            val r = (declared?.optString("path", "/") ?: "/").ifEmpty { "/" }
+            val clean = if (r.startsWith("/")) r else "/$r"
+            // previewTargetFor covers both kinds: a declared port (the
+            // agent's server, wherever it runs) or the app's own static
+            // server for the project - started quietly, never opened.
+            previewTargetFor(dir, p, clean)?.let { (u, port) ->
+                setPreviewTarget(u, port, dir, handled, 0)
+            }
+        }
         while (true) {
             kotlinx.coroutines.delay(1500)
             val stamp = withContext(Dispatchers.IO) { if (marker.exists()) marker.lastModified() else 0L }
@@ -691,30 +796,27 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 val declaredPort = declared?.optInt("port", 0) ?: 0
                 val requested = (declared?.optString("path", "/") ?: "/").ifEmpty { "/" }
                 val cleanPath = if (requested.startsWith("/")) requested else "/$requested"
-                // v9.35 (owner): a NEW serve.json write opens the preview only
-                // while it has never been opened (the one auto-open); an
-                // already-open preview just reloads fresh bytes; afterwards a
-                // closed preview answers the write with the "Reloaded" chip -
-                // the chat stays the chat, no more tab-grabbing.
-                if (previewOpen) {
-                    previewReload = stamp
-                    // v9.35.4: the console bar is live but the overlay is
-                    // closed - acknowledge the fresh bytes with the flash.
-                    if (previewPhase == ai.opencode.android.ui.chat.PreviewState.CLOSED) {
-                        flashReloaded()
-                    }
-                } else if (autoOpenedOnce) {
-                    flashReloaded()
-                } else if (declaredPort in 1..65535) {
-                    openChatPreview(
-                        "http://127.0.0.1:$declaredPort$cleanPath",
-                        declaredPort,
-                        dir,
+                // v9.37: whoever DECLARES a port in their serve.json owns it
+                // for the console filter - the declaration is stronger than
+                // the appear-time heuristic (a server hand-over between
+                // projects is then honest, and late attribution can't strand
+                // the row).
+                if (declaredPort in 1..65535 && projectName.isNotEmpty()) {
+                    portOwners[declaredPort] = projectName
+                    persistPortOwners()
+                }
+                val target = previewTargetFor(dir, declaredPort, cleanPath)
+                if (target != null) {
+                    setPreviewTarget(
+                        target.first, target.second, dir, stamp,
+                        if (previewPhase == ai.opencode.android.ui.chat.PreviewState.OPEN ||
+                            previewPhase == ai.opencode.android.ui.chat.PreviewState.OPENING
+                        ) {
+                            0 // the pane is on screen and reloading - no flash
+                        } else {
+                            R.string.sandbox_console_updated
+                        },
                     )
-                    previewReload = stamp
-                } else {
-                    openPreviewFor(dir, cleanPath)
-                    previewReload = stamp
                 }
             }
         }
@@ -1269,7 +1371,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     // screen (console under the TODO panel + morph overlay);
                     // the Sandbox keeps the port door, and opening it now
                     // walks the user to the chat where the preview lives.
-                    livePorts = livePorts,
+                    livePorts = livePorts.filter { it == previewPort || portOwners[it] == projectName },
                     onOpenPort = { port ->
                         openChatPreview(
                             "http://127.0.0.1:$port/",
@@ -1562,9 +1664,13 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         url = previewUrl,
                         port = previewPort,
                         reloadStamp = previewReload,
-                        reloadedFlash = reloadedFlash,
+                        flashLabelRes = previewFlashRes,
                     ),
-                    livePorts = livePorts,
+                    // v9.37 (owner): a project's console shows only ITS ports -
+                    // the ones owned by this project (a previous project's still
+                    // running server is deliberately invisible here) plus the
+                    // target this chat is already previewing.
+                    livePorts = livePorts.filter { it == previewPort || portOwners[it] == projectName },
                     onOpenPreviewPort = { port ->
                         openChatPreview("http://127.0.0.1:$port/", port, projectDir)
                     },

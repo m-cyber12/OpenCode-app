@@ -56,7 +56,10 @@ class HeadlessCapture(private val context: Context) {
         var finished = false
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
-        web.settings.cacheMode = WebSettings.LOAD_NO_CACHE
+        // v9.37: parity with the pane - the HTTP cache may work (image loads
+        // stop re-fetching every capture); the static server answers text
+        // with no-store, so captured bytes are still fresh.
+        web.settings.cacheMode = WebSettings.LOAD_DEFAULT
         web.settings.layoutAlgorithm = WebSettings.LayoutAlgorithm.NORMAL
         web.settings.mediaPlaybackRequiresUserGesture = false
         // Never attached to a window -> no hardware layer exists; force the

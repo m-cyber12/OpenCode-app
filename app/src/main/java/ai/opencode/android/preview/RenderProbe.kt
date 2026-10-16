@@ -33,14 +33,14 @@ object RenderProbe {
             "var vw=(window.innerWidth||v.clientWidth||0),vh=(window.innerHeight||v.clientHeight||0);" +
             "var sw=Math.max(v.scrollWidth||0,(b&&b.scrollWidth)||0);" +
             "var sh=Math.max(v.scrollHeight||0,(b&&b.scrollHeight)||0);" +
-            "return {viewport:[vw,vh],doc:[sw,sh],overflowX:Math.max(0,sw-vw)," +
+            "return {viewport:[vw,vh],doc:[sw,sh],overflowX:Math.max(0,sw-vw),meta:d.querySelector(\u0027meta[name=viewport]\u0027)?1:0," +
             "imgs:ok,totalImgs:imgs.length,broken:bad,text:((b&&b.innerText)||'').length};" +
             "}catch(e){return {error:String(e&&e.message||e)}}})()"
 
     /**
      * Compact one-line digest for console.log, e.g.
-     * `REPORT viewport=412x915 doc=412x2350 overflowX=0px imgs=4/5 broken=1
-     * text=1810ch frame=changed`. `raw` is evaluateJavascript's serialization
+     * `REPORT viewport=412x915 doc=412x2350 overflowX=0px meta=ok imgs=4/5
+     * broken=1 text=1810ch frame=changed`. `raw` is evaluateJavascript's serialization
      * (or null when the probe did not answer); any unparseable input yields
      * `REPORT unavailable` rather than a crash or a silent miss.
      */
@@ -57,6 +57,10 @@ object RenderProbe {
             .append(" viewport=").append(vw).append('x').append(vh)
             .append(" doc=").append(dw).append('x').append(dh)
             .append(" overflowX=").append(o.optInt("overflowX", 0)).append("px")
+            // v9.37 (owner "zoom issues"): a missing viewport meta renders the
+            // page desktop-wide/tiny in EVERY engine (Chrome included). This
+            // one word names that bug without a screenshot.
+            .append(" meta=").append(if (o.optInt("meta", 0) == 1) "ok" else "missing")
             .append(" imgs=").append(o.optInt("imgs", 0))
             .append('/').append(o.optInt("totalImgs", 0))
             .append(" broken=").append(o.optInt("broken", 0))

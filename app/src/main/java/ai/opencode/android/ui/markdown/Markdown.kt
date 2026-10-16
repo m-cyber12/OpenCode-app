@@ -74,9 +74,19 @@ object Markdown {
     private val FENCE = Regex("^(`{3,}|~{3,})[ \\t]*(.*)$")
     private val TABLE_SEP = Regex("^\\s*\\|?\\s*:?-{2,}:?\\s*(\\|\\s*:?-{2,}:?\\s*)*\\|?\\s*$")
 
+    /** ChatML-style control markers a raw-completion provider can leak. */
+    private val LEAKED_TOKEN = Regex("<\\|[a-zA-Z_][a-zA-Z0-9_]{0,31}\\|>")
+
     /** Parse a whole document (or the part of one that has streamed in so far). */
     fun parse(source: String): List<MdBlock> {
-        val lines = source.replace("\r\n", "\n").replace('\r', '\n').split("\n")
+        // v9.37 (owner): some providers leak their own chat-format control
+        // markers into the assistant text ("...<|end|><|start|>assistant...").
+        // The user must never see protocol debris, so the CHAT hides them -
+        // display only: files on disk stay byte-for-byte what the model wrote
+        // (honesty rule; the model is told in the brief to clean its files
+        // itself). One contains() guard keeps the hot path free of regex.
+        val scrubbed = if (source.contains("<|")) source.replace(LEAKED_TOKEN, "") else source
+        val lines = scrubbed.replace("\r\n", "\n").replace('\r', '\n').split("\n")
         val out = ArrayList<MdBlock>()
         var i = 0
         while (i < lines.size) {

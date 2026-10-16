@@ -14,18 +14,19 @@ class RenderProbeTest {
     @Test
     fun digestFormatsProbeNumbersIntoOneLine() {
         val raw = """{"viewport":[412,915],"doc":[412,2350],"overflowX":0,""" +
-            """"imgs":4,"totalImgs":5,"broken":1,"text":1810}"""
+            """"meta":1,"imgs":4,"totalImgs":5,"broken":1,"text":1810}"""
         assertEquals(
-            "REPORT viewport=412x915 doc=412x2350 overflowX=0px imgs=4/5 broken=1 text=1810ch frame=changed",
+            "REPORT viewport=412x915 doc=412x2350 overflowX=0px meta=ok imgs=4/5 broken=1 text=1810ch frame=changed",
             RenderProbe.digest(raw, "changed"),
         )
     }
 
     @Test
-    fun digestOmitsFrameWhenAbsent() {
-        val raw = """{"viewport":[412,915],"doc":[412,915],"overflowX":37,"imgs":0,"totalImgs":0,"broken":0,"text":12}"""
+    fun digestOmitsFrameWhenAbsentAndFlagsMissingViewportMeta() {
+        val raw = """{"viewport":[412,915],"doc":[980,1200],"overflowX":568,""" +
+            """"meta":0,"imgs":0,"totalImgs":0,"broken":0,"text":12}"""
         assertEquals(
-            "REPORT viewport=412x915 doc=412x915 overflowX=37px imgs=0/0 broken=0 text=12ch",
+            "REPORT viewport=412x915 doc=980x1200 overflowX=568px meta=missing imgs=0/0 broken=0 text=12ch",
             RenderProbe.digest(raw),
         )
     }
@@ -41,7 +42,7 @@ class RenderProbeTest {
 
     @Test
     fun probeScriptAnswersEveryDigestField() {
-        for (key in listOf("viewport", "doc", "overflowX", "imgs", "totalImgs", "broken", "text")) {
+        for (key in listOf("viewport", "doc", "overflowX", "meta", "imgs", "totalImgs", "broken", "text")) {
             assertEquals("JS must produce $key", true, RenderProbe.JS.contains("$key:"))
         }
     }

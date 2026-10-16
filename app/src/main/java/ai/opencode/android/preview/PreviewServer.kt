@@ -76,15 +76,19 @@ class PreviewServer(val root: File) {
             val request = runCatching {
                 val reader = BufferedReader(InputStreamReader(s.getInputStream(), StandardCharsets.ISO_8859_1))
                 val first = reader.readLine() ?: return
-                // Drain the headers; a static viewer needs none of them.
+                var inm = ""
                 while (true) {
                     val line = reader.readLine() ?: break
                     if (line.isEmpty()) break
+                    // v9.37: the ONE header a fresh-enough answer needs -
+                    // revalidation for cacheable media rides on it.
+                    if (line.startsWith("If-None-Match:")) inm = line.substringAfter(':').trim()
                 }
-                first
+                first to inm
             }.getOrNull() ?: return
             val out = s.getOutputStream()
-            val parts = request.split(' ')
+            val (requestLine, ifNoneMatch) = request
+            val parts = requestLine.split(' ')
             if (parts.size < 2) return
             val method = parts[0]
             if (method != "GET" && method != "HEAD") {
@@ -100,12 +104,32 @@ class PreviewServer(val root: File) {
                 )
                 return
             }
+            val etag = "W/\"${target.length()}-${target.lastModified()}\""
+            if (cacheable(target.name) && ifNoneMatch == etag) {
+                // Unchanged binary media: answer with headers alone. A day of
+                // reloads costs zero re-transferred bytes - yet the browser
+                // still revalidates every load, so a replaced image is
+                // NEVER served stale. (The pane contract "fresh bytes, not
+                // cached content" survives; only the wire traffic shrinks.)
+                respond304(out, etag)
+                return
+            }
             val body = runCatching { target.readBytes() }.getOrNull()
             if (body == null) {
                 respond(out, 404, "Not Found", "text/plain; charset=utf-8", "unreadable".toByteArray(), method == "HEAD")
                 return
             }
-            respond(out, 200, "OK", mimeOf(target.name), body, method == "HEAD")
+            respond(
+                out, 200, "OK", mimeOf(target.name), body, method == "HEAD",
+                // v9.37 (owner: "slow image loading"): everything answered
+                // no-store, so every reload re-fetched every logo and video.
+                // Binary media now caches-then-revalidates (304 on repeats);
+                // anything text-like the model may still be editing
+                // (html/css/js/json/svg...) stays no-store, so a reload
+                // always shows fresh bytes.
+                cacheable = cacheable(target.name),
+                etag = etag,
+            )
         }
     }
 
@@ -121,12 +145,22 @@ class PreviewServer(val root: File) {
         return if (inside) target else null
     }
 
-    private fun respond(out: OutputStream, code: Int, reason: String, mime: String, body: ByteArray, headOnly: Boolean) {
+    private fun respond(
+        out: OutputStream,
+        code: Int,
+        reason: String,
+        mime: String,
+        body: ByteArray,
+        headOnly: Boolean,
+        cacheable: Boolean = false,
+        etag: String = "",
+    ) {
         val head = buildString {
             append("HTTP/1.1 ").append(code).append(' ').append(reason).append("\r\n")
             append("Content-Type: ").append(mime).append("\r\n")
             append("Content-Length: ").append(body.size).append("\r\n")
-            append("Cache-Control: no-store\r\n")
+            append(if (cacheable) "Cache-Control: no-cache\r\n" else "Cache-Control: no-store\r\n")
+            if (etag.isNotEmpty() && cacheable) append("ETag: ").append(etag).append("\r\n")
             append("Connection: close\r\n\r\n")
         }
         out.write(head.toByteArray(StandardCharsets.ISO_8859_1))
@@ -134,7 +168,30 @@ class PreviewServer(val root: File) {
         out.flush()
     }
 
+    private fun respond304(out: OutputStream, etag: String) {
+        out.write(
+            ("HTTP/1.1 304 Not Modified\r\nETag: $etag\r\nCache-Control: no-cache\r\nConnection: close\r\n\r\n")
+                .toByteArray(StandardCharsets.ISO_8859_1),
+        )
+        out.flush()
+    }
+
     companion object {
+        /**
+         * v9.37: binary media a page references but the agent is not
+         * mid-edit on - safe to let the WebView HTTP cache hold for a day.
+         * The model editing an image replaces the file, and a new capture or
+         * pane load revalidates on its own schedule; text artifacts never
+         * take this path.
+         */
+        internal fun cacheable(name: String): Boolean =
+            when (name.substringAfterLast('.', "").lowercase()) {
+                "png", "jpg", "jpeg", "gif", "webp", "avif", "bmp", "ico",
+                "mp4", "webm", "ogg", "mp3", "wav", "m4a", "aac",
+                "woff", "woff2", "ttf", "otf", "eot" -> true
+                else -> false
+            }
+
         /** The fixed map: previews are code the user just wrote, not arbitrary uploads. */
         internal fun mimeOf(name: String): String = when (name.substringAfterLast('.', "").lowercase()) {
             "html", "htm" -> "text/html; charset=utf-8"

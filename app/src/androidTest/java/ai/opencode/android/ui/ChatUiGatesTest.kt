@@ -1244,7 +1244,10 @@ class ChatUiGatesTest {
             uiState(sessionView(messages = emptyList(), busy = false), busy = false),
             availability = AgentAvailability.READY,
         )
-        val consoleBarShown = exists("sandbox_console_bar") && onScreenText().contains(":8080")
+        // v9.37 (owner): the bar asks "See What You've Made" - the server
+        // name is gone from it (the overlay header still names the port).
+        val consoleBarShown = exists("sandbox_console_bar") &&
+            onScreenText().contains("See What You've Made")
         rule.onAllNodesWithTag("sandbox_console_bar")[0].performClick()
         rule.waitForIdle()
         val barReopens = previewShows == 1
