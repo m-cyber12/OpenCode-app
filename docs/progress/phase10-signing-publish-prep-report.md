@@ -5566,3 +5566,12 @@ kill, leak grep; "at most ONE" -> "roughly one read per fix round");
 RenderProbeTest pinned against the new meta field; a cache/revalidation
 case added to PreviewServerTest. All 20 UI gates + 20 smoke + driver
 selftest remain the contract for CI.
+
+RESULT (2026-10-16): the first v9.37 run caught one real defect at compile
+(AppRoot used mutableStateMapOf without its import - fixed in c1ae200; the
+brace/strings sweeps missed it because the import, not the syntax, was the
+problem). The re-run 74be496 is fully green: JVM tests 421/421 (the new
+cache case included), all 20 UI gates on the fresh AVD (U3 now asserts the
+"See What You've Made" bar), all 20 release-shaped smoke gates, driver
+selftest 136/0, payload verified, phase6_ui_fails=0 phase10_gate_fails=0
+phase9_gate_fails=0 - evidence commits a196664/e7a26d1. v9.37 shipped.
