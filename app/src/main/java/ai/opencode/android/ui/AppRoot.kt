@@ -59,6 +59,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -403,7 +404,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // project naturally gets a DIFFERENT port because the first still holds
     // the preferred one. Stopped with the composition.
     val previewServers = remember {
-        androidx.compose.runtime.mutableStateMapOf<String, ai.opencode.android.preview.PreviewServer>()
+        mutableStateMapOf<String, ai.opencode.android.preview.PreviewServer>()
     }
     // v9.37 (owner): "its server option should not be displayed in the new
     // project's interface." A port belongs to the project that was open when
