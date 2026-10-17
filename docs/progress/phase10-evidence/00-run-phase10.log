@@ -1,9 +1,9 @@
-=== PHASE 10 START 2026-10-17T16:06:37Z ===
+=== PHASE 10 START 2026-10-17T16:47:50Z ===
 ########## 1/9 static checks (phase 9 invariants + phase 10 release invariants) ##########
-=== Phase 10 static checks 2026-10-17T16:06:37Z ===
+=== Phase 10 static checks 2026-10-17T16:47:50Z ===
 
 === phase 9 static checks (not weakened) ===
-=== Phase 9 static checks 2026-10-17T16:06:37Z ===
+=== Phase 9 static checks 2026-10-17T16:47:50Z ===
 OK   bash -n on 42 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8/phase9 driver
@@ -106,7 +106,7 @@ PASS a visible match is not flagged (rc=0) (rc=0 out='1020 1740')
 PASS has still finds an off-screen node (a tag being present is news) (rc=0)
 PASS a device that marks everything not-shown does not blind the reader (rc=0)
 PASS attrs reports the attribute set and the hidden count (rc=0 out='nodes=4 2 node(s) marked shown=false\nbounds:4 class:4 clickable:4 content-desc:4 enabled:4 index:4 package:4 resource-id:4 shown:4 text:4')
-PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmp52pn_jbn/broken.xml')
+PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmptqef9is1/broken.xml')
 p10d-ui selftest: 20 checks, 0 failed
 SELFTEST PASS
 OK   uiautomator dump reader self-test (tap targets, disabled states, diagnostics)
@@ -115,17 +115,15 @@ OK   uiautomator dump reader self-test (tap targets, disabled states, diagnostic
 OK   fake-phone shim answers the first two questions of every run
 
 === compose icon availability (material-icons-core only) ===
-NOTE not in material-icons-core, will not compile: app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:324 Icons.Filled.Stop
-NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:325 Icons.Filled.KeyboardArrowRight (use AutoMirrored.Filled.KeyboardArrowRight)
-NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:594 Icons.Filled.ArrowBack (use AutoMirrored.Filled.ArrowBack)
-NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:695 Icons.Filled.KeyboardArrowRight (use AutoMirrored.Filled.KeyboardArrowRight)
-NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:818 Icons.Filled.ArrowBack (use AutoMirrored.Filled.ArrowBack)
+NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:326 Icons.Filled.KeyboardArrowRight (use AutoMirrored.Filled.KeyboardArrowRight)
+NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:595 Icons.Filled.ArrowBack (use AutoMirrored.Filled.ArrowBack)
+NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:696 Icons.Filled.KeyboardArrowRight (use AutoMirrored.Filled.KeyboardArrowRight)
+NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:819 Icons.Filled.ArrowBack (use AutoMirrored.Filled.ArrowBack)
 NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:154 Icons.Filled.KeyboardArrowRight (use AutoMirrored.Filled.KeyboardArrowRight)
 NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:198 Icons.Filled.KeyboardArrowRight (use AutoMirrored.Filled.KeyboardArrowRight)
 NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:284 Icons.Filled.ArrowBack (use AutoMirrored.Filled.ArrowBack)
 NOTE deprecated in Compose 1.6 (still available): app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:1704 Icons.Filled.Send (use AutoMirrored.Filled.Send)
-check-compose-icons: 88 kotlin files, 1 not-in-core, 8 deprecated references
-FIX: use an icon from material-icons-core, or add androidx.compose.material:material-icons-extended to app/build.gradle.kts knowing that isMinifyEnabled=false means its unused vectors ship too.
+check-compose-icons: 88 kotlin files, 0 not-in-core, 8 deprecated references
 OK   compose icon availability (material-icons-core only)
 
 === harness/app contract (v4 fixtures, driver needles, gate tags) ===
@@ -198,7 +196,7 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   model marker written for the x86_64 carry-forward
   ok   a POSIX host says so, instead of leaving the path question open
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-160715/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-164821/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
   ok   v4: the storage screen no longer shows copy-path, export or the folder choosers
@@ -370,9 +368,9 @@ PAYLOAD STAGING SKIPPED: compile/test-only run, no APK was produced.
 > Task :app:mapDebugSourceSetPaths
 > Task :app:generateDebugResources
 > Task :app:packageDebugResources
-> Task :app:mergeDebugResources
 > Task :app:createDebugCompatibleScreenManifests
 > Task :app:extractDeepLinksDebug
+> Task :app:mergeDebugResources
 > Task :app:parseDebugLocalResources
 
 > Task :app:processDebugMainManifest
@@ -389,49 +387,925 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:generateDebugAndroidTestResValues FROM-CACHE
 > Task :app:mapDebugAndroidTestSourceSetPaths
 > Task :app:generateDebugAndroidTestResources
-> Task :app:preDebugUnitTestBuild
-> Task :app:javaPreCompileDebugUnitTest FROM-CACHE
 > Task :app:processDebugManifestForPackage
 > Task :app:mergeDebugAndroidTestResources
+> Task :app:preDebugUnitTestBuild
+> Task :app:javaPreCompileDebugUnitTest FROM-CACHE
 > Task :app:processDebugAndroidTestResources
 > Task :app:processDebugResources
 > Task :app:compileDebugKotlin
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/AppRoot.kt:1517:37 Cannot infer a type for this parameter. Please specify it explicitly.
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:33:47 Unresolved reference: Stop
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:324:56 Unresolved reference: Stop
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:17:53 Expecting a top level declaration
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:17:55 Expecting a top level declaration
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:17:56 Expecting a top level declaration
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:17:64 Expecting a top level declaration
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:17:65 Expecting a top level declaration
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:17:72 Expecting a top level declaration
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:17:73 Expecting a top level declaration
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:17:75 Expecting a top level declaration
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:17:76 Expecting a top level declaration
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:17:82 Expecting a top level declaration
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:17:83 Expecting a top level declaration
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:17:93 imports are only allowed in the beginning of file
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:17:38 Unresolved reference: WebGlyphimport
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:196:20 Unresolved reference: ProjectTab
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:363:35 Unresolved reference: ProjectTab
-e: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:729:60 Unresolved reference: WebGlyph
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/EnvironmentBrief.kt:95:19 Parameter 'engine' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/security/SecretStore.kt:119:54 'getter for isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:156:5 Parameter 'onOpenSessions' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:849:5 Parameter 'runtime' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:1704:60 'Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:154:52 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:198:60 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:284:52 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:283:17 Name shadowed: chat
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:326:64 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:595:60 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:696:56 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:819:52 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/projects/ProjectsScreen.kt:123:5 Parameter 'onOpen' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:256:5 Parameter 'availability' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:259:9 Variable 'chat' is never used
 
-> Task :app:compileDebugKotlin FAILED
+> Task :app:compileDebugJavaWithJavac
+> Task :app:processDebugJavaRes
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:bundleDebugClassesToRuntimeJar
+
+> Task :app:compileDebugUnitTestKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/client/OpenCodeApiHttpTest.kt:56:27 Parameter 'rec' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/projects/ProjectStoreLifecycleTest.kt:64:13 Variable 'p' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/projects/ProjectStoreLifecycleTest.kt:96:13 Variable 'p' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/GithubWorkspaceNotesTest.kt:18:19 'createTempDir(String = ..., String? = ..., File? = ...): File' is deprecated. Avoid creating temporary directories in the default temp location with this function due to too wide permissions on the newly created directory. Use kotlin.io.path.createTempDirectory instead.
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractionValidationTest.kt:45:13 Unsafe use of a nullable receiver of type File?
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractionValidationTest.kt:59:9 Unsafe use of a nullable receiver of type File?
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractionValidationTest.kt:117:9 Unsafe use of a nullable receiver of type File?
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/test/java/ai/opencode/android/runtime/PayloadExtractorTest.kt:103:37 Unsafe use of a nullable receiver of type File?
+
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes
+
+> Task :app:compileDebugAndroidTestKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/client/OpenCodeClientGatesTest.kt:392:39 Type mismatch: inferred type is String? but String was expected
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/FirstRunUiGatesTest.kt:305:32 Variable 'createdThroughUi' initializer is redundant
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/FirstRunUiGatesTest.kt:306:21 Variable 'typed' initializer is redundant
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/ai/opencode/android/ui/StressRecoveryGatesTest.kt:203:45 'getter for isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java
+
+> Task :app:testDebugUnitTest
+
+AddonsTest > catalogCarriesTheWasmCompilerUnderTheBriefedName PASSED
+
+AddonsTest > tarballNameIsExactlyWhatTheBriefTeaches PASSED
+
+AddonsTest > installedListsFinishedTarballsOnlySorted PASSED
+
+AddonsTest > manifestUrlEscapesTheScopedSlashOnly PASSED
+
+AddonsTest > manifestParsingReadsVersionTarballAndSize PASSED
+
+AddonsTest > versionSafetyRejectsEverythingThatCouldEscapeTheAddonsDir PASSED
+
+DefaultModelHintTest > nothingConnectedMeansNoHintNotAnArbitraryProvider PASSED
+
+DefaultModelHintTest > firstCatalogEntryIsNeverChosenWhenNotConnected PASSED
+
+DefaultModelHintTest > aConnectedThirdPartyProviderBeatsTheBundledOne PASSED
+
+DefaultModelHintTest > theJustProvisionedProviderWinsWhenConnected PASSED
+
+DefaultModelHintTest > aConnectedProviderWithoutADefaultModelIsSkipped PASSED
+
+DefaultModelHintTest > aPreferredProviderTheServerDoesNotReportConnectedIsNotForced PASSED
+
+EventFrameTest > derivesLegacyType PASSED
+
+EventFrameTest > sessionIDFoundInNestedShapes PASSED
+
+EventFrameTest > permissionEventsMatchBothSpellings PASSED
+
+EventFrameTest > nullAndUnknownShapesDoNotThrow PASSED
+
+EventFrameTest > stripsDurableVersionSuffix PASSED
+
+LoopbackGuardTest > bindHostname_defaultsToLoopbackWhenUnset PASSED
+
+LoopbackGuardTest > bindHostname_refusesNonLoopbackAndKeepsLoopback PASSED
+
+LoopbackGuardTest > checked_acceptsLoopbackUrlsOnly PASSED
+
+LoopbackGuardTest > isLoopbackLiteral_coversThe127Block PASSED
+
+LoopbackGuardTest > bindHostname_acceptsLoopbackForms PASSED
+
+ModelPreferenceTest > starringKeepsTheOrderTheUserStarredInAndUnstarringRemoves PASSED
+
+ModelPreferenceTest > withoutAMemoryTheHeuristicStillRunsIncludingItsPreferenceArgument PASSED
+
+ModelPreferenceTest > aRememberedModelBeatsTheFirstConnectedProvider PASSED
+
+ModelPreferenceTest > theStoredSpellingIsTrimmedOnTheWayIn PASSED
+
+ModelPreferenceTest > aRememberedModelOnACustomProviderIsAcceptedWithoutADefaultEntry PASSED
+
+ModelPreferenceTest > aModelIdContainingASlashSurvivesTheRoundTrip PASSED
+
+ModelPreferenceTest > theLastUsedModelIsWhatComesBackAfterARebuild PASSED
+
+ModelPreferenceTest > aRememberedModelWithNoProviderLeftAtAllStillFallsBackToTheHeuristic PASSED
+
+ModelPreferenceTest > noMemoryAndNothingConnectedIsNoHintAtAll PASSED
+
+ModelPreferenceTest > aRememberedModelThatIsNoLongerInTheCatalogIsIgnored PASSED
+
+ModelPreferenceTest > malformedEntriesDecodeToNothingInsteadOfAGuess PASSED
+
+OpenCodeApiHttpTest > mcpAddPostsNameAndConfig PASSED
+
+OpenCodeApiHttpTest > permissionReplyUsesTheUpstreamRoute PASSED
+
+OpenCodeApiHttpTest > non2xxBecomesTypedError PASSED
+
+OpenCodeApiHttpTest > providersParsesTheModelsOwnVariantIds PASSED
+
+OpenCodeApiHttpTest > healthIsGlobalAndCarriesBasicAuth PASSED
+
+OpenCodeApiHttpTest > promptAsyncSendsUpstreamPartShape PASSED
+
+OpenCodeApiHttpTest > promptAsyncOmitsAgentAndVariantWhenUnset PASSED
+
+OpenCodeApiHttpTest > authProvisioningUsesProviderIdRoute PASSED
+
+OpenCodeApiHttpTest > patchMethodIsAndroidOnly PASSED
+
+OpenCodeApiHttpTest > sessionCreateIsDirectoryScopedAndPassesTitle PASSED
+
+OpenCodeApiHttpTest > bodylessRequestsDeclareZeroLength PASSED
+
+OpenCodeApiHttpTest > eventStreamParsesFramesAndReconnects PASSED
+
+ProviderCatalogTest > aProviderIdMustBeASlugBecauseItBecomesAConfigKey PASSED
+
+ProviderCatalogTest > anExactIdWinsOverEverythingElse PASSED
+
+ProviderCatalogTest > aQueryNothingMatchesReturnsNothingRatherThanTheWholeCatalog PASSED
+
+ProviderCatalogTest > anEmptyQueryReturnsTheCatalogInItsOwnOrder PASSED
+
+ProviderCatalogTest > caseDoesNotMatterAndSubstringsStillMatch PASSED
+
+ProviderCatalogTest > aBlankDisplayNameFallsBackToTheIdRatherThanAnEmptyLabel PASSED
+
+ProviderCatalogTest > modelIdsAreSplitDedupedAndKeptInOrder PASSED
+
+ProviderCatalogTest > theConfigDocumentIsTheShapeUpstreamExpects PASSED
+
+ProviderCatalogTest > anIdPrefixBeatsANameMatch PASSED
+
+ProviderCatalogTest > theResultIsBoundedSoASingleLetterCannotComposeHundredsOfRows PASSED
+
+ProviderCatalogTest > impossibleInputProducesNoDocumentInsteadOfABrokenOne PASSED
+
+ProviderSetupTest > nothingStoredAndNothingConnectedIsTheNamedEmptyState PASSED
+
+ProviderSetupTest > anUnknownProviderListIsUnknownEvenWithStoredKeys PASSED
+
+ProviderSetupTest > aStoredKeyWithoutConnectionIsConfiguredNotConnected PASSED
+
+ProviderSetupTest > connectedWinsOverEverything PASSED
+
+SseAccumulatorTest > dispatchesOnBlankLine PASSED
+
+SseAccumulatorTest > joinsMultipleDataLines PASSED
+
+SseAccumulatorTest > ignoresCommentsAndKeepsFrameBoundaries PASSED
+
+SseAccumulatorTest > finishFlushesUnterminatedFrame PASSED
+
+ToolMetaParserTest > readMetadataTruncationIsReported PASSED
+
+ToolMetaParserTest > aMissingExitStaysNullInsteadOfPretendingSuccess PASSED
+
+ToolMetaParserTest > blankGarbageAndNullsNeverThrow PASSED
+
+ToolMetaParserTest > builtinToolNamesMapOntoFamilies PASSED
+
+ToolMetaParserTest > writeAndEditMetadataCarryTheDiffAndItsCounts PASSED
+
+ToolMetaParserTest > shellMetadataCarriesOutputExitAndTruncation PASSED
+
+ToolMetaParserTest > underscoredNamesFromMcpServersAreMcp PASSED
+
+ToolMetaParserTest > matchingIsCaseInsensitiveAndExactBeforePattern PASSED
+
+ToolMetaParserTest > todoParserDegradesToEmptyOnMalformedOrForeignShapes PASSED
+
+ToolMetaParserTest > truncatedShellOutputPointsAtTheFullFile PASSED
+
+ToolMetaParserTest > diagnosticsWithoutADiffAreStillCounted PASSED
+
+ToolMetaParserTest > aDiffOnlyInsideFilediffIsStillADiff PASSED
+
+ToolMetaParserTest > todoParserReadsUpstreamInputShape PASSED
+
+ToolMetaParserTest > anythingUnrecognisedIsOtherAndStillRendered PASSED
+
+ToolMetaParserTest > todoParserPrefersMetadataOverInputAndNormalisesStatus PASSED
+
+ToolMetaParserTest > numbersOfAnyJsonTypeStillParse PASSED
+
+TranscriptPhase6Test > loadedPartsBecomeRenderablePartsInServerOrder PASSED
+
+TranscriptPhase6Test > startingANewTurnClearsThePreviousTurnsError PASSED
+
+TranscriptPhase6Test > anAssistantMessageErrorIsMirroredOntoTheMessageAndTheSession PASSED
+
+TranscriptPhase6Test > aCanonicalPartFrameAfterDeltasOverwritesRatherThanDoubles PASSED
+
+TranscriptPhase6Test > theServersOwnPendingListReplacesWhatTheStreamGuessed PASSED
+
+TranscriptPhase6Test > anUnknownErrorShapeIsKeptRatherThanDiscarded PASSED
+
+TranscriptPhase6Test > aToolPartMovesFromRunningToCompletedInPlace PASSED
+
+TranscriptPhase6Test > aDeltaForAPartThatHasNotArrivedYetIsDroppedNotSynthesised PASSED
+
+TranscriptPhase6Test > anEmptyDeltaChangesNothing PASSED
+
+TranscriptPhase6Test > anEmptyErrorObjectIsNotATurnError PASSED
+
+TranscriptPhase6Test > removedPartsDisappearFromTheMessage PASSED
+
+TranscriptPhase6Test > sessionErrorBecomesTheTurnsTypedError PASSED
+
+TranscriptPhase6Test > loadMessagesDerivesTheLastErrorFromHistory PASSED
+
+TranscriptPhase6Test > retryStatusCarriesTheAttemptNumber PASSED
+
+TranscriptPhase6Test > aDeltaNamingAnUnknownMessageIsIgnored PASSED
+
+TranscriptPhase6Test > aPermissionAskKeepsTheAlwaysScopeAndItsToolCall PASSED
+
+TranscriptPhase6Test > bookkeepingPartsAreMirroredWholeSoTheUiCanDecideToHideThem PASSED
+
+TranscriptPhase6Test > aToolPartKeepsItsStateMetadataAndTiming PASSED
+
+TranscriptPhase6Test > busySessionsLooksAcrossSessions PASSED
+
+TranscriptPhase6Test > deltaAppendsOntoThePartItNames PASSED
+
+TranscriptPhase6Test > aRejectedQuestionIsAlsoRemoved PASSED
+
+TranscriptPhase6Test > questionsAreTrackedAndClearedWhenRepliedTo PASSED
+
+TranscriptPhase6Test > aToolPartInErrorStateKeepsTheErrorText PASSED
+
+TranscriptPhase6Test > aLaterBusyStatusClearsTheRetryState PASSED
+
+TranscriptPhase6Test > anIdThatIsNotAQuestionIsNotInvented PASSED
+
+TranscriptPhase6Test > aFilePartKeepsMimeNameAndUrl PASSED
+
+TranscriptPhase6Test > severalPartsStreamIndependently PASSED
+
+TranscriptPhase6Test > deletingASessionTakesItsMessagesPromptsAndErrorsWithIt PASSED
+
+TranscriptPhase6Test > summaryFlagAndTokensSurviveTheEventPath PASSED
+
+TranscriptPhase6Test > customDefaultsToTrueWhenUpstreamOmitsIt PASSED
+
+TranscriptPhase6Test > loadMessagesReplacesTheOlderTranscriptRatherThanAppending PASSED
+
+TranscriptPhase6Test > aDeltaOnAnotherFieldDoesNotTouchTheText PASSED
+
+TranscriptPhase6Test > idleClearsRetryAndBusy PASSED
+
+TranscriptPhase6Test > aPermissionReplyRemovesThePrompt PASSED
+
+TranscriptTest > toolPartLifecycleKeepsLatestStatus PASSED
+
+TranscriptTest > sessionDeletedDropsEverything PASSED
+
+TranscriptTest > ignoresForeignAndMalformedFrames PASSED
+
+TranscriptTest > partRemovedDropsThePart PASSED
+
+TranscriptTest > mergesTextPartUpdatesIntoOneMessage PASSED
+
+TranscriptTest > busyFollowsSessionStatusAndIdle PASSED
+
+TranscriptTest > permissionAskThenReplyClears PASSED
+
+UiErrorOfflineTest > apiError5xxIsAProviderReachabilityFailure PASSED
+
+UiErrorOfflineTest > a429WithAuthSoundingTextIsStillUnreachable PASSED
+
+UiErrorOfflineTest > networkTextIsRecognisedFromTheKnownHintVocabulary PASSED
+
+UiErrorOfflineTest > authHintsInTheTextAreRecognisedWhenThereIsNoStatus PASSED
+
+UiErrorOfflineTest > authHintsTakePrecedenceOverNetworkHints PASSED
+
+UiErrorOfflineTest > apiError401IsAProviderAuthFailure PASSED
+
+UiErrorOfflineTest > onlyLocalFailureStatesDisableSending PASSED
+
+UiErrorOfflineTest > runtimeStateNamesMapOntoTheTwoRuntimeBuckets PASSED
+
+UiErrorOfflineTest > aTransportFailureOfTheAppCallIsServerUnreachable PASSED
+
+UiErrorOfflineTest > aNamedProviderErrorWithNoRecognisableTextIsProviderOther PASSED
+
+UiErrorOfflineTest > aRetryableApiErrorIsProviderReachability PASSED
+
+UiErrorOfflineTest > anAbortIsNeverAServerProblem PASSED
+
+UiErrorOfflineTest > structuralFailuresAreNotNetworkProblems PASSED
+
+UiErrorOfflineTest > theRuntimeStateAlwaysWinsOverEverything PASSED
+
+UiErrorOfflineTest > anUnrecognisedNameWithNoTextIsUnknown PASSED
+
+UiErrorOfflineTest > apiError403IsAProviderAuthFailure PASSED
+
+UiErrorOfflineTest > theAppCallStatusesClassifySeparately PASSED
+
+UiErrorOfflineTest > theUpstreamProviderAuthErrorNameAlwaysWins PASSED
+
+UiErrorTest > aRateLimitTriggersTheKeySwitch PASSED
+
+UiErrorTest > aDeadNetworkOrAnAbortNeverBurnsThroughTheRing PASSED
+
+UiErrorTest > apiErrorStatusCodesDecideBetweenAuthNetworkAndOther PASSED
+
+UiErrorTest > modelSideLimitsAreProviderFailures PASSED
+
+UiErrorTest > providerAuthErrorIsProviderAuthWhateverTheMessageSays PASSED
+
+UiErrorTest > theMostLocalFailureWins PASSED
+
+UiErrorTest > sendingIsBlockedOnlyByTheLocalAgent PASSED
+
+UiErrorTest > anUnnamedErrorKeepsItsHintsButNeverInventsACause PASSED
+
+UiErrorTest > serverCallClassificationSeparatesTransportFromRefusal PASSED
+
+UiErrorTest > anEmptyErrorIsUnknownRatherThanSomethingInvented PASSED
+
+UiErrorTest > abortIsItsOwnStateAndIsNotAnError PASSED
+
+UiErrorTest > runtimeStatesMapOntoStartingVersusUnavailable PASSED
+
+UiErrorTest > aProviderFailureNeverMakesTheWholeAppLookBroken PASSED
+
+UiErrorTest > retryableApiErrorIsTreatedAsReachabilityNotAsABug PASSED
+
+UiErrorTest > unknownNamesFallBackToMessageHints PASSED
+
+WorkLogDiffTest > editWithoutDiffIsNotSynthesized PASSED
+
+WorkLogDiffTest > newFileWriteSynthesizesAFullAdditionDiff PASSED
+
+WorkLogDiffTest > serverDiffStillWinsOverSynthesis PASSED
+
+WorkLogTest > readsSearchesAndShellRunsAreNotChanges PASSED
+
+WorkLogTest > aNullSessionAndGarbageJsonProduceEmptyPagesNotCrashes PASSED
+
+WorkLogTest > aWriteWithoutADiffStillCounts_theFileComesFromTheInput PASSED
+
+WorkLogTest > userTurnsAndNonToolPartsNeverAppear PASSED
+
+WorkLogTest > anEditBecomesAStageWithTheFileAndTheCounts PASSED
+
+WorkLogTest > runningAndFailedCommandsAreShownNotHidden PASSED
+
+WorkLogTest > aShellCallBecomesAConsoleEntryWithCommandOutputAndExit PASSED
+
+WorkLogTest > editsAndReadsAreNotConsoleEntries PASSED
+
+WorkLogTest > theConsoleReadsTopDown_oldestFirst_acrossTurns PASSED
+
+WorkLogTest > turnsWithoutFileChangesAreOmittedAndNewestStageLeads PASSED
+
+GitSyncTest > cloneLandsOnTheProjectBranchWithTheFilesPresent PASSED
+
+GitSyncTest > oneBranchPerProjectNamedAfterIt PASSED
+
+GitSyncTest > ensureProjectBranchPutsAStrayCheckoutBack PASSED
+
+GitSyncTest > githubOriginDetectionReadsTheRemoteUrl PASSED
+
+GithubReposTest > cloneUrlIsTheTokenFreeWebForm PASSED
+
+GithubReposTest > headersCarryBearerTokenAndApiVersionNeverInUrl PASSED
+
+GithubReposTest > listUrlAsksForTheViewersReposNewestPushFirst PASSED
+
+GithubReposTest > parseReadsNameFullNameBranchAndVisibility PASSED
+
+ProjectMemoryTest > projectAndGlobalFilesLiveInTheirOwnScopes PASSED
+
+ProjectMemoryTest > blankWriteRemovesTheFile PASSED
+
+ProjectMemoryTest > contentIsTrimmedOfSurroundingWhitespace PASSED
+
+ProjectMemoryTest > removeDeletesTheFile PASSED
+
+ProjectMemoryTest > readingAMissingFileIsEmptyNotAnError PASSED
+
+ProjectMemoryTest > writeThenReadRoundTrips PASSED
+
+PortScannerTest > findsAListeningPortAndSkipsClosedOnes PASSED
+
+PortScannerTest > scanPreservesCandidateOrderForTheDoor PASSED
+
+PortScannerTest > aClosedPortStopsBeingReported PASSED
+
+PortScannerTest > theAppsOwnStaticPortLeadsTheWatchedList PASSED
+
+PreviewServerTest > missingFilesAre404NotCrashes PASSED
+
+PreviewServerTest > bindsTheIpv4LoopbackTheUrlActuallyDials PASSED
+
+PreviewServerTest > servesTheRootIndexForSlash PASSED
+
+PreviewServerTest > pathTraversalIsConfinedToTheRoot PASSED
+
+PreviewServerTest > stopReallyStops PASSED
+
+PreviewServerTest > queryStringsDoNotConfuseTheLookup PASSED
+
+PreviewServerTest > mimeMapCoversTheWebBasics PASSED
+
+PreviewServerTest > servesFilesWithTheirOwnMimeTypes PASSED
+
+PreviewServerTest > aDirectoryFallsThroughToItsIndex PASSED
+
+PreviewServerTest > mediaRevalidatesAndTextStaysNoStore PASSED
+
+RenderProbeTest > digestOmitsFrameWhenAbsentAndFlagsMissingViewportMeta PASSED
+
+RenderProbeTest > brokenOrMissingProbeAlwaysYieldsALine PASSED
+
+RenderProbeTest > probeScriptAnswersEveryDigestField PASSED
+
+RenderProbeTest > digestFormatsProbeNumbersIntoOneLine PASSED
+
+ShotStoreTest > longNamesAreBoundedButNeverEndInADash PASSED
+
+ShotStoreTest > nonPngClutterDoesNotBreakTheSequence PASSED
+
+ShotStoreTest > capturesAreNumberedInOrderInsideProjectRootScreenshots PASSED
+
+ShotStoreTest > slugsAreFilesystemSafeAndReadable PASSED
+
+ProjectIoTest > renameRefusesToClobberAnExistingDirectory PASSED
+
+ProjectIoTest > copyTreeEnforcesTheByteCapAndLeavesNothingPartial PASSED
+
+ProjectIoTest > sizeOfSumsAWholeTree PASSED
+
+ProjectIoTest > renameMovesATreeAndKeepsContents PASSED
+
+ProjectIoTest > deleteTreeRemovesRecursively PASSED
+
+ProjectIoTest > copyTreeSkipsSymlinks PASSED
+
+ProjectIoTest > zipTreeRoundTripsFiles PASSED
+
+ProjectIoTest > writeStreamRemovesThePartialFileWhenTheCapIsBreached PASSED
+
+ProjectMigrationTest > movingARootIntoItselfIsANoOp PASSED
+
+ProjectMigrationTest > anExplicitMoveTakesEverythingAndRemovesTheDrainedSource PASSED
+
+ProjectMigrationTest > theAutomaticPathRefusesANonEmptyDestination PASSED
+
+ProjectMigrationTest > aRootThatIsAlsoALegacyCandidateIsNeverMovedOntoItself PASSED
+
+ProjectMigrationTest > theAutomaticMigrationTakesTheNewestLegacyRootThatStillHasProjects PASSED
+
+ProjectMigrationTest > theStoreMovesProjectsAndTheActivePointerFollowsThem PASSED
+
+ProjectMigrationTest > theAutomaticMigrationDoesNothingWhenTheCurrentRootAlreadyHasProjects PASSED
+
+ProjectMigrationTest > anExplicitMoveSkipsNameCollisionsAndKeepsBothCopies PASSED
+
+ProjectMigrationTest > anEmptySourceIsJustRemovedAndNothingIsReportedAsMoved PASSED
+
+ProjectStoreLifecycleTest > deleteRemovesTheDirectoryAndClearsActiveWhenItWasCurrent PASSED
+
+ProjectStoreLifecycleTest > adoptRegistersAnExistingDirectoryWithoutRenamingIt PASSED
+
+ProjectStoreLifecycleTest > renameMovesTheDirectoryAndKeepsItOpen PASSED
+
+ProjectStoreLifecycleTest > renameOfAMissingProjectReturnsNull PASSED
+
+ProjectStoreLifecycleTest > uniqueNameNeverCollidesWithExistingDirectories PASSED
+
+ProjectStoreLifecycleTest > createSuffixesCollisions PASSED
+
+ProjectStoreLifecycleTest > dotDirectoriesAreInfrastructureNotProjects PASSED
+
+ProjectStoreLifecycleTest > renameToACollidingNameGetsASuffix PASSED
+
+ProjectStoreMigrationTest > migrationIsIdempotentAndNeverResurrectsDeletedProjects PASSED
+
+ProjectStoreMigrationTest > theUsersPreferenceHistorySurvivesTheMigration PASSED
+
+ProjectStoreMigrationTest > theInternalRootIsUsedWhenExternalStorageIsUnavailable PASSED
+
+ProjectStoreMigrationTest > existingProjectsMoveAcrossFilesystemsAndTheOldRootIsRemoved PASSED
+
+ProjectStoreMigrationTest > aFreshInstallWithNoLegacyRootIsANoOp PASSED
+
+ProjectStoreMigrationTest > externalStorageIsTheProjectRootWhenItIsAvailable PASSED
+
+ProjectStoreMigrationTest > anInstallThatAlreadyHasProjectsIsNotOverwritten PASSED
+
+ProjectStorePersistenceTest > theActiveProjectSurvivesARestart PASSED
+
+ProjectStorePersistenceTest > theProjectListSurvivesARestart PASSED
+
+ProjectStorePersistenceTest > filesystemDiscoveredProjectsWithoutPreferencesStillAppear PASSED
+
+ProjectStorePersistenceTest > timestampsSurviveARestart PASSED
+
+ProjectStorePersistenceTest > aStaleActivePointerWithNoProjectsLeftIsNull PASSED
+
+ProjectStorePersistenceTest > theMostRecentlyOpenedProjectSortsFirst PASSED
+
+ProjectStorePersistenceTest > aStaleActivePointerFallsBackToTheMostRecentlyOpenedProject PASSED
+
+ProjectStoreSanitizeTest > ordinaryNamesAreUnchanged PASSED
+
+ProjectStoreSanitizeTest > aLeadingOrTrailingDotIsDropped PASSED
+
+ProjectStoreSanitizeTest > theResultIsAlwaysAUsableSinglePathComponent PASSED
+
+ProjectStoreSanitizeTest > separatorsBecomeDashesAndRunsCollapse PASSED
+
+ProjectStoreSanitizeTest > nonAsciiLettersAreKeptBecauseTheyAreLegalDirectoryNames PASSED
+
+ProjectStoreSanitizeTest > aCappedNameNeverEndsInADashOrDot PASSED
+
+ProjectStoreSanitizeTest > pathTraversalCannotSurvive PASSED
+
+ProjectStoreSanitizeTest > theDefaultProjectNameIsAlreadySanitized PASSED
+
+ProjectStoreSanitizeTest > lengthIsCapped PASSED
+
+ProjectStoreSanitizeTest > surroundingWhitespaceIsTrimmed PASSED
+
+AbiGateTest > apiBelow29IsRejectedEvenWithArm64 PASSED
+
+AbiGateTest > x86_64IsSupportedForEmulator PASSED
+
+AbiGateTest > arm64IsSupported PASSED
+
+AbiGateTest > x86_32OnlyIsRejected PASSED
+
+AbiGateTest > prefersArm64WhenBothAbisPresent PASSED
+
+AbiGateTest > armeabiV7aOnlyIsRejected PASSED
+
+EnvironmentBriefTest > webappBriefCarriesTheCreatorsHubLessons PASSED
+
+EnvironmentBriefTest > freshInstallWritesBriefAndWiresConfig PASSED
+
+EnvironmentBriefTest > installingTwiceAddsNothingTwice PASSED
+
+EnvironmentBriefTest > userConfigIsExtendedNeverReplaced PASSED
+
+EnvironmentBriefTest > briefsRefreshWhenContentChanges PASSED
+
+EnvironmentBriefTest > mainBriefIndexesEveryTopicFileAndStaysLean PASSED
+
+EnvironmentBriefTest > v924WebappBriefTeachesTheAddonStoreAndTheCheapPreviewPaths FAILED
+    java.lang.AssertionError at EnvironmentBriefTest.kt:359
+
+EnvironmentBriefTest > installedSetTellsTheTruthAboutTheEnvironment PASSED
+
+EnvironmentBriefTest > v923BriefsCarrySecondRunLessonsAndGithubContract FAILED
+    java.lang.AssertionError at EnvironmentBriefTest.kt:311
+
+EnvironmentBriefTest > unparseableUserConfigIsLeftByteForByteAlone PASSED
+
+GithubWorkspaceNotesTest > appendsToAUserWrittenFileWithoutTouchingIt PASSED
+
+GithubWorkspaceNotesTest > createsTheFileWithTheOwnersContract PASSED
+
+GithubWorkspaceNotesTest > secondEnsureIsInertAndContentAfterEditsSurvives PASSED
+
+GithubWorkspaceNotesTest > refusesQuietlyWhenTheProjectDirIsGone PASSED
+
+HealthCheckerTest > aRefusedSocketIsUnhealthyNotAnException PASSED
+
+HealthCheckerTest > waitHealthyTimesOutCleanlyWhenNothingAnswers PASSED
+
+HealthCheckerTest > waitHealthyReturnsOnTheFirstHealthyProbe PASSED
+
+HealthCheckerTest > aTwoHundredThatDoesNotReportHealthyIsNotHealthy PASSED
+
+HealthCheckerTest > aWrongPasswordIsUnhealthyWithTheServersStatus PASSED
+
+HealthCheckerTest > waitHealthyIsBoundedAndReturnsTheLastObservation PASSED
+
+HealthCheckerTest > aHealthyTwoHundredIsReportedHealthy PASSED
+
+LoopbackAuditTest > distinguishesWildcardListenRow PASSED
+
+LoopbackAuditTest > formatsIpv6LoopbackAndWildcard PASSED
+
+LoopbackAuditTest > parsesLoopbackListenRow PASSED
+
+LoopbackAuditTest > udpRowsCarryPortForMdnsDetection PASSED
+
+LoopbackAuditTest > skipsHeaderAndJunk PASSED
+
+LoopbackAuditTest > formatsIpv4LittleEndianWord PASSED
+
+ManifestTest > roundTripsVersionsAndEntries PASSED
+
+ManifestTest > unknownFieldsTolerated PASSED
+
+ManifestTest > rejectsManifestVersionDriftFromLock PASSED
+
+ManifestTest > rejectsUnsafeManifestPaths PASSED
+
+PayloadExtractionValidationTest > aTarEntryThatEscapesTheRootIsRejected PASSED
+
+PayloadExtractionValidationTest > aStaleMarkerVersionIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > aShaMismatchIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > aCompleteValidExtractionReturnsNull PASSED
+
+PayloadExtractionValidationTest > aMissingEntryFileIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > aMissingServerBundleIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > pluginSeedEntriesAreVerifiedAtTheirPromotedLocation PASSED
+
+PayloadExtractionValidationTest > sha256MatchesTheJdkDigest PASSED
+
+PayloadExtractionValidationTest > unpackRestoresFilesAndDirectories PASSED
+
+PayloadExtractionValidationTest > aMissingMarkerMeansFirstRunOrWipe PASSED
+
+PayloadExtractionValidationTest > aSizeMismatchIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > anUnsafeManifestEntryIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > anUnreadableMarkerIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > aMissingLauncherIsAReExtraction PASSED
+
+PayloadExtractionValidationTest > aTruncatedTarEntryIsRejected PASSED
+
+PayloadExtractorTest > verifyDetectsCorruptedContent PASSED
+
+PayloadExtractorTest > unpackTarExtractsFilesAndNestedDirs PASSED
+
+PayloadExtractorTest > verifyDetectsMissingMarker PASSED
+
+PayloadExtractorTest > unpackTarRejectsPathEscape PASSED
+
+RestartBackoffTest > delayIsNeverBelowTheFloorNorAboveTheCap PASSED
+
+RestartBackoffTest > totalWorstCaseBackoffBudgetIsBounded PASSED
+
+RestartBackoffTest > delayGrowsExponentiallyUntilTheCap PASSED
+
+RestartBackoffTest > firstRetryLandsBetweenHalfAndOneAndAHalfSeconds PASSED
+
+RestartBackoffTest > supervisorGivesUpAfterEightAttempts PASSED
+
+RestartBackoffTest > attemptsAreOneBasedAndInvalidInputIsRejected PASSED
+
+RestartBackoffTest > jitterBandIsHalfToOneAndAHalfOfTheExponentialStep PASSED
+
+RuntimeEnvTest > buildCarriesTheServerAuthAndIdentity PASSED
+
+RuntimeEnvTest > buildPointsEveryWritablePathAtAppPrivateStorage PASSED
+
+RuntimeEnvTest > githubTokenLandsInEnvOnlyWhenConnected PASSED
+
+RuntimeEnvTest > portAndUserAreFixedAndValid PASSED
+
+RuntimeEnvTest > buildHonoursALoopbackHostnameOverrideButNothingElse PASSED
+
+RuntimeEnvTest > buildPutstheBundledToolsFirstOnThePath PASSED
+
+RuntimeEnvTest > hostnameAcceptsTheFullLoopbackSet PASSED
+
+RuntimeEnvTest > hostnameIsFailClosedForEveryNonLoopbackRequest PASSED
+
+RuntimeStateMachineTest > coldStartPathIsLegal PASSED
+
+RuntimeStateMachineTest > everyStatusKnowsItsLegalTargets PASSED
+
+RuntimeStateMachineTest > noStateSkipsExtractionOnReentry PASSED
+
+RuntimeStateMachineTest > aCrashCanOnlyReachHealthyThroughStarting PASSED
+
+RuntimeStateMachineTest > userStopIsLegalFromEveryActiveState PASSED
+
+RuntimeStateMachineTest > reEntryFromDeadEndsGoesThroughExtraction PASSED
+
+RuntimeStateMachineTest > impossibleTransitionsAreRejected PASSED
+
+RuntimeStateMachineTest > crashRestartCycleIsLegal PASSED
+
+RuntimeStateMachineTest > theWholeTableIsClosedAndSelfConsistent PASSED
+
+RuntimeStateMachineTest > giveUpIsLegalFromEveryActiveState PASSED
+
+RuntimeStateMachineTest > retryWithinOneStartAttemptIsLegal PASSED
+
+RuntimeVersionTest > aWrongOpencodeVersionIsRejected PASSED
+
+RuntimeVersionTest > thePinsMatchTheLockfileContract PASSED
+
+RuntimeVersionTest > aWrongRipgrepVersionIsRejected PASSED
+
+RuntimeVersionTest > everyMismatchIsReportedTogether PASSED
+
+RuntimeVersionTest > safeRelativePathsAreAccepted PASSED
+
+RuntimeVersionTest > aWrongBunVersionIsRejected PASSED
+
+RuntimeVersionTest > aWrongOpencodeCommitIsRejected PASSED
+
+RuntimeVersionTest > aManifestWithoutFilesIsRefusedOnParse PASSED
+
+RuntimeVersionTest > aWrongPayloadVersionIsRejected PASSED
+
+RuntimeVersionTest > aMatchingManifestIsValid PASSED
+
+RuntimeVersionTest > unsafePathsAreRejected PASSED
+
+RuntimeVersionTest > aManifestWithAnUnsafePathIsRefusedOnParse PASSED
+
+RuntimeVersionTest > manifestJsonRoundTrips PASSED
+
+RuntimeVersionTest > aWrongGitVersionIsRejected PASSED
+
+StorageResolutionTest > withNoUsableExternalStorageTheAppPrivateRootIsTheLastResort PASSED
+
+StorageResolutionTest > sdCardAndCloudFoldersAreRefusedRatherThanAcceptedAndBroken PASSED
+
+StorageResolutionTest > withoutTheGrantTheFallbackIsUsedAndLabelledHonestly PASSED
+
+StorageResolutionTest > onAndroid10TheAppExternalFallbackIsFileManagerVisible PASSED
+
+StorageResolutionTest > aPrimaryVolumeFolderResolvesToARealPath PASSED
+
+StorageResolutionTest > aGrantedButUnmountedVolumeFallsBackInsteadOfPretending PASSED
+
+StorageResolutionTest > allFilesAccessMakesSharedStorageTheDefault PASSED
+
+StorageResolutionTest > aUsableRootIsOneTheAppCanActuallyWriteIn PASSED
+
+StorageResolutionTest > traversalInAChosenFolderIdIsRefused PASSED
+
+StorageResolutionTest > aChosenFolderBeatsTheSharedDefault PASSED
+
+GithubConnectorTest > shapeCheckAcceptsRealTokensAndRejectsPasteAccidents PASSED
+
+GithubConnectorTest > secretNamePassesTheKeystoreNamePolicy PASSED
+
+GithubConnectorTest > envVarIsTheOwnersChosenName PASSED
+
+GithubConnectorTest > normalizeOnlyTrims PASSED
+
+GithubConnectorTest > tokenPageCarriesScopePrefillAndDescription PASSED
+
+ProviderKeyringTest > removeAllWipesBlobsMetadataAndLegacy PASSED
+
+ProviderKeyringTest > activateReturnsTheValueAndMirrorsTheLegacyName PASSED
+
+ProviderKeyringTest > deletingTheLastKeyReportsEmptyAndClearsTheLegacyName PASSED
+
+ProviderKeyringTest > failoverWithOneOrZeroKeysIsNull PASSED
+
+ProviderKeyringTest > deletingAnInactiveKeyLeavesTheActiveOneAlone PASSED
+
+ProviderKeyringTest > addingASecondKeyKeepsTheFirstAndActivatesTheNew PASSED
+
+ProviderKeyringTest > providersDoNotShareRings PASSED
+
+ProviderKeyringTest > providerWithNoKeysListsNothing PASSED
+
+ProviderKeyringTest > deletingTheActiveKeyPromotesTheNextAndReportsItsValue PASSED
+
+ProviderKeyringTest > failoverAdvancesRoundRobinAndReturnsTheNextValue PASSED
+
+ProviderKeyringTest > legacySingleKeyIsAdoptedAsActiveKeyOne PASSED
+
+ProviderKeyringTest > corruptMetadataIsTreatedAsEmptyNotACrash PASSED
+
+ProviderKeyringTest > activatingAnUnknownSlotIsNullNeverASilentSuccess PASSED
+
+ProviderKeyringTest > metadataRoundTripsThroughAFreshInstance PASSED
+
+ProviderKeyringTest > last4IsMetadataOnlyAndNeverTheWholeKey PASSED
+
+SecretNamesTest > rejectsPathTraversalAndJunk PASSED
+
+SecretNamesTest > blobFileNameIsContained PASSED
+
+SecretNamesTest > acceptsProviderStyleNames PASSED
+
+SecretNamesTest > providerIdRoundTrip PASSED
+
+EmptyChatCopyTest > planExitQuestionHidesThePlanFilePath PASSED
+
+EmptyChatCopyTest > headlinesAreTheOwnersThirtyVerbatim PASSED
+
+EmptyChatCopyTest > tipsAndSubtitle PASSED
+
+EmptyChatCopyTest > otherQuestionsRenderVerbatim PASSED
+
+EmptyChatCopyTest > oneHeadlinePerDayRotating PASSED
+
+CodeHighlightTest > emptyAndWhitespaceInputsAreLossless PASSED
+
+CodeHighlightTest > shellVariablesAndCommands PASSED
+
+CodeHighlightTest > capitalisedIdentifiersAreTypes PASSED
+
+CodeHighlightTest > javascriptTemplateLiteralIsAString PASSED
+
+CodeHighlightTest > kotlinKeywordsNumbersAndCalls PASSED
+
+CodeHighlightTest > realFixturesStayByteExact PASSED
+
+CodeHighlightTest > unknownLanguageStillTokenisesStringsAndNumbers PASSED
+
+CodeHighlightTest > supportedLanguagesAreReportedHonestly PASSED
+
+CodeHighlightTest > jsonKeysAreTypesAndLiteralsAreKeywords PASSED
+
+CodeHighlightTest > lineAndBlockComments PASSED
+
+CodeHighlightTest > punctuationRunsMerge PASSED
+
+CodeHighlightTest > stringsKeepTheirEscapes PASSED
+
+CodeHighlightTest > unterminatedStringStopsAtTheNewline PASSED
+
+CodeHighlightTest > pythonTripleQuotedStringIsOneSpan PASSED
+
+CodeHighlightTest > commentDoesNotSwallowTheNextLine PASSED
+
+CodeHighlightTest > diffLinesAreColouredBySign PASSED
+
+CodeHighlightTest > languageAliasesResolve PASSED
+
+MarkdownTest > inlineSpanTextAlwaysConcatenatesBackToTheVisibleText PASSED
+
+MarkdownTest > emptyInputProducesNoBlocks PASSED
+
+MarkdownTest > fencedCodeBlockKeepsLanguageAndByteExactSource PASSED
+
+MarkdownTest > blockquoteAndRule PASSED
+
+MarkdownTest > pipeTableSplitsCells PASSED
+
+MarkdownTest > crlfIsNormalised PASSED
+
+MarkdownTest > underscoreInsideAWordIsNotEmphasis PASSED
+
+MarkdownTest > listsCarryDepthMarkerAndOrdering PASSED
+
+MarkdownTest > linksCarryLabelAndUrl PASSED
+
+MarkdownTest > unterminatedFenceIsStillCodeBecauseTheRestHasNotArrived PASSED
+
+MarkdownTest > indentedContinuationJoinsThePreviousItem PASSED
+
+MarkdownTest > backslashEscapesAreLiteral PASSED
+
+MarkdownTest > boldItalicStrikeAndInlineCode PASSED
+
+MarkdownTest > paragraphIsOneBlockAndKeepsSoftLineBreaks PASSED
+
+MarkdownTest > unterminatedEmphasisStaysLiteralWhileStreaming PASSED
+
+MarkdownTest > strongUsesDoubleMarkersAndNestsEmphasis PASSED
+
+MarkdownTest > languageNormalisationIsLowercaseAndAliasFree PASSED
+
+MarkdownTest > blankLineSeparatesParagraphs PASSED
+
+MarkdownTest > tildeFenceAndInfoStringAttributes PASSED
+
+MarkdownTest > atxHeadingsCarryTheirLevel PASSED
+
+MarkdownTest > unterminatedLinkStaysLiteralWhileStreaming PASSED
+
+425 tests completed, 2 failed
+
+> Task :app:testDebugUnitTest FAILED
 
 FAILURE: Build failed with an exception.
 
 * What went wrong:
-Execution failed for task ':app:compileDebugKotlin'.
-> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
-   > Compilation error. See log for more details
+Execution failed for task ':app:testDebugUnitTest'.
+> There were failing tests. See the report at: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build/reports/tests/testDebugUnitTest/index.html
 
 * Try:
-> Run with --info or --debug option to get more log output.
 > Run with --scan to get full insights.
-> Get more help at https://help.gradle.org.
 
 * Exception is:
-org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugKotlin'.
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:testDebugUnitTest'.
 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:130)
 	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:293)
 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:128)
@@ -463,18 +1337,20 @@ org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:com
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
-Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
-	at org.gradle.workers.internal.DefaultWorkerExecutor$WorkItemExecution.waitForCompletion(DefaultWorkerExecutor.java:287)
-	at org.gradle.internal.work.DefaultAsyncWorkTracker.lambda$waitForItemsAndGatherFailures$2(DefaultAsyncWorkTracker.java:130)
-	at org.gradle.internal.Factories$1.create(Factories.java:31)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLocks(DefaultWorkerLeaseService.java:339)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLocks(DefaultWorkerLeaseService.java:322)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLock(DefaultWorkerLeaseService.java:327)
-	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForItemsAndGatherFailures(DefaultAsyncWorkTracker.java:126)
-	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForItemsAndGatherFailures(DefaultAsyncWorkTracker.java:92)
-	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForAll(DefaultAsyncWorkTracker.java:78)
-	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForCompletion(DefaultAsyncWorkTracker.java:66)
-	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:252)
+Caused by: org.gradle.api.internal.exceptions.MarkedVerificationException: There were failing tests. See the report at: file:///home/runner/work/OpenCode-app/OpenCode-app/app/build/reports/tests/testDebugUnitTest/index.html
+	at org.gradle.api.tasks.testing.AbstractTestTask.handleTestFailures(AbstractTestTask.java:705)
+	at org.gradle.api.tasks.testing.AbstractTestTask.handleCollectedResults(AbstractTestTask.java:539)
+	at org.gradle.api.tasks.testing.AbstractTestTask.executeTests(AbstractTestTask.java:534)
+	at org.gradle.api.tasks.testing.Test.executeTests(Test.java:715)
+	at com.android.build.gradle.tasks.factory.AndroidUnitTest.executeTests(AndroidUnitTest.java:163)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at org.gradle.internal.reflect.JavaMethod.invoke(JavaMethod.java:125)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.doExecute(StandardTaskAction.java:58)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:51)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:29)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:244)
 	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
 	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
 	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
@@ -592,43 +1468,12 @@ Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionExcept
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
-Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
-	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:20)
-	at org.jetbrains.kotlin.compilerRunner.GradleKotlinCompilerWork.run(GradleKotlinCompilerWork.kt:141)
-	at org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction.execute(GradleCompilerRunnerWithWorkers.kt:73)
-	at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:63)
-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:66)
-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:62)
-	at org.gradle.internal.classloader.ClassLoaderUtils.executeInClassloader(ClassLoaderUtils.java:100)
-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.lambda$execute$0(NoIsolationWorkerFactory.java:62)
-	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:44)
-	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:41)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
-	at org.gradle.workers.internal.AbstractWorker.executeWrappedInBuildOperation(AbstractWorker.java:41)
-	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.execute(NoIsolationWorkerFactory.java:59)
-	at org.gradle.workers.internal.DefaultWorkerExecutor.lambda$submitWork$0(DefaultWorkerExecutor.java:174)
-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runExecution(DefaultConditionalExecutionQueue.java:195)
-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.access$700(DefaultConditionalExecutionQueue.java:128)
-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner$1.run(DefaultConditionalExecutionQueue.java:170)
-	at org.gradle.internal.Factories$1.create(Factories.java:31)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:267)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:131)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:136)
-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:165)
-	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:134)
-	... 2 more
 
 
-BUILD FAILED in 1m 55s
-27 actionable tasks: 25 executed, 2 from cache
+BUILD FAILED in 1m 57s
+35 actionable tasks: 33 executed, 2 from cache
 STEP_FAILED rc=1: SKIP_PAYLOAD=1 '/home/runner/work/OpenCode-app/OpenCode-app/gradlew' -p '/home/runner/work/OpenCode-app/OpenCode-app' :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
 FATAL: kotlin compile or JVM unit tests failed (compiler-errors.txt)
 P10-BUILD FAIL: kotlin compile or JVM unit tests failed (compiler-errors.txt)
 P10_SUMMARY gates not reached (build/environment failure) - see 00-run-phase10.log
-=== PHASE 10 END 2026-10-17T16:38:16Z FATAL: kotlin compile or JVM unit tests failed (compiler-errors.txt) ===
+=== PHASE 10 END 2026-10-17T17:17:40Z FATAL: kotlin compile or JVM unit tests failed (compiler-errors.txt) ===
