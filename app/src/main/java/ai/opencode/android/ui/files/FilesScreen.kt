@@ -30,6 +30,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -205,6 +206,7 @@ fun FilesScreen(
     // (a missing grant, projects waiting to move) must not hide behind the
     // very "?" it is asking about.
     var showInfo by remember { mutableStateOf(false) }
+    val infoLabel = stringResource(R.string.files_info)
     BackHandler(enabled = showInfo) { showInfo = false }
 
     Box(
@@ -257,21 +259,35 @@ fun FilesScreen(
                 }
             }
             Spacer(Modifier.width(8.dp))
+            // The tag sits DIRECTLY on the IconButton's modifier - the shape
+            // every clickable the gates drive uses (files_viewer_close,
+            // sandbox_preview_close, the door rows). Style inside the content
+            // so nothing can interpose between the click semantics and the
+            // node the test finds.
             IconButton(
                 onClick = { showInfo = true },
                 modifier = Modifier
                     .size(34.dp)
-                    .clip(CircleShape)
-                    .background(chat.toolContainer)
-                    .border(1.dp, chat.toolBorder, CircleShape)
-                    .semantics { testTag = "files_info" },
+                    .semantics {
+                        testTag = "files_info"
+                        contentDescription = infoLabel
+                    },
             ) {
-                Icon(
-                    imageVector = QuestionGlyph,
-                    contentDescription = stringResource(R.string.files_info),
-                    tint = chat.muted,
-                    modifier = Modifier.size(17.dp),
-                )
+                Box(
+                    Modifier
+                        .size(30.dp)
+                        .clip(CircleShape)
+                        .background(chat.toolContainer)
+                        .border(1.dp, chat.toolBorder, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = QuestionGlyph,
+                        contentDescription = null,
+                        tint = chat.muted,
+                        modifier = Modifier.size(17.dp).clearAndSetSemantics { },
+                    )
+                }
             }
         }
 
@@ -406,16 +422,30 @@ private fun FilesInfoSheet(
     onClose: () -> Unit,
 ) {
     val chat = ChatTheme.chat
+    val closeLabel = stringResource(R.string.files_info_close)
+    // THE SHAPE MATTERS: a clickable parent MERGES its descendants' semantics,
+    // and TestTag does not survive that merge - tag lookups inside would vanish
+    // (the first device run proved it: the sheet was visibly open, its content
+    // readable, yet every tag query missed). So the root is a plain Box that
+    // only carries the sheet's own tag and the scrim paint; the tap-catcher is
+    // a SIBLING layer under the card, and the card's texts and buttons stay
+    // independent nodes. The sibling still consumes every tap the card does
+    // not claim - nothing reaches the listing underneath.
     Box(
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClose,
-            ),
+            .semantics { testTag = "files_info_sheet" },
     ) {
+        Box(
+            Modifier
+                .matchParentSize()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClose,
+                ),
+        )
         Surface(
             color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(22.dp),
@@ -423,8 +453,7 @@ private fun FilesInfoSheet(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .padding(12.dp)
-                .semantics { testTag = "files_info_sheet" },
+                .padding(12.dp),
         ) {
             Column(
                 Modifier
@@ -442,16 +471,25 @@ private fun FilesInfoSheet(
                         onClick = onClose,
                         modifier = Modifier
                             .size(34.dp)
-                            .clip(CircleShape)
-                            .background(chat.toolContainer)
-                            .semantics { testTag = "files_info_close" },
+                            .semantics {
+                                testTag = "files_info_close"
+                                contentDescription = closeLabel
+                            },
                     ) {
-                        Icon(
-                            imageVector = CloseGlyph,
-                            contentDescription = stringResource(R.string.files_info_close),
-                            tint = chat.muted,
-                            modifier = Modifier.size(16.dp),
-                        )
+                        Box(
+                            Modifier
+                                .size(30.dp)
+                                .clip(CircleShape)
+                                .background(chat.toolContainer),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = CloseGlyph,
+                                contentDescription = null,
+                                tint = chat.muted,
+                                modifier = Modifier.size(16.dp).clearAndSetSemantics { },
+                            )
+                        }
                     }
                 }
                 Spacer(Modifier.height(6.dp))

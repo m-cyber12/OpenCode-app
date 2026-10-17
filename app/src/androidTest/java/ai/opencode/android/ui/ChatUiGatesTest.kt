@@ -1930,6 +1930,8 @@ class ChatUiGatesTest {
         // v9.38 (owner): the explanation is behind a small "?" - tap it and
         // the facts are there, close it and the listing owns the screen again.
         val infoBtn = exists("files_info")
+        val infoCount = countTag("files_info")
+        rule.waitForIdle()
         rule.onAllNodesWithTag("files_info")[0].performClick()
         rule.waitForIdle()
         val sheetOpen = exists("files_info_sheet")
@@ -2116,7 +2118,7 @@ class ChatUiGatesTest {
         gate(
             "U9",
             ok,
-            "listed=$listed meta=$metaShown info=$infoBtn/$sheetOpen/$sheetClosed pathShown=$pathShown locationCopy=$locationCopy openedDir=$openedDir " +
+            "listed=$listed meta=$metaShown info=$infoBtn($infoCount)/$sheetOpen/$sheetClosed pathShown=$pathShown locationCopy=$locationCopy openedDir=$openedDir " +
                 "upShown=$upShown upWorks=$upWorks openedFile=$openedFile viewer=$viewer body=$bodyText " +
                 "preview=$noToggleForPlain/$previewOffered/$sourceDefault/$previewShown/$sourceBack " +
                 "sandbox=$doorGated/$doorShown/$doorWired " +
