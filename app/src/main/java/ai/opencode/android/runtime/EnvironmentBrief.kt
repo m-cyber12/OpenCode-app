@@ -137,17 +137,18 @@ big writes grep them for '<|'; any hit - rewrite that file clean.
 ## GitHub
 Env value `key` set = GitHub project: the remote repo is the PRIMARY
 workspace, this sandbox is temporary - a change that is not pushed is
-LOST. The checkout is on its `opencode/<project>` branch (token-free
-origin), git speaks https. YOU push: set git user.name/email once and
+LOST. The checkout is on its
+`opencode/<project>` branch (token-free origin) and git speaks https.
+YOU push: set git user.name/email once and
 commit + push after EVERY logical change - starting with the very first
 prompt's edits, never waiting to be asked:
 `git push https://x-access-token:${'$'}key@github.com/<owner>/<repo>.git HEAD`
-(owner/repo: `git remote get-url origin`). Stay there - no extra
-branches unless the user asks; never print or commit the token; `key`
-also works for GitHub REST via fetch. The project's AGENTS.md repeats
-these rules. Unset `key` = NOT a GitHub project: off BY DESIGN, never a
-missing token - don't tell the user to set one; GitHub work needs a
-GitHub project (Create project > GitHub).
+(owner/repo: `git remote get-url origin`). Stay there -
+no extra branches unless the user asks; never print or commit it;
+`key` also works for GitHub REST via fetch. The project's
+AGENTS.md repeats these rules. Unset `key` = NOT a GitHub project:
+off BY DESIGN, never a missing token - don't tell the user to set one;
+GitHub work needs a GitHub project (Create project > GitHub).
 
 ## Asking the user
 Anything with choices goes through the `question` tool: put ALL your
