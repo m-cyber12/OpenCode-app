@@ -5686,3 +5686,49 @@ three modes; EnvironmentBriefTest budget 780 -> 830 (measured 820, dated
 reason) with needles for push-per-change and the stop contract;
 GithubWorkspaceNotesTest (new, JVM) pins create/replace/append/idempotent
 including "user text outside the block survives byte-identical".
+
+Verification - CI board 39061823474 on `8c32fb2`, conclusion success; every
+line quoted from `docs/progress/phase10-evidence/` as committed by that run:
+
+```text
+P10-STATIC PASS               phase9 checks unchanged + release invariants
+P10_DRIVER_SELFTEST PASS      fake-phone 16 scenarios, pass=136 fail=0
+P10-UNIT PASS                 JVM tests=425 failures=0 errors=0 skipped=0
+P10-PAYLOAD PASS              payloadVersion=7 opencode=1.18.23@05ea5073be96
+                              bun=1.3.14 git=v2.48.1 rg=15.1.0 files=1062
+P10-DEVICE PASS               fresh AVD API 34 (1080x1920 @160)
+P6-UI debug gates             pass=20 fail=0 skip=0
+P6-UI smoke gates             pass=20 fail=0 skip=0
+P10_PHASE9 gates              pass=7 fail=0 skip=0
+P10_RELEASE_AAB PASS          entries=318, arm64-v8a+x86_64, payload embedded
+P10_RELEASE_APK PASS          min29/target34 debuggable=false
+P10_UNSIGNED PASS             CI artifact ships UNSIGNED (signing stays human)
+```
+
+Item-specific evidence from the same run: items 1/2 ride the preview/console
+flags inside `P6_U3 preview=true/true/true/true/true/true/true` (the last two
+are stopOffered/stopWired); item 7 is `P6_U5 stopped=true/noCard=true` in
+both debug and smoke; item 8 is `P6_U9 listed=true meta=true
+info=true(1)/true/true ... closed=true` plus
+`v4Removed=copyPath:true,export:true,choose:true,reset:true` in both runs.
+Getting there was not a straight line and the misses are part of the record:
+one board failed only on EnvironmentBriefTest because re-wrapping the GitHub
+brief text split pinned phrases across newlines (fixed by re-wrapping the
+TEXT, never the needles - needles are contracts); one board passed JVM
+425/425 and 116 of 117 gate assertions but P6_U9 missed the sheet's tags,
+because a clickable scrim MERGES descendant semantics and TestTag does not
+survive that merge (fixed: plain tagged Box root, sibling tap-catcher); the
+fix itself then carried a bogus `matchParentSize` import (a BoxScope member,
+not a package-level symbol) and cost one compile-only board. Nothing was
+worked around by weakening a check.
+
+What CI cannot prove here; the owner walks these on the phone: (a) switch
+A->B while A's server runs - B shows no preview, A keeps serving; (b) kill
+A's server outside the app, restart the app - nothing re-arms on its port and
+its files do not 404; (c) the console Stop button and the agent writing
+{"stop": true} both stop the in-process server; (d) a GitHub project commits
++ pushes after every change, starting with the first prompt's edits; (e) the
+items 4/5 investigations concluded provider-side (the app mirrors part.type
+verbatim on both the event and REST paths, and "endpoint is unavailable" rows
+are upstream 503 retries) - report only by owner decision, no app behavior
+was added.
