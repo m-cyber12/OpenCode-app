@@ -14,7 +14,8 @@ import ai.opencode.android.ui.common.PdfGlyph
 import ai.opencode.android.ui.common.QuestionGlyph
 import ai.opencode.android.ui.common.SheetGlyph
 import ai.opencode.android.ui.common.VideoGlyph
-import ai.opencode.android.ui.common.WebGlyphimport ai.opencode.android.ui.common.ProjectTab
+import ai.opencode.android.ui.common.WebGlyph
+import ai.opencode.android.ui.common.ProjectTab
 import ai.opencode.android.ui.common.ProjectTabs
 import ai.opencode.android.ui.markdown.MarkdownText
 import ai.opencode.android.ui.theme.ChatTheme

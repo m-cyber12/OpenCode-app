@@ -30,7 +30,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
@@ -49,6 +48,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.unit.dp
 import ai.opencode.android.R
+import ai.opencode.android.ui.common.StopGlyph
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
 import android.webkit.WebSettings
@@ -321,7 +321,7 @@ fun ChatPreviewOverlay(
                         },
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Stop,
+                            imageVector = StopGlyph,
                             contentDescription = stopDesc,
                         )
                     }

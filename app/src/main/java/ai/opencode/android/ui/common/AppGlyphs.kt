@@ -470,3 +470,15 @@ val CloseGlyph: ImageVector by lazy(LazyThreadSafetyMode.NONE) {
         }
     }
 }
+
+val StopGlyph: ImageVector by lazy(LazyThreadSafetyMode.NONE) {
+    materialIcon(name = "OpenCode.Stop") {
+        materialPath {
+            moveTo(6.0f, 6.0f)
+            horizontalLineToRelative(12.0f)
+            verticalLineToRelative(12.0f)
+            horizontalLineTo(6.0f)
+            close()
+        }
+    }
+}
