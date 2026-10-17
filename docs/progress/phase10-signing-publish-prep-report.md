@@ -5732,3 +5732,15 @@ items 4/5 investigations concluded provider-side (the app mirrors part.type
 verbatim on both the event and REST paths, and "endpoint is unavailable" rows
 are upstream 503 retries) - report only by owner decision, no app behavior
 was added.
+
+Follow-up board (2026-10-17, 39066734061 on `c220793`, conclusion success):
+the tip board was green except ONE loud note - P6_L2 (the live-chat gate that
+waits for the model to call a tool) SKIPPED on both variants: "the model
+answered without calling a tool within 420s (asksAnswered=0, replyChars=29)".
+Skip-not-fail is that gate's designed behavior when the provider does not
+cooperate, the app code on that tip is byte-identical to `8c32fb2` (only this
+report file differed), and `8c32fb2` ran the identical L2 gate green. The
+payload sha256 also differs between boards by design (the embedded runtime
+manifest carries per-build fields); file count, versions and commit pin are
+identical. A re-dispatch of that run was refused by the API and the bot token
+lacks actions:write for workflow_dispatch, so the next push on the tip re-boards.
