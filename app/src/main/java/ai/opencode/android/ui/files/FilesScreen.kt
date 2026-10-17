@@ -3,7 +3,18 @@ package ai.opencode.android.ui.files
 import ai.opencode.android.R
 import ai.opencode.android.runtime.StorageMode
 import ai.opencode.android.ui.common.AppTopBar
-import ai.opencode.android.ui.common.ProjectTab
+import ai.opencode.android.ui.common.ArchiveGlyph
+import ai.opencode.android.ui.common.AudioGlyph
+import ai.opencode.android.ui.common.CloseGlyph
+import ai.opencode.android.ui.common.CodeGlyph
+import ai.opencode.android.ui.common.DocGlyph
+import ai.opencode.android.ui.common.FolderGlyph
+import ai.opencode.android.ui.common.ImageGlyph
+import ai.opencode.android.ui.common.PdfGlyph
+import ai.opencode.android.ui.common.QuestionGlyph
+import ai.opencode.android.ui.common.SheetGlyph
+import ai.opencode.android.ui.common.VideoGlyph
+import ai.opencode.android.ui.common.WebGlyphimport ai.opencode.android.ui.common.ProjectTab
 import ai.opencode.android.ui.common.ProjectTabs
 import ai.opencode.android.ui.markdown.MarkdownText
 import ai.opencode.android.ui.theme.ChatTheme
@@ -13,7 +24,11 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +44,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -48,7 +64,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.viewinterop.AndroidView
@@ -107,6 +126,11 @@ data class FileNode(
     val name: String,
     val path: String,
     val isDirectory: Boolean,
+    /** v9.38 (owner): a file-manager row shows its facts - byte size (-1 =
+     *  unknown/folder) and the modification time (0 = unknown). AppRoot's
+     *  listing fills both from one stat pass; fabricated states may omit. */
+    val bytes: Long = -1L,
+    val modifiedMs: Long = 0L,
 )
 
 /** A file opened for reading, or why it could not be. */
@@ -173,109 +197,80 @@ fun FilesScreen(
 ) {
     val chat = ChatTheme.chat
     val where = if (currentPath.isEmpty()) "/" else "/$currentPath"
+    // v9.38 (owner): the top-of-screen explanation is not a permanent fixture
+    // any more - "move all the explanatory text into a small circular button
+    // with a question-mark icon, which users can tap to view the information
+    // when needed." The dot in the path chip stays: an UNANSWERED question
+    // (a missing grant, projects waiting to move) must not hide behind the
+    // very "?" it is asking about.
+    var showInfo by remember { mutableStateOf(false) }
+    BackHandler(enabled = showInfo) { showInfo = false }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .semantics { testTag = "files_screen" },
     ) {
+      Column(Modifier.fillMaxSize()) {
         AppTopBar(
             title = projectName,
             subtitle = stringResource(R.string.files_subtitle) + where,
             onBack = onBack,
         )
 
-        // Where these files are on the device, said plainly - and what can be
-        // done about it when the answer is "somewhere a file manager cannot open".
-        Surface(
-            color = MaterialTheme.colorScheme.surface,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 6.dp)
-                .semantics { testTag = "files_location" },
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.padding(12.dp)) {
-                Text(
-                    text = stringResource(R.string.files_location_title),
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = projectPath,
-                    style = MonoSmall,
-                    color = chat.muted,
-                    modifier = Modifier.semantics { testTag = "files_location_path" },
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = stringResource(storageModeLabel(storageMode)),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.semantics { testTag = "files_storage_mode" },
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = storageExplanation(
-                        mode = storageMode,
-                        visibleToFileManagers = storageVisibleToFileManagers,
-                        appFolderBrowsable = storageAppFolderBrowsableByFileManagers,
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = chat.muted,
-                    modifier = Modifier.semantics { testTag = "files_storage_explanation" },
-                )
-                if (storagePendingMove > 0) {
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = stringResource(R.string.files_storage_pending, storagePendingMove),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = chat.attention,
-                        modifier = Modifier.semantics { testTag = "files_storage_pending" },
+            Surface(
+                color = chat.toolContainer,
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.weight(1f).semantics { testTag = "files_location" },
+            ) {
+                Row(
+                    Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = FolderGlyph,
+                        contentDescription = null,
+                        tint = chat.attention,
+                        modifier = Modifier.size(15.dp).clearAndSetSemantics { },
                     )
-                }
-                if (!storageVisibleToFileManagers && storageCanGrantAllFilesAccess) {
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(
-                        text = stringResource(R.string.files_storage_make_visible_body),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = chat.muted,
+                        text = where,
+                        style = MonoSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
                     )
-                }
-                if (storageMessage.isNotEmpty()) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = storageMessage,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = chat.attention,
-                        modifier = Modifier.semantics { testTag = "files_storage_message" },
-                    )
-                }
-                // The workspace folder itself is chosen in Settings (v4: the switch
-                // action lives where the rest of the configuration does). What stays
-                // here is what only this screen can say: whether a file manager can
-                // open the folder right now, how to fix that if it cannot, and the
-                // one migration that is not a preference change.
-                if (storageCanGrantAllFilesAccess || storagePendingMove > 0) {
-                    Spacer(Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        if (storageCanGrantAllFilesAccess) {
-                            TextButton(
-                                onClick = onRequestAllFilesAccess,
-                                modifier = Modifier.semantics { testTag = "files_storage_grant" },
-                            ) {
-                                Text(stringResource(R.string.files_storage_make_visible))
-                            }
-                        }
-                        if (storagePendingMove > 0) {
-                            TextButton(
-                                onClick = onMoveProjects,
-                                modifier = Modifier.semantics { testTag = "files_storage_move" },
-                            ) {
-                                Text(stringResource(R.string.files_storage_move_action))
-                            }
-                        }
+                    if (storagePendingMove > 0 || (!storageVisibleToFileManagers && storageCanGrantAllFilesAccess)) {
+                        Spacer(Modifier.width(8.dp))
+                        Box(
+                            Modifier.size(7.dp)
+                                .background(chat.attention, CircleShape)
+                                .semantics { testTag = "files_storage_needs_action" },
+                        )
                     }
                 }
+            }
+            Spacer(Modifier.width(8.dp))
+            IconButton(
+                onClick = { showInfo = true },
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(chat.toolContainer)
+                    .border(1.dp, chat.toolBorder, CircleShape)
+                    .semantics { testTag = "files_info" },
+            ) {
+                Icon(
+                    imageVector = QuestionGlyph,
+                    contentDescription = stringResource(R.string.files_info),
+                    tint = chat.muted,
+                    modifier = Modifier.size(17.dp),
+                )
             }
         }
 
@@ -367,6 +362,177 @@ fun FilesScreen(
         if (onSelectTab != null && openFile == null) {
             ProjectTabs(current = ProjectTab.FILES, onSelect = onSelectTab)
         }
+      }
+      if (showInfo && openFile == null) {
+        // v9.38 (owner): all the explanation, one tap away - where it was
+        // always meant to be. The actions it carried (grant, move) live here
+        // too; the dot on the path chip is what draws the eye to them.
+        FilesInfoSheet(
+            projectPath = projectPath,
+            storageMode = storageMode,
+            storageVisibleToFileManagers = storageVisibleToFileManagers,
+            storageAppFolderBrowsableByFileManagers = storageAppFolderBrowsableByFileManagers,
+            storageCanGrantAllFilesAccess = storageCanGrantAllFilesAccess,
+            storagePendingMove = storagePendingMove,
+            storageMessage = storageMessage,
+            onRequestAllFilesAccess = onRequestAllFilesAccess,
+            onMoveProjects = onMoveProjects,
+            onClose = { showInfo = false },
+        )
+      }
+    }
+}
+
+/**
+ * v9.38 (owner): everything the old top panel explained, behind the "?" on
+ * the listing - location, mode, what a file manager can open here, and the
+ * two actions that only this screen offers. The scrim CONSUMES taps (the
+ * v9.38 overlay lesson: a Compose background alone lets touches fall through
+ * to the rows underneath), and both ways out - the scrim and the close key -
+ * land on the same quiet state change.
+ */
+@Composable
+private fun FilesInfoSheet(
+    projectPath: String,
+    storageMode: StorageMode,
+    storageVisibleToFileManagers: Boolean,
+    storageAppFolderBrowsableByFileManagers: Boolean,
+    storageCanGrantAllFilesAccess: Boolean,
+    storagePendingMove: Int,
+    storageMessage: String,
+    onRequestAllFilesAccess: () -> Unit,
+    onMoveProjects: () -> Unit,
+    onClose: () -> Unit,
+) {
+    val chat = ChatTheme.chat
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClose,
+            ),
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(22.dp),
+            border = BorderStroke(1.dp, chat.toolBorder),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(12.dp)
+                .semantics { testTag = "files_info_sheet" },
+        ) {
+            Column(
+                Modifier
+                    .padding(16.dp)
+                    .heightIn(max = 460.dp)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(R.string.files_location_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(
+                        onClick = onClose,
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clip(CircleShape)
+                            .background(chat.toolContainer)
+                            .semantics { testTag = "files_info_close" },
+                    ) {
+                        Icon(
+                            imageVector = CloseGlyph,
+                            contentDescription = stringResource(R.string.files_info_close),
+                            tint = chat.muted,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = projectPath,
+                    style = MonoSmall,
+                    color = chat.muted,
+                    modifier = Modifier.semantics { testTag = "files_location_path" },
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(storageModeLabel(storageMode)),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.semantics { testTag = "files_storage_mode" },
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = storageExplanation(
+                        mode = storageMode,
+                        visibleToFileManagers = storageVisibleToFileManagers,
+                        appFolderBrowsable = storageAppFolderBrowsableByFileManagers,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = chat.muted,
+                    modifier = Modifier.semantics { testTag = "files_storage_explanation" },
+                )
+                if (storagePendingMove > 0) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = stringResource(R.string.files_storage_pending, storagePendingMove),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = chat.attention,
+                        modifier = Modifier.semantics { testTag = "files_storage_pending" },
+                    )
+                }
+                if (!storageVisibleToFileManagers && storageCanGrantAllFilesAccess) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.files_storage_make_visible_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = chat.muted,
+                    )
+                }
+                if (storageMessage.isNotEmpty()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = storageMessage,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = chat.attention,
+                        modifier = Modifier.semantics { testTag = "files_storage_message" },
+                    )
+                }
+                // The workspace folder itself is chosen in Settings (v4: the switch
+                // action lives where the rest of the configuration does). What stays
+                // here is what only this screen can say - now inside the sheet:
+                // whether a file manager can open the folder right now, how to fix
+                // that if it cannot, and the one migration that is not a preference
+                // change.
+                if (storageCanGrantAllFilesAccess || storagePendingMove > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (storageCanGrantAllFilesAccess) {
+                            TextButton(
+                                onClick = onRequestAllFilesAccess,
+                                modifier = Modifier.semantics { testTag = "files_storage_grant" },
+                            ) {
+                                Text(stringResource(R.string.files_storage_make_visible))
+                            }
+                        }
+                        if (storagePendingMove > 0) {
+                            TextButton(
+                                onClick = onMoveProjects,
+                                modifier = Modifier.semantics { testTag = "files_storage_move" },
+                            ) {
+                                Text(stringResource(R.string.files_storage_move_action))
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -405,6 +571,7 @@ private fun Listing(
         }
 
         LazyColumn(
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 6.dp, bottom = 10.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .semantics { testTag = "files_list" },
@@ -415,16 +582,27 @@ private fun Listing(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable(onClick = onUp)
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .padding(horizontal = 16.dp, vertical = 10.dp)
                             .semantics { testTag = "files_up" },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.files_up),
-                        )
+                        Box(
+                            Modifier.size(30.dp).clip(CircleShape).background(chat.toolContainer),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.files_up),
+                                tint = chat.muted,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
                         Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.files_up), style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            stringResource(R.string.files_up),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = chat.muted,
+                        )
                     }
                 }
             }
@@ -440,39 +618,159 @@ private fun Listing(
                     )
                 }
             }
+            // v9.38 (owner): "design it to look like a real file manager, with
+            // a more polished and modern UI, stylish icons, file sizes, file
+            // formats and other relevant file details." A row is now the file:
+            // a kind-tinted glyph, the name, what it IS (size and date, or
+            // "Folder"), and the format badge. Folders lead, then names.
             items(nodes, key = { it.path }) { node ->
+                val kind = fileGlyphFor(node.name, node.isDirectory)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { if (node.isDirectory) onOpenDir(node.path) else onOpenFile(node.path) }
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
                         .semantics { testTag = if (node.isDirectory) "files_dir" else "files_file" },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // A folder gets the "opens into something" affordance; a file
-                    // row is just its name (an icon that says nothing would be
-                    // noise). Both carry an accessible name either way.
+                    Box(
+                        Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(11.dp))
+                            .background(kind.tint.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = kind.glyph,
+                            contentDescription = null,
+                            tint = kind.tint,
+                            modifier = Modifier.size(19.dp).clearAndSetSemantics { },
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = node.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        val meta = rowMetaLabel(
+                            isDirectory = node.isDirectory,
+                            bytes = node.bytes,
+                            modifiedMs = node.modifiedMs,
+                            folderWord = stringResource(R.string.files_row_folder),
+                        )
+                        if (meta.isNotEmpty()) {
+                            Text(
+                                text = meta,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = chat.muted,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                    val badge = if (node.isDirectory) "" else node.name.substringAfterLast('.', "")
+                        .uppercase().takeIf { it.length in 1..4 } ?: ""
+                    if (badge.isNotEmpty()) {
+                        Spacer(Modifier.width(8.dp))
+                        Box(
+                            Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(kind.tint.copy(alpha = 0.12f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                        ) {
+                            Text(
+                                text = badge,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = kind.tint,
+                            )
+                        }
+                    }
                     if (node.isDirectory) {
+                        // The row itself carries the accessible name (folder
+                        // glyph tinted, chevron plain): decoration is silent.
                         Icon(
                             imageVector = Icons.Filled.KeyboardArrowRight,
-                            contentDescription = stringResource(R.string.files_dir_description),
-                            tint = chat.attention,
+                            contentDescription = null,
+                            tint = chat.muted,
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .clearAndSetSemantics { },
                         )
-                        Spacer(Modifier.width(12.dp))
-                    } else {
-                        Spacer(Modifier.width(12.dp))
                     }
-                    Text(
-                        text = node.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
                 }
             }
         }
     }
+}
+
+/**
+ * v9.38: what a row's icon is and what colour it wears. The `-extended`
+ * icons artifact is not a dependency (see check-compose-icons.py), so the
+ * glyphs are the app's own drawing (AppGlyphs) and the kind lookup is this
+ * table - the same "no guessing" discipline the briefs follow: known kinds
+ * get a glyph and a hue, everything else stays a quiet document.
+ */
+private class FileRowGlyph(val glyph: ImageVector, val tint: Color)
+
+@Composable
+private fun fileGlyphFor(name: String, isDirectory: Boolean): FileRowGlyph {
+    val chat = ChatTheme.chat
+    val ext = name.substringAfterLast('.', "").lowercase()
+    return when {
+        isDirectory -> FileRowGlyph(FolderGlyph, chat.attention)
+        ext in setOf(
+            "kt", "kts", "java", "py", "js", "jsx", "ts", "tsx", "go", "rs",
+            "c", "h", "cpp", "swift", "sh", "gradle", "json", "yaml",
+            "yml", "toml", "xml", "css", "scss", "lua", "dart",
+        ) -> FileRowGlyph(CodeGlyph, Color(0xFF6FA8FF))
+        ext in setOf("html", "htm", "svg") -> FileRowGlyph(WebGlyph, Color(0xFF5FC9A8))
+        ext in setOf("png", "jpg", "jpeg", "gif", "webp", "avif", "bmp") ->
+            FileRowGlyph(ImageGlyph, Color(0xFF9CCC7A))
+        ext in setOf("md", "markdown", "txt", "log") -> FileRowGlyph(DocGlyph, Color(0xFFB9C4D6))
+        ext in setOf("zip", "tar", "gz", "tgz", "bz2", "7z", "rar") ->
+            FileRowGlyph(ArchiveGlyph, Color(0xFFC7A5F5))
+        ext in setOf("mp3", "wav", "ogg", "m4a", "aac", "flac") ->
+            FileRowGlyph(AudioGlyph, Color(0xFFF0B95C))
+        ext in setOf("mp4", "webm", "mov", "mkv") -> FileRowGlyph(VideoGlyph, Color(0xFFE88AB4))
+        ext == "pdf" -> FileRowGlyph(PdfGlyph, Color(0xFFE0898B))
+        ext in setOf("csv", "tsv", "xls", "xlsx") -> FileRowGlyph(SheetGlyph, Color(0xFF79C7C0))
+        else -> FileRowGlyph(DocGlyph, chat.muted)
+    }
+}
+
+/** "Folder · Mar 4, 18:32" / "4.1 KB · Mar 4, 18:32" - quiet when unknown.
+ * A date from another year carries the year instead of the clock time: a
+ * listing full of "Jan 3" rows from three different years would be trivia. */
+private fun rowMetaLabel(isDirectory: Boolean, bytes: Long, modifiedMs: Long, folderWord: String): String {
+    val bits = ArrayList<String>()
+    if (isDirectory) bits.add(folderWord) else {
+        humanSize(bytes).let { if (it.isNotEmpty()) bits.add(it) }
+    }
+    if (modifiedMs > 0L) {
+        val date = java.util.Date(modifiedMs)
+        val sameYear = java.util.Calendar.getInstance().let { cal ->
+            cal.time = date
+            cal.get(java.util.Calendar.YEAR) == java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+        }
+        bits.add(
+            java.text.SimpleDateFormat(
+                if (sameYear) "MMM d, HH:mm" else "MMM d, yyyy",
+                java.util.Locale.getDefault(),
+            ).format(date),
+        )
+    }
+    return bits.joinToString("  \u00b7  ")
+}
+
+private fun humanSize(bytes: Long): String = when {
+    bytes < 0L -> ""
+    bytes < 1024L -> "$bytes B"
+    bytes < 1024L * 1024L -> String.format(java.util.Locale.US, "%.1f KB", bytes / 1024.0)
+    bytes < 1024L * 1024L * 1024L -> String.format(java.util.Locale.US, "%.1f MB", bytes / (1024.0 * 1024.0))
+    else -> String.format(java.util.Locale.US, "%.1f GB", bytes / (1024.0 * 1024.0 * 1024.0))
 }
 
 /** What the viewer can render BESIDES the source text (owner, v9.6). */

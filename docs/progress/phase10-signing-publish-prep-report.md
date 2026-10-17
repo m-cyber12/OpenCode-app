@@ -5575,3 +5575,114 @@ cache case included), all 20 UI gates on the fresh AVD (U3 now asserts the
 "See What You've Made" bar), all 20 release-shaped smoke gates, driver
 selftest 136/0, payload verified, phase6_ui_fails=0 phase10_gate_fails=0
 phase9_gate_fails=0 - evidence commits a196664/e7a26d1. v9.37 shipped.
+
+## B.61 - v9.38: preview state belongs to one project; servers can be stopped; the Sandbox becomes a file manager (2026-10-17)
+
+Owner's device pass on the v9.37 build (five screenshots) plus a
+follow-up list. Eight items, all implemented; two investigated honestly.
+
+1. THE STALE BAR ACROSS PROJECTS. Root cause: the v9.37 console filtered
+   the DOOR LIST by ownership but the bar/overlay ride previewUrl/
+   previewPort, which nothing reset when the project changed - so B
+   inherited A's target, and B's serve.json write "replaced" it (the
+   behavior the owner saw). v9.38: the serve.json effect (keyed on
+   projectDir) clears the target first whenever it belongs to another
+   project (or nothing is here at all) - new project, new chat, empty
+   console; and returning to a project whose OWNED port is still live
+   re-arms quietly without a new write. The livePorts retarget condition
+   became "keep the target only if it is live AND owned by this project,
+   else this project's freshest port wins" - a foreign live port can no
+   longer hold this project's bar.
+
+2. "NO SUCH FILE OR DIRECTORY" AFTER AN APP RESTART. The dead-static-
+   server path re-armed via the stale serve.json: no declared port -> the
+   app started its own static server at the PROJECT ROOT while the page
+   actually lived under a subdirectory the agent's own (now-dead) server
+   had rooted. v9.38 gates the START-UP arm on believability: a declared
+   port must actually answer (one PortScanner pass), a static path must
+   exist under the project root; a lying marker stays dark and quiet and
+   any NEW hand-off re-arms as before. (Mid-session writes are never
+   gated - the file may be written a beat after the marker.)
+
+3. STOP, THREE WAYS. (a) The overlay header gained a Stop key, shown only
+   when the port being viewed IS this project's in-process server - an
+   honest button, never a wish (an external dev server is the agent's
+   process; the app does not kill it). (b) `{"stop": true}` in
+   .preview/serve.json shuts the app's static server for the project and
+   dims the console - documented in preview.md so the model can end it
+   when the work is done. (c) DELETING a project now stops its server and
+   frees its port claims (the old code only deleted sessions + folder).
+
+4. REASONING/ANSWER SWAP (the "rare, strange bug"). Both paths that
+   could type a part - the event reducer (Transcript.partOf) and the
+   REST snapshot loader - pass upstream's `part.type` through verbatim;
+   there is no app-side classification to flip (grep-verified + the
+   reducer KDoc). The swap therefore happens upstream: OpenRouter's
+   glm/deepseek "flash" variants occasionally open the reasoning channel
+   for the answer or the text channel for the plan. No honest app-side
+   fix exists (inventing a content-guesser would reinterpret the
+   transcript - against the mirror policy); the owner can confirm next
+   time from the tool cards' raw-JSON disclosure, which shows the part
+   type exactly as the server sent it.
+
+5. "ENDPOINT UNAVAILABLE" x4 BEFORE THE SECOND PART. No app code retries
+   (one-attempt policy intact; grep-verified). The five-attempt shape is
+   upstream/provider-side: OpenRouter answered 503 on an oversized resend
+   (the run shows 116k tokens IN) and opencode's own retry loop walked
+   through attempts 1-4 before success - each hop surfaced as the retry
+   row the app already renders. The structural mitigation already exists:
+   the 40k auto-compact regulator keeps later resends small; nothing to
+   change without inventing a retry or lying about the cause.
+
+6. GITHUB PROJECTS ARE REPO-FIRST, PUSHED PER CHANGE. The owner: the
+   model behaved like a plain project until told otherwise. Two
+   structural fixes: (a) the brief's GitHub section now states "the
+   remote repo is the PRIMARY workspace, the sandbox is temporary - a
+   change that is not pushed is LOST. Commit + push after EVERY logical
+   change - starting with the very first prompt's edits, never waiting
+   to be asked"; (b) the app itself writes the same rules into the
+   project's AGENTS.md (GithubWorkspaceNotes, additive between marker
+   lines, idempotent, user content preserved verbatim) where upstream
+   auto-loads project instructions - the model cannot miss it by
+   staying "in regular-project mode". Branch policy unchanged: the
+   project branch stays the target (v9.28 owner decision).
+
+7. STOPPED IS A WHISPER NOW. The gold "Stopped" banner/card for a
+   user-aborted turn is gone (owner: "unnecessary and misleading"):
+   StatusArea skips the ABORTED availability banner, TurnErrorCard
+   renders nothing for an abort, and the only signal left is the word
+   "Stopped" in tiny muted labelSmall directly under the turn's token
+   count (tag message_stopped_note). Every other error keeps its card.
+
+8. THE SANDBOX TAB IS A FILE MANAGER. Rows carry a kind-tinted glyph
+   (folder/code/web/image/archive/audio/video/pdf/sheet/doc - the
+   glyphs are app-drawn in AppGlyphs; the extended icons artifact stays
+   off the classpath per check-compose-icons.py), the name, a meta line
+   ("Folder · Mar 4, 18:32" / "4.1 KB · Nov 14, 2023" - other-year rows
+   show the year instead of the clock), and an uppercase format badge.
+   The listing sorts folders-first, then by name. All top-of-screen
+   explanation moved behind a small circular "?" (the owner's words):
+   the FilesInfoSheet holds location, mode, the file-manager verdict,
+   and the grant/move actions; an amber dot on the path chip keeps
+   ACTION-NEEDED visible (it is not explanation, it is a question). The
+   sheet scrim consumes taps - same Compose hit-through lesson as (9).
+
+9. THE PREVIEW HEADER LET TAPS THROUGH TO THE CHAT. Screenshot-proven:
+   the drawer opened over the full-screen preview. Mechanism: a Compose
+   `background` paints but does NOT consume touches - the overlay's dead
+   areas hit-tested straight through to the chat header underneath. The
+   overlay's root layer now runs a no-op detectTapGestures: anything a
+   child does not claim (buttons keep priority; the interop WebView owns
+   its region natively) is consumed. Lesson applied twice (also the file
+   sheet scrim).
+
+Gates/tests moved with behavior (never around it): U3 now proves the Stop
+key exists exactly when the app can stop and that the tap reaches the
+callback; U5 proves a stopped turn shows ONLY the tiny word (no banner
+tag, no body string); U9 drives the "?" sheet (open -> path + title ->
+close), pins the row meta text ("42 B", "Folder", "Nov 14, 2023", the
+"MD" badge) and re-checks the storage panel inside the sheet for all
+three modes; EnvironmentBriefTest budget 780 -> 830 (measured 820, dated
+reason) with needles for push-per-change and the stop contract;
+GithubWorkspaceNotesTest (new, JVM) pins create/replace/append/idempotent
+including "user text outside the block survives byte-identical".

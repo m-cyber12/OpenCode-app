@@ -190,6 +190,8 @@ fun ChatScreen(
     onOpenPreviewPort: (Int) -> Unit = {},
     onPreviewClose: () -> Unit = {},
     onPreviewReload: () -> Unit = {},
+    /** v9.38 (owner): stop THIS project's preview server from the overlay. */
+    onPreviewStop: () -> Unit = {},
     onPreviewBrowser: () -> Unit = {},
     onPreviewCapture: (android.graphics.Bitmap) -> Unit = {},
     onPreviewConsole: (String) -> Unit = {},
@@ -348,6 +350,7 @@ fun ChatScreen(
             onReload = onPreviewReload,
             onCapture = onPreviewCapture,
             onConsole = onPreviewConsole,
+            onStop = onPreviewStop,
         )
     }
     }
@@ -860,7 +863,11 @@ private fun StatusArea(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
         )
     }
-    if (availability != AgentAvailability.READY) {
+    // v9.38 (owner): "that yellow Stop indicator is unnecessary and
+    // misleading - just show the word Stopped under the token count". A user
+    // stopping a turn is not a degraded agent: no banner, no card - the tiny
+    // footer note on the turn itself is the whole signal.
+    if (availability != AgentAvailability.READY && availability != AgentAvailability.ABORTED) {
         val raw = state.error.ifBlank { state.turnError?.let { e -> "${e.name}: ${e.message}".trim() } ?: "" }
         // Deliberately no `extra`: the supervisor's own detail line carries the
         // loopback bind address once the runtime is healthy ("healthy on

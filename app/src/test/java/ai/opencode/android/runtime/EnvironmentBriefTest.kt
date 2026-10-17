@@ -142,7 +142,14 @@ class EnvironmentBriefTest {
         // leaked chat markers ride into written files and break the page in
         // every browser, so the grep rule must be impossible to miss.
         // All owner-driven content; everything else still fights per word.
-        assertTrue("main brief grew to $words words - split or trim it", words < 780)
+        // v9.38: -> 830 (measured 820). The owner's device run showed a model
+        // in a GitHub project behaving like a plain one until TOLD otherwise;
+        // the repo being the primary workspace with "commit + push after EVERY
+        // logical change, starting with the very first prompt" is now stated
+        // where it cannot be skipped (and duplicated into the project's
+        // AGENTS.md by GithubWorkspaceNotes, which this budget exists so the
+        // brief section can stay short).
+        assertTrue("main brief grew to $words words - split or trim it", words < 830)
         // The core product loop and cost discipline stay in the always-read part.
         assertTrue(main.contains("serve.json"))
         assertTrue(main.contains("EXISTS"))
@@ -158,6 +165,11 @@ class EnvironmentBriefTest {
         assertTrue(main.contains("See What You've Made"))
         assertTrue("foreign servers are never killed", main.contains("never kill it"))
         assertTrue("the leak grep ships in the main brief", main.contains("'<|'"))
+        // v9.38 owner contracts: GitHub projects are repo-first and push per
+        // change; the stop request is the agent's way to end the app server.
+        assertTrue(main.contains("commit + push after EVERY logical change"))
+        assertTrue(main.contains("not pushed is"))
+        assertTrue(main.contains("AGENTS.md"))
         assertTrue(main.contains("mkdir -p \"\$TMPDIR\""))
         assertTrue(main.contains("seccomp"))
         assertTrue(main.contains("setsid"))
@@ -190,6 +202,8 @@ class EnvironmentBriefTest {
         assertTrue(text.contains("width=device-width"))
         assertTrue(text.contains("roughly one read per fix round"))
         assertTrue(text.contains("do NOT start your own server"))
+        // v9.38: the shutdown path must be documented in the always-install set.
+        assertTrue(text.contains("\"stop\": true"))
         // v9.36: the capture loop must document its cheap channels.
         assertTrue(text.contains(".preview/latest.jpg"))
         assertTrue(text.contains("report.json"))

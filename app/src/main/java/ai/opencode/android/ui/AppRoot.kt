@@ -329,8 +329,15 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         githubClone.ensureProjectBranch(projectDir)
         if (projectName.isNotEmpty() && summary.ready) {
             val want = withContext(Dispatchers.IO) {
-                githubToken() != null &&
-                    ai.opencode.android.github.GitSync.isGithubProject(projectDir)
+                val isGit = ai.opencode.android.github.GitSync.isGithubProject(projectDir)
+                if (isGit) projectDir?.let {
+                    // v9.38 (owner): "in a GitHub project the model should not
+                    // need to be told to use GitHub" - the push-after-every-
+                    // change contract rides into the project itself, where
+                    // upstream auto-loads it (see GithubWorkspaceNotes).
+                    runCatching { ai.opencode.android.runtime.GithubWorkspaceNotes.ensure(it) }
+                }
+                githubToken() != null && isGit
             }
             if (want != runtime.envHasGithubToken) runtime.resetAndRestart()
         }
@@ -578,6 +585,36 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         }
     }
 
+    /**
+     * v9.38 (owner): "The server should also support being stopped - both
+     * when the project is finished and whenever the agent decides to shut it
+     * down." Stops THIS project's in-process static server and, when the
+     * console was showing it, clears the bar and frees the port ownership.
+     * A declared external port is the agent's own process: the app never
+     * kills it (its livePorts watcher notices when it closes) - here the
+     * project simply stops following it.
+     */
+    suspend fun stopProjectPreview(dir: File?) {
+        if (dir != null) {
+            val srv = previewServers.remove(dir.absolutePath)
+            withContext(Dispatchers.IO) { runCatching { srv?.stop() } }
+        }
+        val aboutThisProject = dir == null ||
+            previewProjectDir?.absolutePath == dir.absolutePath || previewUrl.isEmpty()
+        if (aboutThisProject) {
+            if (previewPort > 0 && portOwners[previewPort] == projectName) {
+                portOwners.remove(previewPort)
+                persistPortOwners()
+            }
+            previewUrl = ""
+            previewPort = 0
+            previewProjectDir = null
+            if (previewPhase != ai.opencode.android.ui.chat.PreviewState.CLOSED) {
+                previewPhase = ai.opencode.android.ui.chat.PreviewState.CLOSED
+            }
+        }
+    }
+
     // .preview/capture.json {"name": "02-after-login-fix", "path": "/x.html",
     // "port": 8080} and the app loads that page in an OFF-SCREEN WebView at
     // device size - no pane needs to be open, no tab needs to be visible -
@@ -722,22 +759,27 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     if (project.isNotEmpty()) {
                         fresh.forEach { portOwners[it] = project }
                         persistPortOwners()
-                        if (previewUrl.isEmpty() || previewPort !in current) {
-                            // No target yet, or the old one's server died -
-                            // this project's fresh port becomes the target.
+                        // v9.38 (owner): "a foreign live port must never be
+                        // this project's target" - a target is only kept if
+                        // it is live AND owned by THIS project; otherwise the
+                        // project's freshest port takes it (this is also what
+                        // re-points the bar after the user switches back).
+                        val targetMineAndLive = previewUrl.isNotEmpty() &&
+                            previewPort in current && portOwners[previewPort] == project
+                        if (!targetMineAndLive && previewUrl.isNotEmpty() && previewPort in fresh) {
+                            // Same port came back (restart) - an open pane
+                            // reloads; a closed one just lights the bar.
+                            setPreviewTarget(
+                                previewUrl, previewPort, null,
+                                System.currentTimeMillis(),
+                                R.string.sandbox_console_updated,
+                            )
+                        } else if (!targetMineAndLive) {
                             val firstPort = fresh.min()
                             setPreviewTarget(
                                 "http://127.0.0.1:$firstPort/",
                                 firstPort,
                                 null,
-                                System.currentTimeMillis(),
-                                R.string.sandbox_console_updated,
-                            )
-                        } else if (previewPort in fresh) {
-                            // Same port came back (restart) - an open pane
-                            // reloads; a closed one just lights the bar.
-                            setPreviewTarget(
-                                previewUrl, previewPort, null,
                                 System.currentTimeMillis(),
                                 R.string.sandbox_console_updated,
                             )
@@ -769,7 +811,22 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // marker still arms the console when the project opens (quietly, no
     // flash), so the bar survives app restarts.
     LaunchedEffect(projectDir) {
-        val dir = projectDir ?: return@LaunchedEffect
+        val dir = projectDir
+        // v9.38 (owner): "when I switched to the second project, the previous
+        // server was still displayed... nothing related to the server should
+        // be displayed in a new chat." A preview target belongs to exactly one
+        // project; crossing the boundary clears it first, so bar, door and
+        // overlay - all driven by this one state - show NOTHING of the old
+        // project and nothing that was never this project's.
+        if (previewUrl.isNotEmpty() && previewProjectDir?.absolutePath != dir?.absolutePath) {
+            previewUrl = ""
+            previewPort = 0
+            previewProjectDir = null
+            if (previewPhase != ai.opencode.android.ui.chat.PreviewState.CLOSED) {
+                previewPhase = ai.opencode.android.ui.chat.PreviewState.CLOSED
+            }
+        }
+        if (dir == null) return@LaunchedEffect
         val marker = File(dir, ".preview/serve.json")
         var handled = withContext(Dispatchers.IO) { if (marker.exists()) marker.lastModified() else 0L }
         if (handled > 0L) {
@@ -779,11 +836,45 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             val p = declared?.optInt("port", 0) ?: 0
             val r = (declared?.optString("path", "/") ?: "/").ifEmpty { "/" }
             val clean = if (r.startsWith("/")) r else "/$r"
-            // previewTargetFor covers both kinds: a declared port (the
-            // agent's server, wherever it runs) or the app's own static
-            // server for the project - started quietly, never opened.
-            previewTargetFor(dir, p, clean)?.let { (u, port) ->
-                setPreviewTarget(u, port, dir, handled, 0)
+            // v9.38 (owner's "No such file or directory" after an app
+            // restart): the START-UP arm has to be believed before the bar
+            // offers it - a marker outlives the server it described, and the
+            // static fallback may point at a path that is not at the project
+            // root at all. A declared port must actually answer; a static
+            // path must actually exist. A lie at start-up stays dark and
+            // quiet - any NEW hand-off re-arms the console as before.
+            if (declared?.optBoolean("stop", false) != true) {
+                val live = p !in 1..65535 || withContext(Dispatchers.IO) {
+                    runCatching { ai.opencode.android.preview.PortScanner().scan().contains(p) }
+                        .getOrDefault(true)
+                }
+                val existsAtRoot = p in 1..65535 || withContext(Dispatchers.IO) {
+                    runCatching { File(dir, clean.substringBefore('?').removePrefix("/")).exists() }
+                        .getOrDefault(true)
+                }
+                if (live && existsAtRoot) {
+                    // previewTargetFor covers both kinds: a declared port (the
+                    // agent's server, wherever it runs) or the app's own static
+                    // server for the project - started quietly, never opened.
+                    previewTargetFor(dir, p, clean)?.let { (u, port) ->
+                        setPreviewTarget(u, port, dir, handled, 0)
+                    }
+                }
+            }
+        }
+        // v9.38 (owner): returning to a project whose OWNED port is still
+        // live re-arms the bar without needing a fresh write (the switch away
+        // just cleared it) - quietly, and only while nothing claimed it.
+        if (previewUrl.isEmpty() && projectName.isNotEmpty()) {
+            val mineNow = livePorts.filter { portOwners[it] == projectName }.minOrNull()
+            if (mineNow != null) {
+                setPreviewTarget(
+                    "http://127.0.0.1:$mineNow/",
+                    mineNow,
+                    dir,
+                    System.currentTimeMillis(),
+                    0,
+                )
             }
         }
         while (true) {
@@ -793,6 +884,14 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 handled = stamp
                 val declared = withContext(Dispatchers.IO) {
                     runCatching { org.json.JSONObject(marker.readText()) }.getOrNull()
+                }
+                // v9.38 (owner): {"stop": true} in serve.json is the agent's
+                // shutdown request for the APP's server of this project
+                // (killing a server it started itself stays its own bash
+                // business). Quiet by design - the bar simply goes dark.
+                if (declared?.optBoolean("stop", false) == true) {
+                    stopProjectPreview(dir)
+                    continue
                 }
                 val declaredPort = declared?.optInt("port", 0) ?: 0
                 val requested = (declared?.optString("path", "/") ?: "/").ifEmpty { "/" }
@@ -940,13 +1039,25 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
+                    val root = projectDir
                     repository.api.fileList(relPath).map { entry ->
+                        val isDir = entry.type == "directory"
+                        // v9.38 (owner): the listing became a real file
+                        // manager - a row that looks like a file manager row
+                        // needs the file manager's facts, and they ride the
+                        // same IO tick (one length()/lastModified() per row).
+                        val f = if (root != null) File(root, entry.path) else null
                         FileNode(
                             name = entry.path.substringAfterLast('/').ifEmpty { entry.path },
                             path = entry.path,
-                            isDirectory = entry.type == "directory",
+                            isDirectory = isDir,
+                            bytes = if (isDir) -1L else runCatching { f?.length() ?: -1L }.getOrDefault(-1L),
+                            modifiedMs = runCatching { f?.lastModified() ?: 0L }.getOrDefault(0L),
                         )
-                    }
+                    }.sortedWith(
+                        compareByDescending<FileNode> { it.isDirectory }
+                            .thenBy { it.name.lowercase() },
+                    )
                 }
             }
             result.onSuccess { nodes ->
@@ -1287,6 +1398,29 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         // then the folder itself and its preference history.
                         repository.deleteSessionsForDirectory(File(container.workspacesRoot(), name).absolutePath)
                         store.delete(name)
+                        // v9.38 (owner): "the server should support being
+                        // stopped when the project is finished" - deleting a
+                        // project ENDS it: its in-process preview server
+                        // stops and its port claims are freed.
+                        run {
+                            val dead = File(container.workspacesRoot(), name).absolutePath
+                            previewServers.keys.filter { it == dead }.forEach { key ->
+                                runCatching { previewServers.remove(key)?.stop() }
+                            }
+                            val gonePorts = portOwners.keys.filter { portOwners[it] == name }
+                            if (gonePorts.isNotEmpty()) {
+                                gonePorts.forEach { portOwners.remove(it) }
+                                persistPortOwners()
+                            }
+                            if (previewProjectDir?.absolutePath == dead && previewUrl.isNotEmpty()) {
+                                previewUrl = ""
+                                previewPort = 0
+                                previewProjectDir = null
+                                if (previewPhase != ai.opencode.android.ui.chat.PreviewState.CLOSED) {
+                                    previewPhase = ai.opencode.android.ui.chat.PreviewState.CLOSED
+                                }
+                            }
+                        }
                         if (projectName == name) projectName = store.activeName()
                         projects = store.projects()
                     },
@@ -1666,6 +1800,12 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         port = previewPort,
                         reloadStamp = previewReload,
                         flashLabelRes = previewFlashRes,
+                        // v9.38 (owner): the overlay's Stop key exists only
+                        // when the shown port IS this project's in-process
+                        // server - an honest button, not a wish.
+                        canStop = previewPort > 0 && previewProjectDir?.let {
+                            previewServers[it.absolutePath]
+                        }?.let { it.running && it.port == previewPort } == true,
                     ),
                     // v9.37 (owner): a project's console shows only ITS ports -
                     // the ones owned by this project (a previous project's still
@@ -1682,6 +1822,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     },
                     onPreviewClose = { closeChatPreview() },
                     onPreviewReload = { previewReload = System.currentTimeMillis() },
+                    onPreviewStop = {
+                        val dir = previewProjectDir
+                        scope.launch { stopProjectPreview(dir) }
+                    },
                     onPreviewBrowser = {
                         runCatching {
                             context.startActivity(

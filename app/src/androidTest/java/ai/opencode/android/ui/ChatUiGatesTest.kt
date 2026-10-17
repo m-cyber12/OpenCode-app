@@ -173,6 +173,7 @@ class ChatUiGatesTest {
     private var allFilesRequests = 0
     private val portOpens = mutableListOf<Int>()
     private var previewCloses = 0
+    private var previewStops = 0
     private var browserOpens = 0
     private val capturedFrames = mutableListOf<Pair<Int, Int>>()
     // v9.35: the preview is a CHAT surface now - the gates drive it through
@@ -495,6 +496,7 @@ class ChatUiGatesTest {
             livePorts = chatLivePorts.value,
             onOpenPreviewPort = { portOpens.add(it) },
             onPreviewClose = { previewCloses++ },
+            onPreviewStop = { previewStops++ },
             onPreviewBrowser = { browserOpens++ },
             onPreviewShow = { previewShows++ },
         )
@@ -1217,6 +1219,7 @@ class ChatUiGatesTest {
             phase = ai.opencode.android.ui.chat.PreviewState.OPEN,
             url = "http://127.0.0.1:8080/",
             port = 8080,
+            canStop = true,
         )
         renderChat(
             uiState(sessionView(messages = emptyList(), busy = false), busy = false),
@@ -1224,6 +1227,13 @@ class ChatUiGatesTest {
         )
         val overlayShown = exists("sandbox_preview") && exists("sandbox_preview_close") &&
             exists("sandbox_open_browser") && exists("sandbox_preview_reload")
+        // v9.38 (owner): "the server should also support being stopped" - the
+        // overlay offers Stop exactly when there is an in-process server the
+        // app can actually shut down, and the tap reaches the callback.
+        val stopOffered = exists("sandbox_preview_stop")
+        if (stopOffered) rule.onAllNodesWithTag("sandbox_preview_stop")[0].performClick()
+        rule.waitForIdle()
+        val stopWired = previewStops == 1
         val portNamed = onScreenText().contains(":8080")
         // The console behind the overlay carries the same tag; a touch at ITS
         // bounds would land on the overlay's dim layer. Tap the TOPMOST node -
@@ -1267,6 +1277,7 @@ class ChatUiGatesTest {
         val ok = askShown && commandVerbatim && alwaysScope && kindLine && onceOk && alwaysOk && rejectOk &&
             questionShown && questionText && optionShown && inlineInTranscript && picked && answered && skipped &&
             overlayShown && portNamed && overlayClosable && consoleBarShown && barReopens &&
+            stopOffered && stopWired &&
             chatDoorShown && chatDoorWired
         gate(
             "U3",
@@ -1513,10 +1524,41 @@ class ChatUiGatesTest {
         )
         val turnErrorShown = onScreenText().contains("APIError") && onScreenText().contains("overloaded")
 
+        // v9.38 (owner): "whenever the user stops the agent, simply display
+        // the word Stopped in very small text below the token count" - no
+        // gold card, no banner, no Details. A message carrying upstream's
+        // MessageAbortedError must paint exactly that whisper and nothing
+        // louder, even while availability still reads ABORTED.
+        renderChat(
+            uiState(
+                sessionView(
+                    messages = listOf(
+                        message("msg_u1", "user", listOf(textPart("p0", "msg_u1", "explain"))),
+                        message(
+                            "msg_a1",
+                            "assistant",
+                            listOf(textPart("p1", "msg_a1", "half an answer")),
+                            error = Transcript.TurnError(name = "MessageAbortedError", message = "aborted by user"),
+                        ),
+                    ),
+                    error = Transcript.TurnError(name = "MessageAbortedError", message = "aborted by user"),
+                ),
+                error = "",
+                errorKind = AgentAvailability.ABORTED,
+            ),
+            availability = AgentAvailability.ABORTED,
+        )
+        rule.waitForIdle()
+        val stoppedNote = exists("message_stopped_note") &&
+            onScreenText().contains(context.getString(R.string.availability_aborted))
+        val noStoppedCard = !onScreenText().contains(context.getString(R.string.availability_aborted_body)) &&
+            !exists("availability_banner")
+
         val ok = busyBar && streamingDots && stopShown && sendHidden && workingLabel && stopped &&
             noActionsWhileStreaming &&
             retryBanner && retryText && retryDetail && retryAction && undoAction && redoAction && acted &&
-            copyAction && copyWired && likeAction && dislikeAction && turnErrorShown
+            copyAction && copyWired && likeAction && dislikeAction && turnErrorShown &&
+            stoppedNote && noStoppedCard
         gate(
             "U5",
             ok,
@@ -1524,7 +1566,8 @@ class ChatUiGatesTest {
                 "workingLabel=$workingLabel stopCallback=$stopped noActionsWhileStreaming=$noActionsWhileStreaming " +
                 "retryText=$retryText retryDetail=$retryDetail retryAction=$retryAction undoAction=$undoAction " +
                 "redoAction=$redoAction callbacks=$acted copy=$copyAction/$copyWired like=$likeAction " +
-                "dislike=$dislikeAction turnErrorKept=$turnErrorShown retryBanner=$retryBanner",
+                "dislike=$dislikeAction turnErrorKept=$turnErrorShown retryBanner=$retryBanner " +
+                "stopped=$stoppedNote/noCard=$noStoppedCard",
         )
     }
 
@@ -1868,16 +1911,33 @@ class ChatUiGatesTest {
     @Test
     fun u9_fileBrowserListsOpensAndOffersAWayOut() {
         val rootPath = FILES_FIXTURE_PATH
+        // v9.38 (owner): "design it to look like a real file manager... file
+        // sizes, file formats and other relevant file details" - the fixture
+        // carries real facts now, and a row that looks like a file manager's
+        // row must SHOW them: kind glyph, size, date, format badge.
+        val fixtureDate = 1_700_000_000_000L // Nov 14, 2023 (UTC-ish, always "MMM d, yyyy")
         renderFiles(
             path = "",
             nodes = listOf(
-                FileNode(name = "src", path = "src", isDirectory = true),
-                FileNode(name = "README.md", path = "README.md", isDirectory = false),
+                FileNode(name = "src", path = "src", isDirectory = true, modifiedMs = fixtureDate),
+                FileNode(name = "README.md", path = "README.md", isDirectory = false, bytes = 42L, modifiedMs = fixtureDate),
             ),
         )
         val listed = exists("files_list") && countTag("files_dir") == 1 && countTag("files_file") == 1
+        val rows = onScreenText()
+        val metaShown = rows.contains("42 B") && rows.contains("Folder") &&
+            rows.contains("Nov 14, 2023") && rows.contains("MD")
+        // v9.38 (owner): the explanation is behind a small "?" - tap it and
+        // the facts are there, close it and the listing owns the screen again.
+        val infoBtn = exists("files_info")
+        rule.onAllNodesWithTag("files_info")[0].performClick()
+        rule.waitForIdle()
+        val sheetOpen = exists("files_info_sheet")
         val pathShown = onScreenText().contains(rootPath)
         val locationCopy = onScreenText().contains(context.getString(R.string.files_location_title))
+        rule.onAllNodesWithTag("files_info_close")[0].performClick()
+        rule.waitForIdle()
+        val sheetClosed = !exists("files_info_sheet")
         shot("20-files-listing.png")
 
         // tapping the folder asks for that folder (the driver loads it)
@@ -1993,6 +2053,12 @@ class ChatUiGatesTest {
         // In the good case the panel names the real location and does not nag about a
         // permission the user does not need.
         renderFiles(path = "", nodes = emptyList())
+        // v9.38: the location panel is the "?" sheet now - open it once for
+        // the whole storage sequence; the mode is a MutableState the fixture
+        // flips WHILE the sheet is open, which is exactly how a grant landing
+        // mid-screen would recompose it.
+        rule.onAllNodesWithTag("files_info")[0].performClick()
+        rule.waitForIdle()
         val goodPanelVisible = exists("files_storage_mode") && onScreenText()
             .contains(context.getString(R.string.files_storage_mode_public))
         val goodExplanation = onScreenText().contains(context.getString(R.string.files_location_public))
@@ -2030,13 +2096,16 @@ class ChatUiGatesTest {
         val chosenVisible = onScreenText().contains(context.getString(R.string.files_storage_mode_chosen))
         val messageShown = onScreenText().contains("moved 2")
         val stillNoChoose = !exists("files_storage_choose")
+        rule.onAllNodesWithTag("files_info_close")[0].performClick()
+        rule.waitForIdle()
         // back to the default state so the remaining assertions see a clean panel
         storageMode.value = StorageMode.PUBLIC
         storageMessage.value = ""
         storageCanGrant.value = false
         renderFiles(path = "", nodes = emptyList())
 
-        val ok = listed && pathShown && locationCopy && openedDir && upShown && upWorks && openedFile &&
+        val ok = listed && metaShown && infoBtn && sheetOpen && pathShown && locationCopy &&
+            sheetClosed && openedDir && upShown && upWorks && openedFile &&
             viewer && bodyText && saveCopyShown && saveCopyWired && closed && emptyShown &&
             noToggleForPlain && previewOffered && sourceDefault && previewShown && sourceBack &&
             doorShown && doorWired &&
@@ -2047,7 +2116,7 @@ class ChatUiGatesTest {
         gate(
             "U9",
             ok,
-            "listed=$listed pathShown=$pathShown locationCopy=$locationCopy openedDir=$openedDir " +
+            "listed=$listed meta=$metaShown info=$infoBtn/$sheetOpen/$sheetClosed pathShown=$pathShown locationCopy=$locationCopy openedDir=$openedDir " +
                 "upShown=$upShown upWorks=$upWorks openedFile=$openedFile viewer=$viewer body=$bodyText " +
                 "preview=$noToggleForPlain/$previewOffered/$sourceDefault/$previewShown/$sourceBack " +
                 "sandbox=$doorGated/$doorShown/$doorWired " +

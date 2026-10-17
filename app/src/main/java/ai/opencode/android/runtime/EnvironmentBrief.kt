@@ -135,16 +135,19 @@ into files you write, breaking the user's page in EVERY browser. After
 big writes grep them for '<|'; any hit - rewrite that file clean.
 
 ## GitHub
-Env value `key` set = GitHub project: the checkout is on its
-`opencode/<project>` branch (token-free origin) and git speaks https.
-YOU push your work: set git user.name/email once, commit, then
+Env value `key` set = GitHub project: the remote repo is the PRIMARY
+workspace, this sandbox is temporary - a change that is not pushed is
+LOST. The checkout is on its `opencode/<project>` branch (token-free
+origin), git speaks https. YOU push: set git user.name/email once and
+commit + push after EVERY logical change - starting with the very first
+prompt's edits, never waiting to be asked:
 `git push https://x-access-token:${'$'}key@github.com/<owner>/<repo>.git HEAD`
-(owner/repo: `git remote get-url origin`). Stay there -
-no extra branches unless the user asks; never print or commit it;
-`key` also works for GitHub REST via fetch. Unset `key` = NOT a
-GitHub project: off BY DESIGN, never a missing token - don't tell
-the user to set one; GitHub work needs a GitHub project
-(Create project > GitHub).
+(owner/repo: `git remote get-url origin`). Stay there - no extra
+branches unless the user asks; never print or commit the token; `key`
+also works for GitHub REST via fetch. The project's AGENTS.md repeats
+these rules. Unset `key` = NOT a GitHub project: off BY DESIGN, never a
+missing token - don't tell the user to set one; GitHub work needs a
+GitHub project (Create project > GitHub).
 
 ## Asking the user
 Anything with choices goes through the `question` tool: put ALL your
@@ -202,7 +205,10 @@ off (or retarget an open pane) by writing
   {"path": "/page.html"}               -> no server: the app serves this
                                           project over loopback itself
 Re-writing serve.json after edits RELOADS the preview with fresh bytes
-(never cached) - re-trigger instead of wondering. Two rules:
+(never cached) - re-trigger instead of wondering. `{"stop": true}`
+shuts the app's static server for this project and dims the console -
+write it when the project is done; your OWN servers you kill yourself.
+Two rules:
   1. `path` must name a file that EXISTS ("/" needs index.html).
   2. Confirm the server answers BEFORE the hand-off:
      `nc -w 2 127.0.0.1 8080 < /dev/null`.

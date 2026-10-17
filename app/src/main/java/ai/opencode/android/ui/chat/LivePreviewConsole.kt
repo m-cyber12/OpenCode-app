@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
@@ -39,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -60,7 +63,12 @@ import android.webkit.WebViewClient
  *    v9.37 (owner): instead of a server name it asks "See What You've
  *    Made", and acknowledges model updates with a finite "Project updated"
  *    flash. With no preview open it is the port door - and nothing here
- *    ever opens the page by itself.
+ *    ever opens the page by itself. v9.38 (owner): the bar/door belong to
+ *    exactly one project - switching projects clears a target that was not
+ *    this project's, and a project with nothing of its own shows nothing;
+ *    the overlay gained a Stop key for the server the app can actually
+ *    stop, and its whole layer now CONSUMES taps (a background alone let
+ *    the chat underneath answer them).
  *  * Opening the preview is a SIMPLE smooth transition (v9.35.6 owner: "not
  *    a teleport" and no circle morph either): the full-screen page fades and
  *    settles over the chat with one finite tween; closing fades it back out.
@@ -86,6 +94,11 @@ data class PreviewUi(
     /** v9.37 (owner): a string res to flash on the bar when the project moved
      *  under the user's nose ("Project updated"/"Reloaded"); 0 = no flash. */
     val flashLabelRes: Int = 0,
+    /** v9.38 (owner): "the server should also support being stopped" - true
+     *  only when THIS project's in-process static server is what the overlay
+     *  is showing, i.e. there is something the app can actually stop. An
+     *  external dev server is the agent's process; the app never kills it. */
+    val canStop: Boolean = false,
 )
 
 /**
@@ -210,6 +223,7 @@ fun ChatPreviewOverlay(
     onReload: () -> Unit,
     onCapture: (android.graphics.Bitmap) -> Unit,
     onConsole: (String) -> Unit,
+    onStop: () -> Unit = {},
 ) {
     val chat = ChatTheme.chat
     val reloadDesc = stringResource(R.string.sandbox_console_reload)
@@ -239,6 +253,16 @@ fun ChatPreviewOverlay(
         Column(
             Modifier
                 .fillMaxSize()
+                // v9.38 (owner): "tapping the empty space of the preview
+                // header goes through to the chat underneath - the hamburger,
+                // the model selector". A Compose background paints but does
+                // NOT consume touches, so every dead spot here used to fall
+                // through to the layer below. This swallow ends that: taps
+                // that no child control claims are CONSUMED by the overlay.
+                // (Children keep priority: the buttons consume their taps
+                // first, and the interop WebView owns every touch inside its
+                // bounds before Compose routes anything here.)
+                .pointerInput(Unit) { detectTapGestures(onTap = { }, onLongPress = { }) }
                 .graphicsLayer(
                     alpha = p,
                     // A whisper of settle so the fade reads as a page
@@ -285,6 +309,22 @@ fun ChatPreviewOverlay(
                         imageVector = Icons.Filled.Refresh,
                         contentDescription = reloadDesc,
                     )
+                }
+                if (preview.canStop) {
+                    // v9.38 (owner): stop the project's server from here.
+                    val stopDesc = stringResource(R.string.sandbox_preview_stop)
+                    IconButton(
+                        onClick = onStop,
+                        modifier = Modifier.semantics {
+                            testTag = "sandbox_preview_stop"
+                            contentDescription = stopDesc
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Stop,
+                            contentDescription = stopDesc,
+                        )
+                    }
                 }
                 TextButton(
                     onClick = onBrowser,

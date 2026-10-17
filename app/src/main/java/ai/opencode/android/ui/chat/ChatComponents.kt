@@ -348,6 +348,20 @@ fun MessageRow(
                     color = chat.muted.copy(alpha = 0.75f),
                 )
             }
+            // v9.38 (owner): "the yellow Stop indicator is unnecessary and
+            // misleading - whenever the user stops the agent, simply show the
+            // word Stopped in very small text below the token count." That is
+            // exactly this line: two words under the totals, nothing more.
+            if (message.error?.kind == AgentAvailability.ABORTED) {
+                Text(
+                    text = stringResource(R.string.availability_aborted),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = chat.muted,
+                    modifier = Modifier
+                        .padding(top = 2.dp)
+                        .semantics { testTag = "message_stopped_note" },
+                )
+            }
         }
 
         // v9.5 fix (CI #117, U5 noActionsWhileStreaming=false): the caller's
@@ -948,36 +962,13 @@ private fun Chevron(up: Boolean) {
 @Composable
 fun TurnErrorCard(error: Transcript.TurnError, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
-    // v9.34 (owner: tapping Stop painted a red "This turn failed /
-    // MessageAbortedError" card - "it was me who stopped it"). An abort is
-    // always something this side asked for (the Stop key, an undo, a new
-    // prompt interrupting), so it renders as a quiet gold "Stopped" note, not
-    // a failure. Honesty holds: the card still says the turn ended early, and
-    // the raw upstream name stays one tap away in the disclosure.
-    if (error.kind == AgentAvailability.ABORTED) {
-        val chat = ChatTheme.chat
-        Surface(
-            modifier = modifier.fillMaxWidth().semantics { testTag = TAG_TURN_ERROR },
-            color = chat.attentionContainer,
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            Column(Modifier.padding(12.dp)) {
-                Text(
-                    text = stringResource(R.string.availability_aborted),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = chat.onAttentionContainer,
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = stringResource(R.string.availability_aborted_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = chat.onAttentionContainer,
-                )
-                DetailDisclosure(listOf(error.name, error.message).filter { it.isNotEmpty() }.joinToString(": "))
-            }
-        }
-        return
-    }
+    // v9.34 (owner): an abort is always something this side asked for (Stop,
+    // undo, a new prompt) - it was never a failure worth a red card.
+    // v9.38 (owner): the gold card that replaced it is ALSO gone - "the
+    // yellow Stop indicator is unnecessary and misleading"; the only signal
+    // left is the tiny "Stopped" word under the turn's token count, rendered
+    // by MessageRow itself. Nothing here paints for an aborted turn.
+    if (error.kind == AgentAvailability.ABORTED) return
     val raw = buildString {
         if (error.name.isNotEmpty()) append(error.name)
         if (error.name.isNotEmpty() && error.message.isNotEmpty()) append(": ")
