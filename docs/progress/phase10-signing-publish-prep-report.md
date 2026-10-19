@@ -5799,7 +5799,10 @@ retry classification + isKeyLimitError true), and flat-wins-over-data
 precedence. No UI change; no gate change (they exercise downstream of the
 parser).
 
-Status: fix pushed, CI board pending at the time of writing; the board line
-below is filled when green. Zen itself needs no app change - it is an
-upstream gateway incident (see 2), and the app now says so with the gateway's
-own words instead of `apiError:`.
+Board: CI run 39284354667 on `6826499` - conclusion success. JVM tests=428
+failures=0 (the three new regressions included), P6-UI debug gates 20/20 with
+skip=0, smoke gates 20/20 with skip=0 (P6_L2 also answered inside the window
+this time), driver selftest 136/0, payload + fresh-AVD device + release APK/AAB
+all PASS; every number quoted from the evidence the run itself committed. Zen
+itself needs no app change - it is an upstream gateway incident (see 2), and
+the app now says so with the gateway's own words instead of `apiError:`.
