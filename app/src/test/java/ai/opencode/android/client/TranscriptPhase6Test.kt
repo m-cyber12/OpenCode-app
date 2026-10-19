@@ -126,7 +126,7 @@ class TranscriptPhase6Test {
         apply(
             "message.updated",
             """{"info":{"id":"m1","sessionID":"s1","role":"assistant",
-               "error":{"name":"APIError","message":"rate limited","statusCode":429,"isRetryable":true}}}""".trimIndent(),
+               "error":{"name":"APIError","data":{"message":"rate limited","statusCode":429,"isRetryable":true}}}}""".trimIndent(),
         )
         val message = messages().single()
         assertEquals("APIError", message.error?.name)
@@ -165,6 +165,45 @@ class TranscriptPhase6Test {
         apply("session.status", """{"sessionID":"s1","status":{"type":"busy"}}""")
         assertNull("a new turn supersedes the failure it moved past", view()?.error)
         assertTrue(view()?.busy == true)
+    }
+
+    @Test
+    fun nestedNamedErrorDataIsTheProductionShapeAndMustReachTheUi() {
+        // v9.38 (owner: "outcome apiError," with no text): the pinned upstream
+        // serializes EVERY session error as {name, data:{...}} - see
+        // packages/schema/src/v1/session.ts `namedError` at the pin; their own
+        // retry.ts reads error.data.message. The parser must follow production.
+        apply(
+            "session.error",
+            """{"sessionID":"s1","error":{"name":"APIError","data":{"message":"Forbidden: blocked by gateway","statusCode":403,"isRetryable":false}}}""",
+        )
+        val error = view()?.error
+        assertNotNull(error)
+        assertEquals("Forbidden: blocked by gateway", error!!.message)
+        assertEquals(403, error.statusCode)
+        assertEquals(AgentAvailability.PROVIDER_AUTH, error.kind)
+    }
+
+    @Test
+    fun anErrorMessageMissingFromDataFallsBackToTheResponseBody() {
+        apply(
+            "session.error",
+            """{"sessionID":"s1","error":{"name":"APIError","data":{"message":"","responseBody":"429: Free limit exceeded","statusCode":429,"isRetryable":true}}}""",
+        )
+        val error = view()?.error
+        assertEquals("429: Free limit exceeded", error?.message)
+        assertEquals(AgentAvailability.PROVIDER_UNREACHABLE, error?.kind)
+        assertTrue(UiError.isKeyLimitError(error!!.name, error.message, error.statusCode))
+    }
+
+    @Test
+    fun flatTopLevelFieldsStillWinForOlderFrames() {
+        apply(
+            "session.error",
+            """{"sessionID":"s1","error":{"name":"APIError","message":"overloaded","statusCode":529,"isRetryable":true,"data":{"message":"ignored","statusCode":400}}}""",
+        )
+        assertEquals("overloaded", view()?.error?.message)
+        assertEquals(529, view()?.error?.statusCode)
     }
 
     @Test

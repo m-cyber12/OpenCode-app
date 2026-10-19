@@ -291,11 +291,28 @@ class Transcript {
 
     private fun turnErrorOf(err: JSONObject): TurnError = TurnError(
         name = err.optString("name"),
-        message = err.optString("message"),
-        statusCode = err.optInt("statusCode"),
-        retryable = err.optBoolean("isRetryable"),
+        message = errField(err, "message").ifEmpty { errField(err, "responseBody") },
+        statusCode = err.optInt("statusCode").takeIf { it != 0 }
+            ?: err.optJSONObject("data")?.optInt("statusCode") ?: 0,
+        retryable = err.optBoolean("isRetryable") ||
+            (err.optJSONObject("data")?.optBoolean("isRetryable") ?: false),
         atMs = System.currentTimeMillis(),
     )
+
+    /**
+     * v9.38 (owner report `apiError:` with no message): upstream serializes every
+     * session error as a NESTED NamedError - `{name, data:{message, statusCode,
+     * isRetryable, responseBody}}` (packages/schema/src/v1/session.ts `namedError`
+     * at the pinned commit; upstream's own retry.ts reads `error.data.message`).
+     * Reading only the top level turned every provider failure into a bare name
+     * and hid the 401/429 statuses from the classifier (and the key failover).
+     * Top level still wins when a field is there (older captures and the
+     * `session.status` retry line are flat), `data` covers production.
+     */
+    private fun errField(err: JSONObject, key: String): String =
+        err.optString(key).takeIf { it.isNotEmpty() }
+            ?: (err.optJSONObject("data")?.optString(key) ?: "")
+
 
     private fun onPartDelta(props: JSONObject) {
         val partID = props.optString("partID")

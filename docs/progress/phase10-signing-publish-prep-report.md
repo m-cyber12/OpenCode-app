@@ -5744,3 +5744,62 @@ payload sha256 also differs between boards by design (the embedded runtime
 manifest carries per-build fields); file count, versions and commit pin are
 identical. A re-dispatch of that run was refused by the API and the bot token
 lacks actions:write for workflow_dispatch, so the next push on the tip re-boards.
+
+## B.62 - v9.39: the zen outage during v9.38 field test, and the error-parser bug it exposed (2026-10-19)
+
+Owner report while testing v9.38 on the phone: every `opencode zen` model
+failed with the bare outcome `apiError:`; all other providers worked. The
+owner suspected "an update in the main opencode binary" - partly right, and
+the investigation found a real app bug underneath the incident.
+
+What is actually happening with zen (evidence from the pinned tree and the
+upstream tracker, not guesses):
+
+1. Upstream migrated the hosted free-model gateway 2026-10-07..11
+   (anomalyco/opencode #53717/#53959/#53963/#53967 "proxy keyless Zen requests
+   to new inference per model", then 83f2b6f67 "make Zen routes a thin
+   inference proxy"). The old /zen/go/v1 paths still work: the console proxies
+   them and explicitly strips the keyless `apiKey: "public"` the pinned
+   1.18.23 client sends. Our binary still speaks the protocol.
+2. Then, ~2026-10-18, the hosted gateway started mass IP-based abuse
+   blocking: "Forbidden, OpenCode Free Model Gateway Detect Abuse Traffic" /
+   "free tier can only be used from within OpenCode" - #56762 (30+ confirmations,
+   official Desktop and CLI users included) and #56822, both closed with
+   "handled by email, help@anoma.ly". Carrier-NAT, VPN and shared mobile
+   egress IPs are being flagged. A `$0`-model client cannot unblock an IP
+   reputation system, and routing around it would be the wrong fix; the app
+   is collateral damage in a live provider incident. Related churn in the
+   same window: `opencode/glm-5.3-flash-free` "Endpoint is unavailable" (#56796 -
+   same string family as the v9.38 item-5 observation), `space-bunny-free`
+   deprecated (#57083), region blocks (#57046). Owner options: wait, move
+   network/VPN, or OpenCode Go; other providers are unaffected and were.
+3. The app-side bug the empty `apiError:` exposed: upstream serializes every
+   session error as a NESTED NamedError - `{name:"APIError",
+   data:{message,statusCode,isRetryable,responseBody}}`
+   (packages/schema/src/v1/session.ts `namedError` at our pin; their own
+   retry.ts reads `error.data.message`). Our `Transcript.turnErrorOf` read
+   only the TOP level, so every provider failure became a bare name with no
+   text, the 401/403/429 classifications never fired, and the v6.1 keyring
+   limit-failover (triggered by `isKeyLimitError(name, message, statusCode)`)
+   was dead on this path. The retry banner looked fine only because
+   `session.status` retry carries a separate flat `message` string.
+   WHY THE GATES MISSED IT: they inject TurnError at the struct level (UI
+   assembly), and the JVM fixtures were authored flat - fixtures matched the
+   parser, the parser did not match the wire. Lesson recorded: wire-shaped
+   evidence must come from the pinned source of truth, not from a hand-written
+   fixture that agrees with the implementation.
+
+Fix: `turnErrorOf` prefers top-level fields (older flat captures still work)
+and falls back to `data`, then to `responseBody` when `message` is blank, and
+reads `statusCode`/`isRetryable` through the same fallback. Tests: the
+`message.updated` APIError fixture flipped to the production nested shape
+(assertions unchanged); three new JVM regressions pin nested passthrough
+(403 -> PROVIDER_AUTH), responseBody fallback with key-limit trigger (429 ->
+retry classification + isKeyLimitError true), and flat-wins-over-data
+precedence. No UI change; no gate change (they exercise downstream of the
+parser).
+
+Status: fix pushed, CI board pending at the time of writing; the board line
+below is filled when green. Zen itself needs no app change - it is an
+upstream gateway incident (see 2), and the app now says so with the gateway's
+own words instead of `apiError:`.
