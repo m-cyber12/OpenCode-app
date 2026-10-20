@@ -5806,3 +5806,79 @@ this time), driver selftest 136/0, payload + fresh-AVD device + release APK/AAB
 all PASS; every number quoted from the evidence the run itself committed. Zen
 itself needs no app change - it is an upstream gateway incident (see 2), and
 the app now says so with the gateway's own words instead of `apiError:`.
+
+## B.63 - v9.40: the master-branch leak, the loading slog, the up-nav teleport, the pop-in sheet, and the triple-stacked error (2026-10-20)
+
+Owner's device round - five findings, all shipped in one commit series, CI-proven.
+
+1. "COMMITS AND PUSHES WORK, BUT EVERYTHING IS PUSHED TO MASTER." The app
+   did create and park `opencode/<project>` at clone time (v9.26) and
+   re-asserted it at project open - but if anything moved the checkout
+   (an older project, a model-side re-clone, a failed resume), the model's
+   own `git push <token-url> HEAD` then faithfully pushed MASTER, because
+   that is what HEAD was. Three layers now close it: (a) the AGENTS.md block
+   teaches the repair BEFORE the first commit - `git rev-parse
+   --abbrev-ref HEAD`, and if it says master/main, `git checkout -B
+   opencode/<project>` (commits and uncommitted edits travel with it) - and
+   forbids pushing the default branch outright; (b) every prompt send
+   re-parks the checkout (send-time, so the model starts on the right branch);
+   (c) the existing open/new-session re-asserts stay. Merge-to-main remains
+   manual (v9.28 unchanged). Provable on-device, not in CI: watch the repo's
+   branch list after a first prompt.
+2. "LOADING THE MODEL LIST AND PROVIDERS TAKES FAR TOO LONG." `refresh()`
+   was ONE sequential chain - health, sessions, status, mcp, the (slow)
+   provider table, config, asks - each waiting on `GET /provider`'s
+   upstream-side cost. It is now four concurrent streams (health, mcp,
+   provider+config, and the transcript-owning chain in its original order)
+   landing in the UI as they answer; a cached provider snapshot seeds the
+   first paint after a restart or project switch (stale-while-revalidate;
+   fresh data replaces it - the cache is memory-only and never invents a
+   connection state). Two discipline fixes came with it: all state writes in
+   the chain moved to CAS-atomic `_state.update` (the read-assign pattern
+   would have dropped a sibling stream's update), and transcript mutations
+   deliberately stay in ONE ordered stream.
+3. "BACK IN THE SANDBOX TELEPORTS TO THE PREVIOUS POSITION; THE SECOND TAP
+   WORKS." Two compounding causes: the LazyColumn carried the OLD folder's
+   scroll index into the new listing (clamped at the short parent list's end
+   - visually a jump), and `filesPath` updated only on a SUCCESSFUL load, so
+   a second up-tap computed the parent from the PREVIOUS directory. The list
+   now gets a fresh scroll state per directory and the path follows the
+   request immediately, rolling back when the listing genuinely failed.
+4. "THE INFO PANEL SUDDENLY APPEARS." It now rises: finite fade 160ms +
+   slide-in 220ms, mirrored out (130/170ms) - within the standing
+   finite-animation rule; U9 drives it through the same open/close path.
+5. "WHEN AN ERROR OCCURS THE SCREEN BECOMES TOO CLUTTERED." The screenshot
+   said it: a red card from the message row, ANOTHER red card floating from
+   the session error, and the gold availability banner restating the same
+   failure a third time. The rule now: the failure's verbatim text exists in
+   exactly ONE place (the failed turn's own row, directly under the user's
+   message); an error no row carries (upstream dying before the assistant
+   message exists) keeps the compact inline card; the availability banner
+   stays for degraded runtime/server states because its HEADLINE is context
+   the card never carries - but it no longer restates turn text. The card
+   itself lost the red block and heading: one amber-tinted line with the
+   server's words and the same Details disclosure. U5 proves it with a new
+   fixture: the same rejection rendered twice (row + session) must show
+   "singleError=true".
+
+Two honest board-failures along the way, both caught before anything shipped
+to the owner: the first board ran the StatusArea change over-reach (headline-
+only banners for runtime-down/starting vanished - U4 a/b/d failed, and the
+raw-text-visible contract broke for rowless errors because AvailabilityBanner
+hides its detail in a collapsed disclosure; the card is the visible surface);
+the second board died on an unresolved `singleErrorLine` - the U5 block had
+been inserted into U4 by an anchor that matched the wrong test (and then
+referenced U4's local error fixture - it got a local c2Error). The third
+board is the green one below.
+
+CI: run 39457871567 on `0bd66146` - conclusion success. JVM 428/428; P6-UI
+debug gates 20/20 skip=0 and smoke 20/20 skip=0, with
+`P6_U5 PASS ... turnErrorKept=true singleError=true ... stopped=true/noCard=true`
+and `P6_U4 PASS ... runtimeDown=true(body=true,send=false) ...
+providerAuth=true(rawKept=true...)` (both verdict files); driver selftest
+136/0; payload/device/release APK+AAB/UNSIGNED all PASS. What CI cannot
+prove: the real network's /provider latency (item 2 - feel the difference on
+the phone), the GitHub branch landing (item 1 - check the repo's branches
+after the first prompt), and that a push still never reaches master if the
+model itself misbehaves (AGENTS.md steers; it cannot be forced from the app
+without the app pushing again, which v9.29 removed by owner decision).
