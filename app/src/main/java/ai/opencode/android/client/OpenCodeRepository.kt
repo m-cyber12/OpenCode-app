@@ -4,9 +4,12 @@ import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -139,6 +142,8 @@ class OpenCodeRepository(
 
     private val transcript = Transcript()
     private val _state = MutableStateFlow(UiState())
+    /** v9.40: last successful provider snapshot - seeds the next refresh instantly. */
+    private var providersCache: OpenCodeApi.ProviderSnapshot? = null
     val state: StateFlow<UiState> = _state.asStateFlow()
 
     private val stream = OpenCodeEventStream(
@@ -245,91 +250,126 @@ class OpenCodeRepository(
         }
     }
 
-    /** Pull the authoritative lists from the server (never fabricated locally). */
+    /** Pull the authoritative lists from the server (never fabricated locally).
+     *
+     * v9.40 (owner: "loading the model list and providers takes too long"):
+     * this used to be ONE sequential chain - health, sessions, status, mcp,
+     * the (slow) provider table, config, asks. Every section waited behind
+     * `GET /provider`, whose cost upstream drives (auth read + catalog +
+     * npm resolution). Now the independent sections run concurrently, each
+     * landing in the UI as it answers, while everything that mutates the
+     * transcript stays in ONE ordered stream (sessions -> messages -> status
+     * -> permissions -> questions - the relative order they had before).
+     * A cached provider snapshot also seeds the UI instantly on the first
+     * refresh after a restart/project switch, then the fresh answer
+     * replaces it (stale-while-revalidate; never invented by the client).
+     */
     fun refresh() {
         scope.launch {
-            val errors = ArrayList<String>()
-            runCatching { api.health() }.onSuccess { h ->
-                _state.value = _state.value.copy(
-                    serverVersion = h.optString("version"),
-                    serverReachable = true,
-                    error = "",
-                    errorKind = AgentAvailability.READY,
-                )
-            }.onFailure {
-                errors.add("health: ${it.message}")
-                noteCallFailure(it)
-            }
-
-            runCatching { api.listSessions() }.onSuccess { list ->
-                val sel = _state.value.selectedSession
-                val keep = if (sel.isNotEmpty() && list.any { it.id == sel }) sel else (list.firstOrNull()?.id ?: "")
-                _state.value = _state.value.copy(sessions = list, selectedSession = keep)
-                if (keep.isNotEmpty() && keep != sel) {
-                    runCatching { api.messages(keep) }
-                        .onSuccess { transcript.loadMessages(keep, it); publishTranscript("transcript loaded") }
-                        .onFailure { errors.add("messages: ${it.message}") }
-                } else {
-                    publishTranscript("sessions refreshed")
+            providersCache?.let { cached ->
+                _state.update { st ->
+                    if (st.providers != null) st else st.copy(
+                        providers = cached,
+                        model = st.model ?: defaultModelHint(cached, persisted = modelPreference?.lastModel()),
+                        starredModels = modelPreference?.starred() ?: st.starredModels,
+                    )
                 }
-            }.onFailure { errors.add("sessions: ${it.message}") }
+            }
+            val errors = java.util.Collections.synchronizedList(ArrayList<String>())
+            coroutineScope {
+                launch {
+                    runCatching { api.health() }.onSuccess { h ->
+                        _state.update { st ->
+                            st.copy(
+                                serverVersion = h.optString("version"),
+                                serverReachable = true,
+                                error = "",
+                                errorKind = AgentAvailability.READY,
+                            )
+                        }
+                    }.onFailure {
+                        errors.add("health: ${it.message}")
+                        noteCallFailure(it)
+                    }
+                }
+                launch {
+                    runCatching { api.mcpEntries() }.onSuccess { m ->
+                        _state.update { st -> st.copy(mcp = m) }
+                    }.onFailure { errors.add("mcp: ${it.message}") }
+                }
+                launch {
+                    runCatching { api.providers() }.onSuccess { p ->
+                        providersCache = p
+                        // OpenCode's own `default` map (providerID -> modelID);
+                        // used as the model hint, never invented by the client.
+                        // When this client instance has no choice in memory yet
+                        // (new chat, new project, fresh process), the PERSISTED
+                        // last-used model is the answer - not "the first
+                        // connected provider" (Phase 10 v4, item 3).
+                        _state.update { st ->
+                            st.copy(
+                                providers = p,
+                                model = st.model ?: defaultModelHint(p, persisted = modelPreference?.lastModel()),
+                                starredModels = modelPreference?.starred() ?: st.starredModels,
+                            )
+                        }
+                    }.onFailure { errors.add("providers: ${it.message}") }
+                }
+                launch {
+                    runCatching { api.globalConfig() }.onSuccess { cfg ->
+                        val effective = enforceAskDefaults(cfg)
+                        _state.update { st -> st.copy(permissionPolicy = parsePermissionPolicy(effective)) }
+                    }.onFailure { errors.add("config: ${it.message}") }
+                }
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    runCatching { api.listSessions() }.onSuccess { list ->
+                        val sel = _state.value.selectedSession
+                        val keep = if (sel.isNotEmpty() && list.any { it.id == sel }) sel else (list.firstOrNull()?.id ?: "")
+                        _state.update { st -> st.copy(sessions = list, selectedSession = keep) }
+                        if (keep.isNotEmpty() && keep != sel) {
+                            runCatching { api.messages(keep) }
+                                .onSuccess { transcript.loadMessages(keep, it); publishTranscript("transcript loaded") }
+                                .onFailure { errors.add("messages: ${it.message}") }
+                        } else {
+                            publishTranscript("sessions refreshed")
+                        }
+                    }.onFailure { errors.add("sessions: ${it.message}") }
 
-            runCatching { api.sessionStatus() }.onSuccess { m ->
-                _state.value = _state.value.copy(sessionStatus = m)
-                publishTranscript("session status refreshed")
-            }.onFailure { errors.add("session status: ${it.message}") }
+                    runCatching { api.sessionStatus() }.onSuccess { m ->
+                        _state.update { st -> st.copy(sessionStatus = m) }
+                        publishTranscript("session status refreshed")
+                    }.onFailure { errors.add("session status: ${it.message}") }
 
-            runCatching { api.mcpEntries() }.onSuccess { m ->
-                _state.value = _state.value.copy(mcp = m)
-            }.onFailure { errors.add("mcp: ${it.message}") }
+                    runCatching { api.pendingPermissions() }.onSuccess { list ->
+                        transcript.replacePrompts(list.map { it.asPrompt() })
+                        publishTranscript("permissions refreshed")
+                    }.onFailure { errors.add("permissions: ${it.message}") }
 
-            runCatching { api.providers() }.onSuccess { p ->
-                // OpenCode's own `default` map (providerID -> modelID); used as
-                // the model hint, never invented by the client. When this client
-                // instance has no choice in memory yet (new chat, new project,
-                // fresh process), the PERSISTED last-used model is the answer -
-                // not "the first connected provider", which is what the user
-                // reported as a bug (Phase 10 continuation v4, item 3).
-                _state.value = _state.value.copy(
-                    providers = p,
-                    model = _state.value.model ?: defaultModelHint(p, persisted = modelPreference?.lastModel()),
-                    starredModels = modelPreference?.starred() ?: _state.value.starredModels,
-                )
-            }.onFailure { errors.add("providers: ${it.message}") }
-
-            runCatching { api.globalConfig() }.onSuccess { cfg ->
-                val effective = enforceAskDefaults(cfg)
-                _state.value = _state.value.copy(permissionPolicy = parsePermissionPolicy(effective))
-            }.onFailure { errors.add("config: ${it.message}") }
-
-            runCatching { api.pendingPermissions() }.onSuccess { list ->
-                transcript.replacePrompts(list.map { it.asPrompt() })
-                publishTranscript("permissions refreshed")
-            }.onFailure { errors.add("permissions: ${it.message}") }
-
-            runCatching { api.pendingQuestions() }.onSuccess { list ->
-                transcript.replaceQuestions(
-                    list.map {
-                        Transcript.Question(
-                            id = it.id,
-                            sessionID = it.sessionID,
-                            items = it.items.map { q ->
-                                Transcript.QuestionItem(
-                                    header = q.header,
-                                    question = q.question,
-                                    options = q.options.map { o -> Transcript.QuestionOption(o.label, o.description) },
-                                    multiple = q.multiple,
-                                    custom = q.custom,
+                    runCatching { api.pendingQuestions() }.onSuccess { list ->
+                        transcript.replaceQuestions(
+                            list.map {
+                                Transcript.Question(
+                                    id = it.id,
+                                    sessionID = it.sessionID,
+                                    items = it.items.map { q ->
+                                        Transcript.QuestionItem(
+                                            header = q.header,
+                                            question = q.question,
+                                            options = q.options.map { o -> Transcript.QuestionOption(o.label, o.description) },
+                                            multiple = q.multiple,
+                                            custom = q.custom,
+                                        )
+                                    },
                                 )
                             },
                         )
-                    },
-                )
-                publishTranscript("questions refreshed")
-            }.onFailure { errors.add("questions: ${it.message}") }
-
+                        publishTranscript("questions refreshed")
+                    }.onFailure { errors.add("questions: ${it.message}") }
+                }
+            }
             if (errors.isNotEmpty()) {
-                _state.value = _state.value.copy(error = errors.joinToString("; ").take(400))
+                val joined = synchronized(errors) { errors.joinToString("; ") }.take(400)
+                _state.update { st -> st.copy(error = joined) }
             }
         }
     }
@@ -1196,14 +1236,21 @@ class OpenCodeRepository(
 
     private fun publishTranscript(status: String) {
         val snap = transcript.snapshot()
-        val st = _state.value
-        val busyFromServer = st.sessionStatus[st.selectedSession]?.busy == true
-        _state.value = st.copy(
-            transcript = snap,
-            busy = snap.busySessions().isNotEmpty() || busyFromServer,
-            streamStatus = status,
-        )
-        maybeFailoverKey(snap, st)
+        // v9.40: refresh() now runs its sections concurrently, so this write
+        // is CAS-atomic (the old read-value-then-assign could drop a sibling's
+        // update outright). `prev` captures the state immediately before the
+        // winning compare-and-set - what the failover check has always seen.
+        var prev = _state.value
+        _state.update { st ->
+            prev = st
+            val busyFromServer = st.sessionStatus[st.selectedSession]?.busy == true
+            st.copy(
+                transcript = snap,
+                busy = snap.busySessions().isNotEmpty() || busyFromServer,
+                streamStatus = status,
+            )
+        }
+        maybeFailoverKey(snap, prev)
         maybeAutoCompact(snap)
     }
 

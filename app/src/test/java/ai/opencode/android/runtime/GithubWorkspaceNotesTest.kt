@@ -28,6 +28,11 @@ class GithubWorkspaceNotesTest {
         assertTrue(text.contains("Commit AND push after EVERY logical change"))
         assertTrue(text.contains("very first"))
         assertTrue(text.contains("primary workspace"))
+        // v9.40 (owner: "everything is pushed to master, the plan was a
+        // separate dedicated branch per project"): the block must name the
+        // repair and forbid the default branch.
+        assertTrue(text.contains("NEVER push master or main"))
+        assertTrue(text.contains("git rev-parse --abbrev-ref HEAD"))
         assertTrue(text.contains(GithubWorkspaceNotes.BEGIN))
         assertTrue(text.contains(GithubWorkspaceNotes.END))
     }

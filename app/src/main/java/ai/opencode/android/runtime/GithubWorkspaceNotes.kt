@@ -32,8 +32,12 @@ A change that is not pushed does not, for practical purposes, exist.
 - Commit AND push after EVERY logical change, starting with the very first
   one, even an edit made in response to the user's opening prompt. Never
   wait to be asked, never batch work "until the end".
-- Stay on the current branch (the project branch the app checked out);
-  no extra branches unless the user asks.
+- Work on the project branch the app checked out (`opencode/<project folder>`,
+  lower-case). Before your FIRST commit run `git rev-parse --abbrev-ref HEAD`:
+  if the checkout sits on the repo's default branch (master or main), move
+  the work onto the project branch first - `git checkout -B opencode/<project>`
+  carries your commits and uncommitted edits with it.
+  NEVER push master or main; no other branches unless the user asks.
 - Push with the token URL the environment brief's GitHub section provides;
   `git remote get-url origin` names the owner/repo. Never print the token,
   never commit it into any file.

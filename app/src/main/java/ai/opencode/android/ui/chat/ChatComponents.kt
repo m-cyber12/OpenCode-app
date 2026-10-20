@@ -81,6 +81,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -958,16 +959,24 @@ private fun Chevron(up: Boolean) {
     )
 }
 
-/** The error upstream attached to a turn: its name and message, verbatim. */
+/**
+ * The error upstream attached to a turn: its name and message, verbatim.
+ *
+ * v9.40 (owner): "when an error occurs, the screen becomes too cluttered.
+ * Displaying a single error message directly below the user's message is
+ * sufficient" - the red block and its heading are gone. One quiet line
+ * rides INSIDE the failed turn (which sits directly under the user's
+ * message), in the standing amber of a thing-that-needs-attention - never
+ * the error red (v7's rule) - and the raw upstream text stays reachable
+ * through the same Details disclosure.
+ */
 @Composable
 fun TurnErrorCard(error: Transcript.TurnError, modifier: Modifier = Modifier) {
-    val scheme = MaterialTheme.colorScheme
+    val chat = ChatTheme.chat
     // v9.34 (owner): an abort is always something this side asked for (Stop,
-    // undo, a new prompt) - it was never a failure worth a red card.
-    // v9.38 (owner): the gold card that replaced it is ALSO gone - "the
-    // yellow Stop indicator is unnecessary and misleading"; the only signal
-    // left is the tiny "Stopped" word under the turn's token count, rendered
-    // by MessageRow itself. Nothing here paints for an aborted turn.
+    // undo, a new prompt) - it was never a failure worth a card. v9.38: the
+    // only signal for an aborted turn is the tiny "Stopped" word under the
+    // turn's token count (rendered by MessageRow). Nothing here paints.
     if (error.kind == AgentAvailability.ABORTED) return
     val raw = buildString {
         if (error.name.isNotEmpty()) append(error.name)
@@ -978,17 +987,22 @@ fun TurnErrorCard(error: Transcript.TurnError, modifier: Modifier = Modifier) {
     }
     Surface(
         modifier = modifier.fillMaxWidth().semantics { testTag = TAG_TURN_ERROR },
-        color = scheme.errorContainer,
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, chat.toolBorder),
         shape = MaterialTheme.shapes.medium,
     ) {
-        Column(Modifier.padding(12.dp)) {
+        Row(
+            Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(7.dp).clip(CircleShape).background(chat.attention))
+            Spacer(Modifier.width(8.dp))
             Text(
-                text = stringResource(R.string.chat_turn_failed),
-                style = MaterialTheme.typography.titleSmall,
-                color = scheme.onErrorContainer,
+                text = raw,
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.attention,
+                modifier = Modifier.weight(1f),
             )
-            Spacer(Modifier.height(2.dp))
-            Text(text = raw, style = MaterialTheme.typography.bodySmall, color = scheme.onErrorContainer)
             DetailDisclosure(raw)
         }
     }

@@ -857,30 +857,41 @@ private fun StatusArea(
     // non-READY state) and no card (TurnErrorCard only renders a message-level
     // error). The session-level error is not an availability state, so it must not
     // wait for one to become visible: upstream's own name and message, on screen.
-    state.turnError?.let { error ->
-        TurnErrorCard(
-            error = error,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-        )
-    }
+    // v9.40 (owner): "the screen becomes too cluttered - a single error
+    // message below the user message is sufficient". The failed turn's own
+    // row already carries the error line (MessageRow renders it), so nothing
+    // floats here any more; only an error NO row shows (an upstream failure
+    // before the assistant message exists - ProviderModelNotFoundError) or a
+    // runtime/server-level failure earns the banner below.
+    val turnError = state.turnError
+    val turnErrorShownByRow = turnError?.let { te ->
+        val msgs = state.messages
+        val turnStart = msgs.indexOfLast { it.role == "user" }
+        val inTurn = if (turnStart >= 0) msgs.subList(turnStart + 1, msgs.size) else msgs
+        inTurn.any { m -> m.error?.name == te.name && m.error?.message == te.message }
+    } == true
     // v9.38 (owner): "that yellow Stop indicator is unnecessary and
     // misleading - just show the word Stopped under the token count". A user
     // stopping a turn is not a degraded agent: no banner, no card - the tiny
     // footer note on the turn itself is the whole signal.
     if (availability != AgentAvailability.READY && availability != AgentAvailability.ABORTED) {
-        val raw = state.error.ifBlank { state.turnError?.let { e -> "${e.name}: ${e.message}".trim() } ?: "" }
+        val raw = state.error.ifBlank {
+            if (turnError != null && !turnErrorShownByRow) "${turnError.name}: ${turnError.message}".trim() else ""
+        }
         // Deliberately no `extra`: the supervisor's own detail line carries the
         // loopback bind address once the runtime is healthy ("healthy on
         // <host>:<port>"), and the conversation surface never shows a host, a port
         // or a command line. That detail belongs to Settings > Runtime and to the
         // diagnostics bundle, where a user goes looking for it.
-        AvailabilityBanner(
-            availability = availability,
-            rawDetail = raw,
-            extra = "",
-            onDismiss = if (state.error.isNotBlank()) onDismissBanner else null,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-        )
+        if (state.error.isNotBlank() || (turnError != null && !turnErrorShownByRow)) {
+            AvailabilityBanner(
+                availability = availability,
+                rawDetail = raw,
+                extra = "",
+                onDismiss = if (state.error.isNotBlank()) onDismissBanner else null,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            )
+        }
         return
     }
     val retry = state.retry

@@ -1036,6 +1036,14 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     fun loadFiles(relPath: String) {
         filesLoading = true
         filesError = ""
+        // v9.40 (owner, up-navigation "teleports, second tap works"): the
+        // displayed path only updated on a SUCCESSFUL load, so the up button
+        // computed its parent from the PREVIOUS directory whenever a load
+        // was still in flight (or two taps raced). The path now follows the
+        // request immediately - what the user tapped is what the next tap
+        // computes from - and rolls back when the listing genuinely failed.
+        val shownPath = filesPath
+        filesPath = relPath
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
@@ -1064,6 +1072,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 filesNodes = nodes
                 filesPath = relPath
             }.onFailure { t ->
+                filesPath = shownPath
                 filesError = context.getString(R.string.files_load_failed, t.message ?: t.javaClass.simpleName)
             }
             filesLoading = false
@@ -1750,7 +1759,17 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     availability = availability,
                     projectName = projectName,
                     githubProject = projectName in githubProjects,
-                    onSend = { text -> repository.sendPrompt(text) },
+                    onSend = { text ->
+                        // v9.40 (owner): "everything gets pushed to master" -
+                        // right before a prompt starts, re-park a GitHub
+                        // project's checkout on its project branch (cheap,
+                        // never-destructive no-op when it is already there),
+                        // so the model's commit+push lands on opencode/<project>.
+                        // The AGENTS.md block teaches the same rule for the
+                        // mid-turn case (never push the default branch).
+                        githubClone.ensureProjectBranch(projectDir)
+                        repository.sendPrompt(text)
+                    },
                     onDraftChange = { text -> repository.setDraft(text) },
                     onStop = { repository.abort() },
                     onRetry = { repository.retryLastTurn() },

@@ -41,7 +41,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -379,7 +386,15 @@ fun FilesScreen(
             ProjectTabs(current = ProjectTab.FILES, onSelect = onSelectTab)
         }
       }
-      if (showInfo && openFile == null) {
+      // v9.40 (owner): the sheet "suddenly appears without any animation -
+      // it should have a smooth entrance". Finite fade + rise, mirrored on
+      // the way out - the standing "no endless motion" rule holds (every
+      // spec here has an end; the gate clock can idle).
+      AnimatedVisibility(
+          visible = showInfo && openFile == null,
+          enter = fadeIn(tween(160)) + slideInVertically(tween(220)) { it / 3 },
+          exit = fadeOut(tween(130)) + slideOutVertically(tween(170)) { it / 3 },
+      ) {
         // v9.38 (owner): all the explanation, one tap away - where it was
         // always meant to be. The actions it carried (grant, move) live here
         // too; the dot on the path chip is what draws the eye to them.
@@ -608,7 +623,13 @@ private fun Listing(
             )
         }
 
+        // v9.40 (owner): "tap up, the app navigates back, but suddenly
+        // teleports to the previous position" - the list carried the OLD
+        // folder's scroll index into the new listing (and clamped at its
+        // end, which looked like a jump back). Fresh state per directory:
+        // every navigation starts at the top, no carry-over.
         LazyColumn(
+            state = remember(currentPath) { LazyListState() },
             contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 6.dp, bottom = 10.dp),
             modifier = Modifier
                 .fillMaxSize()
