@@ -1344,6 +1344,38 @@ class ChatUiGatesTest {
         val cSend = sendEnabled()
         shot("14-chat-provider-auth.png")
 
+        // v9.40 (owner): "when an error occurs the screen becomes too
+        // cluttered - a single error message directly below the user's
+        // message is sufficient". The same rejection rendered TWICE - once
+        // carried by the failed turn's own row, once as a session-level
+        // error - must produce ONE line, not a card plus a banner. Only an
+        // error no row shows (case above) earns the banner.
+        renderChat(
+            uiState(
+                sessionView(
+                    messages = listOf(
+                        message("msg_u1", "user", listOf(textPart("p0", "msg_u1", "hello"))),
+                        message(
+                            "msg_a1",
+                            "assistant",
+                            listOf(textPart("p1", "msg_a1", "")),
+                            error = authError,
+                        ),
+                    ),
+                    error = authError,
+                ),
+                serverReachable = true,
+                draft = "hello",
+            ),
+            availability = AgentAvailability.PROVIDER_AUTH,
+        )
+        rule.waitForIdle()
+        val c2Text = onScreenText()
+        val singleErrorLine = c2Text.contains("ProviderAuthError") &&
+            !c2Text.contains(context.getString(R.string.availability_provider_auth)) &&
+            !exists("availability_banner")
+        shot("14b-chat-error-single.png")
+
         // (d) still starting: not an error, and the composer says so
         renderChat(
             uiState(serverReachable = false, draft = "hello"),
@@ -1558,6 +1590,7 @@ class ChatUiGatesTest {
             noActionsWhileStreaming &&
             retryBanner && retryText && retryDetail && retryAction && undoAction && redoAction && acted &&
             copyAction && copyWired && likeAction && dislikeAction && turnErrorShown &&
+            singleErrorLine &&
             stoppedNote && noStoppedCard
         gate(
             "U5",
@@ -1566,7 +1599,8 @@ class ChatUiGatesTest {
                 "workingLabel=$workingLabel stopCallback=$stopped noActionsWhileStreaming=$noActionsWhileStreaming " +
                 "retryText=$retryText retryDetail=$retryDetail retryAction=$retryAction undoAction=$undoAction " +
                 "redoAction=$redoAction callbacks=$acted copy=$copyAction/$copyWired like=$likeAction " +
-                "dislike=$dislikeAction turnErrorKept=$turnErrorShown retryBanner=$retryBanner " +
+                "dislike=$dislikeAction turnErrorKept=$turnErrorShown singleError=$singleErrorLine " +
+                "retryBanner=$retryBanner " +
                 "stopped=$stoppedNote/noCard=$noStoppedCard",
         )
     }
