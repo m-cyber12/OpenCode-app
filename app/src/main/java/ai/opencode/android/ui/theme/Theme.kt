@@ -3,7 +3,9 @@ package ai.opencode.android.ui.theme
 import android.os.Build
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.LocalIndication
+import androidx.compose.material.ripple.LocalRippleTheme
+import androidx.compose.material.ripple.RippleAlpha
+import androidx.compose.material.ripple.RippleTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
@@ -264,46 +266,40 @@ fun OpenCodeTheme(
     CompositionLocalProvider(
         LocalCodePalette provides if (darkTheme) DarkCodePalette else LightCodePalette,
         LocalChatPalette provides if (darkTheme) DarkChatPalette else LightChatPalette,
-        // v9.41 (owner item 12): the press feedback is gone. On the dark glass
-        // the default bounded ripple flashed near-white behind a key tap a beat
-        // before anything happened - the owner's call, one of two options they
-        // offered, was "remove it entirely". A no-op indication does exactly
-        // that, app-wide, without touching any button's semantics or tags.
-        LocalIndication provides NoPressIndication,
     ) {
         MaterialTheme(
             colorScheme = scheme,
             typography = OpenCodeTypography,
             shapes = OpenCodeShapes,
-            content = content,
-        )
+        ) {
+            // v9.41 (owner item 12): the press feedback is gone. On the dark
+            // glass the default bounded ripple flashed near-white behind a key
+            // tap a beat before anything happened - the owner's chosen option
+            // was "remove it entirely". This pinned material3 hardcodes
+            // rememberRipple() per surface (there is no public LocalIndication
+            // at this version), but that ripple reads its color and alpha from
+            // [LocalRippleTheme] - and MaterialTheme itself installs that
+            // theme, so the override has to sit INSIDE MaterialTheme to win.
+            // A transparent color at zero alpha draws literally nothing, on
+            // every control, without touching a single call site, semantic, or
+            // test tag. Press feedback stays with the pressed/selected state
+            // colors each control already paints.
+            CompositionLocalProvider(LocalRippleTheme provides NoRippleTheme) {
+                content()
+            }
+        }
     }
 }
 
-/**
- * v9.41 (owner item 12): the app-wide "no ripple" indication. Implemented
- * against the public [Indication] contract (M3's own NoIndication is internal,
- * and depending on a private detail to switch ripples off would be fragile).
- * It draws nothing and reports nothing pending; press feedback stays with the
- * color/alpha states each control already keeps.
- */
-@OptIn(androidx.compose.runtime.ReadOnlyComposable::class)
-private object NoPressIndication : androidx.compose.material3.Indication {
-    private object QuietInstance : androidx.compose.material3.IndicationInstance {
-        override val isPending: androidx.compose.runtime.State<Boolean> =
-            androidx.compose.runtime.mutableStateOf(false)
-
-        @Composable
-        override fun Content() = Unit
-    }
+/** A [RippleTheme] whose layers are fully transparent - the app-wide "no ripple". */
+private object NoRippleTheme : RippleTheme {
+    @Composable
+    override fun defaultColor(): androidx.compose.ui.graphics.Color =
+        androidx.compose.ui.graphics.Color.Transparent
 
     @Composable
-    @androidx.compose.runtime.ReadOnlyComposable
-    override fun rememberUpdatedInstance(
-        interactionSource: androidx.compose.foundation.interaction.InteractionSource,
-    ): androidx.compose.material3.IndicationInstance = QuietInstance
+    override fun rippleAlpha(): RippleAlpha = RippleAlpha(0f, 0f, 0f, 0f)
 }
-
 
 /** Convenience accessor used by the chat components. */
 object ChatTheme {

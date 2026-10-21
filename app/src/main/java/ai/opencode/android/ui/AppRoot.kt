@@ -4,6 +4,8 @@ import ai.opencode.android.AppContainer
 import ai.opencode.android.R
 import ai.opencode.android.client.AgentAvailability
 import ai.opencode.android.github.GitClone
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import ai.opencode.android.ui.common.HiddenFromUser
 import ai.opencode.android.client.CustomProviderConfig
 import ai.opencode.android.client.OpenCodeApi
@@ -1285,7 +1287,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             suspend fun fetchAll(): Map<String, List<ProjectSession>> =
                 kotlinx.coroutines.coroutineScope {
                     projects.map { pr ->
-                        kotlinx.coroutines.async { pr.name to fetchFor(pr.name) }
+                        async { pr.name to fetchFor(pr.name) }
                     }.awaitAll().toMap()
                 }
             // "Empty while projects exist" right after a switch/boot is more

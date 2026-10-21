@@ -227,11 +227,14 @@ private fun SessionRow(
                 // the owner listed them). The per-action testTags moved INTO the
                 // menu items, so every existing driver keeps its anchors.
                 Box {
+                    // The semantics builder is NOT a composable context - the label
+                    // is read here, where composition is.
+                    val menuDesc = stringResource(R.string.sessions_actions, title)
                     IconButton(
                         onClick = { menuOpen = true },
                         modifier = Modifier.semantics {
                             testTag = "session_menu_${session.id}"
-                            contentDescription = stringResource(R.string.sessions_actions, title)
+                            contentDescription = menuDesc
                         },
                     ) {
                         Icon(

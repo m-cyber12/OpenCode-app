@@ -258,6 +258,11 @@ dependencies {
     // syntax highlighting are implemented in-repo (ui/markdown) so the dependency
     // list stays as small and as pinnable as Phase 5 left it.
     implementation("androidx.compose.material:material-icons-core")
+    // v9.41 (owner item 12): the pinned material3 hardcodes rememberRipple()
+    // per surface; the only public app-wide switch is LocalRippleTheme, which
+    // lives in this artifact. BOM-aligned like the two lines above - no new
+    // library, no version, the same one material3 already resolves.
+    implementation("androidx.compose.material:material-ripple")
     implementation("androidx.compose.foundation:foundation")
     // Phase 7: SAF document-tree traversal for project import/export. This is the
     // standard AndroidX wrapper over DocumentsContract — importing a folder the user

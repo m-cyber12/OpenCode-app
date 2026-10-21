@@ -640,6 +640,7 @@ private fun ModelsSection(
             )
         }
         if (free != null) {
+            val freeLabel = stringResource(R.string.chat_model_free_title)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -648,7 +649,7 @@ private fun ModelsSection(
                     .semantics {
                         testTag = "model_free_header"
                         role = Role.Button
-                        contentDescription = stringResource(R.string.chat_model_free_title)
+                        contentDescription = freeLabel
                     },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -1059,6 +1060,7 @@ private fun ModelList(
             }
             if (expandedFor == model.id && model.variants.isNotEmpty()) {
                 for ((vi, vid) in model.variants.withIndex()) {
+                    val lvlDesc = stringResource(R.string.chat_thinking_pick, vid)
                     Text(
                         text = vid,
                         style = MaterialTheme.typography.labelSmall,
@@ -1069,7 +1071,7 @@ private fun ModelList(
                             .padding(start = 36.dp, top = 5.dp, bottom = 5.dp, end = 12.dp)
                             .semantics {
                                 testTag = "${tagPrefix}_lvl_${provider.id}_${model.id}_$vi"
-                                contentDescription = stringResource(R.string.chat_thinking_pick, vid)
+                                contentDescription = lvlDesc
                             },
                     )
                 }

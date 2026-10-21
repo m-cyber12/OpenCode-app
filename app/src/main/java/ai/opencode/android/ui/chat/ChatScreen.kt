@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -1688,12 +1689,6 @@ private fun AttachGlyph(kind: AttachGlyphKind, modifier: Modifier = Modifier) {
         val w = size.width
         val h = size.height
         val stroke = 1.6.dp.toPx()
-        fun rrect(x0: Float, y0: Float, x1: Float, y1: Float, r: Float) =
-            androidx.compose.ui.geometry.RoundRect(
-                androidx.compose.ui.geometry.Offset(x0, y0),
-                androidx.compose.ui.geometry.Offset(x1, y1),
-                r, r,
-            )
         when (kind) {
             AttachGlyphKind.Camera -> {
                 drawRoundRect(tint, topLeft = androidx.compose.ui.geometry.Offset(1f, h * 0.30f),
@@ -1702,11 +1697,14 @@ private fun AttachGlyph(kind: AttachGlyphKind, modifier: Modifier = Modifier) {
                     style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
                 // the little viewfinder bump
                 drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.34f, h * 0.30f),
-                    androidx.compose.ui.geometry.Offset(w * 0.34f, h * 0.16f), stroke)
+                    androidx.compose.ui.geometry.Offset(w * 0.34f, h * 0.16f),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
                 drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.34f, h * 0.16f),
-                    androidx.compose.ui.geometry.Offset(w * 0.62f, h * 0.16f), stroke)
+                    androidx.compose.ui.geometry.Offset(w * 0.62f, h * 0.16f),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
                 drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.62f, h * 0.16f),
-                    androidx.compose.ui.geometry.Offset(w * 0.62f, h * 0.30f), stroke)
+                    androidx.compose.ui.geometry.Offset(w * 0.62f, h * 0.30f),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
                 drawCircle(tint, radius = w * 0.16f,
                     center = androidx.compose.ui.geometry.Offset(w * 0.5f, h * 0.58f),
                     style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
@@ -1745,9 +1743,11 @@ private fun AttachGlyph(kind: AttachGlyphKind, modifier: Modifier = Modifier) {
                 }
                 drawPath(corner, tint, style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
                 drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.22f, h * 0.55f),
-                    androidx.compose.ui.geometry.Offset(w * 0.72f, h * 0.55f), stroke)
+                    androidx.compose.ui.geometry.Offset(w * 0.72f, h * 0.55f),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
                 drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.22f, h * 0.74f),
-                    androidx.compose.ui.geometry.Offset(w * 0.60f, h * 0.74f), stroke)
+                    androidx.compose.ui.geometry.Offset(w * 0.60f, h * 0.74f),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
             }
         }
     }
