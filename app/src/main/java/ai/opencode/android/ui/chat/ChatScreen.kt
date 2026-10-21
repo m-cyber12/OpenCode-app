@@ -1697,14 +1697,11 @@ private fun AttachGlyph(kind: AttachGlyphKind, modifier: Modifier = Modifier) {
                     style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
                 // the little viewfinder bump
                 drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.34f, h * 0.30f),
-                    androidx.compose.ui.geometry.Offset(w * 0.34f, h * 0.16f),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
+                    androidx.compose.ui.geometry.Offset(w * 0.34f, h * 0.16f), strokeWidth = stroke)
                 drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.34f, h * 0.16f),
-                    androidx.compose.ui.geometry.Offset(w * 0.62f, h * 0.16f),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
+                    androidx.compose.ui.geometry.Offset(w * 0.62f, h * 0.16f), strokeWidth = stroke)
                 drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.62f, h * 0.16f),
-                    androidx.compose.ui.geometry.Offset(w * 0.62f, h * 0.30f),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
+                    androidx.compose.ui.geometry.Offset(w * 0.62f, h * 0.30f), strokeWidth = stroke)
                 drawCircle(tint, radius = w * 0.16f,
                     center = androidx.compose.ui.geometry.Offset(w * 0.5f, h * 0.58f),
                     style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
@@ -1743,11 +1740,9 @@ private fun AttachGlyph(kind: AttachGlyphKind, modifier: Modifier = Modifier) {
                 }
                 drawPath(corner, tint, style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
                 drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.22f, h * 0.55f),
-                    androidx.compose.ui.geometry.Offset(w * 0.72f, h * 0.55f),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
+                    androidx.compose.ui.geometry.Offset(w * 0.72f, h * 0.55f), strokeWidth = stroke)
                 drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.22f, h * 0.74f),
-                    androidx.compose.ui.geometry.Offset(w * 0.60f, h * 0.74f),
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
+                    androidx.compose.ui.geometry.Offset(w * 0.60f, h * 0.74f), strokeWidth = stroke)
             }
         }
     }
