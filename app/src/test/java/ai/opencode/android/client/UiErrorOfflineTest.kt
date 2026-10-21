@@ -241,8 +241,11 @@ class UiErrorOfflineTest {
     fun onlyLocalFailureStatesDisableSending() {
         // Provider problems keep the composer enabled: the app is fine and the
         // fixed key / restored network is the way out.
+        // v9.41 (owner item 6): STARTING moved to the allowed side - a send
+        // made while the agent boots is QUEUED by the app and fires the moment
+        // the server answers, so there is no reason to lock the field; the
+        // chat says "waiting" instead of refusing the tap.
         for (blocking in listOf(
-            AgentAvailability.RUNTIME_STARTING,
             AgentAvailability.RUNTIME_UNAVAILABLE,
             AgentAvailability.SERVER_UNREACHABLE,
             AgentAvailability.SERVER_AUTH,
@@ -250,6 +253,7 @@ class UiErrorOfflineTest {
             org.junit.Assert.assertFalse("$blocking must block sending", UiError.canSend(blocking))
         }
         for (allowed in listOf(
+            AgentAvailability.RUNTIME_STARTING,
             AgentAvailability.READY,
             AgentAvailability.REQUEST_REJECTED,
             AgentAvailability.PROVIDER_UNREACHABLE,
