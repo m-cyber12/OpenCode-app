@@ -250,13 +250,24 @@ for line in main_src.splitlines():
         for lit in re.findall(r'"([^"]+)"', line):
             if not lit.startswith("${"):
                 tag_templates.append(lit)
-# Templates may interpolate: "provider_connect_${provider.id}" -> prefix "provider_connect_"
+# v9.41: tag material also flows through NAMED parameters the screens apply
+# to the semantics testTag directly (SectionCard's `headerTag`, SessionList's
+# `listTag`, ModelLineRow's `rowTag`). Recognition only - the tag is still
+# real main-source material wired into a testTag assignment.
+for line in main_src.splitlines():
+    for lit in re.findall(r'\b\w*[Tt]ag\b[^"=]*=\s*"([^"]+)"', line):
+        tag_templates.append(lit)
+# Templates may interpolate: "provider_connect_${provider.id}" and the braceless
+# Kotlin form "model_pick_$index" both yield the prefix "provider_connect_".
 template_re = re.compile(r"[^$]*")
 prefixes = []
 for tmpl in tag_templates:
-    templ_re = "^" + re.escape(tmpl).replace(r"\$\{[^}]*\}", ".*") + "$"
-    prefixes.append(re.compile(templ_re))
-    cut = tmpl.find("${")
+    escaped = re.escape(tmpl)
+    escaped = re.sub(r"\\$\{[^}]*\}", ".*", escaped)
+    escaped = re.sub(r"\\$[A-Za-z_]\w*", ".*", escaped)
+    prefixes.append(re.compile("^" + escaped + "$"))
+    m = re.search(r"\$[A-Za-z_{]", tmpl)
+    cut = m.start() if m else -1
     if cut > 0:
         prefixes.append(re.compile("^" + re.escape(tmpl[:cut])))
 

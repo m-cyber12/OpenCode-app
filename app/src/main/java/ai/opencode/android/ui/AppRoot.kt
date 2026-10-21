@@ -1987,9 +1987,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                             // Failures never block the send - the prompt
                             // proceeds against what is on disk (the state
                             // carries the error line for the projects notice).
-                            val meta = ai.opencode.android.github.GithubProjectMeta.read(context, projectName)
-                            val isGithub = meta != null ||
-                                withContext(Dispatchers.IO) { ai.opencode.android.github.GitSync.isGithubProject(projectDir) }
+                            val isGithub = withContext(Dispatchers.IO) {
+                                ai.opencode.android.github.GithubProjectMeta.has(context, projectName) ||
+                                    ai.opencode.android.github.GitSync.isGithubProject(projectDir)
+                            }
                             if (isGithub) {
                                 repoSyncing = true
                                 runCatching {

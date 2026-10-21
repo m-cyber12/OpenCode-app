@@ -20,7 +20,8 @@ import org.json.JSONObject
  */
 object GithubProjectMeta {
 
-    data class Meta(val repo: String, val webUrl: String)
+    /** The repository the project was created around: "owner/name". */
+    data class Meta(val repo: String)
 
     private fun fileFor(context: Context, project: String): File? {
         if (project.isEmpty()) return null
@@ -33,12 +34,7 @@ object GithubProjectMeta {
         runCatching {
             val f = fileFor(context, project) ?: return
             f.parentFile?.mkdirs()
-            f.writeText(
-                JSONObject()
-                    .put("repo", repo)
-                    .put("webUrl", "https://github.com/$repo")
-                    .toString(),
-            )
+            f.writeText(JSONObject().put("repo", repo).toString())
         }
     }
 
@@ -47,7 +43,7 @@ object GithubProjectMeta {
         if (!f.isFile) return null
         val o = JSONObject(f.readText())
         val repo = o.optString("repo")
-        if (repo.isEmpty()) null else Meta(repo, o.optString("webUrl", "https://github.com/$repo"))
+        if (repo.isEmpty()) null else Meta(repo)
     }.getOrNull()
 
     fun has(context: Context, project: String): Boolean = read(context, project) != null

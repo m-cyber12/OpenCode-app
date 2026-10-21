@@ -1640,7 +1640,7 @@ private fun DrawerAction(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(icon, contentDescription = null, tint = chat.muted, modifier = Modifier.size(18.dp))
+            Icon(icon, contentDescription = null, tint = chat.muted, modifier = Modifier.size(18.dp).clearAndSetSemantics { })
             Spacer(Modifier.width(10.dp))
             Text(label, style = MaterialTheme.typography.labelLarge)
         }

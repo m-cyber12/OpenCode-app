@@ -156,7 +156,7 @@ fun ModelQuickSwitch(
                 val currentKey = ModelRefCodec.encode(current)
                 val variantSuffix = activeVariant.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
                 Text(
-                    text = "$currentText$variantSuffix",
+                    text = currentText + variantSuffix,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
@@ -268,7 +268,7 @@ fun ModelQuickSwitch(
                             open = false
                             onPickWithVariant(pid, mid, v)
                         },
-                        rowTag = "model_pick_$index",
+                        rowTag = "model_pick_${index}",
                         levelTagPrefix = "star_vt_$index",
                         current = current,
                     )
@@ -281,7 +281,7 @@ fun ModelQuickSwitch(
                             imageVector = Icons.Filled.Star,
                             contentDescription = null,
                             tint = chat.muted.copy(alpha = 0.7f),
-                            modifier = Modifier.size(15.dp),
+                            modifier = Modifier.size(15.dp).clearAndSetSemantics { },
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.chat_model_open_settings))
