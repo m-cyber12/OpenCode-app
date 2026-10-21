@@ -728,6 +728,12 @@ class OpenCodeApi(
     }
 
     companion object {
+        /**
+         * v9.41 (owner item 23): the bundled provider whose models are free.
+         * It pins the top of the Providers card with a "Free" pill and owns
+         * the "Free Models" group in the Models card and the quick switch.
+         */
+        const val ZEN_PROVIDER_ID = "opencode"
         /** Routes that must NOT carry a directory (instance resolution). */
         private val GLOBAL_PATHS = setOf("/global/health", "/global/dispose", "/global/config", "/global/event")
 

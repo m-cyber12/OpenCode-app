@@ -54,7 +54,8 @@ import androidx.compose.ui.unit.dp
 fun TerminalScreen(
     projectName: String,
     commands: List<WorkLog.Command>,
-    onBack: () -> Unit,
+    /** v9.41 (owner item 17): tab page - no navigation button. */
+    onBack: (() -> Unit)?,
     onSelectTab: (ProjectTab) -> Unit,
     modifier: Modifier = Modifier,
     /**
@@ -68,7 +69,7 @@ fun TerminalScreen(
         AppTopBar(
             title = stringResource(R.string.terminal_title),
             subtitle = projectName,
-            onBack = onBack,
+            onBack = null,
         )
         if (runtimeLog.isNotEmpty()) {
             RuntimeLogSection(runtimeLog)

@@ -53,6 +53,12 @@ class OpenCodeRepository(
     // v6.1: the app-side multi-key ring (upstream auth.json holds ONE credential
     // per provider, so several keys live here; the active one is pushed upstream).
     private val keyring: ai.opencode.android.security.ProviderKeyring? = null,
+    /**
+     * v9.41 (owner item 7): the last successful provider snapshot, on disk.
+     * A fresh process starts from yesterday's catalog instead of an empty
+     * "loading models" surface, then swaps in the server's answer silently.
+     */
+    private val providersDisk: ProviderSnapshotDisk? = null,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) {
 
@@ -144,6 +150,12 @@ class OpenCodeRepository(
     private val _state = MutableStateFlow(UiState())
     /** v9.40: last successful provider snapshot - seeds the next refresh instantly. */
     private var providersCache: OpenCodeApi.ProviderSnapshot? = null
+
+    init {
+        // v9.41 (owner item 7): a rebuilt repository (new project, restart) is
+        // still the same app - the catalog on disk is its first frame.
+        providersCache = runCatching { providersDisk?.load() }.getOrNull() ?: providersCache
+    }
     val state: StateFlow<UiState> = _state.asStateFlow()
 
     private val stream = OpenCodeEventStream(
@@ -300,6 +312,9 @@ class OpenCodeRepository(
                 launch {
                     runCatching { api.providers() }.onSuccess { p ->
                         providersCache = p
+                        // v9.41 (owner item 7): through to disk (cheap; a
+                        // failure here never affects the live state).
+                        runCatching { providersDisk?.save(p) }
                         // OpenCode's own `default` map (providerID -> modelID);
                         // used as the model hint, never invented by the client.
                         // When this client instance has no choice in memory yet

@@ -141,7 +141,10 @@ class UiErrorTest {
 
     @Test
     fun sendingIsBlockedOnlyByTheLocalAgent() {
-        assertFalse(UiError.canSend(AgentAvailability.RUNTIME_STARTING))
+        // v9.41 (owner item 6): while the agent starts the composer STAYS
+        // OPEN - a send made now is queued by the app and goes out when the
+        // server is ready. Locked composer only for genuinely broken states.
+        assertTrue(UiError.canSend(AgentAvailability.RUNTIME_STARTING))
         assertFalse(UiError.canSend(AgentAvailability.RUNTIME_UNAVAILABLE))
         assertFalse(UiError.canSend(AgentAvailability.SERVER_UNREACHABLE))
         assertFalse(UiError.canSend(AgentAvailability.SERVER_AUTH))

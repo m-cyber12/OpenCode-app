@@ -521,7 +521,10 @@ private fun PartRow(part: Transcript.Part, streaming: Boolean) {
 
         "reasoning" -> ReasoningBlock(part)
 
-        "tool" -> ToolCard(part)
+        // v9.41 (owner item 19): the row knows whether its message
+        // is still streaming - a tool that has not flipped to "running"
+        // yet must NOT read "Queued" while the agent is visibly mid-call.
+        "tool" -> ToolCard(part, streaming = streaming)
 
         "file" -> AttachmentChip(
             filename = part.filename.ifEmpty { part.url.substringAfterLast('/') },
@@ -646,7 +649,12 @@ private fun RetryRow(part: Transcript.Part) {
  * additions/deletions counts, exit code, truncation flag and saved-output path.
  */
 @Composable
-fun ToolCard(part: Transcript.Part, modifier: Modifier = Modifier) {
+fun ToolCard(
+    part: Transcript.Part,
+    modifier: Modifier = Modifier,
+    /** v9.41 (owner item 19): the owning message is still streaming. */
+    streaming: Boolean = false,
+) {
     val chat = ChatTheme.chat
     val meta = remember(part.metadata) { ToolMetaParser.parse(part.metadata) }
     var expanded by rememberSaveable(part.id) { mutableStateOf(part.status == "error") }
@@ -657,7 +665,7 @@ fun ToolCard(part: Transcript.Part, modifier: Modifier = Modifier) {
         else -> chat.muted
     }
     val output = meta.output.ifBlank { part.output }
-    val statusLabel = toolStatusLabel(part.status)
+    val statusLabel = toolStatusLabel(part.status, streaming)
     val toggleLabel = stringResource(
         if (expanded) R.string.chat_tool_collapse else R.string.chat_tool_expand,
     )
@@ -1386,12 +1394,18 @@ private fun <T> List<T>.setAt(index: Int, value: T): List<T> =
     mapIndexed { i, v -> if (i == index) value else v }
 
 @Composable
-private fun toolStatusLabel(status: String): String = stringResource(
+private fun toolStatusLabel(status: String, streaming: Boolean = false): String = stringResource(
     when (status) {
         "completed" -> R.string.chat_tool_status_completed
         "error" -> R.string.chat_tool_status_error
         "running" -> R.string.chat_tool_status_running
-        else -> R.string.chat_tool_status_pending
+        // v9.41 (owner item 19): "Queued" the whole time, then a jump to
+        // "Done", was the old read. Upstream keeps a tool part in "pending"
+        // for some writes even while it executes, so a pending row inside a
+        // STILL-STREAMING message honestly says "Doing"; only rows outside an
+        // active turn (genuinely waiting, or a finished turn's leftovers) say
+        // "Queued".
+        else -> if (streaming) R.string.chat_tool_status_running else R.string.chat_tool_status_pending
     },
 )
 

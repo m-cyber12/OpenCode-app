@@ -3,6 +3,8 @@ package ai.opencode.android.ui
 import ai.opencode.android.AppContainer
 import ai.opencode.android.R
 import ai.opencode.android.client.AgentAvailability
+import ai.opencode.android.github.GitClone
+import ai.opencode.android.ui.common.HiddenFromUser
 import ai.opencode.android.client.CustomProviderConfig
 import ai.opencode.android.client.OpenCodeApi
 import ai.opencode.android.client.OpenCodeRepository
@@ -165,11 +167,37 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val runtimeState by runtime.state.collectAsState()
     val summary = remember(runtimeState) { runtimeState.toSummary() }
 
-    var route by rememberSaveable { mutableStateOf(ROUTE_WELCOME) }
-    // Dark is the product's designed look (the reference direction is a dark,
-    // warm-gold surface); SYSTEM and LIGHT stay available in Settings.
-    var themeName by rememberSaveable { mutableStateOf(ThemeChoice.DARK.name) }
-    var dynamicColor by rememberSaveable { mutableStateOf(false) }
+    // v9.41 (owner item 6): the boot does not wait behind a splash any more.
+    // Once the workspace is confirmed and a project exists, the FIRST frame is
+    // the chat; the runtime status lives inside it (gold while starting). The
+    // welcome screen stays exactly where setup is genuinely unfinished.
+    var route by rememberSaveable {
+        mutableStateOf(
+            if (ai.opencode.android.runtime.StorageChoice.workspaceConfirmed(context) &&
+                store.activeName().isNotEmpty()
+            ) ROUTE_CHAT else ROUTE_WELCOME
+        )
+    }
+    // v9.41 (owner item 1): the theme was `rememberSaveable` only - it survived
+    // rotation but a process death reset the app to dark, and the DEFAULT was
+    // dark too. It is a user choice now: persisted in the app's own prefs file
+    // (the one the preview-port map already uses), defaulting to SYSTEM.
+    val uiPrefs = remember(context) {
+        context.getSharedPreferences("opencode", android.content.Context.MODE_PRIVATE)
+    }
+    var themeName by remember {
+        mutableStateOf(uiPrefs.getString("theme", ThemeChoice.SYSTEM.name) ?: ThemeChoice.SYSTEM.name)
+    }
+    var dynamicColor by remember {
+        mutableStateOf(uiPrefs.getBoolean("dynamic_color", false))
+    }
+    // v9.41 (owner item 20): the empty-chat subtitle belongs to the FIRST
+    // launch after install; afterwards it returns rarely (one day in thirteen,
+    // a stable rule, not dice-rolled per view). The flag flips on first send.
+    val emptyChatFirstLaunch = remember { !uiPrefs.getBoolean("empty_chat_launch_seen", false) }
+    fun markEmptyChatSeen() {
+        if (emptyChatFirstLaunch) uiPrefs.edit().putBoolean("empty_chat_launch_seen", true).apply()
+    }
     var projectName by rememberSaveable { mutableStateOf(store.activeName()) }
     var projects by remember { mutableStateOf(emptyList<Project>()) }
     // v9.30 (owner): GitHub projects must LOOK different on the projects page.
@@ -179,7 +207,13 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     var githubProjects by remember { mutableStateOf(emptySet<String>()) }
     LaunchedEffect(projects, githubCloneState.phase) {
         githubProjects = withContext(Dispatchers.IO) {
-            projects.filter { ai.opencode.android.github.GitSync.isGithubProject(it.dir) }
+            // v9.41 (owner item 3): a GitHub project is recognized BEFORE the
+            // clone exists - the creation-time marker counts just like the
+            // origin URL does afterwards, so the mark appears instantly.
+            projects.filter {
+                ai.opencode.android.github.GitSync.isGithubProject(it.dir) ||
+                    ai.opencode.android.github.GithubProjectMeta.has(context, it.name)
+            }
                 .map { it.name }
                 .toSet()
         }
@@ -193,7 +227,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     var knownWorkspaces by remember { mutableStateOf(emptyList<KnownWorkspace>()) }
     var sessionsTick by remember { mutableStateOf(0) }
 
-    val theme = runCatching { ThemeChoice.valueOf(themeName) }.getOrDefault(ThemeChoice.DARK)
+    val theme = runCatching { ThemeChoice.valueOf(themeName) }.getOrDefault(ThemeChoice.SYSTEM)
     val dark = when (theme) {
         ThemeChoice.DARK -> true
         ThemeChoice.LIGHT -> false
@@ -329,7 +363,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         githubClone.ensureProjectBranch(projectDir)
         if (projectName.isNotEmpty() && summary.ready) {
             val want = withContext(Dispatchers.IO) {
-                val isGit = ai.opencode.android.github.GitSync.isGithubProject(projectDir)
+                // v9.41 (owner item 3): a GitHub project that is not cloned
+                // yet is still a GitHub project - the token env must be wired
+                // for the very first prompt, which is the one that CLONES.
+                val isGit = ai.opencode.android.github.GitSync.isGithubProject(projectDir) ||
+                    ai.opencode.android.github.GithubProjectMeta.has(context, projectName)
                 if (isGit) projectDir?.let {
                     // v9.38 (owner): "in a GitHub project the model should not
                     // need to be told to use GitHub" - the push-after-every-
@@ -1037,35 +1075,47 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         filesLoading = true
         filesError = ""
         // v9.40 (owner, up-navigation "teleports, second tap works"): the
-        // displayed path only updated on a SUCCESSFUL load, so the up button
-        // computed its parent from the PREVIOUS directory whenever a load
-        // was still in flight (or two taps raced). The path now follows the
-        // request immediately - what the user tapped is what the next tap
-        // computes from - and rolls back when the listing genuinely failed.
+        // displayed path follows the REQUEST immediately (what the user tapped
+        // is what the next tap computes from) and rolls back only on a genuine
+        // failure. v9.41 (owner items 5+14): the listing itself no longer goes
+        // THROUGH THE SERVER at all. The old path made a directory read wait
+        // on the agent's HTTP port - "Failed to connect to /127.0.0.1:4111"
+        // as a red error, late listings on slow boots, up-navigation reading as
+        // broken - for what is a single local syscall. The Files page is disk,
+        // and it is fast now, and the agent's state cannot make it fail.
         val shownPath = filesPath
         filesPath = relPath
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
-                    val root = projectDir
-                    repository.api.fileList(relPath).map { entry ->
-                        val isDir = entry.type == "directory"
-                        // v9.38 (owner): the listing became a real file
-                        // manager - a row that looks like a file manager row
-                        // needs the file manager's facts, and they ride the
-                        // same IO tick (one length()/lastModified() per row).
-                        val f = if (root != null) File(root, entry.path) else null
-                        FileNode(
-                            name = entry.path.substringAfterLast('/').ifEmpty { entry.path },
-                            path = entry.path,
-                            isDirectory = isDir,
-                            bytes = if (isDir) -1L else runCatching { f?.length() ?: -1L }.getOrDefault(-1L),
-                            modifiedMs = runCatching { f?.lastModified() ?: 0L }.getOrDefault(0L),
+                    val root = projectDir ?: error("no project open")
+                    val dir = if (relPath.isEmpty()) root else File(root, relPath)
+                    val rootCanon = root.canonicalPath
+                    val canon = dir.canonicalPath
+                    require(canon == rootCanon || canon.startsWith(rootCanon + File.separator)) {
+                        "outside the project"
+                    }
+                    if (!dir.isDirectory) emptyList()
+                    else (dir.listFiles()?.asSequence() ?: emptySequence())
+                        // v9.41 (owner item 4): the machinery stays invisible -
+                        // dot-entries (.git, .opencode, caches) and the
+                        // app-maintained root AGENTS.md are not user files.
+                        .filter { f -> !HiddenFromUser.isListingHidden(f.name) }
+                        .map { f ->
+                            val isDir = f.isDirectory
+                            FileNode(
+                                name = f.name,
+                                path = if (relPath.isEmpty()) f.name else "$relPath/${f.name}",
+                                isDirectory = isDir,
+                                bytes = if (isDir) -1L else f.length(),
+                                modifiedMs = f.lastModified(),
+                            )
+                        }
+                        .sortedWith(
+                            compareByDescending<FileNode> { it.isDirectory }
+                                .thenBy { it.name.lowercase() },
                         )
-                    }.sortedWith(
-                        compareByDescending<FileNode> { it.isDirectory }
-                            .thenBy { it.name.lowercase() },
-                    )
+                        .toList()
                 }
             }
             result.onSuccess { nodes ->
@@ -1080,20 +1130,30 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     }
 
     fun openProjectFile(relPath: String) {
+        // v9.41 (owner items 5+14): direct disk read, same reasoning as the
+        // listing - a file preview must never depend on the agent's port.
         if (projectDir == null) return
         scope.launch {
             val result = withContext(Dispatchers.IO) {
-                runCatching { repository.api.fileContent(relPath) }
+                runCatching {
+                    val f = File(projectDir, relPath)
+                    if (!f.isFile) error("not a file")
+                    val cap = FILE_VIEW_LIMIT.toLong() * 4L
+                    val bytes = f.inputStream().use { ins ->
+                        ins.readNBytes(if (f.length() > cap) cap.toInt() else Integer.MAX_VALUE)
+                    }
+                    Triple(f, bytes, f.length() > bytes.size.toLong())
+                }
             }
-            result.onSuccess { body ->
-                val truncated = body.length > FILE_VIEW_LIMIT
-                val shown = if (truncated) body.take(FILE_VIEW_LIMIT) else body
+            result.onSuccess { (f, bytes, truncated) ->
+                val binary = bytes.any { it == 0.toByte() }
+                val shown = String(bytes, Charsets.UTF_8)
                 openFile = OpenFile(
                     path = relPath,
                     name = relPath.substringAfterLast('/'),
-                    text = shown,
-                    bytes = File(projectDir, relPath).length(),
-                    binary = shown.contains('\u0000'),
+                    text = if (binary) "" else shown,
+                    bytes = f.length(),
+                    binary = binary,
                     truncated = truncated,
                 )
             }.onFailure { t ->
@@ -1102,12 +1162,48 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         }
     }
 
+    val stageAttach: (android.net.Uri) -> Unit = { uri ->
+        scope.launch {
+            val staged = withContext(Dispatchers.IO) { AttachmentStager.stage(context, uri) }
+            if (staged != null) repository.attach(staged)
+        }
+    }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) {
-            scope.launch {
-                val staged = withContext(Dispatchers.IO) { AttachmentStager.stage(context, uri) }
-                if (staged != null) repository.attach(staged)
-            }
+        if (uri != null) stageAttach(uri)
+    }
+    // v9.41 (owner item 16): the `+` menu's other two doors. Pictures opens a
+    // MIME-filtered document picker (images only). Camera captures to a real
+    // JPEG in the app's own files dir through the EXISTING FileProvider
+    // (files-path covers it: no new permission, no new provider entry) and
+    // stages the result through the same AttachmentStager the picker uses.
+    val picturesPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) stageAttach(uri)
+    }
+    var pendingCaptureUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var pendingCaptureFile by remember { mutableStateOf<File?>(null) }
+    val cameraCapture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+        val uri = pendingCaptureUri
+        val file = pendingCaptureFile
+        pendingCaptureUri = null
+        if (ok && uri != null && file != null && file.isFile && file.length() > 0L) {
+            stageAttach(uri)
+        }
+        runCatching { file?.delete() }
+    }
+    fun launchCameraCapture() {
+        val dir = File(context.filesDir, "captures").apply { mkdirs() }
+        val file = File(dir, "capture-${System.currentTimeMillis()}.jpg")
+        val uri = runCatching {
+            androidx.core.content.FileProvider.getUriForFile(
+                context, "${context.packageName}.fileprovider", file,
+            )
+        }.getOrNull()
+        if (uri == null) {
+            storageMessage = context.getString(R.string.chat_camera_unavailable)
+        } else {
+            pendingCaptureUri = uri
+            pendingCaptureFile = file
+            cameraCapture.launch(uri)
         }
     }
 
@@ -1127,10 +1223,37 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         storage = withContext(Dispatchers.IO) { storageController.snapshot() }
     }
 
+    // v9.41 (owner item 6): a prompt sent while the agent is still starting is
+    // QUEUED - never dropped, never fired at a dead port - and goes out by
+    // itself the moment the server is up. (The owner's exact requirement: the
+    // user can type and send; anything that needs the agent waits.)
+    var pendingSend by remember { mutableStateOf<String?>(null) }
+    // v9.41 (owner item 3): the GitHub clone/refresh that runs right before a
+    // prompt rides this flag so the chat can say what it is waiting on.
+    var repoSyncing by remember { mutableStateOf(false) }
+    // v9.41 (owner item 13): "owner/name · branch" for the sandbox header,
+    // read off the disk (marker and/or origin) when the page opens - it costs
+    // one tiny IO tick and never waits on the agent.
+    var filesRepoLabel by remember { mutableStateOf("") }
+    val sendWaitLabel = when {
+        repoSyncing -> stringResource(R.string.chat_wait_repo)
+        pendingSend != null -> stringResource(R.string.chat_wait_boot)
+        else -> ""
+    }
+
     // The stream is the only source of live progress; it starts once the supervisor
     // says the server is healthy and is re-asserted when the project changes.
     LaunchedEffect(summary.ready, repository) {
         if (summary.ready) repository.startStream()
+    }
+    // v9.41 (owner item 6): the queue drains itself the moment the server is
+    // up - the same pre-prompt rules apply (branch first, then the send).
+    LaunchedEffect(summary.ready) {
+        val t = pendingSend ?: return@LaunchedEffect
+        if (!summary.ready) return@LaunchedEffect
+        pendingSend = null
+        githubClone.ensureProjectBranch(projectDir)
+        repository.sendPrompt(t)
     }
     // v8 fix round (owner's issue 1): the workspace root is a key on purpose.
     // A switch that does not recreate the Activity used to leave this effect
@@ -1140,36 +1263,46 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         if (summary.ready) repository.refresh()
         if (route == ROUTE_PROJECTS) {
             projects = withContext(Dispatchers.IO) { store.projects() }
-            // Per-project conversation lists come from the server's own session
-            // list grouped by directory - the same scoping the session panel uses.
-            // The full (grouped) map feeds the expandable rows; the counts map
-            // feeds the row's count pill.
+            // v9.41 (owner item 8): per-project lists are fetched PER DIRECTORY.
+            // The old single unscoped call was grouped client-side afterwards -
+            // but upstream scopes `GET /session` to the request's own directory,
+            // so the map only ever held the ACTIVE project's rows: everything
+            // else read empty, or briefly showed the previous root's rows before
+            // the refetch erased them ("appears for a second, then gone"). The
+            // explicit `directory=` parameter is upstream's own filter; each
+            // project asks for its own list, all in parallel.
             val rootPath = container.workspacesRoot().absolutePath
-            suspend fun fetchGrouped() = withContext(Dispatchers.IO) {
-                runCatching { repository.api.listSessions(limit = 500) }
-                    .getOrDefault(emptyList())
-                    .groupBy { it.directory }
+            suspend fun fetchFor(name: String): List<ProjectSession> = withContext(Dispatchers.IO) {
+                runCatching {
+                    repository.api.listSessions(
+                        limit = 200,
+                        directory = java.io.File(rootPath, name).absolutePath,
+                    )
+                }.getOrDefault(emptyList())
+                    .map { ProjectSession(it.id, it.title, it.updatedAt) }
+                    .sortedByDescending { it.updatedAtMs }
             }
-            var grouped = fetchGrouped()
-            // Right after a workspace switch the recreated Activity runs this
-            // effect exactly once, and the server can still be settling on the
-            // new root at that moment: an empty answer while projects exist on
-            // disk is more likely "too early" than "no conversations". Three
-            // finite retries, one second apart - then the empty answer stands.
+            suspend fun fetchAll(): Map<String, List<ProjectSession>> =
+                kotlinx.coroutines.coroutineScope {
+                    projects.map { pr ->
+                        kotlinx.coroutines.async { pr.name to fetchFor(pr.name) }
+                    }.awaitAll().toMap()
+                }
+            // "Empty while projects exist" right after a switch/boot is more
+            // likely "too early" than "no conversations" - two finite passes,
+            // then the empty answer stands (and it is never an error, only the
+            // quiet state the owner can refresh by returning).
+            var fetched = fetchAll()
             var retries = 0
-            while (grouped.isEmpty() && projects.isNotEmpty() && retries < 3) {
-                kotlinx.coroutines.delay(1_000)
+            while (fetched.values.all { it.isEmpty() } && projects.isNotEmpty() &&
+                summary.ready && retries < 2
+            ) {
+                kotlinx.coroutines.delay(1_200)
                 retries++
-                grouped = fetchGrouped()
+                fetched = fetchAll()
             }
-            sessionsByProject = projects.mapNotNull { pr ->
-                val list = grouped[java.io.File(rootPath, pr.name).absolutePath]
-                    ?.map { ProjectSession(it.id, it.title, it.updatedAt) }
-                    ?.sortedByDescending { it.updatedAtMs }
-                    ?: return@mapNotNull null
-                pr.name to list
-            }.toMap()
-            sessionCounts = sessionsByProject.mapValues { it.value.size }
+            sessionsByProject = fetched.filterValues { it.isNotEmpty() }
+            sessionCounts = projects.associate { it.name to (fetched[it.name]?.size ?: 0) }
             // The switch-party: the current root plus the remembered ones that are
             // still live folders, each with its project count read off the disk.
             val currentRoot = container.workspacesRoot()
@@ -1195,6 +1328,23 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         if (route == ROUTE_WORKSPACE || route == ROUTE_FILES) {
             // Reset the viewer on entry so the screen always opens on the listing.
             openFile = null
+            if (route == ROUTE_FILES) {
+                filesRepoLabel = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val dir = projectDir
+                        val meta = ai.opencode.android.github.GithubProjectMeta.read(context, projectName)
+                        val isGit = meta != null || ai.opencode.android.github.GitSync.isGithubProject(dir)
+                        if (!isGit) ""
+                        else {
+                            val repo = ai.opencode.android.github.GitSync.originRepo(dir)
+                                .ifEmpty { meta?.repo ?: "" }
+                            val branch = ai.opencode.android.github.GitSync.currentBranch(dir)
+                                .ifEmpty { GitClone.projectBranch(projectName) }
+                            listOf(repo, branch).filter { it.isNotBlank() }.joinToString(" · ")
+                        }
+                    }.getOrDefault("")
+                }
+            }
             // The first-run step prints the folder the app would use, so it has to
             // be read from the platform (a grant made a moment ago counts) - and the
             // persisted answer to "did the workspace step already run" is re-read
@@ -1221,11 +1371,19 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             }
         }
     }
-    // First-run advance: leave WELCOME only when the agent is actually up. Where it
-    // goes depends on whether a project exists - never on a timer.
-    LaunchedEffect(summary.ready, projectName) {
-        if (route == ROUTE_WELCOME && summary.ready) {
-            route = firstRunDestination(projectName, workspaceConfirmed)
+    // First-run advance. v9.41 (owner item 6): WELCOME used to be a GATE -
+    // nothing could be opened or typed until the agent finished booting. It is
+    // a status surface now: a returning user with a confirmed workspace and a
+    // project goes through it immediately (the chat shows the gold "starting"
+    // state itself); a genuinely fresh install still waits on the workspace
+    // step, which is a user decision, not a boot phase.
+    LaunchedEffect(summary.ready, projectName, route) {
+        if (route == ROUTE_WELCOME) {
+            val setupDone = ai.opencode.android.runtime.StorageChoice.workspaceConfirmed(context) &&
+                projectName.isNotEmpty()
+            if (summary.ready || setupDone) {
+                route = firstRunDestination(projectName, workspaceConfirmed)
+            }
         }
     }
     // A confirm that was interrupted by the system grant screen finishes itself when
@@ -1278,6 +1436,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val serverAvailability = when {
         uiState.serverReachable -> uiState.errorKind
         summary.ready -> AgentAvailability.SERVER_UNREACHABLE
+        // v9.41 (owner item 6): while the runtime is still coming up the
+        // status is STARTING - gold, honest, NOT red. Before this, the cold
+        // launch fell through to "whatever the last turn's error was" and the
+        // whole app looked broken while it was merely young.
+        !summary.ready -> AgentAvailability.RUNTIME_STARTING
         else -> uiState.errorKind
     }
     val turnAvailability = uiState.turnError?.kind ?: AgentAvailability.READY
@@ -1356,12 +1519,14 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         projects = store.projects()
                         route = ROUTE_CHAT
                     },
-                    workspacePath = container.workspacesRoot().absolutePath,
+                    // v9.41 (owner item 11): the Workspace box is gone from
+                    // this page; only the collapsed history row keeps the
+                    // known-folders switch here. Import + path moved to
+                    // Settings > Workspace (wired at the SettingsScreen call).
                     workspaces = knownWorkspaces,
                     onSwitchTo = { path ->
                         runStorageChange { storageController.switchTo(java.io.File(path)) }
                     },
-                    onBrowseWorkspace = { chosenFolderPicker.launch(null) },
                     sessions = sessionsByProject,
                     expandedName = expandedProject,
                     onToggleExpand = { name ->
@@ -1400,6 +1565,8 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         if (renamed != null) {
                             if (projectName == old) projectName = renamed.name
                             projects = store.projects()
+                            // v9.41 item 3: the GitHub marker travels with it.
+                            ai.opencode.android.github.GithubProjectMeta.rename(context, old, new)
                         }
                     },
                     onDelete = { name ->
@@ -1407,6 +1574,8 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         // then the folder itself and its preference history.
                         repository.deleteSessionsForDirectory(File(container.workspacesRoot(), name).absolutePath)
                         store.delete(name)
+                        // v9.41 item 3: the marker dies with the project.
+                        ai.opencode.android.github.GithubProjectMeta.delete(context, name)
                         // v9.38 (owner): "the server should support being
                         // stopped when the project is finished" - deleting a
                         // project ENDS it: its in-process preview server
@@ -1442,12 +1611,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         filesPath = ""
                         route = ROUTE_FILES
                     },
-                    onImport = { importPicker.launch(null) },
                     onExport = { name ->
                         exportTarget = store.projects().firstOrNull { it.name == name }
                         exportPicker.launch("$name.zip")
                     },
-                    importing = importing,
                     importError = importError,
                     // v9.26 (owner): GitHub lives INSIDE the create card - a
                     // toggle (or, before first setup, a Connect key) and a
@@ -1466,20 +1633,22 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     },
                     onConnectGithub = { route = ROUTE_SETTINGS },
                     onCreateFromRepo = { repo, typedName ->
-                        val token = githubToken()
-                        if (token != null) {
-                            // A fresh, unique, EMPTY project dir - create() dedupes.
-                            // The typed name wins; empty = the repo's own name.
-                            val created = store.create(typedName.ifBlank { repo.name })
-                            projects = store.projects()
-                            githubClone.clone(repo, token, created.dir) {
-                                // Cloned and on its project branch: surface it
-                                // like any new project.
-                                projects = store.projects()
-                                projectName = created.name
-                                expandedProject = created.name
-                            }
-                        }
+                        // v9.41 (owner item 3): creating is INSTANT - no clone,
+                        // no wait, no "repository uploading" feel. The project
+                        // row appears immediately with its GitHub mark; the
+                        // clone happens at the first prompt (onSend below),
+                        // where the model actually needs it, exactly like the
+                        // owner's Arena reference. The marker says which repo.
+                        val created = store.create(typedName.ifBlank { repo.name })
+                        ai.opencode.android.github.GithubProjectMeta.write(
+                            context, created.name, repo.fullName,
+                        )
+                        projects = store.projects()
+                        projectName = created.name
+                        expandedProject = created.name
+                        // A stale error banner from a previous listing/clone is
+                        // not this project's story.
+                        githubClone.dismissError()
                     },
                     sessionCounts = sessionCounts,
                     // A refused folder pick (SD card, cloud provider, unwritable) must
@@ -1559,7 +1728,13 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         filesError = ""
                         runStorageChange { storageController.moveProjectsIntoPlace() }
                     },
-                    onBack = { route = ROUTE_CHAT },
+                    // v9.41 (owner item 13): repo · branch, right in the
+                    // header of the sandbox page, for GitHub projects only.
+                    repoLabel = filesRepoLabel,
+                    // v9.41 (owner item 17): the tab pages get NO navigation
+                    // button at all - the tab strip below already is the
+                    // navigation, and system back is complete without it.
+                    onBack = null,
                 )
 
                 ROUTE_SETTINGS -> SettingsScreen(
@@ -1571,8 +1746,14 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     appVersion = appVersion,
                     theme = theme,
                     dynamicColor = dynamicColor,
-                    onThemeChange = { themeName = it.name },
-                    onDynamicColorChange = { dynamicColor = it },
+                    onThemeChange = {
+                        themeName = it.name
+                        uiPrefs.edit().putString("theme", it.name).apply()
+                    },
+                    onDynamicColorChange = {
+                        dynamicColor = it
+                        uiPrefs.edit().putBoolean("dynamic_color", it).apply()
+                    },
                     workspacePath = storage.rootPath,
                     workspaceVisibleToFileManagers = storage.visibleToFileManagers,
                     workspaceCanGrantAllFilesAccess = storage.canGrantAllFilesAccess,
@@ -1585,6 +1766,14 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onMoveWorkspaceProjects = {
                         filesError = ""
                         runStorageChange { storageController.moveProjectsIntoPlace() }
+                    },
+                    // v9.41 (owner item 11): what the Projects page's Workspace
+                    // box carried, now in the dropdown that owns the workspace.
+                    workspaceImporting = importing,
+                    onImportProject = { importPicker.launch(null) },
+                    knownWorkspaces = knownWorkspaces,
+                    onSwitchWorkspace = { path ->
+                        runStorageChange { storageController.switchTo(java.io.File(path)) }
                     },
                     onAddMcp = { name, config, persist ->
                         // Returns whether the config parsed: the form shows an
@@ -1696,6 +1885,12 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     hardwareBacked = hardwareBacked,
                     onSetModel = { providerId, modelId -> repository.setModel(providerId, modelId) },
                     onClearModel = { repository.clearModel() },
+                    // v9.41 (owner item 22): a thinking-level tap in the Models
+                    // card picks the model AND its level in one gesture.
+                    onSetThinking = { providerId, modelId, variant ->
+                        repository.setModel(providerId, modelId)
+                        repository.setThinkingVariant(variant)
+                    },
                     onToggleStar = { providerId, modelId, starred ->
                         repository.setStarred(OpenCodeApi.ModelRef(providerId, modelId), starred)
                     },
@@ -1734,8 +1929,21 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     }
                     ChangesScreen(
                         projectName = projectName.ifEmpty { stringResource(R.string.projects_title) },
-                        turns = remember(view) { WorkLog.changes(view) },
-                        onBack = { route = ROUTE_CHAT },
+                        // v9.41 (owner item 4): the app-maintained AGENTS.md is
+                        // not the model editing the user's project - it never
+                        // appears as a change row. (The file stays fully real
+                        // on disk; only the surface is quiet.)
+                        turns = remember(view) {
+                            WorkLog.changes(view)
+                                .map { t ->
+                                    t.copy(changes = t.changes.filterNot { ch ->
+                                        ai.opencode.android.ui.common.HiddenFromUser.isDiffHidden(ch.file)
+                                    })
+                                }
+                                .filter { it.changes.isNotEmpty() }
+                        },
+                        // v9.41 (owner item 17): tab page - no navigation button.
+                        onBack = null,
                         onSelectTab = { tab -> route = routeForTab(tab) },
                     )
                 }
@@ -1748,7 +1956,8 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         projectName = projectName.ifEmpty { stringResource(R.string.projects_title) },
                         commands = remember(view) { WorkLog.commands(view) },
                         runtimeLog = diagnosticsLines,
-                        onBack = { route = ROUTE_CHAT },
+                        // v9.41 (owner item 17): tab page - no navigation button.
+                        onBack = null,
                         onSelectTab = { tab -> route = routeForTab(tab) },
                     )
                 }
@@ -1760,15 +1969,52 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     projectName = projectName,
                     githubProject = projectName in githubProjects,
                     onSend = { text ->
-                        // v9.40 (owner): "everything gets pushed to master" -
-                        // right before a prompt starts, re-park a GitHub
-                        // project's checkout on its project branch (cheap,
-                        // never-destructive no-op when it is already there),
-                        // so the model's commit+push lands on opencode/<project>.
-                        // The AGENTS.md block teaches the same rule for the
-                        // mid-turn case (never push the default branch).
-                        githubClone.ensureProjectBranch(projectDir)
-                        repository.sendPrompt(text)
+                        markEmptyChatSeen()
+                        scope.launch {
+                            // v9.41 (owner item 6): one queued send at a time -
+                            // the composer label already says "waiting"; a
+                            // second tap while one waits must not double-send
+                            // the first when the boot completes.
+                            if (pendingSend != null) return@launch
+                            // v9.41 (owner item 3): the GitHub project's code
+                            // is made REAL and FRESH here, at the door the model
+                            // walks through - not at creation. First prompt of a
+                            // fresh project clones (the user watched nothing to
+                            // get the project; a short wait before the first
+                            // answer is the honest trade); every prompt after
+                            // that fetches and fast-forwards, so the repository
+                            // is always current when the model touches it.
+                            // Failures never block the send - the prompt
+                            // proceeds against what is on disk (the state
+                            // carries the error line for the projects notice).
+                            val meta = ai.opencode.android.github.GithubProjectMeta.read(context, projectName)
+                            val isGithub = meta != null ||
+                                withContext(Dispatchers.IO) { ai.opencode.android.github.GitSync.isGithubProject(projectDir) }
+                            if (isGithub) {
+                                repoSyncing = true
+                                runCatching {
+                                    githubClone.materialize(context, projectName, projectDir, githubToken())
+                                }
+                                repoSyncing = false
+                            } else {
+                                // v9.40 (owner): "everything gets pushed to master"
+                                // - right before a prompt starts, re-park a GitHub
+                                // project's checkout on its project branch (cheap,
+                                // never-destructive no-op when it is already there),
+                                // so the model's commit+push lands on
+                                // opencode/<project>. The AGENTS.md block teaches
+                                // the same rule for the mid-turn case (never push
+                                // the default branch).
+                                githubClone.ensureProjectBranch(projectDir)
+                            }
+                            // v9.41 (owner item 6): the agent is not up yet?
+                            // The send waits, and the chat says so.
+                            if (!summary.ready) {
+                                pendingSend = text
+                                return@launch
+                            }
+                            repository.sendPrompt(text)
+                        }
                     },
                     onDraftChange = { text -> repository.setDraft(text) },
                     onStop = { repository.abort() },
@@ -1808,6 +2054,21 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onQuestionSubmit = { id, answers -> repository.replyQuestion(id, answers) },
                     onQuestionSkip = { id -> repository.rejectQuestion(id) },
                     onAttach = { picker.launch(ANY_CONTENT) },
+                    // v9.41 (owner item 16): the `+` menu's other two doors.
+                    onAttachCamera = { launchCameraCapture() },
+                    onAttachPictures = { picturesPicker.launch(arrayOf("image/*")) },
+                    // v9.41 (owner item 15): the conversation drawer's own
+                    // callbacks (select / rename / delete right from the chat).
+                    onSelectSession = { id -> repository.selectSession(id) },
+                    onRenameSession = { id, title -> repository.renameSession(id, title) },
+                    onDeleteSession = { id -> repository.deleteSession(id) },
+                    // v9.41 items 3+6: what the chat shows while a send waits.
+                    sendWaitLabel = sendWaitLabel,
+                    // v9.41 (owner item 20): the "Say what should exist…" line
+                    // belongs to the install's first launch; afterwards it
+                    // returns only on one day in thirteen.
+                    emptyChatSubtitle = emptyChatFirstLaunch ||
+                        (java.time.LocalDate.now().toEpochDay() % 13L == 0L),
                     onRemoveAttachment = { url -> repository.detach(url) },
                     onDismissBanner = { repository.clearBanner() },
                     // v9.35 (owner): the live preview is a chat surface now -

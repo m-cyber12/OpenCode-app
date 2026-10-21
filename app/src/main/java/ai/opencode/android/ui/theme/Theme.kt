@@ -3,6 +3,7 @@ package ai.opencode.android.ui.theme
 import android.os.Build
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.LocalIndication
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
@@ -263,6 +264,12 @@ fun OpenCodeTheme(
     CompositionLocalProvider(
         LocalCodePalette provides if (darkTheme) DarkCodePalette else LightCodePalette,
         LocalChatPalette provides if (darkTheme) DarkChatPalette else LightChatPalette,
+        // v9.41 (owner item 12): the press feedback is gone. On the dark glass
+        // the default bounded ripple flashed near-white behind a key tap a beat
+        // before anything happened - the owner's call, one of two options they
+        // offered, was "remove it entirely". A no-op indication does exactly
+        // that, app-wide, without touching any button's semantics or tags.
+        LocalIndication provides NoPressIndication,
     ) {
         MaterialTheme(
             colorScheme = scheme,
@@ -272,6 +279,31 @@ fun OpenCodeTheme(
         )
     }
 }
+
+/**
+ * v9.41 (owner item 12): the app-wide "no ripple" indication. Implemented
+ * against the public [Indication] contract (M3's own NoIndication is internal,
+ * and depending on a private detail to switch ripples off would be fragile).
+ * It draws nothing and reports nothing pending; press feedback stays with the
+ * color/alpha states each control already keeps.
+ */
+@OptIn(androidx.compose.runtime.ReadOnlyComposable::class)
+private object NoPressIndication : androidx.compose.material3.Indication {
+    private object QuietInstance : androidx.compose.material3.IndicationInstance {
+        override val isPending: androidx.compose.runtime.State<Boolean> =
+            androidx.compose.runtime.mutableStateOf(false)
+
+        @Composable
+        override fun Content() = Unit
+    }
+
+    @Composable
+    @androidx.compose.runtime.ReadOnlyComposable
+    override fun rememberUpdatedInstance(
+        interactionSource: androidx.compose.foundation.interaction.InteractionSource,
+    ): androidx.compose.material3.IndicationInstance = QuietInstance
+}
+
 
 /** Convenience accessor used by the chat components. */
 object ChatTheme {

@@ -155,6 +155,12 @@ data class OpenFile(
 @Composable
 fun FilesScreen(
     projectName: String,
+    /**
+     * v9.41 (owner item 13): for a GitHub project, the repo and the branch the
+     * sandbox currently sits on - "owner/name · branch", one minimal line in
+     * the header. Empty = not a GitHub project (nothing extra shown).
+     */
+    repoLabel: String = "",
     projectPath: String,
     /** Which of the storage locations the projects are in. Drives the panel text. */
     storageMode: StorageMode,
@@ -187,7 +193,9 @@ fun FilesScreen(
     onSaveCopy: (String) -> Unit,
     onRequestAllFilesAccess: () -> Unit,
     onMoveProjects: () -> Unit,
-    onBack: () -> Unit,
+    /** v9.41 (owner item 17): the tab pages get NO navigation button at all;
+     * the parameter stays so callers (and the gates) keep their shape. */
+    onBack: (() -> Unit)?,
     /**
      * v9.9 (owner): the door only exists while something actually answers on
      * a loopback port. The app's PortScanner feeds this; empty = no door at
@@ -223,8 +231,9 @@ fun FilesScreen(
       Column(Modifier.fillMaxSize()) {
         AppTopBar(
             title = projectName,
-            subtitle = stringResource(R.string.files_subtitle) + where,
-            onBack = onBack,
+            subtitle = stringResource(R.string.files_subtitle) + where +
+                if (repoLabel.isEmpty()) "" else " · $repoLabel",
+            onBack = null,
         )
 
         Row(

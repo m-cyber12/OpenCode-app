@@ -7,6 +7,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -106,6 +107,55 @@ class GithubCloneManager(
      */
     fun ensureProjectBranch(projectDir: File?) {
         scope.launch { GitSync.ensureProjectBranch(projectDir) }
+    }
+
+    /**
+     * v9.41 (owner item 3): make the checkout REAL, then FRESH, synchronously
+     * for the calling coroutine - the pre-prompt gate for GitHub projects.
+     * First prompt of a fresh GitHub project clones; every prompt after that
+     * fetches and fast-forwards (see [GitSync.refreshFastForward]). A failure
+     * never blocks the send: the state carries the error for the UI, the
+     * prompt proceeds with what is on disk. No token, or a project that was
+     * never created from a repo: an instant no-op.
+     */
+    suspend fun materialize(context: android.content.Context, project: String, projectDir: File?, token: String?) {
+        val dir = projectDir ?: return
+        if (token.isNullOrEmpty()) return
+        // ONLY projects this app created around a GitHub repository (the filesDir
+        // marker). A local/Imported project may be the user's own checkout with
+        // their own remote - pulling into that behind their back is not this
+        // app's business, and the marker is the consent boundary.
+        val meta = withContext(Dispatchers.IO) {
+            ai.opencode.android.github.GithubProjectMeta.read(context, project)
+        }
+        if (meta == null) return
+        _state.value = _state.value.copy(
+            phase = Phase.CLONING, project = project, error = "", progress = "",
+        )
+        try {
+            withContext(Dispatchers.IO) {
+                if (!File(dir, ".git").isDirectory && meta != null) {
+                    _state.value = _state.value.copy(progress = "cloning ${'$'}{meta.repo}")
+                    GitSync.cloneOnly(
+                        cloneUrl = GithubRepos.cloneUrl(webBase, meta.repo),
+                        targetDir = dir,
+                        token = token,
+                    ) { line -> _state.value = _state.value.copy(progress = line) }
+                } else if (File(dir, ".git").isDirectory) {
+                    _state.value = _state.value.copy(progress = "refreshing")
+                    GitSync.refreshFastForward(dir, token) { line ->
+                        _state.value = _state.value.copy(progress = line)
+                    }
+                }
+                GitSync.ensureProjectBranch(dir)
+            }
+            _state.value = _state.value.copy(phase = Phase.DONE, progress = "")
+        } catch (t: Throwable) {
+            _state.value = _state.value.copy(
+                phase = Phase.ERROR, progress = "",
+                error = t.message ?: t.javaClass.simpleName,
+            )
+        }
     }
 
     fun dismissError() {

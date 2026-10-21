@@ -8,17 +8,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -32,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -45,18 +48,31 @@ import androidx.compose.ui.unit.dp
 /**
  * Phase 10 continuation v4, item 3: the model quick switch, at the top of the chat.
  *
- * Two deliberate restrictions, both from the brief:
+ * v9.41 (owner items 21+22), the menu is three things now:
  *
- *  1. it lists ONLY the models the user starred in Settings. The catalog is
- *     hundreds of entries (three providers alone list more models than a phone
- *     menu can hold), so "all models" is not a quick switch - it is the Settings
- *     screen, and the last item here goes there;
- *  2. it never leaves the chat screen to change the model: one tap, one menu.
+ *  1. the CURRENT model owns the head of the menu, and its thinking levels are
+ *     INLINE right under it - the separate "thinking level" section at the
+ *     bottom of the menu is gone. Every other model that can think gets a
+ *     small triangle on the right of its name; tapping it opens (or closes)
+ *     the same inline picker for that model, and choosing a level there picks
+ *     the model AND its level in one gesture;
+ *  2. a collapsible "Free Models" group (Zen), expanded by default, listed
+ *     with a real star rather than a checkmark;
+ *  3. the starred shortlist under it, then one "manage" entry to the Providers
+ *     surface. The catalog stays where it belongs - hundreds of models do not
+ *     fit a phone menu.
  *
- * Pure: [current] and [starred] are values, picking is a callback. The screen does
- * not know where the list came from, which is what lets the Phase 6 gates render it
- * with fabricated state.
+ * Pure: every list is a value and every choice is a callback, which is what
+ * lets the Phase 6 gates render it with fabricated state.
  */
+
+/** One row of the quick list: the ref, its display name, its thinking variants. */
+data class QuickModel(
+    val ref: OpenCodeApi.ModelRef,
+    val label: String,
+    val variants: List<String> = emptyList(),
+)
+
 @Composable
 fun ModelQuickSwitch(
     current: OpenCodeApi.ModelRef?,
@@ -74,8 +90,16 @@ fun ModelQuickSwitch(
     /** The active variant id, "" = the model's default. */
     activeVariant: String = "",
     onPickVariant: (String) -> Unit = {},
+    /** v9.41 item 22: the "Free Models" group (all Zen models). */
+    freeModels: List<QuickModel> = emptyList(),
+    /** Thinking variants for any listed model, keyed `provider/model`. */
+    variantsOf: (String, String) -> List<String> = { _, _ -> emptyList() },
+    /** v9.41: pick model AND level in one go (a level tap inside a row). */
+    onPickWithVariant: (String, String, String) -> Unit = { p, m, _ -> onPick(p, m) },
 ) {
     var open by remember { mutableStateOf(false) }
+    var freeOpen by remember { mutableStateOf(true) } // expanded by default (owner)
+    var expandedKey by remember { mutableStateOf<String?>(null) }
     val chat = ChatTheme.chat
     val currentText = current?.let { ModelRefCodec.encode(it) } ?: stringResource(R.string.chat_model_none)
     val label = stringResource(R.string.chat_model_switch, currentText)
@@ -127,6 +151,88 @@ fun ModelQuickSwitch(
             onDismissRequest = { open = false },
             modifier = Modifier.semantics { testTag = "model_quick_switch_menu" },
         ) {
+            // ---- the current model, with its thinking levels INLINE (v9.41) --
+            if (current != null) {
+                val currentKey = ModelRefCodec.encode(current)
+                val variantSuffix = activeVariant.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
+                Text(
+                    text = "$currentText$variantSuffix",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .width(280.dp)
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                        .semantics { testTag = "model_current_row" },
+                )
+                if (variants.isNotEmpty()) {
+                    val defaultLabel = stringResource(R.string.chat_thinking_default)
+                    val defaultDescription = stringResource(R.string.chat_thinking_pick, defaultLabel)
+                    ThinkingRow(
+                        label = defaultLabel,
+                        active = activeVariant.isEmpty(),
+                        onClick = {
+                            open = false
+                            onPickVariant("")
+                        },
+                        modifier = Modifier.semantics {
+                            testTag = "thinking_default"
+                            contentDescription = defaultDescription
+                        },
+                    )
+                    variants.forEachIndexed { index, id ->
+                        val description = stringResource(R.string.chat_thinking_pick, id)
+                        ThinkingRow(
+                            label = id,
+                            active = id == activeVariant,
+                            onClick = {
+                                open = false
+                                onPickVariant(id)
+                            },
+                            modifier = Modifier.semantics {
+                                testTag = "thinking_pick_${index}"
+                                contentDescription = description
+                            },
+                        )
+                    }
+                }
+                HorizontalDivider(color = chat.toolBorder, modifier = Modifier.padding(vertical = 4.dp))
+            }
+
+            // ---- Free Models (Zen), collapsible, expanded by default --------
+            if (freeModels.isNotEmpty()) {
+                QuickGroupHeader(
+                    title = stringResource(R.string.chat_model_free_title),
+                    expanded = freeOpen,
+                    tag = "model_free_header",
+                    onToggle = { freeOpen = !freeOpen },
+                )
+                if (freeOpen) {
+                    freeModels.forEachIndexed { index, qm ->
+                        ModelLineRow(
+                            model = qm,
+                            variantsOf = variantsOf,
+                            expanded = expandedKey == "free_$index",
+                            onToggleExpand = {
+                                expandedKey = if (expandedKey == "free_$index") null else "free_$index"
+                            },
+                            onPickModel = {
+                                open = false
+                                onPick(qm.ref.providerID, qm.ref.modelID)
+                            },
+                            onPickLevel = { v ->
+                                open = false
+                                onPickWithVariant(qm.ref.providerID, qm.ref.modelID, v)
+                            },
+                            rowTag = "model_free_$index",
+                            levelTagPrefix = "free_vt_$index",
+                            current = current,
+                        )
+                    }
+                    HorizontalDivider(color = chat.toolBorder, modifier = Modifier.padding(vertical = 4.dp))
+                }
+            }
+
+            // ---- the starred shortlist ---------------------------------------
             Text(
                 text = stringResource(R.string.chat_model_starred_title),
                 style = MaterialTheme.typography.labelSmall,
@@ -145,86 +251,161 @@ fun ModelQuickSwitch(
                 )
             } else {
                 starred.forEachIndexed { index, ref ->
-                    val text = ModelRefCodec.encode(ref)
-                    DropdownMenuItem(
-                        text = { Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        onClick = {
-                            open = false
-                            onPick(ref.providerID, ref.modelID)
+                    val pid = ref.providerID
+                    val mid = ref.modelID
+                    ModelLineRow(
+                        model = QuickModel(ref, ModelRefCodec.encode(ref), variantsOf(pid, mid)),
+                        variantsOf = variantsOf,
+                        expanded = expandedKey == "star_$index",
+                        onToggleExpand = {
+                            expandedKey = if (expandedKey == "star_$index") null else "star_$index"
                         },
-                        modifier = Modifier
-                            .width(280.dp)
-                            .semantics { testTag = "model_pick_$index" },
+                        onPickModel = {
+                            open = false
+                            onPick(pid, mid)
+                        },
+                        onPickLevel = { v ->
+                            open = false
+                            onPickWithVariant(pid, mid, v)
+                        },
+                        rowTag = "model_pick_$index",
+                        levelTagPrefix = "star_vt_$index",
+                        current = current,
                     )
                 }
             }
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.chat_model_open_settings)) },
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = null,
+                            tint = chat.muted.copy(alpha = 0.7f),
+                            modifier = Modifier.size(15.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.chat_model_open_settings))
+                    }
+                },
                 onClick = {
                     open = false
                     onOpenSettings()
                 },
                 modifier = Modifier.semantics { testTag = "model_quick_switch_settings" },
             )
-            // ---- thinking level (the bottom of the menu, per the brief) ----
-            // Only what the server lists for THIS model: `PromptInput.variant`
-            // takes a variant id from the model's own `variants` record, so
-            // the rows ARE that record's keys - no invented levels. The
-            // "Model default" row returns to sending no variant at all.
-            HorizontalDivider(
-                color = chat.toolBorder,
-                modifier = Modifier.padding(vertical = 4.dp),
-            )
-            Text(
-                text = stringResource(R.string.chat_thinking_title),
-                style = MaterialTheme.typography.labelSmall,
-                color = chat.muted,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            )
-            if (variants.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.chat_thinking_empty),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = chat.muted,
-                    modifier = Modifier
-                        .width(260.dp)
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                        .semantics { testTag = "thinking_empty" },
-                )
-            } else {
-                val defaultLabel = stringResource(R.string.chat_thinking_default)
-                val defaultDescription = stringResource(R.string.chat_thinking_pick, defaultLabel)
-                ThinkingRow(
-                    label = defaultLabel,
-                    active = activeVariant.isEmpty(),
-                    onClick = {
-                        open = false
-                        onPickVariant("")
-                    },
-                    modifier = Modifier.semantics {
-                        testTag = "thinking_default"
-                        contentDescription = defaultDescription
-                    },
-                )
-                variants.forEachIndexed { index, id ->
-                    val description = stringResource(R.string.chat_thinking_pick, id)
-                    ThinkingRow(
-                        label = id,
-                        active = id == activeVariant,
-                        onClick = {
-                            open = false
-                            onPickVariant(id)
-                        },
-                        modifier = Modifier.semantics {
-                            testTag = "thinking_pick_${index}"
-                            contentDescription = description
-                        },
-                    )
-                }
-            }
         }
         }
         Spacer(Modifier.width(0.dp))
+    }
+}
+
+/** The "Free Models" group header: label + fold marker, tappable. */
+@Composable
+private fun QuickGroupHeader(
+    title: String,
+    expanded: Boolean,
+    tag: String,
+    onToggle: () -> Unit,
+) {
+    val chat = ChatTheme.chat
+    Row(
+        modifier = Modifier
+            .width(280.dp)
+            .clickable(onClick = onToggle)
+            .padding(horizontal = 12.dp, vertical = 7.dp)
+            .semantics { testTag = tag; role = Role.Button },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelSmall,
+            color = chat.muted,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+            contentDescription = null,
+            tint = chat.muted,
+            modifier = Modifier.size(16.dp).clearAndSetSemantics { },
+        )
+    }
+}
+
+/**
+ * One model line in the quick menu (v9.41 item 22): a real STAR leads the row
+ * (gold when this is the active model's group member... the star here is the
+ * owner's replacement for the checkmark - the selected model still keeps its
+ * name in normal weight); the name; and for thinking-capable models a small
+ * TRIANGLE on the right that opens the level picker inline under the row.
+ */
+@Composable
+private fun ModelLineRow(
+    model: QuickModel,
+    variantsOf: (String, String) -> List<String>,
+    expanded: Boolean,
+    onToggleExpand: () -> Unit,
+    onPickModel: () -> Unit,
+    onPickLevel: (String) -> Unit,
+    rowTag: String,
+    levelTagPrefix: String,
+    current: OpenCodeApi.ModelRef?,
+) {
+    val chat = ChatTheme.chat
+    val isSelected = current != null &&
+        current.providerID == model.ref.providerID && current.modelID == model.ref.modelID
+    val levels = model.variants.ifEmpty { variantsOf(model.ref.providerID, model.ref.modelID) }
+    DropdownMenuItem(
+        text = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Star,
+                    // v9.41 (owner item 21): a REAL star replaces the checkmark.
+                    // (material-icons-core has Star but no StarBorder, so the
+                    // unstarred form is the same star drawn quiet.)
+                    contentDescription = null,
+                    tint = if (isSelected) MaterialTheme.colorScheme.primary else chat.muted.copy(alpha = 0.45f),
+                    modifier = Modifier
+                        .size(14.dp)
+                        .padding(end = 8.dp)
+                        .clearAndSetSemantics { },
+                )
+                Text(model.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        },
+        trailingIcon = {
+            if (levels.isNotEmpty()) {
+                // The little triangle: opens/closes the inline level picker.
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                    contentDescription = stringResource(R.string.chat_thinking_expand),
+                    tint = chat.muted,
+                    modifier = Modifier
+                        .size(22.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClick = onToggleExpand)
+                        .semantics { testTag = "${levelTagPrefix}_toggle" },
+                )
+            } else {
+                Spacer(Modifier.width(4.dp))
+            }
+        },
+        onClick = onPickModel,
+        modifier = Modifier
+            .width(300.dp)
+            .semantics {
+                testTag = rowTag
+                contentDescription = model.label
+            },
+    )
+    if (expanded && levels.isNotEmpty()) {
+        levels.forEachIndexed { index, id ->
+            ThinkingRow(
+                label = id,
+                active = false,
+                onClick = { onPickLevel(id) },
+                modifier = Modifier.semantics { testTag = "${levelTagPrefix}_$index" },
+            )
+        }
     }
 }
 

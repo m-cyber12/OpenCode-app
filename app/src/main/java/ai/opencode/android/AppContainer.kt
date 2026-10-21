@@ -60,6 +60,8 @@ class AppContainer private constructor(private val context: Context) {
             // app restart) starts from the user's own choice instead of the first
             // model the server happens to list (v4 item 3).
             modelPreference = ai.opencode.android.client.PrefsModelPreference.get(context),
+            // v9.41 (owner item 7): last provider catalog, on disk, seeds the UI.
+            providersDisk = ai.opencode.android.client.PrefsProviderSnapshotDisk.get(context),
             keyring = keyringInstance,
         )
         cached = key to repo

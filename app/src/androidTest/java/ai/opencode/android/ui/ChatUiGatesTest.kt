@@ -1345,7 +1345,8 @@ class ChatUiGatesTest {
         shot("14-chat-provider-auth.png")
 
 
-        // (d) still starting: not an error, and the composer says so
+        // (d) still starting: not an error, and - v9.41 (owner item 6) - the
+        // composer STAYS OPEN: a send now is queued and fired on "up".
         renderChat(
             uiState(serverReachable = false, draft = "hello"),
             availability = AgentAvailability.RUNTIME_STARTING,
@@ -1398,7 +1399,7 @@ class ChatUiGatesTest {
         shot("19b-welcome-states.png")
 
         val ok = aHeadline && aBody && bHeadline && cHeadline && cRawKept && dHeadline && distinct &&
-            !aSend && !bSend && !dSend && cSend && leaks.isEmpty() &&
+            !aSend && !bSend && dSend && cSend && leaks.isEmpty() &&
             welcomeShown.size == stageTitles.size && welcomeLeaks.isEmpty()
         gate(
             "U4",
@@ -1896,10 +1897,18 @@ class ChatUiGatesTest {
         rule.waitForIdle()
         val switched = selectedSessions.contains("ses_40")
 
+        // v9.41 (owner item 15): Delete/Rename moved behind the row's
+        // three-dot menu - open it, then tap the item. The menu item carries
+        // the SAME tag as the old direct icon, so only the extra open-tap is
+        // new; the assertions are untouched.
+        rule.onNodeWithTag("session_menu_ses_38").performClick()
+        rule.waitForIdle()
         rule.onNodeWithTag("session_delete_ses_38").performClick()
         rule.waitForIdle()
         val deleted = deletedSessions.contains("ses_38")
 
+        rule.onNodeWithTag("session_menu_ses_37").performClick()
+        rule.waitForIdle()
         rule.onNodeWithTag("session_rename_ses_37").performClick()
         rule.waitForIdle()
         val editor = rule.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().isNotEmpty()
@@ -2383,6 +2392,13 @@ class ChatUiGatesTest {
         rule.waitForIdle()
         val screenShown = exists("providers_screen")
 
+        // v9.41 (owner item 23): the page became two collapsible cards, both
+        // CLOSED by default - opening the Providers card is now step one, and
+        // the gate is thereby also the proof that "collapsed by default" is
+        // real (before this click nothing of the catalog composes at all).
+        val collapsedByDefault = !exists("provider_search")
+        rule.onNodeWithTag("providers_section_header").performClick()
+        rule.waitForIdle()
         rule.onAllNodesWithTag("providers_list")[0].performScrollToNode(hasTestTag("provider_search"))
         rule.waitForIdle()
         val searchShown = exists("provider_search")
@@ -2411,18 +2427,28 @@ class ChatUiGatesTest {
         rule.waitForIdle()
         val activated = connectCalls == 1
 
-        // starring: the checkbox reflects the starred list and reports the toggle.
-        // The models (and therefore the stars) are behind the provider row's expansion -
-        // a collapsed row is what a user sees first, so what this gate proves is the
-        // flow: open the provider, see the star, toggle it.
+        // v9.41 (owner items 21+23): starring moved into the Models card, and
+        // only CONNECTED providers list models there ("Models should include
+        // all models of the connected providers") - so the gate first reflects
+        // the activation its own fake connect-call just performed, then opens
+        // the Models card. The star itself is now a real STAR icon button (not
+        // a checkbox): its state rides on the accessible name ("Remove ..."
+        // when starred, "Show ..." otherwise).
+        settingsState.value = settingsState.value.copy(
+            providers = providers.copy(connected = providers.connected + "openrouter"),
+        )
+        rule.waitForIdle()
         val starTag = "model_star_openrouter_openai/gpt-4o-mini"
-        val starHiddenUntilExpanded = !exists(starTag)
-        rule.onAllNodesWithTag("provider_openrouter")[0].performClick()
+        val starHiddenUntilModelsOpen = !exists(starTag)
+        rule.onNodeWithTag("models_section_header").performClick()
+        rule.waitForIdle()
+        rule.onAllNodesWithTag("providers_list")[0].performScrollToNode(hasTestTag(starTag))
         rule.waitForIdle()
         val starShown = exists(starTag)
         val starChecked = starShown &&
             rule.onAllNodesWithTag(starTag)[0].fetchSemanticsNode()
-                .config.getOrNull(SemanticsProperties.ToggleableState) == ToggleableState.On
+                .config.getOrNull(SemanticsProperties.ContentDescription)
+                ?.firstOrNull()?.startsWith("Remove") == true
         if (starShown) {
             rule.onAllNodesWithTag(starTag)[0].performScrollTo()
             rule.waitForIdle()
@@ -2456,12 +2482,13 @@ class ChatUiGatesTest {
 
         gate(
             "U11",
-            screenShown && searchShown && filtered && countLine && dialogShown && onlyKeyAsked && activated &&
-                starHiddenUntilExpanded && starShown && starChecked && starWired && starReported &&
+            screenShown && collapsedByDefault && searchShown && filtered && countLine && dialogShown &&
+                onlyKeyAsked && activated &&
+                starHiddenUntilModelsOpen && starShown && starChecked && starWired && starReported &&
                 customHiddenUntilAdd && customShown && customSaved,
             "surface=$screenShown search=$searchShown/$filtered/$countLine keyOnly=$dialogShown/$onlyKeyAsked " +
                 "activated=$activated star=$starShown/$starChecked/$starWired/$starReported " +
-                "collapsedFirst=$starHiddenUntilExpanded custom=$customHiddenUntilAdd/$customShown/$customSaved " +
+                "collapsedFirst=$collapsedByDefault/$starHiddenUntilModelsOpen custom=$customHiddenUntilAdd/$customShown/$customSaved " +
                 "reported=$starLastToggle",
         )
     }

@@ -39,8 +39,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -123,6 +125,11 @@ fun SettingsScreen(
     onPickWorkspace: () -> Unit = {},
     onGrantAllFilesAccess: () -> Unit = {},
     onMoveWorkspaceProjects: () -> Unit = {},
+    // v9.41 (owner item 11): the workspace actions the Projects page let go of.
+    workspaceImporting: Boolean = false,
+    onImportProject: () -> Unit = {},
+    knownWorkspaces: List<ai.opencode.android.ui.projects.KnownWorkspace> = emptyList(),
+    onSwitchWorkspace: (String) -> Unit = {},
     onAddMcp: (String, String, Boolean) -> Boolean,
     onConnectMcp: (String) -> Unit,
     onDisconnectMcp: (String) -> Unit,
@@ -198,6 +205,10 @@ fun SettingsScreen(
                         onPick = onPickWorkspace,
                         onGrant = onGrantAllFilesAccess,
                         onMove = onMoveWorkspaceProjects,
+                        importing = workspaceImporting,
+                        onImport = onImportProject,
+                        knownWorkspaces = knownWorkspaces,
+                        onSwitchWorkspace = onSwitchWorkspace,
                     )
                     "diagnostics" -> DiagnosticsSection(
                         lines = diagnosticsLines,
@@ -413,21 +424,8 @@ private fun ModelSection(
     starred: List<OpenCodeApi.ModelRef>,
     storedProviderIds: String,
     hardwareBacked: String,
-    onSetModel: (String, String) -> Unit,
-    onClearModel: () -> Unit,
-    onToggleStar: (String, String, Boolean) -> Unit,
-    onConnectProvider: (String, String) -> Unit,
-    onRevokeKey: (String) -> Unit,
-    providerKeys: (String) -> List<ProviderKeyring.Entry> = { emptyList() },
-    onUseKey: (String, String) -> Unit = { _, _ -> },
-    onDeleteKey: (String, String) -> Unit = { _, _ -> },
 ) {
     val chat = ChatTheme.chat
-    // v4 item 2: the catalog is hundreds of entries, so it is searched, not scrolled.
-    var query by rememberSaveable { mutableStateOf("") }
-    // v4 item 2: tapping a listed provider asks for the key and nothing else.
-    var connectTarget by remember { mutableStateOf<OpenCodeApi.ProviderEntry?>(null) }
-
     SectionCard(title = stringResource(R.string.settings_section_model)) {
         val current = if (model == null) "" else ModelRefCodec.encode(model)
         KeyValueRow(
@@ -458,16 +456,56 @@ private fun ModelSection(
             color = chat.muted,
             modifier = Modifier.semantics { testTag = "settings_star_count" },
         )
-        if (model != null) {
-            Spacer(Modifier.height(4.dp))
-            TextButton(
-                onClick = onClearModel,
-                modifier = Modifier.height(44.dp).semantics { testTag = "model_clear" },
-            ) {
-                Text(stringResource(R.string.settings_model_clear))
-            }
+        // v9.41 (owner item 23): "Use the agent default" is gone. The agent's
+        // default was never a choice the user made - the last-used model is
+        // already the rule, and a button offering to forget it only confused
+        // the surface. The provider catalog lives in its own collapsible
+        // "Providers" card (see [ProvidersCatalogSection]) and every model of
+        // every connected provider in a collapsible "Models" card (see
+        // [ModelsSection]); this card is the plain state summary again.
+    }
+}
+
+// ---- providers catalog (v9.41, owner item 23) --------------------------------
+
+/**
+ * The Providers card: one row per catalog provider, the key dialog a row's
+ * button opens, and the search the whole list is filtered by. Collapsed by
+ * default - the owner's "both sections collapsible, collapsed by default".
+ *
+ * v9.41 ordering is the owner's pin: Zen (the bundled provider, whose models
+ * are free) at the very top with a "Free" pill, then the connected providers,
+ * then the rest of the catalog alphabetically. The models a provider carries
+ * do NOT live here any more - the Models card is their home.
+ */
+@Composable
+private fun ProvidersCatalogSection(
+    providers: OpenCodeApi.ProviderSnapshot?,
+    onConnectProvider: (String, String) -> Unit,
+    onRevokeKey: (String) -> Unit,
+    providerKeys: (String) -> List<ProviderKeyring.Entry>,
+    onUseKey: (String, String) -> Unit,
+    onDeleteKey: (String, String) -> Unit,
+) {
+    val chat = ChatTheme.chat
+    var query by rememberSaveable { mutableStateOf("") }
+    var connectTarget by remember { mutableStateOf<OpenCodeApi.ProviderEntry?>(null) }
+
+    SectionCard(
+        title = stringResource(R.string.settings_section_providers),
+        collapsible = true,
+        initiallyExpanded = false,
+        headerTag = "providers_section_header",
+    ) {
+        if (providers == null) {
+            Text(
+                text = stringResource(R.string.settings_provider_checking),
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.muted,
+            )
+            return@SectionCard
         }
-        Spacer(Modifier.height(6.dp))
+        // v4 item 2: the catalog is hundreds of entries, so it is searched, not scrolled.
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
@@ -492,16 +530,16 @@ private fun ModelSection(
                 modifier = Modifier.semantics { testTag = "provider_search_count" },
             )
         }
-        val starredKeys = remember(starred) { starred.map { ModelRefCodec.encode(it) }.toSet() }
-        for (provider in shown) {
+        val ordered = remember(shown, providers) {
+            shown.sortedWith(
+                compareBy({ it.id != OpenCodeApi.ZEN_PROVIDER_ID }, { !providers.connected.contains(it.id) }, { it.name.lowercase() }),
+            )
+        }
+        for (provider in ordered) {
             ProviderRow(
                 provider = provider,
                 connected = providers.connected.contains(provider.id),
-                selectedProvider = model?.providerID ?: "",
-                selectedModel = model?.modelID ?: "",
-                starredKeys = starredKeys,
-                onSetModel = onSetModel,
-                onToggleStar = onToggleStar,
+                free = provider.id == OpenCodeApi.ZEN_PROVIDER_ID,
                 onConnect = { connectTarget = provider },
             )
         }
@@ -531,6 +569,136 @@ private fun ModelSection(
                 connectTarget = null
             },
         )
+    }
+}
+
+// ---- the model catalog (v9.41, owner items 21+22+23) ------------------------
+
+/**
+ * The Models card: a search, a collapsible "Free Models" group (EVERY Zen
+ * model, expanded by default because free needs no selling), then the models
+ * of the connected providers grouped under their provider. Each row toggles
+ * its star with a real star icon (item 21) and, when the model can think,
+ * shows the little triangle that opens the level rows inline (item 22) -
+ * picking a level there picks the model AND the level in one gesture.
+ */
+@Composable
+private fun ModelsSection(
+    providers: OpenCodeApi.ProviderSnapshot?,
+    model: OpenCodeApi.ModelRef?,
+    starred: List<OpenCodeApi.ModelRef>,
+    onSetModel: (String, String) -> Unit,
+    onToggleStar: (String, String, Boolean) -> Unit,
+    onSetThinking: (String, String, String) -> Unit,
+) {
+    val chat = ChatTheme.chat
+    var query by rememberSaveable { mutableStateOf("") }
+    // v9.41 (owner item 22): the free section is collapsed-by-NOBODY - the
+    // owner asked for it expanded by default.
+    var freeOpen by rememberSaveable { mutableStateOf(true) }
+
+    SectionCard(
+        title = stringResource(R.string.settings_section_models),
+        collapsible = true,
+        initiallyExpanded = false,
+        headerTag = "models_section_header",
+    ) {
+        if (providers == null) {
+            Text(
+                text = stringResource(R.string.settings_provider_checking),
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.muted,
+            )
+            return@SectionCard
+        }
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            label = { Text(stringResource(R.string.settings_models_search)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().semantics { testTag = "model_search" },
+        )
+        Spacer(Modifier.height(6.dp))
+        val q = query.trim().lowercase()
+        fun matches(name: String, id: String) =
+            q.isEmpty() || name.lowercase().contains(q) || id.lowercase().contains(q)
+        val starredKeys = remember(starred) { starred.map { ModelRefCodec.encode(it) }.toSet() }
+        val free = providers.entries.firstOrNull { it.id == OpenCodeApi.ZEN_PROVIDER_ID }
+        val freeModels = free?.models?.filter { matches(it.name, it.id) } ?: emptyList()
+        val groups = remember(providers, q) {
+            providers.entries
+                .filter { providers.connected.contains(it.id) && it.id != OpenCodeApi.ZEN_PROVIDER_ID }
+                .map { entry -> entry to entry.models.filter { matches(it.name, it.id) } }
+                .filter { it.second.isNotEmpty() }
+        }
+        if (free == null && groups.isEmpty()) {
+            Text(
+                text = stringResource(R.string.settings_models_empty),
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.muted,
+                modifier = Modifier.semantics { testTag = "models_empty_hint" },
+            )
+        }
+        if (free != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { freeOpen = !freeOpen }
+                    .padding(vertical = 6.dp)
+                    .semantics {
+                        testTag = "model_free_header"
+                        role = Role.Button
+                        contentDescription = stringResource(R.string.chat_model_free_title)
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.chat_model_free_title),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = chat.muted,
+                    modifier = Modifier.weight(1f).padding(start = 4.dp),
+                )
+                Icon(
+                    imageVector = if (freeOpen) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = chat.muted,
+                    modifier = Modifier.size(18.dp).clearAndSetSemantics { },
+                )
+            }
+            if (freeOpen) {
+                ModelList(
+                    provider = free,
+                    models = freeModels,
+                    selectedModel = if (model?.providerID == free.id) model.modelID else "",
+                    starredKeys = starredKeys,
+                    onSetModel = onSetModel,
+                    onToggleStar = onToggleStar,
+                    onSetThinking = onSetThinking,
+                    tagPrefix = "model_free",
+                )
+            }
+        }
+        for ((entry, list) in groups) {
+            Text(
+                text = entry.name,
+                style = MaterialTheme.typography.labelMedium,
+                color = chat.muted,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp, bottom = 2.dp, start = 4.dp)
+                    .semantics { testTag = "model_group_${entry.id}" },
+            )
+            ModelList(
+                provider = entry,
+                models = list,
+                selectedModel = if (model?.providerID == entry.id) model.modelID else "",
+                starredKeys = starredKeys,
+                onSetModel = onSetModel,
+                onToggleStar = onToggleStar,
+                onSetThinking = onSetThinking,
+                tagPrefix = "model",
+            )
+        }
     }
 }
 
@@ -692,15 +860,11 @@ private fun ProviderKeyDialog(
 private fun ProviderRow(
     provider: OpenCodeApi.ProviderEntry,
     connected: Boolean,
-    selectedProvider: String,
-    selectedModel: String,
-    starredKeys: Set<String> = emptySet(),
-    onSetModel: (String, String) -> Unit,
-    onToggleStar: (String, String, Boolean) -> Unit = { _, _, _ -> },
+    /** v9.41 (owner item 23): Zen's rows carry a "Free" pill. */
+    free: Boolean = false,
     onConnect: (OpenCodeApi.ProviderEntry) -> Unit = {},
 ) {
     val chat = ChatTheme.chat
-    var open by rememberSaveable(provider.id) { mutableStateOf(false) }
     val toggleLabel = provider.name
     Surface(
         modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
@@ -709,15 +873,20 @@ private fun ProviderRow(
         border = BorderStroke(1.dp, chat.toolBorder),
     ) {
         Column {
+            // v9.41 (owner item 23): the row is no longer an accordion - the
+            // provider's models live in the Models card. What stays here is
+            // exactly what a provider needs from this page: its name, whether
+            // it is connected, how many models it brings, and the ONE button
+            // that acts on it ("Save key" while unconnected, "Manage" after -
+            // the owner's rule that the connect affordance must not outlive
+            // the setup is item 2; here it already swapped to management).
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
-                    .clickable { open = !open }
                     .padding(horizontal = 12.dp, vertical = 8.dp)
                     .semantics {
                         testTag = "provider_${provider.id}"
-                        role = Role.Button
                         contentDescription = toggleLabel
                     },
                 verticalAlignment = Alignment.CenterVertically,
@@ -736,6 +905,10 @@ private fun ProviderRow(
                         style = MaterialTheme.typography.labelSmall,
                         color = chat.muted,
                     )
+                }
+                if (free) {
+                    StatusPill(text = stringResource(R.string.provider_free_pill), color = chat.success)
+                    Spacer(Modifier.width(6.dp))
                 }
                 StatusPill(text = "${provider.models.size}", color = chat.muted)
                 if (!connected) {
@@ -768,29 +941,17 @@ private fun ProviderRow(
                         Text(stringResource(R.string.settings_provider_manage_short))
                     }
                 }
-                Spacer(Modifier.width(6.dp))
-                Icon(
-                    imageVector = if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = chat.muted,
-                    modifier = Modifier.size(20.dp).clearAndSetSemantics { },
-                )
-            }
-            if (open) {
-                HorizontalDivider(thickness = 1.dp, color = chat.toolBorder)
-                ModelList(
-                    provider = provider,
-                    selectedModel = if (selectedProvider == provider.id) selectedModel else "",
-                    starredKeys = starredKeys,
-                    onSetModel = onSetModel,
-                    onToggleStar = onToggleStar,
-                )
             }
         }
     }
 }
 
-/** Model list in a bounded scroll box (a provider can list hundreds of models). */
+/**
+ * The model rows the Models card groups by provider (v9.41 rebuild, owner
+ * items 21+22): tap the row to USE the model; tap the STAR to toggle it into
+ * the quick switch; tap the small TRIANGLE (thinking-capable models only) to
+ * open that model's level rows inline under it.
+ */
 @Composable
 private fun ModelList(
     provider: OpenCodeApi.ProviderEntry,
@@ -798,16 +959,22 @@ private fun ModelList(
     starredKeys: Set<String> = emptySet(),
     onSetModel: (String, String) -> Unit,
     onToggleStar: (String, String, Boolean) -> Unit = { _, _, _ -> },
+    models: List<OpenCodeApi.ModelEntry>? = null,
+    onSetThinking: (String, String, String) -> Unit = { p, m, _ -> onSetModel(p, m) },
+    tagPrefix: String = "model",
 ) {
     val chat = ChatTheme.chat
+    val rows = models ?: provider.models
+    if (rows.isEmpty()) return
+    var expandedFor by remember(provider.id) { mutableStateOf<String?>(null) }
     Column(
         Modifier
             .fillMaxWidth()
-            .heightIn(max = 260.dp)
+            .heightIn(max = 300.dp)
             .verticalScroll(rememberScrollState())
             .padding(vertical = 4.dp),
     ) {
-        for (model in provider.models) {
+        for (model in rows) {
             val label = stringResource(R.string.settings_model_use, model.name)
             val selected = model.id == selectedModel
             Row(
@@ -816,7 +983,7 @@ private fun ModelList(
                     .heightIn(min = 44.dp)
                     .clickable { onSetModel(provider.id, model.id) }
                     .semantics {
-                        testTag = "model_${provider.id}_${model.id}"
+                        testTag = "${tagPrefix}_${provider.id}_${model.id}"
                         role = Role.Button
                         contentDescription = label
                     }
@@ -846,24 +1013,66 @@ private fun ModelList(
                 if (model.status.isNotBlank()) {
                     StatusPill(text = model.status, color = chat.muted)
                 }
-                // v4 item 3: "starred" is what the chat header's quick switch shows.
-                // It is a checkbox and not a tap on the row because tapping the row
-                // already means "use this model now" - two different decisions that
-                // must not fight over one gesture.
+                if (model.variants.isNotEmpty()) {
+                    // v9.41 (owner item 22): the little triangle beside the
+                    // name; it opens the level rows for THIS model inline.
+                    val expandLabel = stringResource(R.string.chat_thinking_expand)
+                    Icon(
+                        imageVector = if (expandedFor == model.id) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                        contentDescription = expandLabel,
+                        tint = chat.muted,
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                            .clickable {
+                                expandedFor = if (expandedFor == model.id) null else model.id
+                            }
+                            .semantics { testTag = "${tagPrefix}_vt_${provider.id}_${model.id}" },
+                    )
+                    Spacer(Modifier.width(4.dp))
+                }
+                // v4 item 3 / v9.41 (owner item 21): a REAL star, not a
+                // checkbox. It stays a separate tap from the row itself,
+                // because "use this now" and "keep this in the quick switch"
+                // are two decisions that must not fight over one gesture.
                 val starred = ModelRefCodec.encode(OpenCodeApi.ModelRef(provider.id, model.id)) in starredKeys
                 val starLabel = stringResource(
                     if (starred) R.string.settings_model_star_off else R.string.settings_model_star_on,
                     model.name,
                 )
-                Checkbox(
-                    checked = starred,
-                    onCheckedChange = { onToggleStar(provider.id, model.id, it) },
+                IconButton(
+                    onClick = { onToggleStar(provider.id, model.id, !starred) },
                     modifier = Modifier
+                        .size(34.dp)
                         .semantics {
                             testTag = "model_star_${provider.id}_${model.id}"
                             contentDescription = starLabel
                         },
-                )
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = null,
+                        tint = if (starred) MaterialTheme.colorScheme.primary else chat.muted.copy(alpha = 0.45f),
+                        modifier = Modifier.size(18.dp).clearAndSetSemantics { },
+                    )
+                }
+            }
+            if (expandedFor == model.id && model.variants.isNotEmpty()) {
+                for ((vi, vid) in model.variants.withIndex()) {
+                    Text(
+                        text = vid,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = chat.muted,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSetThinking(provider.id, model.id, vid) }
+                            .padding(start = 36.dp, top = 5.dp, bottom = 5.dp, end = 12.dp)
+                            .semantics {
+                                testTag = "${tagPrefix}_lvl_${provider.id}_${model.id}_$vi"
+                                contentDescription = stringResource(R.string.chat_thinking_pick, vid)
+                            },
+                    )
+                }
             }
         }
     }
@@ -974,39 +1183,58 @@ private fun ConnectorsSection(
     val chat = ChatTheme.chat
     var token by remember { mutableStateOf("") }
     var rejected by remember { mutableStateOf(false) }
+    // v9.41 (owner item 2): the connectors accordion no longer opens itself -
+    // every other Settings section is collapsed by default and this one reads
+    // as a shout otherwise. Once the token is in, the "create a token" CTA
+    // disappears too: it is done, it should stop asking. (A quiet "replace
+    // token" text button keeps the re-enter path - management, not a connect
+    // flow.)
+    var replacing by remember { mutableStateOf(false) }
     SectionCard(
         title = stringResource(R.string.settings_section_connectors),
         body = stringResource(R.string.settings_connectors_body),
         collapsible = true,
+        initiallyExpanded = false,
     ) {
-        Text(
-            text = stringResource(R.string.github_connector_explain),
-            style = MaterialTheme.typography.bodySmall,
-            color = chat.muted,
-        )
-        Spacer(Modifier.height(8.dp))
-        val tokenUrl = stringResource(R.string.github_token_url)
-        OutlinedButton(
-            onClick = { onOpenUrl(tokenUrl) },
-            modifier = Modifier.fillMaxWidth().semantics { testTag = "github_create_token" },
-        ) {
-            Text(stringResource(R.string.github_create_token))
+        if (!githubConnected) {
+            Text(
+                text = stringResource(R.string.github_connector_explain),
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.muted,
+            )
+            Spacer(Modifier.height(8.dp))
+            val tokenUrl = stringResource(R.string.github_token_url)
+            OutlinedButton(
+                onClick = { onOpenUrl(tokenUrl) },
+                modifier = Modifier.fillMaxWidth().semantics { testTag = "github_create_token" },
+            ) {
+                Text(stringResource(R.string.github_create_token))
+            }
+            Spacer(Modifier.height(8.dp))
         }
-        Spacer(Modifier.height(8.dp))
-        if (githubConnected) {
+        if (githubConnected && !replacing) {
             Text(
                 text = stringResource(R.string.github_connected),
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.semantics { testTag = "github_connected_line" },
             )
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = onRemoveGithubToken,
-                modifier = Modifier.fillMaxWidth().semantics { testTag = "github_token_remove" },
-            ) {
-                Text(stringResource(R.string.github_token_remove))
+            Spacer(Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(
+                    onClick = { replacing = true },
+                    modifier = Modifier.height(40.dp).semantics { testTag = "github_token_replace" },
+                ) {
+                    Text(stringResource(R.string.github_token_replace))
+                }
+                Spacer(Modifier.width(6.dp))
+                TextButton(
+                    onClick = onRemoveGithubToken,
+                    modifier = Modifier.height(40.dp).semantics { testTag = "github_token_remove" },
+                ) {
+                    Text(stringResource(R.string.github_token_remove))
+                }
             }
-        } else {
+        } else if (!githubConnected || replacing) {
             OutlinedTextField(
                 value = token,
                 onValueChange = { token = it; rejected = false },
@@ -1026,7 +1254,10 @@ private fun ConnectorsSection(
                 onClick = {
                     val ok = onSaveGithubToken(token)
                     rejected = !ok
-                    if (ok) token = ""
+                    if (ok) {
+                        token = ""
+                        replacing = false
+                    }
                 },
                 enabled = token.isNotBlank(),
                 modifier = Modifier.height(46.dp).fillMaxWidth().semantics { testTag = "github_token_save" },
@@ -1310,6 +1541,13 @@ private fun WorkspaceSection(
     onPick: () -> Unit,
     onGrant: () -> Unit,
     onMove: () -> Unit,
+    // v9.41 (owner item 11): what the Projects page's Workspace box used to
+    // own moved into this dropdown - the import action and the known-folder
+    // switcher ("Import a Copy and co in a dedicated Settings dropdown").
+    importing: Boolean = false,
+    onImport: () -> Unit = {},
+    knownWorkspaces: List<ai.opencode.android.ui.projects.KnownWorkspace> = emptyList(),
+    onSwitchWorkspace: (String) -> Unit = {},
 ) {
     val chat = ChatTheme.chat
     SectionCard(
@@ -1378,6 +1616,67 @@ private fun WorkspaceSection(
             style = MaterialTheme.typography.bodySmall,
             color = chat.muted,
         )
+        // v9.41 (owner item 11): the import action, copied here from the
+        // Projects page's removed Workspace box. A COPY, per the standing
+        // v6.1 rule - nothing on the source device is touched.
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(
+                onClick = onImport,
+                enabled = !importing,
+                modifier = Modifier.height(46.dp).weight(1f).semantics {
+                    testTag = "settings_workspace_import"
+                },
+            ) {
+                Text(
+                    stringResource(if (importing) R.string.projects_importing else R.string.projects_import),
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                )
+            }
+        }
+        // The folders this app has worked in before. One line each, tap to
+        // switch (server-scoped `cd`, the note above says exactly what that
+        // means; nothing is deleted).
+        val previous = knownWorkspaces.filterNot { it.current }
+        if (previous.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = stringResource(R.string.projects_workspace_history),
+                style = MaterialTheme.typography.labelSmall,
+                color = chat.muted,
+            )
+            previous.forEachIndexed { index, ws ->
+                Surface(
+                    onClick = { onSwitchWorkspace(ws.path) },
+                    color = chat.toolContainer,
+                    shape = MaterialTheme.shapes.small,
+                    border = BorderStroke(1.dp, chat.toolBorder),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp)
+                        .semantics {
+                            testTag = "settings_workspace_root_$index"
+                            role = Role.Button
+                        },
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(ws.path, style = MonoSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(
+                                stringResource(R.string.projects_workspace_project_count, ws.projectCount),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = chat.muted,
+                            )
+                        }
+                        StatusPill(text = stringResource(R.string.projects_workspace_switch), color = chat.muted)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1886,6 +2185,8 @@ fun ProvidersScreen(
     onDeleteKey: (String, String) -> Unit = { _, _ -> },
     onAddCustomProvider: (String, String, String, String, String) -> Unit = { _, _, _, _, _ -> },
     providerSetup: ProviderSetup = ProviderSetup.UNKNOWN,
+    /** v9.41 (owner item 22): pick a model AND its thinking level at once. */
+    onSetThinking: (String, String, String) -> Unit = { providerID, modelID, _ -> onSetModel(providerID, modelID) },
 ) {
     // The `+` toggles the manual form into the list instead of pushing another
     // screen: the owner asked for an add affordance at the top, not more depth.
@@ -1928,14 +2229,28 @@ fun ProvidersScreen(
                     starred = state.starredModels,
                     storedProviderIds = storedProviderIds,
                     hardwareBacked = hardwareBacked,
-                    onSetModel = onSetModel,
-                    onClearModel = onClearModel,
-                    onToggleStar = onToggleStar,
+                )
+            }
+            // v9.41 (owner item 23): the split - Providers and Models are each
+            // their own collapsible card now, collapsed by default.
+            item(key = "providers_catalog") {
+                ProvidersCatalogSection(
+                    providers = state.providers,
                     onConnectProvider = onConnectProvider,
                     onRevokeKey = onRevokeKey,
                     providerKeys = providerKeys,
                     onUseKey = onUseKey,
                     onDeleteKey = onDeleteKey,
+                )
+            }
+            item(key = "models_catalog") {
+                ModelsSection(
+                    providers = state.providers,
+                    model = state.model,
+                    starred = state.starredModels,
+                    onSetModel = onSetModel,
+                    onToggleStar = onToggleStar,
+                    onSetThinking = onSetThinking,
                 )
             }
         }

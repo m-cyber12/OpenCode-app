@@ -61,7 +61,8 @@ import androidx.compose.ui.unit.dp
 fun ChangesScreen(
     projectName: String,
     turns: List<WorkLog.TurnChanges>,
-    onBack: () -> Unit,
+    /** v9.41 (owner item 17): tab page - no navigation button. */
+    onBack: (() -> Unit)?,
     onSelectTab: (ProjectTab) -> Unit,
     modifier: Modifier = Modifier,
     now: Long = System.currentTimeMillis(),
@@ -70,7 +71,7 @@ fun ChangesScreen(
         AppTopBar(
             title = stringResource(R.string.changes_title),
             subtitle = projectName,
-            onBack = onBack,
+            onBack = null,
         )
         if (turns.isEmpty()) {
             EmptyState(

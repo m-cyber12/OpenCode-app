@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -85,10 +86,14 @@ fun AppTopBar(
                 modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                // v9.41 (owner item 17): sub-screens carry a BACK ARROW, not an
+                // X. Nothing here is a modal that "cancels" something; it is one
+                // level deeper, and an arrow says so. The tab pages (Sandbox/
+                // Diff/Terminal) pass onBack = null and render no button at all.
                 if (onBack != null) {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = Icons.Filled.Close,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.action_back),
                         )
                     }
@@ -154,6 +159,8 @@ fun SectionCard(
     /** v9.1 (owner): Settings is one page of accordions - a collapsible card's header toggles its content inline. */
     collapsible: Boolean = false,
     initiallyExpanded: Boolean = true,
+    /** v9.41: an optional tag on the header row so the collapse itself is testable. */
+    headerTag: String = "",
     content: @Composable ColumnScope.() -> Unit,
 ) {
     var expanded by rememberSaveable(title, collapsible) { mutableStateOf(!collapsible || initiallyExpanded) }
@@ -175,6 +182,7 @@ fun SectionCard(
                         .semantics {
                             role = Role.Button
                             contentDescription = title
+                            if (headerTag.isNotEmpty()) testTag = headerTag
                         }
                 } else {
                     Modifier.fillMaxWidth()

@@ -122,10 +122,11 @@ fun ProjectsScreen(
     onCreate: (String) -> Unit,
     onOpen: (String) -> Unit,
     onBack: (() -> Unit)?,
-    workspacePath: String = "",
+    // v9.41 (owner item 11): workspacePath / onBrowseWorkspace / onImport and
+    // the Workspace card they fed left this screen for good - Settings owns
+    // the workspace now. `workspaces` remains for the collapsed history row.
     workspaces: List<KnownWorkspace> = emptyList(),
     onSwitchTo: (String) -> Unit = {},
-    onBrowseWorkspace: () -> Unit = {},
     sessions: Map<String, List<ProjectSession>> = emptyMap(),
     expandedName: String = "",
     onToggleExpand: (String) -> Unit = {},
@@ -136,10 +137,8 @@ fun ProjectsScreen(
     onDeleteSession: (String) -> Unit = {},
     onRename: (String, String) -> Unit = { _, _ -> },
     onDelete: (String) -> Unit = {},
-    onImport: () -> Unit = {},
     onExport: (String) -> Unit = {},
     onFiles: (String) -> Unit = {},
-    importing: Boolean = false,
     importError: String = "",
     /**
      * Something the user should know about the project *location* (Phase 10
@@ -169,7 +168,6 @@ fun ProjectsScreen(
     var sessionDeleteTarget by remember { mutableStateOf<ProjectSession?>(null) }
     var sessionRenameTarget by remember { mutableStateOf<ProjectSession?>(null) }
     var sessionRenameText by rememberSaveable { mutableStateOf("") }
-    var switchOpen by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxSize().semantics { testTag = "projects_screen" }) {
         AppTopBar(
@@ -177,14 +175,13 @@ fun ProjectsScreen(
             subtitle = runtimeLine,
             onBack = onBack,
         )
-        WorkspaceCard(
-            workspacePath = workspacePath,
-            rootCount = workspaces.size,
-            onSwitchOpen = { switchOpen = true },
-            onImport = onImport,
-            importing = importing,
-        )
-
+        // v9.41 (owner item 11): the "Workspace" box that led this page is
+        // GONE. Everything it held was either reachable from elsewhere already
+        // or now lives in the one place that owns it - Settings > Workspace,
+        // which carries the path, the import action and the known-workspace
+        // switcher as a dedicated dropdown. The page leads with what the page
+        // is for: projects. (The collapsed history row below keeps a quick
+        // path back to folders this app has worked in.)
         CreateProjectCard(
             onCreate = onCreate,
             existing = projects.map { it.name },
@@ -381,20 +378,6 @@ fun ProjectsScreen(
         )
     }
 
-    if (switchOpen) {
-        SwitchWorkspaceDialog(
-            workspaces = workspaces,
-            onPick = { path ->
-                switchOpen = false
-                onSwitchTo(path)
-            },
-            onBrowse = {
-                switchOpen = false
-                onBrowseWorkspace()
-            },
-            onDismiss = { switchOpen = false },
-        )
-    }
 }
 
 /**
@@ -945,64 +928,6 @@ private fun SessionRow(
 }
 
 /**
- * Where the listing lives: the workspace folder itself, the action that switches
- * it, and the (small) import action. Every speech- and touch-path names what the
- * path is; nothing here is only visual.
- */
-@Composable
-private fun WorkspaceCard(
-    workspacePath: String,
-    rootCount: Int,
-    onSwitchOpen: () -> Unit,
-    onImport: () -> Unit,
-    importing: Boolean,
-) {
-    val chat = ChatTheme.chat
-    SectionCard(
-        title = stringResource(R.string.projects_workspace_label),
-        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-    ) {
-        Text(
-            text = workspacePath,
-            style = MonoSmall,
-            color = chat.muted,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth().semantics { testTag = "projects_workspace_path" },
-        )
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            val switchDesc = stringResource(R.string.projects_workspace_switch_desc)
-            OutlinedButton(
-                onClick = onSwitchOpen,
-                modifier = Modifier.height(42.dp).weight(1f).semantics {
-                    testTag = "projects_switch_workspace"
-                    contentDescription = switchDesc
-                },
-            ) {
-                Text(
-                    stringResource(R.string.projects_workspace_switch) +
-                        if (rootCount > 1) " ($rootCount)" else "",
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = 1,
-                )
-            }
-            TextButton(
-                onClick = onImport,
-                enabled = !importing,
-                modifier = Modifier.height(42.dp).semantics { testTag = "project_import" },
-            ) {
-                Text(
-                    text = stringResource(if (importing) R.string.projects_importing else R.string.projects_import),
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = 1,
-                )
-            }
-        }
-    }
-}
-
-/**
  * The folders the user has worked in before. Collapsed by default (one line),
  * expanded it is a plain list of roots with their project counts; tapping a root
  * switches to it (the server never moves anything - cf `cd`).
@@ -1090,70 +1015,3 @@ private fun HistorySection(
     }
 }
 
-/** The remembered-roots list plus the full "browse for a folder" entry. */
-@Composable
-private fun SwitchWorkspaceDialog(
-    workspaces: List<KnownWorkspace>,
-    onPick: (String) -> Unit,
-    onBrowse: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val chat = ChatTheme.chat
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.projects_switch_dialog_title)) },
-        text = {
-            Column {
-                Text(
-                    text = stringResource(R.string.projects_switch_note),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = chat.muted,
-                )
-                Spacer(Modifier.height(10.dp))
-                workspaces.forEach { ws ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 44.dp)
-                            .clickable(enabled = !ws.current) { onPick(ws.path) }
-                            .padding(vertical = 6.dp)
-                            .semantics {
-                                testTag = if (ws.current) "projects_switch_current" else "projects_switch_root"
-                                if (!ws.current) role = Role.Button
-                                contentDescription = ws.path
-                            },
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                text = ws.path,
-                                style = MonoSmall,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Text(
-                                text = if (ws.current) {
-                                    stringResource(R.string.projects_switch_current)
-                                } else {
-                                    stringResource(R.string.projects_history_project_count, ws.projectCount)
-                                },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (ws.current) chat.success else chat.muted,
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.height(4.dp))
-                OutlinedButton(
-                    onClick = onBrowse,
-                    modifier = Modifier.fillMaxWidth().height(44.dp).semantics { testTag = "projects_switch_browse" },
-                ) {
-                    Text(stringResource(R.string.projects_switch_browse))
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-        },
-    )
-}

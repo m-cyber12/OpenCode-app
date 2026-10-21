@@ -103,4 +103,51 @@ object EmptyChatCopy {
         "The best refactor reads like nothing happened - same behavior, calmer code.",
         "Ship the smallest thing that works, then make it beautiful.",
     )
+
+    /** One rendered frame of the typewriter line: the visible text and whether
+     * the caret blinks with it. */
+    data class Frame(val text: String, val caret: Boolean)
+
+    /**
+     * v9.41 (owner item 20): the whole empty-chat cycle as ONE pure function
+     * of elapsed time. The old composable drove it with a coroutine that
+     * restarted on every (re)entry, so returning to the chat replayed the
+     * typing from zero; now the caller samples `frameAt(now - anchor)` and the
+     * line simply IS where the clock says it is - mid-type, mid-hold, whatever
+     * the moment. [firstChat] prepends the polished subtitle with its long
+     * hold; [tipStart] pins which tip the day starts on (the v9.35 rule).
+     */
+    fun frameAt(elapsedMs: Long, firstChat: Boolean, tipStart: Int = 0): Frame {
+        val typeMs = 26L
+        val wipeMs = 13L
+        val gapMs = 400L
+        var t = if (elapsedMs < 0L) 0L else elapsedMs
+        var i = 0
+        while (true) {
+            val line: String
+            val hold: Long
+            if (firstChat && i == 0) {
+                line = SUBTITLE
+                hold = 15_000L
+            } else {
+                val k = if (firstChat) i - 1 else i
+                line = TIPS[((tipStart + k) % TIPS.size + TIPS.size) % TIPS.size]
+                hold = 7_500L
+            }
+            val typeLen = line.length * typeMs
+            val wipeLen = line.length * wipeMs
+            val cycle = typeLen + hold + wipeLen + gapMs
+            if (t < cycle) {
+                return when {
+                    t < typeLen -> Frame(line.substring(0, (t / typeMs).toInt() + 1), caret = true)
+                    t < typeLen + hold -> Frame(line, caret = false)
+                    t < typeLen + hold + wipeLen ->
+                        Frame(line.dropLast(((t - typeLen - hold) / wipeMs).toInt() + 1), caret = true)
+                    else -> Frame("", caret = false)
+                }
+            }
+            t -= cycle
+            i++
+        }
+    }
 }

@@ -21,6 +21,8 @@ import ai.opencode.android.ui.theme.goldAccentBrush
 import ai.opencode.android.ui.theme.goldenBackdrop
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
@@ -30,6 +32,7 @@ import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.graphics.SolidColor
 import kotlinx.coroutines.delay
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -103,6 +106,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -164,6 +168,23 @@ fun ChatScreen(
     /** v7 redesign: the Changes and Terminal tabs under the project header. */
     onOpenChanges: () -> Unit = {},
     onOpenTerminal: () -> Unit = {},
+    // v9.41 (owner item 15): the conversation drawer switches/renames/deletes
+    // sessions itself - the same callbacks the full-page panel gets, wired to
+    // the same repository calls. Defaults keep every existing call site (and
+    // gate) compiling untouched.
+    onSelectSession: (String) -> Unit = {},
+    onRenameSession: (String, String) -> Unit = { _, _ -> },
+    onDeleteSession: (String) -> Unit = {},
+    // v9.41 (owner item 16): the `+` opens a three-button menu first; Camera
+    // and Pictures get their own launchers, Files keeps the old `onAttach`.
+    onAttachCamera: () -> Unit = {},
+    onAttachPictures: () -> Unit = {},
+    // v9.41 (owner items 3+6): one quiet line while a send waits behind the
+    // agent boot or a GitHub refresh. Empty string = no line at all.
+    sendWaitLabel: String = "",
+    // v9.41 (owner item 20): null keeps the built-in rule ("first chat of the
+    // project"); AppRoot overrides it with the install-first-launch decision.
+    emptyChatSubtitle: Boolean? = null,
     /** v4 item 3: pick one of the starred models without a trip to Settings. */
     onPickModel: (String, String) -> Unit = { _, _ -> },
     /** Build/plan: which built-in agent the next prompt runs as. */
@@ -211,6 +232,12 @@ fun ChatScreen(
     // with one simple finite fade. The console only hides while the overlay
     // owns the screen.
 
+    // v9.41 (owner item 15): the hamburger opens a ChatGPT-style side drawer -
+    // it covers part of the screen with the current project's conversations in
+    // it; it is not a popup. State lives here (not in the header) because the
+    // header only holds the button that opens it.
+    var drawerOpen by remember { mutableStateOf(false) }
+
     // v9.35: root is a Box now - the conversation column underneath, the
     // preview page overlay on top of EVERYTHING (header, tabs included).
     Box(
@@ -229,11 +256,22 @@ fun ChatScreen(
         // holds the far right. The project/session identity moved INSIDE the
         // hamburger menu (glass card at its very top), so the row above the
         // conversation carries exactly three quiet controls and nothing else.
+        // v9.41 (owner item 22): every Zen model belongs to the quick switch's
+        // "Free Models" group - free needs no starring to be reachable. The
+        // variants lookup answers for ANY listed model from the same catalog
+        // snapshot the repository already holds.
+        val freeQuick = remember(state.providers) {
+            state.providers?.entries
+                ?.firstOrNull { it.id == OpenCodeApi.ZEN_PROVIDER_ID }
+                ?.models
+                ?.map { m -> QuickModel(OpenCodeApi.ModelRef(OpenCodeApi.ZEN_PROVIDER_ID, m.id), m.name, m.variants) }
+                ?: emptyList()
+        }
+        fun variantsOf(pid: String, mid: String): List<String> =
+            state.providers?.entries?.firstOrNull { it.id == pid }?.models
+                ?.firstOrNull { it.id == mid }?.variants ?: emptyList()
         ChatHeader(
-            projectLabel = projectLabel,
-            sessionTitle = sessionTitle,
-            projectsDescription = projectsDescription,
-            githubProject = githubProject,
+            onOpenMenu = { drawerOpen = true },
             busy = state.busy,
             availability = availability,
             model = state.model,
@@ -250,9 +288,30 @@ fun ChatScreen(
             onOpenProviders = onOpenProviders,
             onOpenAddons = onOpenAddons,
             onCompactSession = onCompactSession,
+            freeModels = freeQuick,
+            variantsOf = ::variantsOf,
+            onPickWithVariant = { pid, mid, v ->
+                onPickModel(pid, mid)
+                onPickThinking(v)
+            },
         )
 
         StatusArea(state = state, runtime = runtime, availability = availability, onDismissBanner = onDismissBanner)
+
+        // v9.41 (owner items 3+6): the "waiting" line - shown while a send
+        // waits behind the agent boot or a repo refresh. One finite, quiet
+        // label; the composer stays usable.
+        if (sendWaitLabel.isNotEmpty()) {
+            Text(
+                text = sendWaitLabel,
+                style = MaterialTheme.typography.labelMedium,
+                color = ChatTheme.chat.muted,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp, vertical = 2.dp)
+                    .semantics { testTag = "send_wait_note" },
+            )
+        }
 
         // v9.35 (owner): the preview console sits DIRECTLY below the TODO
         // panel - a clone of its rounded container, asking "See What You've
@@ -287,7 +346,7 @@ fun ChatScreen(
             messages = messages,
             // v9.35 (owner): the typed subtitle belongs ONLY to the first chat
             // of a freshly created project - later chats go straight to tips.
-            firstChatOfProject = state.sessions.size <= 1,
+            firstChatOfProject = emptyChatSubtitle ?: (state.sessions.size <= 1),
             busy = state.busy,
             now = now,
             listState = listState,
@@ -321,6 +380,8 @@ fun ChatScreen(
             onSend = { onSend(state.draft) },
             onStop = onStop,
             onAttach = onAttach,
+            onAttachCamera = onAttachCamera,
+            onAttachPictures = onAttachPictures,
             busy = state.busy,
             canSend = UiError.canSend(availability),
             canRedo = state.canRedo,
@@ -341,6 +402,30 @@ fun ChatScreen(
             },
         )
     }
+    // v9.41 (owner item 15): the conversation drawer, above everything.
+    ChatConversationDrawer(
+        open = drawerOpen,
+        onDismiss = { drawerOpen = false },
+        projectLabel = projectLabel,
+        projectsDescription = projectsDescription,
+        githubProject = githubProject,
+        sessionTitle = sessionTitle,
+        sessions = state.sessions,
+        selectedSession = state.selectedSession,
+        transcript = state.transcript,
+        now = now,
+        ready = runtime.ready,
+        onOpenProjects = { drawerOpen = false; onOpenProjects() },
+        onNewSession = { drawerOpen = false; onNewSession() },
+        onOpenAddons = { drawerOpen = false; onOpenAddons() },
+        onOpenProviders = { drawerOpen = false; onOpenProviders() },
+        onCompactSession = { drawerOpen = false; onCompactSession() },
+        onOpenSettings = { drawerOpen = false; onOpenSettings() },
+        onSelect = { id -> drawerOpen = false; onSelectSession(id) },
+        onRename = onRenameSession,
+        onDelete = onDeleteSession,
+    )
+
     // v9.35: the morph overlay composes last, above the whole column.
     if (preview.phase != PreviewState.CLOSED) {
         ChatPreviewOverlay(
@@ -372,11 +457,9 @@ fun ChatScreen(
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun ChatHeader(
-    projectLabel: String,
-    sessionTitle: String,
-    projectsDescription: String,
-    githubProject: Boolean,
     busy: Boolean,
+    /** v9.41 (owner item 15): opens the conversation drawer. */
+    onOpenMenu: () -> Unit,
     availability: AgentAvailability,
     model: OpenCodeApi.ModelRef?,
     starred: List<OpenCodeApi.ModelRef>,
@@ -386,6 +469,11 @@ private fun ChatHeader(
     onPickModel: (String, String) -> Unit,
     onPickMode: (String) -> Unit,
     onPickThinking: (String) -> Unit,
+    // v9.41 (owner item 22): the quick switch also lists the FREE models (Zen)
+    // and knows each listed model's thinking variants for its inline picker.
+    freeModels: List<QuickModel> = emptyList(),
+    variantsOf: (String, String) -> List<String> = { _, _ -> emptyList() },
+    onPickWithVariant: (String, String, String) -> Unit = { p, m, _ -> onPickModel(p, m) },
     onOpenProjects: () -> Unit,
     onNewSession: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -403,209 +491,34 @@ private fun ChatHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 10.dp, end = 14.dp, top = 10.dp, bottom = 8.dp),
+            .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        var menuOpen by remember { mutableStateOf(false) }
-        Box {
-            // v9.1: the hamburger sits in its own glass circle, like the other
-            // header controls - the row reads as three floating glass pieces.
-            // v9.6 (owner, second pass on the size): built EXACTLY like the
-            // status orb - a 36dp clickable Surface - instead of an
-            // IconButton, whose Material minimum-touch-target plumbing kept
-            // it visually larger than its neighbours.
-            Surface(
-                onClick = { menuOpen = true },
-                color = chat.toolContainer,
-                shape = CircleShape,
-                border = BorderStroke(1.dp, chat.toolBorder),
-                modifier = Modifier
-                    .size(36.dp)
-                    .semantics { testTag = "chat_menu" },
-            ) {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                    Icon(
-                        Icons.Filled.Menu,
-                        contentDescription = menuLabel,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
-            }
-            // The menu itself rounds to a soft card (the stock extraSmall corner
-            // reads sharp against the black backdrop).
-            MaterialTheme(shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(22.dp))) {
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    // The identity card: the code-glyph tile on a golden
-                    // gradient, project name and session title beside it, the
-                    // whole card a floating glass pane. One tap = the project
-                    // list, exactly what tapping the old header block did.
-                    Surface(
-                        onClick = {
-                            menuOpen = false
-                            onOpenProjects()
-                        },
-                        color = chat.toolContainer,
-                        shape = RoundedCornerShape(18.dp),
-                        border = BorderStroke(1.dp, chat.toolBorder),
-                        modifier = Modifier
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
-                            .widthIn(min = 236.dp)
-                            .semantics { contentDescription = projectsDescription },
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(goldAccentBrush(), RoundedCornerShape(13.dp)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                // v9.31 (owner): the menu's identity tile shows
-                                // the SAME mark as the projects page - a GitHub
-                                // project is recognizable everywhere.
-                                if (githubProject) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.ic_github_mark),
-                                        contentDescription = stringResource(R.string.projects_github_label),
-                                        modifier = Modifier.size(22.dp),
-                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                    )
-                                } else {
-                                    Text(
-                                        text = stringResource(R.string.project_glyph),
-                                        style = MonoSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                    )
-                                }
-                            }
-                            Spacer(Modifier.width(10.dp))
-                            Column {
-                                Text(
-                                    text = projectLabel,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                Text(
-                                    text = sessionTitle,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = chat.muted,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    DropdownMenuItem(
-                        text = { Text(providersLabel) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Filled.Lock,
-                                contentDescription = null,
-                                tint = chat.muted,
-                                modifier = Modifier.clearAndSetSemantics { },
-                            )
-                        },
-                        onClick = {
-                            menuOpen = false
-                            onOpenProviders()
-                        },
-                        modifier = Modifier.semantics {
-                            testTagsAsResourceId = true
-                            testTag = "open_providers"
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(newLabel) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Filled.Add,
-                                contentDescription = null,
-                                tint = chat.muted,
-                                modifier = Modifier.clearAndSetSemantics { },
-                            )
-                        },
-                        onClick = {
-                            menuOpen = false
-                            onNewSession()
-                        },
-                        modifier = Modifier.semantics {
-                            testTagsAsResourceId = true
-                            testTag = "new_session"
-                        },
-                    )
-                    // v9.19 token saver: upstream's /compact, always reachable
-                    // from the menu (the smart chip above the composer only
-                    // appears once the conversation is actually heavy).
-                    // v9.24 (owner): Add-ons - the app downloads big artifacts
-                    // (the Next wasm compiler) once, agents reuse them free.
-                    DropdownMenuItem(
-                        text = { Text(addonsLabel) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Filled.Build,
-                                contentDescription = null,
-                                tint = chat.muted,
-                                modifier = Modifier.clearAndSetSemantics { },
-                            )
-                        },
-                        onClick = {
-                            menuOpen = false
-                            onOpenAddons()
-                        },
-                        modifier = Modifier.semantics {
-                            testTagsAsResourceId = true
-                            testTag = "open_addons"
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(compactLabel) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Filled.Refresh,
-                                contentDescription = null,
-                                tint = chat.muted,
-                                modifier = Modifier.clearAndSetSemantics { },
-                            )
-                        },
-                        onClick = {
-                            menuOpen = false
-                            onCompactSession()
-                        },
-                        modifier = Modifier.semantics {
-                            testTagsAsResourceId = true
-                            testTag = "compact_session"
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(settingsLabel) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Filled.Settings,
-                                contentDescription = null,
-                                tint = chat.muted,
-                                modifier = Modifier.clearAndSetSemantics { },
-                            )
-                        },
-                        onClick = {
-                            menuOpen = false
-                            onOpenSettings()
-                        },
-                        modifier = Modifier.semantics {
-                            testTagsAsResourceId = true
-                            testTag = "open_settings"
-                        },
-                    )
-                }
+        // v9.41 (owner item 15): the hamburger no longer pops a dropdown - it
+        // opens the conversation drawer hosted by the screen root. The identity
+        // card and every action that lived in this menu moved into the drawer,
+        // tag for tag. The circle itself is byte-identical (v9.6 size rule).
+        Surface(
+            onClick = onOpenMenu,
+            color = chat.toolContainer,
+            shape = CircleShape,
+            border = BorderStroke(1.dp, chat.toolBorder),
+            modifier = Modifier
+                .size(36.dp)
+                .semantics { testTag = "chat_menu" },
+        ) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                Icon(
+                    Icons.Filled.Menu,
+                    contentDescription = menuLabel,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(18.dp),
+                )
             }
         }
-        Spacer(Modifier.width(6.dp))
+        // v9.41 (owner item 9): one gap everywhere - the old row mixed 6dp and
+        // 8dp, which is what made the pieces read as uneven.
+        Spacer(Modifier.width(8.dp))
         // Models are starred on the Providers surface now, so the quick
         // switch's manage entry leads there (in the gates the two callbacks
         // are the same lambda, which keeps the U10 contract meaningful).
@@ -623,6 +536,10 @@ private fun ChatHeader(
                 variants = thinkingVariants,
                 activeVariant = thinkingVariant,
                 onPickVariant = onPickThinking,
+            
+                freeModels = freeModels,
+                variantsOf = variantsOf,
+                onPickWithVariant = onPickWithVariant,
             )
         }
         Spacer(Modifier.width(8.dp))
@@ -948,8 +865,12 @@ private fun BusyBar(todos: List<TodoItem> = emptyList()) {
     val chat = ChatTheme.chat
     val label = stringResource(R.string.chat_working)
     val done = todos.count { it.status == "completed" }
+    // v9.41 (owner item 10): the pending FALLBACK is gone. Marking the first
+    // unfinished item as "the current task" is what pinned the gold dot to
+    // item one for the rest of a turn whenever the model forgot to post an
+    // in_progress marker - "stays on the first item, does not move". Only a
+    // real in_progress gets the headline; otherwise the generic label does.
     val current = todos.firstOrNull { it.status == "in_progress" }
-        ?: todos.firstOrNull { it.status == "pending" }
     val headline = current?.content?.takeIf { it.isNotBlank() } ?: label
     var expanded by remember { mutableStateOf(false) }
 
@@ -1168,51 +1089,52 @@ object TypewriterConfig {
  * touches the animation clock, and the gates switch it off entirely via
  * [TypewriterConfig].
  */
+/**
+ * Process-static anchor for the empty-chat line (v9.41, owner item 20): the
+ * typewriter's phase is a pure function of wall-clock time since app start,
+ * so leaving the chat and coming back CONTINUES the line mid-cycle instead of
+ * replaying the typing animation from zero.
+ */
+private val EMPTY_CHAT_ANCHOR_MS = System.currentTimeMillis()
+
+/**
+ * v9.35 (owner): the line under the empty-chat headline is ALIVE now.
+ *
+ *  * First chat of a freshly created project (and, from v9.41 on, only the
+ *    first launch after install): the polished subtitle types in character by
+ *    character, stays for 15 seconds ONCE FULLY TYPED, then deletes itself.
+ *  * Then - and immediately, in every later chat - the tip carousel: one of
+ *    the 30 short tips types in, holds for 7.5 seconds fully displayed,
+ *    deletes, and the next one follows. The day picks where the carousel
+ *    starts so it does not always open on tip one.
+ *
+ * v9.41 (owner item 20): the cycle itself moved into [EmptyChatCopy.frameAt]
+ * - pure and unit-tested - and this composable just samples it against the
+ * wall clock. Deliberately NOT a Compose animation API: a delay-driven sampler
+ * never touches the animation clock, and the gates switch the whole line off
+ * (fully-typed, no motion) via [TypewriterConfig].
+ */
 @Composable
 private fun EmptyChatTypewriter(firstChat: Boolean) {
     val animate = TypewriterConfig.animate
-    var text by remember {
-        mutableStateOf(if (animate) "" else EmptyChatCopy.SUBTITLE)
+    val dayStart = remember {
+        ((java.time.LocalDate.now().toEpochDay() % EmptyChatCopy.TIPS.size).toInt() + EmptyChatCopy.TIPS.size) % EmptyChatCopy.TIPS.size
     }
-    var caret by remember { mutableStateOf(false) }
+    var frame by remember { mutableStateOf(EmptyChatCopy.Frame(EmptyChatCopy.SUBTITLE, caret = false)) }
     if (animate) {
-        LaunchedEffect(firstChat) {
-            val typeMs = 26L
-            val wipeMs = 13L
-            suspend fun type(line: String) {
-                caret = true
-                for (i in 1..line.length) {
-                    text = line.substring(0, i)
-                    delay(typeMs)
-                }
-                caret = false
-            }
-            suspend fun wipe() {
-                caret = true
-                while (text.isNotEmpty()) {
-                    text = text.dropLast(1)
-                    delay(wipeMs)
-                }
-                caret = false
-            }
-            if (firstChat) {
-                type(EmptyChatCopy.SUBTITLE)
-                delay(15_000L) // fully-visible hold; type/delete time excluded
-                wipe()
-                delay(400L)
-            }
-            var index = (java.time.LocalDate.now().toEpochDay() % EmptyChatCopy.TIPS.size).toInt()
+        LaunchedEffect(firstChat, dayStart) {
             while (true) {
-                type(EmptyChatCopy.TIPS[index])
-                delay(7_500L) // fully-visible hold per tip
-                wipe()
-                delay(400L)
-                index = (index + 1) % EmptyChatCopy.TIPS.size
+                frame = EmptyChatCopy.frameAt(
+                    elapsedMs = System.currentTimeMillis() - EMPTY_CHAT_ANCHOR_MS,
+                    firstChat = firstChat,
+                    tipStart = dayStart,
+                )
+                delay(90L)
             }
         }
     }
     Text(
-        text = if (caret) text + "\u258D" else text,
+        text = if (frame.caret) frame.text + "\u258D" else frame.text,
         style = MaterialTheme.typography.bodyMedium,
         color = ChatTheme.chat.muted,
         textAlign = TextAlign.Center,
@@ -1500,51 +1422,390 @@ private fun TranscriptPane(
     }
 }
 
+
+// ---- conversation drawer (v9.41, owner item 15) ----------------------------
+
+/**
+ * The ChatGPT-style side panel the hamburger opens: it slides in from the
+ * start, covers a stable fraction of the screen (not a popup), and holds the
+ * CURRENT project's conversations - each with its three-dot menu (Delete /
+ * Rename, in [SessionRow]) - plus the identity card and the actions that used
+ * to live in the old dropdown, tag for tag: `open_projects` (the identity
+ * card), `new_session`, `open_addons`, `open_providers`, `compact_session`,
+ * `open_settings`. Entering/leaving is finite (190/160 ms), matching the
+ * sheet rule; the scrim closes it, the system back closes it.
+ */
+@Composable
+private fun ChatConversationDrawer(
+    open: Boolean,
+    onDismiss: () -> Unit,
+    projectLabel: String,
+    sessionTitle: String,
+    projectsDescription: String,
+    githubProject: Boolean,
+    sessions: List<ai.opencode.android.client.OpenCodeApi.SessionInfo>,
+    selectedSession: String,
+    transcript: Transcript.Snapshot,
+    now: Long,
+    ready: Boolean,
+    onOpenProjects: () -> Unit,
+    onNewSession: () -> Unit,
+    onOpenAddons: () -> Unit,
+    onOpenProviders: () -> Unit,
+    onCompactSession: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onSelect: (String) -> Unit,
+    onRename: (String, String) -> Unit,
+    onDelete: (String) -> Unit,
+) {
+    AnimatedVisibility(
+        visible = open,
+        enter = slideInHorizontally(tween(190)) { full -> -(full * 0.30f).toInt() } + fadeIn(tween(160)),
+        exit = slideOutHorizontally(tween(160)) { full -> -(full * 0.30f).toInt() } + fadeOut(tween(130)),
+    ) {
+        val chat = ChatTheme.chat
+        Box(Modifier.fillMaxSize().semantics { testTag = "conversation_drawer" }) {
+            // Scrim: taps outside close the panel (ChatGPT behavior). No
+            // elevation games - a plain dim layer over the conversation.
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.55f))
+                    .clickable(onClick = onDismiss),
+            )
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(topEnd = 22.dp, bottomEnd = 22.dp),
+                border = BorderStroke(1.dp, chat.toolBorder),
+                modifier = Modifier.fillMaxHeight().fillMaxWidth(0.66f),
+            ) {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp, vertical = 14.dp),
+                ) {
+                    // The identity card, moved verbatim from the old dropdown
+                    // header of the menu - same glass, same gold tile, one tap
+                    // = the project list.
+                    Surface(
+                        onClick = onOpenProjects,
+                        color = chat.toolContainer,
+                        shape = RoundedCornerShape(18.dp),
+                        border = BorderStroke(1.dp, chat.toolBorder),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .semantics { testTag = "open_projects"; contentDescription = projectsDescription },
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(goldAccentBrush(), RoundedCornerShape(13.dp)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (githubProject) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_github_mark),
+                                        contentDescription = stringResource(R.string.projects_github_label),
+                                        modifier = Modifier.size(22.dp),
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                    )
+                                } else {
+                                    Text(
+                                        text = stringResource(R.string.project_glyph),
+                                        style = MonoSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Column(Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = projectLabel,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    text = sessionTitle,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = chat.muted,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    DrawerAction(
+                        tag = "new_session",
+                        label = stringResource(R.string.chat_new_conversation),
+                        icon = Icons.Filled.Add,
+                        onClick = onNewSession,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        text = stringResource(R.string.sessions_title),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = chat.muted,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+                    )
+                    if (!ready) {
+                        Text(
+                            text = stringResource(R.string.drawer_sessions_starting),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = chat.muted,
+                            modifier = Modifier.padding(8.dp).semantics { testTag = "drawer_sessions_pending" },
+                        )
+                    } else if (sessions.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.sessions_empty_title),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = chat.muted,
+                            modifier = Modifier.padding(8.dp),
+                        )
+                    } else {
+                        SessionList(
+                            sessions = sessions,
+                            selectedSession = selectedSession,
+                            transcript = transcript,
+                            now = now,
+                            onSelect = onSelect,
+                            onRename = onRename,
+                            onDelete = onDelete,
+                            listTag = "drawer_session_list",
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(chat.toolBorder),
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    DrawerAction(
+                        tag = "open_providers",
+                        label = stringResource(R.string.chat_open_providers),
+                        icon = Icons.Filled.Lock,
+                        onClick = onOpenProviders,
+                    )
+                    DrawerAction(
+                        tag = "open_addons",
+                        label = stringResource(R.string.chat_open_addons),
+                        icon = Icons.Filled.Build,
+                        onClick = onOpenAddons,
+                    )
+                    DrawerAction(
+                        tag = "compact_session",
+                        label = stringResource(R.string.chat_compact_session),
+                        icon = Icons.Filled.Refresh,
+                        onClick = onCompactSession,
+                    )
+                    DrawerAction(
+                        tag = "open_settings",
+                        label = stringResource(R.string.chat_open_settings),
+                        icon = Icons.Filled.Settings,
+                        onClick = onOpenSettings,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DrawerAction(
+    tag: String,
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+) {
+    val chat = ChatTheme.chat
+    Surface(
+        onClick = onClick,
+        color = androidx.compose.ui.graphics.Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth().semantics { testTag = tag; role = Role.Button },
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(icon, contentDescription = null, tint = chat.muted, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(label, style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
+
+@Composable
+private fun AttachTile(
+    kind: AttachGlyphKind,
+    label: String,
+    tag: String,
+    onClick: () -> Unit,
+) {
+    val chat = ChatTheme.chat
+    // v9.41 (owner item 16): the Claude-style square icon buttons - one tile
+    // per source, side by side, before any system picker is asked for. The
+    // glyphs are app-drawn (the StopGlyph precedent): the camera/pictures/
+    // files icons are not in material-icons-core, and the extended artifact
+    // stays off the classpath on purpose.
+    Surface(
+        onClick = onClick,
+        color = chat.toolContainer,
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, chat.toolBorder),
+        modifier = Modifier
+            .size(56.dp)
+            .semantics {
+                testTag = tag
+                role = Role.Button
+                contentDescription = label
+            },
+    ) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+            AttachGlyph(kind, Modifier.size(24.dp).clearAndSetSemantics { })
+        }
+    }
+}
+
+private enum class AttachGlyphKind { Camera, Pictures, Files }
+
+@Composable
+private fun AttachGlyph(kind: AttachGlyphKind, modifier: Modifier = Modifier) {
+    val tint = MaterialTheme.colorScheme.onSurface
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val stroke = 1.6.dp.toPx()
+        fun rrect(x0: Float, y0: Float, x1: Float, y1: Float, r: Float) =
+            androidx.compose.ui.geometry.RoundRect(
+                androidx.compose.ui.geometry.Offset(x0, y0),
+                androidx.compose.ui.geometry.Offset(x1, y1),
+                r, r,
+            )
+        when (kind) {
+            AttachGlyphKind.Camera -> {
+                drawRoundRect(tint, topLeft = androidx.compose.ui.geometry.Offset(1f, h * 0.30f),
+                    size = androidx.compose.ui.geometry.Size(w - 2f, h * 0.56f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(stroke, stroke),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
+                // the little viewfinder bump
+                drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.34f, h * 0.30f),
+                    androidx.compose.ui.geometry.Offset(w * 0.34f, h * 0.16f), stroke)
+                drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.34f, h * 0.16f),
+                    androidx.compose.ui.geometry.Offset(w * 0.62f, h * 0.16f), stroke)
+                drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.62f, h * 0.16f),
+                    androidx.compose.ui.geometry.Offset(w * 0.62f, h * 0.30f), stroke)
+                drawCircle(tint, radius = w * 0.16f,
+                    center = androidx.compose.ui.geometry.Offset(w * 0.5f, h * 0.58f),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
+            }
+            AttachGlyphKind.Pictures -> {
+                drawRoundRect(tint, topLeft = androidx.compose.ui.geometry.Offset(1f, 2f),
+                    size = androidx.compose.ui.geometry.Size(w - 2f, h - 4f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(stroke, stroke),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
+                val mountain = Path().apply {
+                    moveTo(w * 0.14f, h * 0.78f)
+                    lineTo(w * 0.40f, h * 0.46f)
+                    lineTo(w * 0.60f, h * 0.68f)
+                    lineTo(w * 0.74f, h * 0.54f)
+                    lineTo(w * 0.88f, h * 0.78f)
+                }
+                drawPath(mountain, tint, style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
+                drawCircle(tint, radius = w * 0.09f,
+                    center = androidx.compose.ui.geometry.Offset(w * 0.30f, h * 0.30f))
+            }
+            AttachGlyphKind.Files -> {
+                val fold = w * 0.28f
+                val doc = Path().apply {
+                    moveTo(2f, 2f)
+                    lineTo(w - fold, 2f)
+                    lineTo(w - 2f, 2f + fold)
+                    lineTo(w - 2f, h - 2f)
+                    lineTo(2f, h - 2f)
+                    close()
+                }
+                drawPath(doc, tint, style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
+                val corner = Path().apply {
+                    moveTo(w - fold, 2f)
+                    lineTo(w - fold, 2f + fold)
+                    lineTo(w - 2f, 2f + fold)
+                }
+                drawPath(corner, tint, style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke))
+                drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.22f, h * 0.55f),
+                    androidx.compose.ui.geometry.Offset(w * 0.72f, h * 0.55f), stroke)
+                drawLine(tint, androidx.compose.ui.geometry.Offset(w * 0.22f, h * 0.74f),
+                    androidx.compose.ui.geometry.Offset(w * 0.60f, h * 0.74f), stroke)
+            }
+        }
+    }
+}
+
+
 // ---- blocking asks ---------------------------------------------------------
 
 /**
- * Permissions the agent is waiting on, presented as a bottom sheet rather than
- * a card buried in the scroll.
+ * Permissions the agent is waiting on.
  *
- * v9.32 (owner): QUESTIONS left this sheet - they render inline in the
+ * v9.32 (owner): QUESTIONS left this area - they render inline in the
  * transcript now (see [TranscriptPane]), because a question is part of the
- * conversation and must sit below the text it asks about. A permission is an
- * interruption, so the sheet remains its home.
+ * conversation and must sit below the text it asks about.
  *
- * Upstream blocks the turn until a permission is answered, so the sheet is not
- * dismissible: tapping the scrim or the back button does nothing, and the only
- * ways out are the answers the agent is waiting for (allow once / always allow /
- * reject). This is a restyle of the same upstream mechanism — the three
- * permission replies are unchanged, and OpenCode's permission model is fully
- * preserved.
+ * v9.41 (owner item 18): the ModalBottomSheet is GONE. A separate sheet
+ * window drifted downward with the IME, and being non-dismissible it could
+ * hold an orphaned transparent frame until a restart - the exact stuck card
+ * of the owner's screenshot. The ask is a plain, opaque inline surface
+ * between transcript and composer now: it cannot drift, nothing transparent
+ * remains, and it shows ONE ask at a time with a quiet count of the rest
+ * (upstream blocks the turn on the first answer anyway, so queueing them is
+ * exactly what the agent is waiting for). The three permission replies are
+ * unchanged; OpenCode's permission model is fully preserved.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AskArea(
     asks: List<Transcript.Prompt>,
     onPermissionReply: (String, String) -> Unit,
 ) {
     if (asks.isEmpty()) return
-
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(
-        onDismissRequest = { /* non-dismissible: the turn is blocked until answered */ },
-        sheetState = sheetState,
+    val chat = ChatTheme.chat
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.dp, chat.attention),
+        shadowElevation = 6.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .semantics { testTag = "ask_area" },
     ) {
-        // Scrollable on purpose: when several permission asks stack up, every
-        // answer the agent is waiting for must stay reachable by scrolling the
-        // sheet. The sheet provides bounded height, so a verticalScroll column
-        // here cannot hit the unbounded-height crash a lazy list would.
         Column(
             Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .padding(horizontal = 4.dp, vertical = 4.dp),
         ) {
-            for (ask in asks) {
-                PermissionAsk(prompt = ask, onReply = onPermissionReply)
+            PermissionAsk(prompt = asks.first(), onReply = onPermissionReply)
+            if (asks.size > 1) {
+                Text(
+                    text = stringResource(R.string.chat_asks_waiting, asks.size - 1),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = chat.muted,
+                    modifier = Modifier
+                        .padding(start = 12.dp, bottom = 6.dp)
+                        .semantics { testTag = "ask_more_waiting" },
+                )
             }
         }
     }
@@ -1559,6 +1820,8 @@ private fun Composer(
     onSend: () -> Unit,
     onStop: () -> Unit,
     onAttach: () -> Unit,
+    onAttachCamera: () -> Unit = {},
+    onAttachPictures: () -> Unit = {},
     busy: Boolean,
     canSend: Boolean,
     canRedo: Boolean,
@@ -1626,23 +1889,65 @@ private fun Composer(
                     // 8+20=28, 7+21=28, 6+22=28) while the Bottom alignment keeps
                     // them anchored when the field grows to six lines. v8 fix
                     // round: the owner saw the old 2/4dp riding visibly low.
-                    IconButton(
-                        onClick = onAttach,
-                        enabled = canSend,
-                        modifier = Modifier
-                            .padding(bottom = 8.dp)
-                            .size(40.dp)
-                            .semantics {
-                                testTag = TAG_COMPOSER_ATTACH
-                                contentDescription = attachLabel
-                            },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = null,
-                            tint = chat.muted,
-                            modifier = Modifier.clearAndSetSemantics { },
-                        )
+                    // v9.41 (owner item 16): the `+` no longer jumps straight
+                    // into the system picker. It opens a minimal menu first:
+                    // three square tiles - Camera, Pictures, Files - side by
+                    // side; only the tap on a tile opens that source.
+                    var attachOpen by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(
+                            onClick = { attachOpen = true },
+                            enabled = canSend,
+                            modifier = Modifier
+                                .padding(bottom = 8.dp)
+                                .size(40.dp)
+                                .semantics {
+                                    testTag = TAG_COMPOSER_ATTACH
+                                    contentDescription = attachLabel
+                                },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Add,
+                                contentDescription = null,
+                                tint = chat.muted,
+                                modifier = Modifier.clearAndSetSemantics { },
+                            )
+                        }
+                        MaterialTheme(
+                            shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(18.dp)),
+                        ) {
+                            DropdownMenu(expanded = attachOpen, onDismissRequest = { attachOpen = false }) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    AttachTile(
+                                        kind = AttachGlyphKind.Camera,
+                                        label = stringResource(R.string.chat_attach_camera),
+                                        tag = "attach_camera",
+                                    ) {
+                                        attachOpen = false
+                                        onAttachCamera()
+                                    }
+                                    AttachTile(
+                                        kind = AttachGlyphKind.Pictures,
+                                        label = stringResource(R.string.chat_attach_pictures),
+                                        tag = "attach_pictures",
+                                    ) {
+                                        attachOpen = false
+                                        onAttachPictures()
+                                    }
+                                    AttachTile(
+                                        kind = AttachGlyphKind.Files,
+                                        label = stringResource(R.string.chat_attach_files),
+                                        tag = "attach_files",
+                                    ) {
+                                        attachOpen = false
+                                        onAttach()
+                                    }
+                                }
+                            }
+                        }
                     }
                     OutlinedTextField(
                         value = draft,

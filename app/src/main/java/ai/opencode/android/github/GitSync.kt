@@ -106,7 +106,77 @@ object GitSync {
         }.getOrDefault(false)
     }
 
+    /**
+     * v9.41 (owner item 3): clone WITHOUT creating any branch - the first
+     * prompt sees the repository exactly as GitHub serves it (its default
+     * branch); [ensureProjectBranch] immediately after parks the checkout on
+     * `opencode/<project>` in the same motion every later prompt performs.
+     */
+    fun cloneOnly(cloneUrl: String, targetDir: File, token: String, onLine: (String) -> Unit) {
+        Git.cloneRepository()
+            .setURI(cloneUrl)
+            .setDirectory(targetDir)
+            .setCredentialsProvider(credentials(token))
+            .setProgressMonitor(monitor(onLine))
+            .call()
+            .use { }
+    }
+
+    /**
+     * v9.41 (owner item 3): "the repository is always fresh when the model
+     * touches it." Fetch origin and fast-forward the CURRENT branch when -
+     * and only when - it can be done without touching a single local byte:
+     * uncommitted tracked work is never disturbed, a diverged branch is
+     * never rebased or reset, and every failure here is a deliberate no-op -
+     * the prompt proceeds with what is already on disk. (The model commits
+     * after every change - the AGENTS block rule - so the common state IS a
+     * clean tree, and the fast-forward lands.)
+     */
+    fun refreshFastForward(dir: File?, token: String, onLine: (String) -> Unit) {
+        if (dir == null || !File(dir, ".git").isDirectory) return
+        runCatching {
+            Git.open(dir).use { git ->
+                val branch = git.repository.branch ?: return
+                git.fetch().setRemote("origin").setCredentialsProvider(credentials(token))
+                    .setProgressMonitor(monitor(onLine)).call()
+                val tracked = git.repository.resolve("refs/remotes/origin/$branch") ?: return
+                if (git.repository.resolve("refs/heads/$branch") == tracked) return
+                if (git.status().call().hasUncommittedChanges()) return
+                runCatching {
+                    git.merge()
+                        .include(tracked)
+                        .setFastForward(org.eclipse.jgit.api.MergeCommand.FastForwardMode.FF_ONLY)
+                        .call()
+                }
+            }
+        }
+    }
+
+    /** The `owner/name` behind a cloned project's origin URL, or "" (item 13). */
+    fun originRepo(dir: File?): String {
+        if (dir == null || !File(dir, ".git").isDirectory) return ""
+        return runCatching {
+            Git.open(dir).use { git ->
+                val url = git.repository.config.getString("remote", "origin", "url") ?: return ""
+                val tail = url.substringAfterLast('/')
+                val name = tail.removeSuffix(".git")
+                val owner = url.substringBeforeLast('/').substringAfterLast(':').removePrefix("//")
+                    .substringAfterLast('/')
+                if (owner.isNotEmpty() && name.isNotEmpty()) "$owner/$name" else name
+            }
+        }.getOrDefault("")
+    }
+
+    /** The branch the checkout currently sits on, "" when there is none (item 13). */
+    fun currentBranch(dir: File?): String {
+        if (dir == null || !File(dir, ".git").isDirectory) return ""
+        return runCatching { Git.open(dir).use { it.repository.branch ?: "" } }.getOrDefault("")
+    }
+
     // v9.29 (owner): pushCurrentBranch / needsPush REMOVED. JGit now only
     // CLONES (device-proven); pushing is the model's job via the bundled
     // https-capable git - see the environment brief's GitHub section.
+    // v9.41 (owner item 3): fetch/refresh was ADDED back on the same JGit
+    // transport - the clone-on-prompt + refresh-on-every-prompt rule needs an
+    // app-side network operation, and only JGit speaks https on device.
 }

@@ -264,15 +264,18 @@ class FirstRunUiGatesTest {
                 !exists("files_storage_choose") && !exists("files_storage_default")
             val stepShot = shot("02b-first-run-workspace.png")
             rule.onNodeWithTag("onboarding_workspace_use").performClick()
-            // v6: post-setup landing is the projects page itself - the workspace
-            // path on top, the first project expanded, its first session listed.
-            // The chat is entered from that surface (the session row), which is
-            // the same user journey this gate then verifies.
+            // v6: post-setup landing is the projects page itself. v9.41 (owner
+            // item 11) moved the workspace path box out of this page (it is in
+            // Settings > Workspace now), so the gate reads the landing proof
+            // from the page's own cards instead: create card present, first
+            // project expanded, its first session listed. The chat is entered
+            // from that surface (the session row), which is the same user
+            // journey this gate then verifies.
             val landedOnProjects = waitFor(180_000) {
-                exists("projects_screen") && exists("projects_workspace_path")
+                exists("projects_screen") && exists("project_create")
             }
             rule.waitForIdle()
-            val workspaceShown = exists("projects_workspace_path") &&
+            val workspaceShown = exists("project_create") &&
                 allText().contains("OpenCode", ignoreCase = true)
             val firstExpanded = rule.onAllNodes(tagPrefixMatcher("projects_session_"))
                 .fetchSemanticsNodes().isNotEmpty() ||

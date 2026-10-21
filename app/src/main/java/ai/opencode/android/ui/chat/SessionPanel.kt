@@ -12,6 +12,7 @@ import ai.opencode.android.ui.theme.MonoSmall
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -26,8 +27,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,8 +46,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.Role
@@ -60,6 +64,10 @@ import androidx.compose.ui.unit.dp
  * generated or the user set, its directory and its own timestamps. Nothing here is
  * a client-side notion of a conversation, and the list is a real [LazyColumn] with
  * stable keys because a heavy user accumulates hundreds of them.
+ *
+ * v9.41 (owner item 15): the row's actions moved behind a three-dot menu -
+ * Delete and Rename - and the list became its own composable so the chat's
+ * hamburger drawer embeds exactly the same rows (one implementation, one look).
  */
 @Composable
 fun SessionPanel(
@@ -101,23 +109,52 @@ fun SessionPanel(
                 body = stringResource(R.string.sessions_empty_body),
             )
         } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().semantics { testTag = "session_list" },
-                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(items = sessions, key = { it.id }) { session ->
-                    SessionRow(
-                        session = session,
-                        selected = session.id == selectedSession,
-                        view = transcript.session(session.id),
-                        now = now,
-                        onSelect = { onSelect(session.id) },
-                        onDelete = { onDelete(session.id) },
-                        onRename = { title -> onRename(session.id, title) },
-                    )
-                }
-            }
+            SessionList(
+                sessions = sessions,
+                selectedSession = selectedSession,
+                transcript = transcript,
+                now = now,
+                onSelect = onSelect,
+                onDelete = onDelete,
+                onRename = onRename,
+                listTag = "session_list",
+            )
+        }
+    }
+}
+
+/**
+ * The bare scrollable list of [SessionRow]s, shared by the full panel and the
+ * chat's side drawer. [listTag] keeps the panel's gate contract ("session_list")
+ * while the drawer stays under its own tag.
+ */
+@Composable
+fun SessionList(
+    sessions: List<OpenCodeApi.SessionInfo>,
+    selectedSession: String,
+    transcript: Transcript.Snapshot,
+    onSelect: (String) -> Unit,
+    onDelete: (String) -> Unit,
+    onRename: (String, String) -> Unit,
+    modifier: Modifier = Modifier,
+    now: Long = System.currentTimeMillis(),
+    listTag: String = "session_list",
+) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize().semantics { testTag = listTag },
+        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(items = sessions, key = { it.id }) { session ->
+            SessionRow(
+                session = session,
+                selected = session.id == selectedSession,
+                view = transcript.session(session.id),
+                now = now,
+                onSelect = { onSelect(session.id) },
+                onDelete = { onDelete(session.id) },
+                onRename = { title -> onRename(session.id, title) },
+            )
         }
     }
 }
@@ -134,6 +171,7 @@ private fun SessionRow(
 ) {
     val chat = ChatTheme.chat
     var editing by rememberSaveable(session.id) { mutableStateOf(false) }
+    var menuOpen by rememberSaveable(session.id) { mutableStateOf(false) }
     var draft by rememberSaveable(session.id) { mutableStateOf(session.title) }
     val title = session.title.ifBlank { stringResource(R.string.sessions_untitled) }
     val deleteLabel = stringResource(R.string.sessions_delete, title)
@@ -184,33 +222,69 @@ private fun SessionRow(
                     )
                     Spacer(Modifier.width(6.dp))
                 }
-                IconButton(
-                    onClick = { editing = !editing },
-                    modifier = Modifier.semantics {
-                        testTag = "session_rename_${session.id}"
-                        contentDescription = renameLabel
-                    },
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Edit,
-                        contentDescription = null,
-                        tint = chat.muted,
-                        modifier = Modifier.clearAndSetSemantics { },
-                    )
-                }
-                IconButton(
-                    onClick = onDelete,
-                    modifier = Modifier.semantics {
-                        testTag = "session_delete_${session.id}"
-                        contentDescription = deleteLabel
-                    },
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = null,
-                        tint = chat.muted,
-                        modifier = Modifier.clearAndSetSemantics { },
-                    )
+                // v9.41 (owner item 15): one quiet three-dot affordance; Delete
+                // and Rename live in the small menu it opens (Delete first, as
+                // the owner listed them). The per-action testTags moved INTO the
+                // menu items, so every existing driver keeps its anchors.
+                Box {
+                    IconButton(
+                        onClick = { menuOpen = true },
+                        modifier = Modifier.semantics {
+                            testTag = "session_menu_${session.id}"
+                            contentDescription = stringResource(R.string.sessions_actions, title)
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = null,
+                            tint = chat.muted,
+                            modifier = Modifier.clearAndSetSemantics { },
+                        )
+                    }
+                    MaterialTheme(
+                        shapes = MaterialTheme.shapes.copy(extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)),
+                    ) {
+                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.sessions_action_delete)) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Filled.Delete,
+                                        contentDescription = null,
+                                        tint = chat.muted,
+                                        modifier = Modifier.clearAndSetSemantics { },
+                                    )
+                                },
+                                onClick = {
+                                    menuOpen = false
+                                    onDelete()
+                                },
+                                modifier = Modifier.semantics {
+                                    testTag = "session_delete_${session.id}"
+                                    contentDescription = deleteLabel
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.sessions_action_rename)) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Filled.Edit,
+                                        contentDescription = null,
+                                        tint = chat.muted,
+                                        modifier = Modifier.clearAndSetSemantics { },
+                                    )
+                                },
+                                onClick = {
+                                    menuOpen = false
+                                    editing = true
+                                },
+                                modifier = Modifier.semantics {
+                                    testTag = "session_rename_${session.id}"
+                                    contentDescription = renameLabel
+                                },
+                            )
+                        }
+                    }
                 }
             }
             if (session.revertMessageID.isNotEmpty()) {
