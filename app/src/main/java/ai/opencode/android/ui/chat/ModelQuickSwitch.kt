@@ -194,6 +194,19 @@ fun ModelQuickSwitch(
                             },
                         )
                     }
+                } else {
+                    // v9.41 (owner item 22) + the standing honesty rule: a model
+                    // with no reasoning variants gets the explanation, not invented
+                    // levels - and no triangle on its row either.
+                    Text(
+                        text = stringResource(R.string.chat_thinking_empty),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = chat.muted,
+                        modifier = Modifier
+                            .width(280.dp)
+                            .padding(horizontal = 12.dp, vertical = 4.dp)
+                            .semantics { testTag = "thinking_empty" },
+                    )
                 }
                 HorizontalDivider(color = chat.toolBorder, modifier = Modifier.padding(vertical = 4.dp))
             }

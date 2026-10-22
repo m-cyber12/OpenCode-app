@@ -352,6 +352,12 @@ class LiveChatUiGatesTest {
         var sawBusy = false
         var sawStreaming = false
         var sawErrorBanner = false
+        // v9.41 (chat is reachable, and SENDABLE, from the first frame): a cold
+        // start now shows the gold "server is starting up" banner while an early
+        // send waits in the queue - that is the designed state, on the designed
+        // surface, and the turn below flows through it. Only a banner saying
+        // anything else is an error, and an error is still fatal.
+        val startingWords = context.getString(R.string.availability_runtime_starting)
         var asksAnswered = 0
         var polls = 0
         var reply = ""
@@ -359,7 +365,7 @@ class LiveChatUiGatesTest {
             asksAnswered += answerAnyAsk()
             if (exists("busy_bar")) sawBusy = true
             if (exists("streaming_indicator")) sawStreaming = true
-            if (exists("availability_banner")) sawErrorBanner = true
+            if (exists("availability_banner") && !allText().contains(startingWords)) sawErrorBanner = true
             polls++
             if (polls % 3 == 0) reply = replyInNew(known)
             reply.isNotEmpty()
