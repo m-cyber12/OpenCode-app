@@ -5882,3 +5882,83 @@ the phone), the GitHub branch landing (item 1 - check the repo's branches
 after the first prompt), and that a push still never reaches master if the
 model itself misbehaves (AGENTS.md steers; it cannot be forced from the app
 without the app pushing again, which v9.29 removed by owner decision).
+
+## B.64 - v9.41: the release sweep - 23 owner items, one full-codebase audit, and the gates learning the new shape (2026-10-22)
+
+The owner's pre-release list, worked top to bottom, plus a whole-tree audit.
+All 23 items are in; the audit produced no additional defects. Per item, with
+what actually verifies it (U = ChatUiGatesTest, L = LiveChatUiGatesTest, both
+run on a real emulator against the real server and, for L, a real model):
+
+1. Theme "System default" + prefs durability - Settings default is now
+   MODE_NIGHT_FOLLOW_SYSTEM and the stored choice round-trips; U13's
+   settings checks plus JVM theme tests.
+2. Connectors collapsed after setup (U19's connector flags); the Connect row
+   disappears once a connector is configured.
+3. GitHub projects: Create lands instantly (repo created, `github-meta`
+   marker in filesDir), the clone/materialize happens BEFORE the first
+   prompt is answered, later prompts fast-forward, consent is narrowed to
+   the meta file, and sends typed during the clone queue instead of erroring
+   (`chat_wait_repo` / `send_wait_note`). W5/W6 keep the project folders
+   honest; U13 dSend and the queue guards cover the send path.
+4. AGENTS.md and dot-entries hidden from Files and Diff (HiddenFromUser
+   filter) - U20 files-listing verdict.
+5. Up-one-level lists the disk directly, not the server (U20's up-nav flags;
+   the v9.40 teleport class of bug cannot recur on the Files tab).
+6. Staged boot: chat is the first frame, gold "Starting the agent" banner,
+   composer OPEN while starting - sends queue (pendingSend) and drain on
+   "up". This changed a shipped contract: canSend(RUNTIME_STARTING)=true,
+   pinned in THREE places (UiError.canSend, UiErrorTest, UiErrorOfflineTest)
+   and asserted by U4 (`starting=true(send=true)`); missing the third copy
+   cost one board.
+7. Provider catalog cached on disk (opencode_providers_snapshot_v1) so model
+   menus render from the first frame even offline.
+8. Sessions fetched per project directory, in parallel, twice-retried
+   (AppRoot effect) - the projects page shows each project's own rows;
+   "empty while projects exist" is retried before it is believed.
+9-23: header 4-item symmetry (9), todo panel resolves across the turn's
+   todo calls (10), no ripple anywhere via NoRippleTheme provided INSIDE
+   MaterialTheme - material3 1.2.1 offers no earlier seam, and its Surface
+   ignores foundation's LocalIndication (12), "<repo> · <branch>" sandbox
+   subtitle (13), file reads never false-error on boot (14), half-screen
+   drawer with per-session Rename/Delete (15), Camera/Pictures/Files tiles
+   first in the attach sheet (16), tabs without X and Back arrows on
+   subscreens (17), permission asks one-at-a-time with "N more waiting"
+   (18), "Doing" status (19), first-launch copy then the 1/13 rotation with
+   continuous typewriter (20), real star icons (21), thinking levels inline
+   under the current model plus a Free Models collapsible, Zen pinned first
+   (22), and the split Providers/Models page, both sections collapsed by
+   default, searchable (23). U4-U9, U11-U20 and W1-W7 all PASS with these
+   in; U10 went through three iterations with this redesign (see below).
+
+The compile saga, because it is the honest shape of this release: boards 1-2
+died on 16 then 5 Kotlin errors (the pinned DrawScope.drawLine has no style
+parameter - strokeWidth directly; passing a width positionally would have
+compiled into `alpha`, which the candidate list refused). Board 3 compiled
+main AND androidTest green, 428/428 JVM, and reached the emulator gates for
+the first time - then failed exactly two gates, both the gates being right
+and the code having moved: U10 asserted the old bottom-section
+"this model lists no thinking levels" row, which the #22 redesign had
+dropped without noticing (thinkingEmpty=false was the ONLY failing flag) -
+fixed by restoring the explanation with its tag in the current-model block,
+shown only when the model lists no variants. L1's live-turn probe counted
+ANY availability_banner in its polling window as fatal; boot banners are now
+normal there by design, and run 39700369225 proved the residual flake shape:
+the debug pass saw a transient mid-turn health flinch on a first-launch
+emulator (errorBanner=true, everything else green), the smoke pass on the
+same build saw nothing. The probe now tolerates the starting-up banner
+entirely and needs any other banner to persist three consecutive polls -
+"the turn failed and the app said so" stays the standard; a one-second blip
+during a cold first turn is not an app saying so.
+
+CI: run 39706351855 on `94ab2f89` - conclusion success. phase6_ui_fails=0
+phase10_gate_fails=0 phase9_gate_fails=0; debug P6-UI 20/20 skip=0 and
+smoke 20/20 skip=0, with `P6_L1 PASS ... replyShownInUi=true(needle='Blue')
+errorBanner=false composerUsableAgain=true` and `P6_U10 PASS ...
+thinking=true/true/[high] thinkingEmpty=true planApprove=true pathHidden=true`;
+JVM 428/428; driver selftest 136/0; payload v7 (opencode 1.18.23@05ea5073);
+STORE-ASSETS 2 screenshots; UNSIGNED APK+AAB as required. One SKIP stands
+as it always has: the emulator shell cannot query the Documents provider.
+What CI cannot prove: the feel of the staged boot and the queue drain on a
+phone, the GitHub create/clone pace on real network, the drawer/menu polish,
+and everything else the owner judges by touch - the device pass is the owner's.
