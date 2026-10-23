@@ -5962,3 +5962,83 @@ as it always has: the emulator shell cannot query the Documents provider.
 What CI cannot prove: the feel of the staged boot and the queue drain on a
 phone, the GitHub create/clone pace on real network, the drawer/menu polish,
 and everything else the owner judges by touch - the device pass is the owner's.
+
+## B.65 - v9.42: loading that looks like loading, and sends that never wait on the machine (2026-10-22)
+
+The owner's device pass after the v9.41 sweep. Nine changes, each one a
+"this does not feel finished yet" report; one of them (the queued first
+prompt) was a real bug the code had been quietly carrying.
+
+**Loading is a state, not an error.** The red banner is GONE from the boot
+path: while the agent starts, the conversation shows one quiet neutral row
+(`chat_loading_row`) - "Starting the agent" with three dots that light in
+turn - and the status orb breathes and pulses a ring outwards. The word
+"Starting the agent" is the same string every other surface uses, so nothing
+disagrees about what is happening; only the red is gone. Two of the three
+animations are stepped by a new `rememberLoadingPulse` (a coroutine tick on a
+delay), because phase 10's own static check forbids an unbounded Compose
+animation in the UI layer - one keeps the Compose TEST CLOCK busy and hangs
+`waitForIdle()`, so the whole gate suite would time out rather than fail.
+That gate (run 39907235147) caught me doing it the obvious way first.
+
+**Sending is never blocked by anything.** `UiError.canSend` is now true for
+every state - dead runtime, unanswered server, refused key - and the composer
+has no locked form left. What the app does instead is what the owner asked
+for: the message appears in the chat immediately (the user's own bubble under
+the conversation, `pending_send_row`, with one line saying it is waiting),
+and it goes to the model the moment initialization finishes. The contract is
+pinned in three places again (UiError + both JVM test classes + U4, which now
+asserts the composer is USABLE, not disabled, in all four states).
+
+**The clone bug.** A first prompt typed while the agent was still booting
+never materialized its GitHub project: v9.41 ran the pre-prompt gate on the
+SEND tap but the queue drain only re-parked a branch, so the clone - the one
+thing that makes the project real before the model touches it - never ran.
+Both doors now call one function (`promptGateAndSend` in AppRoot): live sends
+and drained sends go through the same gate. The silent half is fixed too - a
+failed clone used to die inside `runCatching`, leaving the model working in
+an empty folder with nothing said; it now prints one quiet line.
+
+**The previous chat, immediately.** A cold open used to show an empty
+conversation until `GET /session/:id/message` answered. The transcript is
+now cached on disk per project (`TranscriptDisk`, in cacheDir, written after
+every load and every finished turn) and painted before the network is asked;
+a session switch paints what the process already holds in the same frame.
+The server's answer replaces the cached copy a moment later, and a cached
+copy never overrides a live turn. The Providers page re-reads the catalog on
+open, so the pinned Zen list tracks what the server has now - a model added
+or removed upstream shows (or stops showing) without a reinstall.
+
+**The model surfaces, per the owner's eye.** The quick-switch menu is
+minimal again - the separate thinking-level section at the top is gone, the
+triangles stay (they are the way to a level, one tap inside the row). The
+Models list on the Providers page shows NO triangles (levels cannot be chosen
+there) and labels every model with its provider. Providers read Ready /
+Not Ready as green and red pills instead of "Key stored" / "No key stored",
+Zen is pinned at the top with connected providers directly beneath it, and
+the Add affordance is a proper "Add Your Own Provider" rectangle inside the
+Providers card (the top-bar `+` is gone; the form opens right below the tile
+that asked for it). The Projects page's Connect button now lands ON the
+connectors accordion - expanded and scrolled into view - instead of at the
+top of a long settings page. Compact conversation is removed outright. And
+the redo icon no longer sticks after an undo followed by a new send: it is
+offered only while the staged revert is still the end of the conversation.
+
+CI: run 39931177415 on `f9b329bf` - conclusion success. phase6_ui_fails=0
+phase10_gate_fails=0 phase9_gate_fails=0; debug P6-UI 20/20 skip=0 and
+smoke 20/20 skip=0 on the release-shaped build, with `P6_U4 PASS ...
+startingLooksLikeLoading=true/noBanner=true queued=true send=true(in every
+state)` and `P6_L1 PASS ... replyShownInUi=true(needle='Blue')
+errorBanner=false composerUsableAgain=true`; U10 and U11 pass against the
+redesigned menu and the relocated Add tile; JVM 428/428; driver selftest
+136/0; payload v7; STORE-ASSETS; UNSIGNED APK+AAB. Three boards were spent
+getting here, and each one earned: 39907235147 (my loading animation was an
+unbounded Compose animation - a real phase 10 gate), 39914448918 (a missing
+`withContext` import), 39922158760 (U4 caught the queued bubble as a lazy
+item, and then caught my own assertion probing a disabled send button after
+the draft cleared - the app was right, the gate was wrong).
+What CI cannot prove: how the boot actually feels on a phone, whether the
+pulse and the dots read as "busy in the background" rather than decoration,
+the real pace of a clone over a real network now that it runs on the drain
+path too, and every other judgement the owner makes by touch. The device pass
+is the owner's; the queue, the cache and the gate are now provable.
