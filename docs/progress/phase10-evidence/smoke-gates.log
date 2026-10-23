@@ -1,4 +1,4 @@
-[2026-10-22T03:20:04Z] === building the smoke variant (release configuration, debug-key signed) ===
+[2026-10-23T07:40:06Z] === building the smoke variant (release configuration, debug-key signed) ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
@@ -7,9 +7,9 @@ RELEASE SIGNING: not configured -> release artifacts are UNSIGNED (CI behavior; 
 
 > Task :app:verifyAndStagePayload
 PAYLOAD STAGING: -PskipPayload=null SKIP_PAYLOAD=null
-PAYLOAD_SOURCE runtime-payload.tar.gz=20610855B runtime-manifest.json=187354B
+PAYLOAD_SOURCE runtime-payload.tar.gz=20168358B runtime-manifest.json=187354B
 Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/assets / /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/jniLibs
-STAGED_ASSETS n=2 runtime-manifest.json(187354B), runtime-payload.tar.gz(20610855B)
+STAGED_ASSETS n=2 runtime-manifest.json(187354B), runtime-payload.tar.gz(20168358B)
 STAGED_JNILIBS n=14 x86_64/libbun.so, arm64-v8a/libbun.so, x86_64/libchildshim.so, arm64-v8a/libchildshim.so, x86_64/libexecshim.so, arm64-v8a/libexecshim.so, x86_64/libgit.so, arm64-v8a/libgit.so, x86_64/libgitremotehttp.so, arm64-v8a/libgitremotehttp.so, x86_64/librg.so, arm64-v8a/librg.so, x86_64/libseccompshim.so, arm64-v8a/libseccompshim.so
 
 > Task :app:preBuild
@@ -34,19 +34,19 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:processSmokeManifest
 > Task :app:javaPreCompileSmoke FROM-CACHE
 > Task :app:mergeSmokeShaders
+> Task :app:processSmokeManifestForPackage
 > Task :app:compileSmokeShaders NO-SOURCE
 > Task :app:generateSmokeAssets
 > Task :app:mergeSmokeResources
 > Task :app:mergeSmokeAssets
 > Task :app:desugarSmokeFileDependencies FROM-CACHE
 > Task :app:mergeSmokeStartupProfile
-> Task :app:processSmokeManifestForPackage
 > Task :app:checkSmokeDuplicateClasses
-> Task :app:mergeExtDexSmoke FROM-CACHE
-> Task :app:mergeLibDexSmoke FROM-CACHE
-> Task :app:compressSmokeAssets
 > Task :app:processSmokeResources
 > Task :app:mergeSmokeJniLibFolders
+> Task :app:compressSmokeAssets
+> Task :app:mergeExtDexSmoke FROM-CACHE
+> Task :app:mergeLibDexSmoke FROM-CACHE
 > Task :app:validateSigningSmoke
 > Task :app:writeSmokeAppMetadata
 > Task :app:writeSmokeSigningConfigVersions
@@ -67,6 +67,11 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:mergeSmokeNativeLibs
 > Task :app:checkSmokeAndroidTestDuplicateClasses
 > Task :app:desugarSmokeAndroidTestFileDependencies FROM-CACHE
+
+> Task :app:stripSmokeDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libbun.so, libchildshim.so, libexecshim.so, libgit.so, libgitremotehttp.so, librg.so, libseccompshim.so.
+
+> Task :app:processSmokeAndroidTestResources
 > Task :app:mergeExtDexSmokeAndroidTest FROM-CACHE
 > Task :app:mergeLibDexSmokeAndroidTest FROM-CACHE
 > Task :app:mergeSmokeAndroidTestJniLibFolders
@@ -74,36 +79,31 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:stripSmokeAndroidTestDebugSymbols NO-SOURCE
 > Task :app:validateSigningSmokeAndroidTest
 > Task :app:writeSmokeAndroidTestSigningConfigVersions
-> Task :app:processSmokeAndroidTestResources
-
-> Task :app:stripSmokeDebugSymbols
-Unable to strip the following libraries, packaging them as they are: libbun.so, libchildshim.so, libexecshim.so, libgit.so, libgitremotehttp.so, librg.so, libseccompshim.so.
-
 > Task :app:compileSmokeKotlin
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/client/UiError.kt:194:17 Parameter 'a' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/github/GithubCloneManager.kt:137:55 Condition 'meta != null' is always 'true'
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/EnvironmentBrief.kt:95:19 Parameter 'engine' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/security/SecretStore.kt:119:54 'getter for isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/changes/ChangesScreen.kt:65:5 Parameter 'onBack' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:161:5 Parameter 'onOpenSessions' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:478:5 Parameter 'onOpenProjects' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:479:5 Parameter 'onNewSession' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:480:5 Parameter 'onOpenSettings' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:482:5 Parameter 'onOpenAddons' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:483:5 Parameter 'onCompactSession' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:486:9 Variable 'newLabel' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:487:9 Variable 'settingsLabel' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:488:9 Variable 'providersLabel' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:489:9 Variable 'addonsLabel' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:490:9 Variable 'compactLabel' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:767:5 Parameter 'runtime' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:794:62 Unnecessary safe call on a non-null receiver of type Transcript.TurnError?
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:2023:60 'Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:169:5 Parameter 'onOpenSessions' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:485:5 Parameter 'onOpenProjects' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:486:5 Parameter 'onNewSession' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:487:5 Parameter 'onOpenSettings' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:489:5 Parameter 'onOpenAddons' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:494:9 Variable 'newLabel' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:495:9 Variable 'settingsLabel' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:496:9 Variable 'providersLabel' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:497:9 Variable 'addonsLabel' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:857:5 Parameter 'runtime' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:884:62 Unnecessary safe call on a non-null receiver of type Transcript.TurnError?
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:2170:60 'Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:154:52 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:198:60 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:284:52 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ModelQuickSwitch.kt:156:21 Variable 'currentKey' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ModelQuickSwitch.kt:96:5 Parameter 'variants' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ModelQuickSwitch.kt:99:5 Parameter 'onPickVariant' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:198:5 Parameter 'onBack' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:314:17 Name shadowed: chat
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:357:64 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
@@ -111,17 +111,17 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:763:56 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:886:52 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/projects/ProjectsScreen.kt:123:5 Parameter 'onOpen' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:267:5 Parameter 'availability' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:270:9 Variable 'chat' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:2179:5 Parameter 'onClearModel' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:287:5 Parameter 'availability' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:290:9 Variable 'chat' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:2303:5 Parameter 'onClearModel' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/terminal/TerminalScreen.kt:58:5 Parameter 'onBack' is never used
 
 > Task :app:compileSmokeJavaWithJavac
 > Task :app:dexBuilderSmoke
 > Task :app:mergeSmokeGlobalSynthetics FROM-CACHE
 > Task :app:processSmokeJavaRes
-> Task :app:bundleSmokeClassesToCompileJar
 > Task :app:mergeProjectDexSmoke
+> Task :app:bundleSmokeClassesToCompileJar
 > Task :app:mergeSmokeJavaResource
 > Task :app:packageSmoke
 > Task :app:createSmokeApkListingFileRedirect
@@ -143,19 +143,19 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/a
 > Task :app:createSmokeAndroidTestApkListingFileRedirect
 > Task :app:assembleSmokeAndroidTest
 
-BUILD SUCCESSFUL in 1m 25s
+BUILD SUCCESSFUL in 1m 54s
 69 actionable tasks: 55 executed, 14 from cache
-[2026-10-22T03:21:30Z] smoke apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/smoke/app-smoke.apk
-[2026-10-22T03:21:30Z] smoke testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/smoke/app-smoke-androidTest.apk
-[2026-10-22T03:21:30Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/smoke/INSTALL-README.txt (which artifact file is installable, and why)
-[2026-10-22T03:21:30Z] === inspecting the smoke APK (identity, payload, abis, signing) ===
-[2026-10-22T03:21:30Z] P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=True
-[2026-10-22T03:21:30Z] P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
-[2026-10-22T03:21:30Z] === installing the smoke build (fresh) ===
+[2026-10-23T07:42:00Z] smoke apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/smoke/app-smoke.apk
+[2026-10-23T07:42:00Z] smoke testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/smoke/app-smoke-androidTest.apk
+[2026-10-23T07:42:00Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/smoke/INSTALL-README.txt (which artifact file is installable, and why)
+[2026-10-23T07:42:00Z] === inspecting the smoke APK (identity, payload, abis, signing) ===
+[2026-10-23T07:42:00Z] P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=True
+[2026-10-23T07:42:00Z] P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
+[2026-10-23T07:42:00Z] === installing the smoke build (fresh) ===
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-10-22T03:21:32Z] === Phase 6 UI gates against the SMOKE build (P6_PKG=io.github.mcyber12.opencode) ===
-[2026-10-22T03:23:25Z] P10_SMOKE_UI PASS :: pass=20 fail=0 skip=0 on the release-shaped build (identical gates to the debug run)
-[2026-10-22T03:23:25Z] P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
+[2026-10-23T07:42:03Z] === Phase 6 UI gates against the SMOKE build (P6_PKG=io.github.mcyber12.opencode) ===
+[2026-10-23T07:44:21Z] P10_SMOKE_UI FAIL :: pass=19 fail=1 skip=0 - a gate that passes on debug and fails here is a RELEASE-SHAPE finding (see p10-smoke-ui.log)
+[2026-10-23T07:44:21Z] P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
