@@ -834,6 +834,16 @@ class ChatUiGatesTest {
     private fun onScreenText(): String = rule.onAllNodes(anyNodeMatcher()).fetchSemanticsNodes()
         .joinToString("\n") { textOf(it.config) }
 
+    /**
+     * v9.42: whether the composer FIELD is usable. `sendEnabled()` is about the
+     * send button, which is legitimately disabled with an empty draft - the
+     * right probe for "the app still accepts what I type" is the field.
+     */
+    private fun composerUsable(): Boolean {
+        val nodes = rule.onAllNodesWithTag(TAG_COMPOSER_INPUT).fetchSemanticsNodes()
+        return nodes.isNotEmpty() && !nodes.first().config.contains(SemanticsProperties.Disabled)
+    }
+
     private fun sendEnabled(): Boolean {
         val nodes = rule.onAllNodesWithTag(TAG_COMPOSER_SEND).fetchSemanticsNodes()
         return nodes.isNotEmpty() && !nodes.first().config.contains(SemanticsProperties.Disabled)
@@ -1377,9 +1387,11 @@ class ChatUiGatesTest {
             runtime = startingRuntime,
             pendingMessage = "build me a landing page",
         )
+        // the draft is empty (the message was sent) - so the honest probe is
+        // the composer field being usable, not the send button.
         val queuedShown = exists("pending_send_row") &&
             onScreenText().contains("build me a landing page") &&
-            sendEnabled()
+            composerUsable()
         shot("13b-chat-starting-and-queued.png")
 
         val headlines = listOf(
