@@ -1237,9 +1237,20 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // read off the disk (marker and/or origin) when the page opens - it costs
     // one tiny IO tick and never waits on the agent.
     var filesRepoLabel by remember { mutableStateOf("") }
+    // v9.42 (owner): which Settings section a navigation intends to land on
+    // ("connectors" from the Projects page's Connect button). Consumed once by
+    // SettingsScreen (expand + scroll), then cleared when the page is left.
+    var settingsFocus by remember { mutableStateOf<String?>(null) }
+    // v9.42 (owner bug 1, the silent half): a GitHub sync that failed used to
+    // vanish into runCatching. It now says one small line until the next send.
+    var repoSyncError by remember { mutableStateOf("") }
     val sendWaitLabel = when {
         repoSyncing -> stringResource(R.string.chat_wait_repo)
         pendingSend != null -> stringResource(R.string.chat_wait_boot)
+        // v9.42 (owner bug 1, the silent half): a failed clone used to vanish
+        // inside runCatching - the model then worked on an EMPTY folder and
+        // the user was told nothing. One quiet line, cleared by the next send.
+        repoSyncError.isNotBlank() -> stringResource(R.string.chat_repo_sync_failed, repoSyncError)
         else -> ""
     }
 
@@ -1248,14 +1259,47 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     LaunchedEffect(summary.ready, repository) {
         if (summary.ready) repository.startStream()
     }
-    // v9.41 (owner item 6): the queue drains itself the moment the server is
-    // up - the same pre-prompt rules apply (branch first, then the send).
-    LaunchedEffect(summary.ready) {
+    // v9.42 (owner bug 1): THE pre-prompt gate, shared by the live send and by
+    // the queue drain. A GitHub project's code is made REAL and FRESH here, at
+    // the door the model walks through - first prompt clones, later prompts
+    // fast-forward; a non-GitHub project just gets its branch re-parked
+    // (v9.40's master-leak guard; the AGENTS.md block teaches the mid-turn
+    // half). Failures never block the send - the prompt proceeds against what
+    // IS on disk - but a failure now says so in one small line instead of
+    // dying silently inside runCatching.
+    suspend fun promptGateAndSend(text: String) {
+        val isGithub = withContext(Dispatchers.IO) {
+            ai.opencode.android.github.GithubProjectMeta.has(context, projectName) ||
+                ai.opencode.android.github.GitSync.isGithubProject(projectDir)
+        }
+        if (isGithub) {
+            repoSyncing = true
+            repoSyncError = ""
+            withContext(Dispatchers.IO) {
+                runCatching {
+                    githubClone.materialize(context, projectName, projectDir, githubToken())
+                }
+            }
+            repoSyncing = false
+            val gs = githubClone.state.value
+            if (gs.phase == ai.opencode.android.github.GithubCloneManager.Phase.ERROR) {
+                repoSyncError = gs.error.take(180)
+            }
+        } else {
+            githubClone.ensureProjectBranch(projectDir)
+        }
+        repository.sendPrompt(text)
+    }
+    // v9.42 (owner bug 1): the queue drains through EXACTLY the same pre-prompt
+    // gate as a live send. v9.41 ran the gate on the tap but drained with only
+    // a branch-no-op - so a first prompt typed while the agent was still
+    // booting never materialized its GitHub project ("clone does not
+    // happen"). One gate function, both doors.
+    LaunchedEffect(summary.ready, pendingSend) {
         val t = pendingSend ?: return@LaunchedEffect
         if (!summary.ready) return@LaunchedEffect
         pendingSend = null
-        githubClone.ensureProjectBranch(projectDir)
-        repository.sendPrompt(t)
+        promptGateAndSend(t)
     }
     // v8 fix round (owner's issue 1): the workspace root is a key on purpose.
     // A switch that does not recreate the Activity used to leave this effect
@@ -1633,7 +1677,13 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onLoadGithubRepos = {
                         githubToken()?.let { githubClone.listRepos(it) }
                     },
-                    onConnectGithub = { route = ROUTE_SETTINGS },
+                    // v9.42 (owner): "when I click the Connect button in the
+                    // Projects section, it should navigate directly to that
+                    // exact section in Settings and expand the dropdown".
+                    onConnectGithub = {
+                        settingsFocus = "connectors"
+                        route = ROUTE_SETTINGS
+                    },
                     onCreateFromRepo = { repo, typedName ->
                         // v9.41 (owner item 3): creating is INSTANT - no clone,
                         // no wait, no "repository uploading" feel. The project
@@ -1874,42 +1924,57 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     // The URL itself comes from strings.xml - the UI layer never
                     // compiles a URL literal, which is also what P5-G19 checks for.
                     onOpenUrl = onOpenUrl,
-                    onBack = { route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT },
+                    // v9.42 (owner): the Projects page's Connect button must
+                    // land ON the connectors accordion - opened, and scrolled
+                    // into view - not at the top of a long settings page.
+                    focusSection = settingsFocus,
+                    onBack = {
+                        settingsFocus = null
+                        route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT
+                    },
                 )
 
                 // v9.1: the Providers surface - the provider/model/keys sections that
                 // used to sit inside Settings, unchanged in behaviour, plus the `+`
                 // that opens the manual custom-provider form.
-                ROUTE_PROVIDERS -> ProvidersScreen(
-                    state = uiState,
-                    availability = availability,
-                    storedProviderIds = storedIds,
-                    hardwareBacked = hardwareBacked,
-                    onSetModel = { providerId, modelId -> repository.setModel(providerId, modelId) },
-                    onClearModel = { repository.clearModel() },
-                    // v9.41 (owner item 22): a thinking-level tap in the Models
-                    // card picks the model AND its level in one gesture.
-                    onSetThinking = { providerId, modelId, variant ->
+                ROUTE_PROVIDERS -> {
+                    // v9.42 (owner): "the Zen models that are automatically
+                    // pinned must also stay up to date with updates". Opening
+                    // the Providers page re-reads the catalog, so a model the
+                    // server added or removed shows (or stops showing) here -
+                    // the disk snapshot only ever seeds the FIRST frame.
+                    LaunchedEffect(Unit) { repository.refresh() }
+                    ProvidersScreen(
+                        state = uiState,
+                        availability = availability,
+                        storedProviderIds = storedIds,
+                        hardwareBacked = hardwareBacked,
+                        onSetModel = { providerId, modelId -> repository.setModel(providerId, modelId) },
+                        onClearModel = { repository.clearModel() },
+                        // v9.41 (owner item 22): a thinking-level tap in the Models
+                        // card picks the model AND its level in one gesture.
+                        onSetThinking = { providerId, modelId, variant ->
                         repository.setModel(providerId, modelId)
                         repository.setThinkingVariant(variant)
-                    },
-                    onToggleStar = { providerId, modelId, starred ->
+                        },
+                        onToggleStar = { providerId, modelId, starred ->
                         repository.setStarred(OpenCodeApi.ModelRef(providerId, modelId), starred)
-                    },
-                    onConnectProvider = { providerId, key -> repository.provisionProvider(providerId, key, secrets) },
-                    // v6.1: the keyring (several saved keys per provider, one active).
-                    providerKeys = { providerId ->
+                        },
+                        onConnectProvider = { providerId, key -> repository.provisionProvider(providerId, key, secrets) },
+                        // v6.1: the keyring (several saved keys per provider, one active).
+                        providerKeys = { providerId ->
                         runCatching { container.keyring().entries(providerId) }.getOrDefault(emptyList())
-                    },
-                    onUseKey = { providerId, slot -> repository.activateProviderKey(providerId, slot) },
-                    onDeleteKey = { providerId, slot -> repository.removeProviderKey(providerId, slot) },
-                    onAddCustomProvider = { id, name, baseUrl, models, key ->
+                        },
+                        onUseKey = { providerId, slot -> repository.activateProviderKey(providerId, slot) },
+                        onDeleteKey = { providerId, slot -> repository.removeProviderKey(providerId, slot) },
+                        onAddCustomProvider = { id, name, baseUrl, models, key ->
                         repository.addCustomProvider(id, name, baseUrl, CustomProviderConfig.parseModels(models), key, secrets)
-                    },
-                    onRevokeKey = { providerId -> repository.revokeProvider(providerId, secrets) },
-                    providerSetup = providerSetup,
-                    onBack = { route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT },
-                )
+                        },
+                        onRevokeKey = { providerId -> repository.revokeProvider(providerId, secrets) },
+                        providerSetup = providerSetup,
+                        onBack = { route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT },
+                    )
+                }
 
                 // v9.24: Add-ons. The manager lives at the top of AppRoot so a
                 // download survives navigating away from this screen.
@@ -1974,49 +2039,19 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         markEmptyChatSeen()
                         scope.launch {
                             // v9.41 (owner item 6): one queued send at a time -
-                            // the composer label already says "waiting"; a
-                            // second tap while one waits must not double-send
+                            // a second tap while one waits must not double-send
                             // the first when the boot completes.
                             if (pendingSend != null) return@launch
-                            // v9.41 (owner item 3): the GitHub project's code
-                            // is made REAL and FRESH here, at the door the model
-                            // walks through - not at creation. First prompt of a
-                            // fresh project clones (the user watched nothing to
-                            // get the project; a short wait before the first
-                            // answer is the honest trade); every prompt after
-                            // that fetches and fast-forwards, so the repository
-                            // is always current when the model touches it.
-                            // Failures never block the send - the prompt
-                            // proceeds against what is on disk (the state
-                            // carries the error line for the projects notice).
-                            val isGithub = withContext(Dispatchers.IO) {
-                                ai.opencode.android.github.GithubProjectMeta.has(context, projectName) ||
-                                    ai.opencode.android.github.GitSync.isGithubProject(projectDir)
-                            }
-                            if (isGithub) {
-                                repoSyncing = true
-                                runCatching {
-                                    githubClone.materialize(context, projectName, projectDir, githubToken())
-                                }
-                                repoSyncing = false
-                            } else {
-                                // v9.40 (owner): "everything gets pushed to master"
-                                // - right before a prompt starts, re-park a GitHub
-                                // project's checkout on its project branch (cheap,
-                                // never-destructive no-op when it is already there),
-                                // so the model's commit+push lands on
-                                // opencode/<project>. The AGENTS.md block teaches
-                                // the same rule for the mid-turn case (never push
-                                // the default branch).
-                                githubClone.ensureProjectBranch(projectDir)
-                            }
-                            // v9.41 (owner item 6): the agent is not up yet?
-                            // The send waits, and the chat says so.
+                            // v9.41 (owner item 6) + v9.42 (owner): the agent
+                            // is not up? The message goes to the queue (and
+                            // shows in the chat as waiting) - the gate below
+                            // runs at DRAIN time, so a queued first prompt of
+                            // a GitHub project clones just like a live one.
                             if (!summary.ready) {
                                 pendingSend = text
                                 return@launch
                             }
-                            repository.sendPrompt(text)
+                            promptGateAndSend(text)
                         }
                     },
                     onDraftChange = { text -> repository.setDraft(text) },
@@ -2052,7 +2087,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onPickThinking = { variant -> repository.setThinkingVariant(variant) },
                     // v9.19 token saver: upstream /compact - the server summarizes
                     // the history so later turns stop resending the whole transcript.
-                    onCompactSession = { repository.compactSession() },
                     onPermissionReply = { id, reply -> repository.replyPermission(id, reply) },
                     onQuestionSubmit = { id, answers -> repository.replyQuestion(id, answers) },
                     onQuestionSkip = { id -> repository.rejectQuestion(id) },
@@ -2067,6 +2101,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onDeleteSession = { id -> repository.deleteSession(id) },
                     // v9.41 items 3+6: what the chat shows while a send waits.
                     sendWaitLabel = sendWaitLabel,
+                    // v9.42 (owner): the queued message rides the
+                    // conversation itself - the user sees their own words the
+                    // instant they send, whether or not the agent is up yet.
+                    pendingMessage = pendingSend,
                     // v9.41 (owner item 20): the "Say what should exist…" line
                     // belongs to the install's first launch; afterwards it
                     // returns only on one day in thirteen.

@@ -4,9 +4,15 @@ import ai.opencode.android.R
 import ai.opencode.android.client.ModelRefCodec
 import ai.opencode.android.client.OpenCodeApi
 import ai.opencode.android.ui.theme.ChatTheme
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +20,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -34,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -96,12 +104,23 @@ fun ModelQuickSwitch(
     variantsOf: (String, String) -> List<String> = { _, _ -> emptyList() },
     /** v9.41: pick model AND level in one go (a level tap inside a row). */
     onPickWithVariant: (String, String, String) -> Unit = { p, m, _ -> onPick(p, m) },
+    /**
+     * v9.42 (owner): "if we can't make model loading any faster, at least
+     * replace 'No Model' with 'Loading' and an animation". True while the
+     * provider catalog has not arrived - the capsule then says what is
+     * happening instead of claiming there is no model.
+     */
+    modelsLoading: Boolean = false,
 ) {
     var open by remember { mutableStateOf(false) }
     var freeOpen by remember { mutableStateOf(true) } // expanded by default (owner)
     var expandedKey by remember { mutableStateOf<String?>(null) }
     val chat = ChatTheme.chat
-    val currentText = current?.let { ModelRefCodec.encode(it) } ?: stringResource(R.string.chat_model_none)
+    val currentText = when {
+        current != null -> ModelRefCodec.encode(current)
+        modelsLoading -> stringResource(R.string.chat_model_loading)
+        else -> stringResource(R.string.chat_model_none)
+    }
     val label = stringResource(R.string.chat_model_switch, currentText)
 
     // v9 premium pass, after the Gemini reference: the switch is a compact
@@ -137,6 +156,26 @@ fun ModelQuickSwitch(
                 .weight(1f, fill = false)
                 .semantics { testTag = "model_quick_switch_label" },
         )
+        if (modelsLoading && current == null) {
+            // v9.42 (owner): the animation that makes "Loading" a state and
+            // not a word - one dot breathing, cleared from the a11y tree
+            // (the capsule's own label already says "Loading").
+            val infinite = rememberInfiniteTransition(label = "model_loading")
+            val breathe by infinite.animateFloat(
+                initialValue = 0.25f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(animation = tween(800), repeatMode = RepeatMode.Reverse),
+                label = "model_loading_breathe",
+            )
+            Box(
+                Modifier
+                    .size(8.dp)
+                    .alpha(breathe)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                    .clearAndSetSemantics { },
+            )
+            Spacer(Modifier.width(6.dp))
+        }
         Icon(
             imageVector = Icons.Filled.ArrowDropDown,
             contentDescription = null,
@@ -151,9 +190,14 @@ fun ModelQuickSwitch(
             onDismissRequest = { open = false },
             modifier = Modifier.semantics { testTag = "model_quick_switch_menu" },
         ) {
-            // ---- the current model, with its thinking levels INLINE (v9.41) --
+            // ---- the current model, and nothing else at the top --------------
+            // v9.42 (owner): "the model selector menu has become too large -
+            // make it more minimal". The thinking-level block that used to sit
+            // here is GONE: levels are one tap away, inside the row's own
+            // triangle, and the menu opens on the models themselves again.
+            // The triangle stays (owner's explicit "don't remove the
+            // triangles next to the models"); only the separate section went.
             if (current != null) {
-                val currentKey = ModelRefCodec.encode(current)
                 val variantSuffix = activeVariant.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
                 Text(
                     text = currentText + variantSuffix,
@@ -164,50 +208,6 @@ fun ModelQuickSwitch(
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                         .semantics { testTag = "model_current_row" },
                 )
-                if (variants.isNotEmpty()) {
-                    val defaultLabel = stringResource(R.string.chat_thinking_default)
-                    val defaultDescription = stringResource(R.string.chat_thinking_pick, defaultLabel)
-                    ThinkingRow(
-                        label = defaultLabel,
-                        active = activeVariant.isEmpty(),
-                        onClick = {
-                            open = false
-                            onPickVariant("")
-                        },
-                        modifier = Modifier.semantics {
-                            testTag = "thinking_default"
-                            contentDescription = defaultDescription
-                        },
-                    )
-                    variants.forEachIndexed { index, id ->
-                        val description = stringResource(R.string.chat_thinking_pick, id)
-                        ThinkingRow(
-                            label = id,
-                            active = id == activeVariant,
-                            onClick = {
-                                open = false
-                                onPickVariant(id)
-                            },
-                            modifier = Modifier.semantics {
-                                testTag = "thinking_pick_${index}"
-                                contentDescription = description
-                            },
-                        )
-                    }
-                } else {
-                    // v9.41 (owner item 22) + the standing honesty rule: a model
-                    // with no reasoning variants gets the explanation, not invented
-                    // levels - and no triangle on its row either.
-                    Text(
-                        text = stringResource(R.string.chat_thinking_empty),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = chat.muted,
-                        modifier = Modifier
-                            .width(280.dp)
-                            .padding(horizontal = 12.dp, vertical = 4.dp)
-                            .semantics { testTag = "thinking_empty" },
-                    )
-                }
                 HorizontalDivider(color = chat.toolBorder, modifier = Modifier.padding(vertical = 4.dp))
             }
 
@@ -237,7 +237,7 @@ fun ModelQuickSwitch(
                                 onPickWithVariant(qm.ref.providerID, qm.ref.modelID, v)
                             },
                             rowTag = "model_free_$index",
-                            levelTagPrefix = "free_vt_$index",
+                            levelTag = "free_vt_$index",
                             current = current,
                         )
                     }
@@ -282,7 +282,7 @@ fun ModelQuickSwitch(
                             onPickWithVariant(pid, mid, v)
                         },
                         rowTag = "model_pick_${index}",
-                        levelTagPrefix = "star_vt_$index",
+                        levelTag = "star_vt_$index",
                         current = current,
                     )
                 }
@@ -360,7 +360,7 @@ private fun ModelLineRow(
     onPickModel: () -> Unit,
     onPickLevel: (String) -> Unit,
     rowTag: String,
-    levelTagPrefix: String,
+    levelTag: String,
     current: OpenCodeApi.ModelRef?,
 ) {
     val chat = ChatTheme.chat
@@ -396,7 +396,7 @@ private fun ModelLineRow(
                         .size(22.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .clickable(onClick = onToggleExpand)
-                        .semantics { testTag = "${levelTagPrefix}_toggle" },
+                        .semantics { testTag = "${levelTag}_toggle" },
                 )
             } else {
                 Spacer(Modifier.width(4.dp))
@@ -416,7 +416,7 @@ private fun ModelLineRow(
                 label = id,
                 active = false,
                 onClick = { onPickLevel(id) },
-                modifier = Modifier.semantics { testTag = "${levelTagPrefix}_$index" },
+                modifier = Modifier.semantics { testTag = "${levelTag}_$index" },
             )
         }
     }

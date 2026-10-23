@@ -140,14 +140,17 @@ class UiErrorTest {
     }
 
     @Test
-    fun sendingIsBlockedOnlyByTheLocalAgent() {
-        // v9.41 (owner item 6): while the agent starts the composer STAYS
-        // OPEN - a send made now is queued by the app and goes out when the
-        // server is ready. Locked composer only for genuinely broken states.
+    fun sendingIsNeverBlockedByAnything() {
+        // v9.42 (owner): "make message submission behave normally, as if the
+        // app were fully initialized". The user can always send; while the
+        // agent is not up the app QUEUES the prompt (the message shows in the
+        // chat, nothing goes to the model until init finishes), and every
+        // degraded state drains through the same queue when it recovers.
+        // There is no longer a locked composer at all.
         assertTrue(UiError.canSend(AgentAvailability.RUNTIME_STARTING))
-        assertFalse(UiError.canSend(AgentAvailability.RUNTIME_UNAVAILABLE))
-        assertFalse(UiError.canSend(AgentAvailability.SERVER_UNREACHABLE))
-        assertFalse(UiError.canSend(AgentAvailability.SERVER_AUTH))
+        assertTrue(UiError.canSend(AgentAvailability.RUNTIME_UNAVAILABLE))
+        assertTrue(UiError.canSend(AgentAvailability.SERVER_UNREACHABLE))
+        assertTrue(UiError.canSend(AgentAvailability.SERVER_AUTH))
         // The app is fine in all of these: the composer must stay usable.
         assertTrue(UiError.canSend(AgentAvailability.PROVIDER_UNREACHABLE))
         assertTrue(UiError.canSend(AgentAvailability.PROVIDER_AUTH))

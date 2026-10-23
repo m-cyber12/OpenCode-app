@@ -88,8 +88,12 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -157,6 +161,13 @@ fun ChatScreen(
     onRetry: () -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
+    /**
+     * v9.42 (owner): the message the user already sent while the agent is
+     * still starting. It is IN the conversation - their own words, on screen -
+     * and reaches the model the moment the app is ready. Submission has to
+     * feel like a fully initialized app, not a disabled one.
+     */
+    pendingMessage: String? = null,
     onNewSession: () -> Unit,
     onOpenSessions: () -> Unit,
     onOpenProjects: () -> Unit,
@@ -193,7 +204,6 @@ fun ChatScreen(
     /** The reasoning-variant id for the next prompt; "" = model default. */
     onPickThinking: (String) -> Unit = {},
     /** v9.19 token saver: upstream /compact - summarize the history server-side. */
-    onCompactSession: () -> Unit = {},
     onPermissionReply: (String, String) -> Unit,
     onQuestionSubmit: (String, List<List<String>>) -> Unit,
     onQuestionSkip: (String) -> Unit,
@@ -288,7 +298,7 @@ fun ChatScreen(
             onOpenSettings = onOpenSettings,
             onOpenProviders = onOpenProviders,
             onOpenAddons = onOpenAddons,
-            onCompactSession = onCompactSession,
+            modelsLoading = state.providers == null,
             freeModels = freeQuick,
             variantsOf = ::variantsOf,
             onPickWithVariant = { pid, mid, v ->
@@ -365,6 +375,7 @@ fun ChatScreen(
                 }
             },
             onQuestionSkip = onQuestionSkip,
+            pendingMessage = pendingMessage,
             modifier = Modifier.weight(1f),
         )
 
@@ -420,7 +431,6 @@ fun ChatScreen(
         onNewSession = { drawerOpen = false; onNewSession() },
         onOpenAddons = { drawerOpen = false; onOpenAddons() },
         onOpenProviders = { drawerOpen = false; onOpenProviders() },
-        onCompactSession = { drawerOpen = false; onCompactSession() },
         onOpenSettings = { drawerOpen = false; onOpenSettings() },
         onSelect = { id -> drawerOpen = false; onSelectSession(id) },
         onRename = onRenameSession,
@@ -480,14 +490,14 @@ private fun ChatHeader(
     onOpenSettings: () -> Unit,
     onOpenProviders: () -> Unit,
     onOpenAddons: () -> Unit,
-    onCompactSession: () -> Unit,
+    /** v9.42 (owner): the catalog has not arrived yet - the capsule says so. */
+    modelsLoading: Boolean = false,
 ) {
     val chat = ChatTheme.chat
     val newLabel = stringResource(R.string.chat_new_conversation)
     val settingsLabel = stringResource(R.string.chat_open_settings)
     val providersLabel = stringResource(R.string.chat_open_providers)
     val addonsLabel = stringResource(R.string.chat_open_addons)
-    val compactLabel = stringResource(R.string.chat_compact_session)
     val menuLabel = stringResource(R.string.chat_open_menu)
     Row(
         modifier = Modifier
@@ -541,6 +551,7 @@ private fun ChatHeader(
                 freeModels = freeModels,
                 variantsOf = variantsOf,
                 onPickWithVariant = onPickWithVariant,
+                modelsLoading = modelsLoading,
             )
         }
         Spacer(Modifier.width(8.dp))
@@ -712,6 +723,24 @@ private fun StatusOrb(
     }
     var pulse by remember { mutableStateOf(0) }
     var expanded by remember { mutableStateOf(false) }
+    // v9.42 (owner): "the status circle should have an animation to show the
+    // user that the app is loading in the background". While the agent boots
+    // the dot breathes and a ring expands out of it - the one thing in the
+    // header that tells the user work is happening behind the first frame.
+    val loading = availability == AgentAvailability.RUNTIME_STARTING
+    val infinite = rememberInfiniteTransition(label = "status_orb")
+    val breathe by infinite.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(animation = tween(900), repeatMode = RepeatMode.Reverse),
+        label = "orb_breathe",
+    )
+    val ring by infinite.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(animation = tween(1500), repeatMode = RepeatMode.Restart),
+        label = "orb_ring",
+    )
     // Re-runs when the status text changes OR the user taps: expand, hold,
     // settle back. A change mid-hold restarts the effect (the old one is
     // cancelled), so the capsule simply stays open showing the new word.
@@ -737,7 +766,25 @@ private fun StatusOrb(
                 .animateContentSize(animationSpec = tween(240))
                 .padding(horizontal = 13.dp),
         ) {
-            Box(Modifier.size(10.dp).background(color, CircleShape))
+            Box(contentAlignment = Alignment.Center) {
+                if (loading) {
+                    // The expanding ring: alpha falls as it grows, so it reads
+                    // as one pulse leaving the dot, not a second shape.
+                    Box(
+                        Modifier
+                            .size(20.dp)
+                            .alpha((1f - ring) * 0.7f)
+                            .background(color.copy(alpha = 0.5f), CircleShape)
+                            .clearAndSetSemantics { },
+                    )
+                }
+                Box(
+                    Modifier
+                        .size(10.dp)
+                        .background(color.copy(alpha = if (loading) breathe else 1f), CircleShape)
+                        .clearAndSetSemantics { },
+                )
+            }
             AnimatedVisibility(
                 visible = expanded,
                 enter = fadeIn(tween(160)) + expandHorizontally(tween(240)),
@@ -755,6 +802,60 @@ private fun StatusOrb(
 }
 
 // ---- status ----------------------------------------------------------------
+
+/**
+ * v9.42 (owner): the boot state, AS a loading state. No red, no error copy -
+ * one quiet line naming what is happening and a dot that moves, because "the
+ * app is working in the background" is the message, not "something is wrong".
+ * The word stays `Starting the agent` so every surface agrees on it.
+ */
+@Composable
+private fun StartingRow(modifier: Modifier = Modifier) {
+    val chat = ChatTheme.chat
+    val label = stringResource(R.string.availability_runtime_starting)
+    val infinite = rememberInfiniteTransition(label = "starting_dots")
+    val step by infinite.animateFloat(
+        initialValue = 0f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(animation = tween(1200), repeatMode = RepeatMode.Restart),
+        label = "starting_step",
+    )
+    Surface(
+        color = chat.toolContainer,
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, chat.toolBorder),
+        modifier = modifier.fillMaxWidth().semantics { testTag = "chat_loading_row" },
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.muted,
+            )
+            Spacer(Modifier.width(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                modifier = Modifier.clearAndSetSemantics { },
+            ) {
+                for (i in 0 until 3) {
+                    val lit = step.toInt() >= i
+                    Box(
+                        Modifier
+                            .size(5.dp)
+                            .alpha(if (lit) 1f else 0.28f)
+                            .background(
+                                if (lit) MaterialTheme.colorScheme.primary else chat.muted,
+                                CircleShape,
+                            ),
+                    )
+                }
+            }
+        }
+    }
+}
 
 /**
  * Everything that can make the agent unusable or merely busy, in one place, in a
@@ -803,6 +904,14 @@ private fun StatusArea(
     // misleading - just show the word Stopped under the token count". A user
     // stopping a turn is not a degraded agent: no banner, no card - the tiny
     // footer note on the turn itself is the whole signal.
+    // v9.42 (owner): "it looks much more like an error than a loading state"
+    // - the red banner is GONE from the boot path. Starting is loading: a
+    // quiet neutral row with a moving dot, and the status orb animating.
+    // Everything else here is unchanged - a real failure still says so, once.
+    if (availability == AgentAvailability.RUNTIME_STARTING) {
+        StartingRow(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+        return
+    }
     if (availability != AgentAvailability.READY && availability != AgentAvailability.ABORTED) {
         if (!turnErrorShownByRow || state.error.isNotBlank()) {
             // Deliberately no `extra`: the supervisor's own detail line carries the
@@ -1151,6 +1260,47 @@ private fun EmptyChatTypewriter(firstChat: Boolean) {
  * The scrolling transcript, with pin-to-bottom while streaming and a "N new"
  * affordance once the user has scrolled away.
  */
+/**
+ * v9.42 (owner): a sent message that is still waiting for the agent. Rendered
+ * as the user's own bubble - same shape, same side - with one quiet line under
+ * it, because "your message is here and will go out" is the honest statement.
+ * It is never presented as an answer, and it disappears the moment the real
+ * turn starts (the queued text becomes the actual user message).
+ */
+@Composable
+private fun PendingSendRow(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    val chat = ChatTheme.chat
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp)
+            .semantics { testTag = "pending_send_row" },
+        horizontalAlignment = Alignment.End,
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer,
+            shape = RoundedCornerShape(18.dp),
+            modifier = Modifier.widthIn(max = 620.dp),
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = stringResource(R.string.chat_pending_send),
+            style = MaterialTheme.typography.labelSmall,
+            color = chat.muted,
+        )
+    }
+}
+
 @Composable
 private fun TranscriptPane(
     messages: List<Transcript.Message>,
@@ -1164,6 +1314,8 @@ private fun TranscriptPane(
     question: Transcript.Question? = null,
     onQuestionSubmit: (String, List<List<String>>) -> Unit = { _, _ -> },
     onQuestionSkip: (String) -> Unit = {},
+    /** v9.42 (owner): a message already sent, waiting for the agent to be up. */
+    pendingMessage: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val jumpLabel = stringResource(R.string.chat_jump_to_latest)
@@ -1385,6 +1537,20 @@ private fun TranscriptPane(
                     }
                 }
             }
+            // v9.42 (owner): the user's own message, in the conversation, the
+            // moment they send it - even though the agent is still starting.
+            // A real bubble with a quiet "waiting" note, and it becomes the
+            // actual prompt when the runtime is ready (AppRoot's queue).
+            if (!pendingMessage.isNullOrBlank()) {
+                item(key = "pending_send") {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                        PendingSendRow(
+                            text = pendingMessage,
+                            modifier = Modifier.widthIn(max = 760.dp),
+                        )
+                    }
+                }
+            }
         }
 
         if (unseen > 0) {
@@ -1432,8 +1598,7 @@ private fun TranscriptPane(
  * CURRENT project's conversations - each with its three-dot menu (Delete /
  * Rename, in [SessionRow]) - plus the identity card and the actions that used
  * to live in the old dropdown, tag for tag: `open_projects` (the identity
- * card), `new_session`, `open_addons`, `open_providers`, `compact_session`,
- * `open_settings`. Entering/leaving is finite (190/160 ms), matching the
+ * card), `new_session`, `open_addons`, `open_providers`, `open_settings`. Entering/leaving is finite (190/160 ms), matching the
  * sheet rule; the scrim closes it, the system back closes it.
  */
 @Composable
@@ -1453,7 +1618,6 @@ private fun ChatConversationDrawer(
     onNewSession: () -> Unit,
     onOpenAddons: () -> Unit,
     onOpenProviders: () -> Unit,
-    onCompactSession: () -> Unit,
     onOpenSettings: () -> Unit,
     onSelect: (String) -> Unit,
     onRename: (String, String) -> Unit,
@@ -1603,12 +1767,6 @@ private fun ChatConversationDrawer(
                         label = stringResource(R.string.chat_open_addons),
                         icon = Icons.Filled.Build,
                         onClick = onOpenAddons,
-                    )
-                    DrawerAction(
-                        tag = "compact_session",
-                        label = stringResource(R.string.chat_compact_session),
-                        icon = Icons.Filled.Refresh,
-                        onClick = onCompactSession,
                     )
                     DrawerAction(
                         tag = "open_settings",

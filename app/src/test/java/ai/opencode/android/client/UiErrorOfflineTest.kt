@@ -238,22 +238,17 @@ class UiErrorOfflineTest {
     }
 
     @Test
-    fun onlyLocalFailureStatesDisableSending() {
-        // Provider problems keep the composer enabled: the app is fine and the
-        // fixed key / restored network is the way out.
-        // v9.41 (owner item 6): STARTING moved to the allowed side - a send
-        // made while the agent boots is QUEUED by the app and fires the moment
-        // the server answers, so there is no reason to lock the field; the
-        // chat says "waiting" instead of refusing the tap.
-        for (blocking in listOf(
+    fun noStateDisablesSendingAnymore() {
+        // v9.42 (owner): the locked composer is GONE. Every state - dead
+        // runtime, unanswered server, refused key - accepts the send; the app
+        // queues it, shows it in the chat, and fires it when the agent is
+        // up. Offline behavior IS this: the queue simply waits for the
+        // recovery, and nothing about the moment needs a refusal.
+        for (any in listOf(
+            AgentAvailability.RUNTIME_STARTING,
             AgentAvailability.RUNTIME_UNAVAILABLE,
             AgentAvailability.SERVER_UNREACHABLE,
             AgentAvailability.SERVER_AUTH,
-        )) {
-            org.junit.Assert.assertFalse("$blocking must block sending", UiError.canSend(blocking))
-        }
-        for (allowed in listOf(
-            AgentAvailability.RUNTIME_STARTING,
             AgentAvailability.READY,
             AgentAvailability.REQUEST_REJECTED,
             AgentAvailability.PROVIDER_UNREACHABLE,
@@ -262,7 +257,7 @@ class UiErrorOfflineTest {
             AgentAvailability.ABORTED,
             AgentAvailability.UNKNOWN,
         )) {
-            org.junit.Assert.assertTrue("$allowed must keep sending enabled", UiError.canSend(allowed))
+            org.junit.Assert.assertTrue("$any must keep sending enabled", UiError.canSend(any))
         }
     }
 }

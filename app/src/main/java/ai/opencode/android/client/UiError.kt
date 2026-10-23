@@ -183,24 +183,16 @@ object UiError {
     }
 
     /**
-     * Whether a turn can even be attempted. Only the local server's own absence
-     * blocks sending: a provider failure must NOT disable the composer, because
-     * the app is fine and the user's next attempt (or a fixed key) is the way out.
-     * That asymmetry is the whole point of distinguishing the states.
+     * v9.42 (owner): sending NEVER waits on the machine. "Make message
+     * submission behave normally, as if the app were fully initialized" - the
+     * user sends, the message appears in the chat, and it goes to the model
+     * only once the agent is actually up; until then AppRoot's queue holds it.
+     * A dead server, a booting one, a refused key - all the same rule: the
+     * composer is open and the queue drains when the state does. There is no
+     * state this app answers with "Sending is unavailable".
      */
-    fun canSend(a: AgentAvailability): Boolean = when (a) {
-        // v9.41 (owner item 6): STARTING is no longer a reason to lock the
-        // composer. The user CAN send while the agent boots - AppRoot queues
-        // the prompt and fires it the moment the server answers, and the chat
-        // says exactly that. A dead/broken server (below) stays locked: that
-        // is a failure, not a boot, and a queue behind it would never drain.
-        AgentAvailability.RUNTIME_UNAVAILABLE,
-        AgentAvailability.SERVER_UNREACHABLE,
-        AgentAvailability.SERVER_AUTH,
-        -> false
-        AgentAvailability.RUNTIME_STARTING -> true
-        else -> true
-    }
+    fun canSend(a: AgentAvailability): Boolean = true
+
 
     /**
      * The single state the UI shows, from the three facts it has. Precedence is

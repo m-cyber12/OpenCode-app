@@ -62,6 +62,9 @@ class AppContainer private constructor(private val context: Context) {
             modelPreference = ai.opencode.android.client.PrefsModelPreference.get(context),
             // v9.41 (owner item 7): last provider catalog, on disk, seeds the UI.
             providersDisk = ai.opencode.android.client.PrefsProviderSnapshotDisk.get(context),
+            // v9.42 (owner): last conversation, on disk, so the chat is not
+            // empty while the server answers.
+            transcriptDisk = ai.opencode.android.client.TranscriptDisk.get(context, workspaceDir),
             keyring = keyringInstance,
         )
         cached = key to repo

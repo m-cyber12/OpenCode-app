@@ -59,6 +59,12 @@ class OpenCodeRepository(
      * "loading models" surface, then swaps in the server's answer silently.
      */
     private val providersDisk: ProviderSnapshotDisk? = null,
+    /**
+     * v9.42 (owner): the last transcript, on disk, so opening the app paints
+     * the conversation the user was reading instead of an empty chat screen
+     * while the network answers. See [TranscriptDisk].
+     */
+    private val transcriptDisk: TranscriptDisk? = null,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) {
 
@@ -137,8 +143,23 @@ class OpenCodeRepository(
         /** Undo/retry needs a user message to revert to (upstream's own rule). */
         val canRetryTurn: Boolean get() = messages.any { it.role == "user" }
 
-        /** Upstream keeps a staged revert on the session; that is redo's precondition. */
-        val canRedo: Boolean get() = selectedInfo?.revertMessageID?.isNotEmpty() == true
+        /**
+         * Upstream keeps a staged revert on the session; that is redo's
+         * precondition. v9.42 (owner bug: "the yellow icon remains stuck at
+         * the bottom"): upstream does NOT clear the marker when a NEW prompt
+         * follows the undo, and a redo of a superseded undo is not a thing -
+         * so the offer is limited to what is actually redoable: the revert
+         * still sits at the END of the conversation. Once anything newer
+         * exists (a retry, a fresh send), the icon goes.
+         */
+        val canRedo: Boolean
+            get() {
+                val rev = selectedInfo?.revertMessageID ?: ""
+                if (rev.isEmpty()) return false
+                val ids = messages.map { it.id }
+                val at = ids.indexOf(rev)
+                return at == -1 || at == ids.lastIndex
+            }
     }
 
     val api = OpenCodeApi(baseUrl = baseUrl, username = username, password = password, directory = workspaceDir)
@@ -228,6 +249,46 @@ class OpenCodeRepository(
         _state.value.transcript.session(sid)?.messages?.isNotEmpty() == true
 
     /**
+     * v9.42 (owner: cold open showed an empty chat): paint what the app ALREADY
+     * has before the network is asked for anything. Returns true when it put
+     * rows on screen. Only ever fills an empty transcript - a live turn is
+     * never briefly replaced by an older copy.
+     */
+    private fun paintCachedSession(sid: String): Boolean {
+        if (sid.isEmpty() || hasRows(sid)) return false
+        val cached = runCatching { transcriptDisk?.load(sid) }.getOrNull()
+        if (cached.isNullOrEmpty()) return false
+        transcript.loadMessages(sid, cached)
+        publishTranscript("transcript from cache")
+        return true
+    }
+
+    /**
+     * v9.42: one transcript fetch, used by the boot refresh and by a session
+     * switch: paint the cache first ([paintCachedSession]), then ask the server,
+     * then keep the disk copy current for the next cold start.
+     */
+    private suspend fun fetchMessages(sid: String, status: String, quiet: Boolean = false) {
+        runCatching { api.messages(sid) }
+            .onSuccess { list ->
+                transcript.loadMessages(sid, list)
+                // Only the SELECTED session's fetch repaints the screen - a
+                // late answer for a session the user left must not yank the
+                // conversation they are reading.
+                if (_state.value.selectedSession == sid) publishTranscript(status)
+                withContext(Dispatchers.IO) { runCatching { transcriptDisk?.save(sid, list) } }
+            }
+            .onFailure { t ->
+                // v9.42 (owner): a cold-open fetch happens while the agent may
+                // still be starting - that is loading, not failure, so it must
+                // never paint a red banner. An explicit switch (quiet=false)
+                // still reports, because there the user asked for it.
+                if (quiet) Log.d("OpenCode/repo", "transcript fetch pending: ${t.message}")
+                else fail("messages", t)
+            }
+    }
+
+    /**
      * Re-read the selected session's messages from the server.
      *
      * Normally the transcript is fed by the event stream, which is live and cheap.
@@ -251,6 +312,9 @@ class OpenCodeRepository(
                 if (_state.value.selectedSession == sid) {
                     transcript.loadMessages(sid, list)
                     publishTranscript(status)
+                    // v9.42: the finished turn is what a cold restart should
+                    // paint first, so the disk copy follows every turn end.
+                    withContext(Dispatchers.IO) { runCatching { transcriptDisk?.save(sid, list) } }
                 }
             } catch (t: Throwable) {
                 // Keep it quiet: the stream is the primary path and will report a real
@@ -341,11 +405,18 @@ class OpenCodeRepository(
                         val sel = _state.value.selectedSession
                         val keep = if (sel.isNotEmpty() && list.any { it.id == sel }) sel else (list.firstOrNull()?.id ?: "")
                         _state.update { st -> st.copy(sessions = list, selectedSession = keep) }
-                        if (keep.isNotEmpty() && keep != sel) {
-                            runCatching { api.messages(keep) }
-                                .onSuccess { transcript.loadMessages(keep, it); publishTranscript("transcript loaded") }
-                                .onFailure { errors.add("messages: ${it.message}") }
-                        } else {
+                        // v9.42 (owner): the conversation shows FIRST from the
+                        // disk cache (cold open) and is then confirmed by the
+                        // server - an empty chat screen is no longer the first
+                        // thing the user sees while the messages load.
+                        val painted = paintCachedSession(keep)
+                        if (keep.isNotEmpty() && (keep != sel || !painted)) {
+                            launch {
+                                runCatching { fetchMessages(keep, "transcript loaded", quiet = true) }
+                                    .onFailure { errors.add("messages: ${it.message}") }
+                            }
+                        }
+                        if (!painted && keep.isEmpty()) {
                             publishTranscript("sessions refreshed")
                         }
                     }.onFailure { errors.add("sessions: ${it.message}") }
@@ -404,13 +475,13 @@ class OpenCodeRepository(
 
     fun selectSession(sessionID: String) {
         if (sessionID.isEmpty()) return
-        scope.launch {
-            runCatching { api.messages(sessionID) }.onSuccess {
-                transcript.loadMessages(sessionID, it)
-                _state.value = _state.value.copy(selectedSession = sessionID, transcript = transcript.snapshot())
-                publishTranscript("transcript loaded")
-            }.onFailure { fail("messages", it) }
-        }
+        // v9.42 (owner: switching sessions showed an empty chat first): the
+        // transcript already holds every session this process has seen, and
+        // the disk holds yesterday's - either is on screen in the same frame
+        // as the switch, and the server corrects it a moment later.
+        _state.value = _state.value.copy(selectedSession = sessionID, transcript = transcript.snapshot())
+        paintCachedSession(sessionID)
+        scope.launch { fetchMessages(sessionID, "transcript loaded") }
     }
 
     fun newSession(title: String?) {
@@ -580,22 +651,6 @@ class OpenCodeRepository(
      * compaction itself streams like a normal turn (the event stream keeps the
      * transcript and busy state honest while it runs).
      */
-    fun compactSession() {
-        val st = _state.value
-        val sid = st.selectedSession
-        val model = st.model
-        if (sid.isEmpty() || model == null || st.busy) return
-        scope.launch {
-            runCatching { api.summarizeSession(sid, model.providerID, model.modelID) }
-                .onSuccess {
-                    _state.value = _state.value.copy(
-                        notice = "compacting conversation - older turns become a short summary, cutting what every next step re-sends",
-                    )
-                }
-                .onFailure { fail("compact", it) }
-        }
-    }
-
     // ---- undo / retry (upstream's own revert choreography) -----------------
 
     /**

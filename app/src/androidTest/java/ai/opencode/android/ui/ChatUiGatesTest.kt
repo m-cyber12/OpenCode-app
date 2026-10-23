@@ -390,6 +390,8 @@ class ChatUiGatesTest {
     private val chatState = mutableStateOf(uiState())
     private val chatAvailability = mutableStateOf(AgentAvailability.READY)
     private val chatRuntime = mutableStateOf(healthy)
+    /** v9.42 (owner): the queued send the chat surface renders. */
+    private val queuedMessage = mutableStateOf("")
     private val liveMessages = mutableStateListOf<Transcript.Message>()
     private val liveBusy = mutableStateOf(false)
     private val sessionList = mutableStateListOf<OpenCodeApi.SessionInfo>()
@@ -492,6 +494,8 @@ class ChatUiGatesTest {
             onAttach = { attaches++ },
             onRemoveAttachment = { removedAttachments.add(it) },
             onDismissBanner = { dismissals++ },
+            // v9.42 (owner): the queued message rides the conversation.
+            pendingMessage = queuedMessage.value.ifBlank { null },
             preview = chatPreview.value,
             livePorts = chatLivePorts.value,
             onOpenPreviewPort = { portOpens.add(it) },
@@ -699,10 +703,13 @@ class ChatUiGatesTest {
         state: OpenCodeRepository.UiState,
         availability: AgentAvailability,
         runtime: RuntimeSummary = healthy,
+        /** v9.42 (owner): a message already sent while the agent starts. */
+        pendingMessage: String = "",
     ) {
         chatState.value = state
         chatAvailability.value = availability
         chatRuntime.value = runtime
+        queuedMessage.value = pendingMessage
         surface.value = Surface.CHAT
         show()
     }
@@ -1345,8 +1352,11 @@ class ChatUiGatesTest {
         shot("14-chat-provider-auth.png")
 
 
-        // (d) still starting: not an error, and - v9.41 (owner item 6) - the
-        // composer STAYS OPEN: a send now is queued and fired on "up".
+        // (d) still starting: not an error, and - v9.42 (owner) - the composer
+        // is OPEN IN EVERY STATE. "Make message submission behave normally, as
+        // if the app were fully initialized": the send is accepted, shown in
+        // the chat, and held until the app can deliver it. A locked composer
+        // is no longer a state this app has.
         renderChat(
             uiState(serverReachable = false, draft = "hello"),
             availability = AgentAvailability.RUNTIME_STARTING,
@@ -1355,6 +1365,22 @@ class ChatUiGatesTest {
         val dText = onScreenText()
         val dHeadline = dText.contains(context.getString(R.string.availability_runtime_starting))
         val dSend = sendEnabled()
+        // v9.42 (owner): starting LOOKS like loading - a neutral row with the
+        // moving dots, and no red banner anywhere in the conversation.
+        val dLoadingRow = exists("chat_loading_row")
+        val dNoErrorBanner = !exists("availability_banner")
+        // v9.42 (owner): a message sent while the agent starts is IN the chat
+        // (the user's own words, visible) and waits for the app, not the user.
+        renderChat(
+            uiState(serverReachable = false, draft = ""),
+            availability = AgentAvailability.RUNTIME_STARTING,
+            runtime = startingRuntime,
+            pendingMessage = "build me a landing page",
+        )
+        val queuedShown = exists("pending_send_row") &&
+            onScreenText().contains("build me a landing page") &&
+            sendEnabled()
+        shot("13b-chat-starting-and-queued.png")
 
         val headlines = listOf(
             context.getString(R.string.availability_runtime_unavailable),
@@ -1399,12 +1425,15 @@ class ChatUiGatesTest {
         shot("19b-welcome-states.png")
 
         val ok = aHeadline && aBody && bHeadline && cHeadline && cRawKept && dHeadline && distinct &&
-            !aSend && !bSend && dSend && cSend && leaks.isEmpty() &&
+            aSend && bSend && cSend && dSend && dLoadingRow && dNoErrorBanner && queuedShown &&
+            leaks.isEmpty() &&
             welcomeShown.size == stageTitles.size && welcomeLeaks.isEmpty()
         gate(
             "U4",
             ok,
             "runtimeDown=$aHeadline(body=$aBody,send=$aSend) serverUnreachable=$bHeadline(send=$bSend) " +
+                "(v9.42: the composer stays open in every state) " +
+                "startingLooksLikeLoading=$dLoadingRow/noBanner=$dNoErrorBanner queued=$queuedShown " +
                 "providerAuth=$cHeadline(rawKept=$cRawKept,send=$cSend) starting=$dHeadline(send=$dSend) " +
                 "headlinesDistinct=$distinct chatLeaks=$leaks " +
                 "welcomeStatesShown=${welcomeShown.size}/${stageTitles.size} welcomeLeaks=$welcomeLeaks",
@@ -2189,8 +2218,12 @@ class ChatUiGatesTest {
             OpenCodeApi.ModelRef("google", "gemini-2.5-flash"),
         )
         // The current model's catalog row lists its own reasoning variants
-        // (upstream `Model.variants` keys) - the thinking section at the bottom
-        // of the menu must show EXACTLY these, no invented levels.
+        // (upstream `Model.variants` keys). v9.42 (owner): the separate
+        // thinking section at the top of the menu is GONE - the menu is
+        // models only, and the levels live behind each row's TRIANGLE
+        // (owner's "don't remove the triangles next to the models"). So the
+        // gate now asserts: no thinking rows at the top at all, and the
+        // levels reachable from a row that HAS them.
         val variantIds = listOf("low", "medium", "high", "xhigh")
         val providers = OpenCodeApi.ProviderSnapshot(
             allIds = listOf("openrouter", "google"),
@@ -2226,23 +2259,35 @@ class ChatUiGatesTest {
         val listed = countPrefix("model_pick_") == starred.size
         val idsShown = onScreenText().contains("openai/gpt-4o-mini") &&
             onScreenText().contains("gemini-2.5-flash")
-        // the thinking section sits at the bottom: a default row plus one row
-        // per variant id the model itself reports - no more, no fewer
-        val thinkingListed = exists("thinking_default") &&
-            countPrefix("thinking_pick_") == variantIds.size
+        // v9.42 (owner): the menu is minimal - NO thinking rows in the menu
+        // body any more. The levels are behind the row's triangle: starred row
+        // 0 is the current model (`openrouter/openai/gpt-4o-mini`, which the
+        // fixture gives four variants), so its triangle must exist and must
+        // open exactly those four level rows - the server's own ids, no more.
+        val thinkingSectionGone = !exists("thinking_default") &&
+            countPrefix("thinking_pick_") == 0 && !exists("thinking_empty")
+        val triangleShown = exists("star_vt_0_toggle")
+        rule.onAllNodesWithTag("star_vt_0_toggle")[0].performClick()
+        rule.waitForIdle()
+        // the level rows are `star_vt_0_<i>`; the triangle shares the prefix,
+        // so the count is the levels plus that one triangle.
+        val levelsOpened = countPrefix("star_vt_0_") == variantIds.size + 1
         shot("23-model-quick-switch.png")
 
         // picking a level calls back with the SERVER'S OWN id and closes the menu
-        rule.onAllNodesWithTag("thinking_pick_2")[0].performClick()
+        rule.onAllNodesWithTag("star_vt_0_2")[0].performClick()
         rule.waitForIdle()
-        val thinkingPicked = thinkingPicks == listOf("high") && modelPicks == 0
+        // v9.41 contract kept: a level tap inside a row picks the MODEL and
+        // the level in one gesture (so modelPicks grows here too).
+        val thinkingPicked = thinkingPicks == listOf("high") && modelPicks == 1 &&
+            pickedModels.contains("openrouter/openai/gpt-4o-mini")
 
         // picking a model calls back with the two halves, and does NOT require Settings
         rule.onAllNodesWithTag("model_quick_switch")[0].performClick()
         rule.waitForIdle()
         rule.onAllNodesWithTag("model_pick_1")[0].performClick()
         rule.waitForIdle()
-        val picked = modelPicks == 1 && pickedModels.contains("google/gemini-2.5-flash")
+        val picked = modelPicks == 2 && pickedModels.contains("google/gemini-2.5-flash")
         val noSettingsTrip = openSettings == 0
 
         // the build/plan switch, left of the status orb: two real agents, the
@@ -2331,29 +2376,32 @@ class ChatUiGatesTest {
         shot("30-mode-switch.png")
 
         // with nothing starred the menu says what to do and offers the one place
-        // where models are starred; without a catalog row the thinking section
-        // says the model lists no levels instead of inventing any
+        // where models are starred. v9.42 (owner): the "lists no levels"
+        // explanation row went with the thinking section - the capsule now
+        // shows the model (or "Loading" while the catalog is on its way), and
+        // a model with no variants simply has no triangle.
         renderChat(uiState(model = starred[0], starred = emptyList()), AgentAvailability.READY)
         rule.onAllNodesWithTag("model_quick_switch")[0].performClick()
         rule.waitForIdle()
         val emptyExplained = exists("model_quick_switch_empty") &&
             onScreenText().contains(context.getString(R.string.chat_model_empty))
-        val thinkingEmptyExplained = exists("thinking_empty")
+        val thinkingEmptyExplained = !exists("thinking_empty") && !exists("thinking_default")
         rule.onAllNodesWithTag("model_quick_switch_settings")[0].performClick()
         rule.waitForIdle()
         val settingsOffered = openSettings == 1
 
-        val settled = modelPicks == 1 && pickedModels.size == 1 && thinkingPicks.size == 1
+        val settled = modelPicks == 2 && pickedModels.size == 2 && thinkingPicks.size == 1
         gate(
             "U10",
             shown && labelNamesCurrent && menuOpen && listed && idsShown && picked && noSettingsTrip &&
-                thinkingListed && thinkingPicked && thinkingEmptyExplained &&
+                thinkingSectionGone && triangleShown && levelsOpened && thinkingPicked && thinkingEmptyExplained &&
                 modeShown && modeMenu && modePicked && modeLabelled &&
                 approveOffered && approveWired && planPathHidden &&
                 emptyExplained && settingsOffered && settled,
             "shown=$shown label=$labelNamesCurrent menu=$menuOpen listed=$listed/$idsShown " +
                 "picked=$picked/$pickedModels settingsTrip=$noSettingsTrip " +
-                "thinking=$thinkingListed/$thinkingPicked/$thinkingPicks thinkingEmpty=$thinkingEmptyExplained " +
+                "thinking=gone=$thinkingSectionGone triangle=$triangleShown levels=$levelsOpened " +
+                "picked=$thinkingPicks emptyNoRows=$thinkingEmptyExplained " +
                 "mode=$modeShown/$modeMenu/$modePicked/$modePicks label=$modeLabelled " +
                 "planApprove=$approveOffered/$approveWired pathHidden=$planPathHidden " +
                 "emptyExplained=$emptyExplained offered=$settingsOffered",
@@ -2459,10 +2507,14 @@ class ChatUiGatesTest {
         val starReported = starLastToggle == Triple("openrouter", "openai/gpt-4o-mini", false)
 
         // the manual path for a provider no catalog knows: four fields plus the
-        // key. v9.1 put the form behind the `+` in the top bar (the owner's "add
-        // a provider" affordance), so the gate goes through that button.
+        // key. v9.42 (owner): the `+` in the top bar is GONE - the affordance is
+        // the "Add Your Own Provider" rectangle inside the Providers card, and
+        // the form opens directly beneath it. The gate goes through that tile.
         val customHiddenUntilAdd = !exists("custom_provider_id")
-        rule.onAllNodesWithTag("providers_add")[0].performClick()
+        rule.onAllNodesWithTag("providers_list")[0].performScrollToNode(hasTestTag("provider_add_custom"))
+        rule.waitForIdle()
+        val addTileShown = exists("provider_add_custom")
+        rule.onAllNodesWithTag("provider_add_custom")[0].performClick()
         rule.waitForIdle()
         rule.onAllNodesWithTag("providers_list")[0].performScrollToNode(hasTestTag("custom_provider_id"))
         rule.waitForIdle()
@@ -2485,10 +2537,11 @@ class ChatUiGatesTest {
             screenShown && collapsedByDefault && searchShown && filtered && countLine && dialogShown &&
                 onlyKeyAsked && activated &&
                 starHiddenUntilModelsOpen && starShown && starChecked && starWired && starReported &&
-                customHiddenUntilAdd && customShown && customSaved,
+                customHiddenUntilAdd && addTileShown && customShown && customSaved,
             "surface=$screenShown search=$searchShown/$filtered/$countLine keyOnly=$dialogShown/$onlyKeyAsked " +
                 "activated=$activated star=$starShown/$starChecked/$starWired/$starReported " +
-                "collapsedFirst=$collapsedByDefault/$starHiddenUntilModelsOpen custom=$customHiddenUntilAdd/$customShown/$customSaved " +
+                "collapsedFirst=$collapsedByDefault/$starHiddenUntilModelsOpen " +
+                "addTile=$addTileShown custom=$customHiddenUntilAdd/$customShown/$customSaved " +
                 "reported=$starLastToggle",
         )
     }

@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -60,6 +61,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -150,6 +152,12 @@ fun SettingsScreen(
     githubConnected: Boolean = false,
     onSaveGithubToken: (String) -> Boolean = { false },
     onRemoveGithubToken: () -> Unit = {},
+    /**
+     * v9.42 (owner): the section this navigation means to reach (the Projects
+     * page's Connect button asks for "connectors"). It opens that accordion
+     * AND scrolls it into view, so the tap lands on the thing it asked for.
+     */
+    focusSection: String? = null,
     modifier: Modifier = Modifier,
 ) {
     // A fixed, bounded list of sections rendered by a lazy list: the diagnostics
@@ -183,7 +191,15 @@ fun SettingsScreen(
             subtitle = availabilityHeadline(availability),
             onBack = onBack,
         )
+        val listState = rememberLazyListState()
+        // v9.42 (owner): land ON the section, not above it.
+        LaunchedEffect(focusSection) {
+            val target = focusSection ?: return@LaunchedEffect
+            val index = sections.indexOf(target)
+            if (index >= 0) listState.animateScrollToItem(index)
+        }
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize().semantics { testTag = "settings_list" },
             // Phase 10 polish: same one-step-of-air treatment as the transcript.
             contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 28.dp),
@@ -222,6 +238,10 @@ fun SettingsScreen(
                         onSaveGithubToken = onSaveGithubToken,
                         onRemoveGithubToken = onRemoveGithubToken,
                         onOpenUrl = onOpenUrl,
+                        // v9.42 (owner): a navigation that asked for this
+                        // section gets it OPEN - collapsed otherwise, as the
+                        // owner asked in v9.41.
+                        expanded = focusSection == "connectors",
                     )
                     "mcp" -> McpSection(
                         entries = state.mcp,
@@ -486,6 +506,9 @@ private fun ProvidersCatalogSection(
     providerKeys: (String) -> List<ProviderKeyring.Entry>,
     onUseKey: (String, String) -> Unit,
     onDeleteKey: (String, String) -> Unit,
+    /** v9.42 (owner): the Add tile lives in this card, and it is open. */
+    addOpen: Boolean = false,
+    onToggleAdd: () -> Unit = {},
 ) {
     val chat = ChatTheme.chat
     var query by rememberSaveable { mutableStateOf("") }
@@ -530,6 +553,9 @@ private fun ProvidersCatalogSection(
                 modifier = Modifier.semantics { testTag = "provider_search_count" },
             )
         }
+        // v9.42 (owner): Zen pinned at the very top, the connected providers
+        // pinned directly below it, everything else alphabetical. Pinned means
+        // pinned under a search too - the sort key is the provider, not the row.
         val ordered = remember(shown, providers) {
             shown.sortedWith(
                 compareBy({ it.id != OpenCodeApi.ZEN_PROVIDER_ID }, { !providers.connected.contains(it.id) }, { it.name.lowercase() }),
@@ -543,6 +569,8 @@ private fun ProvidersCatalogSection(
                 onConnect = { connectTarget = provider },
             )
         }
+        Spacer(Modifier.height(10.dp))
+        AddProviderTile(expanded = addOpen, onClick = onToggleAdd)
     }
 
     val target = connectTarget
@@ -569,6 +597,67 @@ private fun ProvidersCatalogSection(
                 connectTarget = null
             },
         )
+    }
+}
+
+/**
+ * v9.42 (owner): "move the Add button into the Providers section and make it
+ * more polished, for example by placing it in a rectangle labeled 'Add Your
+ * Own...'". A full-width rectangle with a `+`, a title and one line saying
+ * what it is for - and it opens the form right beneath itself.
+ */
+@Composable
+private fun AddProviderTile(
+    expanded: Boolean,
+    onClick: () -> Unit,
+) {
+    val chat = ChatTheme.chat
+    val label = stringResource(R.string.settings_provider_add_title)
+    val body = stringResource(R.string.settings_provider_add_body)
+    Surface(
+        onClick = onClick,
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, chat.toolBorder),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 58.dp)
+            .semantics {
+                testTag = "provider_add_custom"
+                role = Role.Button
+                contentDescription = label
+            },
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Add,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp).clearAndSetSemantics { },
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = body,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = chat.muted,
+                )
+            }
+            Icon(
+                imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                contentDescription = null,
+                tint = chat.muted,
+                modifier = Modifier.size(20.dp).clearAndSetSemantics { },
+            )
+        }
     }
 }
 
@@ -676,6 +765,9 @@ private fun ModelsSection(
                     onToggleStar = onToggleStar,
                     onSetThinking = onSetThinking,
                     tagPrefix = "model_free",
+                    // v9.42 (owner): thinking levels are not pickable here.
+                    showTriangles = false,
+                    providerLabel = free.name,
                 )
             }
         }
@@ -698,6 +790,12 @@ private fun ModelsSection(
                 onToggleStar = onToggleStar,
                 onSetThinking = onSetThinking,
                 tagPrefix = "model",
+                // v9.42 (owner): no triangles in the Models list either
+                // (levels cannot be chosen from here), and every row says
+                // which provider it belongs to - the list mixes groups and a
+                // search can surface a model far from its provider header.
+                showTriangles = false,
+                providerLabel = entry.name,
             )
         }
     }
@@ -899,12 +997,16 @@ private fun ProviderRow(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Text(
+                    // v9.42 (owner): "replace the Stored / Not Stored text
+                    // with Ready / Not Ready tags, green and red". A provider
+                    // with a key is READY to run; one without is not. The
+                    // state is the same fact as before - the words now say
+                    // what it means for the user.
+                    StatusPill(
                         text = stringResource(
-                            if (connected) R.string.settings_model_connected else R.string.settings_model_not_connected,
+                            if (connected) R.string.settings_provider_ready else R.string.settings_provider_not_ready,
                         ),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = chat.muted,
+                        color = if (connected) chat.success else MaterialTheme.colorScheme.error,
                     )
                 }
                 if (free) {
@@ -963,6 +1065,14 @@ private fun ModelList(
     models: List<OpenCodeApi.ModelEntry>? = null,
     onSetThinking: (String, String, String) -> Unit = { p, m, _ -> onSetModel(p, m) },
     tagPrefix: String = "model",
+    /**
+     * v9.42 (owner): thinking levels are chosen in the chat header's model
+     * menu, not here - so this list shows no triangles at all (a control that
+     * cannot act must not be drawn).
+     */
+    showTriangles: Boolean = true,
+    /** v9.42 (owner): the provider name under each model row. */
+    providerLabel: String = "",
 ) {
     val chat = ChatTheme.chat
     val rows = models ?: provider.models
@@ -1010,13 +1120,25 @@ private fun ModelList(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(text = model.id, style = MonoSmall, color = chat.muted, maxLines = 1)
+                    // v9.42 (owner): "under each model, add a small label
+                    // indicating which provider it belongs to".
+                    if (providerLabel.isNotEmpty()) {
+                        Text(
+                            text = providerLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = chat.muted.copy(alpha = 0.8f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
                 if (model.status.isNotBlank()) {
                     StatusPill(text = model.status, color = chat.muted)
                 }
-                if (model.variants.isNotEmpty()) {
+                if (showTriangles && model.variants.isNotEmpty()) {
                     // v9.41 (owner item 22): the little triangle beside the
                     // name; it opens the level rows for THIS model inline.
+                    // v9.42 (owner): only where levels are actually pickable.
                     val expandLabel = stringResource(R.string.chat_thinking_expand)
                     Icon(
                         imageVector = if (expandedFor == model.id) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
@@ -1181,6 +1303,8 @@ private fun ConnectorsSection(
     onSaveGithubToken: (String) -> Boolean,
     onRemoveGithubToken: () -> Unit,
     onOpenUrl: (String) -> Unit,
+    /** v9.42 (owner): opened by a navigation that asked for this section. */
+    expanded: Boolean = false,
 ) {
     val chat = ChatTheme.chat
     var token by remember { mutableStateOf("") }
@@ -1196,7 +1320,7 @@ private fun ConnectorsSection(
         title = stringResource(R.string.settings_section_connectors),
         body = stringResource(R.string.settings_connectors_body),
         collapsible = true,
-        initiallyExpanded = false,
+        initiallyExpanded = expanded,
     ) {
         if (!githubConnected) {
             Text(
@@ -2190,23 +2314,16 @@ fun ProvidersScreen(
     /** v9.41 (owner item 22): pick a model AND its thinking level at once. */
     onSetThinking: (String, String, String) -> Unit = { providerID, modelID, _ -> onSetModel(providerID, modelID) },
 ) {
-    // The `+` toggles the manual form into the list instead of pushing another
-    // screen: the owner asked for an add affordance at the top, not more depth.
+    // v9.42 (owner): "move the Add button into the Providers section". The
+    // top-bar `+` is gone - the affordance is a proper rectangle at the end of
+    // the Providers card ("Add Your Own..."), and the form opens right below
+    // it, so the thing you tap and the thing that appears are neighbours.
     var addOpen by rememberSaveable { mutableStateOf(false) }
-    val addLabel = stringResource(R.string.providers_add)
     Column(modifier = modifier.fillMaxSize().semantics { testTag = "providers_screen" }) {
         AppTopBar(
             title = stringResource(R.string.providers_title),
             subtitle = availabilityHeadline(availability),
             onBack = onBack,
-            actions = {
-                IconButton(
-                    onClick = { addOpen = !addOpen },
-                    modifier = Modifier.semantics { testTag = "providers_add" },
-                ) {
-                    Icon(imageVector = Icons.Filled.Add, contentDescription = addLabel)
-                }
-            },
         )
         LazyColumn(
             modifier = Modifier.fillMaxSize().semantics { testTag = "providers_list" },
@@ -2218,11 +2335,6 @@ fun ProvidersScreen(
                     providerSetup = providerSetup,
                     connectedCount = state.providers?.connected?.size ?: 0,
                 )
-            }
-            if (addOpen) {
-                item(key = "keys") {
-                    KeysSection(onAddCustomProvider = onAddCustomProvider)
-                }
             }
             item(key = "model") {
                 ModelSection(
@@ -2243,7 +2355,17 @@ fun ProvidersScreen(
                     providerKeys = providerKeys,
                     onUseKey = onUseKey,
                     onDeleteKey = onDeleteKey,
+                    // v9.42 (owner): the Add affordance lives IN this card.
+                    addOpen = addOpen,
+                    onToggleAdd = { addOpen = !addOpen },
                 )
+            }
+            // v9.42 (owner): the custom-provider form opens directly under the
+            // tile that asked for it, inside the same scroll.
+            if (addOpen) {
+                item(key = "keys") {
+                    KeysSection(onAddCustomProvider = onAddCustomProvider)
+                }
             }
             item(key = "models_catalog") {
                 ModelsSection(
