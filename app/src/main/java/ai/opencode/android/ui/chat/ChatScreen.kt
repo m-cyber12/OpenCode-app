@@ -372,9 +372,24 @@ fun ChatScreen(
                 }
             },
             onQuestionSkip = onQuestionSkip,
-            pendingMessage = pendingMessage,
             modifier = Modifier.weight(1f),
         )
+
+        // v9.42 (owner): the user's own message, in the chat, the moment they
+        // send it - even though the agent is still starting. It sits directly
+        // under the conversation (always composed, never below an empty-state
+        // spacer), becomes the real prompt when the runtime is ready, and says
+        // so in one quiet line instead of pretending the send did not happen.
+        if (!pendingMessage.isNullOrBlank()) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                PendingSendRow(
+                    text = pendingMessage,
+                    modifier = Modifier
+                        .widthIn(max = 760.dp)
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                )
+            }
+        }
 
         AskArea(
             asks = state.pendingAsks,
@@ -1303,8 +1318,6 @@ private fun TranscriptPane(
     question: Transcript.Question? = null,
     onQuestionSubmit: (String, List<List<String>>) -> Unit = { _, _ -> },
     onQuestionSkip: (String) -> Unit = {},
-    /** v9.42 (owner): a message already sent, waiting for the agent to be up. */
-    pendingMessage: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val jumpLabel = stringResource(R.string.chat_jump_to_latest)
@@ -1521,20 +1534,6 @@ private fun TranscriptPane(
                             question = question,
                             onSubmit = onQuestionSubmit,
                             onReject = onQuestionSkip,
-                            modifier = Modifier.widthIn(max = 760.dp),
-                        )
-                    }
-                }
-            }
-            // v9.42 (owner): the user's own message, in the conversation, the
-            // moment they send it - even though the agent is still starting.
-            // A real bubble with a quiet "waiting" note, and it becomes the
-            // actual prompt when the runtime is ready (AppRoot's queue).
-            if (!pendingMessage.isNullOrBlank()) {
-                item(key = "pending_send") {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
-                        PendingSendRow(
-                            text = pendingMessage,
                             modifier = Modifier.widthIn(max = 760.dp),
                         )
                     }
