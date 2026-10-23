@@ -4,6 +4,8 @@ import ai.opencode.android.R
 import ai.opencode.android.client.AgentAvailability
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -461,3 +463,30 @@ fun formatCost(cost: Double): String =
 
 /** Collapse whitespace in server text so a one-line label stays one line. */
 fun oneLine(text: String): String = text.replace('\n', ' ').replace('\r', ' ').trim()
+
+/**
+ * v9.42 (owner): a loading pulse the UI can step through - the tick count,
+ * one step every [periodMs].
+ *
+ * Deliberately NOT an unbounded Compose animation (the infinite-transition
+ * API): phase 10's static check forbids those in the UI layer, because one
+ * keeps the Compose TEST CLOCK busy and hangs `waitForIdle()` in the emulator
+ * gates - the whole suite would time out, not fail. A coroutine tick on a
+ * delay is the house pattern (the typewriter and the status capsule already
+ * work this way) and it is bounded by construction: the loop dies with the
+ * composable that asked for it, so it only ever runs while a loading state is
+ * on screen.
+ *
+ * Callers use `tick % steps` to pick a frame; nothing here draws.
+ */
+@Composable
+fun rememberLoadingPulse(periodMs: Long = 420): Int {
+    var tick by remember { mutableStateOf(0) }
+    LaunchedEffect(periodMs) {
+        while (true) {
+            delay(periodMs)
+            tick++
+        }
+    }
+    return tick
+}

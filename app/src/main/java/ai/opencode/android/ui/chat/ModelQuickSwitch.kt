@@ -3,12 +3,8 @@ package ai.opencode.android.ui.chat
 import ai.opencode.android.R
 import ai.opencode.android.client.ModelRefCodec
 import ai.opencode.android.client.OpenCodeApi
+import ai.opencode.android.ui.common.rememberLoadingPulse
 import ai.opencode.android.ui.theme.ChatTheme
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -80,6 +76,9 @@ data class QuickModel(
     val label: String,
     val variants: List<String> = emptyList(),
 )
+
+// v9.42 (owner): the four brightness frames of the capsule's loading dot.
+private val MODEL_LOADING_FRAMES = floatArrayOf(0.25f, 0.55f, 1f, 0.55f)
 
 @Composable
 fun ModelQuickSwitch(
@@ -160,13 +159,9 @@ fun ModelQuickSwitch(
             // v9.42 (owner): the animation that makes "Loading" a state and
             // not a word - one dot breathing, cleared from the a11y tree
             // (the capsule's own label already says "Loading").
-            val infinite = rememberInfiniteTransition(label = "model_loading")
-            val breathe by infinite.animateFloat(
-                initialValue = 0.25f,
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(animation = tween(800), repeatMode = RepeatMode.Reverse),
-                label = "model_loading_breathe",
-            )
+            // four brightness frames, stepped by the shared pulse (bounded by
+            // composition - see rememberLoadingPulse)
+            val breathe = MODEL_LOADING_FRAMES[rememberLoadingPulse(360) % MODEL_LOADING_FRAMES.size]
             Box(
                 Modifier
                     .size(8.dp)

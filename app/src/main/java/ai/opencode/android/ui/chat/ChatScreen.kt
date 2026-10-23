@@ -6,6 +6,7 @@ import ai.opencode.android.client.OpenCodeRepository
 import ai.opencode.android.client.Transcript
 import ai.opencode.android.client.UiError
 import ai.opencode.android.ui.common.AvailabilityBanner
+import ai.opencode.android.ui.common.rememberLoadingPulse
 import ai.opencode.android.ui.common.RedoGlyph
 import ai.opencode.android.ui.common.ProjectTab
 import ai.opencode.android.ui.common.ProjectTabs
@@ -88,12 +89,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -728,19 +725,9 @@ private fun StatusOrb(
     // the dot breathes and a ring expands out of it - the one thing in the
     // header that tells the user work is happening behind the first frame.
     val loading = availability == AgentAvailability.RUNTIME_STARTING
-    val infinite = rememberInfiniteTransition(label = "status_orb")
-    val breathe by infinite.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(animation = tween(900), repeatMode = RepeatMode.Reverse),
-        label = "orb_breathe",
-    )
-    val ring by infinite.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(animation = tween(1500), repeatMode = RepeatMode.Restart),
-        label = "orb_ring",
-    )
+    // Four frames, stepped by the shared pulse; the ring walks outwards while
+    // the dot breathes. Bounded by composition - see rememberLoadingPulse.
+    val pulseTick = if (loading) rememberLoadingPulse(380) else 0
     // Re-runs when the status text changes OR the user taps: expand, hold,
     // settle back. A change mid-hold restarts the effect (the old one is
     // cancelled), so the capsule simply stays open showing the new word.
@@ -768,20 +755,23 @@ private fun StatusOrb(
         ) {
             Box(contentAlignment = Alignment.Center) {
                 if (loading) {
-                    // The expanding ring: alpha falls as it grows, so it reads
-                    // as one pulse leaving the dot, not a second shape.
+                    // The expanding ring: each beat is a wider, fainter circle,
+                    // so it reads as one pulse leaving the dot.
+                    val step = pulseTick % 4
+                    val ringSize = (12 + step * 3).dp
                     Box(
                         Modifier
-                            .size(20.dp)
-                            .alpha((1f - ring) * 0.7f)
+                            .size(ringSize)
+                            .alpha(0.55f - step * 0.11f)
                             .background(color.copy(alpha = 0.5f), CircleShape)
                             .clearAndSetSemantics { },
                     )
                 }
+                val breath = if (loading) BREATH_FRAMES[pulseTick % BREATH_FRAMES.size] else 1f
                 Box(
                     Modifier
                         .size(10.dp)
-                        .background(color.copy(alpha = if (loading) breathe else 1f), CircleShape)
+                        .background(color.copy(alpha = breath), CircleShape)
                         .clearAndSetSemantics { },
                 )
             }
@@ -801,6 +791,9 @@ private fun StatusOrb(
     }
 }
 
+// v9.42 (owner): the dot's four brightness frames while the agent boots.
+private val BREATH_FRAMES = floatArrayOf(0.35f, 0.62f, 1f, 0.62f)
+
 // ---- status ----------------------------------------------------------------
 
 /**
@@ -813,13 +806,9 @@ private fun StatusOrb(
 private fun StartingRow(modifier: Modifier = Modifier) {
     val chat = ChatTheme.chat
     val label = stringResource(R.string.availability_runtime_starting)
-    val infinite = rememberInfiniteTransition(label = "starting_dots")
-    val step by infinite.animateFloat(
-        initialValue = 0f,
-        targetValue = 3f,
-        animationSpec = infiniteRepeatable(animation = tween(1200), repeatMode = RepeatMode.Restart),
-        label = "starting_step",
-    )
+    // v9.42: four beats - one dot, two, three, then none - stepped by the
+    // shared pulse (bounded by composition, see rememberLoadingPulse).
+    val phase = rememberLoadingPulse(420) % 4
     Surface(
         color = chat.toolContainer,
         shape = RoundedCornerShape(14.dp),
@@ -841,7 +830,7 @@ private fun StartingRow(modifier: Modifier = Modifier) {
                 modifier = Modifier.clearAndSetSemantics { },
             ) {
                 for (i in 0 until 3) {
-                    val lit = step.toInt() >= i
+                    val lit = phase < 3 && i <= phase
                     Box(
                         Modifier
                             .size(5.dp)
