@@ -6234,3 +6234,40 @@ gate, because it needs the seccomp shim that `libexecshim.so` installs; running
 it bare would prove nothing and fail for the wrong reason. Building the real
 thing — a shell, python, node, a package manager — is the next work, and the
 200 MB base-module question is still unmeasured here.
+
+## 2026-10-24 - B.71 - T1-T3: the runtime we ship is sealed, on both builds
+
+Run 40119751456, green. The gates that decide whether slice C1 worked:
+
+  P6_T1 PASS :: sealed manifest links=5 missingTools=[] unresolved=[]
+               repaired=false linked=0 alreadyCorrect=5 errors=[]
+               missingTargets=[]
+  P6_T2 PASS :: rg ran=true exit=0 :: ripgrep 15.1.0 (rev af60c2de9d);
+               git ran=true exit=0 :: git version 2.48.1 :: failed=[]
+               api=34 abi=x86_64
+  P6_T3 PASS :: exec audit publishable=true shipped=5 outside=[] scanned=5
+               failure=null
+  P6-UI totals: ui_gates_pass=30 ui_gates_fail=0 ui_gates_skip=0
+  P10-UNIT PASS: JVM tests=477 failures=0
+  phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0
+
+T1-T3 pass on the debug build and again on the release-shaped smoke build.
+`alreadyCorrect=5` is worth reading: the app had already linked its tools at
+startup from the shipped manifest, and the gate's second application found every
+one of them already correct - which is the idempotence property doing its job
+and the production path being exercised, not just the test's own call. T2 is the
+first time a real shipped tool has been run through the sealed shape: ripgrep
+and git, from `filesDir/bin`, on a real kernel.
+
+Two honest asides. One gate skipped on the smoke build only - `P10_SMOKE_UI_L2
+SKIP :: the model answered without calling a tool within 420s` - which is the
+live-model gate depending on a model choosing to call a tool; it passed on the
+debug build in the same run, and nothing in this change touches model behaviour.
+And the T2 line above was recovered from the device logcat because the gate
+runner truncates a detail at the first ` | `, which had hidden git behind rg in
+the summary; that separator is now `; ` so the next board's summary shows both.
+
+Where slice C stands: the split is real (generator, asset, app, gates), the
+runtime we ship is sealed and audited, and the server still runs on Bun. The
+data half of the payload is still empty and there is still no userland - that
+remains the bulk of the slice, and the 200 MB question with it.

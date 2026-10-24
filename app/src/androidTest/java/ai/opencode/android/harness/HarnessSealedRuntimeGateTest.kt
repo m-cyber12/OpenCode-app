@@ -96,7 +96,9 @@ class HarnessSealedRuntimeGateTest {
         printGate(
             "T2",
             failed.isEmpty(),
-            runs.joinToString(" | ") { (name, run) ->
+            // '; ' and not ' | ': the gate runner truncates a detail at the
+            // first ' | ', which hid git behind rg in the evidence summary.
+            runs.joinToString("; ") { (name, run) ->
                 "$name ran=${run.ran} exit=${run.exitCode} :: ${run.output.trim().take(40)}"
             } + " :: failed=$failed api=${Build.VERSION.SDK_INT} " +
                 "abi=${Build.SUPPORTED_ABIS.firstOrNull()}",
