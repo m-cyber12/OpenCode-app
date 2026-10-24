@@ -181,7 +181,27 @@ This is the first change in step 1 that touches production code — the path tha
 creates the runtime's symlinks — and it is deliberately behaviour-preserving:
 the server still starts on Bun, nothing the user sees changed.
 
-**Still to do in slice C:** the userland itself (section 3 continues below).
+**C2 (built, 2026-10-24): a shell and the coreutils.** The two cheapest real
+answers to "full tools", and both are what Android itself ships:
+
+| | What it is | Why this one |
+|---|---|---|
+| `libtoybox.so` | ~190 coreutils in **one** ELF that dispatches on `argv[0]` | toybox *is* AOSP's toolbox: maintained for bionic, and one binary costs one symlink per command instead of one binary |
+| `libmksh.so` | the shell (`bin/sh`) | mksh was Android's own `/system/bin/sh` for years; toybox has no shell at all (its `sh` is unfinished, in `pending/`) |
+
+Both cross-compile with the NDK we already pin, both are built from pinned
+commits, both are PIE/DYN and asserted so, and both are sealed: every command
+is a symlink into the APK. Total addition to the APK: well under 2 MB per ABI
+for ~190 tools.
+
+The command list is not a hand-written table: it is read out of the build's own
+generated tables by `scripts/install.c`, so the manifest cannot disagree with
+the binary that was built. The miniconfig is AOSP's `android_miniconfig` minus
+nine symbols - libselinux, libcrypto and libz, none of which the NDK ships, so
+toybox falls back to its own hashes and its own deflate.
+
+**Still to do in slice C:** python, node-as-a-tool, curl/wget, jq, openssh - and
+wiring any of it to the agent, which is slice D.
 
 Play forbids downloading executable code, so the store shape is **sealed**:
 every executable is a symlink into `nativeLibraryDir` (the inode comes from the

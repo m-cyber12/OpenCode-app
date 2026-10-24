@@ -263,6 +263,20 @@ done
 [ "$RUNTIME_RC" = 0 ] || log "note: the sealed-runtime instrument run itself returned rc=$RUNTIME_RC"
 
 # ---------------------------------------------------------------------------
+# stage G: the userland core actually runs. T1-T3 proved the runtime's own
+# tools are sealed; this runs a shell out of the prefix and a pipeline through
+# it, which is the difference between "binaries are present" and "the agent has
+# a shell". A pipeline is the honest test: sh forks, and each stage is found by
+# name on PATH and exec'd from a different prefix path.
+log "=== stage G: sealed userland core (shell + coreutils) ==="
+TOOLS_RC=0
+run_class "harness-sealed-tools" "ai.opencode.android.harness.HarnessSealedToolsGateTest" 900 || TOOLS_RC=1
+for g in V1 V2; do
+  v=$(verdict_of "P6_$g"); p6 "$g" "$v" "$(detail_of "P6_$g")"
+done
+[ "$TOOLS_RC" = 0 ] || log "note: the sealed-tools instrument run itself returned rc=$TOOLS_RC"
+
+# ---------------------------------------------------------------------------
 log "=== evidence pull ==="
 rash "tail -c 60000 '$FILES/log/runtime.log' 2>&1" > "$EV/runtime.log" 2>&1 || true
 rash 'for d in "$FILES/xdg/data/opencode/log" "$FILES/xdg/state/opencode/log"; do for f in "$d"/*.log; do [ -e "$f" ] || continue; echo "### $f"; tail -150 "$f"; done; done' \

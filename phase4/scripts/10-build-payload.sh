@@ -516,14 +516,112 @@ EOF
 # harness.sealed.SealedLayout instead of hand-rolling symlinks. Same links as
 # before, now derived from a shipped, auditable asset - and checked by
 # ExecAudit on the device (gate T3).
+# ---------------------------------------------------------------------------
+note "=== [6.5/6] sealed userland core: a shell and the coreutils (v9.42 slice C2) ==="
+# Why these two, and why they are the cheapest honest answer to "full tools".
+# The agent has no shell and no coreutils today: the runtime is bun, git and
+# ripgrep, and the environment brief tells the model so. toybox is AOSP's own
+# toolbox - maintained FOR bionic, every command in one ELF that dispatches on
+# argv[0], so ~190 tools cost one binary and one symlink each - and mksh was
+# Android's /system/bin/sh for years. Both cross-compile with the NDK, both
+# ship as lib*.so, and every command becomes a symlink into the APK, which is
+# the only shape an app may execute at API 29+.
+TOYBOX_PIN="6a0c0ef5eeb2c43e4feef9781398c1718b8bddcb"
+MKSH_PIN="341752823184238dc9b2b0a22b48da984f25442d"
+SEALED_EXEC_RECORDS="$WORK/sealed-exec-records.txt"
+
+checkout_pinned() {  # $1=dir $2=url $3=sha
+  rm -rf "$1" && mkdir -p "$1"
+  ( cd "$1" && git init -q . && git remote add origin "$2" \
+      && git fetch -q --depth 1 origin "$3" && git checkout -q FETCH_HEAD )
+}
+
+build_mksh() {  # $1=abi $2=triple
+  local abi="$1" triple="$2" outdir="$ENGINE/jniLibs/$abi"
+  local cc="$NDK_BIN/${triple}29-clang" src="$WORK/mksh-$abi"
+  checkout_pinned "$src" https://github.com/MirBSD/mksh.git "$MKSH_PIN" \
+    || { note "FATAL: mksh checkout failed ($abi)"; return 1; }
+  # Build.sh probes the target with the cross compiler rather than running
+  # target binaries, and has an explicit Android category.
+  ( cd "$src" && CC="$cc" TARGET_OS=Android \
+      CFLAGS="-O2 -fPIE" LDFLAGS="-pie -Wl,-z,max-page-size=16384" \
+      sh Build.sh ) > "$WORK/mksh-build-$abi.log" 2>&1 \
+    || { note "FATAL: mksh build failed ($abi); last 60 log lines:"; \
+         tail -60 "$WORK/mksh-build-$abi.log" | tee -a "$STATUS"; return 1; }
+  [ -f "$src/mksh" ] || { note "FATAL: mksh produced no binary ($abi)"; \
+         tail -40 "$WORK/mksh-build-$abi.log" | tee -a "$STATUS"; return 1; }
+  cp "$src/mksh" "$outdir/libmksh.so"
+  note "mksh $abi: $(stat -c%s "$outdir/libmksh.so") bytes"
+}
+
+build_toybox() {  # $1=abi $2=triple
+  local abi="$1" triple="$2" outdir="$ENGINE/jniLibs/$abi"
+  local cc="$NDK_BIN/${triple}29-clang" src="$WORK/toybox-$abi"
+  checkout_pinned "$src" https://github.com/landley/toybox.git "$TOYBOX_PIN" \
+    || { note "FATAL: toybox checkout failed ($abi)"; return 1; }
+  # Our miniconfig is AOSP's android config minus the parts that need libraries
+  # the NDK does not ship (libselinux, libcrypto, libz). toybox falls back to
+  # its own hash and deflate implementations for those.
+  ( cd "$src" && KCONFIG_ALLCONFIG="$DIR/payload/toybox-miniconfig" \
+      scripts/genconfig.sh -n ) > "$WORK/toybox-config-$abi.log" 2>&1 \
+    || { note "FATAL: toybox genconfig failed ($abi)"; \
+         tail -40 "$WORK/toybox-config-$abi.log" | tee -a "$STATUS"; return 1; }
+  ( cd "$src" && make -j"$(nproc)" toybox CC="$cc" HOSTCC=cc CROSS_COMPILE= \
+      CFLAGS="-O2 -fPIE" LDFLAGS="-pie -Wl,-z,max-page-size=16384" \
+      STRIP="$NDK_BIN/llvm-strip" ) > "$WORK/toybox-build-$abi.log" 2>&1 \
+    || { note "FATAL: toybox build failed ($abi); last 60 log lines:"; \
+         tail -60 "$WORK/toybox-build-$abi.log" | tee -a "$STATUS"; return 1; }
+  local built="$src/toybox"
+  [ -f "$built" ] || built="$src/generated/unstripped/toybox"
+  [ -f "$built" ] || { note "FATAL: toybox produced no binary ($abi)"; \
+         tail -40 "$WORK/toybox-build-$abi.log" | tee -a "$STATUS"; return 1; }
+  cp "$built" "$outdir/libtoybox.so"
+  # The command list is read out of the build's own generated tables by
+  # scripts/install.c, so it cannot disagree with the binary that was built.
+  if [ ! -s "$WORK/toybox-commands.txt" ]; then
+    cc -I "$src" "$src/scripts/install.c" -o "$WORK/instlist" 2>>"$STATUS" \
+      || { note "FATAL: toybox instlist build failed"; return 1; }
+    "$WORK/instlist" | tr ' \t' '\n\n' \
+      | grep -E '^[a-z0-9][a-z0-9_.-]*$' | sort -u > "$WORK/toybox-commands.txt"
+  fi
+  note "toybox $abi: $(stat -c%s "$outdir/libtoybox.so") bytes, " \
+       "$(wc -l < "$WORK/toybox-commands.txt") commands"
+}
+
+for abi in "${ABIS[@]}"; do
+  case "$abi" in
+    x86_64)    build_mksh "$abi" "x86_64-linux-android";  build_toybox "$abi" "x86_64-linux-android" ;;
+    arm64-v8a) build_mksh "$abi" "aarch64-linux-android"; build_toybox "$abi" "aarch64-linux-android" ;;
+  esac
+done
+
+# Same PIE/DYN assertion the runtime's own shims get: an ET_EXEC fixed-address
+# binary is rejected by the platform, and a userland that cannot be exec'd is
+# worse than no userland because it fails quietly, at the first command.
+READELF="$NDK_BIN/llvm-readelf"
+[ -x "$READELF" ] || READELF="$(command -v llvm-readelf readelf | head -1)"
+for abi in "${ABIS[@]}"; do
+  for so in libmksh.so libtoybox.so; do
+    "$READELF" -h "$ENGINE/jniLibs/$abi/$so" 2>&1 | tee -a "$STATUS" | grep -q 'DYN' \
+      || { note "FATAL: $so ($abi) is not a PIE/DYN executable (ELF header above)"; exit 1; }
+  done
+done
+
+# The sealed exec records: the runtime's five tools, then the shell, then every
+# command toybox built. One line each, "<prefix path> <TAB> <library>".
+printf 'bin/bun\tlibbun.so\nbin/git\tlibgit.so\nbin/rg\tlibrg.so\n' > "$SEALED_EXEC_RECORDS"
+printf 'bin/git-remote-http\tlibgitremotehttp.so\nbin/git-remote-https\tlibgitremotehttp.so\n' \
+  >> "$SEALED_EXEC_RECORDS"
+printf 'bin/sh\tlibmksh.so\n' >> "$SEALED_EXEC_RECORDS"
+while IFS= read -r cmd; do
+  printf 'bin/%s\tlibtoybox.so\n' "$cmd" >> "$SEALED_EXEC_RECORDS"
+done < "$WORK/toybox-commands.txt"
+note "sealed exec records: $(wc -l < "$SEALED_EXEC_RECORDS") entries"
+
 note "=== sealed layout ==="
 for abi in "${ABIS[@]}"; do
   python3 "$SEAL_PY" --abi "$abi" --out "$ENGINE/assets" \
-      --exec-map "bin/bun=libbun.so" \
-      --exec-map "bin/git=libgit.so" \
-      --exec-map "bin/rg=librg.so" \
-      --exec-map "bin/git-remote-http=libgitremotehttp.so" \
-      --exec-map "bin/git-remote-https=libgitremotehttp.so" \
+      --exec-file "$SEALED_EXEC_RECORDS" \
       | tee -a "$STATUS" || { note "FATAL: sealed layout generation failed for $abi"; exit 1; }
   # Every library named in the manifest must exist for this ABI, or the app
   # would install a link to nothing and the tool would be silently absent.

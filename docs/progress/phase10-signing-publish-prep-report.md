@@ -6271,3 +6271,40 @@ Where slice C stands: the split is real (generator, asset, app, gates), the
 runtime we ship is sealed and audited, and the server still runs on Bun. The
 data half of the payload is still empty and there is still no userland - that
 remains the bulk of the slice, and the 200 MB question with it.
+
+## 2026-10-24 - B.72 - slice C2: a shell and ~190 coreutils, sealed
+
+The first userland core is in the payload: a shell and the coreutils, built
+from source in the payload build and sealed like everything else.
+
+  libmksh.so    bin/sh - mksh, which was Android's own /system/bin/sh for
+                years. Toybox has no shell (its sh is unfinished, in pending/).
+  libtoybox.so  ~190 coreutils (ls, cat, grep, sed, find, tar, tr, wc, sort,
+                diff, patch, sha256sum, gzip, vi, ...) in ONE ELF that
+                dispatches on argv[0] - toybox is AOSP's toolbox, maintained
+                for bionic.
+
+Both are built from pinned commits with the NDK already in the tree, both are
+asserted PIE/DYN (an ET_EXEC binary is rejected by the platform, and a
+userland that cannot be exec'd fails quietly, at the first command), and both
+become ordinary symlinks into the APK's native library directory. Cost: under
+2 MB per ABI for ~190 tools. The command list is read out of the build's own
+generated tables by scripts/install.c, so the manifest cannot drift from the
+binary. The miniconfig is AOSP's android_miniconfig minus nine symbols -
+libselinux, libcrypto and libz, none of which the NDK ships - so toybox uses
+its own hashes and its own deflate.
+
+**This board also showed that the sandbox has gcc, which I had been assuming it
+did not.** That changes how this work can be de-risked, so it is worth saying
+plainly: I built toybox for the host with the exact miniconfig (clean, no bad
+symbols, 490 KB), built mksh for the host (343 KB), and then ran the sealed
+shape locally - a prefix of symlinks, `sh -c 'echo hello | tr a-z A-Z | grep -c
+HELLO'` returning 1, sha256sum of "abc" correct, sort|head, id, date. The
+bionic/PIE specifics still belong to CI, but the config is valid, the sources
+compile, the multicall dispatch works, and the pipeline the gate asserts was
+first run on a Linux box rather than discovered on a board.
+
+What this is not yet: the agent cannot use any of it. Nothing sets PATH, the
+environment brief still says there is no shell, and python/node/curl are absent.
+That wiring is slice D, and it is the difference between "the binaries are in
+the APK" and "the agent has a shell".

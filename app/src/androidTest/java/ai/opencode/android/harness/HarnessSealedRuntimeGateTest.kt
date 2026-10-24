@@ -108,15 +108,20 @@ class HarnessSealedRuntimeGateTest {
     @Test
     fun t3_theRuntimePrefixIsPublishable() {
         seal()
+        val links = seal().links?.size ?: 0
         val report = ExecAudit.audit(binDir, nativeLibraryDir)
-        val ok = report.publishable() && report.shippedCount() == REQUIRED_TOOLS.size &&
-            report.failure == null
+        // Every link the manifest declares must resolve into the APK, and
+        // nothing else in bin/ may need the data-directory exec exemption.
+        // '>=' and not '==': an unrelated file in bin/ is not this gate's
+        // business, and outside=[] is the property that actually matters.
+        val ok = report.publishable() && report.shippedCount() >= links &&
+            report.failure == null && links > 0
         printGate(
             "T3",
             ok,
             "exec audit publishable=${report.publishable()} shipped=${report.shippedCount()} " +
-                "outside=${report.outsideApk().map { it.path }} scanned=${report.scanned} " +
-                "failure=${report.failure}",
+                "manifestLinks=$links outside=${report.outsideApk().map { it.path }} " +
+                "scanned=${report.scanned} failure=${report.failure}",
         )
     }
 
