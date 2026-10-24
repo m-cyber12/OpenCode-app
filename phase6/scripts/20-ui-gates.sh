@@ -233,6 +233,21 @@ done
 [ "$EXECM_RC" = 0 ] || log "note: the harness exec-model instrument run itself returned rc=$EXECM_RC"
 
 # ---------------------------------------------------------------------------
+# stage E: the sealed installer, on this device, with a payload the test itself
+# builds. X1-X3 measured the platform's rule; this measures the machinery that
+# builds a userland on it: install a payload, turn every executable into a
+# symlink into the APK, run one, walk the prefix and confirm nothing left in
+# app data needs execve(), then uninstall and confirm only our own files went.
+# Same probe and same reasoning as stage D - no server, no model, no network.
+log "=== stage E: sealed install (the kernel, proven on this device) ==="
+SEALED_RC=0
+run_class "harness-sealed" "ai.opencode.android.harness.HarnessSealedInstallGateTest" 900 || SEALED_RC=1
+for g in S1 S2 S3 S4; do
+  v=$(verdict_of "P6_$g"); p6 "$g" "$v" "$(detail_of "P6_$g")"
+done
+[ "$SEALED_RC" = 0 ] || log "note: the sealed-install instrument run itself returned rc=$SEALED_RC"
+
+# ---------------------------------------------------------------------------
 log "=== evidence pull ==="
 rash "tail -c 60000 '$FILES/log/runtime.log' 2>&1" > "$EV/runtime.log" 2>&1 || true
 rash 'for d in "$FILES/xdg/data/opencode/log" "$FILES/xdg/state/opencode/log"; do for f in "$d"/*.log; do [ -e "$f" ] || continue; echo "### $f"; tail -150 "$f"; done; done' \

@@ -52,16 +52,26 @@ runner):
 X3 is the shape the harness actually uses: stable prefix paths for scripts,
 `PATH` and shebangs, with the executable inode always coming from the APK.
 
-**Result (2026-10-24, targetSdk 34, CI emulator): X1, X2 and X3 all pass.**
-The verdict comes from the run's own arithmetic rather than from a line I can
-quote: stage D feeds X1-X3 through the same `p6` verdict path as the
-long-established U1-U14 gates, where a missing verdict counts as a failure, and the
-run on this code concluded `success` (runs 40095093459 and 40095163720, both on
-commits that carry the probe and nothing else new). So: the APK's native
-library directory executes, app data does not, and a prefix symlink into the APK
-runs. The literal gate lines were lost to an evidence-push race between two
-concurrent boards (a known hazard here: three runs pushed evidence inside two
-seconds and one lost), and are re-captured on the next board.
+**Result (2026-10-24, CI run 40102807738, targetSdk 34, API 34, abi x86_64) —
+X1, X2 and X3 all pass, on the debug build and again on the release-shaped
+smoke build:**
+
+```
+P6_X1 PASS :: nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=34 api=34 abi=x86_64 :: OCEXECPROBE ok
+P6_X2 PASS :: appData exec refused=true ran=false exit=-1 targetSdk=34 :: IOException: Cannot run program ".../files/probe-exec"
+P6_X3 PASS :: prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
+```
+
+So, on this tree: the APK's native library directory executes, the same bytes
+copied into app data and chmod +x are refused outright (the refusal is an
+`IOException` from `execve`, not a permission error from the file), and a stable
+prefix path symlinked into the APK runs. That is the predicate, measured.
+
+An operational note that cost two boards of evidence: a phase-10 run commits
+its evidence against the commit it checked out, so **pushing while a run is in
+flight rejects that push and the run still reports success**. Both of the runs
+that first carried X1-X3 (40095093459, 40095163720) lost their evidence that
+way; the lines above are from the run that was left alone.
 
 ## 2. Slice B — vendor the harness modules
 
@@ -109,6 +119,23 @@ question reopens. In-package, it is the same code this app already compiles.
 were the tests asking the wrong question (a digest mismatch claimed as a length
 change, a prefix directory that was never created, and an uninstall count that
 forgot the second data file), not faults in the kernel.
+
+## 2b. Slice C0 — the kernel, proven on a device (in progress)
+
+Before any userland exists, the installer is exercised on a real Android
+kernel with a payload the gate builds itself. `HarnessSealedInstallGateTest`
+(stage E of the Phase 6 runner, gates S1-S4):
+
+| Gate | Claim |
+|---|---|
+| S1 | a payload installs into a prefix: data extracted and verified, executable linked |
+| S2 | the sealed executable **runs** from its prefix path, printing the probe's marker |
+| S3 | `ExecAudit` says the prefix is publishable: nothing left in app data needs `execve()` |
+| S4 | uninstall reclaims exactly the data file and the link, and leaves the APK's own copy alone |
+
+It uses `libocexecprobe.so` — the same PIE, the same ABI list, no new payload —
+because this is about the packaging, not the tool. It is the last cheap
+falsification available: if S2 fails, everything in section 3 is sand.
 
 ## 3. Slice C — the sealed payload
 

@@ -6127,3 +6127,35 @@ What is still unproven, and said so where it belongs: none of this has run on a
 real device, the sealed userland has not been built, nothing in the app calls
 any of it yet, and the size question - whether the core tier fits Play's 200 MB
 base module - has not been measured here at all.
+
+## 2026-10-24 - B.68 - the precondition is now measured, and the kernel is in
+
+Run 40102807738, the first board left alone from push to evidence, is green and
+its gate lines are in the repository:
+
+  P10-UNIT PASS: JVM tests=477 failures=0 errors=0 skipped=0
+  P6_X1 PASS :: nativeLibraryDir exec ran=true exit=0 marker=true
+                targetSdk=34 api=34 abi=x86_64 :: OCEXECPROBE ok
+  P6_X2 PASS :: appData exec refused=true ran=false exit=-1 api=34
+                targetSdk=34 :: IOException: Cannot run program
+                "/data/user/0/.../files/probe-exec"
+  P6_X3 PASS :: prefix symlink exec linked=true ran=true exit=0 ::
+                OCEXECPROBE ok
+  P6-UI totals: ui_gates_pass=23 ui_gates_fail=0 ui_gates_skip=0
+  phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0
+
+X1-X3 pass twice: once on the debug build and once on the release-shaped smoke
+build (P10_SMOKE_UI_X1/X2/X3), which is the configuration that ships. The
+refusal in X2 is worth reading exactly: it is an `IOException` from `execve`
+itself, not a permission error from the file - the platform refuses to start the
+process at all, which is the stronger form of the guarantee.
+
+The 477 unit tests are the 428 that were there plus the 49 the sealed kernel
+brought, none failing. The APK now carries 8 native libraries per ABI instead
+of 7 (arm64-v8a 126.4 MB, x86_64 130.0 MB): the probe is a little over a
+kilobyte of that, and it is the only runtime cost step 1 has added so far.
+
+What this does NOT say: that a userland can be built here, that it would fit
+Play's base module, that any of it works on the owner's phone, or that the app
+has changed in any way the user could notice. The kernel is present and proven
+in isolation; the app still runs on Bun and looks exactly as it did.
