@@ -1,6 +1,8 @@
 package ai.opencode.android.harness
 
 import ai.opencode.android.harness.sealed.HarnessSeal
+import ai.opencode.android.runtime.RuntimeEnv
+import ai.opencode.android.runtime.RuntimePaths
 import ai.opencode.android.ui.printGate
 import android.content.Context
 import android.os.Build
@@ -66,6 +68,44 @@ class HarnessSealedToolsGateTest {
         )
     }
 
+    /**
+     * V3: the agent's environment - not ours - finds the shell.
+     *
+     * V1 and V2 build a PATH by hand to prove the sealed binaries run. The
+     * agent does not get a hand-built PATH: it gets [RuntimeEnv.build], which
+     * is also what the server process is launched with. If that block forgot
+     * bin/, or pointed SHELL at /system/bin/sh, V1 and V2 would still pass and
+     * the agent would still be running the device's shell. So run the same
+     * pipeline through the real environment block.
+     */
+    @Test
+    fun v3_theAgentsEnvironmentResolvesTheSealedShell() {
+        // Wrapped: a throw here is a missing gate line, and a missing line is
+        // the one failure this project cannot afford (a gate that cannot fail
+        // the build). The exception goes into the detail instead.
+        val measured = runCatching {
+            HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
+            val paths = RuntimePaths.get(context)
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val bin = paths.binDir.absolutePath
+            val firstOnPath = env["PATH"]?.split(File.pathSeparator)?.firstOrNull()
+            val shellEnv = env["SHELL"]
+            // Second line: where `tr` actually resolved. /system/bin has its
+            // own toybox, so a PATH that merely "contains" bin/ would still
+            // hand the agent the device's tools - this names the winner.
+            val run = shellIn(env, "echo hello | tr a-z A-Z | grep -c HELLO; command -v tr")
+            val lines = run.output.trim().split("\n").map { it.trim() }
+            val resolvedTr = lines.getOrNull(1) ?: ""
+            val ok = firstOnPath == bin && shellEnv == File(paths.binDir, "sh").absolutePath &&
+                run.ran && run.exitCode == 0 && lines.firstOrNull() == "1" &&
+                resolvedTr.startsWith(bin + File.separator)
+            val detail = "agent env PATH[0]=$firstOnPath (want $bin) SHELL=$shellEnv " +
+                "ran=${run.ran} exit=${run.exitCode} out='${lines.firstOrNull()}' tr=$resolvedTr"
+            ok to detail
+        }.getOrElse { t -> false to "threw ${t.javaClass.simpleName}: ${t.message}" }
+        printGate("V3", measured.first, measured.second)
+    }
+
     private fun shell(script: String): Run =
         try {
             val process = ProcessBuilder(File(binDir, "sh").absolutePath, "-c", script)
@@ -74,6 +114,23 @@ class HarnessSealedToolsGateTest {
                     environment()["PATH"] = binDir.absolutePath + ":/system/bin:/system/xbin"
                     environment()["HOME"] = context.filesDir.absolutePath
                     environment()["TMPDIR"] = File(context.filesDir, "tmp").absolutePath
+                }
+                .redirectErrorStream(true)
+                .start()
+            val out = process.inputStream.bufferedReader().readText()
+            Run(ran = true, exitCode = process.waitFor(), output = out)
+        } catch (t: Throwable) {
+            Run(ran = false, exitCode = -1, output = t.javaClass.simpleName + ": " + (t.message ?: ""))
+        }
+
+    /** Runs through the SAME environment block the server is launched with. */
+    private fun shellIn(env: Map<String, String>, script: String): Run =
+        try {
+            val process = ProcessBuilder(env["SHELL"], "-c", script)
+                .directory(context.filesDir)
+                .apply {
+                    environment().clear()
+                    environment().putAll(env)
                 }
                 .redirectErrorStream(true)
                 .start()

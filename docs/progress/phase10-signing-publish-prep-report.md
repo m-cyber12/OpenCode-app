@@ -6308,3 +6308,49 @@ What this is not yet: the agent cannot use any of it. Nothing sets PATH, the
 environment brief still says there is no shell, and python/node/curl are absent.
 That wiring is slice D, and it is the difference between "the binaries are in
 the APK" and "the agent has a shell".
+
+## 2026-10-24 - B.73 - the userland runs on device; and the size wall is now measured
+
+Board is green. The sealed userland is not a plan any more, it is a running
+thing on a real device at this app's targetSdk 34:
+
+  P6_T1 PASS :: links=198 missingTools=[] unresolved=[] repaired=false
+               linked=0 alreadyCorrect=198 errors=[] missingTargets=[]
+  P6_T2 PASS :: rg ran=true exit=0 :: ripgrep 15.1.0; git ran=true exit=0 ::
+               git version 2.48.1 :: failed=[] api=34 abi=x86_64
+  P6_T3 PASS :: publishable=true shipped=198 manifestLinks=198 outside=[]
+               scanned=198 failure=null
+  P6_V1 PASS :: sealed shell ran=true exit=0 api=34 :: OC_SEALED_SH_OK
+  P6_V2 PASS :: pipeline ran=true exit=0 output='1' :: hello piped through
+               tr and grep, found by name on PATH, exec'd from the prefix
+  ui_gates_pass=32 ui_gates_fail=0 ui_gates_skip=0; JVM tests=477 failures=0
+
+198 executables, every one a symlink into the APK, and V2 is the one worth
+reading twice: `sh -c 'echo hello | tr a-z A-Z | grep -c HELLO'` returned 1 -
+so a real shell forked, and two real coreutils were found by NAME and exec'd
+from two different prefix paths.
+
+**What it cost: 0.8 MB per ABI for 198 tools.** Native libraries per ABI went
+8 -> 10 (libmksh.so, libtoybox.so), arm64 126.4 MB -> 127.2 MB, and the
+universal APK 132.7 MB -> 133.5 MB. That is the number that decides what
+"full tools" can mean, so it now gets measured on every release build:
+
+  P10_SIZE - Play's 200 MB base-module cap, checked against the universal APK
+  (a device downloads one ABI, so the universal build is an upper bound on
+  every split; if it fits, every split fits). 180 MB warns.
+
+Current reading: **133.5 MB, 66.5 MB of headroom.** Python (stdlib as payload
+data, compressed) is plausibly 15-25 MB of that; a real `node` is 25-40 MB.
+Both together would land near 180 MB and leave nothing for whatever comes
+next, so the honest answer to "full tools" is a choice, not an accumulation -
+and the gate will say so out loud when we get there.
+
+Also in this slice: the agent actually uses the prefix. `SHELL` was still
+/system/bin/sh while PATH pointed at ours, which is the kind of disagreement
+that hands a script the wrong `test`; it now points at bin/sh. The environment
+brief tells the model the prefix is ours - one pinned version, same command set
+on every phone - and to prefer it to /system/bin, whose toybox varies by model
+and Android version. V3 gates the difference by running the pipeline through
+RuntimeEnv.build (the block the server is launched with) and naming the winner
+of `command -v tr`, because /system/bin has its own toybox and a PATH that
+merely contains bin/ would still hand the agent the device's tools.

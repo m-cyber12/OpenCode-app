@@ -268,10 +268,10 @@ done
 # it, which is the difference between "binaries are present" and "the agent has
 # a shell". A pipeline is the honest test: sh forks, and each stage is found by
 # name on PATH and exec'd from a different prefix path.
-log "=== stage G: sealed userland core (shell + coreutils) ==="
+log "=== stage G: sealed userland core (shell + coreutils, and the agent's env) ==="
 TOOLS_RC=0
 run_class "harness-sealed-tools" "ai.opencode.android.harness.HarnessSealedToolsGateTest" 900 || TOOLS_RC=1
-for g in V1 V2; do
+for g in V1 V2 V3; do
   v=$(verdict_of "P6_$g"); p6 "$g" "$v" "$(detail_of "P6_$g")"
 done
 [ "$TOOLS_RC" = 0 ] || log "note: the sealed-tools instrument run itself returned rc=$TOOLS_RC"

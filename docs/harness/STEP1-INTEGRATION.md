@@ -200,8 +200,31 @@ the binary that was built. The miniconfig is AOSP's `android_miniconfig` minus
 nine symbols - libselinux, libcrypto and libz, none of which the NDK ships, so
 toybox falls back to its own hashes and its own deflate.
 
-**Still to do in slice C:** python, node-as-a-tool, curl/wget, jq, openssh - and
-wiring any of it to the agent, which is slice D.
+**D (wired, 2026-10-24): the agent actually uses it.** PATH already began with
+`bin/` for bun/git/rg, so a shell and 190 coreutils appeared on the agent's PATH
+for free the moment they were sealed. Two changes made that honest:
+
+- `SHELL` now points at our `bin/sh` instead of `/system/bin/sh`. PATH and SHELL
+  disagreeing is how a script finds the wrong `test`.
+- the environment brief tells the model the prefix is *ours* - one pinned
+  version, the same command set on every phone - and to prefer it to the
+  device's `/system/bin`, whose toybox varies by model and Android version.
+
+V3 gates the difference: it runs the pipeline through `RuntimeEnv.build` - the
+same block the server is launched with - and names the winner of `command -v tr`,
+because `/system/bin` has its own toybox and a PATH that merely *contains* `bin/`
+would still hand the agent the device's tools.
+
+**The size budget is now measured, not assumed** (new `P10_SIZE` gate). Play's
+200 MB base-module cap is a wall, not a target: over it, tools must move to a
+dynamic feature module, which is a different product rather than a bigger
+number. Current reading: **132.7 MB, 67.3 MB of headroom**. The shell and 190
+coreutils cost about 2 MB of that. Python (stdlib as payload data, compressed)
+and a real `node` are the next questions, and both have to be measured against
+that 67 MB before they are promised.
+
+**Still to do:** python, node-as-a-tool, curl/wget, jq, openssh - each one now
+has a price tag it has to fit.
 
 Play forbids downloading executable code, so the store shape is **sealed**:
 every executable is a symlink into `nativeLibraryDir` (the inode comes from the

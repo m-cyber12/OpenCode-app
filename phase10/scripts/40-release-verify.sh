@@ -101,6 +101,40 @@ else
 fi
 p10 RELEASE_APK_DETAIL 0 "$(grep -a '^CONTENTS ' "$APK_REPORT" | head -1 | tr -s ' ' | cut -c1-240)"
 
+# ---- size budget: Play's 200 MB base-module cap -----------------------------
+#
+# The userland is growing - a shell and ~190 coreutils now, python and a real
+# node under discussion - and 200 MB is a wall, not a target: over it, tools
+# have to move into a dynamic feature module, which is a different product
+# rather than a bigger number. So it gets measured on every release build.
+#
+# Conservative on purpose: Play's cap is on what ONE device downloads, and a
+# device gets one ABI, so the universal APK (both ABIs) is an upper bound on
+# every split it can produce. If this fits, every split fits. 180 MB warns so
+# the wall is visible while there is still room to plan around it.
+SIZE_DETAIL="$(python3 - "$APK_REPORT" <<'PY'
+import re, sys
+txt = open(sys.argv[1], errors="replace").read()
+m = re.search(r"^ARTIFACT .* bytes=(\d+)", txt, re.M)
+mb = int(m.group(1)) / 1048576.0 if m else -1.0
+# non-greedy up to " payload=": the field itself contains spaces
+# ("arm64-v8a(8 libs,126.4MB)"), so \S+ would stop at the first one.
+c = re.search(r"native_abis=(.+?) payload=", txt)
+nat = c.group(1).replace(" ", "") if c else "unknown"
+print("apkMb=%.1f capMb=200 headroomMb=%.1f native=%s" % (mb, 200.0 - mb, nat))
+PY
+)"
+SIZE_MB="$(printf '%s' "$SIZE_DETAIL" | sed -n 's/.*apkMb=\([0-9.]*\).*/\1/p')"
+if [ -z "$SIZE_MB" ]; then
+  p10 SIZE 1 "could not measure the release APK size (no ARTIFACT bytes= line); the cap is unchecked"
+elif awk -v m="$SIZE_MB" 'BEGIN{exit !(m > 200)}'; then
+  p10 SIZE 1 "OVER Play's 200 MB base-module cap: $SIZE_DETAIL"
+elif awk -v m="$SIZE_MB" 'BEGIN{exit !(m > 180)}'; then
+  p10 SIZE 0 "within the cap but close: $SIZE_DETAIL (plan the next tool against this number)"
+else
+  p10 SIZE 0 "$SIZE_DETAIL"
+fi
+
 # Signature state, asserted explicitly in BOTH directions: CI must never sign,
 # and a release artifact must never be published unsigned *by the human step*.
 # In CI the expected state is unsigned, so that is what is asserted here; the

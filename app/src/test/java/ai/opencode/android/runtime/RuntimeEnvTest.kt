@@ -63,7 +63,11 @@ class RuntimeEnvTest {
         assertEquals(p.binDir.absolutePath, entries.first())
         assertTrue(entries.contains("/system/bin"))
         assertTrue(entries.contains("/system/xbin"))
-        assertEquals("/system/bin/sh", env["SHELL"])
+        // v9.42 step 1 (slice D): the app's own sealed shell, never the
+        // device's. Same secret as PATH[0] - the shell the agent gets must be
+        // the shell the APK shipped and the gates ran, on every device.
+        assertEquals(File(p.binDir, "sh").absolutePath, env["SHELL"])
+        assertFalse("SHELL must not be a system path", env["SHELL"]!!.startsWith("/system/"))
         assertEquals("C.UTF-8", env["LANG"])
     }
 

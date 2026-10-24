@@ -64,7 +64,13 @@ object RuntimeEnv {
             "/system/bin",
             "/system/xbin",
         ).joinToString(File.pathSeparator)
-        env["SHELL"] = "/system/bin/sh"
+        // v9.42 step 1 (slice D): OUR shell, not the device's. bin/sh is a
+        // symlink into the APK (libmksh.so), so the agent's `sh -c` and every
+        // subshell, heredoc and `cmd &` resolve to a shell we built and pinned
+        // rather than to whatever /system/bin/sh happens to be on this phone.
+        // It sits FIRST on PATH above, so PATH and SHELL agree - a shell that
+        // disagrees with its own PATH is how scripts find the wrong `test`.
+        env["SHELL"] = File(paths.binDir, "sh").absolutePath
         env["LANG"] = "C.UTF-8"
         // v9.28: the rebuilt git speaks https (curl + Mbed TLS). Its helper
         // (bin/git-remote-https -> libgitremotehttp.so) is found here, and

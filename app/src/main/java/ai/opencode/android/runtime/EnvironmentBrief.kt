@@ -102,10 +102,14 @@ them, never probe. Briefs are OVERWRITTEN at every app start: never
 edit them - put suggestions in BRIEF-SUGGESTIONS.md at the project root.
 
 ## Tools
-On PATH: `bun` (full runtime - `bun -e`, scripts, `Bun.serve`, `fetch`,
-JSON, bundling: use it for everything python/node/curl would do), `git`,
-`rg`, plus /system/bin toybox (sh, ls, cp, mv, sed, grep, awk, tar, find,
-diff, ps, kill, nc, base64, sha256sum, ...).
+On PATH, in this order: OUR prefix (`sh` plus ~190 coreutils - ls, cp, mv,
+sed, grep, find, tar, diff, sha256sum, gzip, vi, ...), then Android's
+/system/bin. The prefix is the app's - one pinned version, the same command
+set on every phone, sealed in the APK - so prefer it to the device's tools,
+which vary by model and Android version. Full runtime: `bun` (`bun -e`,
+scripts, `Bun.serve`, `fetch`, JSON, bundling: use it for everything
+python/node/curl would do), `git` (https: certs come from the device's own
+CA store), `rg`.
 NOT installed - do not probe: python, node, npm, pip, perl, ruby, curl,
 wget, apt. There is NO node binary at all: npm-style CLIs start with
 `#!/usr/bin/env node` and die - the webapp brief below has the working
