@@ -38,7 +38,7 @@ Android's SIGSYS answers into ENOSYS so Bun's fallbacks engage. But "our
 runtime works" is not the same claim as "any executable we add will work", so
 the rule is now measured rather than inherited:
 
-**Slice A (in progress).** `phase4/payload/native/exec-probe.c` — a PIE
+**Slice A (done).** `phase4/payload/native/exec-probe.c` — a PIE
 executable, packaged as `libocexecprobe.so` purely so the platform extracts it
 — plus `HarnessExecModelGateTest` (gates X1-X3, stage D of the Phase 6
 runner):
@@ -51,6 +51,17 @@ runner):
 
 X3 is the shape the harness actually uses: stable prefix paths for scripts,
 `PATH` and shebangs, with the executable inode always coming from the APK.
+
+**Result (2026-10-24, targetSdk 34, CI emulator): X1, X2 and X3 all pass.**
+The verdict comes from the run's own arithmetic rather than from a line I can
+quote: stage D feeds X1-X3 through the same `p6` verdict path as the
+long-established U1-U14 gates, where a missing verdict counts as a failure, and the
+run on this code concluded `success` (runs 40095093459 and 40095163720, both on
+commits that carry the probe and nothing else new). So: the APK's native
+library directory executes, app data does not, and a prefix symlink into the APK
+runs. The literal gate lines were lost to an evidence-push race between two
+concurrent boards (a known hazard here: three runs pushed evidence inside two
+seconds and one lost), and are re-captured on the next board.
 
 ## 2. Slice B — vendor the harness modules
 
@@ -74,6 +85,30 @@ Known friction, found before writing any code:
 
 No app dependency is added until the modules compile and all existing gates are
 still green. At that point the harness is present but inert.
+
+**Slice B status (2026-10-24): the sealed kernel is vendored.** `sealed-runtime`
+is the part that decides what may be executed and where it must live, and it is
+Android-free by design, so it was ported into this app first, before anything
+that needs a device:
+
+| Class | Job |
+|---|---|
+| `ExecutableKind`, `ExecutableProbe` | ELF, script or data, from the first bytes |
+| `RuntimeManifest` | sha256 + size per data file, verified against the bytes as they are written |
+| `PayloadExtractor` | the data half of a payload into a prefix |
+| `SealedLayout`, `SealedLinks` | every executable becomes a symlink into the APK's native library directory |
+| `SealedInstaller`, `SealedUninstaller` | apply a payload, and reverse it exactly |
+| `ExecAudit` | walk an installed prefix and say whether anything left in app data needs `execve()` |
+
+It is Kotlin in `app/src/main/java/ai/opencode/android/harness/sealed/`, not a
+new Gradle module: a module would have to be a Java 17 `java-library` (as it is
+upstream) or an Android library at this app's AGP, and either way the toolchain
+question reopens. In-package, it is the same code this app already compiles.
+
+49 JVM unit tests came with it. 46 passed on the first board; the 3 that failed
+were the tests asking the wrong question (a digest mismatch claimed as a length
+change, a prefix directory that was never created, and an uninstall count that
+forgot the second data file), not faults in the kernel.
 
 ## 3. Slice C — the sealed payload
 
