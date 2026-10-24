@@ -6042,3 +6042,43 @@ pulse and the dots read as "busy in the background" rather than decoration,
 the real pace of a clone over a real network now that it runs on the drain
 path too, and every other judgement the owner makes by touch. The device pass
 is the owner's; the queue, the cache and the gate are now provable.
+
+## 2026-10-24 - B.66 - the harness decision, and why step 1 is a measurement
+
+The owner decided: integrate the t1 terminal/harness into this app and remove
+Bun, with the size cost accepted, moved to the complete API 36 package, and
+Play as the distribution. The reason given was capabilities plus the API
+requirement, not size - so the order of work changed to protect that. Step 1 is
+additive: the harness lands beside Bun, nothing the user can see changes, and
+Bun is removed only after a measured Node port - because API 36 is the clock
+(Play requires it; an extension runs to 1 Nov 2026) and a failure late in that
+window has to have exactly one cause. The v9.42-era bugs were declared
+non-blocking by the owner and remain open.
+
+What was shipped for slice A is a measurement, not a feature. A coding harness
+is a userland, and Android 10+ refuses to execute a file an app wrote into its
+own data directory, so the entire design rests on one predicate: executables
+come out of the APK's native-library directory, data comes from the payload, and
+scripts are never execve'd directly. That predicate has never been tested in
+this tree, at this app's targetSdk, on this app's ABI list. So a probe was
+added: a ~1 KB PIE built by the payload script per ABI, shipped as
+`libocexecprobe.so`, printing a marker and nothing else. It uses write(1, ...)
+rather than stdio so it cannot trip this app's own seccomp shim and mis-report
+as a platform refusal. Three gates read it:
+
+  X1  runs from nativeLibraryDir, exit 0, marker present
+  X2  the same bytes, copied into app data and chmod +x, are refused
+  X3  a stable prefix path (files/bin/probe) symlinked into the APK runs
+
+X3 is the shape the harness actually uses - prefix paths for PATH and shebangs,
+executable inodes always from the APK. It is also the claim most worth
+falsifying now: if it fails, 300-400 MB of userland is built on sand.
+
+Honest about what this proves and what it does not. It proves the platform's
+rule on CI's emulator at targetSdk 34. It does not prove it on every device the
+owner ships to, and it says nothing about whether the sealed userland fits the
+Play base module (200 MB cap) or whether the Node port is tractable - those are
+later slices with their own stop conditions. The probe is also, deliberately,
+the whole of the runtime footprint added in this step: no module is vendored
+yet, no screen is added, and the app is byte-for-byte the same product it was
+before this commit ran.
