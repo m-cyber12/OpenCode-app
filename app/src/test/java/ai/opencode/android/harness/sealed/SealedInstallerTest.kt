@@ -201,7 +201,12 @@ class SealedInstallerTest {
         val removed = SealedUninstaller.remove(prefix, listOf("bin/git\tlibgit.so"), manifestLines())
 
         assertEquals("the user's own profile\n", File(prefix, "etc/profile").readText())
-        assertEquals(1, removed.files) // only the executable link
+        // Two, not one: the executable link, plus share/motd - which the payload
+        // wrote and nobody touched, so it is still reclaimed. Only a file whose
+        // size no longer matches its manifest record is treated as someone
+        // else's.
+        assertEquals(2, removed.files)
+        assertFalse(File(prefix, "share/motd").exists())
     }
 
     @Test

@@ -121,6 +121,7 @@ class RuntimeManifestTest {
                 line("etc/short", "the original text\n") + "\n" +
                 line("etc/edited", "the original text\n") + "\n"
         )
+        File(prefix, "etc").mkdirs()
         File(prefix, "etc/short").writeText("short\n")
         File(prefix, "etc/edited").writeText("edited by the user\n")
 

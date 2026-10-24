@@ -86,7 +86,9 @@ class PayloadExtractorTest {
     fun extract_reportsADigestMismatchInsteadOfInstallingIt() {
         val payload = listOf("etc/profile" to "export PATH=/usr/bin\n")
         val prefix = tmp.newFolder("prefix")
-        val claimed = manifestOf(listOf("etc/profile" to "a different file\n"))
+        // Same length, different bytes: a size difference is reported before
+        // the digest is ever compared, so this must match in length to reach it.
+        val claimed = manifestOf(listOf("etc/profile" to "export PATH=/usr/ban\n"))
 
         val result = PayloadExtractor.extract(
             ByteArrayInputStream(zip(payload)), prefix, claimed, null
