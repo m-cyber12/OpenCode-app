@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="ai.opencode.android.harness.sealed.RuntimeManifestTest" tests="10" skipped="0" failures="1" errors="0" timestamp="2026-10-24T13:27:42" hostname="runnervm8k3b6" time="0.003">
+<testsuite name="ai.opencode.android.harness.sealed.RuntimeManifestTest" tests="10" skipped="0" failures="1" errors="0" timestamp="2026-10-24T14:22:28" hostname="runnervmtai0g" time="0.01">
   <properties/>
   <testcase name="verify_acceptsAPrefixThatMatches" classname="ai.opencode.android.harness.sealed.RuntimeManifestTest" time="0.001"/>
   <testcase name="parse_skipsMalformedLinesAndComments" classname="ai.opencode.android.harness.sealed.RuntimeManifestTest" time="0.0"/>
@@ -8,17 +8,12 @@
   <testcase name="parse_keepsTheLastRecordForADuplicatedPath" classname="ai.opencode.android.harness.sealed.RuntimeManifestTest" time="0.001"/>
   <testcase name="verify_withoutAPrefixIsAProblemNotACrash" classname="ai.opencode.android.harness.sealed.RuntimeManifestTest" time="0.0"/>
   <testcase name="read_absentOrUnreadableIsAnEmptyManifest" classname="ai.opencode.android.harness.sealed.RuntimeManifestTest" time="0.0"/>
-  <testcase name="parse_readsOneRecordPerLine" classname="ai.opencode.android.harness.sealed.RuntimeManifestTest" time="0.0"/>
-  <testcase name="verify_reportsMissingSizeAndContentChanges" classname="ai.opencode.android.harness.sealed.RuntimeManifestTest" time="0.001">
-    <failure message="java.io.FileNotFoundException: /tmp/junit14107851972851420598/prefix/etc/short (No such file or directory)" type="java.io.FileNotFoundException">java.io.FileNotFoundException: /tmp/junit14107851972851420598/prefix/etc/short (No such file or directory)
-	at java.base/java.io.FileOutputStream.open0(Native Method)
-	at java.base/java.io.FileOutputStream.open(FileOutputStream.java:293)
-	at java.base/java.io.FileOutputStream.&lt;init&gt;(FileOutputStream.java:235)
-	at java.base/java.io.FileOutputStream.&lt;init&gt;(FileOutputStream.java:184)
-	at kotlin.io.FilesKt__FileReadWriteKt.writeBytes(FileReadWrite.kt:108)
-	at kotlin.io.FilesKt__FileReadWriteKt.writeText(FileReadWrite.kt:134)
-	at kotlin.io.FilesKt__FileReadWriteKt.writeText$default(FileReadWrite.kt:134)
-	at ai.opencode.android.harness.sealed.RuntimeManifestTest.verify_reportsMissingSizeAndContentChanges(RuntimeManifestTest.kt:124)
+  <testcase name="parse_readsOneRecordPerLine" classname="ai.opencode.android.harness.sealed.RuntimeManifestTest" time="0.001"/>
+  <testcase name="verify_reportsMissingSizeAndContentChanges" classname="ai.opencode.android.harness.sealed.RuntimeManifestTest" time="0.006">
+    <failure message="java.lang.AssertionError: [missing: etc/gone, size changed: etc/short, size changed: etc/edited]" type="java.lang.AssertionError">java.lang.AssertionError: [missing: etc/gone, size changed: etc/short, size changed: etc/edited]
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at ai.opencode.android.harness.sealed.RuntimeManifestTest.verify_reportsMissingSizeAndContentChanges(RuntimeManifestTest.kt:131)
 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
 	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
 	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
