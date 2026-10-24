@@ -149,10 +149,21 @@ build_native() {  # $1=abi  $2=target-triple
         -o "$outdir/libchildshim.so" "$NATIVE_SRC/child-shim.c" 2>"$WORK/child-$abi.log"; then
     note "FATAL: libchildshim build failed for $abi; clang stderr:"; cat "$WORK/child-$abi.log" | tee -a "$STATUS"; exit 1
   fi
-  chmod 755 "$outdir/libseccompshim.so" "$outdir/libexecshim.so" "$outdir/libchildshim.so"
+  # v9.42 (step 1, slice A): the harness exec-model probe. A PIE executable
+  # shipped under a lib*.so name so the platform extracts it into
+  # nativeLibraryDir; the on-device gate (X1-X3) executes it from there,
+  # through a prefix symlink, and from a COPY in app data - and requires the
+  # first two to work and the third to be refused. Without this measurement the
+  # whole harness (a real userland at targetSdk 29+) is an assumption.
+  if ! "$cc" -O2 -fPIE -pie -Wl,-z,max-page-size=16384 \
+        -o "$outdir/libocexecprobe.so" "$NATIVE_SRC/exec-probe.c" 2>"$WORK/probe-$abi.log"; then
+    note "FATAL: libocexecprobe build failed for $abi; clang stderr:"; cat "$WORK/probe-$abi.log" | tee -a "$STATUS"; exit 1
+  fi
+  chmod 755 "$outdir/libseccompshim.so" "$outdir/libexecshim.so" "$outdir/libchildshim.so" "$outdir/libocexecprobe.so"
   note "seccomp helpers $abi -> libseccompshim.so ($(stat -c%s "$outdir/libseccompshim.so") B)," \
        "libexecshim.so ($(stat -c%s "$outdir/libexecshim.so") B)," \
-       "libchildshim.so ($(stat -c%s "$outdir/libchildshim.so") B)"
+       "libchildshim.so ($(stat -c%s "$outdir/libchildshim.so") B)," \
+       "libocexecprobe.so ($(stat -c%s "$outdir/libocexecprobe.so") B)"
   "$NDK_BIN/llvm-nm" -D "$outdir/libseccompshim.so" 2>/dev/null | grep -q opencode_seccomp_init \
     || { note "FATAL: opencode_seccomp_init missing from libseccompshim.so ($abi)"; exit 1; }
   # The wrapper must be a PIE (DYN) executable so Android will exec it from
@@ -165,7 +176,7 @@ build_native() {  # $1=abi  $2=target-triple
   # binary was EXEC or readelf had simply misbehaved. Cheap to record, decisive
   # to read, and the alternative (relaxing the grep) would let a non-executable
   # shim ship to devices.
-  for so in libexecshim.so libchildshim.so; do
+  for so in libexecshim.so libchildshim.so libocexecprobe.so; do
     "$READELF" -h "$outdir/$so" 2>&1 | tee -a "$STATUS" | grep -q 'DYN' \
       || { note "FATAL: $so ($abi) is not a PIE/DYN executable (ELF header above) - NDK: $NDK_BIN"; exit 1; }
   done

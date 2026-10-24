@@ -220,6 +220,19 @@ done
 [ "$LIVE_RC" = 0 ] || log "note: the live-chat instrument run itself returned rc=$LIVE_RC"
 
 # ---------------------------------------------------------------------------
+# Stage D (v9.42, step 1 slice A): the exec model the coding harness rests on,
+# measured on this app at this app's targetSdk. No runtime, no model, no
+# network - the probe is a PIE executable the payload ships under a lib*.so
+# name, so this stage cannot flake on anything but the platform itself.
+log "=== stage D: harness exec model (nativeLibraryDir vs app data) ==="
+EXECM_RC=0
+run_class "harness-exec" "ai.opencode.android.harness.HarnessExecModelGateTest" 900 || EXECM_RC=1
+for g in X1 X2 X3; do
+  v=$(verdict_of "P6_$g"); p6 "$g" "$v" "$(detail_of "P6_$g")"
+done
+[ "$EXECM_RC" = 0 ] || log "note: the harness exec-model instrument run itself returned rc=$EXECM_RC"
+
+# ---------------------------------------------------------------------------
 log "=== evidence pull ==="
 rash "tail -c 60000 '$FILES/log/runtime.log' 2>&1" > "$EV/runtime.log" 2>&1 || true
 rash 'for d in "$FILES/xdg/data/opencode/log" "$FILES/xdg/state/opencode/log"; do for f in "$d"/*.log; do [ -e "$f" ] || continue; echo "### $f"; tail -150 "$f"; done; done' \
