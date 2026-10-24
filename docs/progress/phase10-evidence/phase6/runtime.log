@@ -1,61 +1,61 @@
-2026-10-24T16:20:23.007Z [host] start() ignored: supervisor already running
-2026-10-24T16:20:23.021Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-2026-10-24T16:20:23.074Z [host] environment brief: installed (config.instructions)
-2026-10-24T16:20:23.076Z [host] state -> EXTRACTING (validating embedded runtime)
-2026-10-24T16:20:23.229Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
-2026-10-24T16:20:23.232Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
-2026-10-24T16:20:27.032Z [host] plugin seed promoted into opencode/ (node_modules + lockfile)
-2026-10-24T16:20:27.034Z [host] extraction complete: 1062 files validated
-2026-10-24T16:20:27.035Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-2026-10-24T16:20:27.036Z [host] symlink bun -> /data/app/~~xG8J7WxL-mYVuY84DTcP5Q==/io.github.mcyber12.opencode-zFydRjGNTYmR44IaMjEzeg==/lib/x86_64/libbun.so (exec=true)
-2026-10-24T16:20:27.037Z [host] symlink git -> /data/app/~~xG8J7WxL-mYVuY84DTcP5Q==/io.github.mcyber12.opencode-zFydRjGNTYmR44IaMjEzeg==/lib/x86_64/libgit.so (exec=true)
-2026-10-24T16:20:27.038Z [host] symlink rg -> /data/app/~~xG8J7WxL-mYVuY84DTcP5Q==/io.github.mcyber12.opencode-zFydRjGNTYmR44IaMjEzeg==/lib/x86_64/librg.so (exec=true)
-2026-10-24T16:20:27.038Z [host] symlink git-remote-https -> /data/app/~~xG8J7WxL-mYVuY84DTcP5Q==/io.github.mcyber12.opencode-zFydRjGNTYmR44IaMjEzeg==/lib/x86_64/libgitremotehttp.so (exec=true)
-2026-10-24T16:20:27.039Z [host] symlink git-remote-http -> /data/app/~~xG8J7WxL-mYVuY84DTcP5Q==/io.github.mcyber12.opencode-zFydRjGNTYmR44IaMjEzeg==/lib/x86_64/libgitremotehttp.so (exec=true)
-2026-10-24T16:20:27.063Z [host] generated fresh server password in AndroidKeyStore (keystore=false)
-2026-10-24T16:20:27.065Z [host] github connector: env 'key' ABSENT (no token, or active project is not a GitHub project)
-2026-10-24T16:20:27.075Z [host] state -> STARTING (starting OpenCode server (attempt 1))
-2026-10-24T16:20:27.083Z [host] server started: pid=8498 abi=x86_64 port=4111
-2026-10-24T16:20:27.101Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~xG8J7WxL-mYVuY84DTcP5Q==/io.github.mcyber12.opencode-zFydRjGNTYmR44IaMjEzeg==/lib/x86_64/libbun.so
-2026-10-24T16:20:27.106Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
-2026-10-24T16:20:27.112Z [server] [stderr] [seccomp] preload handler installed (rc=0)
-2026-10-24T16:20:27.139Z [server] [stderr] [launcher] main entered platform=android arch=x64
-2026-10-24T16:20:27.142Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-10-24T16:20:27.142Z [server] [stderr] [launcher] importing OpenCode bundle
-2026-10-24T16:20:28.848Z [server] [stderr] [launcher] OpenCode bundle imported
-2026-10-24T16:20:28.850Z [server] [stderr] [launcher] binding 127.0.0.1:4111
-2026-10-24T16:20:29.542Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-10-24T16:20:29.550Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-10-24T16:20:34.142Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23"}
-2026-10-24T16:20:34.145Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
-2026-10-24T16:20:36.720Z [host] start() ignored: supervisor already running
-2026-10-24T16:20:37.064Z [host] start() ignored: supervisor already running
-2026-10-24T16:20:39.328Z [host] start() ignored: supervisor already running
-2026-10-24T16:20:39.725Z [host] start() ignored: supervisor already running
-2026-10-24T16:20:44.520Z [host] start() ignored: supervisor already running
-2026-10-24T16:20:44.524Z [host] start() ignored: supervisor already running
-2026-10-24T16:20:47.885Z [host] start() ignored: supervisor already running
-2026-10-24T16:20:47.900Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-2026-10-24T16:20:47.954Z [host] environment brief: installed (config.instructions)
-2026-10-24T16:20:47.956Z [host] state -> EXTRACTING (validating embedded runtime)
-2026-10-24T16:20:52.581Z [host] extraction valid (1062 files, 1.18.23 @ 05ea507)
-2026-10-24T16:20:52.583Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-2026-10-24T16:20:52.589Z [host] server password loaded from AndroidKeyStore (keystore=false)
-2026-10-24T16:20:52.591Z [host] github connector: env 'key' ABSENT (no token, or active project is not a GitHub project)
-2026-10-24T16:20:52.594Z [host] state -> STARTING (starting OpenCode server (attempt 1))
-2026-10-24T16:20:52.600Z [host] server started: pid=8755 abi=x86_64 port=4111
-2026-10-24T16:20:52.611Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~xG8J7WxL-mYVuY84DTcP5Q==/io.github.mcyber12.opencode-zFydRjGNTYmR44IaMjEzeg==/lib/x86_64/libbun.so
-2026-10-24T16:20:52.611Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
-2026-10-24T16:20:52.632Z [server] [stderr] [seccomp] preload handler installed (rc=0)
-2026-10-24T16:20:52.655Z [server] [stderr] [launcher] main entered platform=android arch=x64
-2026-10-24T16:20:52.657Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-10-24T16:20:52.658Z [server] [stderr] [launcher] importing OpenCode bundle
-2026-10-24T16:20:54.283Z [server] [stderr] [launcher] OpenCode bundle imported
-2026-10-24T16:20:54.284Z [server] [stderr] [launcher] binding 127.0.0.1:4111
-2026-10-24T16:20:54.725Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-10-24T16:20:54.727Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-10-24T16:20:59.616Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23"}
-2026-10-24T16:20:59.619Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
-2026-10-24T16:21:06.697Z [host] integration: loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
-2026-10-24T16:21:11.823Z [host] start() ignored: supervisor already running
-2026-10-24T16:21:11.828Z [host] start() ignored: supervisor already running
+2026-10-24T17:22:10.326Z [host] start() ignored: supervisor already running
+2026-10-24T17:22:10.338Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-10-24T17:22:10.391Z [host] environment brief: installed (config.instructions)
+2026-10-24T17:22:10.392Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-10-24T17:22:10.543Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-10-24T17:22:10.545Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-10-24T17:22:14.792Z [host] plugin seed promoted into opencode/ (node_modules + lockfile)
+2026-10-24T17:22:14.794Z [host] extraction complete: 1062 files validated
+2026-10-24T17:22:14.795Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-10-24T17:22:14.796Z [host] symlink bun -> /data/app/~~wwbJCJq-LPBduX6UXAe4qA==/io.github.mcyber12.opencode-OD1cN1_0DL9yHKypsFgyaQ==/lib/x86_64/libbun.so (exec=true)
+2026-10-24T17:22:14.797Z [host] symlink git -> /data/app/~~wwbJCJq-LPBduX6UXAe4qA==/io.github.mcyber12.opencode-OD1cN1_0DL9yHKypsFgyaQ==/lib/x86_64/libgit.so (exec=true)
+2026-10-24T17:22:14.797Z [host] symlink rg -> /data/app/~~wwbJCJq-LPBduX6UXAe4qA==/io.github.mcyber12.opencode-OD1cN1_0DL9yHKypsFgyaQ==/lib/x86_64/librg.so (exec=true)
+2026-10-24T17:22:14.798Z [host] symlink git-remote-https -> /data/app/~~wwbJCJq-LPBduX6UXAe4qA==/io.github.mcyber12.opencode-OD1cN1_0DL9yHKypsFgyaQ==/lib/x86_64/libgitremotehttp.so (exec=true)
+2026-10-24T17:22:14.799Z [host] symlink git-remote-http -> /data/app/~~wwbJCJq-LPBduX6UXAe4qA==/io.github.mcyber12.opencode-OD1cN1_0DL9yHKypsFgyaQ==/lib/x86_64/libgitremotehttp.so (exec=true)
+2026-10-24T17:22:14.818Z [host] generated fresh server password in AndroidKeyStore (keystore=false)
+2026-10-24T17:22:14.819Z [host] github connector: env 'key' ABSENT (no token, or active project is not a GitHub project)
+2026-10-24T17:22:14.821Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-10-24T17:22:14.829Z [host] server started: pid=8371 abi=x86_64 port=4111
+2026-10-24T17:22:14.839Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~wwbJCJq-LPBduX6UXAe4qA==/io.github.mcyber12.opencode-OD1cN1_0DL9yHKypsFgyaQ==/lib/x86_64/libbun.so
+2026-10-24T17:22:14.840Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-10-24T17:22:14.858Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-10-24T17:22:14.883Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-10-24T17:22:14.885Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-10-24T17:22:14.886Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-10-24T17:22:16.662Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-10-24T17:22:16.663Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-10-24T17:22:17.132Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-10-24T17:22:17.134Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-10-24T17:22:21.875Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23"}
+2026-10-24T17:22:21.878Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-10-24T17:22:23.967Z [host] start() ignored: supervisor already running
+2026-10-24T17:22:24.387Z [host] start() ignored: supervisor already running
+2026-10-24T17:22:26.874Z [host] start() ignored: supervisor already running
+2026-10-24T17:22:26.889Z [host] start() ignored: supervisor already running
+2026-10-24T17:22:31.357Z [host] start() ignored: supervisor already running
+2026-10-24T17:22:31.721Z [host] start() ignored: supervisor already running
+2026-10-24T17:22:34.766Z [host] start() ignored: supervisor already running
+2026-10-24T17:22:34.779Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-10-24T17:22:34.838Z [host] environment brief: installed (config.instructions)
+2026-10-24T17:22:34.839Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-10-24T17:22:39.913Z [host] extraction valid (1062 files, 1.18.23 @ 05ea507)
+2026-10-24T17:22:39.915Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
+2026-10-24T17:22:39.922Z [host] server password loaded from AndroidKeyStore (keystore=false)
+2026-10-24T17:22:39.923Z [host] github connector: env 'key' ABSENT (no token, or active project is not a GitHub project)
+2026-10-24T17:22:39.925Z [host] state -> STARTING (starting OpenCode server (attempt 1))
+2026-10-24T17:22:39.932Z [host] server started: pid=8624 abi=x86_64 port=4111
+2026-10-24T17:22:39.941Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~wwbJCJq-LPBduX6UXAe4qA==/io.github.mcyber12.opencode-OD1cN1_0DL9yHKypsFgyaQ==/lib/x86_64/libbun.so
+2026-10-24T17:22:39.942Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
+2026-10-24T17:22:39.961Z [server] [stderr] [seccomp] preload handler installed (rc=0)
+2026-10-24T17:22:39.985Z [server] [stderr] [launcher] main entered platform=android arch=x64
+2026-10-24T17:22:39.986Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
+2026-10-24T17:22:39.987Z [server] [stderr] [launcher] importing OpenCode bundle
+2026-10-24T17:22:41.450Z [server] [stderr] [launcher] OpenCode bundle imported
+2026-10-24T17:22:41.451Z [server] [stderr] [launcher] binding 127.0.0.1:4111
+2026-10-24T17:22:41.849Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
+2026-10-24T17:22:41.859Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
+2026-10-24T17:22:41.983Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23"}
+2026-10-24T17:22:41.990Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
+2026-10-24T17:22:48.072Z [host] integration: loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
+2026-10-24T17:22:56.452Z [host] start() ignored: supervisor already running
+2026-10-24T17:22:56.458Z [host] start() ignored: supervisor already running
