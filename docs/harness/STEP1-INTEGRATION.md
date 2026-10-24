@@ -137,6 +137,22 @@ It uses `libocexecprobe.so` — the same PIE, the same ABI list, no new payload 
 because this is about the packaging, not the tool. It is the last cheap
 falsification available: if S2 fails, everything in section 3 is sand.
 
+**Result (2026-10-24, CI run 40107594196, API 34 / abi x86_64): S1-S4 pass, on
+the debug build and again on the release-shaped smoke build.**
+
+```
+P6_S1 PASS :: sealed install ok=true files=1 verified=1 executables=1 problems=[]
+P6_S2 PASS :: prefix exec symlink=true ran=true exit=0 targetSdk=34 api=34 :: OCEXECPROBE ok
+P6_S3 PASS :: exec audit publishable=true shipped=1 outside=[] scanned=4 failure=null
+P6_S4 PASS :: uninstall files=2 bytes=15 problems=[] probeStillInApk=true
+```
+
+S2 is the load-bearing one: the executable ran from its prefix path, installed
+by this app's own code, on a real kernel — X3 again, but reached through the
+installer rather than by hand, which is the path a userland will take. S3's
+`outside=[]` is the audit re-deriving that from the filesystem rather than
+believing the installer's counts. UI totals 27/27, JVM 477/477.
+
 ## 3. Slice C — the sealed payload
 
 Play forbids downloading executable code, so the store shape is **sealed**:

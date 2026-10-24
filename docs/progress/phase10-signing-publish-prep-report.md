@@ -6159,3 +6159,38 @@ What this does NOT say: that a userland can be built here, that it would fit
 Play's base module, that any of it works on the owner's phone, or that the app
 has changed in any way the user could notice. The kernel is present and proven
 in isolation; the app still runs on Bun and looks exactly as it did.
+
+## 2026-10-24 - B.69 - the kernel works on a device, not only on the JVM
+
+Run 40107594196, green, with the sealed-install gates now on the board:
+
+  P6_S1 PASS :: sealed install ok=true files=1 verified=1 executables=1 problems=[]
+  P6_S2 PASS :: prefix exec symlink=true ran=true exit=0 targetSdk=34 api=34 ::
+                OCEXECPROBE ok
+  P6_S3 PASS :: exec audit publishable=true shipped=1 outside=[] scanned=4
+                failure=null
+  P6_S4 PASS :: uninstall files=2 bytes=15 problems=[] probeStillInApk=true
+  P6-UI totals: ui_gates_pass=27 ui_gates_fail=0 ui_gates_skip=0
+  P10-UNIT PASS: JVM tests=477 failures=0
+  phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0
+
+S1-S4 pass on the debug build and again on the release-shaped smoke build, which
+is the configuration that ships. S2 is the one that decides anything: an
+executable placed in a prefix by this app's own installer ran, from its stable
+prefix path, on a real Android kernel at API 34. S3 reaches the same conclusion
+from the other side, walking the prefix and finding nothing outside the APK that
+would need `execve()`. Together with X1-X3 that is the whole predicate the
+sealed userland stands on, now measured twice from two directions.
+
+Honest about the size of it: the payload in this gate is one file of fifteen
+bytes. It proves the mechanism and nothing about the content — no userland has
+been built, no package manager runs, no shell exists, and the app still does
+exactly what it did before this step started. What has changed is that the
+question "can a harness run here at all?" has an answer recorded in the
+repository instead of an argument, and the machinery that would build one is
+present, compiled and tested.
+
+Where that leaves step 1: slices A, B and C0 are done. What remains is the real
+work — a userland (slice C), a terminal that uses it (slice D), and API 36
+(slice E) — and each of those is a size or a toolchain question rather than a
+guess about the platform.
