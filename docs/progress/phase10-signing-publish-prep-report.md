@@ -6082,3 +6082,48 @@ later slices with their own stop conditions. The probe is also, deliberately,
 the whole of the runtime footprint added in this step: no module is vendored
 yet, no screen is added, and the app is byte-for-byte the same product it was
 before this commit ran.
+
+## 2026-10-24 - B.67 - the harness: what the boards proved, and what they cost
+
+**The measurement is done: X1, X2 and X3 pass at this app's targetSdk 34.**
+The APK's native library directory executes; the same bytes copied into app data
+and chmod +x are refused; and a stable prefix path symlinked into the APK's copy
+runs. That is the predicate the entire sealed userland rests on, and it is now
+measured in this tree rather than inherited from the reference project.
+
+The verdict is read from the run's arithmetic, not from a line I can quote, and
+it should be said plainly why: runs 40095093459 and 40095163720 both concluded
+`success` on code that carries the probe and nothing else new, and stage D feeds
+X1-X3 through the same `p6` verdict path as the long-established U1-U14 gates,
+where a missing verdict counts as a failure. Those two runs' evidence never
+reached the branch, so the literal gate text is not in the repository.
+
+**Why it is missing - an operational rule, learned the expensive way.** The
+pipeline commits its evidence at the end of the run, based on the commit it
+checked out. If the branch has moved since, that push is rejected and the run
+still reports success. Both of the runs whose evidence was lost had a later push
+land underneath them (slice B at 12:56, the test fix at 13:48). So: **do not
+push to this branch while a phase-10 run is in flight** - push first, then wait,
+then pull the evidence. Two boards' worth of detail were thrown away learning
+that, and the next board re-captures the lines.
+
+**Slice B: the sealed kernel is vendored and compiles.** `sealed-runtime` - the
+half that decides what may execute and where it must live - is now Kotlin in
+`app/src/main/java/ai/opencode/android/harness/sealed/`, with 49 JVM unit tests:
+manifest safety, hash-while-writing, payload escape, idempotence, exact
+uninstall, and the audit that says whether a prefix is publishable. It is
+in-package rather than a new Gradle module, because a module would reopen the
+toolchain question this step is deliberately avoiding (AGP 8.5.2 / Kotlin 1.9.24
+here, AGP 8.13 / Gradle 9.2 upstream).
+
+Three of the 49 failed on the first board and one more on the second, and every
+one of them was the test asking a different question than the one it named: a
+"digest mismatch" whose claimed file also changed length (so the size check
+reported first, twice over - once in the extractor, once in verify), a prefix
+directory that was never created, and an uninstall count that forgot the payload
+carries two data files. The kernel itself has not failed a test it was asked.
+
+What is still unproven, and said so where it belongs: none of this has run on a
+real device, the sealed userland has not been built, nothing in the app calls
+any of it yet, and the size question - whether the core tier fits Play's 200 MB
+base module - has not been measured here at all.

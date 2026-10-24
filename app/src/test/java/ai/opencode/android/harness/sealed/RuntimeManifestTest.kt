@@ -123,7 +123,10 @@ class RuntimeManifestTest {
         )
         File(prefix, "etc").mkdirs()
         File(prefix, "etc/short").writeText("short\n")
-        File(prefix, "etc/edited").writeText("edited by the user\n")
+        // Same length, different bytes: verify() compares the size first, so a
+        // file that also changed length is reported as a size change and the
+        // digest is never reached.
+        File(prefix, "etc/edited").writeText("the ORIGINAL text\n")
 
         val problems = manifest.verify(prefix)
         assertTrue(problems.toString(), problems.any { it.startsWith("missing: etc/gone") })
