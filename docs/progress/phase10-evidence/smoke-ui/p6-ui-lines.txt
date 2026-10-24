@@ -53,20 +53,20 @@ P6-F2 PASS :: :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false read
 P6-F3 PASS :: :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:43202,projects
 P6-F4 PASS :: :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=35891, 02-first-run-ready.png=43202, 02b-first-run-workspace.png=43202, 04-first-run-projects.png=65751]
 P6_L1 PASS :: p
-P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=59522 ink=0.310 via=compose] reply='Blue.'
-P6_L2 PASS :: tool=bash status=completed pa
-P6_L2 PASS :: tool=bash status=completed partId=prt_16eeff7a5001Ud2bmeCL97Lh9h cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1 marker=P6LIVE576821 screenshots[bytes=91867 ink=0.359 via=compose | bytes=106502 ink=0.454 via=compose]
-P6_MODEL_AVAILABLE 1 :: replyChars=5 asksAnswered=0
-P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBann
-P6-L2 PASS :: :: tool=bash status=completed partId=prt_16eeff7a5001Ud2bmeCL97Lh9h cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1
+P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=28 replyShownInUi=true(needle='clear') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=61373 ink=0.311 via=compose] reply='A clear sky at noon is blue.'
+P6_L2 SKIP :: the model answe
+P6_L2 SKIP :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=12); screen='
+P6_MODEL_AVAILABLE 1 :: replyChars=28 asksAnswered=0
+P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=28 replyShownInUi=true(needle='clear') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBa
+P6-L2 SKIP :: :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=12); screen='
 P6_X1 PASS :: nativeLib
 P6_X1 PASS :: nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=34 api=34 abi=x86_64 :: OCEXECPROBE ok
 P6_X2 PASS :: appData exec
-P6_X2 PASS :: appData exec refused=true ran=false exit=-1 api=34 targetSdk=34 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~w
+P6_X2 PASS :: appData exec refused=true ran=false exit=-1 api=34 targetSdk=34 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~l
 P6_X3 PASS :: p
 P6_X3 PASS :: prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P6-X1 PASS :: :: nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=34 api=34 abi=x86_64 :: OCEXECPROBE ok
-P6-X2 PASS :: :: appData exec refused=true ran=false exit=-1 api=34 targetSdk=34 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~w
+P6-X2 PASS :: :: appData exec refused=true ran=false exit=-1 api=34 targetSdk=34 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~l
 P6-X3 PASS :: :: prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P6_S1 PASS :: sealed install ok=t
 P6_S1 PASS :: sealed install ok=true files=1 verified=1 executables=1 problems=[] :: sealed payload: 1 data files (15 bytes, 1 verified), 0 data links, 1 executables from the APK
@@ -80,3 +80,12 @@ P6-S1 PASS :: :: sealed install ok=true files=1 verified=1 executables=1 problem
 P6-S2 PASS :: :: prefix exec symlink=true ran=true exit=0 targetSdk=34 api=34 :: OCEXECPROBE ok
 P6-S3 PASS :: :: exec audit publishable=true shipped=1 outside=[] scanned=4 failure=null
 P6-S4 PASS :: :: uninstall files=2 bytes=15 problems=[] probeStillInApk=true :: removed 2 files, reclaimed 15 bytes
+P6_T1 PASS :: sealed manifest links=5 missingTools=[] un
+P6_T1 PASS :: sealed manifest links=5 missingTools=[] unresolved=[] repaired=false linked=0 alreadyCorrect=5 errors=[] missingTargets=[]
+P6_T2 PASS ::
+P6_T2 PASS :: rg ran=true exit=0 :: ripgrep 15.1.0 (rev af60c2de9d)
+P6_T3 PASS :: exec audit publishable=t
+P6_T3 PASS :: exec audit publishable=true shipped=5 outside=[] scanned=5 failure=null
+P6-T1 PASS :: :: sealed manifest links=5 missingTools=[] unresolved=[] repaired=false linked=0 alreadyCorrect=5 errors=[] missingTargets=[]
+P6-T2 PASS :: :: rg ran=true exit=0 :: ripgrep 15.1.0 (rev af60c2de9d)
+P6-T3 PASS :: :: exec audit publishable=true shipped=5 outside=[] scanned=5 failure=null

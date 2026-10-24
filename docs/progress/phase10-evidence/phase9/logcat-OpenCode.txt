@@ -1,7 +1,7 @@
 --------- beginning of main
-10-24 17:27:33.055  9422  9446 I OpenCode/gate: P9_PROVSEL_BASELINE provider=openrouter connected=false source=custom
-10-24 17:27:35.856  9422  9446 I OpenCode/gate: P9_PROVSEL_STALE PASS :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
-10-24 17:27:37.897  9422  9446 I OpenCode/gate: P9_PROVSEL_REBUILT PASS :: after POST /global/dispose: connected=true instanceSource=api models=373 (was instanceSource=custom before the dispose)
-10-24 17:27:39.988  9422  9446 I OpenCode/gate: P9_PROVSEL_SERVERLOG selected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] modelNotFound=false logGrew=0
-10-24 17:27:39.989  9422  9446 I OpenCode/gate: P9_PROVSEL_TURN PASS :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode default
-10-24 17:27:42.075  9422  9446 I OpenCode/gate: P9_PROVSEL_CLEANUP PASS :: dummy credential removed: connected=false
+10-24 19:05:09.865  9794  9817 I OpenCode/gate: P9_PROVSEL_BASELINE provider=openrouter connected=false source=custom
+10-24 19:05:11.123  9794  9817 I OpenCode/gate: P9_PROVSEL_STALE PASS :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
+10-24 19:05:13.492  9794  9817 I OpenCode/gate: P9_PROVSEL_REBUILT PASS :: after POST /global/dispose: connected=true instanceSource=api models=371 (was instanceSource=custom before the dispose)
+10-24 19:05:15.554  9794  9817 I OpenCode/gate: P9_PROVSEL_SERVERLOG selected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] modelNotFound=false logGrew=0
+10-24 19:05:15.555  9794  9817 I OpenCode/gate: P9_PROVSEL_TURN PASS :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode default
+10-24 19:05:16.865  9794  9817 I OpenCode/gate: P9_PROVSEL_CLEANUP PASS :: dummy credential removed: connected=false
