@@ -6194,3 +6194,43 @@ Where that leaves step 1: slices A, B and C0 are done. What remains is the real
 work — a userland (slice C), a terminal that uses it (slice D), and API 36
 (slice E) — and each of those is a size or a toolchain question rather than a
 guess about the platform.
+
+## 2026-10-24 - B.70 - slice C: the split becomes real, and touches production
+
+The first increment of the sealed payload is in. It is deliberately the smallest
+thing that makes the split real rather than aspirational:
+
+- `phase4/scripts/12-seal-payload.py` is the build-side generator. It decides,
+  file by file, which half of a payload something belongs to, and it enforces
+  the one rule that matters: **a file that would have to be executed is refused
+  as data**, using the same ELF-magic / `#!` test the on-device classifier uses.
+  A build that accidentally drops a binary into the data half now fails in CI
+  instead of working on an old device and dying on a new one. It runs its own
+  six-check `--self-test` at the top of every payload build, and its output is
+  deterministic (same tree in, byte-identical assets out).
+- The app's `bin/` links are no longer a hard-coded table in `RuntimeManager`:
+  they come from `sealed-exec-<abi>.txt`, an asset the payload build generates,
+  applied by the vendored `SealedLayout`. Same five links (bun, git, rg and
+  git's two http helpers), same paths. The old table remains as a fallback that
+  logs loudly when it is used, because an unreadable asset must not look like a
+  device with no git.
+- Gates T1-T3 (stage F) assert it on a device: every tool resolves into the APK,
+  `bin/rg --version` and `bin/git --version` run from their prefix paths, and
+  `ExecAudit` re-derives from the filesystem that nothing under `filesDir/bin`
+  needs the data-directory exec exemption.
+
+This is the first step-1 change that touches production code, so it is worth
+being precise about what it does and does not do. It is behaviour-preserving:
+the same links, the same targets, the server still starts on Bun, and nothing
+the user can see changed. What changed is that the layout is now build output
+through tested machinery instead of knowledge buried in a class, so a packaging
+mistake fails a gate rather than quietly removing a tool from a conversation.
+
+What is still not there, and is the bulk of slice C: there is no userland. The
+data half of the payload is empty (zero files) because nothing needs to be
+extracted yet — the sealed machinery is proven on the five executables the app
+already shipped. `bin/bun` is linked and audited but deliberately not *run* by a
+gate, because it needs the seccomp shim that `libexecshim.so` installs; running
+it bare would prove nothing and fail for the wrong reason. Building the real
+thing — a shell, python, node, a package manager — is the next work, and the
+200 MB base-module question is still unmeasured here.

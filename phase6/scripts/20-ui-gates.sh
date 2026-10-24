@@ -248,6 +248,21 @@ done
 [ "$SEALED_RC" = 0 ] || log "note: the sealed-install instrument run itself returned rc=$SEALED_RC"
 
 # ---------------------------------------------------------------------------
+# stage F: the runtime this app ships, sealed. S1-S4 used a payload the test
+# invented; this uses the manifest the payload build actually puts in the APK
+# (sealed-exec-<abi>.txt) and the same code path the app runs at startup. If a
+# tool ever stops being sealed, or a link stops pointing into the APK, or one of
+# them stops running from its prefix path, it fails here - rather than as a tool
+# that is quietly absent from a conversation.
+log "=== stage F: the shipped runtime, sealed ==="
+RUNTIME_RC=0
+run_class "harness-sealed-runtime" "ai.opencode.android.harness.HarnessSealedRuntimeGateTest" 900 || RUNTIME_RC=1
+for g in T1 T2 T3; do
+  v=$(verdict_of "P6_$g"); p6 "$g" "$v" "$(detail_of "P6_$g")"
+done
+[ "$RUNTIME_RC" = 0 ] || log "note: the sealed-runtime instrument run itself returned rc=$RUNTIME_RC"
+
+# ---------------------------------------------------------------------------
 log "=== evidence pull ==="
 rash "tail -c 60000 '$FILES/log/runtime.log' 2>&1" > "$EV/runtime.log" 2>&1 || true
 rash 'for d in "$FILES/xdg/data/opencode/log" "$FILES/xdg/state/opencode/log"; do for f in "$d"/*.log; do [ -e "$f" ] || continue; echo "### $f"; tail -150 "$f"; done; done' \

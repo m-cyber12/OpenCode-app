@@ -42,6 +42,7 @@ done
 rm -rf "$ENGINE"
 mkdir -p "$ENGINE/jniLibs/arm64-v8a" "$ENGINE/jniLibs/x86_64" "$ENGINE/assets"
 
+
 PINNED_COMMIT="05ea5073be967c779d326929b2de6228dda4159d"
 GIT_PIN="v2.48.1"
 ZLIB_PIN="v1.3.1"
@@ -58,6 +59,13 @@ PAYLOAD_VERSION=7   # 7 = Phase 9: bare OPENCODE_VERSION + pre-seeded @opencode-
 STATUS="$ENGINE/build.status"
 : > "$STATUS"
 note() { echo "$*" | tee -a "$STATUS"; }
+
+# v9.42 (step 1, slice C): the sealed-payload generator is build-side code that
+# decides which half of a payload may be executed. It is checked before anything
+# expensive runs, because its one rule - an executable may never ship as data -
+# is the rule the whole store-legal shape rests on.
+SEAL_PY="$DIR/scripts/12-seal-payload.py"
+python3 "$SEAL_PY" --self-test | tee -a "$STATUS" || { note "FATAL: 12-seal-payload.py self-test failed"; exit 1; }
 
 export PATH="$HOME/.bun/bin:$PATH"
 
@@ -500,6 +508,34 @@ manifest = {
 json.dump(manifest, open(out, "w"), indent=2)
 print(f"manifest: {len(files)} files -> {out}")
 EOF
+
+# ---------------------------------------------------------------------------
+# The sealed layout for the runtime this payload ships. Every executable here
+# is already a lib*.so in jniLibs; the manifest says which prefix path it must
+# appear at, and the app links them at startup with the vendored
+# harness.sealed.SealedLayout instead of hand-rolling symlinks. Same links as
+# before, now derived from a shipped, auditable asset - and checked by
+# ExecAudit on the device (gate T3).
+note "=== sealed layout ==="
+for abi in "${ABIS[@]}"; do
+  python3 "$SEAL_PY" --abi "$abi" --out "$ENGINE/assets" \
+      --exec-map "bin/bun=libbun.so" \
+      --exec-map "bin/git=libgit.so" \
+      --exec-map "bin/rg=librg.so" \
+      --exec-map "bin/git-remote-http=libgitremotehttp.so" \
+      --exec-map "bin/git-remote-https=libgitremotehttp.so" \
+      | tee -a "$STATUS" || { note "FATAL: sealed layout generation failed for $abi"; exit 1; }
+  # Every library named in the manifest must exist for this ABI, or the app
+  # would install a link to nothing and the tool would be silently absent.
+  while IFS=$'\t' read -r prefix lib; do
+    case "$prefix" in ''|\#*) continue ;; esac
+    [ -f "$ENGINE/jniLibs/$abi/$lib" ] || {
+      note "FATAL: sealed-exec-$abi.txt names $lib for $prefix but jniLibs/$abi/$lib is missing"
+      exit 1
+    }
+  done < "$ENGINE/assets/sealed-exec-$abi.txt"
+done
+note "sealed exec manifests: $(cd "$ENGINE/assets" && ls sealed-exec-*.txt | tr '\n' ' ')"
 
 note "=== engine layout ==="
 ( cd "$ENGINE" && find . -type f -exec ls -la {} \; | awk '{print $5, $9}' )

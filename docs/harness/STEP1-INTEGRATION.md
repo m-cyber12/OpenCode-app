@@ -155,6 +155,34 @@ believing the installer's counts. UI totals 27/27, JVM 477/477.
 
 ## 3. Slice C — the sealed payload
 
+**C1 (done, 2026-10-24): the payload is sealed for the runtime we already
+ship.** Before a userland exists, the split itself had to become real: a
+generator, an asset, and an app that links from build output instead of from a
+hard-coded table.
+
+- `phase4/scripts/12-seal-payload.py` — turns a payload into the two halves:
+  executables (`sealed-exec-<abi>.txt`, each a symlink into the APK) and data
+  (`userland-<abi>.zip` + `sealed-manifest-<abi>.txt`, verified while written).
+  **Its one rule is enforced, not remembered: a file that would have to be
+  executed is refused as data.** It is checked with the same two tests the
+  on-device classifier uses (ELF magic, `#!`), so a build that drops a binary
+  into the data half fails in CI instead of working on an old device and dying
+  on a new one. It runs its own `--self-test` at the top of every payload build.
+- `HarnessSeal` + `SealedLayout` now create the app's `bin/` links
+  (`bin/bun`, `bin/git`, `bin/rg`, git's two http helpers) from the shipped
+  manifest. Same five links, same paths — but derived from build output,
+  idempotent, and auditable. The old table is kept as a loudly-logged fallback,
+  because a packaging bug must never present as "this device has no git".
+- Gates T1-T3 (stage F): the manifest links every tool into the APK, `bin/rg`
+  and `bin/git` actually run from their prefix paths, and `ExecAudit` says the
+  runtime prefix is publishable.
+
+This is the first change in step 1 that touches production code — the path that
+creates the runtime's symlinks — and it is deliberately behaviour-preserving:
+the server still starts on Bun, nothing the user sees changed.
+
+**Still to do in slice C:** the userland itself (section 3 continues below).
+
 Play forbids downloading executable code, so the store shape is **sealed**:
 every executable is a symlink into `nativeLibraryDir` (the inode comes from the
 APK), read-only files (Python's stdlib, gems, the dpkg database) are data

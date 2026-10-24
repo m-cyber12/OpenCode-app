@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 import kotlin.random.Random
+import ai.opencode.android.harness.sealed.HarnessSeal
 
 /**
  * The runtime supervisor. Owns the full lifecycle and is the single source of
@@ -357,12 +358,45 @@ class RuntimeManager private constructor(private val appContext: Context) {
 
     /**
      * Create bin/bun, bin/git, bin/rg as symlinks into nativeLibraryDir.
-     * All three are Android/Bionic binaries built for this APK ABI.
-     * Symlinks are files in filesDir (noexec) but the KERNEL resolves them to
-     * the nativeLibraryDir target, which is exec-allowed — the standard Android
-     * packaging trick for shipping extra executables inside the APK.
+     *
+     * The layout now comes from the sealed manifest the payload build ships
+     * (`sealed-exec-<abi>.txt`) and is applied by the vendored harness kernel:
+     * the same links as before, but derived from build output, idempotent by
+     * construction, and auditable afterwards with ExecAudit. The built-in table
+     * below stays as the safety net for a missing or unreadable asset, because
+     * a packaging bug must never present itself as "this device has no git".
      */
     private fun ensureBinSymlinks() {
+        paths.binDir.mkdirs()
+        val sealed = HarnessSeal.apply(appContext, paths.filesDir, paths.nativeLibraryDir)
+        if (sealed == null) {
+            logger.host(
+                "SEALED MANIFEST MISSING: " + HarnessSeal.manifestAssetName(HarnessSeal.abi()) +
+                    " is not in assets - falling back to the built-in link table",
+            )
+            ensureBuiltinBinSymlinks()
+            return
+        }
+        logger.host("sealed layout: ${sealed.summary()}")
+        if (sealed.missingTargets.isNotEmpty()) {
+            logger.host("SEALED LAYOUT MISSING TARGETS: ${sealed.missingTargets}")
+        }
+        if (sealed.errors.isNotEmpty()) {
+            logger.host("SEALED LAYOUT ERRORS: ${sealed.errors}")
+        }
+        // Nothing linked at all would leave the runtime with no tools at all,
+        // so the built-in table is used - and the log above says why.
+        if (sealed.linked + sealed.alreadyCorrect == 0) {
+            logger.host("SEALED LAYOUT LINKED NOTHING - falling back to the built-in link table")
+            ensureBuiltinBinSymlinks()
+        }
+    }
+
+    /**
+     * The pre-step-1 behaviour, kept verbatim: the five links the runtime needs,
+     * created directly. Used only when the shipped manifest cannot be read.
+     */
+    private fun ensureBuiltinBinSymlinks() {
         paths.binDir.mkdirs()
         data class Link(val link: File, val target: File, val name: String)
         // Git and ripgrep are built for Android/Bionic, not copied desktop
