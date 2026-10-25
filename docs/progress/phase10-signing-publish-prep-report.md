@@ -6424,3 +6424,46 @@ V5 therefore calls a regex function, not just `jq --version`: a jq built
 without oniguruma still starts, still prints a version and still answers `.a`
 - it fails only when something uses `test`, halfway through somebody's JSON.
 A gate that only checks the version would have shipped exactly that.
+
+## 2026-10-24 - B.76 - jq is on device; python, measured before promising it
+
+jq and oniguruma are in, and the board says so:
+
+  P6_V5 PASS :: jq ran=true exit=0 field='1' regex='true'
+  T1 links=200 alreadyCorrect=200   T3 shipped=200 outside=[]
+  P10_SIZE apkMb=135.7 capMb=200 headroomMb=64.3
+  oniguruma 826 KB, jq 951 KB (arm64); native libs 11 -> 12 per ABI
+
+V5 calls a regex function rather than `jq --version` because a jq built
+WITHOUT oniguruma still starts, still prints a version and still answers
+`.a` - it fails only when something uses `test`, halfway through somebody's
+JSON.
+
+**python: measured before it was promised.** The question was never "can we
+build CPython" but "does it fit in 64 MB", so it was built on this machine
+first (3.13.1, host, minimal):
+
+  interpreter, static modules, stripped ....... 7.3 MB
+  stdlib as one zip, compiled (.pyc) ......... 6.0 MB
+  stdlib as one zip, source (.py) ............ 4.3 MB
+  (unstripped interpreter, for reference .... 39.7 MB)
+
+Which answers it: python costs roughly 10-13 MB of APK and leaves ~50 MB.
+The node question is now the real one - a real node binary is ~40 MB per ABI.
+
+Two decisions came out of that measurement, and both were validated on the
+host build rather than discovered on a board:
+
+  1. EVERY extension module is linked into the interpreter. Android cannot
+     dlopen from app data, so the usual lib-dynload/ of shared modules would
+     be dead weight that fails on first import. Modules/Setup.local names
+     them with *static*; modules needing what Android lacks (syslog,
+     getgrent) or what we do not ship (OpenSSL, libffi, sqlite) are dropped
+     by name, and the build FAILS LOUDLY if any shared module survives.
+  2. The stdlib is ONE zip read through zipimport - ~570 modules as a single
+     6 MB payload entry instead of 570 files the extractor writes and
+     checksums at first run. Verified here: a python with no installed
+     prefix imports json, socket, zlib and pathlib out of that zip alone.
+
+The cross-build needs a build python of the SAME version, so the payload
+builds a host CPython first instead of betting on what the CI image has.

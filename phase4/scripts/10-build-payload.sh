@@ -54,6 +54,7 @@ ZLIB_PIN="v1.3.1"
 CURL_PIN="8.10.1"
 MBEDTLS_PIN="3.6.2"
 JQ_PIN="1.7.1"
+PYTHON_PIN="3.13.1"
 ONIGURUMA_PIN="6.9.10"
 BUN_PIN="1.3.14"
 RG_PIN="15.1.0"
@@ -242,6 +243,14 @@ curl -fsSL --retry 3 --max-time 180 -o "$WORK/oniguruma.tgz" \
   "https://github.com/kkos/oniguruma/releases/download/v${ONIGURUMA_PIN}/onig-${ONIGURUMA_PIN}.tar.gz"
 rm -rf "$WORK/oniguruma-src" && mkdir -p "$WORK/oniguruma-src"
 tar xzf "$WORK/oniguruma.tgz" -C "$WORK/oniguruma-src" --strip-components=1
+
+# v9.42 step 1: CPython. The repo tarball, not a release asset: cpython
+# commits its generated `configure`, so no autotools are needed on the host,
+# and the same URL is verifiable outside CI.
+curl -fsSL --retry 3 --max-time 300 -o "$WORK/cpython.tgz" \
+  "https://codeload.github.com/python/cpython/tar.gz/refs/tags/v${PYTHON_PIN}"
+rm -rf "$WORK/cpython-src" && mkdir -p "$WORK/cpython-src"
+tar xzf "$WORK/cpython.tgz" -C "$WORK/cpython-src" --strip-components=1
 
 build_git_android() {  # $1=abi $2=target triple $3=lib dir
   local abi="$1" triple="$2" outdir="$3"
@@ -678,6 +687,113 @@ for abi in "${ABIS[@]}"; do
   esac
 done
 
+# ---------------------------------------------------------------------------
+# Python. Two things about this build are not like the others:
+#
+# 1. EVERY extension module is linked INTO the interpreter. Android cannot
+#    dlopen: app data is not executable and the platform will not load a .so
+#    from it, so the usual lib-dynload/ of shared modules would be dead
+#    weight that fails on first import. Modules/Setup.local names them
+#    explicitly, with *static*, and the list is ours rather than whatever the
+#    build host happens to detect.
+# 2. The stdlib ships as ONE zip and is read through zipimport - ~570 files
+#    as one 6 MB payload entry instead of 570 files the extractor has to
+#    write and checksum at first run.
+#
+# Both were measured on a host build before being written here: static
+# interpreter 7.3 MB stripped, stdlib zip 6.0 MB (compiled) / 4.3 MB (source).
+# ---------------------------------------------------------------------------
+build_host_python() {
+  local src="$WORK/cpython-host" prefix="$WORK/cpython-host-install"
+  rm -rf "$src" "$prefix" && cp -r "$WORK/cpython-src" "$src"
+  # Cross-compiling needs a build python of the SAME version, and expecting
+  # the runner's python to be 3.13 is a bet on the image. Building it costs
+  # ~2 minutes and makes the build independent of what CI happens to have.
+  ( cd "$src"
+    ./configure --prefix="$prefix" --without-ensurepip --disable-test-modules >/dev/null
+    make -j4 >/dev/null
+    make install >/dev/null
+  ) || { note "FATAL: host python build failed"; return 1; }
+  [ -x "$prefix/bin/python3.13" ] || { note "FATAL: host python missing"; return 1; }
+  note "host python: $("$prefix/bin/python3.13" -c 'import sys;print(sys.version.split()[0])')"
+}
+
+build_python() {  # $1=abi $2=triple
+  local abi="$1" triple="$2" outdir="$ENGINE/jniLibs/$abi"
+  local cc="$NDK_BIN/${triple}29-clang" ar="$NDK_BIN/llvm-ar" ranlib="$NDK_BIN/llvm-ranlib"
+  local zprefix="$WORK/zlib-$abi-android" pprefix="$WORK/python-$abi-android"
+  local hostpy="$WORK/cpython-host-install/bin/python3.13"
+  local src="$WORK/cpython-$abi"
+  rm -rf "$src" && cp -r "$WORK/cpython-src" "$src"
+  # Modules that are pure C (or need only zlib, which we cross-build) and
+  # therefore safe to link statically on bionic. Deliberately NOT here:
+  #   syslog, grp  - bionic has neither syslog() nor getgrent()
+  #   _ssl, _hashlib - no OpenSSL; 3.13's Hacl-based _sha*/_md5 cover hashing
+  #   _ctypes, _sqlite3, _bz2, _lzma, _dbm, readline, _tkinter, _uuid, curses
+  local allow="_asyncio _bisect _contextvars _csv _datetime _heapq _interpchannels \
+_interpqueues _interpreters _json _lsprof _opcode _pickle _queue _random _socket \
+_statistics _struct _typing _zoneinfo array binascii cmath math mmap select _sysconfig \
+_elementtree pyexpat _md5 _sha1 _sha2 _sha3 unicodedata _posixsubprocess fcntl resource \
+termios zlib _decimal _blake2 _multiprocessing _multibytecodec"
+  ( cd "$src"
+    { echo "*static*"
+      for m in $allow; do
+        grep -E "^#?${m} +" Modules/Setup | head -1 | sed 's/^#//'
+      done
+    } > Modules/Setup.local
+    ./configure --host="$triple" --build=x86_64-linux-gnu \
+      --prefix="$pprefix" --with-build-python="$hostpy" \
+      --disable-shared --without-ensurepip --disable-test-modules \
+      ac_cv_file__dev_ptmx=yes ac_cv_file__dev_ptc=no \
+      ac_cv_buggy_getaddrinfo=no ac_cv_little_endian_double=yes \
+      CC="$cc" AR="$ar" RANLIB="$ranlib" \
+      CFLAGS="-O2 -fPIE -I$zprefix/include" \
+      LDFLAGS="-pie -L$zprefix/lib -lz -Wl,-z,max-page-size=16384" >/dev/null
+    # Whatever configure auto-detected beyond our list: keep the ones bionic
+    # can actually support, and drop the rest by name so they are never built
+    # (a module that needs a libc function Android does not have would fail
+    # the whole build rather than skip itself).
+    if [ -f Modules/Setup.stdlib ]; then
+      grep -vE "^(grp|syslog|_posixshmem|readline|_curses|_curses_panel|_tkinter|_ssl|_hashlib|_ctypes|_sqlite3|_bz2|_lzma|_dbm|_gdbm|_uuid) " \
+        Modules/Setup.stdlib >> Modules/Setup.local
+    fi
+    timeout 1800 make -j4 >/dev/null
+    make install >/dev/null
+  ) || { note "FATAL: python build failed for $abi (see python-$abi.log)"; return 1; }
+  local built="$pprefix/bin/python3.13"
+  [ -f "$built" ] || { note "FATAL: python3.13 not installed for $abi"; return 1; }
+  head -c 4 "$built" | grep -q ELF || { note "FATAL: python3.13 is not an ELF ($abi)"; return 1; }
+  # Nothing may be left behind as a shared module: it could not be loaded.
+  local shared=0
+  shared=$(find "$pprefix/lib/python3.13/lib-dynload" -name '*.so' 2>/dev/null | wc -l)
+  [ "$shared" = "0" ] || { note "FATAL: $shared shared extension modules for $abi (cannot dlopen on Android)"; return 1; }
+  "$NDK_BIN/llvm-strip" "$built"
+  cp "$built" "$outdir/libpython3.so"
+  chmod 755 "$outdir/libpython3.so"
+  note "python $abi: $(stat -c%s "$outdir/libpython3.so") bytes (stripped, static modules)"
+}
+
+build_python_stdlib() {
+  local hostpy="$WORK/cpython-host-install/bin/python3.13"
+  local lib="$WORK/python-stdlib"
+  rm -rf "$lib" && cp -r "$WORK/cpython-src/Lib" "$lib"
+  mkdir -p "$STAGE/usr/lib"
+  ( cd "$lib"
+    rm -rf test tests idlelib tkinter lib2to3 distutils
+    find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+    # Compiled by the host python of the SAME version: .pyc magic is
+    # version-tagged, not platform-tagged, so these are valid on the phone.
+    "$hostpy" -m compileall -q . >/dev/null 2>&1
+    find . -name "*.py" -delete
+    # zipimport looks for name.cpython-313.pyc BESIDE the module, not in
+    # __pycache__, so flatten before zipping (measured: it works).
+    find . -name "__pycache__" -type d -exec sh -c 'mv "$1"/* "$1/../" 2>/dev/null; rmdir "$1"' _ {} \; 2>/dev/null || true
+    rm -rf __pycache__
+    zip -qr9 "$STAGE/usr/lib/python3.13.zip" .
+  ) || { note "FATAL: python stdlib zip failed"; return 1; }
+  note "python stdlib zip: $(stat -c%s "$STAGE/usr/lib/python3.13.zip") bytes"
+}
+
 # jq, and the oniguruma it links for regex (test/match/sub). Built after the
 # shell and coreutils so a failure here cannot take the userland core with it.
 for abi in "${ABIS[@]}"; do
@@ -687,13 +803,25 @@ for abi in "${ABIS[@]}"; do
   esac
 done
 
+# Python: the build python first (one host build, ~2 min), then one
+# cross-build per ABI. The stdlib is built once - it is data, not an
+# executable, so both ABIs share the same zip.
+build_host_python || exit 1
+for abi in "${ABIS[@]}"; do
+  case "$abi" in
+    x86_64)    build_python "$abi" "x86_64-linux-android" ;;
+    arm64-v8a) build_python "$abi" "aarch64-linux-android" ;;
+  esac
+done
+build_python_stdlib || exit 1
+
 # Same PIE/DYN assertion the runtime's own shims get: an ET_EXEC fixed-address
 # binary is rejected by the platform, and a userland that cannot be exec'd is
 # worse than no userland because it fails quietly, at the first command.
 READELF="$NDK_BIN/llvm-readelf"
 [ -x "$READELF" ] || READELF="$(command -v llvm-readelf readelf | head -1)"
 for abi in "${ABIS[@]}"; do
-  for so in libmksh.so libtoybox.so libjq.so; do
+  for so in libmksh.so libtoybox.so libjq.so libpython3.so; do
     "$READELF" -h "$ENGINE/jniLibs/$abi/$so" 2>&1 | tee -a "$STATUS" | grep -q 'DYN' \
       || { note "FATAL: $so ($abi) is not a PIE/DYN executable (ELF header above)"; exit 1; }
   done
@@ -704,6 +832,9 @@ done
 printf 'bin/bun\tlibbun.so\nbin/git\tlibgit.so\nbin/rg\tlibrg.so\n' \
   > "$SEALED_EXEC_RECORDS"
 printf 'bin/curl\tlibcurl.so\nbin/jq\tlibjq.so\n' >> "$SEALED_EXEC_RECORDS"
+# `python` and `python3` are both expected by scripts in the wild; one binary,
+# two names, exactly as upstream installs it.
+printf 'bin/python3\tlibpython3.so\nbin/python\tlibpython3.so\n' >> "$SEALED_EXEC_RECORDS"
 printf 'bin/git-remote-http\tlibgitremotehttp.so\nbin/git-remote-https\tlibgitremotehttp.so\n' \
   >> "$SEALED_EXEC_RECORDS"
 printf 'bin/sh\tlibmksh.so\n' >> "$SEALED_EXEC_RECORDS"

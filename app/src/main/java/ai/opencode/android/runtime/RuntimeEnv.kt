@@ -88,6 +88,12 @@ object RuntimeEnv {
             // being down rather than like a build-time decision.
             env["CURL_CA_PATH"] = it
         }
+        // v9.42 step 1: the Python stdlib is ONE zip in the payload, read
+        // through zipimport - 570-odd modules as a single 6 MB payload entry
+        // instead of 570 files the extractor writes and checksums at first
+        // run. Everything it needs that is not pure Python is linked into the
+        // interpreter itself, because Android cannot dlopen from app data.
+        env["PYTHONPATH"] = File(paths.filesDir, "usr/lib/python3.13.zip").absolutePath
         // Loopback only: the value comes from RuntimeEnv.hostname(), which can
         // never return a non-loopback address (and the launcher re-checks it).
         env["OPENCODE_SERVER_HOSTNAME"] = hostname

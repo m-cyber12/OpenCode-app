@@ -241,8 +241,25 @@ oniguruma still starts, still prints its version and still answers `.a`; it
 only fails when something uses a regex function, which is the worst possible
 place to find out.
 
-**Still to do:** python, node-as-a-tool, wget, openssh - each with a price tag
-it has to fit, and the budget is now measured every run (65.0 MB left).
+**python (2026-10-24): measured before it was promised.** Two things make
+CPython work here, and both were validated on a host build first:
+
+- **every extension module is linked into the interpreter.** Android cannot
+  `dlopen` from app data, so the usual `lib-dynload/` of shared modules would
+  be dead weight that fails on first import. `Modules/Setup.local` names them
+  with `*static*`, and modules needing libc functions Android lacks (syslog,
+  getgrent) or libraries we don't ship (OpenSSL, libffi, sqlite) are dropped by
+  name. Measured: **7.3 MB stripped**, all modules inside.
+- **the stdlib is ONE zip, read through zipimport** (~570 modules as a single
+  **6.0 MB** entry, compiled to .pyc by the host python of the same version)
+  rather than 570 files the extractor writes and checksums at first run.
+
+The cross-build itself needs a build python of the same version, so the payload
+builds a host CPython first rather than betting on what the CI image has.
+
+**Still to do:** node-as-a-tool, wget, openssh - each with a price tag it has to
+fit. Node is the last big one and the budget question is real: a real node
+binary is ~40 MB per ABI against the ~50 MB this leaves.
 
 Play forbids downloading executable code, so the store shape is **sealed**:
 every executable is a symlink into `nativeLibraryDir` (the inode comes from the

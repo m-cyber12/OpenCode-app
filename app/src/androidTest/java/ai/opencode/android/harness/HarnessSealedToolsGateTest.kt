@@ -163,6 +163,38 @@ class HarnessSealedToolsGateTest {
         printGate("V5", measured.first, measured.second)
     }
 
+    /**
+     * V6: python runs, and its stdlib is the zip.
+     *
+     * The interpreter alone is not the claim. Two things make python work
+     * here and both fail quietly: the extension modules (zlib, _socket,
+     * _json...) are linked into the binary because Android cannot dlopen
+     * from app data, and the stdlib is a single zip found through PYTHONPATH
+     * rather than an installed prefix that does not exist on a phone. So the
+     * gate imports three C modules and one pure-Python package and checks a
+     * hash - if either half is missing, `import zlib` or `import json` fails.
+     */
+    @Test
+    fun v6_pythonRunsFromTheSealedPrefix() {
+        val measured = runCatching {
+            HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
+            val paths = RuntimePaths.get(context)
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val script = "python3 -c 'import zlib, socket, json, pathlib; " +
+                "print(json.dumps({\'ok\': True})); print(zlib.crc32(b\'abc\'))'"
+            val run = shellIn(env, script)
+            val lines = run.output.trim().split("\n").map { it.trim() }
+            // crc32(b'abc') == 891568578, and the stdlib zip is what makes
+            // json importable at all - no installed prefix exists on a phone.
+            val ok = run.ran && run.exitCode == 0 &&
+                lines.firstOrNull() == "{\"ok\": true}" && lines.getOrNull(1) == "891568578"
+            val detail = "python ran=${run.ran} exit=${run.exitCode} json='${lines.firstOrNull()}' " +
+                "zlib.crc32='${lines.getOrNull(1)}' (want 891568578)"
+            ok to detail
+        }.getOrElse { t -> false to "threw ${t.javaClass.simpleName}: ${t.message}" }
+        printGate("V6", measured.first, measured.second)
+    }
+
     private fun shell(script: String): Run =
         try {
             val process = ProcessBuilder(File(binDir, "sh").absolutePath, "-c", script)
