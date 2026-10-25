@@ -6688,3 +6688,23 @@ runs npm install without network or lifecycle scripts, and requires the
 installed package through Node, expecting 42. The build also requires npm's
 package.json in both the final payload tar and per-file manifest. Cross-build,
 16 KiB alignment, device runtime and final APK size are pending the board.
+
+## 2026-10-25 - B.83 - Node board 40211219623: bundled zlib assumes an NDK file removed years ago
+
+The first Node board failed during the arm64 build, not configure or patching:
+
+  deps/zlib/cpu_features.c:47:10:
+    fatal error: 'cpu-features.h' file not found
+
+Node's bundled Chromium zlib defines ARMV8_OS_ANDROID and includes the old NDK
+`sources/android/cpufeatures/cpu-features.h`. NDK r28 correctly no longer ships
+that legacy source tree. The Termux common.gypi patch removes the obsolete
+include path; Termux does not see the compile failure because its package uses
+external zlib.
+
+This payload already builds pinned zlib 1.3.1 for every ABI before Node (Git,
+curl and Python use it). Node now uses its external/shared-zlib configure path
+with that prefix. The prefix contains only libz.a, so `-lz` selects the static
+archive: one zlib implementation is linked into Node, no extra runtime .so and
+no system-zlib version bet. The build fails immediately if that archive is not
+present. Board confirmation is pending.

@@ -864,10 +864,13 @@ build_node() {  # $1=abi $2=target triple $3=node dest cpu $4=gyp arch
   local outdir="$ENGINE/jniLibs/$abi" src="$WORK/node-$abi"
   local cc="$NDK_BIN/${triple}29-clang" cxx="$NDK_BIN/${triple}29-clang++"
   local hostcc="$(command -v gcc cc | head -1)" hostcxx="$(command -v g++ c++ | head -1)"
+  local zprefix="$WORK/zlib-$abi-android"
   local ndkhome=""
   ndkhome="$(cd "$NDK_BIN/../../../../.." && pwd)"
   local patchdir="$WORK/termux-node-patches"
   note "--- Node $NODE_PIN ($abi, Android/Bionic, no Intl/inspector/snapshot) ---"
+  [ -f "$zprefix/lib/libz.a" ] \
+    || { note "FATAL: Node needs the already-built zlib archive for $abi"; return 1; }
   rm -rf "$src" && mkdir -p "$src"
   tar xzf "$WORK/node.tgz" -C "$src" --strip-components=1
 
@@ -904,6 +907,8 @@ tools-v8_gypfiles-v8.gyp.patch"
       --dest-cpu="$destcpu" --dest-os=android --cross-compiling \
       --openssl-no-asm --with-intl=none --without-inspector \
       --without-node-snapshot --without-node-code-cache \
+      --shared-zlib --shared-zlib-includes="$zprefix/include" \
+      --shared-zlib-libpath="$zprefix/lib" \
       --without-npm --without-corepack >/dev/null
     timeout 10800 make -j4 >/dev/null
   ) || { note "FATAL: Node build failed for $abi"; return 1; }

@@ -320,7 +320,12 @@ the package bundled by that Node tag. Its JS is verified payload data;
 `bin/npm` and `bin/npx` point to a tiny native shim that execs sealed Node with
 the CLI path, so neither launcher depends on executing a script from app data.
 V7 creates and installs a local package (no network), then requires it and
-expects 42 - version text alone is not package-manager evidence.
+expects 42 - version text alone is not package-manager evidence. First board
+40211219623 reached the arm64 compile and found one upstream Android assumption:
+Chromium's bundled zlib includes the NDK-removed `cpu-features.h`. The payload
+already builds pinned zlib 1.3.1 per ABI for Git/Python; Node now links that
+static archive through its external-zlib configure path instead of compiling a
+second, incompatible zlib copy.
 
 **Still to do after the Node size/run board:** wget and openssh.
 
