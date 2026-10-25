@@ -162,7 +162,8 @@ class RuntimePaths private constructor(
     val binDir: File = File(filesDir, "bin")
     // The payload is extracted FLAT into filesDir (matching the proven Phase 3
     // layout): filesDir/launcher.js, filesDir/node_modules/<jsonc-parser,
-    // node-pty, bun-pty>, filesDir/opencode/dist/node/node.js. Bun resolves
+    // node-pty, bun-pty>, filesDir/opencode/dist/node/node.js, and sealed-tool
+    // data under filesDir/usr/ (currently the Python stdlib zip). Bun resolves
     // node_modules by walking up from the bundle dir; the bundle sits in
     // filesDir/opencode/dist/node/, so it finds filesDir/node_modules. The
     // extraction marker and staging still live in filesDir/runtime/ which is

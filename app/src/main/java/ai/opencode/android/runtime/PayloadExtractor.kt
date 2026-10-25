@@ -11,7 +11,8 @@ import java.util.zip.GZIPInputStream
  *
  * The APK ships:
  *   - assets/runtime-manifest.json  (versions + per-file sha256/size)
- *   - assets/runtime-payload.tar.gz (server bundle, node_modules, launcher.js)
+ *   - assets/runtime-payload.tar.gz (server bundle, node_modules, launcher.js,
+ *     and read-only tool data such as usr/lib/python3.13.zip)
  *
  * On every start the supervisor calls [ensureExtracted]:
  *   1. read the manifest from assets (the APK is the trusted source),
@@ -128,7 +129,10 @@ class PayloadExtractor(
 
     private fun extract(manifest: RuntimeManifest): Result {
         val staging = File(paths.filesDir, "payload.staging")
-        val oldRoots = listOf("opencode", "node_modules", "launcher.js")
+            // `usr` is the read-only data half of sealed tools. Its executable
+            // half stays in nativeLibraryDir; e.g. usr/lib/python3.13.zip is
+            // verified here while bin/python3 is a sealed APK-library symlink.
+            val oldRoots = listOf("opencode", "node_modules", "launcher.js", "usr")
         try {
             staging.deleteRecursively()
             staging.mkdirs()

@@ -291,6 +291,15 @@ it. Reproducing with an isolated `PYTHONHOME` gave the same fatal `encodings`
 failure. The payload now keeps `.py` source (smaller anyway), and RuntimeEnv
 sets both the sealed `PYTHONHOME=files/usr` and the exact zip in `PYTHONPATH`.
 
+**Third board (40195652075) proved the zip still was not in the APK.** The
+source archive itself was correct, but `runtime-payload.tar.gz` was packed
+before `build_python_stdlib` created `STAGE/usr/lib/python3.13.zip`, while the
+later seal invocation carried executable records only (no `--data-dir`). A
+file existing in STAGE is not shipping evidence. Payload packing now happens
+after every producer, `PayloadExtractor` promotes the verified `usr` root, and
+the build directly asserts that both the tar and runtime manifest contain the
+zip before Gradle is allowed to package the app.
+
 **Still to do:** node-as-a-tool, wget, openssh - each with a price tag it has to
 fit. Node is the last big one and the budget question is real: a real node
 binary is ~40 MB per ABI against the ~50 MB this leaves.

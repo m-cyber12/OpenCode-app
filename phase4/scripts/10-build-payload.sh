@@ -515,16 +515,22 @@ mkdir -p "$STAGE/plugin-seed"
 cp -r "$SEED/node_modules" "$SEED/package.json" "$SEED/package-lock.json" "$STAGE/plugin-seed/"
 note "plugin seed: $(find "$STAGE/plugin-seed" -type f | wc -l) files, $(du -sk "$STAGE/plugin-seed" | cut -f1) KB, plugin $(python3 -c 'import json;print(json.load(open("'"$STAGE"'/plugin-seed/node_modules/@opencode-ai/plugin/package.json"))["version"])')"
 
-# Deterministic tar (sorted, no owner/mtime noise) then gzip.
-PAYLOAD_TGZ="$ENGINE/assets/runtime-payload.tar.gz"
-( cd "$STAGE" && find . -type f | sed 's|^\./||' | sort \
-    | tar --owner=0 --group=0 --numeric-owner --no-recursion -T - -cf - \
-    | gzip -9n > "$PAYLOAD_TGZ" )
-PAYLOAD_SHA="$(sha256sum "$PAYLOAD_TGZ" | cut -d' ' -f1)"
-note "payload tarball: $(stat -c%s "$PAYLOAD_TGZ") bytes sha256=$PAYLOAD_SHA"
+# Pack the data payload only after EVERY producer has populated STAGE. This is
+# a function, rather than work done here, because Python's stdlib is added much
+# later (after the cross-build functions below run). Boards 40191275984 and
+# 40195652075 built STAGE/usr/lib/python3.13.zip after the old tar command had
+# already run; the interpreter shipped but its stdlib never entered the APK.
+pack_runtime_payload() {
+  local payload_tgz="$ENGINE/assets/runtime-payload.tar.gz" payload_sha=""
+  # Deterministic tar (sorted, no owner/mtime noise) then gzip.
+  ( cd "$STAGE" && find . -type f | sed 's|^\./||' | sort \
+      | tar --owner=0 --group=0 --numeric-owner --no-recursion -T - -cf - \
+      | gzip -9n > "$payload_tgz" )
+  payload_sha="$(sha256sum "$payload_tgz" | cut -d' ' -f1)"
+  note "payload tarball: $(stat -c%s "$payload_tgz") bytes sha256=$payload_sha"
 
-# Manifest: per-file sha256 + size, paths relative to the runtime root (runtime/).
-python3 - "$STAGE" "$ENGINE/assets/runtime-manifest.json" "$PAYLOAD_SHA" "$GOT_COMMIT" <<'EOF'
+  # Manifest: per-file sha256 + size, paths relative to filesDir.
+  python3 - "$STAGE" "$ENGINE/assets/runtime-manifest.json" "$payload_sha" "$GOT_COMMIT" <<'EOF'
 import hashlib, json, os, sys
 stage, out, payload_sha, commit = sys.argv[1:5]
 files = {}
@@ -547,6 +553,7 @@ manifest = {
 json.dump(manifest, open(out, "w"), indent=2)
 print(f"manifest: {len(files)} files -> {out}")
 EOF
+}
 
 # ---------------------------------------------------------------------------
 # The sealed layout for the runtime this payload ships. Every executable here
@@ -840,6 +847,21 @@ for abi in "${ABIS[@]}"; do
   esac
 done
 build_python_stdlib || exit 1
+# This MUST be after build_python_stdlib: usr/lib/python3.13.zip is data in the
+# ordinary verified runtime payload. Packing earlier silently omits the stdlib.
+pack_runtime_payload || exit 1
+# Do not trust STAGE alone: the bug on two consecutive boards was exactly that
+# the file existed there but the already-built APK payload did not contain it.
+tar -tzf "$ENGINE/assets/runtime-payload.tar.gz" 'usr/lib/python3.13.zip' >/dev/null \
+  || { note "FATAL: python stdlib is not in runtime-payload.tar.gz"; exit 1; }
+python3 - "$ENGINE/assets/runtime-manifest.json" <<'EOF'
+import json, sys
+manifest = json.load(open(sys.argv[1], encoding="utf-8"))
+entry = manifest.get("files", {}).get("usr/lib/python3.13.zip")
+if not entry or int(entry.get("size", 0)) <= 0:
+    raise SystemExit("python stdlib is not in runtime-manifest.json")
+print("python stdlib packaged: %d bytes, manifest + tar agree" % entry["size"])
+EOF
 
 # Same PIE/DYN assertion the runtime's own shims get: an ET_EXEC fixed-address
 # binary is rejected by the platform, and a userland that cannot be exec'd is

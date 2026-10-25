@@ -6557,3 +6557,42 @@ on the CI runner, while argv[0] resolves from files/bin into
 nativeLibraryDir; neither can locate the payload prefix on a phone. An
 isolated-prefix host reproduction with the source zip imports json and zlib
 and returns crc32(b'abc') = 891568578. Board confirmation is pending.
+
+## 2026-10-25 - B.79 - python board 40195652075: source zip valid, but never packaged
+
+The third python board failed V6 with the more precise expected symptom:
+
+  Fatal Python error: Failed to import encodings module
+  Python runtime state: core initialized
+
+This is not a second zip-format error. The exact source archive works in the
+isolated-prefix host reproduction. The build ordering was wrong:
+
+  1. runtime-payload.tar.gz and runtime-manifest.json were produced;
+  2. the native sealed tools were built;
+  3. build_python_stdlib created STAGE/usr/lib/python3.13.zip;
+  4. 12-seal-payload.py was called with executable records but NO --data-dir.
+
+Thus the log truthfully said `python stdlib source zip: 4495301 bytes`, but no
+APK asset carried that file. Both debug and release V6 therefore had a valid
+interpreter, PYTHONHOME and PYTHONPATH pointing at a path that did not exist.
+T1/T3 still passed because they audit executable paths; the missing zip is
+data. P10_SIZE staying exactly 141.1 MB across compiled/source boards was a
+second clue that changing a 6.3 MB archive to 4.5 MB changed nothing packaged.
+
+Correction: payload packing is now a function invoked only after
+build_python_stdlib. The ordinary runtime payload carries the data half at
+`usr/lib/python3.13.zip`, its existing per-file manifest hashes it, and
+PayloadExtractor now promotes the verified `usr` top-level root into filesDir.
+The executable half remains `bin/python[3] -> nativeLibraryDir/libpython3.so`.
+This keeps the existing atomically staged, checksum-verified runtime extractor
+instead of introducing a second production installer.
+
+Two direct build assertions now stop this class of error before Gradle:
+
+  tar -tzf runtime-payload.tar.gz usr/lib/python3.13.zip
+  runtime-manifest.json files["usr/lib/python3.13.zip"].size > 0
+
+This is stronger than checking STAGE, because checking STAGE is exactly how a
+file that never entered the APK looked complete twice. Board confirmation is
+pending.
