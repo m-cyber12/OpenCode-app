@@ -325,7 +325,12 @@ expects 42 - version text alone is not package-manager evidence. First board
 Chromium's bundled zlib includes the NDK-removed `cpu-features.h`. The payload
 already builds pinned zlib 1.3.1 per ABI for Git/Python; Node now links that
 static archive through its external-zlib configure path instead of compiling a
-second, incompatible zlib copy.
+second, incompatible zlib copy. Board 40214575682 then found cross-build path
+leakage: the x86_64 host generator `node_js2c` was handed arm64 `libz.a`.
+Termux strips target dependency paths from generated host Ninja rules; this
+build uses Make, so it now strips those paths from `*.host.mk` and asserts none
+survive. Target makefiles still use the pinned Android archive; host generators
+use the runner's host zlib.
 
 **Still to do after the Node size/run board:** wget and openssh.
 

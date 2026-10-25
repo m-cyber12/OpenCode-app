@@ -6708,3 +6708,26 @@ with that prefix. The prefix contains only libz.a, so `-lz` selects the static
 archive: one zlib implementation is linked into Node, no extra runtime .so and
 no system-zlib version bet. The build fails immediately if that archive is not
 present. Board confirmation is pending.
+
+## 2026-10-25 - B.84 - Node board 40214575682: target zlib path leaked into host generator
+
+The external-zlib change bypassed the removed cpu-features header and reached
+the host tools link. It then failed correctly and explicitly:
+
+  libz.a(adler32.o) is incompatible with elf64-x86-64
+  ...
+  node_js2c.host.mk: .../out/Release/node_js2c Error 1
+
+Node's configure put the arm64 zlib include/library paths in both target and
+host generated makefiles. `node_js2c` runs on the x86_64 CI host, so its linker
+cannot consume the target archive. This is a known cross-build boundary in the
+Termux recipe: after configure it removes target dependency paths from host
+Ninja rules, allowing host tools to use host libraries while target rules keep
+the Android paths.
+
+This build uses upstream Make, not Ninja. It now removes only
+`-I<target-zlib>/include` and `-L<target-zlib>/lib` from every generated
+`*.host.mk`, then fails before compilation if that target prefix survives in
+any host makefile. `-lz` remains, resolving Ubuntu's host zlib for generators;
+target makefiles still link the pinned Android libz.a. Board confirmation is
+pending.

@@ -910,6 +910,18 @@ tools-v8_gypfiles-v8.gyp.patch"
       --shared-zlib --shared-zlib-includes="$zprefix/include" \
       --shared-zlib-libpath="$zprefix/lib" \
       --without-npm --without-corepack >/dev/null
+    # Cross-configure leaks external target dependency paths into HOST tools.
+    # node_js2c is an x86_64 runner executable; feeding its host linker the
+    # arm64 libz.a produced board 40214575682's "incompatible with elf64-x86-64".
+    # Termux makes this same correction in generated Ninja; this build uses
+    # upstream Makefiles, so remove only the target -I/-L from *.host.mk. The
+    # host then resolves Ubuntu's zlib while target makefiles retain our archive.
+    find out -name '*.host.mk' -type f -exec \
+      sed -i -e "s|-I$zprefix/include||g" -e "s|-L$zprefix/lib||g" {} +
+    if find out -name '*.host.mk' -type f -exec grep -lF "$zprefix" {} + | grep -q .; then
+      echo "target zlib path survived in a Node host makefile" >&2
+      exit 1
+    fi
     timeout 10800 make -j4 >/dev/null
   ) || { note "FATAL: Node build failed for $abi"; return 1; }
 
