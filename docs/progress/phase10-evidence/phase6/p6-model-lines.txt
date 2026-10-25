@@ -16,21 +16,22 @@ P6_F1 PASS :: firstScreen=welcome workspaceStep=true stages=[extracting, startin
 P6_F2 PASS :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=false,chat=false,workspace=true) leakedTokens=[] screenshot=43202
 P6_F3 PASS :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:43202,projects:65751
 P6_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=35891, 02-first-run-ready.png=43202, 02b-first-run-workspace.png=43202, 04-first-run-projects.png=65751]
-P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=59527 ink=0.310 via=compose] reply='Blue.'
-P6_L2 PASS :: tool=bash status=completed partId=prt_171016fa0001sBWph7j3jko8o7 cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1 marker=P6LIVE278444 screenshots[bytes=89937 ink=0.385 via=compose | bytes=103055 ink=0.455 via=compose]
+P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=28 replyShownInUi=true(needle='clear') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=61637 ink=0.311 via=compose] reply='A clear sky at noon is blue.'
+P6_L2 PASS :: tool=bash status=completed partId=prt_1714fc2a00018ZgFSz67SwnJxS cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1 marker=P6LIVE410275 screenshots[bytes=93156 ink=0.385 via=compose | bytes=106134 ink=0.482 via=compose]
 P6_MODEL_AVAILABLE 1 ::
-P6_MODEL_AVAILABLE 1 :: replyChars=5 asksAnswered=0
+P6_MODEL_AVAILABLE 1 :: replyChars=28 asksAnswered=0
 P6_X1 PASS :: nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=34 api=34 abi=x86_64 :: OCEXECPROBE ok
-P6_X2 PASS :: appData exec refused=true ran=false exit=-1 api=34 targetSdk=34 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~y
+P6_X2 PASS :: appData exec refused=true ran=false exit=-1 api=34 targetSdk=34 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~p
 P6_X3 PASS :: prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P6_S1 PASS :: sealed install ok=true files=1 verified=1 executables=1 problems=[] :: sealed payload: 1 data files (15 bytes, 1 verified), 0 data links, 1 executables from the APK
 P6_S2 PASS :: prefix exec symlink=true ran=true exit=0 targetSdk=34 api=34 :: OCEXECPROBE ok
 P6_S3 PASS :: exec audit publishable=true shipped=1 outside=[] scanned=4 failure=null
 P6_S4 PASS :: uninstall files=2 bytes=15 problems=[] probeStillInApk=true :: removed 2 files, reclaimed 15 bytes
-P6_T1 PASS :: sealed manifest links=199 missingTools=[] unresolved=[] repaired=false linked=0 alreadyCorrect=199 errors=[] missingTargets=[]
+P6_T1 PASS :: sealed manifest links=200 missingTools=[] unresolved=[] repaired=false linked=0 alreadyCorrect=200 errors=[] missingTargets=[]
 P6_T2 PASS :: rg ran=true exit=0 :: ripgrep 15.1.0 (rev af60c2de9d)
-P6_T3 PASS :: exec audit publishable=true shipped=199 manifestLinks=199 outside=[] scanned=199 failure=null
+P6_T3 PASS :: exec audit publishable=true shipped=200 manifestLinks=200 outside=[] scanned=200 failure=null
 P6_V1 PASS :: sealed shell ran=true exit=0 api=34 :: OC_SEALED_SH_OK
 P6_V2 PASS :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
 P6_V3 PASS :: agent env PATH[0]=/data/user/0/io.github.mcyber12.opencode/files/bin (want /data/user/0/io.github.mcyber12.opencode/files/bin) SHELL=/data/user/0/io.github.mcyber12.opencode/files/bin/sh ran=true exit=0 out='1' tr=/data/user/0/io.github.mcyber12.opencode/files/bin/tr
 P6_V4 PASS :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-android) libcurl/8.10.1 mbedTLS' CURL_CA_PATH=/apex/com.android.conscrypt/cacerts isDir=true
+P6_V5 PASS :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
