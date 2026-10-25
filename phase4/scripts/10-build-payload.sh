@@ -297,6 +297,17 @@ build_git_android() {  # $1=abi $2=target triple $3=lib dir
   # https name as a copy/hardlink of the same executable).
   cp "$WORK/git-src/git-remote-http" "$outdir/libgitremotehttp.so"
   chmod 755 "$outdir/libgitremotehttp.so"
+  # ---- v9.42 step 1 (slice E): the curl CLI, from the build git needs ----
+  # Git's smart-HTTP transport links this exact static curl, so the command
+  # line tool is FREE: the binary is built whether we ship it or not, and
+  # shipping it is one copy. It carries NO baked-in CA path (see the
+  # configure line above) on purpose - trust comes from CURL_CA_PATH at
+  # runtime, pointing at Android's own CA store, the same directory git gets
+  # through GIT_SSL_CAPATH. A baked-in bundle would trust yesterday's CAs.
+  [ -x "$cprefix/bin/curl" ] || { note "FATAL: curl CLI missing for $abi"; return 1; }
+  cp "$cprefix/bin/curl" "$outdir/libcurl.so"
+  chmod 755 "$outdir/libcurl.so"
+  note "$abi curl CLI: $(stat -c%s "$outdir/libcurl.so") bytes"
   if git_version=$("$outdir/libgit.so" --version 2>&1 | head -1); then
     note "$abi Android Git host execution: $git_version"
   else
@@ -609,7 +620,8 @@ done
 
 # The sealed exec records: the runtime's five tools, then the shell, then every
 # command toybox built. One line each, "<prefix path> <TAB> <library>".
-printf 'bin/bun\tlibbun.so\nbin/git\tlibgit.so\nbin/rg\tlibrg.so\n' > "$SEALED_EXEC_RECORDS"
+printf 'bin/bun\tlibbun.so\nbin/git\tlibgit.so\nbin/rg\tlibrg.so\nbin/curl\tlibcurl.so\n' \
+  > "$SEALED_EXEC_RECORDS"
 printf 'bin/git-remote-http\tlibgitremotehttp.so\nbin/git-remote-https\tlibgitremotehttp.so\n' \
   >> "$SEALED_EXEC_RECORDS"
 printf 'bin/sh\tlibmksh.so\n' >> "$SEALED_EXEC_RECORDS"

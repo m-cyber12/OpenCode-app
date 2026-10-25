@@ -223,8 +223,18 @@ coreutils cost about 2 MB of that. Python (stdlib as payload data, compressed)
 and a real `node` are the next questions, and both have to be measured against
 that 67 MB before they are promised.
 
-**Still to do:** python, node-as-a-tool, curl/wget, jq, openssh - each one now
-has a price tag it has to fit.
+**E (2026-10-24): curl, for free.** Git's smart-HTTP transport is built against
+a static curl, so the `curl` binary exists whether we ship it or not - shipping
+it as `bin/curl` is one copy. It is built with NO baked-in CA bundle
+deliberately, so `CURL_CA_PATH` now points it at Android's own CA store (the
+same directory git gets); without that, every https request dies with a
+certificate error that looks like the network being down. V4 asserts both: that
+curl runs, and that the CA path points at a directory that exists.
+
+**Still to do:** python, node-as-a-tool, jq, wget, openssh - each with a price
+tag it has to fit. jq comes next and is the first real cross-build in this
+sequence (it wants oniguruma for regex, or it ships without `test`/`match`),
+so it gets its own board rather than riding along with a known-good change.
 
 Play forbids downloading executable code, so the store shape is **sealed**:
 every executable is a symlink into `nativeLibraryDir` (the inode comes from the

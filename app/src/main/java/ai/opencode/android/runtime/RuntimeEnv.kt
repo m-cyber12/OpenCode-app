@@ -79,7 +79,15 @@ object RuntimeEnv {
         // device, not our build (Android 14+ keeps it in the Conscrypt APEX,
         // older in /system).
         env["GIT_EXEC_PATH"] = paths.binDir.absolutePath
-        systemCaDir()?.let { env["GIT_SSL_CAPATH"] = it }
+        systemCaDir()?.let {
+            env["GIT_SSL_CAPATH"] = it
+            // v9.42 step 1 (slice E): the shipped curl is built WITHOUT a CA
+            // bundle (see the payload build), so it trusts nothing at all
+            // until this points it at the device's own store. Without it,
+            // `curl https://...` fails in a way that looks like the network
+            // being down rather than like a build-time decision.
+            env["CURL_CA_PATH"] = it
+        }
         // Loopback only: the value comes from RuntimeEnv.hostname(), which can
         // never return a non-loopback address (and the launcher re-checks it).
         env["OPENCODE_SERVER_HOSTNAME"] = hostname

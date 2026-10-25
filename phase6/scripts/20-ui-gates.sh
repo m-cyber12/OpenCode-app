@@ -271,7 +271,7 @@ done
 log "=== stage G: sealed userland core (shell + coreutils, and the agent's env) ==="
 TOOLS_RC=0
 run_class "harness-sealed-tools" "ai.opencode.android.harness.HarnessSealedToolsGateTest" 900 || TOOLS_RC=1
-for g in V1 V2 V3; do
+for g in V1 V2 V3 V4; do
   v=$(verdict_of "P6_$g"); p6 "$g" "$v" "$(detail_of "P6_$g")"
 done
 [ "$TOOLS_RC" = 0 ] || log "note: the sealed-tools instrument run itself returned rc=$TOOLS_RC"

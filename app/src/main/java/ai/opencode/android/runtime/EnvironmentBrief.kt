@@ -102,15 +102,9 @@ them, never probe. Briefs are OVERWRITTEN at every app start: never
 edit them - put suggestions in BRIEF-SUGGESTIONS.md at the project root.
 
 ## Tools
-On PATH, in this order: OUR prefix (`sh` plus ~190 coreutils - ls, cp, mv,
-sed, grep, find, tar, diff, sha256sum, gzip, vi, ...), then Android's
-/system/bin. The prefix is the app's - one pinned version, the same command
-set on every phone, sealed in the APK - so prefer it to the device's tools,
-which vary by model and Android version. Full runtime: `bun` (`bun -e`,
-scripts, `Bun.serve`, `fetch`, JSON, bundling: use it for everything
-python/node/curl would do), `git` (https: certs come from the device's own
-CA store), `rg`.
-NOT installed - do not probe: python, node, npm, pip, perl, ruby, curl,
+`bun` (`bun -e`, scripts, `Bun.serve`, `fetch`, JSON), `git`, `rg`, and OUR
+prefix first on PATH (`sh` + ~190 coreutils) - prefer ours; the device's
+/system/bin varies by phone.
 wget, apt. There is NO node binary at all: npm-style CLIs start with
 `#!/usr/bin/env node` and die - the webapp brief below has the working
 pattern before you touch any package.json project.
@@ -189,6 +183,8 @@ what cannot have changed; read each topic brief at most once.
   Vite, ...): install, starting dev servers WITHOUT node, readiness,
   missing-env crashes. Read BEFORE the first command in any project that
   has a package.json.
+- $briefsDir/tools.md - PATH order, the full tool list, the `node` trap.
+  Read before shelling out.
 """.trimIndent() + "\n"
     }
 
@@ -388,10 +384,42 @@ placeholder status pages.
    Without GitHub, offer only option 1.
 """.trimIndent() + "\n"
 
+
+        // v9.42 step 1: the tools page exists because the main brief is the
+        // only always-paid text, and a growing userland (a shell, ~190
+        // coreutils, and more to come) cannot fit in it. The word budget on
+        // the main brief is a structural rule, not a style preference, so the
+        // detail lives here and the main brief points at it.
+        val tools = """
+# Tools & PATH - read once, before shelling out in a new project
+
+PATH order is OUR prefix first, then Android's /system/bin:
+
+  1. OUR prefix - a pinned shell (`sh`) plus ~190 coreutils (ls, cp, mv,
+     sed, grep, find, tar, diff, sha256sum, gzip, vi, ...). Sealed in the
+     APK: ONE version, the same command set on every phone, and executable
+     where app data is not. PREFER THESE.
+  2. /system/bin - the DEVICE's toybox. It varies by manufacturer and
+     Android version, so a command that exists on one phone is missing on
+     another. Use it only for something ours genuinely lacks (getprop,
+     cmd, am, ...).
+
+`bun` is the full runtime and the answer to most scripting: `bun -e '...'`,
+`bun run script.ts`, `Bun.serve`, `fetch`, JSON, bundling. Reach for it
+before anything shaped like python or curl. `git` speaks https (certs come
+from the device's own CA store) and `rg` is ripgrep.
+
+NOT installed - do not probe: python, node, npm, pip, perl, ruby, wget,
+apt. There is NO node binary: npm-style CLIs start with
+`#!/usr/bin/env node` and die. The webapp brief has the working pattern -
+read it BEFORE touching any project that has a package.json.
+""".trimIndent() + "\n"
+
         return linkedMapOf(
             "preview.md" to preview,
             "screenshots.md" to screenshots,
             "webapp.md" to webapp,
+            "tools.md" to tools,
         )
     }
 }

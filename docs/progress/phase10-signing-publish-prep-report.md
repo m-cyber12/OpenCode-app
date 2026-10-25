@@ -6354,3 +6354,37 @@ and Android version. V3 gates the difference by running the pipeline through
 RuntimeEnv.build (the block the server is launched with) and naming the winner
 of `command -v tr`, because /system/bin has its own toybox and a PATH that
 merely contains bin/ would still hand the agent the device's tools.
+
+## 2026-10-24 - B.74 - B.73 broke the build; the word budget was right
+
+Run 40140937905 failed, and the cause was mine:
+
+  P10-BUILD FAIL - kotlin compile or JVM unit tests failed
+  EnvironmentBriefTest: main brief grew to 869 words - split or trim it
+
+Slice D added a paragraph to the environment brief describing the new
+prefix. The brief is the only text the model always pays for, and it has a
+hard 830-word budget with a test that fails the build over it. I added ~49
+words and did not check the count first; the guard caught it before any
+device gate ran, which is exactly what it is for.
+
+The fix is the one the budget was designed to force rather than the one
+that would have got me under by a hair: the tool detail moved into a
+`briefs/tools.md` TOPIC brief - PATH order, the full tool list, what is not
+installed, the `node` shebang trap. The main brief now carries a one-line
+pointer and measures **810 words, 19 spare**. Verified before pushing this
+time: every `main.contains(...)` assertion in the test still holds, and the
+index points at all four topic files.
+
+Worth keeping in mind for the slices after this: the tool list is no longer
+bounded by the main brief's budget, so python and node can be described
+properly without buying words from the product rules.
+
+Also in this slice: **curl, for free.** Git's smart-HTTPS transport links a
+static curl that the payload build already produces, so `bin/curl` is one
+copy of a binary that existed anyway - no new build, no new megabytes. It is
+built without a CA bundle on purpose (a baked-in bundle trusts yesterday's
+CAs), so `CURL_CA_PATH` now points it at Android's own CA store, the same
+directory git gets through `GIT_SSL_CAPATH`. V4 asserts both halves: that
+curl runs, and that the CA path names a directory that exists - a curl that
+starts but trusts nothing is the failure mode worth gating.

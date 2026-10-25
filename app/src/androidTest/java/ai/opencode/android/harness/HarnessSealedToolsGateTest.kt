@@ -106,6 +106,36 @@ class HarnessSealedToolsGateTest {
         printGate("V3", measured.first, measured.second)
     }
 
+    /**
+     * V4: curl runs, and it can trust anything.
+     *
+     * The shipped curl is deliberately built WITHOUT a CA bundle, so trusting
+     * the wrong CAs forever was traded for trusting the device's store at
+     * runtime. That trade is invisible until it fails: without CURL_CA_PATH
+     * every https request dies with a certificate error that reads like the
+     * network being down. So the gate asserts the env var AND that it points
+     * at a directory that exists, not merely that the binary starts.
+     *
+     * The pipeline (`curl --version | head -1`) is doing double duty: `head`
+     * is one of the sealed coreutils, so this is also the pipeline path again.
+     */
+    @Test
+    fun v4_curlRunsAndIsPointedAtTheDeviceCaStore() {
+        val measured = runCatching {
+            HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
+            val paths = RuntimePaths.get(context)
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val caPath = env["CURL_CA_PATH"]
+            val run = shellIn(env, "curl --version | head -1")
+            val caOk = !caPath.isNullOrBlank() && File(caPath).isDirectory
+            val ok = run.ran && run.exitCode == 0 && run.output.contains("curl") && caOk
+            val detail = "curl ran=${run.ran} exit=${run.exitCode} " +
+                "out='${run.output.trim().take(60)}' CURL_CA_PATH=$caPath isDir=$caOk"
+            ok to detail
+        }.getOrElse { t -> false to "threw ${t.javaClass.simpleName}: ${t.message}" }
+        printGate("V4", measured.first, measured.second)
+    }
+
     private fun shell(script: String): Run =
         try {
             val process = ProcessBuilder(File(binDir, "sh").absolutePath, "-c", script)
