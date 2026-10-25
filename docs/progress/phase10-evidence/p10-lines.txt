@@ -37,13 +37,13 @@ P10_SMOKE_UI_F3 PASS :: workspaceStep=true folder=true picker=true action=true v
 P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=t
 P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=35891, 02-first-run-ready.png=43202, 02b-first-run-workspace.png=43202, 04-first-run-projects.png=65751]
 P10_SMOKE_UI_L1 PASS :: p
-P10_SMOKE_UI_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=28 replyShownInUi=true(needle='clear') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screensh
+P10_SMOKE_UI_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot
 P10_SMOKE_UI_L2 PASS :: tool=bash status=completed pa
-P10_SMOKE_UI_L2 PASS :: tool=bash status=completed partId=prt_1714fc2a00018ZgFSz67SwnJxS cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1 marker=P6LIVE410275 screenshots[bytes=93156 ink=0.385 via=
+P10_SMOKE_UI_L2 PASS :: tool=bash status=completed partId=prt_1731d534c001o86mCJG9fERQH9 cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1 marker=P6LIVE660358 screenshots[bytes=90785 ink=0.385 via=
 P10_SMOKE_UI_X1 PASS :: nativeLib
 P10_SMOKE_UI_X1 PASS :: nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=34 api=34 abi=x86_64 :: OCEXECPROBE ok
 P10_SMOKE_UI_X2 PASS :: appData exec
-P10_SMOKE_UI_X2 PASS :: appData exec refused=true ran=false exit=-1 api=34 targetSdk=34 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~p
+P10_SMOKE_UI_X2 PASS :: appData exec refused=true ran=false exit=-1 api=34 targetSdk=34 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~O
 P10_SMOKE_UI_X3 PASS :: p
 P10_SMOKE_UI_X3 PASS :: prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P10_SMOKE_UI_S1 PASS :: sealed install ok=t
@@ -54,12 +54,12 @@ P10_SMOKE_UI_S3 PASS :: exec audit publishable=t
 P10_SMOKE_UI_S3 PASS :: exec audit publishable=true shipped=1 outside=[] scanned=4 failure=null
 P10_SMOKE_UI_S4 PASS :: uninstall files=2 bytes=15 p
 P10_SMOKE_UI_S4 PASS :: uninstall files=2 bytes=15 problems=[] probeStillInApk=true :: removed 2 files, reclaimed 15 bytes
-P10_SMOKE_UI_T1 PASS :: sealed manifest links=200 missingTools=[] un
-P10_SMOKE_UI_T1 PASS :: sealed manifest links=200 missingTools=[] unresolved=[] repaired=false linked=0 alreadyCorrect=200 errors=[] missingTargets=[]
+P10_SMOKE_UI_T1 PASS :: sealed manifest links=202 missingTools=[] un
+P10_SMOKE_UI_T1 PASS :: sealed manifest links=202 missingTools=[] unresolved=[] repaired=false linked=0 alreadyCorrect=202 errors=[] missingTargets=[]
 P10_SMOKE_UI_T2 PASS ::
 P10_SMOKE_UI_T2 PASS :: rg ran=true exit=0 :: ripgrep 15.1.0 (rev af60c2de9d)
 P10_SMOKE_UI_T3 PASS :: exec audit publishable=t
-P10_SMOKE_UI_T3 PASS :: exec audit publishable=true shipped=200 manifestLinks=200 outside=[] scanned=200 failure=null
+P10_SMOKE_UI_T3 PASS :: exec audit publishable=true shipped=202 manifestLinks=202 outside=[] scanned=202 failure=null
 P10_SMOKE_UI_V1 PASS :: sealed shell
 P10_SMOKE_UI_V1 PASS :: sealed shell ran=true exit=0 api=34 :: OC_SEALED_SH_OK
 P10_SMOKE_UI_V2 PASS :: pipeline
@@ -70,6 +70,8 @@ P10_SMOKE_UI_V4 PASS :: cu
 P10_SMOKE_UI_V4 PASS :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-android) libcurl/8.10.1 mbedTLS' CURL_CA_PATH=/apex/com.android.conscrypt/cacerts isDir=true
 P10_SMOKE_UI_V5 PASS :: jq
 P10_SMOKE_UI_V5 PASS :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
-P10_SMOKE_UI PASS :: pass=35 fail=0 skip=0 on the release-shaped build (identical gates to the debug run)
+P10_SMOKE_UI_V6 FAIL :: python
+P10_SMOKE_UI_V6 FAIL :: python ran=true exit=1 json='Could not find platform independent libraries <prefix>' zlib.crc32='Could not find platform dependent libraries <exec_prefix>' (want 891568578)
+P10_SMOKE_UI FAIL :: pass=35 fail=1 skip=0 - a gate that passes on debug and fails here is a RELEASE-SHAPE finding (see p10-smoke-ui.log)
 P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
 P10_STORE_ASSETS PASS :: 512 icon + 1024x500 feature graphic + 2 screenshots at a real screen size
