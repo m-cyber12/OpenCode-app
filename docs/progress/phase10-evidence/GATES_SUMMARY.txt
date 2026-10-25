@@ -1,7 +1,7 @@
 P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, published identity, store package) + apk inspector self-test
 P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone (16 scenarios, pass=136 fail=0 - the scenario list and every check are in p10-driver-selftest.log)
 P10-UNIT PASS: JVM tests=477 failures=0 errors=0 skipped=0 (unit tests are NOT runtime evidence - the device gates below are)
-P10-PAYLOAD PASS: payloadVersion=7 opencode=1.18.23@05ea5073be96 bun=1.3.14 git=v2.48.1 rg=15.1.0 sha256=608ad1f51d8b659f files=1062
+P10-PAYLOAD PASS: payloadVersion=7 opencode=1.18.23@05ea5073be96 bun=1.3.14 git=v2.48.1 rg=15.1.0 sha256=83a0f451e2cce589 files=1062
 P10-DEVICE PASS: fresh AVD on 14 (Physical size: 1080x1920 density=Physical density: 160)
 P6_U1 PASS ::
 P6_U1 PASS :: rows=602 composedAtBottom=46 composedAtTop=41 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
@@ -26,7 +26,7 @@ P6_U5 PASS :: busyBar=true streamingIndicator=true stopShown=true sendHidden=tru
 P6_U6 PASS :: heading=t
 P6_U6 PASS :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true table=true/true
 P6_U7 PASS :: inte
-P6_U7 PASS :: interactive={chat=25, sessions=25, projects=6, welcome=2, welcome-unsupported=2, settings=12, files=4} total=76 unnamed=0 filesControls=[About this folder, Up one level Up one level, main.kt KT, app Folder]
+P6_U7 PASS :: interactive={chat=25, sessions=8, projects=6, welcome=2, welcome-unsupported=2, settings=12, files=4} total=59 unnamed=0 filesControls=[About this folder, Up one level Up one level, main.kt KT, app Folder]
 P6_U8 PASS ::
 P6_U8 PASS :: rowsComposedBefore=23 after=23 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true revertNote=true emptyState=true/true
 P6_U9 PASS :: listed=t
@@ -40,9 +40,9 @@ P6_F3 PASS :: workspaceStep=true folder=true picker=true action=true v4Removed=t
 P6_F4 PASS :: count=4 usable=4 welcome=t
 P6_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=35891, 02-first-run-ready.png=43293, 02b-first-run-workspace.png=43293, 04-first-run-projects.png=66009]
 P6_L1 PASS :: p
-P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=13 replyShownInUi=true(needle='think') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=6
+P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=594
 P6_L2 PASS :: tool=bash status=completed pa
-P6_L2 PASS :: tool=bash status=completed partId=prt_1731988930015mQsqczh50Kpj0 cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1 marker=P6LIVE412583 screenshots[bytes=95349 ink=0.360 via=compose | 
+P6_L2 PASS :: tool=bash status=completed partId=prt_173537d94001mfyi91CvSlBrJW cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1 marker=P6LIVE210034 screenshots[bytes=89906 ink=0.359 via=compose | 
 P6_X1 PASS :: nativeLib
 P6_X1 PASS :: nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=34 api=34 abi=x86_64 :: OCEXECPROBE ok
 P6_X2 PASS :: appData exec
@@ -74,9 +74,8 @@ P6_V4 PASS :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-android) li
 P6_V5 PASS :: jq
 P6_V5 PASS :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
 P6_V6 FAIL :: python
-P6_V6 FAIL :: python ran=true exit=1 json='Could not find platform independent libraries <prefix>' zlib.crc32='Could not find platform dependent libraries <exec_prefix>' (want 891568578)
+P6_V6 FAIL :: python ran=true exit=1 json='Fatal Python error: Failed to import encodings module' zlib.crc32='Python runtime state: core initialized' (want 891568578)
 P6-UI totals: ui_gates_pass=35 ui_gates_fail=1 ui_gates_skip=0
-P10-WORKSPACE note: driver rc=1 (the verdict lines above are the record)
 P9_PROVSEL_CLEANUP PASS :: dummy c
 P9_PROVSEL_CLEANUP PASS :: dummy credential removed: connected=false
 P9_PROVSEL_REBUILT PASS :: afte
@@ -91,7 +90,7 @@ P9_PROVSEL_TURN PASS :: :: prompt_async=204 userMessage.model=openrouter/openai/
 P9_PROVSEL_CLEANUP PASS :: :: dummy credential removed: connected=false
 P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
 P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
-P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=608ad1f51d8b659f 
+P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=83a0f451e2cce589 
 P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
 P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
 P10_RELEASE_AAB PASS :: CONTENTS entries=333 native_abis=arm64-v8a(13 libs,136.7MB),x86_64(13 libs,140.3MB) payload=True manifest_asset=True
@@ -111,7 +110,7 @@ P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-f
 P10_SMOKE_UI_L1 PASS :: p
 P10_SMOKE_UI_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot
 P10_SMOKE_UI_L2 PASS :: tool=bash status=completed pa
-P10_SMOKE_UI_L2 PASS :: tool=bash status=completed partId=prt_1731d534c001o86mCJG9fERQH9 cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1 marker=P6LIVE660358 screenshots[bytes=90785 ink=0.385 via=
+P10_SMOKE_UI_L2 PASS :: tool=bash status=completed partId=prt_173587804001W3STxQWfLkd3bs cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1 marker=P6LIVE535713 screenshots[bytes=91096 ink=0.386 via=
 P10_SMOKE_UI_S1 PASS :: sealed install ok=t
 P10_SMOKE_UI_S1 PASS :: sealed install ok=true files=1 verified=1 executables=1 problems=[] :: sealed payload: 1 data files (15 bytes, 1 verified), 0 data links, 1 executables from the APK
 P10_SMOKE_UI_S2 PASS :: p
@@ -165,40 +164,40 @@ P10_SMOKE_UI_V4 PASS :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-a
 P10_SMOKE_UI_V5 PASS :: jq
 P10_SMOKE_UI_V5 PASS :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
 P10_SMOKE_UI_V6 FAIL :: python
-P10_SMOKE_UI_V6 FAIL :: python ran=true exit=1 json='Could not find platform independent libraries <prefix>' zlib.crc32='Could not find platform dependent libraries <exec_prefix>' (want 891568578)
+P10_SMOKE_UI_V6 FAIL :: python ran=true exit=1 json='Fatal Python error: Failed to import encodings module' zlib.crc32='Python runtime state: core initialized' (want 891568578)
 P10_SMOKE_UI_X1 PASS :: nativeLib
 P10_SMOKE_UI_X1 PASS :: nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=34 api=34 abi=x86_64 :: OCEXECPROBE ok
 P10_SMOKE_UI_X2 PASS :: appData exec
-P10_SMOKE_UI_X2 PASS :: appData exec refused=true ran=false exit=-1 api=34 targetSdk=34 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~O
+P10_SMOKE_UI_X2 PASS :: appData exec refused=true ran=false exit=-1 api=34 targetSdk=34 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~6
 P10_SMOKE_UI_X3 PASS :: p
 P10_SMOKE_UI_X3 PASS :: prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P10_STORE_ASSETS PASS :: 512 icon + 1024x500 feature graphic + 2 screenshots at a real screen size
 P10_UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
-P10_WS_VISIBILITY_DOCUMENTS_PROVIDER FAIL :: the system Documents provider could not return the folder: Error while accessing provider:com.android.externalstorage.documents;java.lang.IllegalStateException: Could not find provider: com.android.externalstorage.documents;
+P10_WS_VISIBILITY_DOCUMENTS_PROVIDER SKIP :: this device does not let a shell query the Documents provider (Error while accessing provider:com.android.externalstorage.documents)
 P10_WS_VISIBILITY_LOCATION PASS :: the project root exists and holds 2 project(s): /storage/emulated/0/Documents/OpenCode (source: app-reported (W4 gate), Android 14)
 P10_WS_VISIBILITY_PRIVATE_ROOT_NOT_LIVE PASS :: the live project root is outside /data: /storage/emulated/0/Documents/OpenCode
 P10_WS_VISIBILITY_SHARED_ROOT PASS :: the project root is on shared storage and outside Android/data: /storage/emulated/0/Documents/OpenCode (Android 14)
 P10_WS_VISIBILITY_SHELL_BASELINE PASS :: baseline holds: an unprivileged shell cannot read /data/data/io.github.mcyber12.opencode.debug at all, so the PASSs above are real
-P10_WS_VISIBILITY_SHELL_LIST PASS :: a non-root shell lists the project directory (/storage/emulated/0/Documents/OpenCode/w4-storage-1792932477193): 2 lines
-P10_WS_VISIBILITY_SHELL_READ PASS :: read p10-visible.txt from outside the app: 'P10_VISIBLE_1792932477195' (matches /P10_VISIBLE_/)
-P10_WS_VISIBILITY_SHELL_WRITE PASS :: a file written by the non-root shell in /storage/emulated/0/Documents/OpenCode/w4-storage-1792932477193 was readable back: the directory is shared, ordinary storage
+P10_WS_VISIBILITY_SHELL_LIST PASS :: a non-root shell lists the project directory (/storage/emulated/0/Documents/OpenCode/w4-storage-1792936280995): 2 lines
+P10_WS_VISIBILITY_SHELL_READ PASS :: read p10-visible.txt from outside the app: 'P10_VISIBLE_1792936280996' (matches /P10_VISIBLE_/)
+P10_WS_VISIBILITY_SHELL_WRITE PASS :: a file written by the non-root shell in /storage/emulated/0/Documents/OpenCode/w4-storage-1792936280995 was readable back: the directory is shared, ordinary storage
 P10_WS_W1_PROJECT_LIFECYCLE PASS :: c
-P10_WS_W1_PROJECT_LIFECYCLE PASS :: created=p7-life-1792932477776 renamed=p7-renamed-1792932477776 adopted=p7-adopted-1792932477776 delete=true
+P10_WS_W1_PROJECT_LIFECYCLE PASS :: created=p7-life-1792936282011 renamed=p7-renamed-1792936282011 adopted=p7-adopted-1792936282011 delete=true
 P10_WS_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=t
-P10_WS_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_98507339"}'
+P10_WS_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_4c4ad2f7"}'
 P10_WS_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: p
-P10_WS_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1792932477796/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
+P10_WS_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1792936282057/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
 P10_WS_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/sto
 P10_WS_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces se
 P10_WS_W5_SIBLING_PROJECT_CONFINEMENT PASS :: wsRoot=/sto
-P10_WS_W5_SIBLING_PROJECT_CONFINEMENT PASS :: wsRoot=/storage/emulated/0/Documents/OpenCode/p10ws-1792932475964 project=1 seesOwn=true seesSibling=false seesWorkspaceFile=false refused=sibling:true,workspace:true,deep:true readOwn=true/true chatNoFolder=true shape=true chatOwned=true session=ses_e8c
+P10_WS_W5_SIBLING_PROJECT_CONFINEMENT PASS :: wsRoot=/storage/emulated/0/Documents/OpenCode/p10ws-1792936279362 project=1 seesOwn=true seesSibling=false seesWorkspaceFile=false refused=sibling:true,workspace:true,deep:true readOwn=true/true chatNoFolder=true shape=true chatOwned=true session=ses_e8c
 P10_WS_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: f
 P10_WS_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w6-workspace mode=CHOSEN whenSwitched=[] hid=true oldStillOnDisk=true markerIntact=true pendingProjects=3 pendingNam
 P10_WS_W7_PICKER_FOLDER_SWITCHES PASS :: u
 P10_WS_W7_PICKER_FOLDER_SWITCHES PASS :: uri=content://com.android.externalstorage.documents/tree/primary%3AAndroid%2Fdata%2Fio.github.mcyber12.opencode.debug%2Ffiles%2Fp10w7-picked resolved=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w7-picked ok=true from=/storage/e
 STORE-ASSETS PASS: 2 screenshots in /home/runner/work/OpenCode-app/OpenCode-app/docs/store/screenshots (0 rejected)
-P10_SUMMARY 2026-10-25T12:57:43Z
-phase6_ui_fails=1 phase10_gate_fails=4 phase9_gate_fails=0
+P10_SUMMARY 2026-10-25T14:03:50Z
+phase6_ui_fails=1 phase10_gate_fails=3 phase9_gate_fails=0
 NOTE: PASS lines above are real gate executions on the emulator/device. Unit and
       compile lines are NOT runtime evidence. UNSIGNED release artifacts are
       expected in CI: signing is the human step (docs/RELEASE.md).
