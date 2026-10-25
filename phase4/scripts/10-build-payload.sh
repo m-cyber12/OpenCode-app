@@ -864,9 +864,14 @@ build_node() {  # $1=abi $2=target triple $3=node dest cpu $4=gyp arch
   local outdir="$ENGINE/jniLibs/$abi" src="$WORK/node-$abi"
   local cc="$NDK_BIN/${triple}29-clang" cxx="$NDK_BIN/${triple}29-clang++"
   local hostcc="$(command -v gcc cc | head -1)" hostcxx="$(command -v g++ c++ | head -1)"
-  local zprefix="$WORK/zlib-$abi-android"
+  local zprefix="$WORK/zlib-$abi-android" ninja=""
   local ndkhome=""
   ndkhome="$(cd "$NDK_BIN/../../../../.." && pwd)"
+  ninja="$(command -v ninja 2>/dev/null || true)"
+  if [ -z "$ninja" ]; then
+    ninja="$(find "$(dirname "$NDK_ROOT")" -type f -name ninja -perm -111 2>/dev/null | sort -r | head -1)"
+  fi
+  [ -x "$ninja" ] || { note "FATAL: Node needs Ninja (not found on PATH or under Android SDK)"; return 1; }
   local patchdir="$WORK/termux-node-patches"
   note "--- Node $NODE_PIN ($abi, Android/Bionic, no Intl/inspector/snapshot) ---"
   [ -f "$zprefix/lib/libz.a" ] \
@@ -909,20 +914,19 @@ tools-v8_gypfiles-v8.gyp.patch"
       --without-node-snapshot --without-node-code-cache \
       --shared-zlib --shared-zlib-includes="$zprefix/include" \
       --shared-zlib-libpath="$zprefix/lib" \
-      --without-npm --without-corepack >/dev/null
+      --without-npm --without-corepack --ninja >/dev/null
     # Cross-configure leaks external target dependency paths into HOST tools.
     # node_js2c is an x86_64 runner executable; feeding its host linker the
     # arm64 libz.a produced board 40214575682's "incompatible with elf64-x86-64".
-    # Termux makes this same correction in generated Ninja; this build uses
-    # upstream Makefiles, so remove only the target -I/-L from *.host.mk. The
-    # host then resolves Ubuntu's zlib while target makefiles retain our archive.
-    find out -name '*.host.mk' -type f -exec \
+    # Remove only the target -I/-L from Ninja's obj.host rules. `-lz` remains,
+    # so the host resolves Ubuntu zlib while target rules retain our archive.
+    find out/Release/obj.host -name '*.ninja' -type f -exec \
       sed -i -e "s|-I$zprefix/include||g" -e "s|-L$zprefix/lib||g" {} +
-    if find out -name '*.host.mk' -type f -exec grep -lF "$zprefix" {} + | grep -q .; then
-      echo "target zlib path survived in a Node host makefile" >&2
+    if find out/Release/obj.host -name '*.ninja' -type f -exec grep -lF "$zprefix" {} + | grep -q .; then
+      echo "target zlib path survived in a Node host Ninja rule" >&2
       exit 1
     fi
-    timeout 10800 make -j4 >/dev/null
+    timeout 10800 "$ninja" -C out/Release -j4 >/dev/null
   ) || { note "FATAL: Node build failed for $abi"; return 1; }
 
   local built="$src/out/Release/node"

@@ -330,7 +330,14 @@ leakage: the x86_64 host generator `node_js2c` was handed arm64 `libz.a`.
 Termux strips target dependency paths from generated host Ninja rules; this
 build uses Make, so it now strips those paths from `*.host.mk` and asserts none
 survive. Target makefiles still use the pinned Android archive; host generators
-use the runner's host zlib.
+use the runner's host zlib. Board 40218036288 then reached the phase runner's
+old **90-minute** payload timeout while arm64 V8 was still compiling; the
+missing-generated-header errors occurred after `timeout` terminated the active
+build. Make also printed hundreds of duplicate host/target generation recipes.
+The pinned Termux patch set includes a Ninja generator fix specifically
+separating those outputs, so Node now uses Ninja (as Termux does), and the
+payload step has a finite four-hour ceiling appropriate to two V8 ABIs instead
+of the curl-era 90 minutes.
 
 **Still to do after the Node size/run board:** wget and openssh.
 

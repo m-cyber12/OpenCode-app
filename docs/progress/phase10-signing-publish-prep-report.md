@@ -6731,3 +6731,31 @@ This build uses upstream Make, not Ninja. It now removes only
 any host makefile. `-lz` remains, resolving Ubuntu's host zlib for generators;
 target makefiles still link the pinned Android libz.a. Board confirmation is
 pending.
+
+## 2026-10-25 - B.85 - Node board 40218036288: the curl-era timeout killed a healthy V8 compile
+
+This board did not report a normal compiler/linker failure. The phase runner
+ended the payload command exactly at its old boundary:
+
+  STEP_TIMEOUT rc=124 after 5400s: 10-build-payload.sh
+
+At termination arm64 V8 was still compiling. The last missing-header and
+missing-dependency-file errors were emitted after `timeout` killed concurrent
+make jobs; they are fallout, not a source diagnosis. Earlier logs also contain
+hundreds of Make warnings where target and host recipes override each other for
+the same generated V8 outputs. The pinned Termux patch set contains a Ninja
+generator change that separates `obj` and `obj.host`; Termux builds current
+Node with Ninja, not upstream Make, for this reason.
+
+Node now configures with --ninja and builds out/Release with Ninja. The existing
+Termux generator patch is therefore active rather than dead code, removing the
+host/target generation race. The external-zlib cleanup moves to obj.host Ninja
+rules, exactly matching the maintained recipe.
+
+The payload timeout is raised from 5,400 to 14,400 seconds in both Phase 10 and
+the direct Phase 4 runner. This is still a hard four-hour boundary, leaving the
+six-hour Actions job time for device and release gates, but it reflects two V8
+cross-builds plus CPython rather than the old curl-era payload. Termux's own
+current recipe warns Node takes roughly two hours per architecture; killing a
+healthy build at 90 minutes could never produce the requested tool. Board
+confirmation is pending.

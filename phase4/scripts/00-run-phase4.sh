@@ -117,7 +117,9 @@ step "5/9 build the embedded runtime payload (bun/git/rg + OpenCode bundle)"
 # Build both production ABIs. The emulator below exercises x86_64, while the
 # arm64-v8a artifacts are required for the first real-device product path and
 # are verified by Gradle/APK packaging in the same run.
-run_c 3600 "bash '$DIR/scripts/10-build-payload.sh'"
+# Node/V8 is now part of the sealed tool payload; two Android ABIs take far
+# longer than the old Bun/Git-only one-hour ceiling.
+run_c 14400 "bash '$DIR/scripts/10-build-payload.sh'"
 run_c 900 "bash '$DIR/scripts/11-build-mcp.sh'"
 ls -la "$DIR/out/engine/jniLibs/x86_64" "$DIR/out/engine/assets" 2>&1 | tee -a "$MAINLOG"
 
