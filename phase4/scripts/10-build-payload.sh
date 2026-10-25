@@ -696,12 +696,15 @@ done
 #    weight that fails on first import. Modules/Setup.local names them
 #    explicitly, with *static*, and the list is ours rather than whatever the
 #    build host happens to detect.
-# 2. The stdlib ships as ONE zip and is read through zipimport - ~570 files
-#    as one 6 MB payload entry instead of 570 files the extractor has to
-#    write and checksum at first run.
+# 2. The stdlib ships as ONE source zip and is read through zipimport - ~570
+#    files as one ~4.3 MB payload entry instead of 570 files the extractor has
+#    to write and checksum at first run. Do NOT flatten tagged __pycache__
+#    files into this zip: sourceless zipimport looks for module.pyc, not
+#    module.cpython-313.pyc. Board 40191275984 proved the latter cannot even
+#    import encodings during interpreter startup.
 #
 # Both were measured on a host build before being written here: static
-# interpreter 7.3 MB stripped, stdlib zip 6.0 MB (compiled) / 4.3 MB (source).
+# interpreter 7.3 MB stripped (7.1 MB in Android CI), stdlib source zip ~4.3 MB.
 # ---------------------------------------------------------------------------
 build_host_python() {
   local src="$WORK/cpython-host" prefix="$WORK/cpython-host-install"
@@ -800,24 +803,21 @@ _dbm _gdbm _uuid nis ossaudiodev spwd"
 }
 
 build_python_stdlib() {
-  local hostpy="$WORK/cpython-host-install/bin/python3.13"
   local lib="$WORK/python-stdlib"
   rm -rf "$lib" && cp -r "$WORK/cpython-src/Lib" "$lib"
   mkdir -p "$STAGE/usr/lib"
   ( cd "$lib"
     rm -rf test tests idlelib tkinter lib2to3 distutils
     find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
-    # Compiled by the host python of the SAME version: .pyc magic is
-    # version-tagged, not platform-tagged, so these are valid on the phone.
-    "$hostpy" -m compileall -q . >/dev/null 2>&1
-    find . -name "*.py" -delete
-    # zipimport looks for name.cpython-313.pyc BESIDE the module, not in
-    # __pycache__, so flatten before zipping (measured: it works).
-    find . -name "__pycache__" -type d -exec sh -c 'mv "$1"/* "$1/../" 2>/dev/null; rmdir "$1"' _ {} \; 2>/dev/null || true
-    rm -rf __pycache__
+    # Source is both smaller than the compiled archive and unambiguous to
+    # zipimport. Board 40191275984 shipped flattened tagged pycs such as
+    # encodings/__init__.cpython-313.pyc; sourceless zipimport actually looks
+    # for encodings/__init__.pyc, so the interpreter could not initialize its
+    # filesystem codec. Keeping the .py files fixed that in an isolated-prefix
+    # host reproduction and costs ~4.3 MB rather than 6.0 MB.
     zip -qr9 "$STAGE/usr/lib/python3.13.zip" .
   ) || { note "FATAL: python stdlib zip failed"; return 1; }
-  note "python stdlib zip: $(stat -c%s "$STAGE/usr/lib/python3.13.zip") bytes"
+  note "python stdlib source zip: $(stat -c%s "$STAGE/usr/lib/python3.13.zip") bytes"
 }
 
 # jq, and the oniguruma it links for regex (test/match/sub). Built after the

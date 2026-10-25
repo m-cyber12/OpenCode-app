@@ -250,9 +250,12 @@ CPython work here, and both were validated on a host build first:
   with `*static*`, and modules needing libc functions Android lacks (syslog,
   getgrent) or libraries we don't ship (OpenSSL, libffi, sqlite) are dropped by
   name. Measured: **7.3 MB stripped**, all modules inside.
-- **the stdlib is ONE zip, read through zipimport** (~570 modules as a single
-  **6.0 MB** entry, compiled to .pyc by the host python of the same version)
-  rather than 570 files the extractor writes and checksums at first run.
+- **the stdlib is ONE source zip, read through zipimport** (~570 modules as a
+  single **~4.3 MB** entry) rather than 570 files the extractor writes and
+  checksums at first run. Do not flatten tagged `__pycache__` entries into a
+  sourceless archive: zipimport looks for `module.pyc`, not
+  `module.cpython-313.pyc`; board 40191275984 proved that mistake prevents
+  Python from importing even `encodings` during startup.
 
 The cross-build itself needs a build python of the same version, so the payload
 builds a host CPython first rather than betting on what the CI image has.
@@ -278,6 +281,15 @@ not Android surprises** - recorded here so they are not rediscovered:
   everything appended back into shared objects (which `-pie` then refuses to
   link, wanting a `main()`). Stripped interpreter is now **8.0 MB** with the
   full static set (_decimal, CJK codecs, expat included), still zero `.so`.
+
+**Second board (40191275984) proved the native build and found the zip error.**
+Both ABIs built, all packaging/audit gates passed, and the APK was **141.1 MB**
+with **58.9 MB headroom**. V6 alone failed at interpreter startup. The earlier
+host "validation" of the compiled zip was false: that host still had an
+installed stdlib at its configured prefix, so imports silently fell back to
+it. Reproducing with an isolated `PYTHONHOME` gave the same fatal `encodings`
+failure. The payload now keeps `.py` source (smaller anyway), and RuntimeEnv
+sets both the sealed `PYTHONHOME=files/usr` and the exact zip in `PYTHONPATH`.
 
 **Still to do:** node-as-a-tool, wget, openssh - each with a price tag it has to
 fit. Node is the last big one and the budget question is real: a real node

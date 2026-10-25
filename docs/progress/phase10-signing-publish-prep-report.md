@@ -6513,3 +6513,47 @@ extension modules, install tree lib-dynload empty, zlib.crc32(b'abc') =
 _multiprocessing / grp / syslog / ssl / sqlite3 all absent. Stripped
 interpreter 8.0 MB (the full static set is slightly larger than the 7.3 MB
 spike, which had fewer modules). Board re-run pending.
+
+## 2026-10-25 - B.78 - python board 40191275984 built; V6 exposed and corrected a false zip validation
+
+The second python board got all the way onto both debug and release-shaped
+emulators. The native fix is proven:
+
+  python arm64-v8a .......... 7,419,952 bytes, stripped
+  python x86_64 ............. 7,481,128 bytes, stripped
+  compiled stdlib zip ....... 6,280,076 bytes
+  T1 links=202 alreadyCorrect=202
+  T3 shipped=202 outside=[]
+  P10_SIZE apkMb=141.1 capMb=200 headroomMb=58.9
+
+All packaging/audit/size gates passed. V6 was the only sealed-tool failure:
+
+  P6_V6 FAIL :: python ran=true exit=1
+    json='Could not find platform independent libraries <prefix>'
+    zlib.crc32='Could not find platform dependent libraries <exec_prefix>'
+
+This corrects one claim in B.76/B.77: the flattened compiled archive was NOT
+actually validated in isolation. The host binary still had its installed
+stdlib at its configured prefix, so it silently fell back there. Repeating
+with an explicit nonexistent PYTHONHOME reproduced the Android startup
+failure exactly enough to identify it: the interpreter could not import
+`encodings` and initialize its filesystem codec.
+
+The reason is naming, not bytecode portability. compileall creates tagged
+cache files (`encodings/__init__.cpython-313.pyc`). Flattening those beside
+the source directory does not make a sourceless zip: zipimport looks for
+`encodings/__init__.pyc`. The old comment saying it looked for the tagged
+name was wrong.
+
+The correction is deliberately simpler than another bytecode transform:
+ship the source zip already measured at about 4.3 MB (smaller than the
+6.0 MB compiled zip), and set both:
+
+  PYTHONHOME=<filesDir>/usr
+  PYTHONPATH=<filesDir>/usr/lib/python3.13.zip
+
+The home is explicit because the cross-build's configured prefix exists only
+on the CI runner, while argv[0] resolves from files/bin into
+nativeLibraryDir; neither can locate the payload prefix on a phone. An
+isolated-prefix host reproduction with the source zip imports json and zlib
+and returns crc32(b'abc') = 891568578. Board confirmation is pending.

@@ -169,10 +169,11 @@ class HarnessSealedToolsGateTest {
      * The interpreter alone is not the claim. Two things make python work
      * here and both fail quietly: the extension modules (zlib, _socket,
      * _json...) are linked into the binary because Android cannot dlopen
-     * from app data, and the stdlib is a single zip found through PYTHONPATH
-     * rather than an installed prefix that does not exist on a phone. So the
-     * gate imports three C modules and one pure-Python package and checks a
-     * hash - if either half is missing, `import zlib` or `import json` fails.
+     * from app data, and the stdlib is a single source zip found through an
+     * explicit PYTHONHOME/PYTHONPATH rather than an installed prefix that does
+     * not exist on a phone. So the gate imports three C modules and two
+     * pure-Python packages and checks a hash - if either half is missing,
+     * `import zlib` or `import json` fails.
      */
     @Test
     fun v6_pythonRunsFromTheSealedPrefix() {

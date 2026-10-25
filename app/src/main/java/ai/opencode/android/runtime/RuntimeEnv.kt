@@ -88,11 +88,17 @@ object RuntimeEnv {
             // being down rather than like a build-time decision.
             env["CURL_CA_PATH"] = it
         }
-        // v9.42 step 1: the Python stdlib is ONE zip in the payload, read
-        // through zipimport - 570-odd modules as a single 6 MB payload entry
-        // instead of 570 files the extractor writes and checksums at first
-        // run. Everything it needs that is not pure Python is linked into the
-        // interpreter itself, because Android cannot dlopen from app data.
+        // v9.42 step 1: Python needs an explicit prefix on-device. The prefix
+        // compiled into the cross-build is the runner's temporary directory,
+        // while argv[0] resolves through files/bin into nativeLibraryDir; there
+        // is no installed prefix Python can infer from either location. Without
+        // PYTHONHOME, board 40191275984 printed the literal <prefix> warnings
+        // and failed before it could import encodings. The stdlib itself is ONE
+        // source zip read through zipimport (~570 modules as one ~4.3 MB entry)
+        // instead of 570 files the extractor writes and checksums at first run.
+        // Every non-Python dependency is linked into the interpreter because
+        // Android cannot dlopen from app data.
+        env["PYTHONHOME"] = File(paths.filesDir, "usr").absolutePath
         env["PYTHONPATH"] = File(paths.filesDir, "usr/lib/python3.13.zip").absolutePath
         // Loopback only: the value comes from RuntimeEnv.hostname(), which can
         // never return a non-loopback address (and the launcher re-checks it).

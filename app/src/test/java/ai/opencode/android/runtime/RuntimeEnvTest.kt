@@ -52,6 +52,13 @@ class RuntimeEnvTest {
         assertEquals(p.home.absolutePath, env["HOME"])
         assertEquals(p.xdgData.absolutePath, env["XDG_DATA_HOME"])
         assertEquals(p.xdgConfig.absolutePath, env["XDG_CONFIG_HOME"])
+        // CPython cannot infer its sealed prefix: argv[0] is files/bin/python3,
+        // which points into nativeLibraryDir, while the stdlib is payload data.
+        assertEquals(File(p.filesDir, "usr").absolutePath, env["PYTHONHOME"])
+        assertEquals(
+            File(p.filesDir, "usr/lib/python3.13.zip").absolutePath,
+            env["PYTHONPATH"],
+        )
     }
 
     @Test
