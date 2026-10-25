@@ -726,15 +726,34 @@ build_python() {  # $1=abi $2=triple
   local src="$WORK/cpython-$abi"
   rm -rf "$src" && cp -r "$WORK/cpython-src" "$src"
   # Modules that are pure C (or need only zlib, which we cross-build) and
-  # therefore safe to link statically on bionic. Deliberately NOT here:
-  #   syslog, grp  - bionic has neither syslog() nor getgrent()
-  #   _ssl, _hashlib - no OpenSSL; 3.13's Hacl-based _sha*/_md5 cover hashing
-  #   _ctypes, _sqlite3, _bz2, _lzma, _dbm, readline, _tkinter, _uuid, curses
+  # therefore safe to link statically on bionic.
   local allow="_asyncio _bisect _contextvars _csv _datetime _heapq _interpchannels \
 _interpqueues _interpreters _json _lsprof _opcode _pickle _queue _random _socket \
 _statistics _struct _typing _zoneinfo array binascii cmath math mmap select _sysconfig \
 _elementtree pyexpat _md5 _sha1 _sha2 _sha3 unicodedata _posixsubprocess fcntl resource \
-termios zlib _decimal _blake2 _multiprocessing _multibytecodec"
+termios zlib _decimal _blake2 _multibytecodec"
+  # Modules that must not be built at all. Board 40163562970 failed on two of
+  # them, and both failures are instructive rather than incidental:
+  #   _ctypes (and likewise _sqlite3, _bz2, _lzma, readline): configure finds
+  #     the HOST's libraries on the CI runner and enables the module; the
+  #     cross compiler then cannot find ffi.h and the build dies.
+  #   _multiprocessing, _posixshmem: bionic has no named POSIX semaphores, so
+  #     HAVE_MP_SEMAPHORE is undefined and _PyMp_sem_unlink is never compiled -
+  #     while multiprocessing.c calls it whenever POSIX_SEMAPHORES_NOT_ENABLED
+  #     is also undefined. The final link fails. There is therefore no
+  #     `import multiprocessing` in this python; subprocess is unaffected.
+  #   grp, syslog, _ssl, _hashlib, _dbm, _gdbm, _tkinter, curses, _uuid, nis,
+  #     ossaudiodev, spwd: libc functions or libraries Android does not have.
+  # Filtering these out of the Setup.stdlib copy appended below is NOT enough
+  # (that is exactly what the first board did): makesetup also reads
+  # Setup.stdlib itself, and that is where _ctypes came from. makesetup is
+  # first-rule-wins and reads Setup.local first, so naming a module under
+  # *disabled* in Setup.local removes it from every file that follows.
+  local drop="_ctypes _ctypes_test grp syslog _posixshmem _multiprocessing \
+readline _curses _curses_panel _tkinter _ssl _hashlib _sqlite3 _bz2 _lzma \
+_dbm _gdbm _uuid nis ossaudiodev spwd"
+  local dropre=""
+  dropre=$(printf '%s' "$drop" | tr ' ' '|')
   ( cd "$src"
     { echo "*static*"
       for m in $allow; do
@@ -750,13 +769,20 @@ termios zlib _decimal _blake2 _multiprocessing _multibytecodec"
       CFLAGS="-O2 -fPIE -I$zprefix/include" \
       LDFLAGS="-pie -L$zprefix/lib -lz -Wl,-z,max-page-size=16384" >/dev/null
     # Whatever configure auto-detected beyond our list: keep the ones bionic
-    # can actually support, and drop the rest by name so they are never built
-    # (a module that needs a libc function Android does not have would fail
-    # the whole build rather than skip itself).
+    # can actually support (appended here, so they are static too), and then
+    # disable the rest by name. Two details matter:
+    #   - Module lines only. Setup.stdlib begins with its own *shared*
+    #     marker, and copying that marker would turn everything appended back
+    #     into shared objects - unloadable on Android, and not even linkable
+    #     with -pie in LDFLAGS (the host linker wants a main()).
+    #   - The *disabled* section must come LAST in Setup.local: every module
+    #     after the marker is disabled, so anything appended after it would
+    #     be switched off by mistake.
     if [ -f Modules/Setup.stdlib ]; then
-      grep -vE "^(grp|syslog|_posixshmem|readline|_curses|_curses_panel|_tkinter|_ssl|_hashlib|_ctypes|_sqlite3|_bz2|_lzma|_dbm|_gdbm|_uuid) " \
-        Modules/Setup.stdlib >> Modules/Setup.local
+      grep -E "^[a-z_][a-zA-Z0-9_]* " Modules/Setup.stdlib \
+        | grep -vE "^(${dropre}) " >> Modules/Setup.local
     fi
+    { echo "*disabled*"; echo "$drop"; } >> Modules/Setup.local
     timeout 1800 make -j4 >/dev/null
     make install >/dev/null
   ) || { note "FATAL: python build failed for $abi (see python-$abi.log)"; return 1; }

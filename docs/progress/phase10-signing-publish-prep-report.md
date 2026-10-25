@@ -6467,3 +6467,49 @@ host build rather than discovered on a board:
 
 The cross-build needs a build python of the SAME version, so the payload
 builds a host CPython first instead of betting on what the CI image has.
+
+## 2026-10-25 - B.77 - python board 40163562970 failed; both causes fixed and host-verified
+
+The first python board failed at P10-BUILD. The log named two errors, and
+neither was an Android problem - both were CPython build mechanics that the
+host spike could not have shown, because on the host every library exists:
+
+  ./Modules/_ctypes/_ctypes.c:116:10: fatal error: 'ffi.h' file not found
+  ld.lld: error: undefined symbol: _PyMp_sem_unlink
+
+1. _ctypes: configure finds the CI HOST's libffi and enables the module; the
+   cross compiler then has no ffi.h. The build script already "excluded"
+   _ctypes - but only from the copy of Setup.stdlib it appends to
+   Setup.local. makesetup ALSO reads Setup.stdlib itself, and that is the
+   copy that built _ctypes. makesetup is first-rule-wins (its own message:
+   "Detected multiple rules for a module, first rule wins") and reads
+   Setup.local first, so the correct mechanism is a *disabled* section at
+   the end of Setup.local naming the module - it then cannot be resurrected
+   by any later file. The drop list (_ctypes, _sqlite3, _bz2, _lzma,
+   readline, _ssl, _hashlib, _dbm, _gdbm, _tkinter, curses, _uuid, grp,
+   syslog, nis, ossaudiodev, spwd) now drives both the append filter and
+   that section, so the two cannot drift apart.
+
+2. _multiprocessing: bionic has no named POSIX semaphores, so
+   HAVE_MP_SEMAPHORE is undefined and semaphore.c compiles to nothing -
+   while multiprocessing.c calls _PyMp_sem_unlink whenever
+   POSIX_SEMAPHORES_NOT_ENABLED is also undefined. Upstream assumes those
+   two defines move together; on Android they do not. _multiprocessing is
+   not built. Measured consequence on the host build: `Process` still works
+   (fork + pipes via _posixsubprocess), `Lock` and `Queue` raise
+   ModuleNotFoundError, `Value` raises it for _ctypes.
+
+Fixing the append also exposed a third latent problem the first board never
+reached: Setup.stdlib begins with its own *shared* marker, and the old
+append copied it verbatim into Setup.local, turning every appended module
+back into a shared object - unloadable on Android, and on the host not even
+linkable with -pie in LDFLAGS ("undefined reference to main"). The append
+now copies module lines only.
+
+Host verification of the exact patched logic (lists extracted from the
+script, local zlib standing in for the cross one): make rc=0, ZERO shared
+extension modules, install tree lib-dynload empty, zlib.crc32(b'abc') =
+891568578, _decimal/hashlib/subprocess/CJK codecs all import, _ctypes /
+_multiprocessing / grp / syslog / ssl / sqlite3 all absent. Stripped
+interpreter 8.0 MB (the full static set is slightly larger than the 7.3 MB
+spike, which had fewer modules). Board re-run pending.

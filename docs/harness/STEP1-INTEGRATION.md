@@ -257,6 +257,28 @@ CPython work here, and both were validated on a host build first:
 The cross-build itself needs a build python of the same version, so the payload
 builds a host CPython first rather than betting on what the CI image has.
 
+**First board (40163562970) failed, and both failures were CPython mechanics,
+not Android surprises** - recorded here so they are not rediscovered:
+
+- `_ctypes` died on `ffi.h: file not found`. Configure finds the CI host's
+  libffi (likewise sqlite/bzip2/lzma/readline) and enables the module; the
+  cross compiler then has no such header. Filtering those names out of the
+  Setup.stdlib copy appended to Setup.local was NOT enough, because makesetup
+  also reads Setup.stdlib itself. makesetup is **first-rule-wins** and reads
+  Setup.local first, so the fix is a `*disabled*` section at the END of
+  Setup.local naming every unwanted module - that removes it from all files.
+- `_PyMp_sem_unlink` was an undefined symbol at final link. bionic has no
+  named POSIX semaphores, so `HAVE_MP_SEMAPHORE` is undefined and semaphore.c
+  compiles to nothing, while multiprocessing.c references the symbol whenever
+  `POSIX_SEMAPHORES_NOT_ENABLED` is also undefined. `_multiprocessing` is
+  therefore not built: plain `Process` still works (it is fork + pipes), but
+  `Lock`/`Queue` raise ModuleNotFoundError. Verified on the host build.
+- The appended Setup.stdlib copy must contribute **module lines only**: the
+  file starts with its own `*shared*` marker, and copying that marker turns
+  everything appended back into shared objects (which `-pie` then refuses to
+  link, wanting a `main()`). Stripped interpreter is now **8.0 MB** with the
+  full static set (_decimal, CJK codecs, expat included), still zero `.so`.
+
 **Still to do:** node-as-a-tool, wget, openssh - each with a price tag it has to
 fit. Node is the last big one and the budget question is real: a real node
 binary is ~40 MB per ABI against the ~50 MB this leaves.

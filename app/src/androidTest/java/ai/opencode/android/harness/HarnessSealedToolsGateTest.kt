@@ -180,7 +180,7 @@ class HarnessSealedToolsGateTest {
             HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
             val paths = RuntimePaths.get(context)
             val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
-            val script = "python3 -c 'import zlib, socket, json, pathlib; " +
+            val script = "python3 -c 'import zlib, socket, json, pathlib, decimal; " +
                 "print(json.dumps({\'ok\': True})); print(zlib.crc32(b\'abc\'))'"
             val run = shellIn(env, script)
             val lines = run.output.trim().split("\n").map { it.trim() }
