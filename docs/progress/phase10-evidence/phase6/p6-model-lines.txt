@@ -16,12 +16,12 @@ P6_F1 PASS :: firstScreen=welcome workspaceStep=true stages=[extracting, startin
 P6_F2 PASS :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=false,chat=false,workspace=true) leakedTokens=[] screenshot=43202
 P6_F3 PASS :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:43202,projects:65751
 P6_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=35891, 02-first-run-ready.png=43202, 02b-first-run-workspace.png=43202, 04-first-run-projects.png=65751]
-P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=59266 ink=0.310 via=compose] reply='Blue.'
-P6_L2 PASS :: tool=bash status=completed partId=prt_173587804001W3STxQWfLkd3bs cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1 marker=P6LIVE535713 screenshots[bytes=91096 ink=0.386 via=compose | bytes=103255 ink=0.453 via=compose]
+P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=13 replyShownInUi=true(needle='think') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=60894 ink=0.311 via=compose] reply='</think>Blue.'
+P6_L2 PASS :: tool=bash status=completed partId=prt_173950613001UlumvpuaE4ylPQ cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1 marker=P6LIVE505448 screenshots[bytes=93922 ink=0.360 via=compose | bytes=108867 ink=0.456 via=compose]
 P6_MODEL_AVAILABLE 1 ::
-P6_MODEL_AVAILABLE 1 :: replyChars=5 asksAnswered=0
+P6_MODEL_AVAILABLE 1 :: replyChars=13 asksAnswered=0
 P6_X1 PASS :: nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=34 api=34 abi=x86_64 :: OCEXECPROBE ok
-P6_X2 PASS :: appData exec refused=true ran=false exit=-1 api=34 targetSdk=34 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~6
+P6_X2 PASS :: appData exec refused=true ran=false exit=-1 api=34 targetSdk=34 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~N
 P6_X3 PASS :: prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P6_S1 PASS :: sealed install ok=true files=1 verified=1 executables=1 problems=[] :: sealed payload: 1 data files (15 bytes, 1 verified), 0 data links, 1 executables from the APK
 P6_S2 PASS :: prefix exec symlink=true ran=true exit=0 targetSdk=34 api=34 :: OCEXECPROBE ok
@@ -35,4 +35,4 @@ P6_V2 PASS :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
 P6_V3 PASS :: agent env PATH[0]=/data/user/0/io.github.mcyber12.opencode/files/bin (want /data/user/0/io.github.mcyber12.opencode/files/bin) SHELL=/data/user/0/io.github.mcyber12.opencode/files/bin/sh ran=true exit=0 out='1' tr=/data/user/0/io.github.mcyber12.opencode/files/bin/tr
 P6_V4 PASS :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-android) libcurl/8.10.1 mbedTLS' CURL_CA_PATH=/apex/com.android.conscrypt/cacerts isDir=true
 P6_V5 PASS :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
-P6_V6 FAIL :: python ran=true exit=1 json='Fatal Python error: Failed to import encodings module' zlib.crc32='Python runtime state: core initialized' (want 891568578)
+P6_V6 FAIL :: python ran=true exit=1 json='Traceback (most recent call last):' zlib.crc32='File "<string>", line 1, in <module>' (want 891568578)
