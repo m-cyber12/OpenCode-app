@@ -6388,3 +6388,39 @@ CAs), so `CURL_CA_PATH` now points it at Android's own CA store, the same
 directory git gets through `GIT_SSL_CAPATH`. V4 asserts both halves: that
 curl runs, and that the CA path names a directory that exists - a curl that
 starts but trusts nothing is the failure mode worth gating.
+
+## 2026-10-24 - B.75 - slice E green: the agent's env is ours, and size is a number
+
+Run 40153956154 is green, and the two lines worth keeping are these:
+
+  P6_V3 PASS :: agent env PATH[0]=.../files/bin SHELL=.../files/bin/sh
+               ran=true exit=0 out='1' tr=.../files/bin/tr
+  P6_V4 PASS :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-android)
+               libcurl/8.10.1 mbedTLS' CURL_CA_PATH=/apex/com.android.conscrypt/cacerts
+               isDir=true
+
+V3's `tr=.../files/bin/tr` is the whole point of the gate: /system/bin has its
+own toybox, and a PATH that merely *contained* our prefix would have handed
+the agent the device's `tr` while every other gate stayed green. It resolved
+to ours. And curl's CA path is the device's own Conscrypt APEX store, so
+trust follows the phone rather than a bundle baked into our build.
+
+  T1 links=199 alreadyCorrect=199     T3 shipped=199 outside=[]
+  P10_SIZE PASS :: apkMb=135.0 capMb=200 headroomMb=65.0
+  native libs 10 -> 11 per ABI; arm64 127.2 -> 128.7 MB
+  JVM tests=477 failures=0    ui_gates_pass=34 ui_gates_fail=0
+
+curl cost 1.5 MB per ABI (a binary the build produced anyway) and the size
+gate now reports the wall on every release build: 65 MB left of Play's 200 MB.
+
+**jq is the next board, and it is the first real cross-build in this
+sequence.** jq needs oniguruma for `test`/`match`/`sub`, and jq's repo carries
+oniguruma as a SUBMODULE - a clone has an empty modules/oniguruma, so
+--with-oniguruma=builtin fails there, and whether the release tarball bundles
+it depends on how it was rolled. Building oniguruma separately and pointing jq
+at the prefix makes the answer independent of that question.
+
+V5 therefore calls a regex function, not just `jq --version`: a jq built
+without oniguruma still starts, still prints a version and still answers `.a`
+- it fails only when something uses `test`, halfway through somebody's JSON.
+A gate that only checks the version would have shipped exactly that.

@@ -231,10 +231,18 @@ same directory git gets); without that, every https request dies with a
 certificate error that looks like the network being down. V4 asserts both: that
 curl runs, and that the CA path points at a directory that exists.
 
-**Still to do:** python, node-as-a-tool, jq, wget, openssh - each with a price
-tag it has to fit. jq comes next and is the first real cross-build in this
-sequence (it wants oniguruma for regex, or it ships without `test`/`match`),
-so it gets its own board rather than riding along with a known-good change.
+**jq (2026-10-24): the first real cross-build here.** jq needs oniguruma for
+its regex functions, and jq's repo carries oniguruma as a *submodule* - so a
+clone has an empty `modules/oniguruma` and `--with-oniguruma=builtin` fails
+there, while a release tarball may or may not bundle it. So oniguruma is built
+separately and jq is pointed at it: the answer no longer depends on what any
+tarball happens to ship. V5 calls `test("b")` on purpose - a jq built without
+oniguruma still starts, still prints its version and still answers `.a`; it
+only fails when something uses a regex function, which is the worst possible
+place to find out.
+
+**Still to do:** python, node-as-a-tool, wget, openssh - each with a price tag
+it has to fit, and the budget is now measured every run (65.0 MB left).
 
 Play forbids downloading executable code, so the store shape is **sealed**:
 every executable is a symlink into `nativeLibraryDir` (the inode comes from the

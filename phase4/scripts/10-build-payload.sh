@@ -53,6 +53,8 @@ ZLIB_PIN="v1.3.1"
 # GPL-2.0-or-later - we use its GPL option, which composes cleanly.
 CURL_PIN="8.10.1"
 MBEDTLS_PIN="3.6.2"
+JQ_PIN="1.7.1"
+ONIGURUMA_PIN="6.9.10"
 BUN_PIN="1.3.14"
 RG_PIN="15.1.0"
 PAYLOAD_VERSION=7   # 7 = Phase 9: bare OPENCODE_VERSION + pre-seeded @opencode-ai/plugin tree (plugin-seed/); 6 = bare version only; 5 = Phase 5 launcher/Keystore layout
@@ -223,6 +225,23 @@ curl -fsSL --retry 3 --max-time 180 -o "$WORK/curl.tgz" \
   "https://github.com/curl/curl/releases/download/curl-${CURL_PIN//./_}/curl-${CURL_PIN}.tar.gz"
 rm -rf "$WORK/curl-src" && mkdir -p "$WORK/curl-src"
 tar xzf "$WORK/curl.tgz" -C "$WORK/curl-src" --strip-components=1
+
+# v9.42 step 1 (slice E): jq, and the regex engine it links. Release tarballs
+# for both, and oniguruma built SEPARATELY rather than as jq's "builtin":
+# jq's repo carries oniguruma as a git SUBMODULE, so a clone has an empty
+# modules/oniguruma and --with-oniguruma=builtin fails there, while the
+# release tarball may or may not bundle it depending on how it was rolled.
+# Pointing jq at a prefix we built ourselves makes the answer independent of
+# that, and keeps regex support (test/match/sub) instead of shipping a jq
+# that errors on the regex functions.
+curl -fsSL --retry 3 --max-time 180 -o "$WORK/jq.tgz" \
+  "https://github.com/jqlang/jq/releases/download/jq-${JQ_PIN}/jq-${JQ_PIN}.tar.gz"
+rm -rf "$WORK/jq-src" && mkdir -p "$WORK/jq-src"
+tar xzf "$WORK/jq.tgz" -C "$WORK/jq-src" --strip-components=1
+curl -fsSL --retry 3 --max-time 180 -o "$WORK/oniguruma.tgz" \
+  "https://github.com/kkos/oniguruma/releases/download/v${ONIGURUMA_PIN}/onig-${ONIGURUMA_PIN}.tar.gz"
+rm -rf "$WORK/oniguruma-src" && mkdir -p "$WORK/oniguruma-src"
+tar xzf "$WORK/oniguruma.tgz" -C "$WORK/oniguruma-src" --strip-components=1
 
 build_git_android() {  # $1=abi $2=target triple $3=lib dir
   local abi="$1" triple="$2" outdir="$3"
@@ -599,10 +618,72 @@ build_toybox() {  # $1=abi $2=triple
        "$(wc -l < "$WORK/toybox-commands.txt") commands"
 }
 
+build_oniguruma() {  # $1=abi $2=triple
+  local abi="$1" triple="$2"
+  local cc="$NDK_BIN/${triple}29-clang" ar="$NDK_BIN/llvm-ar" ranlib="$NDK_BIN/llvm-ranlib"
+  local oprefix="$WORK/oniguruma-$abi-android"
+  ( cd "$WORK/oniguruma-src"
+    make distclean >/dev/null 2>&1 || true
+    ./configure --host="$triple" --prefix="$oprefix" \
+      --disable-shared --enable-static \
+      CC="$cc" AR="$ar" RANLIB="$ranlib" CFLAGS="-O2 -fPIC" >/dev/null
+    make -j4 >/dev/null
+    make install >/dev/null
+  ) || { note "FATAL: oniguruma build failed for $abi"; return 1; }
+  [ -f "$oprefix/lib/libonig.a" ] || { note "FATAL: libonig.a missing for $abi"; return 1; }
+  note "oniguruma $abi: $(stat -c%s "$oprefix/lib/libonig.a") bytes"
+}
+
+build_jq() {  # $1=abi $2=triple
+  local abi="$1" triple="$2" outdir="$ENGINE/jniLibs/$abi"
+  local cc="$NDK_BIN/${triple}29-clang" ar="$NDK_BIN/llvm-ar" ranlib="$NDK_BIN/llvm-ranlib"
+  local oprefix="$WORK/oniguruma-$abi-android" jprefix="$WORK/jq-$abi-android"
+  # A fresh tree per ABI: jq builds in-tree, and the two ABIs would otherwise
+  # fight over config.status and the generated Makefiles.
+  local src="$WORK/jq-$abi"
+  rm -rf "$src" && cp -r "$WORK/jq-src" "$src"
+  ( cd "$src"
+    ./configure --host="$triple" --prefix="$jprefix" \
+      --disable-shared --enable-static \
+      --with-oniguruma="$oprefix" \
+      CC="$cc" AR="$ar" RANLIB="$ranlib" \
+      CFLAGS="-O2 -fPIE -I$oprefix/include" \
+      LDFLAGS="-pie -L$oprefix/lib -Wl,-z,max-page-size=16384" >/dev/null
+    # The release tarball ships a pre-generated parser and lexer, so no host
+    # bison/flex is needed - but if make ever decides parser.y is NEWER than
+    # parser.c (equal timestamps from the tarball are decided by mtime), it
+    # tries to regenerate and fails. Up to date, unconditionally.
+    touch src/parser.c src/lexer.c
+    timeout 900 make -j4 >/dev/null
+    make install >/dev/null
+  ) || { note "FATAL: jq build failed for $abi"; return 1; }
+  local installed="$jprefix/bin/jq"
+  [ -f "$installed" ] || { note "FATAL: jq was not installed for $abi"; return 1; }
+  # libtool leaves a wrapper SCRIPT where the binary should be when it links
+  # against an uninstalled shared library. A shell script named jq would be
+  # sealed, symlinked into the prefix, and then fail at the first call - so
+  # check the magic bytes instead of trusting the name.
+  head -c 4 "$installed" | grep -q ELF \
+    || { note "FATAL: installed jq is not an ELF binary ($abi)"; return 1; }
+  cp "$installed" "$outdir/libjq.so"
+  chmod 755 "$outdir/libjq.so"
+  note "jq $abi: $(stat -c%s "$outdir/libjq.so") bytes"
+}
+
+
 for abi in "${ABIS[@]}"; do
   case "$abi" in
     x86_64)    build_mksh "$abi" "x86_64-linux-android";  build_toybox "$abi" "x86_64-linux-android" ;;
     arm64-v8a) build_mksh "$abi" "aarch64-linux-android"; build_toybox "$abi" "aarch64-linux-android" ;;
+  esac
+done
+
+# jq, and the oniguruma it links for regex (test/match/sub). Built after the
+# shell and coreutils so a failure here cannot take the userland core with it.
+for abi in "${ABIS[@]}"; do
+  case "$abi" in
+    x86_64)    build_oniguruma "$abi" "x86_64-linux-android";  build_jq "$abi" "x86_64-linux-android" ;;
+    arm64-v8a) build_oniguruma "$abi" "aarch64-linux-android"; build_jq "$abi" "aarch64-linux-android" ;;
   esac
 done
 
@@ -612,7 +693,7 @@ done
 READELF="$NDK_BIN/llvm-readelf"
 [ -x "$READELF" ] || READELF="$(command -v llvm-readelf readelf | head -1)"
 for abi in "${ABIS[@]}"; do
-  for so in libmksh.so libtoybox.so; do
+  for so in libmksh.so libtoybox.so libjq.so; do
     "$READELF" -h "$ENGINE/jniLibs/$abi/$so" 2>&1 | tee -a "$STATUS" | grep -q 'DYN' \
       || { note "FATAL: $so ($abi) is not a PIE/DYN executable (ELF header above)"; exit 1; }
   done
@@ -620,8 +701,9 @@ done
 
 # The sealed exec records: the runtime's five tools, then the shell, then every
 # command toybox built. One line each, "<prefix path> <TAB> <library>".
-printf 'bin/bun\tlibbun.so\nbin/git\tlibgit.so\nbin/rg\tlibrg.so\nbin/curl\tlibcurl.so\n' \
+printf 'bin/bun\tlibbun.so\nbin/git\tlibgit.so\nbin/rg\tlibrg.so\n' \
   > "$SEALED_EXEC_RECORDS"
+printf 'bin/curl\tlibcurl.so\nbin/jq\tlibjq.so\n' >> "$SEALED_EXEC_RECORDS"
 printf 'bin/git-remote-http\tlibgitremotehttp.so\nbin/git-remote-https\tlibgitremotehttp.so\n' \
   >> "$SEALED_EXEC_RECORDS"
 printf 'bin/sh\tlibmksh.so\n' >> "$SEALED_EXEC_RECORDS"

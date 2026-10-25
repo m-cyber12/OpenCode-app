@@ -136,6 +136,33 @@ class HarnessSealedToolsGateTest {
         printGate("V4", measured.first, measured.second)
     }
 
+    /**
+     * V5: jq runs, and its regex functions work.
+     *
+     * The second half is the point. jq can be built without oniguruma, and
+     * such a jq still starts, still prints its version, and still answers
+     * `.a` - it only fails when something calls `test`, `match` or `sub`, at
+     * which point the agent gets "jq was built without oniguruma support"
+     * mid-pipeline. So the gate calls one: if oniguruma was dropped, this
+     * fails here rather than in the middle of somebody's JSON.
+     */
+    @Test
+    fun v5_jqRunsWithRegexSupport() {
+        val measured = runCatching {
+            HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
+            val paths = RuntimePaths.get(context)
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val run = shellIn(env, "echo '{\"a\":1}' | jq -r .a; echo '\"abc\"' | jq -r 'test(\"b\")'")
+            val lines = run.output.trim().split("\n").map { it.trim() }
+            val ok = run.ran && run.exitCode == 0 &&
+                lines.firstOrNull() == "1" && lines.getOrNull(1) == "true"
+            val detail = "jq ran=${run.ran} exit=${run.exitCode} field='${lines.firstOrNull()}' " +
+                "regex='${lines.getOrNull(1)}' (want 1 then true)"
+            ok to detail
+        }.getOrElse { t -> false to "threw ${t.javaClass.simpleName}: ${t.message}" }
+        printGate("V5", measured.first, measured.second)
+    }
+
     private fun shell(script: String): Run =
         try {
             val process = ProcessBuilder(File(binDir, "sh").absolutePath, "-c", script)

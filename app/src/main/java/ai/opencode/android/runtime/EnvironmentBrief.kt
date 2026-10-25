@@ -406,8 +406,9 @@ PATH order is OUR prefix first, then Android's /system/bin:
 
 `bun` is the full runtime and the answer to most scripting: `bun -e '...'`,
 `bun run script.ts`, `Bun.serve`, `fetch`, JSON, bundling. Reach for it
-before anything shaped like python or curl. `git` speaks https (certs come
-from the device's own CA store) and `rg` is ripgrep.
+before anything shaped like python. `git` speaks https (certs come from the
+device's own CA store), `rg` is ripgrep, and `curl` and `jq` are both there
+- including jq's regex functions (`test`, `match`, `sub`).
 
 NOT installed - do not probe: python, node, npm, pip, perl, ruby, wget,
 apt. There is NO node binary: npm-style CLIs start with
