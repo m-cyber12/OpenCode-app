@@ -6596,3 +6596,37 @@ Two direct build assertions now stop this class of error before Gradle:
 This is stronger than checking STAGE, because checking STAGE is exactly how a
 file that never entered the APK looked complete twice. Board confirmation is
 pending.
+
+## 2026-10-25 - B.80 - python board 40200765125: runtime works; V6 shell quoting was wrong
+
+The fourth board changed failure shape completely:
+
+  P6_V6 FAIL :: python ran=true exit=1
+    json='Traceback (most recent call last):'
+    zlib.crc32='File "<string>", line 1, in <module>'
+  P10_SIZE apkMb=145.4 capMb=200 headroomMb=54.6
+
+The +4.3 MB APK growth proves the source zip finally shipped. Python passed
+startup, found `encodings`, and completed this whole import statement:
+
+  import zlib, socket, json, pathlib, decimal
+
+The error after it was in the gate command. It gave the shell:
+
+  python3 -c '... json.dumps({'ok': True}) ... crc32(b'abc') ...'
+
+POSIX shells concatenate adjacent quoted/unquoted segments. The outer single
+quotes therefore consume the Python literal quotes, and Python receives:
+
+  json.dumps({ok: True}) ... crc32(babc)
+
+That reproduces the board traceback exactly:
+
+  NameError: name 'ok' is not defined
+
+This was hidden by V6 reporting only the first two output lines; nonetheless
+the ordering is conclusive: if any import failed, execution could not reach
+the dict expression and name lookup. The correction is test-only: shell
+`-c` now uses outer double quotes while Python retains the single-quoted dict
+key and bytes literal. No payload/runtime code changes are needed. Board
+confirmation is pending.

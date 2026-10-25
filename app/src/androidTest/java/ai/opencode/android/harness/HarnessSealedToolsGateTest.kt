@@ -181,16 +181,21 @@ class HarnessSealedToolsGateTest {
             HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
             val paths = RuntimePaths.get(context)
             val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
-            val script = "python3 -c 'import zlib, socket, json, pathlib, decimal; " +
-                "print(json.dumps({\'ok\': True})); print(zlib.crc32(b\'abc\'))'"
+            // The shell quotes must be OUTSIDE Python's single quotes. The
+            // previous inverse (`-c '... {'ok': True} ...'`) was valid shell,
+            // but adjacent quote segments stripped the inner quotes and Python
+            // received `{ok: True}` / `babc` (board 40200765125: NameError).
+            val script = "python3 -c \"import zlib, socket, json, pathlib, decimal; " +
+                "print(json.dumps({'ok': True})); print(zlib.crc32(b'abc'))\""
             val run = shellIn(env, script)
             val lines = run.output.trim().split("\n").map { it.trim() }
             // crc32(b'abc') == 891568578, and the stdlib zip is what makes
             // json importable at all - no installed prefix exists on a phone.
             val ok = run.ran && run.exitCode == 0 &&
                 lines.firstOrNull() == "{\"ok\": true}" && lines.getOrNull(1) == "891568578"
+            val compact = run.output.trim().replace("\n", " <NL> ").take(800)
             val detail = "python ran=${run.ran} exit=${run.exitCode} json='${lines.firstOrNull()}' " +
-                "zlib.crc32='${lines.getOrNull(1)}' (want 891568578)"
+                "zlib.crc32='${lines.getOrNull(1)}' (want 891568578) output='$compact'"
             ok to detail
         }.getOrElse { t -> false to "threw ${t.javaClass.simpleName}: ${t.message}" }
         printGate("V6", measured.first, measured.second)

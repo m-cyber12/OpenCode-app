@@ -300,6 +300,14 @@ after every producer, `PayloadExtractor` promotes the verified `usr` root, and
 the build directly asserts that both the tar and runtime manifest contain the
 zip before Gradle is allowed to package the app.
 
+**Fourth board (40200765125) proved Python itself works.** The APK grew to
+**145.4 MB** (the 4.5 MB archive finally shipped), Python started, found its
+source zip, and completed all V6 imports. The traceback was the test command:
+the shell's outer single quotes consumed Python's inner quotes, turning
+`{'ok': True}` into `{ok: True}` and `b'abc'` into `babc`; the resulting
+`NameError` is reproduced byte-for-byte with any shell. V6 now wraps `-c` in
+double quotes so those Python literals arrive intact.
+
 **Still to do:** node-as-a-tool, wget, openssh - each with a price tag it has to
 fit. Node is the last big one and the budget question is real: a real node
 binary is ~40 MB per ABI against the ~50 MB this leaves.
