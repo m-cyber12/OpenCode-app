@@ -6630,3 +6630,61 @@ the dict expression and name lookup. The correction is test-only: shell
 `-c` now uses outer double quotes while Python retains the single-quoted dict
 key and bytes literal. No payload/runtime code changes are needed. Board
 confirmation is pending.
+
+## 2026-10-25 - B.81 - python is green on board 40205885278
+
+The fifth Python board is the closure evidence, on both debug and the
+release-shaped build:
+
+  P6_V6 PASS :: python ran=true exit=0
+    json='{"ok": true}' zlib.crc32='891568578'
+  P10_SMOKE_UI_V6 PASS :: same values
+  P6-UI totals: pass=36 fail=0 skip=0
+  P10_SMOKE_UI PASS :: pass=36 fail=0 skip=0
+  T1 links=202 alreadyCorrect=202
+  T3 shipped=202 outside=[]
+  P10_SIZE apkMb=145.4 capMb=200 headroomMb=54.6
+
+Built artifacts are 7,419,952 bytes arm64 and 7,481,128 bytes x86_64;
+the source stdlib zip is 4,495,301 bytes and the build's final-artifact
+assertion says the tar and runtime manifest agree. Python is no longer a
+promise based on a host spike: it is a sealed-prefix command executed by the
+same instrumentation on the debug and release-shaped APKs.
+
+## 2026-10-25 - B.82 - Node/npm selected next; source build because the easy binary is not shippable
+
+The remaining headroom is 54.6 MB, so Node is the last large budget decision.
+The easy candidate was measured before use:
+
+  nodejs-mobile-react-native 18.20.4 libnode.so
+    arm64 raw 62,475,584 bytes; gzip 17,601,400
+    x86_64 raw 65,361,944 bytes; gzip 18,495,345
+
+Its compression suggests Node can fit, but the artifact itself cannot ship as
+this tool: it is Node 18, exports node::Start but has no main(), depends on a
+separate C++ runtime, and every PT_LOAD segment is aligned to 0x1000 (4 KiB).
+The complete API 36 package must run on 16 KiB-page devices. Renaming that
+library would create a small APK that fails the platform requirement.
+
+The implemented build therefore pins Node 24.22.1 (active LTS, above
+OpenCode's node:sqlite >=22.5 floor), and the exact current Termux nodejs-lts
+Android patch commit 2d6b9d566c2e933c50e675198a0d7847a96deb61. Upstream
+explicitly calls Android unsupported; using its android-configure with no
+maintained fixes would make the first device the integration test. The build
+keeps OpenSSL and the bundled dependencies, but omits Intl, inspector, the
+snapshot and code cache for this CLI-only runtime. Bun remains the server in
+additive step 1.
+
+npm 11.19.1 is the package bundled by this Node tag. Its JavaScript tree is
+payload data. Because app data is no-exec, bin/npm and bin/npx do not point at
+those shebang scripts: they point at a small native PIE which finds sibling
+libnode.so through /proc/self/exe and execs it with the verified CLI JS path
+under OPENCODE_FILES_DIR. The shim was host-compiled and exercised against the
+exact extracted npm tree: npm --version and npx --version both returned
+11.19.1.
+
+V7 is stronger than a version probe: it creates a tiny local dependency,
+runs npm install without network or lifecycle scripts, and requires the
+installed package through Node, expecting 42. The build also requires npm's
+package.json in both the final payload tar and per-file manifest. Cross-build,
+16 KiB alignment, device runtime and final APK size are pending the board.

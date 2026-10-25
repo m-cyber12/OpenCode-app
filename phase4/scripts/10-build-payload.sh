@@ -5,6 +5,7 @@
 #   phase4/out/engine/jniLibs/<abi>/libbun.so  (Bun-for-Android, bionic)
 #   phase4/out/engine/jniLibs/<abi>/libgit.so  (Git v2.48.1, Android/Bionic executable)
 #   phase4/out/engine/jniLibs/<abi>/librg.so   (ripgrep 15.1.0, Android/Bionic executable)
+#   phase4/out/engine/jniLibs/<abi>/libnode.so (Node 24, Android/Bionic executable)
 #   phase4/out/engine/assets/runtime-payload.tar.gz  (server bundle, node_modules, launcher)
 #   phase4/out/engine/assets/runtime-manifest.json   (versions + sha256 of every payload file)
 #
@@ -55,6 +56,14 @@ CURL_PIN="8.10.1"
 MBEDTLS_PIN="3.6.2"
 JQ_PIN="1.7.1"
 PYTHON_PIN="3.13.1"
+# Node 24 is the active LTS line and satisfies upstream OpenCode's node:sqlite
+# floor (>=22.5). npm is the version bundled in this exact Node release.
+NODE_PIN="24.22.1"
+NPM_PIN="11.19.1"
+# Android fixes from the exact Termux nodejs-lts recipe current for NODE_PIN.
+# Upstream calls Android unsupported; pinning these patches is what turns its
+# best-effort android-configure into a reproducible CLI build.
+NODE_TERMUX_PATCH_PIN="2d6b9d566c2e933c50e675198a0d7847a96deb61"
 ONIGURUMA_PIN="6.9.10"
 BUN_PIN="1.3.14"
 RG_PIN="15.1.0"
@@ -251,6 +260,21 @@ curl -fsSL --retry 3 --max-time 300 -o "$WORK/cpython.tgz" \
   "https://codeload.github.com/python/cpython/tar.gz/refs/tags/v${PYTHON_PIN}"
 rm -rf "$WORK/cpython-src" && mkdir -p "$WORK/cpython-src"
 tar xzf "$WORK/cpython.tgz" -C "$WORK/cpython-src" --strip-components=1
+
+# Node 24 + the Android patch set maintained by Termux. codeload is deliberate:
+# GitHub release-asset hosts are not reachable in the reproducible build
+# environment, while tag/commit archives are. The Node archive is kept packed
+# and extracted fresh per ABI so two V8 output trees do not exhaust runner disk.
+curl -fsSL --retry 3 --max-time 600 -o "$WORK/node.tgz" \
+  "https://codeload.github.com/nodejs/node/tar.gz/refs/tags/v${NODE_PIN}"
+curl -fsSL --retry 3 --max-time 300 -o "$WORK/termux-node-patches.tgz" \
+  "https://codeload.github.com/termux/termux-packages/tar.gz/${NODE_TERMUX_PATCH_PIN}"
+rm -rf "$WORK/termux-node-patches" && mkdir -p "$WORK/termux-node-patches"
+tar xzf "$WORK/termux-node-patches.tgz" -C "$WORK/termux-node-patches" \
+  --strip-components=3 \
+  "termux-packages-${NODE_TERMUX_PATCH_PIN}/packages/nodejs-lts"
+[ -f "$WORK/termux-node-patches/node.gyp.patch" ] \
+  || { note "FATAL: pinned Termux Node patch set did not extract"; exit 1; }
 
 build_git_android() {  # $1=abi $2=target triple $3=lib dir
   local abi="$1" triple="$2" outdir="$3"
@@ -827,6 +851,100 @@ build_python_stdlib() {
   note "python stdlib source zip: $(stat -c%s "$STAGE/usr/lib/python3.13.zip") bytes"
 }
 
+# ---------------------------------------------------------------------------
+# Node 24: a REAL Android/Bionic executable, not the 4 KiB-aligned libnode from
+# nodejs-mobile (which cannot run on 16 KiB-page devices and has no main()).
+# Upstream labels Android unsupported, so use the pinned Termux Android fixes
+# current for this exact Node release. Dependencies stay bundled; Intl,
+# inspector, snapshots and code cache are omitted because this is the user's
+# CLI tool, not the OpenCode server (Bun remains the server in additive step 1).
+# ---------------------------------------------------------------------------
+build_node() {  # $1=abi $2=target triple $3=node dest cpu $4=gyp arch
+  local abi="$1" triple="$2" destcpu="$3" gyparch="$4"
+  local outdir="$ENGINE/jniLibs/$abi" src="$WORK/node-$abi"
+  local cc="$NDK_BIN/${triple}29-clang" cxx="$NDK_BIN/${triple}29-clang++"
+  local hostcc="$(command -v gcc cc | head -1)" hostcxx="$(command -v g++ c++ | head -1)"
+  local ndkhome=""
+  ndkhome="$(cd "$NDK_BIN/../../../../.." && pwd)"
+  local patchdir="$WORK/termux-node-patches"
+  note "--- Node $NODE_PIN ($abi, Android/Bionic, no Intl/inspector/snapshot) ---"
+  rm -rf "$src" && mkdir -p "$src"
+  tar xzf "$WORK/node.tgz" -C "$src" --strip-components=1
+
+  # Build/runtime fixes only; test patches do not belong in the shipped source.
+  local patches="avoid-ficlone-ioctl.patch common.gypi.patch \
+deps-uv-src-unix-core.c.patch deps-uv-src-unix-process.c.patch deps-uv-uv.gyp.patch \
+deps-uvwasi-src-uvwasi.c.patch deps-v8-src-flags-flag-definitions.h.patch \
+deps-v8-src-trap-handler-trap-handler.h.patch fix_multiple_definitions.patch \
+lib-child_process.js.patch lib-os.js.patch node.gyp.patch src-debug_utils.cc.patch \
+src-getaddrinfo.patch src-node_internals.h.patch src-node_report.cc.patch \
+tools-gyp-pylib-gyp-generator-ninja.py.patch tools-v8_gypfiles-toolchain.gypi.patch \
+tools-v8_gypfiles-v8.gyp.patch"
+  ( cd "$src"
+    for p in $patches; do
+      patch -p1 -s < "$patchdir/$p" \
+        || { echo "Node patch failed: $p" >&2; exit 1; }
+    done
+    # Termux's compile-time prefix is dynamic in this app (debug and release
+    # application ids differ). TMPDIR is always supplied by RuntimeEnv; these
+    # strings are only unreachable fallbacks/perf-output defaults. child_process
+    # is different: honour the sealed SHELL at runtime instead of baking a path.
+    grep -rl '@TERMUX_PREFIX@' deps lib src tools 2>/dev/null \
+      | xargs -r sed -i 's|@TERMUX_PREFIX@|/data/local/tmp/opencode|g'
+    sed -i "s@file = '/data/local/tmp/opencode/bin/sh';@file = process.env.SHELL || '/system/bin/sh';@" lib/child_process.js
+
+    export PATH="$NDK_BIN:$PATH"
+    export CC="$cc" CXX="$cxx" LINK="$cxx"
+    export CC_host="$hostcc" CXX_host="$hostcxx" LINK_host="$hostcxx"
+    export CFLAGS="-O2 -fPIE -D__TERMUX__"
+    export CXXFLAGS="-O2 -fPIE -D__TERMUX__"
+    export LDFLAGS="-pie -Wl,-z,max-page-size=16384"
+    export GYP_DEFINES="target_arch=$gyparch v8_target_arch=$gyparch android_target_arch=$gyparch host_os=linux OS=android android_ndk_path=$ndkhome"
+    /usr/bin/python3 configure.py \
+      --dest-cpu="$destcpu" --dest-os=android --cross-compiling \
+      --openssl-no-asm --with-intl=none --without-inspector \
+      --without-node-snapshot --without-node-code-cache \
+      --without-npm --without-corepack >/dev/null
+    timeout 10800 make -j4 >/dev/null
+  ) || { note "FATAL: Node build failed for $abi"; return 1; }
+
+  local built="$src/out/Release/node"
+  [ -f "$built" ] || { note "FATAL: Node output missing for $abi"; return 1; }
+  cp "$built" "$outdir/libnode.so"
+  "$NDK_BIN/llvm-strip" "$outdir/libnode.so"
+  chmod 755 "$outdir/libnode.so"
+
+  # npm/npx are JavaScript data and cannot be execve'd from app storage. Their
+  # sealed native entry point execs libnode.so with the verified CLI JS path.
+  "$cc" -O2 -fPIE -pie -Wl,-z,max-page-size=16384 \
+    -o "$outdir/libnpmcli.so" "$NATIVE_SRC/npm-shim.c"
+  "$NDK_BIN/llvm-strip" "$outdir/libnpmcli.so"
+  chmod 755 "$outdir/libnpmcli.so"
+
+  # Node normally needs the NDK C++ runtime. It is code, so it must live beside
+  # Node in nativeLibraryDir too; copying it as payload data would not load.
+  if "$NDK_BIN/llvm-readelf" -d "$outdir/libnode.so" | grep -q 'libc++_shared.so'; then
+    cp "$(dirname "$NDK_BIN")/sysroot/usr/lib/$triple/libc++_shared.so" "$outdir/libc++_shared.so"
+    chmod 755 "$outdir/libc++_shared.so"
+  fi
+
+  note "node $abi: $(stat -c%s "$outdir/libnode.so") bytes stripped; npm shim $(stat -c%s "$outdir/libnpmcli.so") bytes"
+  rm -rf "$src"  # one V8 output tree at a time: runner disk is a real limit
+}
+
+build_node_npm_data() {
+  local npm="$STAGE/usr/lib/node_modules/npm"
+  rm -rf "$npm" && mkdir -p "$npm"
+  tar xzf "$WORK/node.tgz" -C "$npm" --strip-components=3 \
+    "node-${NODE_PIN}/deps/npm"
+  local got=""
+  got=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$npm/package.json")
+  [ "$got" = "$NPM_PIN" ] || { note "FATAL: Node $NODE_PIN bundled npm $got, expected $NPM_PIN"; return 1; }
+  rm -rf "$npm/docs" "$npm/man" "$npm/test" "$npm/tap-snapshots"
+  find "$npm" -type f \( -name '*.md' -o -name '*.map' \) -delete
+  note "npm $got data: $(find "$npm" -type f | wc -l) files, $(du -sk "$npm" | cut -f1) KB"
+}
+
 # jq, and the oniguruma it links for regex (test/match/sub). Built after the
 # shell and coreutils so a failure here cannot take the userland core with it.
 for abi in "${ABIS[@]}"; do
@@ -847,20 +965,34 @@ for abi in "${ABIS[@]}"; do
   esac
 done
 build_python_stdlib || exit 1
-# This MUST be after build_python_stdlib: usr/lib/python3.13.zip is data in the
-# ordinary verified runtime payload. Packing earlier silently omits the stdlib.
+
+# Node is the last large budget decision. Build it after Python is proven so a
+# V8 failure cannot erase the smaller, already-working language runtime.
+for abi in "${ABIS[@]}"; do
+  case "$abi" in
+    x86_64)    build_node "$abi" "x86_64-linux-android" "x64" "x64" ;;
+    arm64-v8a) build_node "$abi" "aarch64-linux-android" "arm64" "arm64" ;;
+  esac
+done
+build_node_npm_data || exit 1
+
+# This MUST be after every data producer: Python's zip and npm's JS tree live
+# in usr/. Packing earlier silently omits them even though STAGE looks complete.
 pack_runtime_payload || exit 1
 # Do not trust STAGE alone: the bug on two consecutive boards was exactly that
 # the file existed there but the already-built APK payload did not contain it.
-tar -tzf "$ENGINE/assets/runtime-payload.tar.gz" 'usr/lib/python3.13.zip' >/dev/null \
-  || { note "FATAL: python stdlib is not in runtime-payload.tar.gz"; exit 1; }
+for data in usr/lib/python3.13.zip usr/lib/node_modules/npm/package.json; do
+  tar -tzf "$ENGINE/assets/runtime-payload.tar.gz" "$data" >/dev/null \
+    || { note "FATAL: $data is not in runtime-payload.tar.gz"; exit 1; }
+done
 python3 - "$ENGINE/assets/runtime-manifest.json" <<'EOF'
 import json, sys
 manifest = json.load(open(sys.argv[1], encoding="utf-8"))
-entry = manifest.get("files", {}).get("usr/lib/python3.13.zip")
-if not entry or int(entry.get("size", 0)) <= 0:
-    raise SystemExit("python stdlib is not in runtime-manifest.json")
-print("python stdlib packaged: %d bytes, manifest + tar agree" % entry["size"])
+for path in ("usr/lib/python3.13.zip", "usr/lib/node_modules/npm/package.json"):
+    entry = manifest.get("files", {}).get(path)
+    if not entry or int(entry.get("size", 0)) <= 0:
+        raise SystemExit(path + " is not in runtime-manifest.json")
+    print("tool data packaged: %s = %d bytes, manifest + tar agree" % (path, entry["size"]))
 EOF
 
 # Same PIE/DYN assertion the runtime's own shims get: an ET_EXEC fixed-address
@@ -869,7 +1001,7 @@ EOF
 READELF="$NDK_BIN/llvm-readelf"
 [ -x "$READELF" ] || READELF="$(command -v llvm-readelf readelf | head -1)"
 for abi in "${ABIS[@]}"; do
-  for so in libmksh.so libtoybox.so libjq.so libpython3.so; do
+  for so in libmksh.so libtoybox.so libjq.so libpython3.so libnode.so libnpmcli.so; do
     "$READELF" -h "$ENGINE/jniLibs/$abi/$so" 2>&1 | tee -a "$STATUS" | grep -q 'DYN' \
       || { note "FATAL: $so ($abi) is not a PIE/DYN executable (ELF header above)"; exit 1; }
   done
@@ -883,6 +1015,7 @@ printf 'bin/curl\tlibcurl.so\nbin/jq\tlibjq.so\n' >> "$SEALED_EXEC_RECORDS"
 # `python` and `python3` are both expected by scripts in the wild; one binary,
 # two names, exactly as upstream installs it.
 printf 'bin/python3\tlibpython3.so\nbin/python\tlibpython3.so\n' >> "$SEALED_EXEC_RECORDS"
+printf 'bin/node\tlibnode.so\nbin/npm\tlibnpmcli.so\nbin/npx\tlibnpmcli.so\n' >> "$SEALED_EXEC_RECORDS"
 printf 'bin/git-remote-http\tlibgitremotehttp.so\nbin/git-remote-https\tlibgitremotehttp.so\n' \
   >> "$SEALED_EXEC_RECORDS"
 printf 'bin/sh\tlibmksh.so\n' >> "$SEALED_EXEC_RECORDS"

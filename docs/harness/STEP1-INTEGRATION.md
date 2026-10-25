@@ -306,11 +306,23 @@ source zip, and completed all V6 imports. The traceback was the test command:
 the shell's outer single quotes consumed Python's inner quotes, turning
 `{'ok': True}` into `{ok: True}` and `b'abc'` into `babc`; the resulting
 `NameError` is reproduced byte-for-byte with any shell. V6 now wraps `-c` in
-double quotes so those Python literals arrive intact.
+double quotes so those Python literals arrive intact. **Board 40205885278 is
+green:** V6 passed on debug and release-shaped builds with JSON `{"ok": true}`
+and CRC32 `891568578`; headroom is **54.6 MB**.
 
-**Still to do:** node-as-a-tool, wget, openssh - each with a price tag it has to
-fit. Node is the last big one and the budget question is real: a real node
-binary is ~40 MB per ABI against the ~50 MB this leaves.
+**Node/npm (build pending):** Node 24.22.1 is cross-built from source because
+the tempting nodejs-mobile binaries are Node 18 shared libraries with no
+`main()` and 4 KiB ELF alignment - both wrong for this CLI and API 36's 16 KiB
+page requirement. Upstream labels Android unsupported, so the build applies
+the exact Termux nodejs-lts patch set pinned in `versions.lock`, then strips a
+PIE with bundled dependencies and no Intl/inspector/snapshot. npm 11.19.1 is
+the package bundled by that Node tag. Its JS is verified payload data;
+`bin/npm` and `bin/npx` point to a tiny native shim that execs sealed Node with
+the CLI path, so neither launcher depends on executing a script from app data.
+V7 creates and installs a local package (no network), then requires it and
+expects 42 - version text alone is not package-manager evidence.
+
+**Still to do after the Node size/run board:** wget and openssh.
 
 Play forbids downloading executable code, so the store shape is **sealed**:
 every executable is a symlink into `nativeLibraryDir` (the inode comes from the

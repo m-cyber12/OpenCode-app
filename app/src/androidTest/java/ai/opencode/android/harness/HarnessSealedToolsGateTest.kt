@@ -201,6 +201,44 @@ class HarnessSealedToolsGateTest {
         printGate("V6", measured.first, measured.second)
     }
 
+    /**
+     * V7: Node is the real Android build and npm performs an installation.
+     *
+     * Version output alone would prove only that two launchers start. Build a
+     * tiny package locally, install it without network or lifecycle scripts,
+     * then require the installed copy. That covers Node's JS runtime, npm's
+     * resolver/copy path, the native npm shim and payload data in one gate.
+     */
+    @Test
+    fun v7_nodeAndNpmRunFromTheSealedPrefix() {
+        val measured = runCatching {
+            HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
+            val paths = RuntimePaths.get(context)
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val root = File(context.filesDir, "npm-local-gate")
+            root.deleteRecursively()
+            val dep = File(root, "dep").apply { mkdirs() }
+            val app = File(root, "app").apply { mkdirs() }
+            File(dep, "package.json").writeText(
+                "{\"name\":\"oc-local-gate\",\"version\":\"1.0.0\",\"main\":\"index.js\"}\n",
+            )
+            File(dep, "index.js").writeText("module.exports = { answer: 42 };\n")
+            File(app, "package.json").writeText("{\"name\":\"oc-app\",\"version\":\"1.0.0\"}\n")
+            val script = "node --version; npm --version; cd '${app.absolutePath}' && " +
+                "npm install --ignore-scripts --no-audit --no-fund '${dep.absolutePath}' >/dev/null 2>&1 && " +
+                "node -e \"console.log(require('oc-local-gate').answer)\""
+            val run = shellIn(env, script)
+            val lines = run.output.trim().split("\n").map { it.trim() }
+            val ok = run.ran && run.exitCode == 0 &&
+                lines.getOrNull(0) == "v24.22.1" &&
+                lines.getOrNull(1) == "11.19.1" &&
+                lines.getOrNull(2) == "42"
+            val compact = run.output.trim().replace("\n", " <NL> ").take(1000)
+            ok to "node/npm ran=${run.ran} exit=${run.exitCode} output='$compact'"
+        }.getOrElse { t -> false to "threw ${t.javaClass.simpleName}: ${t.message}" }
+        printGate("V7", measured.first, measured.second)
+    }
+
     private fun shell(script: String): Run =
         try {
             val process = ProcessBuilder(File(binDir, "sh").absolutePath, "-c", script)

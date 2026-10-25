@@ -404,17 +404,18 @@ PATH order is OUR prefix first, then Android's /system/bin:
      another. Use it only for something ours genuinely lacks (getprop,
      cmd, am, ...).
 
-`bun` is the full runtime and the answer to most scripting: `bun -e '...'`,
-`bun run script.ts`, `Bun.serve`, `fetch`, JSON, bundling. `git` speaks https
-(certs come from the device's own CA store), `rg` is ripgrep, `curl` and `jq`
-are both there (jq including its regex functions `test`/`match`/`sub`), and
-`python3` is a real CPython (stdlib included, no pip - there are no Android
-wheels on PyPI, so only pure-Python packages install).
+`bun` remains the SERVER runtime and is also available for scripting:
+`bun -e '...'`, `bun run script.ts`, `Bun.serve`, fetch, JSON, bundling.
+`node` is real Node 24 LTS and `npm`/`npx` are the bundled npm 11 package
+manager; they are sealed APK executables, while installed package data stays
+under the project. `git` speaks https (certs come from the device's own CA
+store), `rg` is ripgrep, `curl` and `jq` are both there (jq including its regex
+functions `test`/`match`/`sub`), and `python3` is real CPython with its stdlib
+(no pip - Android wheels are generally unavailable).
 
-NOT installed - do not probe: node, npm, pip, perl, ruby, wget, apt. There
-is NO node binary: npm-style CLIs start with `#!/usr/bin/env node` and die.
-The webapp brief has the working pattern - read it BEFORE touching any
-project that has a package.json.
+NOT installed - do not probe: pip, perl, ruby, wget, apt. The webapp brief
+has the working package patterns - read it BEFORE touching any project with
+a package.json.
 """.trimIndent() + "\n"
 
         return linkedMapOf(
