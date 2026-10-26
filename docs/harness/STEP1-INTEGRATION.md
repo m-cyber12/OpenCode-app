@@ -367,10 +367,10 @@ client suite: `ssh`, `scp`, `sftp`, `ssh-add`, `ssh-agent`, `ssh-keygen`, and
 `ssh-keyscan`. It applies the exact current Termux Android client fixes, but no
 server/auth/service patches and no sshd. OpenSSL 3.6.5 provides one shared
 `libcrypto.so` per ABI beside the clients in the APK native directory. This
-avoids repeating roughly 6 MB of static crypto in five executables; host
-measurement projects about 7.7 MB compressed across both ABIs, inside the 11.9
-MB remaining cap. V9 expands a config, generates an Ed25519 key, starts the
-sealed agent in app-private TMPDIR, loads the key, and requires its SHA-256
+avoids repeating roughly 6 MB of static crypto in five executables. The first
+complete Android package measured **195.5 MB**, leaving **4.5 MB** under Play's
+cap with 25 native files per ABI. V9 expands a config, generates an Ed25519
+key, starts the sealed agent in app-private TMPDIR, loads the key, and requires its SHA-256
 fingerprint back without relying on an external SSH host.
 
 Play forbids downloading executable code, so the store shape is **sealed**:

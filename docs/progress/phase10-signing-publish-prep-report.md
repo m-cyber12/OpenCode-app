@@ -6980,3 +6980,23 @@ reading or changing private resolver option fields. Non-Android source behavior
 is byte-for-byte preserved behind the preprocessor branch. The unused tentative
 Android `_res` definition is suppressed as well. A host compile of this exact
 Android branch passed. The board did not reach packaging or a device.
+
+## 2026-10-26 - B.97 - OpenSSH board 40380293412 built, packaged and passed the Play cap; V9 isolates an agent startup SIGSYS
+
+Both ABIs now build all seven clients and the shared crypto library. Stripped
+libcrypto measured 5,151,784 bytes on arm64 and 5,414,680 on x86_64; the client
+sets measured 3,324,568 and 3,580,816 bytes respectively. The payload reached
+READY, T1/T3 passed at 213/213, APK/AAB inspection passed with 25 native files
+per ABI, and P10_SIZE passed at **195.5 MB**, leaving **4.5 MB** under Play's
+200 MB base-module cap. The deduplicated crypto design is validated.
+
+V9 passed OpenSSH/OpenSSL version reporting, config expansion and Ed25519 key
+creation, but then the shell reported `Bad system call` before a fingerprint.
+The same result reproduced in the release-shaped smoke package. ssh-agent calls
+`closefrom()` before it can print its environment; a cross configure against
+modern NDK headers may select `close_range`, which Android's app seccomp policy
+kills rather than returning a fallback-friendly errno. The Android build now
+forces OpenSSH's own closefrom implementation and disables its close_range fast
+path, leaving the `/proc/self/fd` implementation used by portable OpenSSH.
+V9 now emits post-keygen, post-agent and post-add markers so any remaining
+boundary is identified exactly instead of collapsed into one shell status.

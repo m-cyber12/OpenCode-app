@@ -1240,6 +1240,8 @@ EOF
     ac_cv_lib_crypt_crypt=no \
     ac_cv_search_getrrsetbyname=no \
     ac_cv_func_bzero=yes \
+    ac_cv_func_closefrom=no \
+    ac_cv_func_close_range=no \
     ac_cv_member_struct_passwd_pw_gecos=no \
     ./configure --host="$triple" --prefix=/usr --sysconfdir=/etc/ssh \
       --disable-etc-default-login --disable-lastlog --disable-libutil \

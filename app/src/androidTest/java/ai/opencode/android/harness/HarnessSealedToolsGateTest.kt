@@ -326,18 +326,21 @@ class HarnessSealedToolsGateTest {
                 "set -e; " +
                     "ssh -V 2>&1; " +
                     "ssh -G -F /dev/null -o User=git example.invalid 2>/dev/null | grep '^user git${'$'}'; " +
-                    "ssh-keygen -q -t ed25519 -N '' -f '${key.absolutePath}'; " +
-                    "eval \"${'$'}(ssh-agent -s)\" >/dev/null; " +
+                    "ssh-keygen -q -t ed25519 -N '' -f '${key.absolutePath}'; echo OC_SSH_KEYGEN_OK; " +
+                    "eval \"${'$'}(ssh-agent -s)\" >/dev/null; echo OC_SSH_AGENT_OK; " +
                     "trap 'ssh-agent -k >/dev/null 2>&1 || true' EXIT; " +
-                    "ssh-add '${key.absolutePath}' >/dev/null 2>&1; ssh-add -l -E sha256; " +
-                    "ssh-agent -k >/dev/null; trap - EXIT"
+                    "ssh-add '${key.absolutePath}' >/dev/null 2>&1; echo OC_SSH_ADD_OK; " +
+                    "ssh-add -l -E sha256; ssh-agent -k >/dev/null; trap - EXIT"
             val run = shellIn(env, script)
             val lines = run.output.trim().split("\n").map { it.trim() }
+            val fingerprint = lines.firstOrNull { it.contains("SHA256:") }
             val ok = run.ran && run.exitCode == 0 &&
                 lines.firstOrNull()?.startsWith("OpenSSH_10.6p1") == true &&
                 lines.getOrNull(1) == "user git" &&
-                lines.getOrNull(2)?.contains("SHA256:") == true &&
-                lines.getOrNull(2)?.contains("ED25519") == true &&
+                lines.contains("OC_SSH_KEYGEN_OK") &&
+                lines.contains("OC_SSH_AGENT_OK") &&
+                lines.contains("OC_SSH_ADD_OK") &&
+                fingerprint?.contains("ED25519") == true &&
                 key.isFile && File(key.absolutePath + ".pub").isFile
             val compact = run.output.trim().replace("\n", " <NL> ").take(800)
             ok to "openssh ran=${run.ran} exit=${run.exitCode} private=${key.length()} " +
