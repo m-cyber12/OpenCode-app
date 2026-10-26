@@ -7019,3 +7019,21 @@ drop possible privilege. An Android app process already runs at its final fixed
 uid/gid, and the target-34 app seccomp policy kills these otherwise redundant
 credential syscalls. They are now omitted only under `__ANDROID__`; all other
 platforms retain upstream behavior. The portable closefrom fallback remains.
+
+## 2026-10-26 - B.99 - OpenSSH board 40399321805 clears SIGSYS and reaches the agent's HOME socket creation
+
+The Android gid patch removed the seccomp death. V9 now reaches normal
+ssh-agent startup and reports a precise filesystem error instead:
+
+  mkdir_path: open("/"): Permission denied
+  agent_listener_user: failed to create agent socket parent directory
+
+OpenSSH 10.6 defaults agent sockets to a persistent user directory under
+HOME. Its new race-resistant `mkdir_path()` opens `/` and descends with
+`openat`, but Android SELinux denies an app from opening the filesystem root
+even though it can traverse and open its own private HOME. The Android branch
+now recognizes a target strictly equal to or below HOME, opens HOME directly,
+and performs the same component-wise mkdir/openat traversal from there. Paths
+outside HOME retain upstream root traversal and therefore remain denied by the
+platform. This also keeps default `ssh-agent -s` behavior instead of weakening
+V9 with an explicit socket workaround.

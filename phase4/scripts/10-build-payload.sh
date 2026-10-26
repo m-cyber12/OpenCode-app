@@ -348,6 +348,50 @@ if s.count(needle) != 1:
     raise SystemExit("OpenSSH ssh-agent gid-drop patch point drifted")
 p.write_text(s.replace(needle, replacement))
 
+p = root / "misc.c"
+s = p.read_text()
+needle = """\tdir = odir = xstrdup(target);
+
+\tif (*dir == '/' &&
+\t    (fd = open("/", O_RDONLY|O_DIRECTORY)) == -1) {
+\t\terror_f("open(\\\"/\\\"): %s", strerror(errno));
+\t\tfree(odir);
+\t\treturn -1;
+\t}
+"""
+replacement = """\tdir = odir = xstrdup(target);
+
+#ifdef __ANDROID__
+\t/* SELinux denies opening the filesystem root, but the app may safely
+\t * traverse below its already-openable HOME directory. */
+\t{
+\t\tconst char *home = getenv("HOME");
+\t\tsize_t hlen = home == NULL ? 0 : strlen(home);
+
+\t\tif (*dir == '/' && hlen > 1 && strncmp(dir, home, hlen) == 0 &&
+\t\t    (dir[hlen] == '/' || dir[hlen] == '\\0')) {
+\t\t\tif ((fd = open(home, O_RDONLY|O_DIRECTORY)) == -1) {
+\t\t\t\terror_f("open HOME: %s", strerror(errno));
+\t\t\t\tfree(odir);
+\t\t\t\treturn -1;
+\t\t\t}
+\t\t\tdir += hlen;
+\t\t\twhile (*dir == '/')
+\t\t\t\tdir++;
+\t\t}
+\t}
+#endif
+\tif (*dir == '/' &&
+\t    (fd = open("/", O_RDONLY|O_DIRECTORY)) == -1) {
+\t\terror_f("open(\\\"/\\\"): %s", strerror(errno));
+\t\tfree(odir);
+\t\treturn -1;
+\t}
+"""
+if s.count(needle) != 1:
+    raise SystemExit("OpenSSH mkdir_path HOME patch point drifted")
+p.write_text(s.replace(needle, replacement))
+
 p = root / "pathnames.h"
 s = p.read_text()
 needle = '#define _PATH_SSH_PROGRAM\t\t"/usr/bin/ssh"'
