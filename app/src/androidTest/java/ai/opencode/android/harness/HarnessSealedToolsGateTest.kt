@@ -305,6 +305,47 @@ class HarnessSealedToolsGateTest {
         printGate("V8", measured.first, measured.second)
     }
 
+    /**
+     * V9: the OpenSSH client suite has working crypto and an agent socket.
+     *
+     * `ssh -V` alone is weak evidence. Expand a client config, create an
+     * Ed25519 key, start the sealed agent under app-private TMPDIR, add the
+     * private key and require a SHA-256 fingerprint back. This covers ssh,
+     * ssh-keygen, ssh-agent and ssh-add without depending on an external host.
+     */
+    @Test
+    fun v9_openSshCreatesAndLoadsAKey() {
+        val measured = runCatching {
+            HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
+            val paths = RuntimePaths.get(context)
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val key = File(context.cacheDir, "v9-openssh-ed25519")
+            key.delete()
+            File(key.absolutePath + ".pub").delete()
+            val script =
+                "set -e; " +
+                    "ssh -V 2>&1; " +
+                    "ssh -G -F /dev/null -o User=git example.invalid 2>/dev/null | grep '^user git${'$'}'; " +
+                    "ssh-keygen -q -t ed25519 -N '' -f '${key.absolutePath}'; " +
+                    "eval \"${'$'}(ssh-agent -s)\" >/dev/null; " +
+                    "trap 'ssh-agent -k >/dev/null 2>&1 || true' EXIT; " +
+                    "ssh-add '${key.absolutePath}' >/dev/null 2>&1; ssh-add -l -E sha256; " +
+                    "ssh-agent -k >/dev/null; trap - EXIT"
+            val run = shellIn(env, script)
+            val lines = run.output.trim().split("\n").map { it.trim() }
+            val ok = run.ran && run.exitCode == 0 &&
+                lines.firstOrNull()?.startsWith("OpenSSH_10.6p1") == true &&
+                lines.getOrNull(1) == "user git" &&
+                lines.getOrNull(2)?.contains("SHA256:") == true &&
+                lines.getOrNull(2)?.contains("ED25519") == true &&
+                key.isFile && File(key.absolutePath + ".pub").isFile
+            val compact = run.output.trim().replace("\n", " <NL> ").take(800)
+            ok to "openssh ran=${run.ran} exit=${run.exitCode} private=${key.length()} " +
+                "public=${File(key.absolutePath + ".pub").length()} output='$compact'"
+        }.getOrElse { t -> false to "threw ${t.javaClass.simpleName}: ${t.message}" }
+        printGate("V9", measured.first, measured.second)
+    }
+
     private fun shell(script: String): Run =
         try {
             val process = ProcessBuilder(File(binDir, "sh").absolutePath, "-c", script)

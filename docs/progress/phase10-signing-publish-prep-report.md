@@ -6893,3 +6893,41 @@ through the installed `bin/wget` symlink and sibling `libcurl.so`, then verifies
 the writable output. The launcher itself is added to the sealed manifest and
 the PIE/16 KiB build checks. Device, release-shape, exec-audit and final-size
 closure remain pending the next board.
+
+## 2026-10-26 - B.91 - wget board 40341649665 is green with measured bytes, not a version-only probe
+
+The complete Phase 10 run succeeded in 54m55s. Both ABI launchers are tiny
+(12,728 bytes arm64, 12,016 bytes x86_64), and V8 passed on debug and the
+release-shaped package:
+
+  wget ran=true exit=0 bytes=11 body='OC_WGET_OK' fixture=ok
+
+That result came from a real loopback HTTP transfer through the installed
+`bin/wget` symlink and sibling sealed curl executable. T1/T3 are now 206/206
+with zero executable outside the APK. The release APK remains 188.1 MB (17
+native files per ABI), preserving the 11.9 MB budget. wget is closed.
+
+## 2026-10-26 - B.92 - OpenSSH client suite is the last core-tier addition
+
+The final tool build pins OpenSSH portable 10.6p1 and OpenSSL 3.6.5. It applies
+the seven client-side Android fixes from the existing pinned Termux commit but
+omits sshd, server authentication and Termux service integration. The shipped
+commands are ssh, scp, sftp, ssh-add, ssh-agent, ssh-keygen and ssh-keyscan.
+Each is a Bionic PIE and a sealed prefix link; keys, known_hosts, config and the
+agent socket remain ordinary data under HOME/TMPDIR.
+
+Linking libcrypto statically into five programs measured roughly 37 MB raw per
+ABI on a host prototype and would gamble the Play cap. The implemented shape
+instead gives OpenSSL inherited Android targets whose output filename and
+SONAME are both `libcrypto.so`, allowing Android's JNI packager to extract one
+shared crypto library per ABI beside the clients. The build rejects a lingering
+`libcrypto.so.3` dependency, asserts each crypto-using client requests the
+packaged SONAME, and retains the 16 KiB native check. Host compression of the
+seven stripped clients plus libcrypto projects 7.7 MB across two ABIs, leaving
+about 4.2 MB against the currently measured APK; the board remains authoritative.
+
+V9 expands an ssh client config, creates an Ed25519 key, starts ssh-agent under
+the app-private TMPDIR, loads the key with ssh-add and requires a SHA-256
+ED25519 fingerprint. This is key/agent/crypto evidence without depending on an
+external SSH service. Device execution, release shape, exec audit and the 200
+MB cap remain pending the board.

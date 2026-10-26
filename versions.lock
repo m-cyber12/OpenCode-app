@@ -112,6 +112,12 @@ native_components:
   - name: wget-compat                 # native argv translator over the sealed curl executable
     version: "1"
     note: "non-recursive Wget CLI (-q/-O/-P/-T/header/resume/spider); reuses curl 8.10.1 + Mbed TLS + Android CAs instead of duplicating a TLS stack; unsupported crawl options fail loudly"
+  - name: openssh                     # client suite only; no sshd in the app
+    version: 10.6p1
+    note: "ssh/scp/sftp/ssh-add/ssh-agent/ssh-keygen/ssh-keyscan; Android client patches pinned with node_termux_patch_commit; source-built as sealed 16 KiB-aligned PIEs"
+  - name: openssl                     # shared crypto dependency of the OpenSSH clients
+    version: 3.6.5
+    note: "one unversioned-SONAME libcrypto.so per ABI is packaged beside the clients in nativeLibraryDir; never writable payload data"
   - name: mbedtls                     # static lib inside libgitremotehttp.so (v9.28)
     version: 3.6.2
     note: "dual Apache-2.0/GPL-2.0-or-later; the GPL option keeps the combined helper compatible with git's GPL-2.0-only"

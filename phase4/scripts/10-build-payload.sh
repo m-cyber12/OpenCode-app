@@ -7,6 +7,7 @@
 #   phase4/out/engine/jniLibs/<abi>/librg.so   (ripgrep 15.1.0, Android/Bionic executable)
 #   phase4/out/engine/jniLibs/<abi>/libnode.so (Node 24, Android/Bionic executable)
 #   phase4/out/engine/jniLibs/<abi>/libwget.so (sealed curl-backed wget launcher)
+#   phase4/out/engine/jniLibs/<abi>/libssh*.so (OpenSSH 10 client suite)
 #   phase4/out/engine/assets/runtime-payload.tar.gz  (server bundle, node_modules, launcher)
 #   phase4/out/engine/assets/runtime-manifest.json   (versions + sha256 of every payload file)
 #
@@ -65,6 +66,13 @@ NPM_PIN="11.19.1"
 # Upstream calls Android unsupported; pinning these patches is what turns its
 # best-effort android-configure into a reproducible CLI build.
 NODE_TERMUX_PATCH_PIN="2d6b9d566c2e933c50e675198a0d7847a96deb61"
+# The final core-tier network tool. OpenSSH uses the exact portable release and
+# Android patch lineage from this same Termux commit; one OpenSSL libcrypto is
+# packaged beside the clients in the APK native directory, never as writable
+# payload data.
+OPENSSH_PIN="10.6p1"
+OPENSSH_TAG="V_10_6_P1"
+OPENSSL_PIN="3.6.5"
 ONIGURUMA_PIN="6.9.10"
 BUN_PIN="1.3.14"
 RG_PIN="15.1.0"
@@ -276,6 +284,59 @@ tar xzf "$WORK/termux-node-patches.tgz" -C "$WORK/termux-node-patches" \
   "termux-packages-${NODE_TERMUX_PATCH_PIN}/packages/nodejs-lts"
 [ -f "$WORK/termux-node-patches/node.gyp.patch" ] \
   || { note "FATAL: pinned Termux Node patch set did not extract"; exit 1; }
+
+# OpenSSH's portable source and the crypto library its complete algorithm set
+# needs. Both archives come from pinned GitHub tags (not mutable package repos).
+curl -fsSL --retry 3 --max-time 300 -o "$WORK/openssl.tgz" \
+  "https://codeload.github.com/openssl/openssl/tar.gz/refs/tags/openssl-${OPENSSL_PIN}"
+rm -rf "$WORK/openssl-src" && mkdir -p "$WORK/openssl-src"
+tar xzf "$WORK/openssl.tgz" -C "$WORK/openssl-src" --strip-components=1
+curl -fsSL --retry 3 --max-time 300 -o "$WORK/openssh.tgz" \
+  "https://codeload.github.com/openssh/openssh-portable/tar.gz/refs/tags/${OPENSSH_TAG}"
+rm -rf "$WORK/openssh-src" && mkdir -p "$WORK/openssh-src"
+tar xzf "$WORK/openssh.tgz" -C "$WORK/openssh-src" --strip-components=1
+rm -rf "$WORK/termux-openssh-patches" && mkdir -p "$WORK/termux-openssh-patches"
+tar xzf "$WORK/termux-node-patches.tgz" -C "$WORK/termux-openssh-patches" \
+  --strip-components=3 \
+  "termux-packages-${NODE_TERMUX_PATCH_PIN}/packages/openssh"
+[ -f "$WORK/termux-openssh-patches/ssh-keygen.c.patch" ] \
+  || { note "FATAL: pinned Termux OpenSSH patch set did not extract"; exit 1; }
+
+# Keep only the Termux fixes the client suite needs. Server/auth patches pull
+# Termux-only services into the link and do not belong in this app. These seven
+# patches cover Android's no-hardlink cases, mux sockets, explicit memory wipe,
+# passwd iteration, config ownership, key replacement and PTY permissions.
+for p in hostfile.c.patch mux.c.patch openbsd-compat_explicit_bzero.c.patch \
+         openbsd-compat_xcrypt.c.patch readconf.c.patch ssh-keygen.c.patch sshpty.c.patch; do
+  ( cd "$WORK/openssh-src" && patch -p1 -s < "$WORK/termux-openssh-patches/$p" ) \
+    || { note "FATAL: pinned OpenSSH patch failed: $p"; exit 1; }
+done
+# Android's synthetic passwd record does not point at this app's HOME, and the
+# upstream scp/sftp default bakes /usr/bin/ssh. Make both client-only boundaries
+# dynamic without baking the debug or release application id into an ELF.
+python3 - "$WORK/openssh-src" <<'EOF'
+from pathlib import Path
+import sys
+root = Path(sys.argv[1])
+p = root / "ssh.c"
+s = p.read_text()
+needle = "\t/* Take a copy of the returned structure. */\n\tpw = pwcopy(pw);\n"
+replacement = needle + """\t/* Android synthesizes a passwd home outside the app sandbox. */
+\tif ((cp = getenv("HOME")) != NULL && cp[0] == '/') {
+\t\tfree(pw->pw_dir);
+\t\tpw->pw_dir = xstrdup(cp);
+\t}
+"""
+if s.count(needle) != 1:
+    raise SystemExit("OpenSSH ssh.c home patch point drifted")
+p.write_text(s.replace(needle, replacement))
+p = root / "pathnames.h"
+s = p.read_text()
+needle = '#define _PATH_SSH_PROGRAM\t\t"/usr/bin/ssh"'
+if s.count(needle) != 1:
+    raise SystemExit("OpenSSH _PATH_SSH_PROGRAM patch point drifted")
+p.write_text(s.replace(needle, '#define _PATH_SSH_PROGRAM\t\t"ssh"'))
+EOF
 
 build_git_android() {  # $1=abi $2=target triple $3=lib dir
   local abi="$1" triple="$2" outdir="$3"
@@ -1044,6 +1105,117 @@ tools-v8_gypfiles-v8.gyp.patch"
   rm -rf "$src"  # one V8 output tree at a time: runner disk is a real limit
 }
 
+# OpenSSH client suite. One shared libcrypto per ABI avoids statically repeating
+# ~6 MB of crypto in five client programs. It is still APK code: libcrypto.so is
+# packaged beside the clients in nativeLibraryDir and found through the same
+# APK-only LD_LIBRARY_PATH that Node uses, never through writable app data.
+build_openssh_clients() {  # $1=abi $2=target triple $3=OpenSSL platform
+  local abi="$1" triple="$2" ssl_platform="$3"
+  local outdir="$ENGINE/jniLibs/$abi" cc="$NDK_BIN/${triple}29-clang"
+  local ar="$NDK_BIN/llvm-ar" ranlib="$NDK_BIN/llvm-ranlib"
+  local zprefix="$WORK/zlib-$abi-android" oprefix="$WORK/openssl-$abi-android"
+  local osrc="$WORK/openssl-$abi" src="$WORK/openssh-$abi"
+  local ndkhome=""
+  ndkhome="$(cd "$NDK_BIN/../../../../.." && pwd)"
+  note "--- OpenSSH $OPENSSH_PIN clients ($abi, OpenSSL $OPENSSL_PIN shared) ---"
+
+  rm -rf "$osrc" "$oprefix" && cp -r "$WORK/openssl-src" "$osrc"
+  # OpenSSL normally versions the filename/SONAME as libcrypto.so.3. Android's
+  # JNI packager extracts lib*.so, not .so.N. A tiny inherited target keeps the
+  # upstream build but deliberately names both file and SONAME libcrypto.so.
+  cat > "$osrc/Configurations/99-opencode.conf" <<'EOF'
+my %targets = (
+    "android-opencode-arm64" => {
+        inherit_from => [ "android-arm64" ],
+        shared_extension => ".so",
+    },
+    "android-opencode-x86_64" => {
+        inherit_from => [ "android-x86_64" ],
+        shared_extension => ".so",
+    },
+);
+EOF
+  ( cd "$osrc"
+    export ANDROID_NDK_ROOT="$ndkhome"
+    export PATH="$NDK_BIN:$PATH"
+    ./Configure "$ssl_platform" -D__ANDROID_API__=29 \
+      --prefix="$oprefix" --libdir=lib \
+      shared no-tests no-docs no-apps >/dev/null
+    timeout 1200 make -j4 build_libs >/dev/null
+    make install_dev >/dev/null
+  ) || { note "FATAL: OpenSSL crypto build failed for $abi"; return 1; }
+  [ -f "$oprefix/lib/libcrypto.so" ] \
+    || { note "FATAL: unversioned shared libcrypto missing for $abi"; return 1; }
+  cp "$oprefix/lib/libcrypto.so" "$outdir/libcrypto.so"
+  "$NDK_BIN/llvm-strip" "$outdir/libcrypto.so"
+  chmod 755 "$outdir/libcrypto.so"
+  "$NDK_BIN/llvm-readelf" -d "$outdir/libcrypto.so" | grep -Fq 'Library soname: [libcrypto.so]' \
+    || { note "FATAL: libcrypto SONAME is not libcrypto.so ($abi)"; return 1; }
+  note "openssl $abi libcrypto.so: $(stat -c%s "$outdir/libcrypto.so") bytes"
+
+  rm -rf "$src" && cp -r "$WORK/openssh-src" "$src"
+  ( cd "$src"
+    # codeload includes generated configure; copying may make m4/openssh.m4
+    # appear newer by a timestamp tick and trigger an unnecessary autoreconf.
+    touch configure
+    CC="$cc" LD="$cc" AR="$ar" RANLIB="$ranlib" \
+    CPPFLAGS="-D__ANDROID__ -Dfd_mask=int -I$oprefix/include -I$zprefix/include" \
+    CFLAGS="-O2 -fPIE" \
+    LDFLAGS="-pie -L$oprefix/lib -L$zprefix/lib -Wl,-z,max-page-size=16384" \
+    LIBS="-ldl" \
+    ac_cv_func_endgrent=yes \
+    ac_cv_func_fmt_scaled=no \
+    ac_cv_func_getlastlogxbyname=no \
+    ac_cv_func_readpassphrase=no \
+    ac_cv_func_strnvis=no \
+    ac_cv_header_sys_un_h=yes \
+    ac_cv_lib_crypt_crypt=no \
+    ac_cv_search_getrrsetbyname=no \
+    ac_cv_func_bzero=yes \
+    ac_cv_member_struct_passwd_pw_gecos=no \
+    ./configure --host="$triple" --prefix=/usr --sysconfdir=/etc/ssh \
+      --disable-etc-default-login --disable-lastlog --disable-libutil \
+      --disable-pututline --disable-pututxline --disable-strip \
+      --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx \
+      --disable-security-key --without-shadow --without-stackprotect \
+      --without-openssl-header-check --without-zlib-version-check \
+      --with-ssl-dir="$oprefix" --with-zlib="$zprefix" \
+      --with-default-path=/usr/bin:/system/bin \
+      --with-pid-dir=/tmp --with-privsep-path=/tmp >/dev/null
+    timeout 1800 make -j4 ssh scp sftp ssh-add ssh-agent ssh-keygen ssh-keyscan >/dev/null
+  ) || { note "FATAL: OpenSSH client build failed for $abi"; \
+         tail -80 "$src/config.log" 2>/dev/null | tee -a "$STATUS"; return 1; }
+
+  local tool="" lib=""
+  for tool in ssh scp sftp ssh-add ssh-agent ssh-keygen ssh-keyscan; do
+    case "$tool" in
+      ssh)         lib="libsshclient.so" ;;
+      scp)         lib="libscp.so" ;;
+      sftp)        lib="libsftp.so" ;;
+      ssh-add)     lib="libsshadd.so" ;;
+      ssh-agent)   lib="libsshagent.so" ;;
+      ssh-keygen)  lib="libsshkeygen.so" ;;
+      ssh-keyscan) lib="libsshkeyscan.so" ;;
+    esac
+    [ -x "$src/$tool" ] || { note "FATAL: OpenSSH did not build $tool for $abi"; return 1; }
+    cp "$src/$tool" "$outdir/$lib"
+    "$NDK_BIN/llvm-strip" "$outdir/$lib"
+    chmod 755 "$outdir/$lib"
+    if "$NDK_BIN/llvm-readelf" -d "$outdir/$lib" | grep -q 'libcrypto.so.3'; then
+      note "FATAL: $tool requests unpackageable libcrypto.so.3 ($abi)"
+      return 1
+    fi
+    case "$tool" in
+      ssh|ssh-add|ssh-agent|ssh-keygen|ssh-keyscan)
+        "$NDK_BIN/llvm-readelf" -d "$outdir/$lib" | grep -Fq 'Shared library: [libcrypto.so]' \
+          || { note "FATAL: $tool did not link the packaged libcrypto.so ($abi)"; return 1; }
+        ;;
+    esac
+    note "openssh $abi $tool: $(stat -c%s "$outdir/$lib") bytes"
+  done
+  rm -rf "$osrc" "$src"
+}
+
 build_node_npm_data() {
   local npm="$STAGE/usr/lib/node_modules/npm"
   rm -rf "$npm" && mkdir -p "$npm"
@@ -1088,6 +1260,15 @@ for abi in "${ABIS[@]}"; do
 done
 build_node_npm_data || exit 1
 
+# OpenSSH is the last core-tier tool. Its client suite is source-built after
+# Node cache restore, and uses the zlib prefixes already produced for Git.
+for abi in "${ABIS[@]}"; do
+  case "$abi" in
+    x86_64)    build_openssh_clients "$abi" "x86_64-linux-android" "android-opencode-x86_64" ;;
+    arm64-v8a) build_openssh_clients "$abi" "aarch64-linux-android" "android-opencode-arm64" ;;
+  esac
+done
+
 # This MUST be after every data producer: Python's zip and npm's JS tree live
 # in usr/. Packing earlier silently omits them even though STAGE looks complete.
 pack_runtime_payload || exit 1
@@ -1113,7 +1294,9 @@ EOF
 READELF="$NDK_BIN/llvm-readelf"
 [ -x "$READELF" ] || READELF="$(command -v llvm-readelf readelf | head -1)"
 for abi in "${ABIS[@]}"; do
-  for so in libmksh.so libtoybox.so libjq.so libpython3.so libnode.so libnpmcli.so libwget.so; do
+  for so in libmksh.so libtoybox.so libjq.so libpython3.so libnode.so libnpmcli.so libwget.so \
+            libcrypto.so libsshclient.so libscp.so libsftp.so libsshadd.so \
+            libsshagent.so libsshkeygen.so libsshkeyscan.so; do
     "$READELF" -h "$ENGINE/jniLibs/$abi/$so" 2>&1 | tee -a "$STATUS" | grep -q 'DYN' \
       || { note "FATAL: $so ($abi) is not a PIE/DYN executable (ELF header above)"; exit 1; }
   done
@@ -1128,6 +1311,9 @@ printf 'bin/curl\tlibcurl.so\nbin/wget\tlibwget.so\nbin/jq\tlibjq.so\n' >> "$SEA
 # two names, exactly as upstream installs it.
 printf 'bin/python3\tlibpython3.so\nbin/python\tlibpython3.so\n' >> "$SEALED_EXEC_RECORDS"
 printf 'bin/node\tlibnode.so\nbin/npm\tlibnpmcli.so\nbin/npx\tlibnpmcli.so\n' >> "$SEALED_EXEC_RECORDS"
+printf 'bin/ssh\tlibsshclient.so\nbin/scp\tlibscp.so\nbin/sftp\tlibsftp.so\n' >> "$SEALED_EXEC_RECORDS"
+printf 'bin/ssh-add\tlibsshadd.so\nbin/ssh-agent\tlibsshagent.so\n' >> "$SEALED_EXEC_RECORDS"
+printf 'bin/ssh-keygen\tlibsshkeygen.so\nbin/ssh-keyscan\tlibsshkeyscan.so\n' >> "$SEALED_EXEC_RECORDS"
 printf 'bin/git-remote-http\tlibgitremotehttp.so\nbin/git-remote-https\tlibgitremotehttp.so\n' \
   >> "$SEALED_EXEC_RECORDS"
 printf 'bin/sh\tlibmksh.so\n' >> "$SEALED_EXEC_RECORDS"

@@ -353,15 +353,25 @@ debug and release-shaped builds with `v24.22.1`, `11.19.1`, and local npm
 install result `42`; Python V6 remained green. The unsigned release APK passed
 at **188.1 MB**, retaining **11.9 MB** of Play headroom.
 
-**wget (board pending):** wget is a sealed native launcher over the curl 8.10.1
-executable already in the APK. It translates the ordinary non-recursive Wget
-interface (`-q`, `-O`, `-P`, timeout, headers, resume and spider) and fails
-loudly for unsupported crawl/mirror options. This avoids paying twice for a TLS
-stack: HTTPS uses the already-proven Mbed TLS build and Android's live CA store.
-V8 serves deterministic bytes on emulator loopback, downloads them through
-`wget -q -O`, and inspects the written file; version text alone is not closure.
+**wget closed on board 40341649665.** wget is a sealed native launcher over the
+curl 8.10.1 executable already in the APK. It translates the ordinary
+non-recursive Wget interface (`-q`, `-O`, `-P`, timeout, headers, resume and
+spider) and fails loudly for unsupported crawl/mirror options. This avoids
+paying twice for a TLS stack: HTTPS uses the already-proven Mbed TLS build and
+Android's live CA store. V8 served deterministic bytes on emulator loopback,
+downloaded them through `wget -q -O`, and verified all 11 bytes on debug and
+release-shaped builds. T1/T3 rose cleanly to 206/206; the APK remained 188.1 MB.
 
-**Still to do after the wget board:** openssh.
+**OpenSSH (board pending):** the final core-tier tool is the upstream 10.6p1
+client suite: `ssh`, `scp`, `sftp`, `ssh-add`, `ssh-agent`, `ssh-keygen`, and
+`ssh-keyscan`. It applies the exact current Termux Android client fixes, but no
+server/auth/service patches and no sshd. OpenSSL 3.6.5 provides one shared
+`libcrypto.so` per ABI beside the clients in the APK native directory. This
+avoids repeating roughly 6 MB of static crypto in five executables; host
+measurement projects about 7.7 MB compressed across both ABIs, inside the 11.9
+MB remaining cap. V9 expands a config, generates an Ed25519 key, starts the
+sealed agent in app-private TMPDIR, loads the key, and requires its SHA-256
+fingerprint back without relying on an external SSH host.
 
 Play forbids downloading executable code, so the store shape is **sealed**:
 every executable is a symlink into `nativeLibraryDir` (the inode comes from the
