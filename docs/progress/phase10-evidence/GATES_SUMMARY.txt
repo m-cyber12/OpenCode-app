@@ -1,4 +1,5 @@
 P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, published identity, store package) + apk inspector self-test
 P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone (16 scenarios, pass=136 fail=0 - the scenario list and every check are in p10-driver-selftest.log)
-P10-BUILD FAIL: kotlin compile or JVM unit tests failed (compiler-errors.txt)
+P10-UNIT PASS: JVM tests=478 failures=0 errors=0 skipped=0 (unit tests are NOT runtime evidence - the device gates below are)
+P10-BUILD FAIL: payload build failed
 P10_SUMMARY gates not reached (build/environment failure) - see 00-run-phase10.log
