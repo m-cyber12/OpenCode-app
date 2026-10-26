@@ -109,6 +109,9 @@ native_components:
   - name: curl                        # static lib inside libgitremotehttp.so (v9.28)
     version: 8.10.1
     note: "http(s)-only configure; TLS via Mbed TLS; no baked CA defaults - CAPATH comes from the runtime env"
+  - name: wget-compat                 # native argv translator over the sealed curl executable
+    version: "1"
+    note: "non-recursive Wget CLI (-q/-O/-P/-T/header/resume/spider); reuses curl 8.10.1 + Mbed TLS + Android CAs instead of duplicating a TLS stack; unsupported crawl options fail loudly"
   - name: mbedtls                     # static lib inside libgitremotehttp.so (v9.28)
     version: 3.6.2
     note: "dual Apache-2.0/GPL-2.0-or-later; the GPL option keeps the combined helper compatible with git's GPL-2.0-only"

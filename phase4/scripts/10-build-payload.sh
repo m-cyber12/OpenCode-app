@@ -6,6 +6,7 @@
 #   phase4/out/engine/jniLibs/<abi>/libgit.so  (Git v2.48.1, Android/Bionic executable)
 #   phase4/out/engine/jniLibs/<abi>/librg.so   (ripgrep 15.1.0, Android/Bionic executable)
 #   phase4/out/engine/jniLibs/<abi>/libnode.so (Node 24, Android/Bionic executable)
+#   phase4/out/engine/jniLibs/<abi>/libwget.so (sealed curl-backed wget launcher)
 #   phase4/out/engine/assets/runtime-payload.tar.gz  (server bundle, node_modules, launcher)
 #   phase4/out/engine/assets/runtime-manifest.json   (versions + sha256 of every payload file)
 #
@@ -360,6 +361,20 @@ build_git_android() {  # $1=abi $2=target triple $3=lib dir
   cp "$cprefix/bin/curl" "$outdir/libcurl.so"
   chmod 755 "$outdir/libcurl.so"
   note "$abi curl CLI: $(stat -c%s "$outdir/libcurl.so") bytes"
+
+  # wget is a native argument translator over this exact curl executable, not
+  # a second TLS stack. It preserves the familiar non-recursive downloader
+  # interface while HTTPS continues to use Mbed TLS + Android's live CA store.
+  # Unsupported Wget-only crawl options fail loudly instead of changing meaning.
+  if ! "$cc" -O2 -fPIE -pie -Wl,-z,max-page-size=16384 \
+        -o "$outdir/libwget.so" "$NATIVE_SRC/wget-shim.c" \
+        2>"$WORK/wget-$abi.log"; then
+    note "FATAL: wget compatibility launcher build failed for $abi; clang stderr:"
+    cat "$WORK/wget-$abi.log" | tee -a "$STATUS"
+    return 1
+  fi
+  chmod 755 "$outdir/libwget.so"
+  note "$abi wget launcher: $(stat -c%s "$outdir/libwget.so") bytes"
   if git_version=$("$outdir/libgit.so" --version 2>&1 | head -1); then
     note "$abi Android Git host execution: $git_version"
   else
@@ -1098,7 +1113,7 @@ EOF
 READELF="$NDK_BIN/llvm-readelf"
 [ -x "$READELF" ] || READELF="$(command -v llvm-readelf readelf | head -1)"
 for abi in "${ABIS[@]}"; do
-  for so in libmksh.so libtoybox.so libjq.so libpython3.so libnode.so libnpmcli.so; do
+  for so in libmksh.so libtoybox.so libjq.so libpython3.so libnode.so libnpmcli.so libwget.so; do
     "$READELF" -h "$ENGINE/jniLibs/$abi/$so" 2>&1 | tee -a "$STATUS" | grep -q 'DYN' \
       || { note "FATAL: $so ($abi) is not a PIE/DYN executable (ELF header above)"; exit 1; }
   done
@@ -1108,7 +1123,7 @@ done
 # command toybox built. One line each, "<prefix path> <TAB> <library>".
 printf 'bin/bun\tlibbun.so\nbin/git\tlibgit.so\nbin/rg\tlibrg.so\n' \
   > "$SEALED_EXEC_RECORDS"
-printf 'bin/curl\tlibcurl.so\nbin/jq\tlibjq.so\n' >> "$SEALED_EXEC_RECORDS"
+printf 'bin/curl\tlibcurl.so\nbin/wget\tlibwget.so\nbin/jq\tlibjq.so\n' >> "$SEALED_EXEC_RECORDS"
 # `python` and `python3` are both expected by scripts in the wild; one binary,
 # two names, exactly as upstream installs it.
 printf 'bin/python3\tlibpython3.so\nbin/python\tlibpython3.so\n' >> "$SEALED_EXEC_RECORDS"

@@ -346,7 +346,22 @@ those chunks even after hosted cancellation; subsequent runs reconstruct,
 SHA-256-check and architecture-check them in seconds, leaving time for V7,
 release and size gates.
 
-**Still to do after the Node size/run board:** wget and openssh.
+**Node/npm closed on board 40331366739.** Both ABI caches restored with their
+recorded checksums, the ustar payload extracted all npm paths, and Bionic found
+the packaged C++ runtime through the APK-only `LD_LIBRARY_PATH`. V7 passed on
+debug and release-shaped builds with `v24.22.1`, `11.19.1`, and local npm
+install result `42`; Python V6 remained green. The unsigned release APK passed
+at **188.1 MB**, retaining **11.9 MB** of Play headroom.
+
+**wget (board pending):** wget is a sealed native launcher over the curl 8.10.1
+executable already in the APK. It translates the ordinary non-recursive Wget
+interface (`-q`, `-O`, `-P`, timeout, headers, resume and spider) and fails
+loudly for unsupported crawl/mirror options. This avoids paying twice for a TLS
+stack: HTTPS uses the already-proven Mbed TLS build and Android's live CA store.
+V8 serves deterministic bytes on emulator loopback, downloads them through
+`wget -q -O`, and inspects the written file; version text alone is not closure.
+
+**Still to do after the wget board:** openssh.
 
 Play forbids downloading executable code, so the store shape is **sealed**:
 every executable is a symlink into `nativeLibraryDir` (the inode comes from the

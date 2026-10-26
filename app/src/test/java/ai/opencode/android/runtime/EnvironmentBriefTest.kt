@@ -186,6 +186,10 @@ class EnvironmentBriefTest {
             assertTrue("set must document watched port $port", text.contains(port.toString()))
         }
         assertTrue(text.contains("bun"))
+        assertTrue(text.contains("curl"))
+        assertTrue(text.contains("wget"))
+        assertTrue(text.contains("sealed curl/Mbed TLS backend"))
+        assertFalse(text.contains("perl, ruby, wget"))
         assertTrue(text.contains("serve.json"))
         assertTrue(text.contains(".preview/latest.png"))
         assertTrue(text.contains("127.0.0.1"))

@@ -6855,3 +6855,41 @@ regressions in their previously green artifacts.
 The cached rerun must still prove extraction, Python V6, Node/npm V7
 (`v24.22.1`, `11.19.1`, local install result `42`), release 16 KiB checks and
 the size cap. No runtime closure is claimed before that board.
+
+## 2026-10-26 - B.89 - Cached Node board 40331366739 is green in 1h03m
+
+The first cache-consuming run restored both verified Node archives instead of
+rebuilding V8:
+
+  node arm64-v8a: restored verified ... (52,563,432 bytes)
+  node x86_64:    restored verified ... (54,791,880 bytes)
+
+The new ustar regression and RuntimeEnv tests passed before payload assembly.
+On-device extraction reached READY; the debug and release-shaped tool gates
+both report:
+
+  V6 PASS  {"ok": true}; crc32 891568578
+  V7 PASS  v24.22.1; 11.19.1; local npm install/require result 42
+
+T1/T3 remained 205/205 with zero executable outside the APK. The release APK
+and AAB passed byte-level inspection with 16 native libraries per ABI, and the
+APK remained 188.1 MB with 11.9 MB headroom. The complete Phase 10 pipeline
+ended rc=0. Node/npm is now measured sealed-prefix functionality, not a pending
+source-build result.
+
+## 2026-10-26 - B.90 - wget reuses the proven curl/TLS boundary instead of duplicating it
+
+The next missing downloader is implemented as a small native PIE which execs
+the sibling sealed curl 8.10.1 binary after translating Wget's ordinary
+non-recursive interface: quiet/output/directory/timeout/user-agent/header,
+resume, address family, spider, compression and certificate options. Unknown
+crawl/mirror options are rejected explicitly. This gives the agent the familiar
+`wget -q -O` path without adding a second TLS implementation under the 11.9 MB
+Play headroom; HTTPS remains Mbed TLS with Android's current CA store.
+
+V8 does not accept launcher version text as evidence. It starts a deterministic
+loopback HTTP fixture in the instrumentation process, downloads known bytes
+through the installed `bin/wget` symlink and sibling `libcurl.so`, then verifies
+the writable output. The launcher itself is added to the sealed manifest and
+the PIE/16 KiB build checks. Device, release-shape, exec-audit and final-size
+closure remain pending the next board.

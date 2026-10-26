@@ -409,11 +409,14 @@ PATH order is OUR prefix first, then Android's /system/bin:
 `node` is real Node 24 LTS and `npm`/`npx` are the bundled npm 11 package
 manager; they are sealed APK executables, while installed package data stays
 under the project. `git` speaks https (certs come from the device's own CA
-store), `rg` is ripgrep, `curl` and `jq` are both there (jq including its regex
-functions `test`/`match`/`sub`), and `python3` is real CPython with its stdlib
-(no pip - Android wheels are generally unavailable).
+store), `rg` is ripgrep, and both `curl` and `wget` download through the same
+sealed curl/Mbed TLS backend and the device CA store. `wget` supports ordinary
+non-recursive downloads (`-q`, `-O`, `-P`, `-T`, headers, resume, and spider)
+and fails loudly on crawl/mirror options instead of guessing. `jq` includes its
+regex functions (`test`/`match`/`sub`), and `python3` is real CPython with its
+stdlib (no pip - Android wheels are generally unavailable).
 
-NOT installed - do not probe: pip, perl, ruby, wget, apt. The webapp brief
+NOT installed - do not probe: pip, perl, ruby, apt. The webapp brief
 has the working package patterns - read it BEFORE touching any project with
 a package.json.
 """.trimIndent() + "\n"

@@ -9,6 +9,10 @@ import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.File
+import java.net.InetAddress
+import java.net.ServerSocket
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.thread
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -237,6 +241,68 @@ class HarnessSealedToolsGateTest {
             ok to "node/npm ran=${run.ran} exit=${run.exitCode} output='$compact'"
         }.getOrElse { t -> false to "threw ${t.javaClass.simpleName}: ${t.message}" }
         printGate("V7", measured.first, measured.second)
+    }
+
+    /**
+     * V8: wget performs a real transfer through the sealed curl/TLS backend.
+     *
+     * A version string would prove only that the tiny native launcher starts.
+     * Serve deterministic bytes from loopback, ask wget to write them with its
+     * normal `-O` interface, and inspect the file. This covers argument
+     * translation, the sibling libcurl.so exec, HTTP, and writable output while
+     * remaining independent of CI's external network.
+     */
+    @Test
+    fun v8_wgetDownloadsThroughTheSealedBackend() {
+        val measured = runCatching {
+            HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
+            val paths = RuntimePaths.get(context)
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val body = "OC_WGET_OK\n".toByteArray()
+            val serverError = AtomicReference<Throwable?>(null)
+            val server = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
+            val worker = thread(name = "wget-loopback-fixture") {
+                try {
+                    server.accept().use { socket ->
+                        socket.soTimeout = 5_000
+                        val reader = socket.getInputStream().bufferedReader()
+                        while (true) {
+                            val line = reader.readLine() ?: break
+                            if (line.isEmpty()) break
+                        }
+                        val headers =
+                            "HTTP/1.1 200 OK\r\nContent-Length: ${body.size}\r\n" +
+                                "Connection: close\r\n\r\n"
+                        socket.getOutputStream().apply {
+                            write(headers.toByteArray())
+                            write(body)
+                            flush()
+                        }
+                    }
+                } catch (t: Throwable) {
+                    serverError.set(t)
+                }
+            }
+            val output = File(context.cacheDir, "v8-wget-output.txt").apply { delete() }
+            val run = try {
+                shellIn(
+                    env,
+                    "wget --version; wget -q -O '${output.absolutePath}' " +
+                        "'http://127.0.0.1:${server.localPort}/fixture.txt'",
+                )
+            } finally {
+                server.close()
+                worker.join(5_000)
+            }
+            val downloaded = output.takeIf { it.isFile }?.readText()
+            val ok = run.ran && run.exitCode == 0 &&
+                run.output.lineSequence().firstOrNull()?.contains("sealed curl backend") == true &&
+                downloaded == "OC_WGET_OK\n" && serverError.get() == null && !worker.isAlive
+            val compact = run.output.trim().replace("\n", " <NL> ").take(500)
+            ok to "wget ran=${run.ran} exit=${run.exitCode} bytes=${output.length()} " +
+                "body='${downloaded?.trim()}' fixture=${serverError.get()?.message ?: "ok"} output='$compact'"
+        }.getOrElse { t -> false to "threw ${t.javaClass.simpleName}: ${t.message}" }
+        printGate("V8", measured.first, measured.second)
     }
 
     private fun shell(script: String): Run =
