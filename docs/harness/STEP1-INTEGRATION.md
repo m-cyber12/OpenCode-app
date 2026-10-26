@@ -362,16 +362,16 @@ Android's live CA store. V8 served deterministic bytes on emulator loopback,
 downloaded them through `wget -q -O`, and verified all 11 bytes on debug and
 release-shaped builds. T1/T3 rose cleanly to 206/206; the APK remained 188.1 MB.
 
-**OpenSSH (board pending):** the final core-tier tool is the upstream 10.6p1
-client suite: `ssh`, `scp`, `sftp`, `ssh-add`, `ssh-agent`, `ssh-keygen`, and
-`ssh-keyscan`. It applies the exact current Termux Android client fixes, but no
-server/auth/service patches and no sshd. OpenSSL 3.6.5 provides one shared
-`libcrypto.so` per ABI beside the clients in the APK native directory. This
-avoids repeating roughly 6 MB of static crypto in five executables. The first
-complete Android package measured **195.5 MB**, leaving **4.5 MB** under Play's
-cap with 25 native files per ABI. V9 expands a config, generates an Ed25519
-key, starts the sealed agent in app-private TMPDIR, loads the key, and requires its SHA-256
-fingerprint back without relying on an external SSH host.
+**OpenSSH closed on board 40409146619.** The final core-tier tool is the
+upstream 10.6p1 client suite: `ssh`, `scp`, `sftp`, `ssh-add`, `ssh-agent`,
+`ssh-keygen`, and `ssh-keyscan`. It applies the exact current Termux Android
+client fixes, but no server/auth/service patches and no sshd. OpenSSL 3.6.5
+provides one shared `libcrypto.so` per ABI beside the clients in the APK native
+directory, avoiding roughly 6 MB of repeated static crypto in five executables.
+V9 passed on debug and release-shaped packages: config expansion, Ed25519 key
+creation, default agent startup below HOME, key loading, and SHA-256 fingerprint
+listing. T1/T3 passed at 213/213. The final APK measured **195.6 MB**, leaving
+**4.4 MB** under Play's cap with 25 native files per ABI.
 
 Play forbids downloading executable code, so the store shape is **sealed**:
 every executable is a symlink into `nativeLibraryDir` (the inode comes from the

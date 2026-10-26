@@ -7037,3 +7037,20 @@ and performs the same component-wise mkdir/openat traversal from there. Paths
 outside HOME retain upstream root traversal and therefore remain denied by the
 platform. This also keeps default `ssh-agent -s` behavior instead of weakening
 V9 with an explicit socket workaround.
+
+## 2026-10-26 - B.100 - OpenSSH board 40409146619 closes the full step-1 core tier
+
+The complete Phase 10 board passed in 58m30s at source commit 6e1e2e96. V9
+passed on both the debug and release-shaped packages with OpenSSH 10.6p1 and
+OpenSSL 3.6.5, client config expansion, Ed25519 key generation, normal default
+ssh-agent startup below HOME, ssh-add key loading, and a returned SHA-256
+ED25519 fingerprint. No external host or network service was part of the proof.
+
+T1/T3 passed at 213/213 with no missing sealed targets and no executable inode
+outside the APK. All 478 JVM tests passed; Python V6, Node/npm V7 and wget V8
+remained green. APK/AAB byte-level inspection passed with 25 native files per
+ABI, and the unsigned release APK passed Play's base-module gate at **195.6
+MB**, retaining **4.4 MB**. The full additive step-1 tool set is now measured:
+shell/coreutils, curl/wget, jq, Git/ripgrep, CPython, Node/npm, and all seven
+OpenSSH clients. Bun remains the server runtime until the separately measured
+Node-port/removal step, exactly as sequenced.
