@@ -6950,3 +6950,18 @@ wrapped `sealed curl/Mbed TLS backend` between `sealed` and `curl`, while the
 existing environment-truth unit test intentionally requires that exact phrase.
 The text is rewrapped without changing its rendered meaning. All other JVM
 unit tests passed. This board also produced no native build or runtime verdict.
+
+## 2026-10-26 - B.95 - OpenSSH board 40366036990 reached the Android source build and exposed one omitted Termux preconfigure define
+
+All 478 JVM tests passed. OpenSSL 3.6.5 then cross-built its arm64 shared
+library successfully at 5,151,784 stripped bytes with the intended unversioned
+SONAME. OpenSSH configure completed, but `openbsd-compat/bsd-closefrom.c`
+stopped in the NDK unistd header because portable `defines.h` had replaced the
+compiler's `__sentinel__` attribute token.
+
+The pinned Termux recipe carries two Android preconfigure definitions in
+addition to the already-copied configure arguments:
+`HAVE_ATTRIBUTE__SENTINEL__=1` and `BROKEN_SETRESGID`. Both are now present in
+the target CPPFLAGS. The former preserves clang/Bionic's sentinel attribute;
+the latter retains Termux's Android credential-call boundary. No device or
+packaging verdict was reached on this board.

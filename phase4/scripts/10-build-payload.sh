@@ -1159,7 +1159,7 @@ EOF
     # appear newer by a timestamp tick and trigger an unnecessary autoreconf.
     touch configure
     CC="$cc" LD="$cc" AR="$ar" RANLIB="$ranlib" \
-    CPPFLAGS="-D__ANDROID__ -Dfd_mask=int -I$oprefix/include -I$zprefix/include" \
+    CPPFLAGS="-D__ANDROID__ -Dfd_mask=int -DHAVE_ATTRIBUTE__SENTINEL__=1 -DBROKEN_SETRESGID -I$oprefix/include -I$zprefix/include" \
     CFLAGS="-O2 -fPIE" \
     LDFLAGS="-pie -L$oprefix/lib -L$zprefix/lib -Wl,-z,max-page-size=16384" \
     LIBS="-ldl" \
