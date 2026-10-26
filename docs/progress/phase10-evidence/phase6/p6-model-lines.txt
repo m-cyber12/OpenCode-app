@@ -16,12 +16,12 @@ P6_F1 PASS :: firstScreen=welcome workspaceStep=true stages=[extracting, startin
 P6_F2 PASS :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=false,chat=false,workspace=true) leakedTokens=[] screenshot=43202
 P6_F3 PASS :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:43202,projects:65751
 P6_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=35891, 02-first-run-ready.png=43202, 02b-first-run-workspace.png=43202, 04-first-run-projects.png=65751]
-P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=59232 ink=0.310 via=compose] reply='Blue.'
-P6_L2 PASS :: tool=bash status=completed partId=prt_179f1d901001N8rHa34XlyZvCT cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1 marker=P6LIVE250887 screenshots[bytes=92251 ink=0.386 via=compose | bytes=106662 ink=0.453 via=compose]
+P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=59763 ink=0.310 via=compose] reply='Blue.'
+P6_L2 PASS :: tool=bash status=completed partId=prt_17a319404001kCAxoPZENOWhsg cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true markerOnScreen=true asksAnswered=1 marker=P6LIVE428041 screenshots[bytes=90965 ink=0.385 via=compose | bytes=104550 ink=0.454 via=compose]
 P6_MODEL_AVAILABLE 1 ::
 P6_MODEL_AVAILABLE 1 :: replyChars=5 asksAnswered=0
 P6_X1 PASS :: nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=34 api=34 abi=x86_64 :: OCEXECPROBE ok
-P6_X2 PASS :: appData exec refused=true ran=false exit=-1 api=34 targetSdk=34 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~u
+P6_X2 PASS :: appData exec refused=true ran=false exit=-1 api=34 targetSdk=34 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~N
 P6_X3 PASS :: prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P6_S1 PASS :: sealed install ok=true files=1 verified=1 executables=1 problems=[] :: sealed payload: 1 data files (15 bytes, 1 verified), 0 data links, 1 executables from the APK
 P6_S2 PASS :: prefix exec symlink=true ran=true exit=0 targetSdk=34 api=34 :: OCEXECPROBE ok
@@ -38,4 +38,4 @@ P6_V5 PASS :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
 P6_V6 PASS :: python ran=true exit=0 json='{"ok": true}' zlib.crc32='891568578' (want 891568578) output='{"ok": true} <NL> 891568578'
 P6_V7 PASS :: node/npm ran=true exit=0 output='v24.22.1 <NL> 11.19.1 <NL> 42'
 P6_V8 PASS :: wget ran=true exit=0 bytes=11 body='OC_WGET_OK' fixture=ok output='wget (OpenCode sealed curl backend) 1'
-P6_V9 FAIL :: openssh ran=true exit=2 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> Bad system call  <NL> OC_SSH_AGENT_OK'
+P6_V9 FAIL :: openssh ran=true exit=2 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> mkdir_path: open("/"): Permission denied <NL> agent_listener_user: failed to create agent socket parent directory <NL> main: Couldn't prepare agent socket <NL> OC_SSH_AGENT_OK'
