@@ -72,6 +72,12 @@ object RuntimeEnv {
         // disagrees with its own PATH is how scripts find the wrong `test`.
         env["SHELL"] = File(paths.binDir, "sh").absolutePath
         env["LANG"] = "C.UTF-8"
+        // A PIE exec'd by absolute path does not automatically search its own
+        // directory for DT_NEEDED libraries on Android. Node needs the NDK's
+        // libc++_shared.so, which is correctly packaged beside it in the APK,
+        // but board 40285201790 proved the linker still says "not found"
+        // without this search path. Keep it APK-only: never add app data here.
+        env["LD_LIBRARY_PATH"] = paths.nativeLibraryDir.absolutePath
         // v9.28: the rebuilt git speaks https (curl + Mbed TLS). Its helper
         // (bin/git-remote-https -> libgitremotehttp.so) is found here, and
         // certificate trust comes from ANDROID'S OWN CA store - a directory

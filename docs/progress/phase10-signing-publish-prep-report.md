@@ -6813,3 +6813,45 @@ artifacts in seconds. A bad cache is fatal, never a silent source fallback.
 When no cache exists, the pinned source build runs and captures it. This is the
 same source/prebuilt split already accepted for Bun, with stronger local
 checks and a retained full rebuild path. Bootstrap run pending.
+
+## 2026-10-26 - B.88 - Bootstrap board 40285201790 retained both ABI caches and exposed two post-build defects
+
+The one-time bootstrap completed the expensive work before its final red
+verdict. Evidence commits 140e399a and 0d2cdc8c retained deterministic caches
+for Node 24.22.1, NDK 28.2.13676358 and Termux patches at
+2d6b9d566c2e933c50e675198a0d7847a96deb61. Both reconstructed archives match
+their recorded SHA-256 and contain the expected three files:
+
+  arm64-v8a  20,612,025 bytes  77935f1d338ef4b76758bbdc7cbd283a452fc3612f8008d76df587231f2184af
+  x86_64     21,639,650 bytes  67f0eeb5e796cb5961831218b45c95733ffd8476e6ab31cd76e56a367359e723
+
+The extracted libnode.so files are the correct ELF64 machines, retain 16 KiB
+PT_LOAD alignment and declare libc++_shared.so. The release-shaped APK and AAB
+were assembled with all 16 native libraries per ABI. P10_SIZE passed at 188.1
+MB, leaving 11.9 MB under Play's 200 MB base-module cap. The first normal
+rerun can now restore the verified binaries in seconds instead of rebuilding
+V8 for roughly six hours.
+
+The board's failures occurred after source compilation and have narrow causes.
+First, extraction repeatedly stopped before payload promotion at npm's
+110-byte path ending in `google/api/field_behavior.js`. GNU tar's default
+format represented the long name with an extension record, while the small
+Android reader intentionally skips extension records and already supports the
+POSIX ustar prefix field. Payload creation now requests `--format=ustar`
+explicitly, and its unit fixture encodes and extracts this exact long npm path
+through the ustar prefix/name fields.
+
+Second, V7 reached the packaged Node executable but Bionic reported:
+
+  CANNOT LINK EXECUTABLE "node": library "libc++_shared.so" not found
+
+The library was present beside libnode.so in both APK ABI directories; direct
+execution does not imply a sibling-library search. RuntimeEnv now exports only
+the APK native-library directory as LD_LIBRARY_PATH (never writable app data),
+with a unit assertion for that boundary. Python V6 and plugin failures on this
+board were consequences of extraction aborting before payload promotion, not
+regressions in their previously green artifacts.
+
+The cached rerun must still prove extraction, Python V6, Node/npm V7
+(`v24.22.1`, `11.19.1`, local install result `42`), release 16 KiB checks and
+the size cap. No runtime closure is claimed before that board.

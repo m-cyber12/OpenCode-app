@@ -76,6 +76,10 @@ class RuntimeEnvTest {
         assertEquals(File(p.binDir, "sh").absolutePath, env["SHELL"])
         assertFalse("SHELL must not be a system path", env["SHELL"]!!.startsWith("/system/"))
         assertEquals("C.UTF-8", env["LANG"])
+        // Dynamic dependencies may come only from the APK's executable native
+        // directory, never from writable app data.
+        assertEquals(p.nativeLibraryDir.absolutePath, env["LD_LIBRARY_PATH"])
+        assertFalse(env["LD_LIBRARY_PATH"]!!.startsWith(p.filesDir.absolutePath))
     }
 
     @Test

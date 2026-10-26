@@ -25,10 +25,24 @@ class PayloadExtractorTest {
     /** Build a minimal ustar tar (regular files + dirs) in memory. */
     private fun makeTar(files: Map<String, ByteArray>): ByteArray {
         val out = ByteArrayOutputStream()
-        fun writeHeader(name: String, size: Long, type: Char) {
+        fun writeHeader(path: String, size: Long, type: Char) {
             val hdr = ByteArray(512)
-            val nameBytes = name.toByteArray()
-            System.arraycopy(nameBytes, 0, hdr, 0, minOf(nameBytes.size, 100))
+            // POSIX ustar stores paths longer than 100 bytes as prefix + name.
+            // This is the shape GNU tar emits only when --format=ustar is
+            // explicit; board 40285201790 showed why the distinction matters.
+            val split = if (path.toByteArray().size <= 100) {
+                "" to path
+            } else {
+                path.indices.reversed()
+                    .firstOrNull { i ->
+                        path[i] == '/' && path.substring(0, i).toByteArray().size <= 155 &&
+                            path.substring(i + 1).toByteArray().size <= 100
+                    }
+                    ?.let { path.substring(0, it) to path.substring(it + 1) }
+                    ?: error("path does not fit ustar: $path")
+            }
+            split.second.toByteArray().copyInto(hdr, 0)
+            split.first.toByteArray().copyInto(hdr, 345)
             // mode 0000644 at offset 100, uid/gid 0
             "0000644\u0000".toByteArray().copyInto(hdr, 100)
             "0000000\u0000".toByteArray().copyInto(hdr, 108)
@@ -66,6 +80,21 @@ class PayloadExtractorTest {
         assertEquals("console.log('hi')", File(dest, "launcher.js").readText())
         assertEquals("NODE_BUNDLE", File(dest, "opencode/dist/node/node.js").readText())
         assertEquals("asset-data", File(dest, "opencode/dist/node/asset.txt").readText())
+    }
+
+    @Test
+    fun unpackTarUsesUstarPrefixForNpmPathsOverOneHundredBytes() {
+        val dest = tmp.newFolder("ustar-prefix")
+        val path =
+            "usr/lib/node_modules/npm/node_modules/@sigstore/protobuf-specs/" +
+                "dist/__generated__/google/api/field_behavior.js"
+        assertEquals(110, path.toByteArray().size)
+        assertTrue("fixture must exercise ustar prefix", path.toByteArray().size > 100)
+        PayloadExtractor.unpackTar(
+            ByteArrayInputStream(makeTar(mapOf(path to "PROTOBUF".toByteArray()))),
+            dest,
+        )
+        assertEquals("PROTOBUF", File(dest, path).readText())
     }
 
     @Test

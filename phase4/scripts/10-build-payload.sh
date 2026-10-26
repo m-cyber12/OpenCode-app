@@ -546,9 +546,13 @@ note "plugin seed: $(find "$STAGE/plugin-seed" -type f | wc -l) files, $(du -sk 
 # already run; the interpreter shipped but its stdlib never entered the APK.
 pack_runtime_payload() {
   local payload_tgz="$ENGINE/assets/runtime-payload.tar.gz" payload_sha=""
-  # Deterministic tar (sorted, no owner/mtime noise) then gzip.
+  # Deterministic POSIX ustar (sorted, no owner/mtime noise) then gzip. The
+  # format is not cosmetic: our small on-device reader understands ustar's
+  # prefix field, while GNU long-name extension records are deliberately
+  # skipped. npm adds paths over 100 bytes; those entries were absent after
+  # extraction on board 40285201790 even though the manifest had the full name.
   ( cd "$STAGE" && find . -type f | sed 's|^\./||' | sort \
-      | tar --owner=0 --group=0 --numeric-owner --no-recursion -T - -cf - \
+      | tar --format=ustar --owner=0 --group=0 --numeric-owner --no-recursion -T - -cf - \
       | gzip -9n > "$payload_tgz" )
   payload_sha="$(sha256sum "$payload_tgz" | cut -d' ' -f1)"
   note "payload tarball: $(stat -c%s "$payload_tgz") bytes sha256=$payload_sha"
