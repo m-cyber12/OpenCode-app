@@ -1,7 +1,7 @@
 P6_V3 PASS :: agent env PATH[0]=/data/user/0/io.github.mcyber12.opencode/files/bin (want /data/user/0/io.github.mcyber12.opencode/files/bin) SHELL=/data/user/0/io.github.mcyber12.opencode/files/bin/sh ran=true exit=0 out='1' tr=/data/user/0/io.github.mcyber12.opencode/files/bin/tr
 P6_V8 PASS :: wget ran=true exit=0 bytes=11 body='OC_WGET_OK' fixture=ok output='wget (OpenCode sealed curl backend) 1'
 P6_V2 PASS :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
-P6_V9 FAIL :: openssh ran=true exit=2 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> Bad system call'
+P6_V9 FAIL :: openssh ran=true exit=2 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> Bad system call  <NL> OC_SSH_AGENT_OK'
 P6_V6 PASS :: python ran=true exit=0 json='{"ok": true}' zlib.crc32='891568578' (want 891568578) output='{"ok": true} <NL> 891568578'
 P6_V7 PASS :: node/npm ran=true exit=0 output='v24.22.1 <NL> 11.19.1 <NL> 42'
 P6_V5 PASS :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
@@ -10,7 +10,7 @@ P6_V4 PASS :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-android) li
 P6_V3 PASS :: agent env PATH[0]=/data/user/0/io.github.mcyber12.opencode/files/bin (want /data/user/0/io.github.mcyber12.opencode/files/bin) SHELL=/data/user/0/io.github.mcyber12.opencode/files/bin/sh ran=true exit=0 out='1' tr=/data/user/0/io.github.mcyber12.opencode/files/bin/tr
 P6_V8 PASS :: wget ran=true exit=0 bytes=11 body='OC_WGET_OK' fixture=ok output='wget (OpenCode sealed curl backend) 1'
 P6_V2 PASS :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
-P6_V9 FAIL :: openssh ran=true exit=2 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> Bad system call'
+P6_V9 FAIL :: openssh ran=true exit=2 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> Bad system call  <NL> OC_SSH_AGENT_OK'
 P6_V6 PASS :: python ran=true exit=0 json='{"ok": true}' zlib.crc32='891568578' (want 891568578) output='{"ok": true} <NL> 891568578'
 P6_V7 PASS :: node/npm ran=true exit=0 output='v24.22.1 <NL> 11.19.1 <NL> 42'
 P6_V5 PASS :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
