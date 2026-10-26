@@ -858,7 +858,65 @@ build_python_stdlib() {
 # current for this exact Node release. Dependencies stay bundled; Intl,
 # inspector, snapshots and code cache are omitted because this is the user's
 # CLI tool, not the OpenCode server (Bun remains the server in additive step 1).
+#
+# A source build remains the authoritative recipe, but two V8 ABIs take almost
+# the entire six-hour GitHub-hosted runner maximum (board 40253463934 built both
+# and was cancelled after debug assembly). A checksum-pinned prebuilt cache in
+# phase4/prebuilt therefore makes verification runs practical. The one-time CI
+# bootstrap writes sub-2 MiB chunks under evidence because the existing always
+# post-step commits that directory even when the hosted runner is cancelled.
+# Set P4_REBUILD_NODE=1 to ignore the cache and reproduce from source.
 # ---------------------------------------------------------------------------
+NODE_CACHE_KEY="node-${NODE_PIN}-ndk${NDK_PIN}-termux-${NODE_TERMUX_PATCH_PIN:0:12}-v1"
+NODE_PREBUILT_ROOT="$DIR/prebuilt/$NODE_CACHE_KEY"
+NODE_BOOTSTRAP_ROOT="$DIR/../docs/progress/phase10-evidence/node-cache/$NODE_CACHE_KEY"
+
+restore_node_cache() {  # $1=abi
+  local abi="$1" outdir="$ENGINE/jniLibs/$abi" root="" archive="$WORK/node-cache-$abi.tgz"
+  for root in "$NODE_PREBUILT_ROOT/$abi" "$NODE_BOOTSTRAP_ROOT/$abi"; do
+    [ -f "$root/archive.sha256" ] || continue
+    compgen -G "$root/node-runtime.tgz.part-*" >/dev/null || continue
+    cat "$root"/node-runtime.tgz.part-* > "$archive"
+    [ "$(sha256sum "$archive" | cut -d' ' -f1)" = "$(cat "$root/archive.sha256")" ] \
+      || { note "FATAL: Node prebuilt archive checksum failed for $abi ($root)"; return 1; }
+    tar xzf "$archive" -C "$outdir"
+    [ -x "$outdir/libnode.so" ] && [ -x "$outdir/libnpmcli.so" ] \
+      || { note "FATAL: Node cache for $abi lacks executable outputs"; return 1; }
+    if "$NDK_BIN/llvm-readelf" -d "$outdir/libnode.so" | grep -q 'libc++_shared.so'; then
+      [ -f "$outdir/libc++_shared.so" ] \
+        || { note "FATAL: Node cache for $abi lacks libc++_shared.so"; return 1; }
+    fi
+    local machine=""
+    machine=$("$NDK_BIN/llvm-readelf" -h "$outdir/libnode.so" | sed -n 's/.*Machine:[[:space:]]*//p')
+    case "$abi:$machine" in
+      arm64-v8a:AArch64|x86_64:*X86-64*) ;;
+      *) note "FATAL: Node cache machine mismatch for $abi: $machine"; return 1 ;;
+    esac
+    note "node $abi: restored verified $NODE_CACHE_KEY ($(stat -c%s "$outdir/libnode.so") bytes)"
+    return 0
+  done
+  return 2
+}
+
+capture_node_cache() {  # $1=abi
+  local abi="$1" outdir="$ENGINE/jniLibs/$abi" root="$NODE_BOOTSTRAP_ROOT/$abi"
+  local archive="$WORK/node-runtime-$abi.tgz" files="libnode.so libnpmcli.so"
+  [ -f "$outdir/libc++_shared.so" ] && files="$files libc++_shared.so"
+  rm -rf "$root" && mkdir -p "$root"
+  ( cd "$outdir" && tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner \
+      -cf - $files | gzip -9n > "$archive" )
+  sha256sum "$archive" | cut -d' ' -f1 > "$root/archive.sha256"
+  split -b 1900k -d -a 3 "$archive" "$root/node-runtime.tgz.part-"
+  ( cd "$outdir" && sha256sum $files ) > "$root/files.sha256"
+  cat > "$root/README.txt" <<EOF
+Generated from the pinned source recipe in phase4/scripts/10-build-payload.sh.
+cache=$NODE_CACHE_KEY
+abi=$abi
+source_run_rebuild=P4_REBUILD_NODE=1
+EOF
+  note "node $abi cache bootstrap: $(du -sk "$root" | cut -f1) KB in $(find "$root" -name 'node-runtime.tgz.part-*' | wc -l) chunks"
+}
+
 build_node() {  # $1=abi $2=target triple $3=node dest cpu $4=gyp arch
   local abi="$1" triple="$2" destcpu="$3" gyparch="$4"
   local outdir="$ENGINE/jniLibs/$abi" src="$WORK/node-$abi"
@@ -874,6 +932,18 @@ build_node() {  # $1=abi $2=target triple $3=node dest cpu $4=gyp arch
   [ -x "$ninja" ] || { note "FATAL: Node needs Ninja (not found on PATH or under Android SDK)"; return 1; }
   local patchdir="$WORK/termux-node-patches"
   note "--- Node $NODE_PIN ($abi, Android/Bionic, no Intl/inspector/snapshot) ---"
+  if [ "${P4_REBUILD_NODE:-0}" != "1" ]; then
+    if restore_node_cache "$abi"; then
+      return 0
+    else
+      local cache_rc=$?
+      [ "$cache_rc" = "2" ] \
+        || { note "FATAL: unusable Node cache for $abi"; return 1; }
+      note "node $abi: no prebuilt cache; reproducing from pinned source"
+    fi
+  else
+    note "node $abi: P4_REBUILD_NODE=1; reproducing from pinned source"
+  fi
   [ -f "$zprefix/lib/libz.a" ] \
     || { note "FATAL: Node needs the already-built zlib archive for $abi"; return 1; }
   rm -rf "$src" && mkdir -p "$src"
@@ -950,6 +1020,8 @@ tools-v8_gypfiles-v8.gyp.patch"
   fi
 
   note "node $abi: $(stat -c%s "$outdir/libnode.so") bytes stripped; npm shim $(stat -c%s "$outdir/libnpmcli.so") bytes"
+  capture_node_cache "$abi" \
+    || { note "FATAL: could not capture reproducible Node cache for $abi"; return 1; }
   rm -rf "$src"  # one V8 output tree at a time: runner disk is a real limit
 }
 

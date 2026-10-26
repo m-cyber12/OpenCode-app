@@ -335,8 +335,16 @@ payload timeout while Make was still compiling and racing duplicate host/target
 outputs. Activating Termux's Ninja generator fix removed that race. Board
 40227986986 then produced a **52,563,432-byte stripped arm64 Node**, proving the
 build, but the four-hour payload guard expired just after x86_64 started. The
-workflow has a nine-hour job cap; the payload now has a finite eight-hour guard,
-leaving the measured final hour for device and release stages.
+workflow file requests nine hours, but the hosted runner enforced a hard six:
+board 40253463934 built **both** ABIs (arm64 52,563,432 bytes; x86_64
+54,791,880 bytes), packaged them and assembled debug successfully, then was
+cancelled during later gates. Rebuilding V8 in every verification run therefore
+cannot go green. The source recipe remains authoritative (`P4_REBUILD_NODE=1`),
+but it now captures a checksum-pinned runtime archive in sub-2 MiB evidence
+chunks on the one-time bootstrap run. The always-run evidence commit preserves
+those chunks even after hosted cancellation; subsequent runs reconstruct,
+SHA-256-check and architecture-check them in seconds, leaving time for V7,
+release and size gates.
 
 **Still to do after the Node size/run board:** wget and openssh.
 

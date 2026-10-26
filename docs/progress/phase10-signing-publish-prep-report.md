@@ -6781,3 +6781,35 @@ hour) boundary, leaving approximately one hour for the historically measured
 emulator, release and evidence stages. This is a timeout correction based on a
 completed arm64 artifact, not relaxation of a failing compiler gate. x86_64,
 final APK size, 16 KiB verification and V7 remain pending the rerun.
+
+## 2026-10-26 - B.87 - Node board 40253463934 built both ABIs; hosted job has a hard six-hour wall
+
+The eight-hour payload guard was not the active limit. GitHub cancelled the
+hosted run at six hours despite the workflow's requested nine-hour timeout.
+Crucially, evidence shows source compilation itself succeeded for both ABIs:
+
+  node arm64-v8a: 52,563,432 bytes stripped; npm shim 6,192 bytes
+  node x86_64:    54,791,880 bytes stripped; npm shim 5,984 bytes
+
+The payload proceeded through npm data, packaging and Gradle; debug +
+instrumentation APK assembly completed successfully in 2m04s. Cancellation
+arrived during the later pipeline, before emulator verdicts and release size.
+Therefore this is no longer a Node compiler problem. It is impossible to both
+rebuild two V8 architectures and run the acceptance suite inside the hosted
+six-hour wall.
+
+The source recipe remains authoritative and forceable with
+`P4_REBUILD_NODE=1`. A one-time bootstrap source run now writes each ABI's
+`libnode.so`, native npm shim and (when needed) libc++_shared.so into a
+deterministic gzip archive, records the archive and individual-file SHA-256s,
+and splits it into 1,900 KiB pieces under the phase evidence directory. The
+workflow's existing always-run evidence step commits that directory after a
+cancelled main step and deletes only files above 2 MiB, so the chunks survive.
+
+Normal verification checks a cache key containing Node version, NDK version,
+Termux patch commit and recipe revision; reconstructs and SHA-256-checks the
+archive; verifies required files and ELF machine; then uses the measured
+artifacts in seconds. A bad cache is fatal, never a silent source fallback.
+When no cache exists, the pinned source build runs and captures it. This is the
+same source/prebuilt split already accepted for Bun, with stronger local
+checks and a retained full rebuild path. Bootstrap run pending.
