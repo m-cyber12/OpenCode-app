@@ -1,4 +1,4 @@
-[2026-10-26T15:25:02Z] === building the smoke variant (release configuration, debug-key signed) ===
+[2026-10-26T19:30:53Z] === building the smoke variant (release configuration, debug-key signed) ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
@@ -7,10 +7,10 @@ RELEASE SIGNING: not configured -> release artifacts are UNSIGNED (CI behavior; 
 
 > Task :app:verifyAndStagePayload
 PAYLOAD STAGING: -PskipPayload=null SKIP_PAYLOAD=null
-PAYLOAD_SOURCE runtime-payload.tar.gz=26920765B runtime-manifest.json=478077B
+PAYLOAD_SOURCE runtime-payload.tar.gz=26921250B runtime-manifest.json=478077B
 Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/assets / /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/jniLibs
-STAGED_ASSETS n=5 runtime-manifest.json(478077B), runtime-payload.tar.gz(26920765B), sealed-exec-arm64-v8a.txt(4952B), sealed-exec-x86_64.txt(4952B), sealed-report.json(146B)
-STAGED_JNILIBS n=34 x86_64/libbun.so, arm64-v8a/libbun.so, x86_64/libc++_shared.so, arm64-v8a/libc++_shared.so, x86_64/libchildshim.so, arm64-v8a/libchildshim.so, x86_64/libcurl.so, arm64-v8a/libcurl.so, x86_64/libexecshim.so, arm64-v8a/libexecshim.so, x86_64/libgit.so, arm64-v8a/libgit.so, x86_64/libgitremotehttp.so, arm64-v8a/libgitremotehttp.so, x86_64/libjq.so, arm64-v8a/libjq.so, x86_64/libmksh.so, arm64-v8a/lib
+STAGED_ASSETS n=5 runtime-manifest.json(478077B), runtime-payload.tar.gz(26921250B), sealed-exec-arm64-v8a.txt(5132B), sealed-exec-x86_64.txt(5132B), sealed-report.json(146B)
+STAGED_JNILIBS n=50 x86_64/libbun.so, arm64-v8a/libbun.so, x86_64/libc++_shared.so, arm64-v8a/libc++_shared.so, x86_64/libchildshim.so, arm64-v8a/libchildshim.so, x86_64/libcrypto.so, arm64-v8a/libcrypto.so, x86_64/libcurl.so, arm64-v8a/libcurl.so, x86_64/libexecshim.so, arm64-v8a/libexecshim.so, x86_64/libgit.so, arm64-v8a/libgit.so, x86_64/libgitremotehttp.so, arm64-v8a/libgitremotehttp.so, x86_64/libjq.so, arm64-v
 
 > Task :app:preBuild
 > Task :app:preSmokeBuild
@@ -34,19 +34,19 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:processSmokeManifest
 > Task :app:javaPreCompileSmoke FROM-CACHE
 > Task :app:mergeSmokeShaders
+> Task :app:processSmokeManifestForPackage
 > Task :app:compileSmokeShaders NO-SOURCE
 > Task :app:generateSmokeAssets
 > Task :app:mergeSmokeResources
 > Task :app:mergeSmokeAssets
-> Task :app:processSmokeManifestForPackage
-> Task :app:checkSmokeDuplicateClasses
 > Task :app:desugarSmokeFileDependencies FROM-CACHE
 > Task :app:mergeSmokeStartupProfile
-> Task :app:mergeExtDexSmoke FROM-CACHE
-> Task :app:mergeLibDexSmoke FROM-CACHE
+> Task :app:checkSmokeDuplicateClasses
 > Task :app:processSmokeResources
 > Task :app:compressSmokeAssets
 > Task :app:mergeSmokeJniLibFolders
+> Task :app:mergeExtDexSmoke FROM-CACHE
+> Task :app:mergeLibDexSmoke FROM-CACHE
 > Task :app:validateSigningSmoke
 > Task :app:writeSmokeAppMetadata
 > Task :app:writeSmokeSigningConfigVersions
@@ -60,7 +60,7 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:generateSmokeAndroidTestResources
 
 > Task :app:stripSmokeDebugSymbols
-Unable to strip the following libraries, packaging them as they are: libbun.so, libc++_shared.so, libchildshim.so, libcurl.so, libexecshim.so, libgit.so, libgitremotehttp.so, libjq.so, libmksh.so, libnode.so, libnpmcli.so, libocexecprobe.so, libpython3.so, librg.so, libseccompshim.so, libtoybox.so, libwget.so.
+Unable to strip the following libraries, packaging them as they are: libbun.so, libc++_shared.so, libchildshim.so, libcrypto.so, libcurl.so, libexecshim.so, libgit.so, libgitremotehttp.so, libjq.so, libmksh.so, libnode.so, libnpmcli.so, libocexecprobe.so, libpython3.so, librg.so, libscp.so, libseccompshim.so, libsftp.so, libsshadd.so, libsshagent.so, libsshclient.so, libsshkeygen.so, libsshkeyscan.so, libtoybox.so, libwget.so.
 
 > Task :app:javaPreCompileSmokeAndroidTest FROM-CACHE
 > Task :app:mergeSmokeAndroidTestShaders
@@ -137,25 +137,25 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/androidTest/java/a
 > Task :app:dexBuilderSmokeAndroidTest
 > Task :app:mergeSmokeAndroidTestGlobalSynthetics FROM-CACHE
 > Task :app:processSmokeAndroidTestJavaRes
-> Task :app:mergeProjectDexSmokeAndroidTest
 > Task :app:mergeSmokeAndroidTestJavaResource
+> Task :app:mergeProjectDexSmokeAndroidTest
 > Task :app:packageSmokeAndroidTest
 > Task :app:createSmokeAndroidTestApkListingFileRedirect
 > Task :app:assembleSmokeAndroidTest
 
-BUILD SUCCESSFUL in 1m 9s
+BUILD SUCCESSFUL in 1m 22s
 69 actionable tasks: 55 executed, 14 from cache
-[2026-10-26T15:26:12Z] smoke apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/smoke/app-smoke.apk
-[2026-10-26T15:26:12Z] smoke testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/smoke/app-smoke-androidTest.apk
-[2026-10-26T15:26:12Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/smoke/INSTALL-README.txt (which artifact file is installable, and why)
-[2026-10-26T15:26:12Z] === inspecting the smoke APK (identity, payload, abis, signing) ===
-[2026-10-26T15:26:12Z] P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=True
-[2026-10-26T15:26:12Z] P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
-[2026-10-26T15:26:12Z] === installing the smoke build (fresh) ===
+[2026-10-26T19:32:16Z] smoke apk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/smoke/app-smoke.apk
+[2026-10-26T19:32:16Z] smoke testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/smoke/app-smoke-androidTest.apk
+[2026-10-26T19:32:16Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/smoke/INSTALL-README.txt (which artifact file is installable, and why)
+[2026-10-26T19:32:16Z] === inspecting the smoke APK (identity, payload, abis, signing) ===
+[2026-10-26T19:32:16Z] P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=34 debuggable=True
+[2026-10-26T19:32:16Z] P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
+[2026-10-26T19:32:16Z] === installing the smoke build (fresh) ===
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-10-26T15:26:14Z] === Phase 6 UI gates against the SMOKE build (P6_PKG=io.github.mcyber12.opencode) ===
-[2026-10-26T15:27:51Z] P10_SMOKE_UI PASS :: pass=38 fail=0 skip=0 on the release-shaped build (identical gates to the debug run)
-[2026-10-26T15:27:51Z] P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
+[2026-10-26T19:32:18Z] === Phase 6 UI gates against the SMOKE build (P6_PKG=io.github.mcyber12.opencode) ===
+[2026-10-26T19:33:59Z] P10_SMOKE_UI FAIL :: pass=38 fail=1 skip=0 - a gate that passes on debug and fails here is a RELEASE-SHAPE finding (see p10-smoke-ui.log)
+[2026-10-26T19:33:59Z] P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
