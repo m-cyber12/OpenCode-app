@@ -6759,3 +6759,25 @@ cross-builds plus CPython rather than the old curl-era payload. Termux's own
 current recipe warns Node takes roughly two hours per architecture; killing a
 healthy build at 90 minutes could never produce the requested tool. Board
 confirmation is pending.
+
+## 2026-10-26 - B.86 - Node board 40227986986: arm64 built; four-hour guard stopped x86_64
+
+The Ninja change resolved the host/target output race and produced the first
+measured current-LTS Android artifact:
+
+  node arm64-v8a: 52,563,432 bytes stripped
+  npm native shim: 6,192 bytes
+
+There was no compiler or linker error. The next log line is the x86_64 build
+start, followed by the outer guard:
+
+  --- Node 24.22.1 (x86_64, Android/Bionic, no Intl/inspector/snapshot) ---
+  STEP_TIMEOUT rc=124 after 14400s: 10-build-payload.sh
+
+Thus four hours covers the pre-existing payload toolchain plus one V8 ABI, not
+two. The workflow job itself is explicitly capped at nine hours. Phase 10 and
+the direct Phase 4 runner now give the payload a finite 28,800-second (eight
+hour) boundary, leaving approximately one hour for the historically measured
+emulator, release and evidence stages. This is a timeout correction based on a
+completed arm64 artifact, not relaxation of a failing compiler gate. x86_64,
+final APK size, 16 KiB verification and V7 remain pending the rerun.
