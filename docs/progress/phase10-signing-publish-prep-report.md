@@ -7000,3 +7000,22 @@ forces OpenSSH's own closefrom implementation and disables its close_range fast
 path, leaving the `/proc/self/fd` implementation used by portable OpenSSH.
 V9 now emits post-keygen, post-agent and post-add markers so any remaining
 boundary is identified exactly instead of collapsed into one shell status.
+
+## 2026-10-26 - B.98 - OpenSSH board 40389244551 narrows SIGSYS to ssh-agent before its environment output
+
+The close_range-disabled build again passed payload, packaging, T1/T3=213,
+195.5 MB size and every earlier V gate. V9 now reports:
+
+  OC_SSH_KEYGEN_OK
+  Bad system call
+  OC_SSH_AGENT_OK
+
+The last marker belongs to the parent shell after an empty failed command
+substitution; neither the add marker nor a fingerprint appears. Therefore key
+creation is closed and ssh-agent dies before emitting its shell environment.
+At the very start of main, before option parsing or socket creation, upstream
+ssh-agent makes unchecked `setegid(getgid())` and `setgid(getgid())` calls to
+drop possible privilege. An Android app process already runs at its final fixed
+uid/gid, and the target-34 app seccomp policy kills these otherwise redundant
+credential syscalls. They are now omitted only under `__ANDROID__`; all other
+platforms retain upstream behavior. The portable closefrom fallback remains.

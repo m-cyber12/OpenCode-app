@@ -330,6 +330,24 @@ replacement = needle + """\t/* Android synthesizes a passwd home outside the app
 if s.count(needle) != 1:
     raise SystemExit("OpenSSH ssh.c home patch point drifted")
 p.write_text(s.replace(needle, replacement))
+
+p = root / "ssh-agent.c"
+s = p.read_text()
+needle = """\t/* drop */
+\t(void)setegid(getgid());
+\t(void)setgid(getgid());
+"""
+replacement = """\t/* Android apps start at their final fixed uid/gid. API 34 seccomp kills
+\t * the otherwise redundant set[e]gid-to-self syscalls. */
+#ifndef __ANDROID__
+\t(void)setegid(getgid());
+\t(void)setgid(getgid());
+#endif
+"""
+if s.count(needle) != 1:
+    raise SystemExit("OpenSSH ssh-agent gid-drop patch point drifted")
+p.write_text(s.replace(needle, replacement))
+
 p = root / "pathnames.h"
 s = p.read_text()
 needle = '#define _PATH_SSH_PROGRAM\t\t"/usr/bin/ssh"'
