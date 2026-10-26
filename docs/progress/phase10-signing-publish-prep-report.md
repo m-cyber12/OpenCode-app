@@ -6941,3 +6941,12 @@ passed, then the compile/JVM stage stopped before payload assembly. The brief
 now emits the literal with Kotlin's `${'$'}` escape; the existing unit assertion
 still requires the rendered `$HOME/.ssh` text. No native recipe change was made
 in response to this pre-payload failure.
+
+## 2026-10-26 - B.94 - OpenSSH board 40360931086 compiled but a wrapped brief phrase failed its truth test
+
+The dollar escape compiled and the Android instrumentation source compiled.
+The board again stopped before payload assembly because the edited prose had
+wrapped `sealed curl/Mbed TLS backend` between `sealed` and `curl`, while the
+existing environment-truth unit test intentionally requires that exact phrase.
+The text is rewrapped without changing its rendered meaning. All other JVM
+unit tests passed. This board also produced no native build or runtime verdict.

@@ -411,8 +411,8 @@ manager; they are sealed APK executables, while installed package data stays
 under the project. `git` speaks https (certs come from the device's own CA
 store) and SSH. OpenSSH provides `ssh`, `scp`, `sftp`, `ssh-keygen`, `ssh-agent`,
 `ssh-add`, and `ssh-keyscan`; keys/config/known_hosts live under `${'$'}HOME/.ssh`.
-`rg` is ripgrep, and both `curl` and `wget` download through the same sealed
-curl/Mbed TLS backend and the device CA store. `wget` supports ordinary
+`rg` is ripgrep, and both `curl` and `wget` download through the same
+sealed curl/Mbed TLS backend and the device CA store. `wget` supports ordinary
 non-recursive downloads (`-q`, `-O`, `-P`, `-T`, headers, resume, and spider)
 and fails loudly on crawl/mirror options instead of guessing. `jq` includes its
 regex functions (`test`/`match`/`sub`), and `python3` is real CPython with its
