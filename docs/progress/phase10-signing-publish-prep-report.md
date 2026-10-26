@@ -6965,3 +6965,18 @@ addition to the already-copied configure arguments:
 the target CPPFLAGS. The former preserves clang/Bionic's sentinel attribute;
 the latter retains Termux's Android credential-call boundary. No device or
 packaging verdict was reached on this board.
+
+## 2026-10-26 - B.96 - OpenSSH board 40373321127 passed the sentinel fix and exposed Bionic's opaque resolver state
+
+The exact Termux attribute defines worked: the arm64 OpenSSH build advanced
+through openbsd-compat until its bundled SSHFP resolver dereferenced
+`struct __res_state`. Bionic intentionally leaves that resolver structure
+incomplete; only the public resolver calls are API. The build had again
+successfully produced the 5,151,784-byte arm64 libcrypto before stopping.
+
+The compatibility source now keeps its existing SSHFP response parser and
+`res_query()` implementation, but on Android calls public `res_init()` without
+reading or changing private resolver option fields. Non-Android source behavior
+is byte-for-byte preserved behind the preprocessor branch. The unused tentative
+Android `_res` definition is suppressed as well. A host compile of this exact
+Android branch passed. The board did not reach packaging or a device.

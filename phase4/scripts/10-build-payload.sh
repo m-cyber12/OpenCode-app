@@ -336,6 +336,74 @@ needle = '#define _PATH_SSH_PROGRAM\t\t"/usr/bin/ssh"'
 if s.count(needle) != 1:
     raise SystemExit("OpenSSH _PATH_SSH_PROGRAM patch point drifted")
 p.write_text(s.replace(needle, '#define _PATH_SSH_PROGRAM\t\t"ssh"'))
+
+# Bionic deliberately keeps struct __res_state opaque. Keep OpenSSH's bundled
+# SSHFP parser and public res_query() path, but initialize through res_init()
+# instead of dereferencing glibc/BSD resolver internals.
+p = root / "openbsd-compat" / "getrrsetbyname.c"
+s = p.read_text()
+needle = """#ifndef HAVE__RES_EXTERN
+struct __res_state _res;
+#endif
+"""
+replacement = """#if !defined(HAVE__RES_EXTERN) && !defined(__ANDROID__)
+struct __res_state _res;
+#endif
+"""
+if s.count(needle) != 1:
+    raise SystemExit("OpenSSH resolver global state patch point drifted")
+s = s.replace(needle, replacement)
+needle = "\tstruct __res_state *_resp = _THREAD_PRIVATE(_res, _res, &_res);\n"
+replacement = """#ifndef __ANDROID__
+\tstruct __res_state *_resp = _THREAD_PRIVATE(_res, _res, &_res);
+#endif
+"""
+if s.count(needle) != 1:
+    raise SystemExit("OpenSSH resolver state declaration patch point drifted")
+s = s.replace(needle, replacement)
+needle = """\t/* initialize resolver */
+\tif ((_resp->options & RES_INIT) == 0 && res_init() == -1) {
+\t\tresult = ERRSET_FAIL;
+\t\tgoto fail;
+\t}
+
+#ifdef DEBUG
+\t_resp->options |= RES_DEBUG;
+#endif /* DEBUG */
+
+#ifdef RES_USE_DNSSEC
+\t/* turn on DNSSEC if EDNS0 is configured */
+\tif (_resp->options & RES_USE_EDNS0)
+\t\t_resp->options |= RES_USE_DNSSEC;
+#endif /* RES_USE_DNSEC */
+"""
+replacement = """\t/* initialize resolver */
+#ifdef __ANDROID__
+\t/* Bionic exposes the query API but intentionally hides resolver state. */
+\tif (res_init() == -1) {
+\t\tresult = ERRSET_FAIL;
+\t\tgoto fail;
+\t}
+#else
+\tif ((_resp->options & RES_INIT) == 0 && res_init() == -1) {
+\t\tresult = ERRSET_FAIL;
+\t\tgoto fail;
+\t}
+
+# ifdef DEBUG
+\t_resp->options |= RES_DEBUG;
+# endif /* DEBUG */
+
+# ifdef RES_USE_DNSSEC
+\t/* turn on DNSSEC if EDNS0 is configured */
+\tif (_resp->options & RES_USE_EDNS0)
+\t\t_resp->options |= RES_USE_DNSSEC;
+# endif /* RES_USE_DNSEC */
+#endif /* __ANDROID__ */
+"""
+if s.count(needle) != 1:
+    raise SystemExit("OpenSSH resolver initialization patch point drifted")
+p.write_text(s.replace(needle, replacement))
 EOF
 
 build_git_android() {  # $1=abi $2=target triple $3=lib dir
