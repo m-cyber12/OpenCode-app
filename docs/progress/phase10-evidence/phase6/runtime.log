@@ -1,58 +1,37 @@
-2026-10-25T16:01:07.285Z [host] start() ignored: supervisor already running
-2026-10-25T16:01:07.294Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-2026-10-25T16:01:07.328Z [host] environment brief: installed (config.instructions)
-2026-10-25T16:01:07.329Z [host] state -> EXTRACTING (validating embedded runtime)
-2026-10-25T16:01:07.429Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
-2026-10-25T16:01:07.431Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
-2026-10-25T16:01:10.357Z [host] plugin seed promoted into opencode/ (node_modules + lockfile)
-2026-10-25T16:01:10.359Z [host] extraction complete: 1063 files validated
-2026-10-25T16:01:10.360Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-2026-10-25T16:01:10.415Z [host] sealed layout: sealed layout: 202 linked, 0 already correct, 0 missing targets, 0 errors
-2026-10-25T16:01:10.434Z [host] generated fresh server password in AndroidKeyStore (keystore=false)
-2026-10-25T16:01:10.435Z [host] github connector: env 'key' ABSENT (no token, or active project is not a GitHub project)
-2026-10-25T16:01:10.437Z [host] state -> STARTING (starting OpenCode server (attempt 1))
-2026-10-25T16:01:10.444Z [host] server started: pid=8606 abi=x86_64 port=4111
-2026-10-25T16:01:10.452Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~IDcfFVmfgHuy6l1En7deEw==/io.github.mcyber12.opencode-Licn-AZ62xEMh7Jtz84bbA==/lib/x86_64/libbun.so
-2026-10-25T16:01:10.453Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
-2026-10-25T16:01:10.462Z [server] [stderr] [seccomp] preload handler installed (rc=0)
-2026-10-25T16:01:10.489Z [server] [stderr] [launcher] main entered platform=android arch=x64
-2026-10-25T16:01:10.490Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-10-25T16:01:10.490Z [server] [stderr] [launcher] importing OpenCode bundle
-2026-10-25T16:01:11.964Z [server] [stderr] [launcher] OpenCode bundle imported
-2026-10-25T16:01:11.965Z [server] [stderr] [launcher] binding 127.0.0.1:4111
-2026-10-25T16:01:12.743Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-10-25T16:01:12.753Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-10-25T16:01:12.777Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23"}
-2026-10-25T16:01:12.784Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
-2026-10-25T16:01:14.005Z [host] start() ignored: supervisor already running
-2026-10-25T16:01:14.286Z [host] start() ignored: supervisor already running
-2026-10-25T16:01:15.612Z [host] start() ignored: supervisor already running
-2026-10-25T16:01:15.619Z [host] start() ignored: supervisor already running
-2026-10-25T16:01:18.959Z [host] start() ignored: supervisor already running
-2026-10-25T16:01:19.329Z [host] start() ignored: supervisor already running
-2026-10-25T16:01:22.055Z [host] start() ignored: supervisor already running
-2026-10-25T16:01:22.072Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
-2026-10-25T16:01:22.123Z [host] environment brief: installed (config.instructions)
-2026-10-25T16:01:22.124Z [host] state -> EXTRACTING (validating embedded runtime)
-2026-10-25T16:01:25.679Z [host] extraction valid (1063 files, 1.18.23 @ 05ea507)
-2026-10-25T16:01:25.681Z [host] payload: opencode 1.18.23 @ 05ea507 bun 1.3.14 git v2.48.1 rg 15.1.0
-2026-10-25T16:01:25.707Z [host] sealed layout: sealed layout: 0 linked, 202 already correct, 0 missing targets, 0 errors
-2026-10-25T16:01:25.715Z [host] server password loaded from AndroidKeyStore (keystore=false)
-2026-10-25T16:01:25.716Z [host] github connector: env 'key' ABSENT (no token, or active project is not a GitHub project)
-2026-10-25T16:01:25.719Z [host] state -> STARTING (starting OpenCode server (attempt 1))
-2026-10-25T16:01:25.725Z [host] server started: pid=8856 abi=x86_64 port=4111
-2026-10-25T16:01:25.740Z [server] [stderr] [exec-shim] opencode-execshim-bpf-v2 starting; target=/data/app/~~IDcfFVmfgHuy6l1En7deEw==/io.github.mcyber12.opencode-Licn-AZ62xEMh7Jtz84bbA==/lib/x86_64/libbun.so
-2026-10-25T16:01:25.741Z [server] [stderr] [exec-shim] seccomp BPF errno filter installed (8 rules)
-2026-10-25T16:01:25.750Z [server] [stderr] [seccomp] preload handler installed (rc=0)
-2026-10-25T16:01:25.795Z [server] [stderr] [launcher] main entered platform=android arch=x64
-2026-10-25T16:01:25.798Z [server] [stderr] [seccomp] failed to load shim: bun:ffi dlopen() is not available in this build (TinyCC is disabled)
-2026-10-25T16:01:25.799Z [server] [stderr] [launcher] importing OpenCode bundle
-2026-10-25T16:01:27.182Z [server] [stderr] [launcher] OpenCode bundle imported
-2026-10-25T16:01:27.182Z [server] [stderr] [launcher] binding 127.0.0.1:4111
-2026-10-25T16:01:27.548Z [server] SERVER_BOUND url=http://127.0.0.1:4111/ hostname=127.0.0.1 port=4111 mdns=disabled cors=none auth=basic user=opencode
-2026-10-25T16:01:27.550Z [server] BIND_AUDIT audit tcp=unreadable(EACCES) audit tcp6=unreadable(EACCES)
-2026-10-25T16:01:27.780Z [host] health check OK: healthy=true http=200 body={"healthy":true,"version":"1.18.23"}
-2026-10-25T16:01:27.786Z [host] state -> HEALTHY (healthy on 127.0.0.1:4111)
-2026-10-25T16:01:32.425Z [host] integration: loopback_only=true conclusive=true table=NO_ROWS(seen) keystore_hw=false providers_pushed=0 opencode_connected=opencode violations=0
-2026-10-25T16:01:40.668Z [host] start() ignored: supervisor already running
-2026-10-25T16:01:40.673Z [host] start() ignored: supervisor already running
+2026-10-26T11:55:18.456Z [host] start() ignored: supervisor already running
+2026-10-26T11:55:18.462Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-10-26T11:55:18.515Z [host] environment brief: installed (config.instructions)
+2026-10-26T11:55:18.516Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-10-26T11:55:18.783Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-10-26T11:55:18.786Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-10-26T11:55:21.587Z [host] state -> FATAL (runtime extraction failed: extraction incomplete: usr/lib/node_modules/npm/node_modules/@sigstore/protobuf-specs/dist/__generated__/google/api/field_behavior.js missing)
+2026-10-26T12:00:21.212Z [host] start() ignored: supervisor already running
+2026-10-26T12:00:21.219Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-10-26T12:00:21.297Z [host] environment brief: installed (config.instructions)
+2026-10-26T12:00:21.298Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-10-26T12:00:21.528Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-10-26T12:00:21.674Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-10-26T12:00:23.518Z [host] state -> FATAL (runtime extraction failed: extraction incomplete: usr/lib/node_modules/npm/node_modules/@sigstore/protobuf-specs/dist/__generated__/google/api/field_behavior.js missing)
+2026-10-26T12:17:23.681Z [host] start() ignored: supervisor already running
+2026-10-26T12:17:23.685Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-10-26T12:17:23.773Z [host] environment brief: installed (config.instructions)
+2026-10-26T12:17:23.779Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-10-26T12:17:23.894Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-10-26T12:17:24.077Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-10-26T12:17:25.757Z [host] state -> FATAL (runtime extraction failed: extraction incomplete: usr/lib/node_modules/npm/node_modules/@sigstore/protobuf-specs/dist/__generated__/google/api/field_behavior.js missing)
+2026-10-26T12:27:24.848Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-10-26T12:27:24.855Z [host] start() ignored: supervisor already running
+2026-10-26T12:27:24.976Z [host] environment brief: installed (config.instructions)
+2026-10-26T12:27:24.977Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-10-26T12:27:26.796Z [host] start() ignored: supervisor already running
+2026-10-26T12:27:26.810Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-10-26T12:27:26.856Z [host] environment brief: installed (config.instructions)
+2026-10-26T12:27:26.857Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-10-26T12:27:27.104Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting
+2026-10-26T12:27:27.268Z [host] payload asset 'runtime-payload.tar' is a raw tar (AAPT decompressed the .gz)
+2026-10-26T12:27:29.882Z [host] state -> FATAL (runtime extraction failed: extraction incomplete: usr/lib/node_modules/npm/node_modules/@sigstore/protobuf-specs/dist/__generated__/google/api/field_behavior.js missing)
+2026-10-26T12:42:29.484Z [host] ABI gate: ok abi=x86_64 sdk=34 model=Google sdk_gphone64_x86_64
+2026-10-26T12:42:29.496Z [host] start() ignored: supervisor already running
+2026-10-26T12:42:29.582Z [host] environment brief: installed (config.instructions)
+2026-10-26T12:42:29.583Z [host] state -> EXTRACTING (validating embedded runtime)
+2026-10-26T12:42:29.800Z [host] extraction invalid (no extraction marker (first run or wiped)) -> (re)extracting

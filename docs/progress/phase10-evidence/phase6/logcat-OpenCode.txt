@@ -1,7 +1,8 @@
 --------- beginning of main
-10-25 16:01:53.196  9260  9279 I OpenCode/gate: P6_V3 PASS :: agent env PATH[0]=/data/user/0/io.github.mcyber12.opencode/files/bin (want /data/user/0/io.github.mcyber12.opencode/files/bin) SHELL=/data/user/0/io.github.mcyber12.opencode/files/bin/sh ran=true exit=0 out='1' tr=/data/user/0/io.github.mcyber12.opencode/files/bin/tr
-10-25 16:01:53.235  9260  9279 I OpenCode/gate: P6_V2 PASS :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
-10-25 16:01:53.517  9260  9279 I OpenCode/gate: P6_V6 PASS :: python ran=true exit=0 json='{"ok": true}' zlib.crc32='891568578' (want 891568578) output='{"ok": true} <NL> 891568578'
-10-25 16:01:53.567  9260  9279 I OpenCode/gate: P6_V5 PASS :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
-10-25 16:01:53.600  9260  9279 I OpenCode/gate: P6_V1 PASS :: sealed shell ran=true exit=0 api=34 :: OC_SEALED_SH_OK
-10-25 16:01:53.639  9260  9279 I OpenCode/gate: P6_V4 PASS :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-android) libcurl/8.10.1 mbedTLS' CURL_CA_PATH=/apex/com.android.conscrypt/cacerts isDir=true
+10-26 12:42:33.634 10314 10333 I OpenCode/gate: P6_V3 PASS :: agent env PATH[0]=/data/user/0/io.github.mcyber12.opencode/files/bin (want /data/user/0/io.github.mcyber12.opencode/files/bin) SHELL=/data/user/0/io.github.mcyber12.opencode/files/bin/sh ran=true exit=0 out='1' tr=/data/user/0/io.github.mcyber12.opencode/files/bin/tr
+10-26 12:42:33.660 10314 10333 I OpenCode/gate: P6_V2 PASS :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
+10-26 12:42:33.692 10314 10333 I OpenCode/gate: P6_V6 FAIL :: python ran=true exit=1 json='Fatal Python error: Failed to import encodings module' zlib.crc32='Python runtime state: core initialized' (want 891568578) output='Fatal Python error: Failed to import encodings module <NL> Python runtime state: core initialized <NL> ModuleNotFoundError: No module named 'encodings' <NL>  <NL> Current thread 0x00007e81cfb6c4f8 (most recent call first): <NL>   <no Python frame>'
+10-26 12:42:33.726 10314 10333 I OpenCode/gate: P6_V7 FAIL :: node/npm ran=true exit=1 output='CANNOT LINK EXECUTABLE "node": library "libc++_shared.so" not found: needed by main executable <NL> CANNOT LINK EXECUTABLE "/data/app/~~7Rkb_a3ohs77sT9CzGI6ZA==/io.github.mcyber12.opencode-MHLnT4lpIQkXZA8II7gBtQ==/lib/x86_64/libnode.so": library "libc++_shared.so" not found: needed by main executable'
+10-26 12:42:33.755 10314 10333 I OpenCode/gate: P6_V5 PASS :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
+10-26 12:42:33.776 10314 10333 I OpenCode/gate: P6_V1 PASS :: sealed shell ran=true exit=0 api=34 :: OC_SEALED_SH_OK
+10-26 12:42:33.802 10314 10333 I OpenCode/gate: P6_V4 PASS :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-android) libcurl/8.10.1 mbedTLS' CURL_CA_PATH=/apex/com.android.conscrypt/cacerts isDir=true
