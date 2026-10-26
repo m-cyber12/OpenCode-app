@@ -6931,3 +6931,13 @@ the app-private TMPDIR, loads the key with ssh-add and requires a SHA-256
 ED25519 fingerprint. This is key/agent/crypto evidence without depending on an
 external SSH service. Device execution, release shape, exec audit and the 200
 MB cap remain pending the board.
+
+## 2026-10-26 - B.93 - OpenSSH board 40351002330 stopped before payload build on one Kotlin dollar escape
+
+The first OpenSSH board did not test native compilation or runtime. Kotlin
+correctly rejected the environment brief's literal Markdown `$HOME` as an
+unresolved string-template reference at EnvironmentBrief.kt:413. Static gates
+passed, then the compile/JVM stage stopped before payload assembly. The brief
+now emits the literal with Kotlin's `${'$'}` escape; the existing unit assertion
+still requires the rendered `$HOME/.ssh` text. No native recipe change was made
+in response to this pre-payload failure.
