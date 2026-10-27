@@ -478,3 +478,20 @@ Board 40517409850 finished in 1h8m24s on exact Android 16/API 36 with 481 JVM
 tests and zero Phase 6/9/10 failures. The unsigned release APK is 205,053,029
 bytes (195.6 MB, 4.4 MB headroom) and still targets API 36; the AAB is
 191,068,004 bytes. Bun remains the OpenCode server, exactly as decided.
+
+## 2026-10-27 - normal phone install is no longer the 221.65 MiB instrumentation APK
+
+The 221.65 MiB file was the universal debuggable instrumentation package, not
+the ordinary release shape. Board 40560139831 now emits two nondebuggable,
+public-test-key-signed convenience packages beside it:
+
+- `TEST-ONLY-debugkey-app-release-arm64-v8a.apk` — **126,233,444 bytes / 120.4 MiB**;
+  preferred for a normal ARM64 phone.
+- `TEST-ONLY-debugkey-app-release-universal.apk` — **205,058,605 bytes / 195.6 MiB**;
+  arm64+x86_64 fallback.
+
+Both retain API 36, the full runtime/tool payload and Bun server, and both have
+the same package ID, version code and certificate as the installed smoke build.
+The arm64 artifact structurally passed inspection with all 25 arm64 libraries
+and no x86_64 library. The owner's in-place physical-phone update remains the
+field confirmation; use the arm64 file above, not `app-smoke.apk`.

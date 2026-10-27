@@ -7150,3 +7150,51 @@ card could not establish what that older invocation actually printed, so this
 report does not invent an explanation for it. What is now proven is stronger:
 the corrected package repairs a staged old installed tree and the real Zen
 agent successfully invokes Python, Node/npm and every other shipped core tool.
+
+## 2026-10-27 - B.104 - ordinary phone APK is 120.4 MiB; instrumentation APK was the wrong daily-install file
+
+The owner's **232,420,625-byte / 221.65 MiB** file was not corrupt. It matched
+the final board's `TEST-ONLY-debugkey-app-smoke.apk` byte for byte. That file is
+the universal, `debuggable=true` instrumentation build: it carries arm64 and
+x86_64 and D8 emitted 16 dex files. The **195.6 MiB** number previously quoted
+was the non-debuggable universal release APK, which CI deliberately left
+unsigned and therefore was not the file the owner had been told to tap. That
+distinction should have been made explicit.
+
+The release gate now signs copies of the already-inspected non-debuggable
+release with only the committed public TEST-ONLY key. The actual release APK
+and AAB remain unchanged and unsigned. Two unmistakably named convenience
+files are emitted:
+
+  TEST-ONLY-debugkey-app-release-universal.apk ... 205,058,605 bytes (195.6 MiB)
+  TEST-ONLY-debugkey-app-release-arm64-v8a.apk ... 126,233,444 bytes (120.4 MiB)
+
+The arm64 package removes only the 25 `lib/x86_64/` entries. Inspection proves
+that all 25 arm64 native libraries, the 125,184,000-byte runtime payload,
+manifest asset, API 36 identity, icon and permissions remain. No shell,
+coreutils, Bun, Git/ripgrep, curl/wget, jq, Python, Node/npm or OpenSSH tool was
+removed. The universal APK and AAB remain available, and x86_64 emulator
+coverage is unchanged. Bun remains the OpenCode server.
+
+Both convenience APKs are nondebuggable and v3-signed. `apksigner verify`
+reported certificate SHA-256
+`d55fe225ca5697621b6ad41189f966c06785f809e730242e1d3bb8e363b24afa`, exactly
+the same certificate as the installed smoke APK. The application ID and
+version code are also unchanged, so Android has the signature/package identity
+required to update smoke without wiping its data. A physical-arm64 update is
+still an owner field pass; CI did not pretend its x86_64 emulator was that pass.
+
+Board 40549913078 failed the two new gates because the certificate parser
+expected an older `Signer #1` label while Build Tools 36 printed `V3.0 Signer`
+and `V2 Signer`. The APKs themselves verified, but the gates correctly stayed
+red. The parser was fixed against those recorded outputs. Final board
+**40560139831** (source **d8ecd5de**, 1h14m19s) passed both signed-package gates,
+481 JVM tests, API 36 runtime/UI/tool gates, release inspection and all Phase 6,
+9 and 10 summaries with zero failures.
+
+One distribution caveat remains explicit: GitHub's current
+`opencode-android-smoke-test-only` Actions artifact is one ZIP containing the
+instrumentation, universal and arm64 APKs, so the artifact archive itself is
+518,125,736 bytes even though the extracted phone APK is only 126,233,444
+bytes. Splitting it into a dedicated small-download artifact requires a workflow
+change; this session's bot is not permitted to push `.github/workflows/*`.
