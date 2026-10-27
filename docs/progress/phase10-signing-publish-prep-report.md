@@ -7054,3 +7054,51 @@ MB**, retaining **4.4 MB**. The full additive step-1 tool set is now measured:
 shell/coreutils, curl/wget, jq, Git/ripgrep, CPython, Node/npm, and all seven
 OpenSSH clients. Bun remains the server runtime until the separately measured
 Node-port/removal step, exactly as sequenced.
+
+## 2026-10-27 - B.101 - API 36 Slice E closes on board 40444804826
+
+Board 40444804826 passed in 1h15m31s from source 064a93d9. The build now uses
+compileSdk 36 and targetSdk 36. The pipeline installs and selects exactly
+`android-36/google_apis/x86_64` rather than accepting whatever image happens to
+be newest on the runner; the fresh AVD reported Android 16, API 36 and x86_64.
+The artifact inspector independently read targetSdk 36 from both the smoke and
+unsigned release APK manifests.
+
+The platform-sensitive proof passed twice, on debug and release-shaped builds:
+X1 executed the APK-native inode, X2 refused the same bytes from app data, and
+X3 executed the prefix symlink, each with `api36Context=true`. S1-S4 passed;
+T1/T3 audited all 213 sealed links; V1-V9 passed through OpenSSH agent/key
+operations. All 478 JVM tests passed. Phase 6, Phase 9 and Phase 10 each ended
+with zero failures and the pipeline ended rc=0. The key-free Zen path also
+returned a live `opencode/big-pickle` answer on API 36.
+
+The unsigned release APK was 205,042,997 bytes (195.5 MB), retaining 4.5 MB
+under the enforced 200 MB cap; the AAB was 191,058,116 bytes. API 36 therefore
+did not consume the remaining package budget.
+
+## 2026-10-27 - B.102 - Bun/Node size and function decision
+
+Owner decision: while the complete API 36 package stays below 200 MB, do not
+convert the proven OpenCode server from Bun to Node merely for size. Node
+24.22.1 and npm 11.19.1 remain sealed agent tools; Bun 1.3.14 remains the
+server runtime. This supersedes Bun removal as the automatic next step. A Node
+server port remains a contingency if later additions cross the cap.
+
+The size opportunity is real but unnecessary today. The two packaged Bun
+executables are 89,796,776 and 91,788,816 bytes uncompressed. Deflating those
+exact binaries at the APK's ordinary compression level produces about
+70,733,011 bytes (67.5 MiB) combined; subtracting that from this APK gives a
+planning estimate near 128.1 MiB. That is not a promised post-port artifact:
+a Node-targeted bundle and changed launcher would alter the final bytes, so a
+real build would still be required.
+
+The function delta is larger than a launcher rename. Upstream has first-class
+Node branches: `node:sqlite` instead of `bun:sqlite`, a Node HTTP server, a
+ripgrep fallback when the Bun-only FFF accelerator is unavailable, and the
+Node PTY path. On Android the PTY native module is already stubbed, so that
+known degradation remains. The launcher, supervisor paths, seccomp preload,
+bundle target, manifest/sealed links, plugin behavior and all runtime gates
+would need to move together. Zen itself is provider logic, not a Bun API, and
+should remain available on a correct Node port; however only a Node-built live
+L1/L2 board could turn that expectation into evidence. Keeping Bun avoids that
+unnecessary risk, and board 40444804826 already proves Zen live on API 36.

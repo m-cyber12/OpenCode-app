@@ -9,6 +9,12 @@ This document is the plan for step 1 only. Step 1 is deliberately additive: the
 OpenCode server keeps running on Bun, no user-facing behaviour changes, and the
 board stays green while the foundation is measured.
 
+Decision update (owner, 2026-10-27): if the complete API 36 package remains
+below Play's 200 MB base-module cap, a Node server conversion is not required.
+The API 36 verdict remained below the cap at 195.5 MB, so Bun stays as the
+proven server runtime. Node/npm remain shipped as agent tools. A Node server
+port is now a future size-recovery option, not the next required change.
+
 ---
 
 ## 0. What step 1 is, and what it is not
@@ -16,8 +22,9 @@ board stays green while the foundation is measured.
 **Is:** prove, in *this* app's tree, that a real userland can be executed on a
 store-legal target, then bring the harness modules in behind that proof.
 
-**Is not:** removing Bun. That is step 3+, and it is gated on a measurement
-(the Node port of the server) that has not been made yet.
+**Is not:** removing Bun. That was originally sequenced as step 3+, gated on a
+measured Node server port. The 2026-10-27 owner decision now keeps Bun while the
+complete package fits below 200 MB; the port remains optional contingency work.
 
 The reason for the order is attribution, not caution for its own sake: raising
 `targetSdk` and swapping the agent's runtime in the same change means a failure
@@ -405,6 +412,16 @@ re-proved there — X1-X3 first, because they are the ones the platform could
 break silently. Then the payload's own binaries (bun, git, ripgrep, the shims)
 at 36, where the seccomp surprises have historically landed.
 
+**Result (2026-10-27, board 40444804826, source 064a93d9): closed.** The
+pipeline installed and selected exactly `android-36/google_apis/x86_64`; the
+fresh AVD reported Android 16 / API 36, and the built debug, smoke and release
+manifests reported targetSdk 36. X1-X3 passed with an explicit
+`api36Context=true`; S1-S4, T1-T3 at 213/213, and V1-V9 all passed on debug and
+release-shaped packages. All 478 JVM tests passed, the APK/AAB inspectors found
+no issues, and the final unsigned release APK was 205,042,997 bytes (**195.5
+MB**, **4.5 MB** below the enforced cap). The key-free Zen provider also
+returned a live `opencode/big-pickle` reply on API 36.
+
 ## 6. What would make me stop and say so
 
 - X1 or X3 fails at 34: the harness cannot run here as designed, and the plan
@@ -419,5 +436,6 @@ at 36, where the seccomp surprises have historically landed.
 ## 7. Not in scope for step 1
 
 Removing Bun; porting the OpenCode server to Node; the Play upload itself;
-anything that changes what the agent says or does. Those belong to step 3 and
-to their own measurement.
+anything that changes what the agent says or does. Bun removal is now optional
+contingency work if a future package exceeds the size cap, and would still need
+its own measured parity board.
