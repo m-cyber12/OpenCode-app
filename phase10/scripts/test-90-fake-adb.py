@@ -376,7 +376,7 @@ def shell(command):
         return (0, "mState=ACTIVE\n")
 
     if cmd.startswith("dumpsys package"):
-        return (0, "  versionName=1.18.23-phase10\n  versionCode=8 minSdk=29 targetSdk=34\n")
+        return (0, "  versionName=1.18.23-phase10\n  versionCode=8 minSdk=29 targetSdk=36\n")
 
     if cmd.startswith("dumpsys meminfo"):
         return (0, "               TOTAL PSS:   123456      TOTAL RSS:  234567\n")

@@ -210,6 +210,12 @@ def main():
     got_appid = gradle_value("applicationId", gradle)
     got_vname = gradle_value("versionName", gradle)
     got_vcode = gradle_value("versionCode", gradle)
+    got_compile_sdk = gradle_value("compileSdk", gradle)
+    got_target_sdk = gradle_value("targetSdk", gradle)
+    if got_compile_sdk != "36":
+        fail("compileSdk=%r; the Play/API 36 slice requires 36" % got_compile_sdk)
+    if got_target_sdk != "36":
+        fail("targetSdk=%r; the Play/API 36 slice requires 36" % got_target_sdk)
     if want:
         if got_appid != want.get("applicationId"):
             fail("applicationId=%r but versions.lock says %r" % (got_appid, want.get("applicationId")))
@@ -217,6 +223,8 @@ def main():
             fail("versionName=%r but versions.lock says %r" % (got_vname, want.get("versionName")))
         if got_vcode != want.get("versionCode"):
             fail("versionCode=%r but versions.lock says %r" % (got_vcode, want.get("versionCode")))
+        if got_target_sdk != want.get("targetSdk"):
+            fail("targetSdk=%r but versions.lock says %r" % (got_target_sdk, want.get("targetSdk")))
     if got_appid and got_appid.startswith("ai.opencode."):
         fail("applicationId %r uses upstream's own domain - an impersonation risk "
              "(docs/BRANDING.md explains why the published ID is io.github.<owner>.*)" % got_appid)

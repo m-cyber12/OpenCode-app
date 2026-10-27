@@ -83,7 +83,7 @@ log "aab=$(basename "$AAB") ($(stat -c%s "$AAB") bytes)"
 APK_REPORT="$EV/p10-release-apk-report.txt"
 APK_ARGS=(--expect-package "$APPID" --expect-version-name "$VNAME" --expect-version-code "$VCODE"
           --expect-not-debuggable --expect-icon --expect-payload
-          --expect-min-sdk 29 --expect-target-sdk 34
+          --expect-min-sdk 29 --expect-target-sdk 36
           --expect-native-abi arm64-v8a --expect-native-abi x86_64
           --expect-permission android.permission.INTERNET
           --expect-permission android.permission.FOREGROUND_SERVICE
@@ -168,7 +168,7 @@ fi
 log "sha256:"; cat "$EV/release-sha256.txt" | tee -a "$LOG"
 
 # How to sign THIS apk on a phone, learned the hard way (owner report,
-# 2026-09-27): this app targets SDK 34, and Android refuses to install any
+# 2026-09-27): this app targets SDK 36, and Android refuses to install any
 # APK targeting 30+ whose signature is not scheme v2 or newer - and a
 # v1-style signing pass rewrites the zip, which also breaks the 4-byte
 # alignment Android 11+ requires of resources.arsc. Both mistakes end in the
@@ -186,7 +186,7 @@ SIGNING app-release-unsigned.apk ON A PHONE (no computer, no adb)
 
 THE ONE RULE: sign with scheme V2 (and optionally V3). V1 must be OFF.
 
-Why: this app targets Android 14 (SDK 34). Android refuses to install any
+Why: this app targets Android 16 (SDK 36). Android refuses to install any
 APK targeting SDK 30+ without a v2+ signature, and a v1 signing pass
 rewrites the zip and breaks the resources.arsc alignment Android 11+
 demands. Either way the phone says "App not installed as package appears

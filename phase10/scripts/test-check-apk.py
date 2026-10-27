@@ -144,7 +144,7 @@ def build_axml(package="io.github.mcyber12.opencode", version_code=8,
     axml += start_element(
         s("uses-sdk"),
         [(android_ns, s("minSdkVersion"), -1, (TYPE_INT_DEC, 29)),
-         (android_ns, s("targetSdkVersion"), -1, (TYPE_INT_DEC, 34))],
+         (android_ns, s("targetSdkVersion"), -1, (TYPE_INT_DEC, 36))],
     )
     axml += end_element(s("uses-sdk"))
     app_attrs = [
@@ -239,7 +239,7 @@ def main():
         (mf["package"] == "io.github.mcyber12.opencode", "package read back: %r" % mf["package"]),
         (mf["versionCode"] == 8, "versionCode read back: %r" % mf["versionCode"]),
         (mf["versionName"] == "1.18.23-phase10", "versionName read back: %r" % mf["versionName"]),
-        (mf["minSdk"] == 29 and mf["targetSdk"] == 34, "sdk levels: %r/%r" % (mf["minSdk"], mf["targetSdk"])),
+        (mf["minSdk"] == 29 and mf["targetSdk"] == 36, "sdk levels: %r/%r" % (mf["minSdk"], mf["targetSdk"])),
         (mf["debuggable"] is False, "debuggable=false read back"),
         (mf["icon_declared"] and mf["round_icon_declared"], "icon + roundIcon read back"),
         (mf["label_is_resource"], "label is a @string reference"),
@@ -273,7 +273,7 @@ def main():
     rc, out = run([apk, "--expect-package", "io.github.mcyber12.opencode",
                    "--expect-version-name", "1.18.23-phase10", "--expect-version-code", "8",
                    "--expect-not-debuggable", "--expect-unsigned", "--expect-icon",
-                   "--expect-payload", "--expect-min-sdk", "29", "--expect-target-sdk", "34",
+                   "--expect-payload", "--expect-min-sdk", "29", "--expect-target-sdk", "36",
                    "--expect-native-abi", "arm64-v8a", "--expect-native-abi", "x86_64",
                    "--expect-permission", "android.permission.INTERNET",
                    "--expect-no-permission", "android.permission.READ_SMS"])

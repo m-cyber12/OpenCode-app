@@ -136,7 +136,13 @@ grep -qs '^1' "$DIR/CI_GRADLE_ONLY" 2>/dev/null && GRADLE_ONLY=1
 step "1/9 static checks (phase 9 invariants + phase 10 release invariants)"
 run_c 900 "bash '$DIR/scripts/30-static-checks.sh'" || record_fatal "static checks failed (see phase10/out/static-checks.log)"
 cp "$OUT/static-checks.log" "$EV/p10-static-checks.log" 2>/dev/null || true
-note_gate "P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, published identity, store package) + apk inspector self-test"
+note_gate "P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, published identity, store package, compileSdk/targetSdk 36) + apk inspector self-test"
+
+step "1a/9 exact Android 16 SDK + API 36 emulator image"
+run_c 2400 "bash '$DIR/scripts/50-ensure-api36-sdk.sh'" \
+  || record_fatal "Android 16 SDK/API 36 system image install failed"
+cp "$OUT/50-ensure-api36-sdk.log" "$EV/p10-api36-sdk.log" 2>/dev/null || true
+note_gate "P10_API36_SDK PASS: compile platform and google_apis x86_64 image are exactly android-36"
 
 step "1b/9 the real-device driver, run against a fake phone (self-test)"
 # 90-real-device-signed.sh is the one script meant to be run by a human on hardware
@@ -214,22 +220,12 @@ cp "$ROOT/phase4/out/engine/assets/runtime-manifest.json" "$REL/" 2>/dev/null ||
 
 step "4/9 fresh emulator at a phone-sized screen (1080x1920 @ 420dpi)"
 if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm 2>/dev/null || true; echo "KVM: $(ls -la /dev/kvm 2>&1)"; else echo "KVM_MISSING"; fi
-if [ ! -x "$SDK/emulator/emulator" ] || [ ! -d "$SDK/system-images" ]; then
-  run_c 1500 "bash '$ROOT/phase4/scripts/50-install-sdk.sh'" \
-    || echo "warn: SDK installer reported failure; the probe below decides" | tee -a "$MAINLOG"
-fi
-IMAGE_DIR=""; BEST=""
-for d in $(find "$SDK/system-images" -mindepth 3 -maxdepth 3 -type d 2>/dev/null | sort -r); do
-  rel="${d#"$SDK/system-images/"}"
-  api="${rel%%/*}"; rest="${rel#*/}"; tag="${rest%%/*}"; abi="${rest#*/}"
-  case "$api" in android-3[0-9]|android-4[0-9]) ;; *) continue;; esac
-  [ "$abi" != "x86_64" ] && continue
-  s=0; case "$tag" in google_apis) s=3;; default) s=2;; *) s=1;; esac
-  key="$api-$s"
-  if [ -z "$BEST" ] || [ "$key" \> "$BEST" ]; then BEST="$key"; IMAGE_DIR="$rel"; fi
-done
-[ -z "$IMAGE_DIR" ] && record_fatal "no usable x86_64 system image under $SDK/system-images"
-API="${IMAGE_DIR%%/*}"; REST="${IMAGE_DIR#*/}"; TAG="${REST%%/*}"; ABI="${REST#*/}"
+# Exact, never "highest installed": a cached API 34 image or a future API 37
+# image cannot satisfy this slice. Stage 1a installed and checked this path.
+IMAGE_DIR="android-36/google_apis/x86_64"
+[ -f "$SDK/system-images/$IMAGE_DIR/package.xml" ] \
+  || record_fatal "exact API 36 google_apis x86_64 image disappeared after SDK setup"
+API="android-36"; TAG="google_apis"; ABI="x86_64"
 export ANDROID_AVD_HOME="$SDK/avd"; mkdir -p "$ANDROID_AVD_HOME"
 AVDM="$(find "$SDK" -name avdmanager -type f | head -1)"
 echo "system image: $API/$TAG/$ABI" | tee -a "$MAINLOG"
@@ -255,7 +251,13 @@ adb shell svc power stayon true >/dev/null 2>&1 || true
   echo "avd=phase10 (created fresh this run, -wipe-data -no-snapshot, 1080x1920 skin)"
 } > "$EV/device-facts.txt" 2>&1
 cat "$EV/device-facts.txt" | tee -a "$MAINLOG"
-note_gate "P10-DEVICE PASS: fresh AVD on $(sed -n 's/^android_release=//p' "$EV/device-facts.txt" | head -1) ($(sed -n 's/^screen=//p' "$EV/device-facts.txt" | head -1))"
+DEVICE_SDK="$(sed -n 's/^sdk=//p' "$EV/device-facts.txt" | head -1)"
+DEVICE_ABI="$(sed -n 's/^abi=//p' "$EV/device-facts.txt" | head -1)"
+[ "$DEVICE_SDK" = "36" ] \
+  || record_fatal "AVD booted API ${DEVICE_SDK:-unknown}; the API 36 slice requires exactly 36"
+[ "$DEVICE_ABI" = "x86_64" ] \
+  || record_fatal "AVD booted ABI ${DEVICE_ABI:-unknown}; expected x86_64"
+note_gate "P10-DEVICE PASS: fresh exact API 36 AVD on $(sed -n 's/^android_release=//p' "$EV/device-facts.txt" | head -1) ($(sed -n 's/^screen=//p' "$EV/device-facts.txt" | head -1))"
 
 step "5/9 debug APKs + Phase 6 UI gates (F1-F4, U1-U8) - did the polish break anything?"
 run_c 3000 "'$ROOT/gradlew' -p '$ROOT' :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon --stacktrace" \

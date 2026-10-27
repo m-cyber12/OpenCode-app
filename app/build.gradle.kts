@@ -25,7 +25,7 @@ plugins {
 
 android {
     namespace = "ai.opencode.android"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         // PHASE 10 — the Play application ID is PERMANENT once the app is published
@@ -43,7 +43,7 @@ android {
         // every source file for zero packaging benefit.
         applicationId = "io.github.mcyber12.opencode"
         minSdk = 29          // W^X: exec only from nativeLibraryDir; ABI gating enforces arm64/x64
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 8      // Phase 10: signing + store prep. Payload/version pins unchanged
                              // from Phase 9 (payloadVersion 7).
         // versionName = "<pinned OpenCode version>-phase10". Phase 5's P5-01 gate accepts

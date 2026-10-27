@@ -40,7 +40,7 @@ app:                                   # PHASE 10 - the published identity
   versionName: 1.18.23-phase10         # "<pinned OpenCode version>-<phase>"
   versionCode: "8"                     # Play requires a strictly increasing integer
   minSdk: "29"                         # W^X: exec only from nativeLibraryDir
-  targetSdk: "34"                      # Play requires a recent targetSdk
+  targetSdk: "36"                      # Play/API 36 requirement; exact API 36 AVD gate required
   abis: arm64-v8a,x86_64               # arm64 ships to users; x86_64 for CI/emulator
   signing: upload-key, human-held      # docs/RELEASE.md; CI can never sign
   monetization: free                   # no billing code, no ads - docs/STORE-LISTING.md

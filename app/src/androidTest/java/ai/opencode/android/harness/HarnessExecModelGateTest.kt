@@ -67,11 +67,12 @@ class HarnessExecModelGateTest {
         }
         val r = attempt(probe)
         val marker = r.output.contains(PROBE_MARKER)
-        val ok = r.ran && r.exitCode == 0 && marker
+        val api36 = exactApi36Context()
+        val ok = api36 && r.ran && r.exitCode == 0 && marker
         printGate(
             "X1",
             ok,
-            "nativeLibraryDir exec ran=${r.ran} exit=${r.exitCode} marker=$marker " +
+            "api36Context=$api36 nativeLibraryDir exec ran=${r.ran} exit=${r.exitCode} marker=$marker " +
                 "targetSdk=${context.applicationInfo.targetSdkVersion} api=${Build.VERSION.SDK_INT} " +
                 "abi=${Build.SUPPORTED_ABIS.firstOrNull()} :: ${r.output.trim().take(120)}",
         )
@@ -98,10 +99,11 @@ class HarnessExecModelGateTest {
         // both are the platform holding the line. What must never happen is a
         // successful run that prints the marker.
         val refused = !r.ran || r.exitCode != 0 || !r.output.contains(PROBE_MARKER)
+        val api36 = exactApi36Context()
         printGate(
             "X2",
-            refused && copied,
-            "appData exec refused=$refused ran=${r.ran} exit=${r.exitCode} " +
+            api36 && refused && copied,
+            "api36Context=$api36 appData exec refused=$refused ran=${r.ran} exit=${r.exitCode} " +
                 "api=${Build.VERSION.SDK_INT} targetSdk=${context.applicationInfo.targetSdkVersion} :: " +
                 r.output.trim().take(120),
         )
@@ -125,14 +127,20 @@ class HarnessExecModelGateTest {
         }.isSuccess
         val r = if (linked) attempt(link) else Result(false, -1, "symlink failed")
         runCatching { link.delete() }
-        val ok = linked && r.ran && r.exitCode == 0 && r.output.contains(PROBE_MARKER)
+        val api36 = exactApi36Context()
+        val ok = api36 && linked && r.ran && r.exitCode == 0 && r.output.contains(PROBE_MARKER)
         printGate(
             "X3",
             ok,
-            "prefix symlink exec linked=$linked ran=${r.ran} exit=${r.exitCode} :: " +
+            "api36Context=$api36 targetSdk=${context.applicationInfo.targetSdkVersion} " +
+                "api=${Build.VERSION.SDK_INT} prefix symlink exec linked=$linked ran=${r.ran} exit=${r.exitCode} :: " +
                 r.output.trim().take(120),
         )
     }
+
+    /** Slice E is only closed by this app targeting 36 on an exact API 36 AVD. */
+    private fun exactApi36Context(): Boolean =
+        context.applicationInfo.targetSdkVersion == 36 && Build.VERSION.SDK_INT == 36
 
     private data class Result(val ran: Boolean, val exitCode: Int, val output: String)
 
