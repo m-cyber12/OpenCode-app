@@ -199,8 +199,8 @@ else
   SMOKE_SIG="$EV/p10-smoke-signature-for-update-compare.txt"
   [ "$UNIVERSAL_OK" = 1 ] && "$APKSIGNER" verify --verbose --print-certs "$TEST_UNIVERSAL" > "$UNIVERSAL_SIG" 2>&1 || UNIVERSAL_OK=0
   [ "$UNIVERSAL_OK" = 1 ] && "$APKSIGNER" verify --verbose --print-certs "$SMOKE/TEST-ONLY-debugkey-app-smoke.apk" > "$SMOKE_SIG" 2>&1 || UNIVERSAL_OK=0
-  UNIVERSAL_CERT=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$UNIVERSAL_SIG" 2>/dev/null | head -1)
-  SMOKE_CERT=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$SMOKE_SIG" 2>/dev/null | head -1)
+  UNIVERSAL_CERT=$(sed -n 's/^.*Signer: certificate SHA-256 digest: //p' "$UNIVERSAL_SIG" 2>/dev/null | head -1)
+  SMOKE_CERT=$(sed -n 's/^.*Signer: certificate SHA-256 digest: //p' "$SMOKE_SIG" 2>/dev/null | head -1)
   [ -n "$UNIVERSAL_CERT" ] && [ "$UNIVERSAL_CERT" = "$SMOKE_CERT" ] || UNIVERSAL_OK=0
   if [ "$UNIVERSAL_OK" = 1 ] && python3 "$DIR/scripts/check-apk.py" "$TEST_UNIVERSAL" \
       --expect-package "$APPID" --expect-version-name "$VNAME" --expect-version-code "$VCODE" \
@@ -230,7 +230,7 @@ else
   [ "$ARM_OK" = 1 ] && sign_testonly "$ARM_ALIGNED" "$TEST_ARM64" >> "$LOG" 2>&1 || ARM_OK=0
   ARM_SIG="$EV/p10-testonly-release-arm64-signature.txt"
   [ "$ARM_OK" = 1 ] && "$APKSIGNER" verify --verbose --print-certs "$TEST_ARM64" > "$ARM_SIG" 2>&1 || ARM_OK=0
-  ARM_CERT=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$ARM_SIG" 2>/dev/null | head -1)
+  ARM_CERT=$(sed -n 's/^.*Signer: certificate SHA-256 digest: //p' "$ARM_SIG" 2>/dev/null | head -1)
   [ -n "$ARM_CERT" ] && [ "$ARM_CERT" = "$SMOKE_CERT" ] || ARM_OK=0
   if [ "$ARM_OK" = 1 ] && \
       ! unzip -Z1 "$TEST_ARM64" | grep -q '^lib/x86_64/' && \
