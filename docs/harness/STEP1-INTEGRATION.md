@@ -439,3 +439,42 @@ Removing Bun; porting the OpenCode server to Node; the Play upload itself;
 anything that changes what the agent says or does. Bun removal is now optional
 contingency work if a future package exceeds the size cap, and would still need
 its own measured parity board.
+
+## 8. Owner-visible tool correction (2026-10-27)
+
+The first API 36 closure proved the executables but did **not** prove that the
+agent had been told the truth about them. The owner then installed the package
+and `opencode/big-pickle` answered “No. Use bun instead.” to “node?”. That was
+not a model mystery: the always-injected `environment.md` still said “There is
+NO node binary at all”, and `webapp.md` repeated the denial, while `tools.md`
+correctly listed Node/npm/Python. The higher-priority stale text won. This was
+our integration defect; package size and fresh-install executable gates did not
+excuse it.
+
+Source `fe7a6890`, board **40517409850**, closes the agent-facing and update
+paths together. The main brief now names Bun, Node.js 24, npm 11, CPython,
+Git/ripgrep, curl/wget, jq, OpenSSH, the sealed shell and coreutils as installed
+and on PATH. The web-app recipe uses Node/npm honestly while retaining Bun as
+the proven server runtime and as an available project runtime. JVM tests reject
+the old Node/Python-denial phrases anywhere in the installed brief set.
+
+The new V10 gate starts from a deliberately stale installed tree: it keeps
+`payloadVersion=7` and the extraction marker, removes the Python stdlib and the
+Node/npm/Python links, and writes the old “NO node” brief. Startup detects the
+missing current-manifest entry, re-extracts, applies the current sealed-link
+manifest, refreshes the app-owned brief, and runs all 11 capability checks from
+`RuntimeEnv`. V10 passed on debug and release-shaped packages with
+`markerVersion=7->7`, `reextractReason=true`, `briefRefreshed=true`, 5 links
+restored, 208 already correct, and `agentTools=11/11`.
+
+Most importantly, L2 now tests the owner’s requirement rather than a toy
+`echo`: the real key-free `opencode/big-pickle` model invoked the real bash tool
+through the chat UI and the expanded tool card showed shell/coreutils, Bun,
+Git, ripgrep, curl, wget, jq, OpenSSH, Node 24.22.1, npm 11.19.1 and CPython
+3.13.1. Both server output and on-screen output passed every marker. The same
+L2 and V10 gates passed again on the release-shaped smoke package.
+
+Board 40517409850 finished in 1h8m24s on exact Android 16/API 36 with 481 JVM
+tests and zero Phase 6/9/10 failures. The unsigned release APK is 205,053,029
+bytes (195.6 MB, 4.4 MB headroom) and still targets API 36; the AAB is
+191,068,004 bytes. Bun remains the OpenCode server, exactly as decided.

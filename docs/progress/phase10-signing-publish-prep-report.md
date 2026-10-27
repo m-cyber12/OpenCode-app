@@ -7102,3 +7102,51 @@ would need to move together. Zen itself is provider logic, not a Bun API, and
 should remain available on a correct Node port; however only a Node-built live
 L1/L2 board could turn that expectation into evidence. Keeping Bun avoids that
 unnecessary risk, and board 40444804826 already proves Zen live on API 36.
+
+## 2026-10-27 - B.103 - the owner was right: packaged tools were contradicted before the agent could use them
+
+The owner’s installed-app report exposed a real gap in the earlier closure.
+`opencode/big-pickle` answered “No. Use bun instead.” to a Node question, then
+reported Python unavailable after a shell request. Fresh-install V6/V7 proved
+binaries, but they did not prove the model-facing product contract. Inspection
+found the direct cause of the Node answer: the always-injected main environment
+brief still said “There is NO node binary at all”, and `webapp.md` repeated it,
+even though `tools.md` listed the newly shipped Node/npm/Python. The model was
+following our stale higher-priority instruction. Treating the larger APK or a
+fresh AVD as sufficient evidence would have been wrong.
+
+The installed briefs now agree. The always-read inventory explicitly names
+Bun, Node.js 24, npm 11, CPython, Git/ripgrep, curl/wget, jq, OpenSSH, shell and
+coreutils; the web-app guidance uses Node/npm without removing valid Bun paths.
+A JVM regression rejects all known forms of the old Node/Python denial. The JVM
+suite is now 481 tests, all passing.
+
+Update behavior is now a named device gate instead of an inference. V10 retains
+an existing extraction marker and `payloadVersion=7`, removes
+`usr/lib/python3.13.zip` and the Node/npm/Python prefix links, and restores the
+old “NO node” brief. On restart-equivalent startup, the current per-file
+manifest forces re-extraction despite the unchanged coarse version, the sealed
+manifest restores the missing links, and the app rewrites its brief. V10 passed
+on both debug and release-shaped packages:
+
+  upgradeResult=Extracted markerVersion=7->7 reextractReason=true
+  briefRefreshed=true links=5 linked, 208 already correct
+  agentTools=11/11 missing=none
+
+The agent-facing proof also changed from `echo` to the complete tool inventory.
+On board **40517409850** (source **fe7a6890**, 1h8m24s), the real key-free
+`opencode/big-pickle` model called bash through the real chat UI. L2 observed
+all eight non-language markers (shell/coreutils, Bun, Git, ripgrep, curl, wget,
+jq and OpenSSH), plus Node `v24.22.1`, npm `11.19.1` and Python `3.13.1`, in
+both server output and the expanded on-screen tool card. L2 passed on debug and
+again on the release-shaped smoke package. This is the missing “for the agent,
+not for ourselves” evidence.
+
+The final exact Android 16/API 36 board has zero Phase 6, Phase 9 or Phase 10
+failures. The unsigned release APK is 205,053,029 bytes (195.6 MB, 4.4 MB under
+the cap), targetSdk 36, and the AAB is 191,068,004 bytes. Bun remains the server
+runtime; no server migration was made. The owner screenshot’s collapsed Python
+card could not establish what that older invocation actually printed, so this
+report does not invent an explanation for it. What is now proven is stronger:
+the corrected package repairs a staged old installed tree and the real Zen
+agent successfully invokes Python, Node/npm and every other shipped core tool.
