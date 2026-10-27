@@ -37,13 +37,13 @@ P10_SMOKE_UI_F3 PASS :: workspaceStep=true folder=true picker=true action=true v
 P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=t
 P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=35911, 02-first-run-ready.png=43240, 02b-first-run-workspace.png=43240, 04-first-run-projects.png=65876]
 P10_SMOKE_UI_L1 PASS :: p
-P10_SMOKE_UI_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=33 replyShownInUi=true(needle='clear') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screensh
-P10_SMOKE_UI_L2 PASS :: tool=bash status=completed pa
-P10_SMOKE_UI_L2 PASS :: tool=bash status=completed partId=prt_17e9578b4001tAIBpJRi8IdPc6 cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true agentToolsInServerOutput=8/8+node:true,npm:true,python:true missingServer=none markerOnScreen
+P10_SMOKE_UI_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=28 replyShownInUi=true(needle='clear') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screensh
+P10_SMOKE_UI_L2 SKIP :: the model answe
+P10_SMOKE_UI_L2 SKIP :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=198); screen='
 P10_SMOKE_UI_X1 PASS :: api36Context=t
 P10_SMOKE_UI_X1 PASS :: api36Context=true nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=36 api=36 abi=x86_64 :: OCEXECPROBE ok
 P10_SMOKE_UI_X2 PASS :: api36Context=t
-P10_SMOKE_UI_X2 PASS :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~L
+P10_SMOKE_UI_X2 PASS :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~w
 P10_SMOKE_UI_X3 PASS :: api36Context=t
 P10_SMOKE_UI_X3 PASS :: api36Context=true targetSdk=36 api=36 prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P10_SMOKE_UI_S1 PASS :: sealed install ok=t
@@ -79,7 +79,7 @@ P10_SMOKE_UI_V7 PASS :: node/npm ran=true exit=0 output='v24.22.1 <NL> 11.19.1 <
 P10_SMOKE_UI_V8 PASS :: wget
 P10_SMOKE_UI_V8 PASS :: wget ran=true exit=0 bytes=11 body='OC_WGET_OK' fixture=ok output='wget (OpenCode sealed curl backend) 1'
 P10_SMOKE_UI_V9 PASS :: openssh
-P10_SMOKE_UI_V9 PASS :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:LDA4KOmAC4iIoYtMPl+MJbfZ0Ow+wODLkVUZk4fSmxc u0_a224@localhost (ED25519)'
-P10_SMOKE_UI PASS :: pass=40 fail=0 skip=0 on the release-shaped build (identical gates to the debug run)
+P10_SMOKE_UI_V9 PASS :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:oKQzekApL1NO1QcZum5VN5FAi6g5LOwsvMXFVOh6XeU u0_a224@localhost (ED25519)'
+P10_SMOKE_UI PASS :: pass=39 fail=0 skip=1 on the release-shaped build (identical gates to the debug run)
 P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
 P10_STORE_ASSETS PASS :: 512 icon + 1024x500 feature graphic + 2 screenshots at a real screen size

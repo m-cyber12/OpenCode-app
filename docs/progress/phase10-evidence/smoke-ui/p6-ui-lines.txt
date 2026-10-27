@@ -53,20 +53,20 @@ P6-F2 PASS :: :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false read
 P6-F3 PASS :: :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:43240,projects
 P6-F4 PASS :: :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=35911, 02-first-run-ready.png=43240, 02b-first-run-workspace.png=43240, 04-first-run-projects.png=65876]
 P6_L1 PASS :: p
-P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=33 replyShownInUi=true(needle='clear') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=62184 ink=0.323 via=compose] reply='A clear sky at noon is deep blue.'
-P6_L2 PASS :: tool=bash status=completed pa
-P6_L2 PASS :: tool=bash status=completed partId=prt_17e9578b4001tAIBpJRi8IdPc6 cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true agentToolsInServerOutput=8/8+node:true,npm:true,python:true missingServer=none markerOnScreen=true agentToolsOnScreen=8/8+node:true,npm:true,python:true missingUi=none asksAnswered=1 marker=P6LIVE79003 screenshots[bytes=169049 ink=0.446 via=compose | bytes=206633 ink=0.445 via=compose]
-P6_MODEL_AVAILABLE 1 :: replyChars=33 asksAnswered=0
-P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=33 replyShownInUi=true(needle='clear') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBa
-P6-L2 PASS :: :: tool=bash status=completed partId=prt_17e9578b4001tAIBpJRi8IdPc6 cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true agentToolsInServerOutput=8/8+node:
+P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=28 replyShownInUi=true(needle='clear') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=61787 ink=0.323 via=compose] reply='A clear sky at noon is blue.'
+P6_L2 SKIP :: the model answe
+P6_L2 SKIP :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=198); screen='
+P6_MODEL_AVAILABLE 1 :: replyChars=28 asksAnswered=0
+P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=28 replyShownInUi=true(needle='clear') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBa
+P6-L2 SKIP :: :: the model answered without calling a tool within 420s (asksAnswered=0, replyChars=198); screen='
 P6_X1 PASS :: api36Context=t
 P6_X1 PASS :: api36Context=true nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=36 api=36 abi=x86_64 :: OCEXECPROBE ok
 P6_X2 PASS :: api36Context=t
-P6_X2 PASS :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~L
+P6_X2 PASS :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~w
 P6_X3 PASS :: api36Context=t
 P6_X3 PASS :: api36Context=true targetSdk=36 api=36 prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P6-X1 PASS :: :: api36Context=true nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=36 api=36 abi=x86_64 :: OCEXECPROBE ok
-P6-X2 PASS :: :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~L
+P6-X2 PASS :: :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~w
 P6-X3 PASS :: :: api36Context=true targetSdk=36 api=36 prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P6_S1 PASS :: sealed install ok=t
 P6_S1 PASS :: sealed install ok=true files=1 verified=1 executables=1 problems=[] :: sealed payload: 1 data files (15 bytes, 1 verified), 0 data links, 1 executables from the APK
@@ -108,7 +108,7 @@ P6_V7 PASS :: node/npm ran=true exit=0 output='v24.22.1 <NL> 11.19.1 <NL> 42'
 P6_V8 PASS :: wget
 P6_V8 PASS :: wget ran=true exit=0 bytes=11 body='OC_WGET_OK' fixture=ok output='wget (OpenCode sealed curl backend) 1'
 P6_V9 PASS :: openssh
-P6_V9 PASS :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:LDA4KOmAC4iIoYtMPl+MJbfZ0Ow+wODLkVUZk4fSmxc u0_a224@localhost (ED25519)'
+P6_V9 PASS :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:oKQzekApL1NO1QcZum5VN5FAi6g5LOwsvMXFVOh6XeU u0_a224@localhost (ED25519)'
 P6-V1 PASS :: :: sealed shell ran=true exit=0 api=36 :: OC_SEALED_SH_OK
 P6-V2 PASS :: :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
 P6-V3 PASS :: :: agent env PATH[0]=/data/user/0/io.github.mcyber12.opencode/files/bin (want /data/user/0/io.github.mcyber12.opencode/files/bin) SHELL=/data/user/0/io.github.mcyber12.opencode/files/bin/sh ran=true exit=0 out='1' tr=/da
@@ -117,5 +117,5 @@ P6-V5 PASS :: :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
 P6-V6 PASS :: :: python ran=true exit=0 json='{"ok": true}' zlib.crc32='891568578' (want 891568578) output='{"ok": true} <NL> 891568578'
 P6-V7 PASS :: :: node/npm ran=true exit=0 output='v24.22.1 <NL> 11.19.1 <NL> 42'
 P6-V8 PASS :: :: wget ran=true exit=0 bytes=11 body='OC_WGET_OK' fixture=ok output='wget (OpenCode sealed curl backend) 1'
-P6-V9 PASS :: :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:LDA4KOmAC4iIoYtMPl+MJbfZ0Ow+w
+P6-V9 PASS :: :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:oKQzekApL1NO1QcZum5VN5FAi6g5L
 P6-V10 PASS :: :: upgradeResult=Extracted markerVersion=7->7 reextractReason=true briefRefreshed=true links=sealed layout: 5 linked, 208 already correct, 0 missing targets, 0 errors agentTools=11/11 missing=none exit=0 output='SHELL_CO
