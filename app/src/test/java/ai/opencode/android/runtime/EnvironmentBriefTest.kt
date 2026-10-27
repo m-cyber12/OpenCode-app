@@ -250,7 +250,7 @@ class EnvironmentBriefTest {
         for (tool in listOf("Node.js 24", "npm 11", "python3", "curl", "wget", "jq", "OpenSSH")) {
             assertTrue("main brief must name installed tool $tool", main.contains(tool))
         }
-        assertTrue(main.contains("Node/npm and Python are agent tools"))
+        assertTrue(Regex("Node/npm and Python\\s+are agent tools").containsMatchIn(main))
 
         // v9.43 regression: the package already contained Node/npm/Python,
         // while this higher-priority brief still said "There is NO node" and
