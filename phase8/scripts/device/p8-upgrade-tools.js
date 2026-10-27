@@ -34,7 +34,7 @@ const command = [
   "jq --version >/dev/null && printf 'JQ_AGENT_OK\\n'",
   "ssh -V >/dev/null 2>&1 && printf 'OPENSSH_AGENT_OK\\n'",
   "node -e \"console.log('NODE_AGENT_OK', process.version)\"",
-  "printf 'NPM_AGENT_OK '; npm --version",
+  "npm --version 2>/dev/null | sed 's/^/NPM_AGENT_OK /'",
   "python3 -c \"import sys; print('PYTHON_AGENT_OK', sys.version.split()[0])\"",
 ].join("; ")
 
