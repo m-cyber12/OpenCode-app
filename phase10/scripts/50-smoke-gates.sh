@@ -85,23 +85,26 @@ cp "$APK" "$SMOKE_APK"
 cp "$TAPK" "$SMOKE/TEST-ONLY-debugkey-app-smoke-androidTest.apk"
 APK="$SMOKE_APK"
 
-# The one honest answer to "which file can I actually install on a phone":
-# the smoke APK above. The `opencode-android-unsigned-release` artifact is,
-# by design, UNSIGNED - Android refuses it with "package appears to be
-# invalid", and no phone-side setting changes that. Written next to the APK
-# so the artifact explains itself.
+# Carry install guidance beside the APKs. The release gate later adds smaller
+# test-key-signed non-debuggable universal and arm64 APKs to this same folder;
+# smoke remains the instrumentable evidence APK. The real release artifact is,
+# by design, UNSIGNED and is never silently substituted with test-key output.
 cat > "$SMOKE/INSTALL-README.txt" <<'EOF'
 WHICH FILE INSTALLS ON A PHONE
 ==============================
 
-INSTALL THIS ONE:
+FOR INSTRUMENTATION / DEEP TESTING:
   TEST-ONLY-debugkey-app-smoke.apk
-  - signed with the standard Android debug key, so a phone accepts it
-  - release packaging: applicationId io.github.mcyber12.opencode,
-    release code shape, embedded runtime payload, both ABIs
-  - debuggable=true (that is the one deliberate difference from a real
-    release; it is what lets CI run the gates against it)
-  - every CI gate in this run passed against EXACTLY this file
+  - signed with the committed public test-only Android key
+  - release packaging plus debuggable=true, which lets CI run instrumentation
+  - intentionally larger than the normal release because of debug-shaped dex
+
+FOR ORDINARY PHONE USE, PREFER one of the smaller non-debuggable files that
+this workflow adds to the same folder after inspecting the release build:
+  TEST-ONLY-debugkey-app-release-arm64-v8a.apk  (normal ARM64 phone)
+  TEST-ONLY-debugkey-app-release-universal.apk   (ARM64 + x86_64 fallback)
+Both use the SAME test-only key, application ID and version as smoke, so either
+can update a smoke installation without deleting app data.
 
 DO NOT TRY TO INSTALL:
   app-release-unsigned.apk (artifact: opencode-android-unsigned-release)
@@ -115,10 +118,11 @@ DO NOT TRY TO INSTALL:
     HOW-TO-SIGN-ON-PHONE.txt in the unsigned-release artifact.
 
 BEFORE INSTALLING:
-  - if a previously SIGNED build of io.github.mcyber12.opencode is on the
-    phone, Android will refuse this one (signature mismatch). Uninstall it
-    first. Projects under Documents/OpenCode survive an uninstall; in-app
-    sessions and settings do not.
+  - this run's smoke and release-shaped TEST-ONLY APKs all use the same key;
+    they update one another without an uninstall. If a DIFFERENTLY signed build
+    of io.github.mcyber12.opencode is present, Android refuses the mismatch;
+    only then must it be uninstalled. Projects under Documents/OpenCode survive
+    an uninstall; in-app sessions and settings do not.
   - TEST-ONLY-debugkey-app-smoke-androidTest.apk is the instrumentation
     suite, not the app - no need to install it.
 

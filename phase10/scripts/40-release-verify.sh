@@ -21,7 +21,8 @@ ROOT="$(cd "$DIR/.." && pwd)"
 OUT="$DIR/out"
 EV="$OUT/evidence"
 REL="$OUT/release"
-mkdir -p "$EV" "$REL"
+SMOKE="$OUT/smoke"
+mkdir -p "$EV" "$REL" "$SMOKE"
 LOG="$EV/release-verify.log"
 : > "$LOG"
 log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
@@ -151,6 +152,130 @@ else
   p10 UNSIGNED 1 "the CI release APK is SIGNED - CI must never receive signing material. Investigate before publishing anything; $(grep -a '^FINDING' "$UNSIGNED_REPORT" | head -2 | tr '\n' ';' | cut -c1-200)"
 fi
 
+# ---- installable TEST-ONLY release APKs --------------------------------------
+#
+# The instrumentable smoke APK is deliberately debuggable. D8 therefore emits
+# debug-shaped dex and its universal file is ~27 MiB larger than the exact
+# release APK. It is evidence, not the best daily-install artifact. Sign COPIES
+# of the already-inspected, non-debuggable unsigned release with the committed
+# PUBLIC test-only key so the owner gets the same release bytes in an installable
+# package, while the real release output above remains unsigned and untouched.
+# The key is the same one that signs smoke, so this installs as an update without
+# wiping app data. An arm64-only copy drops the emulator ABI for normal phones;
+# the universal copy remains the compatibility fallback.
+APKSIGNER="$(find "${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}/build-tools" -type f -name apksigner 2>/dev/null | sort -V | tail -1)"
+ZIPALIGN="$(find "${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}/build-tools" -type f -name zipalign 2>/dev/null | sort -V | tail -1)"
+TEST_STORE="$ROOT/app/testonly-debug-signing.p12"
+TEST_ALIAS="androiddebugkey"
+TEST_PASS="android" # public Android debug password; never release signing material
+TEST_UNIVERSAL="$SMOKE/TEST-ONLY-debugkey-app-release-universal.apk"
+TEST_ARM64="$SMOKE/TEST-ONLY-debugkey-app-release-arm64-v8a.apk"
+TEST_WORK="$OUT/testonly-release-work"
+rm -rf "$TEST_WORK" && mkdir -p "$TEST_WORK"
+
+sign_testonly() { # $1 unsigned/aligned input, $2 output
+  "$APKSIGNER" sign \
+    --ks "$TEST_STORE" --ks-type PKCS12 --ks-key-alias "$TEST_ALIAS" \
+    --ks-pass "pass:$TEST_PASS" --key-pass "pass:$TEST_PASS" \
+    --v1-signing-enabled false --v2-signing-enabled true \
+    --v3-signing-enabled true --v4-signing-enabled false \
+    --out "$2" "$1"
+}
+
+TEST_SIGN_TOOLS_OK=1
+[ -x "$APKSIGNER" ] && [ -x "$ZIPALIGN" ] && [ -f "$TEST_STORE" ] || TEST_SIGN_TOOLS_OK=0
+if [ "$TEST_SIGN_TOOLS_OK" = "0" ]; then
+  p10 TESTONLY_RELEASE 1 "cannot produce installable release copy: apksigner='$APKSIGNER' zipalign='$ZIPALIGN' key=$([ -f "$TEST_STORE" ] && echo present || echo missing)"
+  p10 TESTONLY_ARM64 1 "not reached because test-only signing tools/key were unavailable"
+else
+  # Universal: zipalign a copy, then v2/v3-sign it. The source APK remains the
+  # byte-identical unsigned artifact whose hash/report were recorded above.
+  UNIVERSAL_ALIGNED="$TEST_WORK/release-universal-aligned.apk"
+  UNIVERSAL_REPORT="$EV/p10-testonly-release-universal-report.txt"
+  UNIVERSAL_OK=1
+  "$ZIPALIGN" -P 16 -f 4 "$APK" "$UNIVERSAL_ALIGNED" >> "$LOG" 2>&1 || UNIVERSAL_OK=0
+  [ "$UNIVERSAL_OK" = 1 ] && sign_testonly "$UNIVERSAL_ALIGNED" "$TEST_UNIVERSAL" >> "$LOG" 2>&1 || UNIVERSAL_OK=0
+  UNIVERSAL_SIG="$EV/p10-testonly-release-universal-signature.txt"
+  SMOKE_SIG="$EV/p10-smoke-signature-for-update-compare.txt"
+  [ "$UNIVERSAL_OK" = 1 ] && "$APKSIGNER" verify --verbose --print-certs "$TEST_UNIVERSAL" > "$UNIVERSAL_SIG" 2>&1 || UNIVERSAL_OK=0
+  [ "$UNIVERSAL_OK" = 1 ] && "$APKSIGNER" verify --verbose --print-certs "$SMOKE/TEST-ONLY-debugkey-app-smoke.apk" > "$SMOKE_SIG" 2>&1 || UNIVERSAL_OK=0
+  UNIVERSAL_CERT=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$UNIVERSAL_SIG" 2>/dev/null | head -1)
+  SMOKE_CERT=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$SMOKE_SIG" 2>/dev/null | head -1)
+  [ -n "$UNIVERSAL_CERT" ] && [ "$UNIVERSAL_CERT" = "$SMOKE_CERT" ] || UNIVERSAL_OK=0
+  if [ "$UNIVERSAL_OK" = 1 ] && python3 "$DIR/scripts/check-apk.py" "$TEST_UNIVERSAL" \
+      --expect-package "$APPID" --expect-version-name "$VNAME" --expect-version-code "$VCODE" \
+      --expect-signed --expect-not-debuggable --expect-icon --expect-payload \
+      --expect-min-sdk 29 --expect-target-sdk 36 \
+      --expect-native-abi arm64-v8a --expect-native-abi x86_64 \
+      --json "$EV/p10-testonly-release-universal.json" > "$UNIVERSAL_REPORT" 2>&1; then
+    UNIVERSAL_BYTES=$(stat -c%s "$TEST_UNIVERSAL")
+    if [ "$UNIVERSAL_BYTES" -le $((200 * 1024 * 1024)) ]; then
+      p10 TESTONLY_RELEASE 0 "installable non-debuggable universal APK bytes=$UNIVERSAL_BYTES MiB=$(awk -v b="$UNIVERSAL_BYTES" 'BEGIN{printf "%.1f",b/1048576}') signed=v2/v3 cert_matches_smoke=${UNIVERSAL_CERT:0:16}..."
+    else
+      p10 TESTONLY_RELEASE 1 "signed universal APK exceeds 200 MiB: bytes=$UNIVERSAL_BYTES"
+    fi
+  else
+    p10 TESTONLY_RELEASE 1 "zipalign/sign/inspect failed: $(grep -a '^FINDING' "$UNIVERSAL_REPORT" 2>/dev/null | head -3 | tr '\n' ';' | cut -c1-220)"
+  fi
+
+  # arm64 phone convenience artifact: remove ONLY lib/x86_64 from the already-
+  # inspected release, realign, sign, then prove arm64 exists and x86_64 does not.
+  ARM_WORK="$TEST_WORK/release-arm64-work.apk"
+  ARM_ALIGNED="$TEST_WORK/release-arm64-aligned.apk"
+  ARM_REPORT="$EV/p10-testonly-release-arm64-report.txt"
+  ARM_OK=1
+  cp "$APK" "$ARM_WORK" || ARM_OK=0
+  [ "$ARM_OK" = 1 ] && zip -q -d "$ARM_WORK" 'lib/x86_64/*' >> "$LOG" 2>&1 || ARM_OK=0
+  [ "$ARM_OK" = 1 ] && "$ZIPALIGN" -P 16 -f 4 "$ARM_WORK" "$ARM_ALIGNED" >> "$LOG" 2>&1 || ARM_OK=0
+  [ "$ARM_OK" = 1 ] && sign_testonly "$ARM_ALIGNED" "$TEST_ARM64" >> "$LOG" 2>&1 || ARM_OK=0
+  ARM_SIG="$EV/p10-testonly-release-arm64-signature.txt"
+  [ "$ARM_OK" = 1 ] && "$APKSIGNER" verify --verbose --print-certs "$TEST_ARM64" > "$ARM_SIG" 2>&1 || ARM_OK=0
+  ARM_CERT=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$ARM_SIG" 2>/dev/null | head -1)
+  [ -n "$ARM_CERT" ] && [ "$ARM_CERT" = "$SMOKE_CERT" ] || ARM_OK=0
+  if [ "$ARM_OK" = 1 ] && \
+      ! unzip -Z1 "$TEST_ARM64" | grep -q '^lib/x86_64/' && \
+      python3 "$DIR/scripts/check-apk.py" "$TEST_ARM64" \
+        --expect-package "$APPID" --expect-version-name "$VNAME" --expect-version-code "$VCODE" \
+        --expect-signed --expect-not-debuggable --expect-icon --expect-payload \
+        --expect-min-sdk 29 --expect-target-sdk 36 --expect-native-abi arm64-v8a \
+        --json "$EV/p10-testonly-release-arm64.json" > "$ARM_REPORT" 2>&1; then
+    ARM_BYTES=$(stat -c%s "$TEST_ARM64")
+    if [ "$ARM_BYTES" -le $((200 * 1024 * 1024)) ]; then
+      p10 TESTONLY_ARM64 0 "installable arm64-only APK bytes=$ARM_BYTES MiB=$(awk -v b="$ARM_BYTES" 'BEGIN{printf "%.1f",b/1048576}') x86_64=absent signed=v2/v3 cert_matches_smoke=${ARM_CERT:0:16}..."
+    else
+      p10 TESTONLY_ARM64 1 "signed arm64-only APK exceeds 200 MiB: bytes=$ARM_BYTES"
+    fi
+  else
+    p10 TESTONLY_ARM64 1 "arm64 trim/align/sign/inspect failed or x86_64 survived: $(grep -a '^FINDING' "$ARM_REPORT" 2>/dev/null | head -3 | tr '\n' ';' | cut -c1-220)"
+  fi
+
+  # The smoke artifact upload already includes this directory. Refresh its hash
+  # list and append exact guidance after the two new files exist.
+  ( cd "$SMOKE" && sha256sum ./*.apk > sha256.txt ) 2>/dev/null || true
+  cat >> "$SMOKE/INSTALL-README.txt" <<EOF
+
+SMALLER INSTALLABLE RELEASE-SHAPED TEST APKs
+============================================
+PREFERRED FOR A NORMAL ARM64 PHONE:
+  TEST-ONLY-debugkey-app-release-arm64-v8a.apk
+
+UNIVERSAL FALLBACK (ARM64 + X86_64):
+  TEST-ONLY-debugkey-app-release-universal.apk
+
+These are non-debuggable copies of the exact inspected release APK, signed with
+the SAME committed public test-only key as the smoke APK. They update the smoke
+install without wiping its app data. They are convenience/test builds, never
+Play artifacts and never trust-bearing releases. The original smoke APK remains
+larger because debuggable instrumentation emits debug-shaped dex; keep it only
+when running the instrumentation suite.
+
+THIS RUN:
+  arm64-only: $(stat -c%s "$TEST_ARM64" 2>/dev/null || echo missing) bytes
+  universal:  $(stat -c%s "$TEST_UNIVERSAL" 2>/dev/null || echo missing) bytes
+EOF
+fi
+rm -rf "$TEST_WORK"
+
 # ---- AAB: identity + payload (protobuf manifest; see check-apk.py) -----------
 AAB_REPORT="$EV/p10-release-aab-report.txt"
 if python3 "$DIR/scripts/check-apk.py" "$AAB" \
@@ -212,9 +337,11 @@ VERIFY THE DOWNLOAD FIRST (Termux):
   -> must equal the line in sha256.txt beside this file.
 
 NO-SIGNING ALTERNATIVE: the CI artifact `opencode-android-smoke-test-only`
-contains TEST-ONLY-debugkey-app-smoke.apk - already signed (v2/v3, debug
-key), same release packaging, installable by tapping it. Its trade-off:
-debuggable=true and everyone shares the debug key.
+contains TEST-ONLY-debugkey-app-release-arm64-v8a.apk and
+TEST-ONLY-debugkey-app-release-universal.apk. Both are already v2/v3 signed,
+non-debuggable release-shaped test builds. They share a committed public test
+key, so they are conveniences for testing, never trust-bearing releases. The
+same folder's larger app-smoke APK is only needed for instrumentation.
 
 The .aab file cannot be installed on a phone; it is Play Store input only.
 EOF
