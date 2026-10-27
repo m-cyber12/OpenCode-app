@@ -8,8 +8,8 @@ import java.io.File
 /**
  * v9.9 (owner): "the model should already be fully aware of the environment
  * and its capabilities" - the agent was observed burning a 12-minute turn
- * probing for python/node/curl (none exist), never finding `bun` (which
- * does), rediscovering the seccomp stderr noise, and learning by trial that
+ * probing for tools instead of trusting the app's inventory, rediscovering
+ * the seccomp stderr noise, and learning by trial that
  * `nohup` dies while `setsid` survives. Arena-style agents do not probe,
  * because their platform BRIEFS them; this file is that brief for OpenCode
  * on Android.
@@ -102,12 +102,11 @@ them, never probe. Briefs are OVERWRITTEN at every app start: never
 edit them - put suggestions in BRIEF-SUGGESTIONS.md at the project root.
 
 ## Tools
-`bun` (`bun -e`, scripts, `Bun.serve`, `fetch`, JSON), `git`, `rg`, and OUR
-prefix first on PATH (`sh` + ~190 coreutils) - prefer ours; the device's
-/system/bin varies by phone.
-wget, apt. There is NO node binary at all: npm-style CLIs start with
-`#!/usr/bin/env node` and die - the webapp brief below has the working
-pattern before you touch any package.json project.
+Installed and on PATH: `bun`, Node.js 24 (`node`), npm 11 (`npm`/`npx`),
+CPython (`python3`/`python`), `git`, `rg`, `curl`, `wget`, `jq`, OpenSSH
+clients, and OUR prefix's `sh` + ~190 coreutils - prefer ours; Android's
+/system/bin varies by phone. Bun remains the app server; Node/npm and Python
+are agent tools. npm installs on shared storage may require `--no-bin-links`.
 
 ## Quirks (device-verified)
 - stderr `[seccomp] preload handler installed (rc=0)` is harmless noise.
@@ -180,10 +179,9 @@ what cannot have changed; read each topic brief at most once.
   REPORT lines, report.json, latest.jpg and the per-round image budget.
   Read before taking or reading any screenshot.
 - $briefsDir/webapp.md - running a real/cloned framework project (Next,
-  Vite, ...): install, starting dev servers WITHOUT node, readiness,
-  missing-env crashes. Read BEFORE the first command in any project that
-  has a package.json.
-- $briefsDir/tools.md - PATH order, the full tool list, the `node` trap.
+  Vite, ...): npm/Bun installs, dev servers, readiness, missing-env crashes.
+  Read BEFORE the first command in any project that has a package.json.
+- $briefsDir/tools.md - PATH order, exact installed tools, Android limits.
   Read before shelling out.
 """.trimIndent() + "\n"
     }
@@ -291,19 +289,23 @@ placeholder status pages.
 
 1. Read package.json FIRST - `scripts` and `engines`. Never guess the
    toolchain.
-2. Install once, in the background, then WAIT (big trees: ~10 min,
-   hundreds of MB):
-   `mkdir -p "${'$'}TMPDIR" 2>/dev/null; setsid bun install </dev/null >install.log 2>&1 &`
-   Poll `du -sh node_modules` and `tail -3 install.log`. On shared
-   storage the install ENDS with `Failed to link <pkg>: EACCES` lines -
-   HARMLESS: packages extract fully, only `node_modules/.bin` is never
-   created. Do not reinstall.
-3. Starting tools: there is NO node (`#!/usr/bin/env node` shebangs
-   cannot run) and no `.bin`, so `bun run dev` / `next dev` will not
-   resolve. Run the tool's JS entry under bun by ABSOLUTE path (relative
-   script paths die with `CouldntReadCurrentDirectory`; `bun -e` is
-   unaffected):
-   `setsid bun /abs/project/node_modules/next/dist/bin/next dev -p 8080 -H 127.0.0.1 </dev/null >dev.log 2>&1 &`
+2. Use the lockfile/package metadata: npm and Bun are BOTH installed.
+   Install once, in the background, then WAIT (big trees: ~10 min,
+   hundreds of MB), for example:
+   `mkdir -p "${'$'}TMPDIR" 2>/dev/null; setsid npm install --no-bin-links </dev/null >install.log 2>&1 &`
+   `bun install` is also available for Bun projects. Poll `du -sh
+   node_modules` and `tail -3 install.log`. On shared storage, symlink
+   creation can end with `Failed to link <pkg>: EACCES` lines - packages
+   extracted successfully but `node_modules/.bin` may be absent. Do not
+   reinstall just for those link errors.
+3. Starting tools: real Node 24 is on PATH, so `#!/usr/bin/env node`
+   works; npm 11 is on PATH too. Try the declared package script first.
+   If shared storage lacks `.bin`, invoke the tool's JS entry by ABSOLUTE
+   path with `node` (relative script paths can die with
+   `CouldntReadCurrentDirectory`):
+   `setsid node /abs/project/node_modules/next/dist/bin/next dev -p 8080 -H 127.0.0.1 </dev/null >dev.log 2>&1 &`
+   The same absolute-path command with `bun` is the device-verified
+   fallback for Bun-compatible projects.
 4. Native addons (`.node` prebuilds) cannot dlopen inside the app. When
    a dep crashes on one, stub THAT module's JS entry inside node_modules
    (no-op or passthrough) - never touch project source; stubs die with
@@ -311,10 +313,10 @@ placeholder status pages.
    - `@parcel/watcher` -> no-op stub (file-watching is optional in dev);
    - `@swc/core` -> passthrough stub (only next-intl's message extractor
      uses it);
-   - Next itself falls back to wasm SWC automatically, but first patch
+   - Next itself falls back to wasm SWC automatically. If its registry
+     subprocess fails on Android, patch
      `node_modules/next/dist/lib/helpers/get-registry.js` to return
-     `https://registry.npmjs.org/` directly (it shells out to npm, which
-     does not exist), and `rm -rf node_modules/next/wasm
+     `https://registry.npmjs.org/` directly. `rm -rf node_modules/next/wasm
      node_modules/next/next-swc-fallback` if an interrupted run left
      empty dirs there - the downloader sees them and silently skips.
 5. Readiness lives in the log, not in your patience: poll `tail -5

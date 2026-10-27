@@ -1,7 +1,10 @@
 package ai.opencode.android.harness
 
 import ai.opencode.android.harness.sealed.HarnessSeal
+import ai.opencode.android.runtime.EnvironmentBrief
+import ai.opencode.android.runtime.PayloadExtractor
 import ai.opencode.android.runtime.RuntimeEnv
+import ai.opencode.android.runtime.RuntimeLogger
 import ai.opencode.android.runtime.RuntimePaths
 import ai.opencode.android.ui.printGate
 import android.content.Context
@@ -347,6 +350,83 @@ class HarnessSealedToolsGateTest {
                 "public=${File(key.absolutePath + ".pub").length()} output='$compact'"
         }.getOrElse { t -> false to "threw ${t.javaClass.simpleName}: ${t.message}" }
         printGate("V9", measured.first, measured.second)
+    }
+
+    /**
+     * V10: simulate the owner's update, not a clean install.
+     *
+     * Keep the persisted extraction marker, remove only the data/link pieces an
+     * older build lacks, and restore the stale brief that said Node did not
+     * exist. Running the same startup components against that tree must notice
+     * the current manifest's missing Python entry even though payloadVersion did
+     * not change, apply the current executable manifest, refresh the app-owned
+     * brief, and make every promised tool usable in the agent environment.
+     */
+    @Test
+    fun v10_anOlderInstalledTreeUpgradesToTheCurrentAgentTools() {
+        val measured = runCatching {
+            val paths = RuntimePaths.get(context)
+            paths.ensureDirs()
+            val baselineLog = File(paths.tmp, "v10-baseline.log").apply { delete() }
+            val baseline = PayloadExtractor(context, paths, RuntimeLogger(baselineLog)).ensureExtracted()
+            check(baseline !is PayloadExtractor.Result.Failed) { "baseline extraction failed: $baseline" }
+            val baselineLinks = HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
+            check(baselineLinks != null && baselineLinks.ok()) { "baseline links failed: ${baselineLinks?.summary()}" }
+
+            val markerVersionBefore = org.json.JSONObject(paths.extractionMarker.readText())
+                .getInt("payloadVersion")
+            val staleBrief = File(paths.xdgConfigOpencode, EnvironmentBrief.FILE_NAME)
+            staleBrief.parentFile?.mkdirs()
+            staleBrief.writeText("wget, apt. There is NO node binary at all\n")
+            File(context.filesDir, "usr/lib/python3.13.zip").delete()
+            for (name in listOf("node", "npm", "npx", "python", "python3")) {
+                File(paths.binDir, name).delete()
+            }
+            check(paths.extractionMarker.isFile) { "staging unexpectedly removed the extraction marker" }
+
+            val upgradeLog = File(paths.tmp, "v10-upgrade.log").apply { delete() }
+            val upgraded = PayloadExtractor(context, paths, RuntimeLogger(upgradeLog)).ensureExtracted()
+            val refreshedBrief = EnvironmentBrief.install(paths.xdgConfigOpencode)
+            val upgradedLinks = HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
+            val markerVersionAfter = org.json.JSONObject(paths.extractionMarker.readText())
+                .getInt("payloadVersion")
+
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val script =
+                "sha256sum </dev/null >/dev/null && echo SHELL_COREUTILS_AGENT_OK; " +
+                    "bun --version >/dev/null && echo BUN_AGENT_OK; " +
+                    "git --version >/dev/null && echo GIT_AGENT_OK; " +
+                    "rg --version >/dev/null && echo RG_AGENT_OK; " +
+                    "curl --version >/dev/null && echo CURL_AGENT_OK; " +
+                    "wget --version >/dev/null && echo WGET_AGENT_OK; " +
+                    "jq --version >/dev/null && echo JQ_AGENT_OK; " +
+                    "ssh -V >/dev/null 2>&1 && echo OPENSSH_AGENT_OK; " +
+                    "node -e \"console.log('NODE_AGENT_OK', process.version)\"; " +
+                    "printf 'NPM_AGENT_OK '; npm --version; " +
+                    "python3 -c \"import sys; print('PYTHON_AGENT_OK', sys.version.split()[0])\""
+            val run = shellIn(env, script)
+            val required = listOf(
+                "SHELL_COREUTILS_AGENT_OK", "BUN_AGENT_OK", "GIT_AGENT_OK", "RG_AGENT_OK",
+                "CURL_AGENT_OK", "WGET_AGENT_OK", "JQ_AGENT_OK", "OPENSSH_AGENT_OK",
+                "NODE_AGENT_OK v24.", "NPM_AGENT_OK 11.", "PYTHON_AGENT_OK 3.13.",
+            )
+            val missing = required.filterNot { run.output.contains(it) }
+            val briefText = staleBrief.readText()
+            val reextractReasonSeen = upgradeLog.readText().contains("missing usr/lib/python3.13.zip")
+            val ok = upgraded is PayloadExtractor.Result.Extracted && refreshedBrief &&
+                upgradedLinks != null && upgradedLinks.ok() &&
+                markerVersionBefore == markerVersionAfter && reextractReasonSeen &&
+                briefText.contains("Node.js 24") && briefText.contains("CPython") &&
+                !briefText.contains("NO node", ignoreCase = true) &&
+                run.ran && run.exitCode == 0 && missing.isEmpty()
+            val compact = run.output.trim().replace("\n", " <NL> ").take(1000)
+            ok to "upgradeResult=${upgraded.javaClass.simpleName} markerVersion=" +
+                "$markerVersionBefore->$markerVersionAfter reextractReason=$reextractReasonSeen " +
+                "briefRefreshed=$refreshedBrief links=${upgradedLinks?.summary()} " +
+                "agentTools=${required.size - missing.size}/${required.size} " +
+                "missing=${missing.joinToString(",").ifEmpty { "none" }} exit=${run.exitCode} output='$compact'"
+        }.getOrElse { t -> false to "threw ${t.javaClass.simpleName}: ${t.message}" }
+        printGate("V10", measured.first, measured.second)
     }
 
     private fun shell(script: String): Run =

@@ -485,11 +485,25 @@ class LiveChatUiGatesTest {
         val marker = "P6LIVE" + (System.currentTimeMillis() % 1_000_000)
         val known = knownMessageIds()
         // Phase 7 note: the Phase 6 run never saw a tool call in budget, so this
-        // prompt is strengthened to make the tool use explicit and non-optional -
-        // the command's output is unknown to the model, so it cannot fake it.
+        // prompt is strengthened to make the tool use explicit and non-optional.
+        // v9.43: exercise the tools the owner actually asked the AGENT to use,
+        // not merely `echo`; the random marker prevents a prose-only fake pass.
+        val agentToolProbe =
+            "printf '$marker\\n'; " +
+                "sha256sum </dev/null >/dev/null && printf 'SHELL_COREUTILS_AGENT_OK\\n'; " +
+                "bun --version >/dev/null && printf 'BUN_AGENT_OK\\n'; " +
+                "git --version >/dev/null && printf 'GIT_AGENT_OK\\n'; " +
+                "rg --version >/dev/null && printf 'RG_AGENT_OK\\n'; " +
+                "curl --version >/dev/null && printf 'CURL_AGENT_OK\\n'; " +
+                "wget --version >/dev/null && printf 'WGET_AGENT_OK\\n'; " +
+                "jq --version >/dev/null && printf 'JQ_AGENT_OK\\n'; " +
+                "ssh -V >/dev/null 2>&1 && printf 'OPENSSH_AGENT_OK\\n'; " +
+                "node -e \"console.log('NODE_AGENT_OK', process.version)\"; " +
+                "printf 'NPM_AGENT_OK '; npm --version; " +
+                "python3 -c \"import sys; print('PYTHON_AGENT_OK', sys.version.split()[0])\""
         val sent = sendPrompt(
             "You must use the bash tool for this task; answering from memory is not allowed. " +
-                "Run this exact shell command, then report ONLY what it printed: echo $marker",
+                "Run this exact shell command, then report ONLY what it printed: $agentToolProbe",
         )
         if (!sent) {
             skip("L2", "the composer would not accept the tool prompt")
@@ -503,10 +517,12 @@ class LiveChatUiGatesTest {
             asksAnswered += answerAnyAsk()
             polls++
             if (polls % 3 == 0) toolParts = toolPartsInNew(known)
-            toolParts.any { it.tool.isNotEmpty() }
+            // The marker in arguments is not evidence. Wait until the real
+            // command output carries it, so an unrelated tool cannot pass L2.
+            toolParts.any { it.output.contains(marker) }
         }
         if (toolParts.isEmpty()) toolParts = toolPartsInNew(known)
-        val started = toolParts.firstOrNull { it.tool.isNotEmpty() }
+        val started = toolParts.firstOrNull { it.output.contains(marker) }
 
         if (!toolCallHappened || started == null) {
             val reply = replyInNew(known)
@@ -573,19 +589,39 @@ class LiveChatUiGatesTest {
         }
         val outputShown = waitFor(30_000) { exists(outputTag) }
         val serverOutputHasMarker = part.output.contains(marker)
-        val uiOutputHasMarker = allText().contains(marker)
+        val agentMarkers = listOf(
+            "SHELL_COREUTILS_AGENT_OK", "BUN_AGENT_OK", "GIT_AGENT_OK", "RG_AGENT_OK",
+            "CURL_AGENT_OK", "WGET_AGENT_OK", "JQ_AGENT_OK", "OPENSSH_AGENT_OK",
+        )
+        val missingServerTools = agentMarkers.filterNot { part.output.contains(it) }
+        val serverOutputHasNode = part.output.contains("NODE_AGENT_OK v24.")
+        val serverOutputHasNpm = part.output.contains("NPM_AGENT_OK 11.")
+        val serverOutputHasPython = part.output.contains("PYTHON_AGENT_OK 3.13.")
+        val visible = allText()
+        val uiOutputHasMarker = visible.contains(marker)
+        val missingUiTools = agentMarkers.filterNot { visible.contains(it) }
+        val uiOutputHasNode = visible.contains("NODE_AGENT_OK v24.")
+        val uiOutputHasNpm = visible.contains("NPM_AGENT_OK 11.")
+        val uiOutputHasPython = visible.contains("PYTHON_AGENT_OK 3.13.")
         val expandedShot = shot("32-live-tool-card-expanded.png")
 
         val ok = cardShown && collapsedBeforeTap && headlineShown && tapped && outputShown &&
-            serverOutputHasMarker && uiOutputHasMarker
+            serverOutputHasMarker && missingServerTools.isEmpty() && serverOutputHasNode &&
+            serverOutputHasNpm && serverOutputHasPython && uiOutputHasMarker &&
+            missingUiTools.isEmpty() && uiOutputHasNode && uiOutputHasNpm && uiOutputHasPython
         gate(
             "L2",
             ok,
             "tool=${part.tool} status=${part.status} partId=${part.id} cardShown=$cardShown " +
                 "collapsedBeforeTap=$collapsedBeforeTap headline=$headlineShown expandedByTap=$tapped " +
                 "outputRendered=$outputShown markerInServerOutput=$serverOutputHasMarker " +
-                "markerOnScreen=$uiOutputHasMarker asksAnswered=$asksAnswered marker=$marker " +
-                "screenshots[$collapsedShot | $expandedShot]",
+                "agentToolsInServerOutput=${agentMarkers.size - missingServerTools.size}/${agentMarkers.size}" +
+                "+node:$serverOutputHasNode,npm:$serverOutputHasNpm,python:$serverOutputHasPython " +
+                "missingServer=${missingServerTools.joinToString(",").ifEmpty { "none" }} markerOnScreen=$uiOutputHasMarker " +
+                "agentToolsOnScreen=${agentMarkers.size - missingUiTools.size}/${agentMarkers.size}" +
+                "+node:$uiOutputHasNode,npm:$uiOutputHasNpm,python:$uiOutputHasPython " +
+                "missingUi=${missingUiTools.joinToString(",").ifEmpty { "none" }} " +
+                "asksAnswered=$asksAnswered marker=$marker screenshots[$collapsedShot | $expandedShot]",
         )
     }
 }

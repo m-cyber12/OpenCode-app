@@ -501,9 +501,22 @@ class LiveToolCallGatesTest {
 
         val marker = BADGE + (System.currentTimeMillis() % 1_000_000)
         val known = probe.knownMessageIds()
+        val agentToolProbe =
+            "printf '$marker\\n'; " +
+                "sha256sum </dev/null >/dev/null && printf 'SHELL_COREUTILS_AGENT_OK\\n'; " +
+                "bun --version >/dev/null && printf 'BUN_AGENT_OK\\n'; " +
+                "git --version >/dev/null && printf 'GIT_AGENT_OK\\n'; " +
+                "rg --version >/dev/null && printf 'RG_AGENT_OK\\n'; " +
+                "curl --version >/dev/null && printf 'CURL_AGENT_OK\\n'; " +
+                "wget --version >/dev/null && printf 'WGET_AGENT_OK\\n'; " +
+                "jq --version >/dev/null && printf 'JQ_AGENT_OK\\n'; " +
+                "ssh -V >/dev/null 2>&1 && printf 'OPENSSH_AGENT_OK\\n'; " +
+                "node -e \"console.log('NODE_AGENT_OK', process.version)\"; " +
+                "printf 'NPM_AGENT_OK '; npm --version; " +
+                "python3 -c \"import sys; print('PYTHON_AGENT_OK', sys.version.split()[0])\""
         val sent = sendPrompt(
             "You must use the bash tool for this task; answering from memory is not allowed. " +
-                "Run this exact shell command, then report ONLY what it printed: echo $marker",
+                "Run this exact shell command, then report ONLY what it printed: $agentToolProbe",
         )
         if (!sent) {
             skip("TOOL", "the composer would not accept the tool prompt")
@@ -524,11 +537,13 @@ class LiveToolCallGatesTest {
                 toolParts = probe.toolPartsInNew(known)
                 replySoFar = probe.replyInNew(known)
             }
-            toolParts.any { it.tool.isNotEmpty() }
+            // Do not accept a read/inspection call as proof. The marker can
+            // appear in the model's arguments; only real shell OUTPUT counts.
+            toolParts.any { it.output.contains(marker) }
         }
         if (toolParts.isEmpty()) toolParts = probe.toolPartsInNew(known)
         if (replySoFar.isEmpty()) replySoFar = probe.replyInNew(known)
-        val part = toolParts.firstOrNull { it.tool.isNotEmpty() }
+        val part = toolParts.firstOrNull { it.output.contains(marker) }
 
         if (!toolCallHappened || part == null) {
             // Two distinct failure shapes: the turn never completed (free-tier
@@ -585,19 +600,40 @@ class LiveToolCallGatesTest {
         }
         val outputShown = waitFor(30_000) { exists(outputTag) }
         val serverOutputHasMarker = done.output.contains(marker)
-        val uiOutputHasMarker = allLines().any { it.contains(marker) }
+        val agentMarkers = listOf(
+            "SHELL_COREUTILS_AGENT_OK", "BUN_AGENT_OK", "GIT_AGENT_OK", "RG_AGENT_OK",
+            "CURL_AGENT_OK", "WGET_AGENT_OK", "JQ_AGENT_OK", "OPENSSH_AGENT_OK",
+        )
+        val missingServerTools = agentMarkers.filterNot { done.output.contains(it) }
+        val serverOutputHasNode = done.output.contains("NODE_AGENT_OK v24.")
+        val serverOutputHasNpm = done.output.contains("NPM_AGENT_OK 11.")
+        val serverOutputHasPython = done.output.contains("PYTHON_AGENT_OK 3.13.")
+        val visible = allText()
+        val uiOutputHasMarker = visible.contains(marker)
+        val missingUiTools = agentMarkers.filterNot { visible.contains(it) }
+        val uiOutputHasNode = visible.contains("NODE_AGENT_OK v24.")
+        val uiOutputHasNpm = visible.contains("NPM_AGENT_OK 11.")
+        val uiOutputHasPython = visible.contains("PYTHON_AGENT_OK 3.13.")
         shot("42-p8-tool-card-expanded.png")
 
         val ok = cardShown && collapsedBeforeTap && headlineShown && tapped && outputShown &&
-            serverOutputHasMarker && uiOutputHasMarker
+            serverOutputHasMarker && missingServerTools.isEmpty() && serverOutputHasNode &&
+            serverOutputHasNpm && serverOutputHasPython && uiOutputHasMarker &&
+            missingUiTools.isEmpty() && uiOutputHasNode && uiOutputHasNpm && uiOutputHasPython
         gate(
             "TOOL",
             ok,
             "tool=${done.tool} status=${done.status} partId=${done.id} cardShown=$cardShown " +
                 "collapsedBeforeTap=$collapsedBeforeTap headline=$headlineShown expandedByTap=$tapped " +
                 "outputRendered=$outputShown markerInServerOutput=$serverOutputHasMarker " +
-                "markerOnScreen=$uiOutputHasMarker asksAnswered=$asksAnswered marker=$marker " +
-                ":: this closes Phase 6 L2 (real model, real tool call)",
+                "agentToolsInServerOutput=${agentMarkers.size - missingServerTools.size}/${agentMarkers.size}" +
+                "+node:$serverOutputHasNode,npm:$serverOutputHasNpm,python:$serverOutputHasPython " +
+                "missingServer=${missingServerTools.joinToString(",").ifEmpty { "none" }} markerOnScreen=$uiOutputHasMarker " +
+                "agentToolsOnScreen=${agentMarkers.size - missingUiTools.size}/${agentMarkers.size}" +
+                "+node:$uiOutputHasNode,npm:$uiOutputHasNpm,python:$uiOutputHasPython " +
+                "missingUi=${missingUiTools.joinToString(",").ifEmpty { "none" }} " +
+                "asksAnswered=$asksAnswered marker=$marker " +
+                ":: real model invoked the shipped Node/npm/Python through the real UI",
         )
     }
 

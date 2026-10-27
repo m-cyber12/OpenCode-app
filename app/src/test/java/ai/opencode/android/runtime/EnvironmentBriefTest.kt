@@ -186,8 +186,12 @@ class EnvironmentBriefTest {
             assertTrue("set must document watched port $port", text.contains(port.toString()))
         }
         assertTrue(text.contains("bun"))
+        assertTrue(text.contains("Node.js 24"))
+        assertTrue(text.contains("npm 11"))
+        assertTrue(text.contains("python3"))
         assertTrue(text.contains("curl"))
         assertTrue(text.contains("wget"))
+        assertTrue(text.contains("jq"))
         assertTrue(text.contains("sealed curl/Mbed TLS backend"))
         assertTrue(text.contains("OpenSSH"))
         assertTrue(text.contains("ssh-keygen"))
@@ -236,25 +240,56 @@ class EnvironmentBriefTest {
     }
 
     @Test
+    fun briefsNeverDenyTheSealedAgentTools() {
+        val main = EnvironmentBrief.briefText()
+        val text = combined()
+
+        // These are agent-visible capabilities, not just APK payload files.
+        // Keep the concise inventory in the always-injected brief so a model
+        // cannot answer from an older topic recipe without first seeing it.
+        for (tool in listOf("Node.js 24", "npm 11", "python3", "curl", "wget", "jq", "OpenSSH")) {
+            assertTrue("main brief must name installed tool $tool", main.contains(tool))
+        }
+        assertTrue(main.contains("Node/npm and Python are agent tools"))
+
+        // v9.43 regression: the package already contained Node/npm/Python,
+        // while this higher-priority brief still said "There is NO node" and
+        // webapp.md repeated it. A model then told the owner to use Bun and
+        // treated a tool probe as proof that Python was absent. Reject every
+        // known shape of that contradiction across the complete installed set.
+        for (lie in listOf(
+            "there is no node",
+            "no node binary",
+            "without node",
+            "node trap",
+            "node does not exist",
+            "npm, which does not exist",
+            "there is no python",
+            "no python binary",
+        )) {
+            assertFalse("briefs contradict installed tools: '$lie'", text.contains(lie, ignoreCase = true))
+        }
+    }
+
+    @Test
     fun webappBriefCarriesTheCreatorsHubLessons() {
         // v9.21: a cloned Next.js 15 site cost ~400k tokens of trial and
         // error on-device. v9.22: replaced my distillation with the MODEL'S
-        // OWN verified setup log (owner-provided) - it corrected one piece
-        // (shared storage never links node_modules/.bin, so `bun --bun run`
-        // cannot resolve; the absolute-path JS entry is the working route)
-        // and added the discoveries below. Each is pinned because each one
-        // cost real turns to find.
+        // OWN verified setup log (owner-provided). v9.43: Node/npm became
+        // sealed tools; retain the shared-storage and absolute-entry lessons
+        // without falsely denying those installed runtimes.
         val webapp = EnvironmentBrief.topicBriefs().getValue("webapp.md")
         assertTrue(webapp.contains("package.json"))
         assertTrue(webapp.contains("#!/usr/bin/env node"))
+        assertTrue(webapp.contains("npm install --no-bin-links"))
         assertTrue(webapp.contains("bun install"))
         assertTrue(webapp.contains("install.log"))
-        // Shared-storage install truth: EACCES link failures are harmless,
-        // .bin never exists - so tools start by ABSOLUTE path under bun.
+        // Shared-storage install truth: link EACCES can be harmless and .bin
+        // may be absent, so tools have an absolute-path Node fallback.
         assertTrue(webapp.contains("EACCES"))
         assertTrue(webapp.contains("node_modules/.bin"))
         assertTrue(webapp.contains("CouldntReadCurrentDirectory"))
-        assertTrue(webapp.contains("bun /abs/project/node_modules/next/dist/bin/next dev -p 8080 -H 127.0.0.1"))
+        assertTrue(webapp.contains("node /abs/project/node_modules/next/dist/bin/next dev -p 8080 -H 127.0.0.1"))
         // Native addons cannot dlopen; the verified Next 15 stub set.
         assertTrue(webapp.contains("@parcel/watcher"))
         assertTrue(webapp.contains("@swc/core"))
@@ -267,9 +302,10 @@ class EnvironmentBriefTest {
         assertTrue(webapp.contains("nc -w 2 127.0.0.1 8080"))
         assertTrue(webapp.contains(".env.local"))
         assertTrue(webapp.contains("pkill"))
-        // The main brief's index warns about the node trap BEFORE the agent
-        // ever opens the topic file - that is where the 400k went.
-        assertTrue(EnvironmentBrief.briefText().contains("#!/usr/bin/env node"))
+        // The always-injected brief names the real runtimes before the agent
+        // opens any topic file; it must never resurrect the old Node denial.
+        assertTrue(EnvironmentBrief.briefText().contains("Node.js 24"))
+        assertTrue(EnvironmentBrief.briefText().contains("CPython"))
         // And screenshots.md carries the capture-under-HMR truths.
         val shots = EnvironmentBrief.topicBriefs().getValue("screenshots.md")
         assertTrue(shots.contains("mtime"))

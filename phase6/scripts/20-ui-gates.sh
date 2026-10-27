@@ -267,11 +267,13 @@ done
 # tools are sealed; this runs a shell out of the prefix and a pipeline through
 # it, which is the difference between "binaries are present" and "the agent has
 # a shell". A pipeline is the honest test: sh forks, and each stage is found by
-# name on PATH and exec'd from a different prefix path.
-log "=== stage G: sealed userland core (shell + coreutils, and the agent's env) ==="
+# name on PATH and exec'd from a different prefix path. V10 additionally
+# mutates the installed tree into its pre-tool shape and proves startup's
+# extraction/link/brief refresh logic upgrades it without a clean install.
+log "=== stage G: sealed userland core (shell + coreutils, agent env, update path) ==="
 TOOLS_RC=0
 run_class "harness-sealed-tools" "ai.opencode.android.harness.HarnessSealedToolsGateTest" 900 || TOOLS_RC=1
-for g in V1 V2 V3 V4 V5 V6 V7 V8 V9; do
+for g in V1 V2 V3 V4 V5 V6 V7 V8 V9 V10; do
   v=$(verdict_of "P6_$g"); p6 "$g" "$v" "$(detail_of "P6_$g")"
 done
 [ "$TOOLS_RC" = 0 ] || log "note: the sealed-tools instrument run itself returned rc=$TOOLS_RC"

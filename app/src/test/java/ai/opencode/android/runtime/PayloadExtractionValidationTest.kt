@@ -171,6 +171,33 @@ class PayloadExtractionValidationTest {
     }
 
     @Test
+    fun aNewToolDataEntryForcesUpgradeEvenWhenPayloadVersionIsUnchanged() {
+        val (root, marker, oldManifest) = fixture()
+        val pythonZip = "new sealed Python stdlib".toByteArray()
+        val upgradedManifest = oldManifest.copy(
+            // Tool additions historically kept payloadVersion=7. The current
+            // APK manifest, not just this coarse marker, must still invalidate
+            // an older installed tree that lacks the new payload entry.
+            payloadVersion = oldManifest.payloadVersion,
+            entries = oldManifest.entries + ManifestEntry(
+                "usr/lib/python3.13.zip",
+                sha256(pythonZip),
+                pythonZip.size.toLong(),
+            ),
+        )
+
+        val reason = PayloadExtractor.verifyExtraction(
+            root,
+            marker,
+            File(root, "opencode/dist/node/node.js"),
+            File(root, "launcher.js"),
+            upgradedManifest,
+        )
+        assertNotNull(reason)
+        assertTrue("same-version tool addition must re-extract: $reason", reason!!.contains("missing usr/lib/python3.13.zip"))
+    }
+
+    @Test
     fun aMissingServerBundleIsAReExtraction() {
         val (root, marker, manifest) = fixture()
         File(root, "opencode/dist/node/node.js").delete()

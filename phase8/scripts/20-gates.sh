@@ -436,6 +436,31 @@ else
   fi
 fi
 
+# D2b: UPDATE path, not another fresh-install proof. Preserve the existing
+# marker/data tree as an app update would, remove only the tools that an older
+# installed build lacked, and restore the exact stale Node denial that reached
+# the owner. Relaunch must detect the new manifest entry despite the unchanged
+# coarse payloadVersion, rebuild all current executable links, rewrite the app-
+# owned brief, and expose every tool through OpenCode's own /shell endpoint.
+adb shell am force-stop "$PKG" >/dev/null 2>&1 || true
+sleep 3
+UPGRADE_PREP=$(rash "test -f '$FILES/runtime/.extracted' && test -f '$FILES/usr/lib/python3.13.zip' && test -e '$FILES/bin/node' && { rm -f '$FILES/usr/lib/python3.13.zip' '$FILES/bin/node' '$FILES/bin/npm' '$FILES/bin/npx' '$FILES/bin/python' '$FILES/bin/python3'; printf '%s\\n' 'wget, apt. There is NO node binary at all' > '$FILES/xdg/config/opencode/environment.md'; echo upgrade_stale_tree_ready; }" 2>/dev/null)
+if ! echo "$UPGRADE_PREP" | grep -q upgrade_stale_tree_ready; then
+  p8 UPGRADETOOLS 1 "could not stage the persisted old-app tree: $(echo "$UPGRADE_PREP" | head -2)"
+else
+  adb shell am start -n "$PKG/ai.opencode.android.MainActivity" >/dev/null 2>&1 || true
+  UPGRADE_HEALTH=1
+  [ "$(wait_healthy 300)" = "HEALTH_OK" ] && UPGRADE_HEALTH=0
+  UPGRADE_OUT=$(run_js_on_device p8-upgrade-tools.js 2>&1)
+  echo "$UPGRADE_OUT" >> "$LOG"
+  UPGRADE_REEXTRACT=$(rash "grep -ac 'missing usr/lib/python3.13.zip' '$FILES/log/runtime.log' 2>/dev/null" | tr -d '[:space:]')
+  if [ "$UPGRADE_HEALTH" = "0" ] && echo "$UPGRADE_OUT" | grep -q 'P8UPGRADETOOLS ok=1' && [ "${UPGRADE_REEXTRACT:-0}" -ge 1 ]; then
+    p8 UPGRADETOOLS 0 "$(echo "$UPGRADE_OUT" | grep P8UPGRADETOOLS | head -1) manifestMissingPythonLines=$UPGRADE_REEXTRACT (persisted marker kept; data + links + brief restored on relaunch)"
+  else
+    p8 UPGRADETOOLS 1 "health=$([ "$UPGRADE_HEALTH" = 0 ] && echo yes || echo no) manifestMissingPythonLines=${UPGRADE_REEXTRACT:-0} $(echo "$UPGRADE_OUT" | grep P8UPGRADETOOLS | head -1)"
+  fi
+fi
+
 # D3: app process crash (force-stop mid-run) -> restart -> healthy again.
 adb shell am force-stop "$PKG" >/dev/null 2>&1 || true
 sleep 3

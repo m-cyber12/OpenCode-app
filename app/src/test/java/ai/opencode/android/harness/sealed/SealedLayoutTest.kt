@@ -102,6 +102,42 @@ class SealedLayoutTest {
     }
 
     @Test
+    fun apply_upgradeAddsToolsMissingFromAnOlderInstalledPrefix() {
+        lib("libgit.so")
+        lib("libnode.so")
+        lib("libpython3.so")
+        val prefix = tmp.newFolder("prefix")
+        val nativeDir = nativeDir
+
+        val oldInstall = SealedLayout.apply(
+            prefix,
+            nativeDir,
+            listOf(SealedLayout.Link("bin/git", "libgit.so")),
+        )
+        assertTrue(oldInstall.summary(), oldInstall.ok())
+        assertTrue(!File(prefix, "bin/node").exists())
+        assertTrue(!File(prefix, "bin/python3").exists())
+
+        // Startup reads the current APK manifest every time; applying a newer
+        // manifest to persisted app data must add the new executable links
+        // instead of treating the old prefix as already complete.
+        val upgraded = SealedLayout.apply(
+            prefix,
+            nativeDir,
+            listOf(
+                SealedLayout.Link("bin/git", "libgit.so"),
+                SealedLayout.Link("bin/node", "libnode.so"),
+                SealedLayout.Link("bin/python3", "libpython3.so"),
+            ),
+        )
+        assertTrue(upgraded.summary(), upgraded.ok())
+        assertEquals(2, upgraded.linked)
+        assertEquals(1, upgraded.alreadyCorrect)
+        assertEquals(lib("libnode.so").absolutePath, SealedLinks.readLink(File(prefix, "bin/node")))
+        assertEquals(lib("libpython3.so").absolutePath, SealedLinks.readLink(File(prefix, "bin/python3")))
+    }
+
+    @Test
     fun apply_rewritesALinkThatPointsSomewhereElse() {
         lib("libgit.so")
         lib("libgit2.so")
