@@ -14,8 +14,8 @@ P6_U2 PASS :: collapsedByDefault=t
 P6_U2 PASS :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true todoChecklist=true(collapsed=true) briefHidden=true
 P6_U3 PASS :: ask=t
 P6_U3 PASS :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true inlineInTranscript=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[staging]])] preview=true/true/true/true/true/true/true submitEnabledAtTap=true submitClicks=1 scrolledIntoView=true
-P6_U4 PASS ::
-P6_U4 PASS :: runtimeDown=true(body=true,send=true) serverUnreachable=true(send=true) (v9.42: the composer stays open in every state) startingLooksLikeLoading=true/noBanner=true queued=true providerAuth=true(rawKept=true,send=true) starting=true(send=true) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
+P6_U4 FAIL ::
+P6_U4 FAIL :: runtimeDown=true(body=true,send=true) serverUnreachable=false(send=true) (v9.42: the composer stays open in every state) startingLooksLikeLoading=true/noBanner=true queued=true providerAuth=true(rawKept=true,send=true) starting=true(send=true) headlinesDistinct=true chatLeaks=[] welcomeStatesShown=7/7 welcomeLeaks=[]
 P6_U5 PASS :: busyBa
 P6_U5 PASS :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true noActionsWhileStreaming=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true copy=true/true like=true dislike=true turnErrorKept=true singleError=true retryBanner=true stopped=true/noCard=true
 P6_U6 PASS :: heading=t
@@ -29,7 +29,7 @@ P6_U9 PASS :: listed=true meta=true info=true(1)/true/true pathShown=true locati
 P6-U1 PASS :: :: rows=602 composedAtBottom=47 composedAtTop=45 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
 P6-U2 PASS :: :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true todoChecklist=true(collapsed=true) b
 P6-U3 PASS :: :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true inlineInTranscript=true optionClicked=true answered=true skipped=true answers
-P6-U4 PASS :: :: runtimeDown=true(body=true,send=true) serverUnreachable=true(send=true) (v9.42: the composer stays open in every state) startingLooksLikeLoading=true/noBanner=true queued=true providerAuth=true(rawKept=true,send=true)
+P6-U4 FAIL :: :: runtimeDown=true(body=true,send=true) serverUnreachable=false(send=true) (v9.42: the composer stays open in every state) startingLooksLikeLoading=true/noBanner=true queued=true providerAuth=true(rawKept=true,send=true
 P6-U5 PASS :: :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true noActionsWhileStreaming=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true cal
 P6-U6 PASS :: :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true table=true/true
 P6-U7 PASS :: :: interactive={chat=25, sessions=8, projects=6, welcome=2, welcome-unsupported=2, settings=12, files=4} total=59 unnamed=0 filesControls=[About this folder, Up one level Up one level, main.kt KT, app Folder]
@@ -52,21 +52,21 @@ P6-F1 PASS :: :: firstScreen=welcome workspaceStep=true stages=[extracting, star
 P6-F2 PASS :: :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=false,chat=false,workspace=true) leakedTokens=[] screenshot=43240
 P6-F3 PASS :: :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:43240,projects
 P6-F4 PASS :: :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=35911, 02-first-run-ready.png=43240, 02b-first-run-workspace.png=43240, 04-first-run-projects.png=65876]
-P6_L1 PASS :: p
-P6_L1 PASS :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBanner=false asksAnswered=0 composerUsableAgain=true screenshot[bytes=60470 ink=0.323 via=compose] reply='Blue.'
-P6_L2 PASS :: tool=bash status=completed pa
-P6_L2 PASS :: tool=bash status=completed partId=prt_18284de540018quv1ShgXHi8Ow cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true agentToolsInServerOutput=8/8+node:true,npm:true,python:true missingServer=none markerOnScreen=true agentToolsOnScreen=8/8+node:true,npm:true,python:true missingUi=none asksAnswered=1 marker=P6LIVE102930 screenshots[bytes=191749 ink=0.422 via=compose | bytes=211096 ink=0.422 via=compose]
-P6_MODEL_AVAILABLE 1 :: replyChars=5 asksAnswered=0
-P6-L1 PASS :: :: promptSent=true userPromptShown=true serverReplyChars=5 replyShownInUi=true(needle='Blue') newScreenLines=13 messageRows=7 emptyConversation=false screenCatchUpMs=120000 busyIndicator=true streamingDots=true errorBann
-P6-L2 PASS :: :: tool=bash status=completed partId=prt_18284de540018quv1ShgXHi8Ow cardShown=true collapsedBeforeTap=true headline=true expandedByTap=true outputRendered=true markerInServerOutput=true agentToolsInServerOutput=8/8+node:
+P6_L1 SKIP :: no assistant text f
+P6_L1 SKIP :: no assistant text from the server within 300s (busySeen=false, asksAnswered=0)
+P6_L2 SKIP :: no model se
+P6_L2 SKIP :: no model served a turn, so no tool call can be observed: no assistant text from the server within 300s (busySeen=false, asksAnswered=0)
+P6_MODEL_AVAILABLE 0 :: no assistant text from the server within 300s (busySeen=false, asksAnswered=0)
+P6-L1 SKIP :: :: no assistant text from the server within 300s (busySeen=false, asksAnswered=0)
+P6-L2 SKIP :: :: no model served a turn, so no tool call can be observed: no assistant text from the server within 300s (busySeen=false, asksAnswered=0)
 P6_X1 PASS :: api36Context=t
 P6_X1 PASS :: api36Context=true nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=36 api=36 abi=x86_64 :: OCEXECPROBE ok
 P6_X2 PASS :: api36Context=t
-P6_X2 PASS :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~W
+P6_X2 PASS :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~Q
 P6_X3 PASS :: api36Context=t
 P6_X3 PASS :: api36Context=true targetSdk=36 api=36 prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P6-X1 PASS :: :: api36Context=true nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=36 api=36 abi=x86_64 :: OCEXECPROBE ok
-P6-X2 PASS :: :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~W
+P6-X2 PASS :: :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~Q
 P6-X3 PASS :: :: api36Context=true targetSdk=36 api=36 prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P6_S1 PASS :: sealed install ok=t
 P6_S1 PASS :: sealed install ok=true files=1 verified=1 executables=1 problems=[] :: sealed payload: 1 data files (15 bytes, 1 verified), 0 data links, 1 executables from the APK
@@ -91,8 +91,8 @@ P6-T2 PASS :: :: rg ran=true exit=0 :: ripgrep 15.1.0 (rev af60c2de9d)
 P6-T3 PASS :: :: exec audit publishable=true shipped=213 manifestLinks=213 outside=[] scanned=213 failure=null
 P6_V1 PASS :: sealed shell
 P6_V1 PASS :: sealed shell ran=true exit=0 api=36 :: OC_SEALED_SH_OK
-P6_V10 PASS :: upg
-P6_V10 PASS :: upgradeResult=Extracted markerVersion=7->7 reextractReason=true briefRefreshed=true links=sealed layout: 5 linked, 208 already correct, 0 missing targets, 0 errors agentTools=11/11 missing=none exit=0 output='SHELL_COREUTILS_AGENT_OK <NL> BUN_AGENT_OK <NL> GIT_AGENT_OK <NL> RG_AGENT_OK <NL> CURL_AGENT_OK <NL> WGET_AGENT_OK <NL> JQ_AGENT_OK <NL> OPENSSH_AGENT_OK <NL> NODE_AGENT_OK v24.22.1 <NL> NPM_AGENT_OK 11.19.1 <NL> PYTHON_AGENT_OK 3.13.1'
+P6_V10 FAIL :: th
+P6_V10 FAIL :: threw FileNotFoundException: /data/user/0/io.github.mcyber12.opencode/files/xdg/config/opencode/environment.md: open failed: EACCES (Permission denied)
 P6_V2 PASS :: pipeline
 P6_V2 PASS :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
 P6_V3 PASS :: agent env PATH[0]=/data/use
@@ -108,7 +108,7 @@ P6_V7 PASS :: node/npm ran=true exit=0 output='v24.22.1 <NL> 11.19.1 <NL> 42'
 P6_V8 PASS :: wget
 P6_V8 PASS :: wget ran=true exit=0 bytes=11 body='OC_WGET_OK' fixture=ok output='wget (OpenCode sealed curl backend) 1'
 P6_V9 PASS :: openssh
-P6_V9 PASS :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:EYjMeqiuDducShzuW/95Gza5y0+6uTwswJKaBw665Pw u0_a224@localhost (ED25519)'
+P6_V9 PASS :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:UPzFzpFmfdqcwg7Kk8MQmEj3aIRcQp7dIYMlC4YdDJ4 u0_a224@localhost (ED25519)'
 P6-V1 PASS :: :: sealed shell ran=true exit=0 api=36 :: OC_SEALED_SH_OK
 P6-V2 PASS :: :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
 P6-V3 PASS :: :: agent env PATH[0]=/data/user/0/io.github.mcyber12.opencode/files/bin (want /data/user/0/io.github.mcyber12.opencode/files/bin) SHELL=/data/user/0/io.github.mcyber12.opencode/files/bin/sh ran=true exit=0 out='1' tr=/da
@@ -117,5 +117,5 @@ P6-V5 PASS :: :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
 P6-V6 PASS :: :: python ran=true exit=0 json='{"ok": true}' zlib.crc32='891568578' (want 891568578) output='{"ok": true} <NL> 891568578'
 P6-V7 PASS :: :: node/npm ran=true exit=0 output='v24.22.1 <NL> 11.19.1 <NL> 42'
 P6-V8 PASS :: :: wget ran=true exit=0 bytes=11 body='OC_WGET_OK' fixture=ok output='wget (OpenCode sealed curl backend) 1'
-P6-V9 PASS :: :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:EYjMeqiuDducShzuW/95Gza5y0+6u
-P6-V10 PASS :: :: upgradeResult=Extracted markerVersion=7->7 reextractReason=true briefRefreshed=true links=sealed layout: 5 linked, 208 already correct, 0 missing targets, 0 errors agentTools=11/11 missing=none exit=0 output='SHELL_CO
+P6-V9 PASS :: :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:UPzFzpFmfdqcwg7Kk8MQmEj3aIRcQ
+P6-V10 FAIL :: :: threw FileNotFoundException: /data/user/0/io.github.mcyber12.opencode/files/xdg/config/opencode/environment.md: open failed: EACCES (Permission denied)

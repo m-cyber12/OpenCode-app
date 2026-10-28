@@ -1,5 +1,5 @@
-[2026-10-28T12:39:12Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=1.18.23-phase10 versionCode=8
-[2026-10-28T12:39:12Z] === gradle :app:assembleRelease :app:bundleRelease ===
+[2026-10-28T17:42:49Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=1.18.23-phase10 versionCode=8
+[2026-10-28T17:42:49Z] === gradle :app:assembleRelease :app:bundleRelease ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
@@ -27,10 +27,10 @@ to this project's gradle.properties.
 
 > Task :app:verifyAndStagePayload
 PAYLOAD STAGING: -PskipPayload=null SKIP_PAYLOAD=null
-PAYLOAD_SOURCE runtime-payload.tar.gz=17071285B runtime-manifest.json=477923B
+PAYLOAD_SOURCE runtime-payload.tar.gz=17065756B runtime-manifest.json=477923B
 Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/assets / /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/jniLibs
-STAGED_ASSETS n=5 runtime-manifest.json(477923B), runtime-payload.tar.gz(17071285B), sealed-exec-arm64-v8a.txt(5132B), sealed-exec-x86_64.txt(5132B), sealed-report.json(146B)
-STAGED_JNILIBS n=50 x86_64/libbun.so, arm64-v8a/libbun.so, x86_64/libc++_shared.so, arm64-v8a/libc++_shared.so, x86_64/libchildshim.so, arm64-v8a/libchildshim.so, x86_64/libcrypto.so, arm64-v8a/libcrypto.so, x86_64/libcurl.so, arm64-v8a/libcurl.so, x86_64/libexecshim.so, arm64-v8a/libexecshim.so, x86_64/libgit.so, arm64-v8a/libgit.so, x86_64/libgitremotehttp.so, arm64-v8a/libgitremotehttp.so, x86_64/libjq.so, arm64-v
+STAGED_ASSETS n=5 runtime-manifest.json(477923B), runtime-payload.tar.gz(17065756B), sealed-exec-arm64-v8a.txt(5132B), sealed-exec-x86_64.txt(5132B), sealed-report.json(146B)
+STAGED_JNILIBS n=50 arm64-v8a/libbun.so, x86_64/libbun.so, arm64-v8a/libc++_shared.so, x86_64/libc++_shared.so, arm64-v8a/libchildshim.so, x86_64/libchildshim.so, arm64-v8a/libcrypto.so, x86_64/libcrypto.so, arm64-v8a/libcurl.so, x86_64/libcurl.so, arm64-v8a/libexecshim.so, x86_64/libexecshim.so, arm64-v8a/libgit.so, x86_64/libgit.so, arm64-v8a/libgitremotehttp.so, x86_64/libgitremotehttp.so, arm64-v8a/libjq.so, x86_
 
 > Task :app:preBuild
 > Task :app:preReleaseBuild
@@ -51,17 +51,17 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 
 > Task :app:processReleaseManifest
 > Task :app:javaPreCompileRelease FROM-CACHE
+> Task :app:processReleaseManifestForPackage
 > Task :app:extractProguardFiles
 > Task :app:mergeReleaseResources
 > Task :app:mergeReleaseJniLibFolders
-> Task :app:processReleaseManifestForPackage
-> Task :app:checkReleaseDuplicateClasses
 > Task :app:desugarReleaseFileDependencies
 > Task :app:mergeReleaseStartupProfile
+> Task :app:checkReleaseDuplicateClasses
 > Task :app:mergeReleaseNativeLibs
 > Task :app:processReleaseResources
-> Task :app:mergeExtDexRelease
 > Task :app:mergeReleaseArtProfile
+> Task :app:mergeExtDexRelease
 > Task :app:mergeReleaseShaders
 > Task :app:compileReleaseShaders NO-SOURCE
 > Task :app:generateReleaseAssets
@@ -73,9 +73,9 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 > Task :app:extractReleaseNativeSymbolTables
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
 > Task :app:extractReleaseVersionControlInfo
-> Task :app:optimizeReleaseResources
 > Task :app:compressReleaseAssets
 > Task :app:collectReleaseDependencies
+> Task :app:optimizeReleaseResources
 > Task :app:sdkReleaseDependencyData
 > Task :app:writeReleaseAppMetadata
 > Task :app:writeReleaseSigningConfigVersions
@@ -87,22 +87,22 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/client/UiError.kt:194:17 Parameter 'a' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/github/GithubCloneManager.kt:137:55 Condition 'meta != null' is always 'true'
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/AbiGate.kt:41:29 'CPU_ABI: String!' is deprecated. Deprecated in Java
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/EnvironmentBrief.kt:95:19 Parameter 'engine' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/EnvironmentBrief.kt:113:19 Parameter 'engine' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/runtime/RuntimeProcess.kt:109:13 Variable 't' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/security/SecretStore.kt:119:54 'getter for isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/changes/ChangesScreen.kt:65:5 Parameter 'onBack' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:169:5 Parameter 'onOpenSessions' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:500:5 Parameter 'onOpenProjects' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:501:5 Parameter 'onNewSession' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:502:5 Parameter 'onOpenSettings' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:504:5 Parameter 'onOpenAddons' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:509:9 Variable 'newLabel' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:510:9 Variable 'settingsLabel' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:511:9 Variable 'providersLabel' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:512:9 Variable 'addonsLabel' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:872:5 Parameter 'runtime' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:899:62 Unnecessary safe call on a non-null receiver of type Transcript.TurnError?
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:2169:60 'Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:170:5 Parameter 'onOpenSessions' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:504:5 Parameter 'onOpenProjects' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:505:5 Parameter 'onNewSession' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:506:5 Parameter 'onOpenSettings' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:508:5 Parameter 'onOpenAddons' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:513:9 Variable 'newLabel' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:514:9 Variable 'settingsLabel' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:515:9 Variable 'providersLabel' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:516:9 Variable 'addonsLabel' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:885:5 Parameter 'runtime' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:912:62 Unnecessary safe call on a non-null receiver of type Transcript.TurnError?
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:2187:60 'Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:154:52 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:198:60 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:284:52 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
@@ -115,9 +115,9 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:763:56 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:886:52 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/projects/ProjectsScreen.kt:123:5 Parameter 'onOpen' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:287:5 Parameter 'availability' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:290:9 Variable 'chat' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:2303:5 Parameter 'onClearModel' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:288:5 Parameter 'availability' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:291:9 Variable 'chat' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:2320:5 Parameter 'onClearModel' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/terminal/TerminalScreen.kt:58:5 Parameter 'onBack' is never used
 
 > Task :app:compileReleaseJavaWithJavac
@@ -127,10 +127,10 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 > Task :app:processReleaseJavaRes
 > Task :app:mergeReleaseJavaResource
 > Task :app:mergeDexRelease
+> Task :app:lintVitalAnalyzeRelease
 > Task :app:compileReleaseArtProfile
 > Task :app:buildReleasePreBundle
 > Task :app:packageReleaseBundle
-> Task :app:lintVitalAnalyzeRelease
 > Task :app:packageRelease
 > Task :app:createReleaseApkListingFileRedirect
 > Task :app:signReleaseBundle
@@ -141,18 +141,18 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 > Task :app:lintVitalRelease
 > Task :app:assembleRelease
 
-BUILD SUCCESSFUL in 3m 19s
+BUILD SUCCESSFUL in 4m 20s
 60 actionable tasks: 56 executed, 4 from cache
-[2026-10-28T12:42:32Z] apk=app-release-unsigned.apk (181283533 bytes)
-[2026-10-28T12:42:32Z] aab=app-release.aab (167298510 bytes)
-[2026-10-28T12:42:32Z] RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=36 debuggable=False
-[2026-10-28T12:42:32Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=352 native_abis=arm64-v8a(25 libs,175.2MB),x86_64(25 libs,180.3MB) payload=True manifest_asset=True
-[2026-10-28T12:42:32Z] SIZE PASS :: apkMb=172.9 capMb=200 headroomMb=27.1 native=arm64-v8a(25libs,175.2MB),x86_64(25libs,180.3MB)
-[2026-10-28T12:42:32Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
-[2026-10-28T12:42:35Z] TESTONLY_RELEASE PASS :: installable non-debuggable universal APK bytes=181289517 MiB=172.9 signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
-[2026-10-28T12:42:36Z] TESTONLY_ARM64 PASS :: installable arm64-only APK bytes=109468516 MiB=104.4 x86_64=absent signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
-[2026-10-28T12:42:37Z] RELEASE_AAB PASS :: CONTENTS entries=357 native_abis=arm64-v8a(25 libs,175.2MB),x86_64(25 libs,180.3MB) payload=True manifest_asset=True
-[2026-10-28T12:42:37Z] sha256:
-a6646270cfe0d20539c2a4723ee51c9b45edf31c0087c852508786722f688142  ./app-release-unsigned.apk
-e021ec4d504733bbc6bb810eef22df06856fe3bfc9ab00f1ca11d3e0e96a5a4d  ./app-release.aab
-[2026-10-28T12:42:37Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/release/HOW-TO-SIGN-ON-PHONE.txt + sha256.txt (phone-signing rules + this build's exact bytes)
+[2026-10-28T17:47:10Z] apk=app-release-unsigned.apk (181284597 bytes)
+[2026-10-28T17:47:10Z] aab=app-release.aab (167294198 bytes)
+[2026-10-28T17:47:10Z] RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=36 debuggable=False
+[2026-10-28T17:47:10Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=352 native_abis=arm64-v8a(25 libs,175.2MB),x86_64(25 libs,180.3MB) payload=True manifest_asset=True
+[2026-10-28T17:47:10Z] SIZE PASS :: apkMb=172.9 capMb=200 headroomMb=27.1 native=arm64-v8a(25libs,175.2MB),x86_64(25libs,180.3MB)
+[2026-10-28T17:47:10Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
+[2026-10-28T17:47:15Z] TESTONLY_RELEASE PASS :: installable non-debuggable universal APK bytes=181289517 MiB=172.9 signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
+[2026-10-28T17:47:16Z] TESTONLY_ARM64 PASS :: installable arm64-only APK bytes=109468516 MiB=104.4 x86_64=absent signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
+[2026-10-28T17:47:16Z] RELEASE_AAB PASS :: CONTENTS entries=357 native_abis=arm64-v8a(25 libs,175.2MB),x86_64(25 libs,180.3MB) payload=True manifest_asset=True
+[2026-10-28T17:47:17Z] sha256:
+d8022489ae9b6aac68ad34733412bf093e32c3d5cbcce7876f6dd38e66a31412  ./app-release-unsigned.apk
+7cd5778e319c6d5ff8fceaeae267f17626a4d43946ab4ebecfde74bb0aa8f518  ./app-release.aab
+[2026-10-28T17:47:17Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/release/HOW-TO-SIGN-ON-PHONE.txt + sha256.txt (phone-signing rules + this build's exact bytes)
