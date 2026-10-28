@@ -24,7 +24,21 @@ Contents: [what CI produces](#1-what-ci-produces) - [generate the keystore](#2-g
 | `app-release.aab` | the App Bundle for Play | **no** |
 | `opencode-runtime-engine.tar.gz` + `runtime-manifest.json` | the pinned embedded runtime (Bun/git/ripgrep + OpenCode bundle) with sha256s | n/a |
 | `phase10-evidence` | gate verdicts, APK manifest/signature report, screenshots | n/a |
-| `TEST-ONLY-debugkey-*.apk` | the release-shaped **smoke** build (section 9) | **debug key, never upload** |
+| `TEST-ONLY-debugkey-*.apk` | test-key smoke and install convenience builds (section 9) | **public test key, never upload** |
+
+The latest measured AAB (board 40681484428) is **167,298,510 bytes**
+(**159.55 MiB / 167.30 MB**). It is below Google Play's current documented
+**500 MB compressed base-module download limit**. The old 200 MB figure is now
+a mobile-data warning threshold, not the hard AAB base-module limit; see
+<https://support.google.com/googleplay/android-developer/answer/9859372>.
+Play measures the device-specific APKs it generates, and an arm64 phone does not
+download the x86_64 native split.
+
+That CI AAB is deliberately **unsigned**. It cannot be uploaded as-is: first
+JAR-sign it with the private upload key as shown in section 4 (never with the
+committed public TEST-ONLY key). Play App Signing then signs the generated APKs
+for users. Also ensure version code 8 has not already been used in that Play app;
+every later upload needs a higher version code.
 
 CI cannot sign the real artifacts: no keystore, no password, no Play credentials
 exist in the workflow, by design and enforced by
@@ -165,7 +179,7 @@ python3 phase10/scripts/check-apk.py app-release-signed.apk \
   --expect-version-name 1.18.23-phase10 \
   --expect-version-code 8 \
   --expect-not-debuggable --expect-signed --expect-icon --expect-payload \
-  --expect-min-sdk 29 --expect-target-sdk 34 \
+  --expect-min-sdk 29 --expect-target-sdk 36 \
   --expect-native-abi arm64-v8a
 
 python3 phase10/scripts/check-apk.py app-release.aab \

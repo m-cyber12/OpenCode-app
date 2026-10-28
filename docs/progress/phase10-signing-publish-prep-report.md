@@ -7198,3 +7198,58 @@ instrumentation, universal and arm64 APKs, so the artifact archive itself is
 518,125,736 bytes even though the extracted phone APK is only 126,233,444
 bytes. Splitting it into a dedicated small-download artifact requires a workflow
 change; this session's bot is not permitted to push `.github/workflows/*`.
+
+## 2026-10-28 - B.105 - Play accepts an AAB of this size; removed 22.7 MiB without removing a tool
+
+The current Google Play help page now documents a **500 MB compressed download
+limit for the base module**, not the 200 MB hard wall stated in earlier entries
+of this append-only report. The old text remains above as historical reasoning;
+this entry corrects it rather than rewriting history. Above 200 MB, Play shows a
+non-blocking large-download dialog on mobile data. Play calculates the limit
+from generated device APKs, not from the raw two-ABI AAB file. Official source:
+<https://support.google.com/googleplay/android-developer/answer/9859372>.
+
+Before this optimization, the AAB was 191,068,754 bytes (182.22 MiB). It was
+already below the current Play limit, and Play would deliver only the matching
+ABI split. It could not be uploaded literally as produced by CI because the
+report proved `SIGNATURE scheme=none`: the human owner must first JAR-sign it
+with the private upload key, then upload it with Play App Signing enabled. The
+public TEST-ONLY key must never be used for Play. Version code 8 must also be
+unused for this app; subsequent uploads need an increment. Size acceptance does
+not waive the separate Play policy review for `MANAGE_EXTERNAL_STORAGE`.
+
+A payload audit found two pure build artifacts that users were paying for:
+
+1. Both ripgrep executables carried full Rust/DWARF debugging data. The arm64
+   file was 34,913,088 bytes and x86_64 was 36,486,760 bytes; `file` reported
+   `with debug_info, not stripped`. The pinned NDK `llvm-strip` now runs after
+   the build and fails loudly if debug information survives. The resulting
+   binaries are 4,777,920 and 5,470,928 bytes.
+2. The production OpenCode bundle shipped a 54,934,336-byte linked source map,
+   larger than the 34,386,968-byte executable JavaScript bundle. Bun/OpenCode
+   do not read it during normal execution. Production bundling now requests no
+   source map. The compressed runtime tarball fell from 26,929,978 to
+   17,071,285 bytes.
+
+Final board **40681484428** (source **b9ae2ea1**, 1h9m03s) passed all Phase 6,
+9 and 10 gates with zero failures. The real-model L2 and V10 inventory still
+proved all 11 agent-tool categories; API 36 and Bun server behavior are
+unchanged. Exact release results:
+
+  unsigned AAB ........................ 167,298,510 bytes = 159.55 MiB
+  signed universal test release ....... 181,289,517 bytes = 172.89 MiB
+  signed arm64 test release ........... 109,468,516 bytes = 104.40 MiB
+
+Compared with board 40560139831, the AAB lost 23,770,244 bytes (22.67 MiB,
+12.44%), the universal APK lost 22.67 MiB, and the arm64 APK lost 15.99 MiB.
+No runtime, ABI, executable or user-facing feature was removed.
+
+Further reduction is possible, but no remaining option is another free
+compression switch. The sensible measured candidates are Bun bundle
+minification and a size-optimized/LTO Node or ripgrep rebuild; both require a
+full runtime board. R8 would affect only the much smaller Android shell. Moving
+runtime data to Play Asset Delivery would reduce initial install size but change
+offline-first startup and delivery semantics. Removing x86_64 from the AAB would
+shrink the upload but not an arm64 user's download and would discard release
+coverage. Removing Bun would save much more, but remains unnecessary and would
+require the separately gated Node server port the owner explicitly deferred.

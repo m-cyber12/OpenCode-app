@@ -495,3 +495,18 @@ the same package ID, version code and certificate as the installed smoke build.
 The arm64 artifact structurally passed inspection with all 25 arm64 libraries
 and no x86_64 library. The owner's in-place physical-phone update remains the
 field confirmation; use the arm64 file above, not `app-smoke.apk`.
+
+## 2026-10-28 - production compression pass
+
+Board 40681484428 removed only developer bytes: DWARF/debug symbols from both
+ripgrep binaries and the 54,934,336-byte OpenCode source map. All 11 agent-tool
+categories, V10 repair, API 36 and the Bun server stayed green. Current sizes:
+
+- Play AAB (unsigned until the owner applies the upload key): **167,298,510
+  bytes / 159.55 MiB**.
+- ARM64 TEST-ONLY install APK: **109,468,516 bytes / 104.40 MiB**.
+- Universal TEST-ONLY install APK: **181,289,517 bytes / 172.89 MiB**.
+
+Google Play's current documented base-module limit is 500 MB compressed; 200 MB
+is a non-blocking mobile-data warning threshold. Play delivers ABI-specific
+splits, so an ARM64 phone does not receive the x86_64 native libraries.
