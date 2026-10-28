@@ -612,8 +612,22 @@ build_rg_android() {  # $1=abi $2=rust target $3=ndk triple
     timeout 1200 cargo build --release --target "$target" --features pcre2
     cp "target/$target/release/rg" "$outdir/librg.so"
   ) || { note "FATAL: Android ripgrep build failed for $abi"; return 1; }
+  # Cargo's release profile still left the full Rust/DWARF symbol payload in
+  # both shipped binaries (~35 MiB arm64, ~36 MiB x86_64). Those symbols are
+  # never read by Android or rg and `file` proved the old APK said
+  # "with debug_info, not stripped". Every other large source-built runtime is
+  # stripped already. Strip rg with the pinned NDK tool too, then fail rather
+  # than silently paying that download cost again if the tool does not work.
+  "$toolchain/llvm-strip" "$outdir/librg.so" \
+    || { note "FATAL: llvm-strip failed for Android ripgrep ($abi)"; return 1; }
   chmod 755 "$outdir/librg.so"
-  note "$abi Android ripgrep OK: $(file "$outdir/librg.so" | cut -d: -f2-)"
+  local rg_file
+  rg_file="$(file "$outdir/librg.so" | cut -d: -f2-)"
+  case "$rg_file" in
+    *"not stripped"*|*"with debug_info"*)
+      note "FATAL: Android ripgrep still contains debug symbols after llvm-strip ($abi): $rg_file"; return 1 ;;
+  esac
+  note "$abi Android ripgrep OK (stripped): $rg_file bytes=$(stat -c%s "$outdir/librg.so")"
 }
 
 for abi in "${ABIS[@]}"; do
@@ -669,7 +683,12 @@ await Bun.build({
   entrypoints: ["./src/node.ts"],
   outdir: "./dist/p4",
   format: "esm",
-  sourcemap: "linked",
+  // Do not ship a production source map. The previous linked map was the
+  // single largest data-payload file: 54,934,336 bytes versus 34,386,968 for
+  // the executable JS bundle itself. It is developer-only diagnostic input;
+  // neither Bun nor OpenCode needs it to run, and all runtime/device gates
+  // exercise this exact no-map bundle before release.
+  sourcemap: "none",
   external: ["jsonc-parser", "@lydell/node-pty", "bun-pty"],
   define: {
     OPENCODE_MODELS_DEV: generated.modelsData,

@@ -102,17 +102,16 @@ else
 fi
 p10 RELEASE_APK_DETAIL 0 "$(grep -a '^CONTENTS ' "$APK_REPORT" | head -1 | tr -s ' ' | cut -c1-240)"
 
-# ---- size budget: Play's 200 MB base-module cap -----------------------------
+# ---- conservative project budget: 200 MiB universal direct APK --------------
 #
-# The userland is growing - a shell and ~190 coreutils now, python and a real
-# node under discussion - and 200 MB is a wall, not a target: over it, tools
-# have to move into a dynamic feature module, which is a different product
-# rather than a bigger number. So it gets measured on every release build.
-#
-# Conservative on purpose: Play's cap is on what ONE device downloads, and a
-# device gets one ABI, so the universal APK (both ABIs) is an upper bound on
-# every split it can produce. If this fits, every split fits. 180 MB warns so
-# the wall is visible while there is still room to plan around it.
+# Keep the owner's 200 MiB project budget as a deliberately conservative signal
+# for the universal direct-download APK. It is NOT Google's current hard Play
+# limit: Play's current documented AAB base-module limit is 500 MB compressed,
+# and crossing 200 MB causes a non-blocking mobile-data warning. Play measures
+# generated device APKs rather than this two-ABI universal proxy. If the proxy
+# fits this tighter budget every ABI split fits it too; 180 MiB warns while
+# there is still room to plan. Play Console remains the authoritative size
+# calculation after an AAB is signed with the upload key and uploaded.
 SIZE_DETAIL="$(python3 - "$APK_REPORT" <<'PY'
 import re, sys
 txt = open(sys.argv[1], errors="replace").read()
@@ -129,9 +128,9 @@ SIZE_MB="$(printf '%s' "$SIZE_DETAIL" | sed -n 's/.*apkMb=\([0-9.]*\).*/\1/p')"
 if [ -z "$SIZE_MB" ]; then
   p10 SIZE 1 "could not measure the release APK size (no ARTIFACT bytes= line); the cap is unchecked"
 elif awk -v m="$SIZE_MB" 'BEGIN{exit !(m > 200)}'; then
-  p10 SIZE 1 "OVER Play's 200 MB base-module cap: $SIZE_DETAIL"
+  p10 SIZE 1 "OVER the project's conservative 200 MiB universal-APK budget (not Play's current 500 MB AAB base-module limit): $SIZE_DETAIL"
 elif awk -v m="$SIZE_MB" 'BEGIN{exit !(m > 180)}'; then
-  p10 SIZE 0 "within the cap but close: $SIZE_DETAIL (plan the next tool against this number)"
+  p10 SIZE 0 "within the project's conservative budget but close: $SIZE_DETAIL (plan the next tool against this number)"
 else
   p10 SIZE 0 "$SIZE_DETAIL"
 fi
