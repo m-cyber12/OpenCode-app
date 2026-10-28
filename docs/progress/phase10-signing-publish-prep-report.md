@@ -7253,3 +7253,59 @@ offline-first startup and delivery semantics. Removing x86_64 from the AAB would
 shrink the upload but not an arm64 user's download and would discard release
 coverage. Removing Bun would save much more, but remains unnecessary and would
 require the separately gated Node server port the owner explicitly deferred.
+
+## 2026-10-28 - B.106 - owner bug round: brief lock, GitHub scope, status, drawer, groups
+
+Implementation commits: `c65908c4` (feature), `b30dac89` (gate contract updates).
+Final board 40740121110 on `b30dac89` succeeded. Evidence: `482` JVM tests, zero
+failures; phase 6 and phase 10 gate failures 0; zero STEP_FAILED lines.
+
+Changed, and why:
+
+1. **Brief is the app's, not the model's.** Every brief file is written read-only.
+   Each send first calls `RuntimeManager.relockBrief()`, which rewrites any brief
+   file the agent changed and locks it again. A JVM test pins this. This is NOT a
+   hard permission boundary: a shell `chmod` can still alter a file until the
+   next send. A permission-level deny rule would be stronger; it was not added
+   because the config schema for `permission` was not verified on this build.
+2. **GitHub errors are scoped to their project.** The chat sync line and the
+   clone manager's error are cleared when the active project changes, so an
+   error from one project no longer shows in another project's chat or create
+   card.
+3. **Sandbox header shows the repo name only** (`repo · branch`), not the owner.
+4. **"Needs attention" is gone.** The orb says `Offline` (connection lost),
+   `Model unreachable` (provider), or `Error`. Connection loss no longer adds a
+   banner under the conversation. The owner's "empty box" was NOT reproduced here;
+   this removes the banner for connection loss, and the owner should confirm on
+   device.
+5. **Startup flash:** the first moment after the runtime reports healthy (before
+   any server error exists) is shown as "Starting", not as a red error.
+6. **Drawer is full width**, with system back closing it. Its slide animation is
+   unchanged.
+7. **Provider groups in Models fold** like Free Models (expanded by default).
+8. **Skills and MCP:** a new `extensions.md` topic brief documents upstream's skill
+   discovery paths (`.opencode/skills/`, global `skills/`), the `mcp` config
+   shape, the no-remote-MCP restriction, and the Node/ICU workaround below.
+   The main brief index gained one line; the main brief is ~818 of 830 words.
+
+Gate contract changes (owner-requested, stated loudly): the U4 gate previously
+required a "server not responding" banner for connection loss. It now requires
+the orb's `Offline` label and no banner. The V10 gate now unlocks the stale brief
+it plants, the way an old build would have left it.
+
+Finding, NOT fixed, needs a decision: the bundled Node is built with
+`--with-intl=none` (`phase4/scripts/10-build-payload.sh`). Without ICU, Unicode
+property escapes such as `/\p{L}/u` can throw "Invalid regular expression". This
+matches the `rea-agents` failure the owner reported. The cause is probable, not
+proven here. Fixing it means shipping ICU, which adds size; that trade-off is the
+owner's decision.
+
+Still open from the owner's list (not done in this round):
+- Model and Build/Plan menus slide down to half the screen (currently standard
+  dropdowns).
+- Dropdown open lag (the whole list composes on open).
+- Loading screen layout, and starting the server automatically once loading ends.
+- Projects page session list (slow and disappearing rows).
+- Settings: a richer Skills and MCP section (the text guidance above is in the brief; the UI is not).
+- Clone into a non-empty folder fails with "Destination path already exists and is
+  not an empty directory". Needs a non-destructive init-and-fetch path, with a test.
