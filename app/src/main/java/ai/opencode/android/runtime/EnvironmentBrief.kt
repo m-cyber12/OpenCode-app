@@ -452,32 +452,50 @@ a package.json.
         val extensions = """
 # MCP servers & skills - read before adding either
 
-## Skills (instructions the agent loads on demand)
-- A skill is a folder with a `SKILL.md` (YAML header: name, description; then
-  the instructions). Discovery is upstream's: any `skill/` or `skills/` folder
-  under a config directory, searched for `**/SKILL.md`.
-- Project skill: `.opencode/skills/<name>/SKILL.md` in the project.
-- Global skill (every project of this app): `skills/<name>/SKILL.md` inside
-  the global config dir, next to `environment.md` (one level above `briefs/`).
-- Keep `SKILL.md` short. Reading a long one costs tokens on every later step:
-  read the header and only the sections the task needs.
-- Skills are loaded through the `skill` tool; name the skill you need.
+## Skills (instructions the agent loads when a task needs them)
+- A skill is a folder with a `SKILL.md`. The header between the two `---` lines
+  holds `name` and `description`; the body holds the instructions. Like a Claude
+  Code skill, the header decides WHEN a skill is used: write `description` as
+  "Use when ..." with the concrete situations and the words a user would say.
+- Where skills live:
+  - project skill: `.opencode/skills/<name>/SKILL.md` in the project (this project only);
+  - global skill: `skills/<name>/SKILL.md` in the app's global config folder
+    (every project of this app; it sits one level above `briefs/`).
+  Upstream also accepts the singular folder name `skill/`.
+- To create one: make the folder, write `SKILL.md` with the header, then a body of
+  numbered steps, the exact commands, and the check that proves the job is done.
+  Put long reference material in other files in the same folder and name them by
+  relative path, so they are read only when a step needs them.
+- To use one: the `skill` tool loads a skill by name. Load it once per task, not once
+  per step, and follow it as written.
+- A user can see what is installed in Settings > Skills (name, scope, description and
+  the file's path). A skill created during a conversation may need the agent restarted
+  before it appears there; if the skill you need is missing, say so and ask the user.
+- Do not rewrite a skill nobody asked you to change. A skill is the user's instruction.
 
 ## MCP servers (external tools served by a local process)
-- Register in the project's `opencode.json` (or the global config):
+- Register a server in the project's `opencode.json` at the project root, under `mcp`.
+  If that file already exists, add the key and keep every entry that is there.
+  Write valid JSON only.
+- A local server (the only kind this runtime supports):
   `{"mcp": {"<name>": {"type": "local", "command": ["npx", "-y", "<package>"]}}}`
-  `npx` and `bunx` both work; `node` is Node 24 and `npm` is npm 11.
-- Remote `http`/`sse` MCP servers are NOT supported by this runtime (upstream
-  restriction). Only servers that run as a local process can connect.
-- Check the result with the Settings > MCP servers status, or ask `Refresh
-  statuses` there. `failed` shows upstream's own error text: quote it, do not
-  guess the cause.
-- Known Node limit: some installers crash with `Invalid regular expression`
-  on Unicode property escapes such as `\p{L}`. If a Node command fails that
-  way, run the package's JS entry point with `bun` instead
-  (`bun node_modules/<pkg>/<entry>.js`) and say so in your reply.
-- Installs go under the project; never install MCP servers globally into the
-  app's own runtime.
+  Optional keys, all upstream's own: `environment` (an object of strings passed to the
+  process), `enabled` (true/false) and `timeout` (milliseconds).
+- A secret never goes into a file the user may commit. Put a placeholder in
+  `environment`, and tell the user which value to fill in and where.
+- `npx` and `bunx` both work. `node` is Node 24 and `npm` is npm 11.
+- Remote `http` and `sse` servers are NOT supported by this runtime. That is an
+  upstream restriction. If the user asks for one, say so; do not fake it.
+- Check a server in Settings > MCP servers. Each row shows upstream's own status word
+  (connected, failed, needs_auth). "Refresh statuses" re-reads them. A failed server
+  shows upstream's error text: quote it and do not guess the cause.
+- After changing `opencode.json`, refresh the statuses. If the server still does not
+  appear, ask the user to restart the agent from Settings > Runtime.
+- Known Node limit: some installers crash with `Invalid regular expression` on Unicode
+  property escapes such as `\p{L}`. If a Node command fails that way, run the package's
+  JavaScript entry point with `bun` instead (`bun node_modules/<pkg>/<entry>.js`), and
+  say so in your reply.
+- Install MCP packages under the project. Never install them into the app's own runtime.
 """.trimIndent() + "\n"
 
         return linkedMapOf(

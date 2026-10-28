@@ -3,6 +3,7 @@ package ai.opencode.android.github
 import java.io.File
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.BatchingProgressMonitor
+import org.eclipse.jgit.lib.Constants
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 
 /**
@@ -65,6 +66,10 @@ object GitSync {
         token: String,
         onLine: (String) -> Unit,
     ) {
+        if (hasContent(targetDir)) {
+            initIntoExisting(cloneUrl, targetDir, token, branch, onLine)
+            return
+        }
         Git.cloneRepository()
             .setURI(cloneUrl)
             .setDirectory(targetDir)
@@ -74,6 +79,69 @@ object GitSync {
             .use { git ->
                 git.checkout().setCreateBranch(true).setName(branch).call()
             }
+    }
+
+    /** True when [dir] exists and holds at least one entry. */
+    private fun hasContent(dir: File): Boolean = dir.listFiles()?.isNotEmpty() == true
+
+    /**
+     * Clone INTO a folder that already has files in it (owner: "Destination path
+     * already exists and is not an empty directory"). A GitHub project's folder
+     * can hold files the app wrote before the first clone (its AGENTS.md notes),
+     * and the owner's own files must survive. So: `git init` in place, point
+     * `origin` at the repository, fetch, then check out the remote's default
+     * branch as a new local branch ([branch], or the default's own name when
+     * null). Untracked files the repository does not contain stay exactly as
+     * they are. A file the repository DOES contain blocks the checkout with
+     * JGit's conflict error and nothing is overwritten. If this call created the
+     * `.git` and the attempt then fails, that `.git` is removed again, so a
+     * failed attempt never leaves a half-made repository behind.
+     */
+    private fun initIntoExisting(
+        cloneUrl: String,
+        targetDir: File,
+        token: String,
+        branch: String?,
+        onLine: (String) -> Unit,
+    ): String {
+        val createdGit = !File(targetDir, ".git").exists()
+        try {
+            Git.init().setDirectory(targetDir).call().use { git ->
+                val config = git.repository.config
+                config.setString("remote", "origin", "url", cloneUrl)
+                config.setString("remote", "origin", "fetch", "+refs/heads/*:refs/remotes/origin/*")
+                config.save()
+                val fetched = git.fetch()
+                    .setRemote("origin")
+                    .setCredentialsProvider(credentials(token))
+                    .setProgressMonitor(monitor(onLine))
+                    .call()
+                val advertised = fetched.getAdvertisedRef(Constants.HEAD)?.target?.name.orEmpty()
+                val remoteDefault = advertised.takeIf { it.startsWith("refs/heads/") }
+                    ?.removePrefix("refs/heads/")
+                    ?: "main"
+                if (git.repository.resolve("refs/remotes/origin/$remoteDefault") == null) {
+                    error("The repository has no branch named $remoteDefault to check out.")
+                }
+                val local = branch ?: remoteDefault
+                git.checkout()
+                    .setCreateBranch(true)
+                    .setName(local)
+                    .setStartPoint("origin/$remoteDefault")
+                    .call()
+                return local
+            }
+        } catch (t: Throwable) {
+            if (createdGit) File(targetDir, ".git").deleteRecursively()
+            if (t is org.eclipse.jgit.api.errors.CheckoutConflictException) {
+                throw IllegalStateException(
+                    "This folder already has files that the repository also contains, so nothing was " +
+                        "overwritten. Move those files out and clone again. (${t.message})",
+                    t,
+                )
+            }
+            throw t
+        }
     }
 
     /**
@@ -113,6 +181,10 @@ object GitSync {
      * `opencode/<project>` in the same motion every later prompt performs.
      */
     fun cloneOnly(cloneUrl: String, targetDir: File, token: String, onLine: (String) -> Unit) {
+        if (hasContent(targetDir)) {
+            initIntoExisting(cloneUrl, targetDir, token, null, onLine)
+            return
+        }
         Git.cloneRepository()
             .setURI(cloneUrl)
             .setDirectory(targetDir)

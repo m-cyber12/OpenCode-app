@@ -97,6 +97,52 @@ class GitSyncTest {
     }
 
     @Test
+    fun cloneIntoAFolderThatAlreadyHoldsAFileKeepsThatFile() {
+        // Owner bug: "Destination path already exists and is not an empty
+        // directory". The app writes AGENTS.md into a GitHub project folder
+        // before the first clone, so the clone must land in a non-empty folder
+        // and leave the file it finds there untouched.
+        val origin = bareOrigin()
+        val project = tmp.newFolder("notes")
+        File(project, "AGENTS.md").writeText("# my notes\n")
+        GitSync.cloneOnly(origin.absolutePath, project, "unused") { }
+        assertTrue(File(project, "README.md").isFile)
+        assertEquals("# my notes\n", File(project, "AGENTS.md").readText())
+        Git.open(project).use { git -> assertEquals("main", git.repository.branch) }
+    }
+
+    @Test
+    fun cloneAndBranchIntoANonEmptyFolderStillLandsOnTheProjectBranch() {
+        val origin = bareOrigin()
+        val project = tmp.newFolder("busy")
+        File(project, "AGENTS.md").writeText("notes\n")
+        GitSync.cloneAndBranch(
+            origin.absolutePath, project, GitClone.projectBranch("busy"), "unused",
+        ) { }
+        assertTrue(File(project, "README.md").isFile)
+        assertEquals("notes\n", File(project, "AGENTS.md").readText())
+        Git.open(project).use { git -> assertEquals("opencode/busy", git.repository.branch) }
+    }
+
+    @Test
+    fun aConflictingFileBlocksTheCloneAndIsNeverOverwritten() {
+        // The repository ALSO has README.md; the folder's own README.md must
+        // survive, and the half-made .git this attempt created must be removed.
+        val origin = bareOrigin()
+        val project = tmp.newFolder("clash")
+        File(project, "README.md").writeText("mine, not theirs\n")
+        var failure: Throwable? = null
+        try {
+            GitSync.cloneOnly(origin.absolutePath, project, "unused") { }
+        } catch (t: Throwable) {
+            failure = t
+        }
+        assertTrue("the conflict must be reported", failure != null)
+        assertEquals("mine, not theirs\n", File(project, "README.md").readText())
+        assertFalse(File(project, ".git").exists())
+    }
+
+    @Test
     fun githubOriginDetectionReadsTheRemoteUrl() {
         val project = tmp.newFolder("gh")
         Git.init().setInitialBranch("main").setDirectory(project).call().use { git ->

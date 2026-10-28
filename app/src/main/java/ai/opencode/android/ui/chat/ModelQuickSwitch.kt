@@ -9,36 +9,46 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -48,23 +58,31 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 /**
- * Phase 10 continuation v4, item 3: the model quick switch, at the top of the chat.
+ * The model quick switch, at the top of the chat.
  *
- * v9.41 (owner items 21+22), the menu is three things now:
+ * v11 (owner, B.107): the menu is a HALF-SCREEN SHEET now, sliding up from the
+ * bottom the way Claude's model picker does, instead of a small popup. It is a
+ * lazy list, so opening it composes only the first screenful: the owner's
+ * "takes seconds to open with no feedback" was the whole catalog composed in a
+ * popup on every open. The sheet appears on the tap itself (no waiting for the
+ * list), and nothing about a collapsed group is composed at all.
  *
- *  1. the CURRENT model owns the head of the menu, and its thinking levels are
- *     INLINE right under it - the separate "thinking level" section at the
- *     bottom of the menu is gone. Every other model that can think gets a
- *     small triangle on the right of its name; tapping it opens (or closes)
- *     the same inline picker for that model, and choosing a level there picks
- *     the model AND its level in one gesture;
- *  2. a collapsible "Free Models" group (Zen), expanded by default, listed
- *     with a real star rather than a checkmark;
- *  3. the starred shortlist under it, then one "manage" entry to the Providers
- *     surface. The catalog stays where it belongs - hundreds of models do not
- *     fit a phone menu.
+ * The order, top to bottom:
+ *  1. the CURRENT model, with its active thinking level;
+ *  2. "Free Models" (Zen), collapsible, expanded by default;
+ *  3. every CONNECTED provider, pinned directly under Zen. Each is a fold header
+ *     (owner: "pin connected providers directly below Zen"), folded by default so
+ *     the starred shortlist below it stays on screen;
+ *  4. the starred shortlist;
+ *  5. every other provider, a fold header too, folded by default, so a long
+ *     catalog never crowds the menu;
+ *  6. one "choose models in Settings" entry.
+ *
+ * A model with thinking levels shows a small triangle; tapping it opens the
+ * level list inline, and a level tap picks the model AND its level in one go.
  *
  * Pure: every list is a value and every choice is a callback, which is what
  * lets the Phase 6 gates render it with fabricated state.
@@ -77,8 +95,47 @@ data class QuickModel(
     val variants: List<String> = emptyList(),
 )
 
+/** One provider group of the quick menu (every provider except Zen). */
+data class QuickProvider(
+    val id: String,
+    val name: String,
+    val models: List<QuickModel>,
+    /** Connected providers are pinned under Zen; their headers show, their models fold. */
+    val connected: Boolean,
+)
+
 // v9.42 (owner): the four brightness frames of the capsule's loading dot.
 private val MODEL_LOADING_FRAMES = floatArrayOf(0.25f, 0.55f, 1f, 0.55f)
+
+/**
+ * A bottom sheet that takes about HALF the screen. It opens at that height (no
+ * partial state to drag through), closes with its own slide-down, and the tag
+ * is on the sheet itself so the gates can find it.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun HalfScreenSheet(
+    tag: String,
+    onDismiss: () -> Unit,
+    content: @Composable (close: () -> Unit) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    val halfHeight = (LocalConfiguration.current.screenHeightDp / 2).dp
+    // Close with the slide-down animation first, then leave composition.
+    val close: () -> Unit = {
+        scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
+    }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        modifier = Modifier.semantics { this.testTag = tag },
+    ) {
+        Box(Modifier.fillMaxWidth().height(halfHeight)) {
+            content(close)
+        }
+    }
+}
 
 @Composable
 fun ModelQuickSwitch(
@@ -110,10 +167,10 @@ fun ModelQuickSwitch(
      * happening instead of claiming there is no model.
      */
     modelsLoading: Boolean = false,
+    /** v11: every provider except Zen - connected ones first, then the rest. */
+    providerGroups: List<QuickProvider> = emptyList(),
 ) {
     var open by remember { mutableStateOf(false) }
-    var freeOpen by remember { mutableStateOf(true) } // expanded by default (owner)
-    var expandedKey by remember { mutableStateOf<String?>(null) }
     val chat = ChatTheme.chat
     val currentText = when {
         current != null -> ModelRefCodec.encode(current)
@@ -177,137 +234,250 @@ fun ModelQuickSwitch(
             tint = chat.muted,
             modifier = Modifier.size(20.dp).clearAndSetSemantics { },
         )
-        // The menu matches the capsule: a soft rounded card, not the stock
-        // sharp-cornered sheet.
-        MaterialTheme(shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(20.dp))) {
-        DropdownMenu(
-            expanded = open,
-            onDismissRequest = { open = false },
-            modifier = Modifier.semantics { testTag = "model_quick_switch_menu" },
-        ) {
-            // ---- the current model, and nothing else at the top --------------
-            // v9.42 (owner): "the model selector menu has become too large -
-            // make it more minimal". The thinking-level block that used to sit
-            // here is GONE: levels are one tap away, inside the row's own
-            // triangle, and the menu opens on the models themselves again.
-            // The triangle stays (owner's explicit "don't remove the
-            // triangles next to the models"); only the separate section went.
-            if (current != null) {
-                val variantSuffix = activeVariant.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
-                Text(
-                    text = currentText + variantSuffix,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .width(280.dp)
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                        .semantics { testTag = "model_current_row" },
-                )
-                HorizontalDivider(color = chat.toolBorder, modifier = Modifier.padding(vertical = 4.dp))
-            }
+    }
 
-            // ---- Free Models (Zen), collapsible, expanded by default --------
-            if (freeModels.isNotEmpty()) {
+    if (open) {
+        HalfScreenSheet(tag = "model_quick_switch_menu", onDismiss = { open = false }) { close ->
+            QuickModelList(
+                current = current,
+                currentText = currentText,
+                activeVariant = activeVariant,
+                starred = starred,
+                freeModels = freeModels,
+                providerGroups = providerGroups,
+                variantsOf = variantsOf,
+                onPick = { p, m ->
+                    close()
+                    onPick(p, m)
+                },
+                onPickWithVariant = { p, m, v ->
+                    close()
+                    onPickWithVariant(p, m, v)
+                },
+                onOpenSettings = {
+                    close()
+                    onOpenSettings()
+                },
+            )
+        }
+    }
+}
+
+/** The lazy body of the sheet. Every group is a lazy section; a fold costs nothing. */
+@Composable
+private fun QuickModelList(
+    current: OpenCodeApi.ModelRef?,
+    currentText: String,
+    activeVariant: String,
+    starred: List<OpenCodeApi.ModelRef>,
+    freeModels: List<QuickModel>,
+    providerGroups: List<QuickProvider>,
+    variantsOf: (String, String) -> List<String>,
+    onPick: (String, String) -> Unit,
+    onPickWithVariant: (String, String, String) -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    val chat = ChatTheme.chat
+    // One expanded row at a time across the whole sheet: the key names it.
+    var expandedKey by remember { mutableStateOf<String?>(null) }
+    var freeOpen by remember { mutableStateOf(true) } // expanded by default (owner)
+    // Every provider group folds by default (a tap opens it). Keyed by provider id.
+    val groupOpen = remember { mutableStateMapOf<String, Boolean>() }
+    fun isOpen(group: QuickProvider): Boolean = groupOpen[group.id] ?: false
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().semantics { testTag = "model_quick_list" },
+        contentPadding = PaddingValues(bottom = 24.dp),
+    ) {
+        // ---- the current model, and its active thinking level ------------
+        if (current != null) {
+            item(key = "current") {
+                val variantSuffix = activeVariant.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
+                Column {
+                    Text(
+                        text = currentText + variantSuffix,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 10.dp)
+                            .semantics { testTag = "model_current_row" },
+                    )
+                    HorizontalDivider(color = chat.toolBorder)
+                }
+            }
+        }
+
+        // ---- Free Models (Zen), collapsible, expanded by default --------
+        if (freeModels.isNotEmpty()) {
+            item(key = "free_head") {
                 QuickGroupHeader(
                     title = stringResource(R.string.chat_model_free_title),
                     expanded = freeOpen,
                     tag = "model_free_header",
                     onToggle = { freeOpen = !freeOpen },
                 )
-                if (freeOpen) {
-                    freeModels.forEachIndexed { index, qm ->
-                        ModelLineRow(
-                            model = qm,
-                            variantsOf = variantsOf,
-                            expanded = expandedKey == "free_$index",
-                            onToggleExpand = {
-                                expandedKey = if (expandedKey == "free_$index") null else "free_$index"
-                            },
-                            onPickModel = {
-                                open = false
-                                onPick(qm.ref.providerID, qm.ref.modelID)
-                            },
-                            onPickLevel = { v ->
-                                open = false
-                                onPickWithVariant(qm.ref.providerID, qm.ref.modelID, v)
-                            },
-                            rowTag = "model_free_$index",
-                            levelTag = "free_vt_$index",
-                            current = current,
-                        )
-                    }
-                    HorizontalDivider(color = chat.toolBorder, modifier = Modifier.padding(vertical = 4.dp))
+            }
+            if (freeOpen) {
+                itemsIndexed(freeModels, key = { i, _ -> "free_$i" }) { index, qm ->
+                    ModelLineRow(
+                        model = qm,
+                        variantsOf = variantsOf,
+                        expanded = expandedKey == "free_$index",
+                        onToggleExpand = {
+                            expandedKey = if (expandedKey == "free_$index") null else "free_$index"
+                        },
+                        onPickModel = { onPick(qm.ref.providerID, qm.ref.modelID) },
+                        onPickLevel = { v -> onPickWithVariant(qm.ref.providerID, qm.ref.modelID, v) },
+                        rowTag = "model_free_$index",
+                        levelTag = "free_vt_$index",
+                        current = current,
+                    )
                 }
             }
+        }
 
-            // ---- the starred shortlist ---------------------------------------
+        // ---- connected providers, pinned directly under Zen ---------------
+        for (group in providerGroups.filter { it.connected }) {
+            quickProviderGroup(
+                group = group,
+                open = isOpen(group),
+                onToggle = { groupOpen[group.id] = !isOpen(group) },
+                expandedKey = expandedKey,
+                onExpandKey = { k -> expandedKey = if (expandedKey == k) null else k },
+                variantsOf = variantsOf,
+                current = current,
+                onPick = onPick,
+                onPickWithVariant = onPickWithVariant,
+            )
+        }
+
+        // ---- the starred shortlist ---------------------------------------
+        item(key = "starred_head") {
             Text(
                 text = stringResource(R.string.chat_model_starred_title),
                 style = MaterialTheme.typography.labelSmall,
                 color = chat.muted,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
             )
-            if (starred.isEmpty()) {
+        }
+        if (starred.isEmpty()) {
+            item(key = "starred_empty") {
                 Text(
                     text = stringResource(R.string.chat_model_empty),
                     style = MaterialTheme.typography.bodySmall,
                     color = chat.muted,
                     modifier = Modifier
-                        .width(260.dp)
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 6.dp)
                         .semantics { testTag = "model_quick_switch_empty" },
                 )
-            } else {
-                starred.forEachIndexed { index, ref ->
-                    val pid = ref.providerID
-                    val mid = ref.modelID
-                    ModelLineRow(
-                        model = QuickModel(ref, ModelRefCodec.encode(ref), variantsOf(pid, mid)),
-                        variantsOf = variantsOf,
-                        expanded = expandedKey == "star_$index",
-                        onToggleExpand = {
-                            expandedKey = if (expandedKey == "star_$index") null else "star_$index"
-                        },
-                        onPickModel = {
-                            open = false
-                            onPick(pid, mid)
-                        },
-                        onPickLevel = { v ->
-                            open = false
-                            onPickWithVariant(pid, mid, v)
-                        },
-                        rowTag = "model_pick_${index}",
-                        levelTag = "star_vt_$index",
-                        current = current,
-                    )
-                }
             }
-            DropdownMenuItem(
-                text = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Filled.Star,
-                            contentDescription = null,
-                            tint = chat.muted.copy(alpha = 0.7f),
-                            modifier = Modifier.size(15.dp).clearAndSetSemantics { },
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.chat_model_open_settings))
-                    }
-                },
-                onClick = {
-                    open = false
-                    onOpenSettings()
-                },
-                modifier = Modifier.semantics { testTag = "model_quick_switch_settings" },
+        } else {
+            itemsIndexed(starred, key = { i, _ -> "star_$i" }) { index, ref ->
+                val pid = ref.providerID
+                val mid = ref.modelID
+                ModelLineRow(
+                    model = QuickModel(ref, ModelRefCodec.encode(ref), variantsOf(pid, mid)),
+                    variantsOf = variantsOf,
+                    expanded = expandedKey == "star_$index",
+                    onToggleExpand = {
+                        expandedKey = if (expandedKey == "star_$index") null else "star_$index"
+                    },
+                    onPickModel = { onPick(pid, mid) },
+                    onPickLevel = { v -> onPickWithVariant(pid, mid, v) },
+                    rowTag = "model_pick_$index",
+                    levelTag = "star_vt_$index",
+                    current = current,
+                )
+            }
+        }
+
+        // ---- every other provider, folded by default ----------------------
+        for (group in providerGroups.filter { !it.connected }) {
+            quickProviderGroup(
+                group = group,
+                open = isOpen(group),
+                onToggle = { groupOpen[group.id] = !isOpen(group) },
+                expandedKey = expandedKey,
+                onExpandKey = { k -> expandedKey = if (expandedKey == k) null else k },
+                variantsOf = variantsOf,
+                current = current,
+                onPick = onPick,
+                onPickWithVariant = onPickWithVariant,
             )
         }
+
+        item(key = "manage") {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .clickable(onClick = onOpenSettings)
+                    .padding(horizontal = 20.dp, vertical = 10.dp)
+                    .semantics {
+                        testTag = "model_quick_switch_settings"
+                        role = Role.Button
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Star,
+                    contentDescription = null,
+                    tint = chat.muted.copy(alpha = 0.7f),
+                    modifier = Modifier.size(15.dp).clearAndSetSemantics { },
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.chat_model_open_settings), style = MaterialTheme.typography.bodyMedium)
+            }
         }
-        Spacer(Modifier.width(0.dp))
     }
 }
 
-/** The "Free Models" group header: label + fold marker, tappable. */
+/**
+ * One provider group below Zen: a fold header, and - only while it is open - its
+ * models. Tags are `conn_<provider>_<i>` or `other_<provider>_<i>`, deliberately
+ * outside the `model_pick_` and `star_vt_` families the starred list owns.
+ */
+private fun LazyListScope.quickProviderGroup(
+    group: QuickProvider,
+    open: Boolean,
+    onToggle: () -> Unit,
+    expandedKey: String?,
+    onExpandKey: (String) -> Unit,
+    variantsOf: (String, String) -> List<String>,
+    current: OpenCodeApi.ModelRef?,
+    onPick: (String, String) -> Unit,
+    onPickWithVariant: (String, String, String) -> Unit,
+) {
+    val prefix = (if (group.connected) "conn_" else "other_") + group.id
+    item(key = "head_$prefix") {
+        QuickGroupHeader(
+            title = group.name,
+            expanded = open,
+            tag = "model_group_${group.id}",
+            onToggle = onToggle,
+        )
+    }
+    if (open) {
+        itemsIndexed(group.models, key = { i, _ -> "${prefix}_$i" }) { index, qm ->
+            val key = "${prefix}_$index"
+            ModelLineRow(
+                model = qm,
+                variantsOf = variantsOf,
+                expanded = expandedKey == key,
+                onToggleExpand = { onExpandKey(key) },
+                onPickModel = { onPick(qm.ref.providerID, qm.ref.modelID) },
+                onPickLevel = { v -> onPickWithVariant(qm.ref.providerID, qm.ref.modelID, v) },
+                rowTag = "${prefix}_pick_$index",
+                levelTag = "${prefix}_vt_$index",
+                current = current,
+            )
+        }
+    }
+}
+
+/** A group header: label + fold marker, tappable. */
 @Composable
 private fun QuickGroupHeader(
     title: String,
@@ -318,33 +488,38 @@ private fun QuickGroupHeader(
     val chat = ChatTheme.chat
     Row(
         modifier = Modifier
-            .width(280.dp)
+            .fillMaxWidth()
+            .heightIn(min = 44.dp)
             .clickable(onClick = onToggle)
-            .padding(horizontal = 12.dp, vertical = 7.dp)
-            .semantics { testTag = tag; role = Role.Button },
+            .padding(horizontal = 20.dp, vertical = 8.dp)
+            .semantics {
+                testTag = tag
+                role = Role.Button
+            },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelMedium,
             color = chat.muted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
         Icon(
             imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
             contentDescription = null,
             tint = chat.muted,
-            modifier = Modifier.size(16.dp).clearAndSetSemantics { },
+            modifier = Modifier.size(18.dp).clearAndSetSemantics { },
         )
     }
 }
 
 /**
- * One model line in the quick menu (v9.41 item 22): a real STAR leads the row
- * (gold when this is the active model's group member... the star here is the
- * owner's replacement for the checkmark - the selected model still keeps its
- * name in normal weight); the name; and for thinking-capable models a small
- * TRIANGLE on the right that opens the level picker inline under the row.
+ * One model line: a star (gold when it is the active model), the name, and for
+ * thinking-capable models a TRIANGLE that opens the level list inline. The name
+ * and the triangle are SIBLINGS, not one clickable parent, so each keeps its own
+ * tag in the semantics tree.
  */
 @Composable
 private fun ModelLineRow(
@@ -362,54 +537,70 @@ private fun ModelLineRow(
     val isSelected = current != null &&
         current.providerID == model.ref.providerID && current.modelID == model.ref.modelID
     val levels = model.variants.ifEmpty { variantsOf(model.ref.providerID, model.ref.modelID) }
-    DropdownMenuItem(
-        text = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    // v9.41 (owner item 21): a REAL star replaces the checkmark.
-                    // (material-icons-core has Star but no StarBorder, so the
-                    // unstarred form is the same star drawn quiet.)
-                    contentDescription = null,
-                    tint = if (isSelected) MaterialTheme.colorScheme.primary else chat.muted.copy(alpha = 0.45f),
-                    modifier = Modifier
-                        .size(14.dp)
-                        .padding(end = 8.dp)
-                        .clearAndSetSemantics { },
-                )
-                Text(model.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        },
-        trailingIcon = {
-            if (levels.isNotEmpty()) {
-                // The little triangle: opens/closes the inline level picker.
+    // Read here, not inside a semantics block: stringResource is a composable call.
+    val triangleLabel = stringResource(R.string.chat_thinking_expand) + ": " + model.label
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .heightIn(min = 48.dp)
+                .clickable(onClick = onPickModel)
+                .padding(horizontal = 8.dp, vertical = 10.dp)
+                .semantics {
+                    testTag = rowTag
+                    contentDescription = model.label
+                    role = Role.Button
+                },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                // v9.41 (owner item 21): a REAL star replaces the checkmark.
+                // (material-icons-core has Star but no StarBorder, so the
+                // unstarred form is the same star drawn quiet.)
+                imageVector = Icons.Filled.Star,
+                contentDescription = null,
+                tint = if (isSelected) MaterialTheme.colorScheme.primary else chat.muted.copy(alpha = 0.45f),
+                modifier = Modifier.size(14.dp).clearAndSetSemantics { },
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                model.label,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        if (levels.isNotEmpty()) {
+            // The little triangle: opens/closes the inline level picker.
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onToggleExpand)
+                    .semantics {
+                        testTag = "${levelTag}_toggle"
+                        role = Role.Button
+                        contentDescription = triangleLabel
+                    },
+            ) {
                 Icon(
                     imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                    contentDescription = stringResource(R.string.chat_thinking_expand),
+                    contentDescription = null,
                     tint = chat.muted,
-                    modifier = Modifier
-                        .size(22.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable(onClick = onToggleExpand)
-                        .semantics { testTag = "${levelTag}_toggle" },
+                    modifier = Modifier.size(22.dp).clearAndSetSemantics { },
                 )
-            } else {
-                Spacer(Modifier.width(4.dp))
             }
-        },
-        onClick = onPickModel,
-        modifier = Modifier
-            .width(300.dp)
-            .semantics {
-                testTag = rowTag
-                contentDescription = model.label
-            },
-    )
+        }
+    }
     if (expanded && levels.isNotEmpty()) {
         levels.forEachIndexed { index, id ->
             ThinkingRow(
                 label = id,
-                active = false,
                 onClick = { onPickLevel(id) },
                 modifier = Modifier.semantics { testTag = "${levelTag}_$index" },
             )
@@ -417,31 +608,27 @@ private fun ModelLineRow(
     }
 }
 
-/**
- * One thinking-level row: the variant id as the server spells it, a gold check
- * on the active one. The row's accessible name is the full "Thinking level: x"
- * sentence so the id-only label still reads as what it does.
- */
+/** The level-list row under a model: the variant id as the server spells it. */
 @Composable
 private fun ThinkingRow(
     label: String,
-    active: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    DropdownMenuItem(
-        text = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        trailingIcon = {
-            if (active) {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp).clearAndSetSemantics { },
-                )
-            }
-        },
-        onClick = onClick,
-        modifier = Modifier.width(280.dp).then(modifier),
-    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 44.dp)
+            .clickable(onClick = onClick)
+            .padding(start = 44.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
+            .then(modifier),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }

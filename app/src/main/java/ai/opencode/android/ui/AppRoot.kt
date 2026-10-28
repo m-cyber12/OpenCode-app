@@ -98,6 +98,9 @@ import java.io.File
  */
 
 private const val ROUTE_WELCOME = "welcome"
+
+/** v11: how long a transport failure right after HEALTHY still reads as the start. */
+private const val STARTUP_GRACE_MS = 10_000L
 private const val ROUTE_PROJECTS = "projects"
 private const val ROUTE_CHAT = "chat"
 private const val ROUTE_SESSIONS = "sessions"
@@ -1249,6 +1252,15 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // ("connectors" from the Projects page's Connect button). Consumed once by
     // SettingsScreen (expand + scroll), then cleared when the page is left.
     var settingsFocus by remember { mutableStateOf<String?>(null) }
+    // v11 (owner, B.107): the skills Settings lists - read off the disk when the
+    // page opens, and again after a save. Never touches the running agent.
+    var skills by remember { mutableStateOf(emptyList<ai.opencode.android.runtime.SkillCatalog.Skill>()) }
+    LaunchedEffect(route, projectDir) {
+        if (route == ROUTE_SETTINGS) {
+            val globalDir = withContext(Dispatchers.IO) { RuntimePaths.get(context).xdgConfigOpencode }
+            skills = withContext(Dispatchers.IO) { ai.opencode.android.runtime.SkillCatalog.scan(projectDir, globalDir) }
+        }
+    }
     val sendWaitLabel = when {
         repoSyncing -> stringResource(R.string.chat_wait_repo)
         pendingSend != null -> stringResource(R.string.chat_wait_boot)
@@ -1326,37 +1338,39 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             // explicit `directory=` parameter is upstream's own filter; each
             // project asks for its own list, all in parallel.
             val rootPath = container.workspacesRoot().absolutePath
-            suspend fun fetchFor(name: String): List<ProjectSession> = withContext(Dispatchers.IO) {
+            // Owner: "sessions in Projects are slow and vanish". Two causes, both
+            // fixed here. (1) A failed list used to read as an EMPTY list, and the
+            // whole map was replaced, so a project's rows vanished on one flaky
+            // call. A failure now returns null and keeps that project's last rows.
+            // (2) The "try again if empty" loop waited 1.2 s twice before the page
+            // could settle, and broke the one-attempt rule. It is gone: one pass,
+            // and the answer stands.
+            suspend fun fetchFor(name: String): List<ProjectSession>? = withContext(Dispatchers.IO) {
                 runCatching {
                     repository.api.listSessions(
                         limit = 200,
                         directory = java.io.File(rootPath, name).absolutePath,
                     )
-                }.getOrDefault(emptyList())
-                    .map { ProjectSession(it.id, it.title, it.updatedAt) }
-                    .sortedByDescending { it.updatedAtMs }
+                }.getOrNull()
+                    ?.map { ProjectSession(it.id, it.title, it.updatedAt) }
+                    ?.sortedByDescending { it.updatedAtMs }
             }
-            suspend fun fetchAll(): Map<String, List<ProjectSession>> =
-                kotlinx.coroutines.coroutineScope {
-                    projects.map { pr ->
-                        async { pr.name to fetchFor(pr.name) }
-                    }.awaitAll().toMap()
-                }
-            // "Empty while projects exist" right after a switch/boot is more
-            // likely "too early" than "no conversations" - two finite passes,
-            // then the empty answer stands (and it is never an error, only the
-            // quiet state the owner can refresh by returning).
-            var fetched = fetchAll()
-            var retries = 0
-            while (fetched.values.all { it.isEmpty() } && projects.isNotEmpty() &&
-                summary.ready && retries < 2
-            ) {
-                kotlinx.coroutines.delay(1_200)
-                retries++
-                fetched = fetchAll()
+            val fetched: Map<String, List<ProjectSession>?> = kotlinx.coroutines.coroutineScope {
+                projects.map { pr ->
+                    async { pr.name to fetchFor(pr.name) }
+                }.awaitAll().toMap()
             }
-            sessionsByProject = fetched.filterValues { it.isNotEmpty() }
-            sessionCounts = projects.associate { it.name to (fetched[it.name]?.size ?: 0) }
+            val previous = sessionsByProject
+            val merged = HashMap<String, List<ProjectSession>>()
+            val counts = HashMap<String, Int>()
+            for (pr in projects) {
+                val now = fetched[pr.name]
+                val rows = now ?: previous[pr.name].orEmpty()
+                if (rows.isNotEmpty()) merged[pr.name] = rows
+                counts[pr.name] = rows.size
+            }
+            sessionsByProject = merged
+            sessionCounts = counts
             // The switch-party: the current root plus the remembered ones that are
             // still live folders, each with its project count read off the disk.
             val currentRoot = container.workspacesRoot()
@@ -1489,12 +1503,31 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // Availability: the three facts, combined by the pure classifier. The runtime
     // outranks the server, which outranks a single failed turn - so a provider
     // problem can never make the whole app look broken.
+    // v11 (owner, B.107): "the red error flashes at the end of loading". The
+    // runtime reports HEALTHY a moment before the app's own first calls land, and
+    // one of those can fail at the transport level. A transport failure in the
+    // first seconds after HEALTHY is the start, not an outage: the flag below
+    // turns true after STARTUP_GRACE_MS, and only then is a failure shown as
+    // Offline. One attempt per call, no retry loop - this only changes the label.
+    var startGraceOver by remember { mutableStateOf(false) }
+    LaunchedEffect(summary.ready) {
+        startGraceOver = false
+        if (summary.ready) {
+            kotlinx.coroutines.delay(STARTUP_GRACE_MS)
+            startGraceOver = true
+        }
+    }
     val serverAvailability = when {
         uiState.serverReachable -> uiState.errorKind
         // v10 (owner): the runtime just reported healthy but the first server
         // check has not answered yet - that is still the start, not an error.
         // The red "not responding" line only appears once a real error exists.
-        summary.ready -> if (uiState.error.isBlank()) AgentAvailability.RUNTIME_STARTING else AgentAvailability.SERVER_UNREACHABLE
+        summary.ready -> when {
+            uiState.error.isBlank() -> AgentAvailability.RUNTIME_STARTING
+            !startGraceOver && uiState.errorKind == AgentAvailability.SERVER_UNREACHABLE ->
+                AgentAvailability.RUNTIME_STARTING
+            else -> AgentAvailability.SERVER_UNREACHABLE
+        }
         // v9.41 (owner item 6): while the runtime is still coming up the
         // status is STARTING - gold, honest, NOT red. Before this, the cold
         // launch fell through to "whatever the last turn's error was" and the
@@ -1851,6 +1884,23 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onConnectMcp = { name -> repository.connectMcp(name) },
                     onDisconnectMcp = { name -> repository.disconnectMcp(name) },
                     onRefreshMcp = { repository.refreshMcp() },
+                    skills = skills,
+                    onCreateSkill = { name, description, body ->
+                        // Writes one global skill; an existing one is never replaced.
+                        // Returns null on success, else the reason key the form shows.
+                        val globalDir = RuntimePaths.get(context).xdgConfigOpencode
+                        when (val made = ai.opencode.android.runtime.SkillCatalog.create(globalDir, name, description, body)) {
+                            is ai.opencode.android.runtime.SkillCatalog.Created.Ok -> {
+                                skills = ai.opencode.android.runtime.SkillCatalog.scan(projectDir, globalDir)
+                                null
+                            }
+                            is ai.opencode.android.runtime.SkillCatalog.Created.Invalid -> when (made.reason) {
+                                "name", "description" -> made.reason
+                                else -> "folder"
+                            }
+                            is ai.opencode.android.runtime.SkillCatalog.Created.Exists -> "exists"
+                        }
+                    },
                     onBashPolicy = { policy -> repository.setPermissionPolicy("bash", policy) },
                     permissionPolicy = uiState.permissionPolicy,
                     onPermissionPolicy = { key, action -> repository.setPermissionPolicy(key, action) },

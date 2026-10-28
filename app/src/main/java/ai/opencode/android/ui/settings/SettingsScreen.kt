@@ -137,6 +137,10 @@ fun SettingsScreen(
     onConnectMcp: (String) -> Unit,
     onDisconnectMcp: (String) -> Unit,
     onRefreshMcp: () -> Unit,
+    /** v11 (owner, B.107): the skills this project and the app see, and the form that adds one. */
+    skills: List<ai.opencode.android.runtime.SkillCatalog.Skill> = emptyList(),
+    /** Returns null when saved, or a short reason key: name, description, exists, folder. */
+    onCreateSkill: (String, String, String) -> String? = { _, _, _ -> null },
     onBashPolicy: (String) -> Unit,
     permissionPolicy: Map<String, String> = emptyMap(),
     onPermissionPolicy: (String, String) -> Unit = { _, _ -> },
@@ -178,6 +182,7 @@ fun SettingsScreen(
             "diagnostics",
             "connectors",
             "mcp",
+            "skills",
             "permissions",
             "memory",
             "appearance",
@@ -250,6 +255,12 @@ fun SettingsScreen(
                         onConnect = onConnectMcp,
                         onDisconnect = onDisconnectMcp,
                         onRefresh = onRefreshMcp,
+                    )
+                    "skills" -> SkillsSection(
+                        skills = skills,
+                        onCreate = onCreateSkill,
+                        // v11: a navigation that asked for Skills gets it open.
+                        expanded = focusSection == "skills",
                     )
                     "permissions" -> PermissionsSection(
                         policy = permissionPolicy,
@@ -1436,6 +1447,14 @@ private fun McpSection(
         collapsible = true,
         initiallyExpanded = false,
     ) {
+        // v11 (owner, B.107): the how-to, so the owner does not have to ask the agent.
+        Text(
+            text = stringResource(R.string.settings_mcp_howto),
+            style = MaterialTheme.typography.bodySmall,
+            color = chat.muted,
+            modifier = Modifier.semantics { testTag = "mcp_howto" },
+        )
+        Spacer(Modifier.height(6.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TextButton(
                 onClick = onRefresh,
@@ -1535,6 +1554,180 @@ private fun McpSection(
             ) {
                 Text(stringResource(R.string.settings_mcp_add))
             }
+        }
+    }
+}
+
+/**
+ * v11 (owner, B.107): Skills, presented the way Claude Code presents them - what a
+ * skill is, the list the agent can use (with the file each one comes from), and a
+ * form that writes a new GLOBAL skill. An existing skill is never overwritten.
+ */
+@Composable
+private fun SkillsSection(
+    skills: List<ai.opencode.android.runtime.SkillCatalog.Skill>,
+    onCreate: (String, String, String) -> String?,
+    expanded: Boolean,
+) {
+    val chat = ChatTheme.chat
+    var adding by rememberSaveable { mutableStateOf(false) }
+    var name by rememberSaveable { mutableStateOf("") }
+    var description by rememberSaveable { mutableStateOf("") }
+    var instructions by rememberSaveable { mutableStateOf("") }
+    var errorKey by rememberSaveable { mutableStateOf("") }
+    var saved by rememberSaveable { mutableStateOf(false) }
+    SectionCard(
+        title = stringResource(R.string.settings_section_skills),
+        body = stringResource(R.string.settings_skills_body),
+        collapsible = true,
+        initiallyExpanded = expanded,
+        headerTag = "skills_section_header",
+    ) {
+        Text(
+            text = stringResource(R.string.settings_skills_howto),
+            style = MaterialTheme.typography.bodySmall,
+            color = chat.muted,
+        )
+        Spacer(Modifier.height(8.dp))
+        if (skills.isEmpty()) {
+            Text(
+                text = stringResource(R.string.settings_skills_empty),
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.muted,
+                modifier = Modifier.semantics { testTag = "skills_empty" },
+            )
+        }
+        val projectScope = stringResource(R.string.settings_skills_scope_project)
+        val globalScope = stringResource(R.string.settings_skills_scope_global)
+        val fileLabel = stringResource(R.string.settings_skills_file)
+        for (skill in skills) {
+            val scopeText = if (skill.scope == "project") projectScope else globalScope
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+                    .semantics { testTag = "skill_${skill.name}" },
+                color = chat.toolContainer,
+                shape = MaterialTheme.shapes.small,
+                border = BorderStroke(1.dp, chat.toolBorder),
+            ) {
+                Column(Modifier.padding(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = skill.name,
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        StatusPill(text = scopeText, color = chat.muted)
+                    }
+                    if (skill.description.isNotBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = skill.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = chat.muted,
+                        )
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = fileLabel + ": " + skill.file.absolutePath,
+                        style = MonoSmall,
+                        color = chat.muted,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(
+                onClick = {
+                    adding = !adding
+                    errorKey = ""
+                    saved = false
+                },
+                modifier = Modifier.height(44.dp).semantics { testTag = "skills_add_toggle" },
+            ) {
+                Text(stringResource(R.string.settings_skills_new))
+            }
+        }
+        if (adding) {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text(stringResource(R.string.settings_skills_name_label)) },
+                placeholder = { Text(stringResource(R.string.settings_skills_name_placeholder)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().semantics { testTag = "skills_name" },
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text(stringResource(R.string.settings_skills_description_label)) },
+                placeholder = { Text(stringResource(R.string.settings_skills_description_placeholder)) },
+                minLines = 2,
+                maxLines = 3,
+                modifier = Modifier.fillMaxWidth().semantics { testTag = "skills_description" },
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = instructions,
+                onValueChange = { instructions = it },
+                label = { Text(stringResource(R.string.settings_skills_body_label)) },
+                placeholder = { Text(stringResource(R.string.settings_skills_body_placeholder)) },
+                minLines = 4,
+                maxLines = 10,
+                modifier = Modifier.fillMaxWidth().semantics { testTag = "skills_instructions" },
+            )
+            if (errorKey.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(
+                        when (errorKey) {
+                            "name" -> R.string.settings_skills_error_name
+                            "description" -> R.string.settings_skills_error_description
+                            "exists" -> R.string.settings_skills_error_exists
+                            else -> R.string.settings_skills_error_folder
+                        },
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.semantics { testTag = "skills_error" },
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            OutlinedButton(
+                onClick = {
+                    val reason = onCreate(name, description, instructions)
+                    if (reason == null) {
+                        adding = false
+                        name = ""
+                        description = ""
+                        instructions = ""
+                        errorKey = ""
+                        saved = true
+                    } else {
+                        errorKey = reason
+                    }
+                },
+                enabled = name.isNotBlank() && description.isNotBlank(),
+                modifier = Modifier.fillMaxWidth().height(46.dp).semantics { testTag = "skills_save" },
+            ) {
+                Text(stringResource(R.string.settings_skills_save))
+            }
+        }
+        if (saved && !adding) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = stringResource(R.string.settings_skills_saved),
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.success,
+                modifier = Modifier.semantics { testTag = "skills_saved" },
+            )
         }
     }
 }

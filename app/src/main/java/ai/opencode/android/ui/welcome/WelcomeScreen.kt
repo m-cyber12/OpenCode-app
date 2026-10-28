@@ -119,6 +119,9 @@ fun WelcomeScreen(
         )
         Spacer(Modifier.height(36.dp))
 
+        // v11 (owner, B.107): the loading card is ONE centred column - the
+        // indicator above the words, never beside them. The side-by-side row
+        // squeezed the copy against the circle on narrow screens ("messy").
         Surface(
             color = MaterialTheme.colorScheme.surface,
             shape = MaterialTheme.shapes.large,
@@ -127,28 +130,36 @@ fun WelcomeScreen(
                 .padding(horizontal = 20.dp)
                 .semantics { testTag = "welcome_stage" },
         ) {
-            Row(
-                Modifier.padding(18.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 StageIndicator(ready = ready, label = progressLabel)
-                Spacer(Modifier.width(16.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(text = stage.first, style = MaterialTheme.typography.titleSmall)
-                    Spacer(Modifier.height(3.dp))
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    text = stage.first,
+                    style = MaterialTheme.typography.titleSmall,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = stage.second,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = chat.muted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (runtime.restartCount > 0) {
+                    Spacer(Modifier.height(8.dp))
                     Text(
-                        text = stage.second,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = chat.muted,
+                        text = stringResource(R.string.welcome_restarts, runtime.restartCount),
+                        style = MonoSmall,
+                        color = chat.attention,
+                        textAlign = TextAlign.Center,
                     )
-                    if (runtime.restartCount > 0) {
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            text = stringResource(R.string.welcome_restarts, runtime.restartCount),
-                            style = MonoSmall,
-                            color = chat.attention,
-                        )
-                    }
                 }
             }
         }

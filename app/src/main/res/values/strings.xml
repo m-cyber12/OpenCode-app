@@ -677,4 +677,26 @@
     <string name="settings_provider_not_ready">Not Ready</string>
     <string name="settings_provider_add_title">Add Your Own Provider</string>
     <string name="settings_provider_add_body">Any OpenAI-compatible endpoint the catalog does not know</string>
+    <!-- v11 (owner, B.107): skills card and fuller MCP guidance. -->
+    <string name="settings_section_skills">Skills</string>
+    <string name="settings_skills_body">Skills are instructions the agent loads when a task matches them, the way Claude Code skills work. The agent sees each skill name and description, and reads the full text only when it needs it.</string>
+    <string name="settings_skills_howto">A skill is a folder with a SKILL.md file. Its header has a name and a description that says when to use it, starting with \"Use when\". Below the header, write the steps, the commands to run, and the check that proves the job is done. Project skills live in .opencode/skills inside the project. Global skills are saved in the app config folder and apply to every project.</string>
+    <string name="settings_skills_empty">No skills yet. Add one below, or put a SKILL.md file in the project under .opencode/skills.</string>
+    <string name="settings_skills_scope_project">This project</string>
+    <string name="settings_skills_scope_global">Every project</string>
+    <string name="settings_skills_file">File</string>
+    <string name="settings_skills_new">New skill</string>
+    <string name="settings_skills_name_label">Name</string>
+    <string name="settings_skills_name_placeholder">for example changelog-writer</string>
+    <string name="settings_skills_description_label">When to use it</string>
+    <string name="settings_skills_description_placeholder">One sentence that starts with Use when</string>
+    <string name="settings_skills_body_label">Instructions</string>
+    <string name="settings_skills_body_placeholder">Numbered steps, the commands to run, and how to check the result</string>
+    <string name="settings_skills_save">Save skill</string>
+    <string name="settings_skills_saved">Saved to the global skills. If the agent does not see it in a chat, restart the agent from Settings, Runtime.</string>
+    <string name="settings_skills_error_name">Use letters or digits for the name.</string>
+    <string name="settings_skills_error_description">Write one sentence that says when to use it.</string>
+    <string name="settings_skills_error_exists">A skill with that name already exists. Choose another name.</string>
+    <string name="settings_skills_error_folder">The skills folder could not be created.</string>
+    <string name="settings_mcp_howto">Add a server to the project opencode.json under \"mcp\", for example {\"mcp\": {\"docs\": {\"type\": \"local\", \"command\": [\"npx\", \"-y\", \"package-name\"]}}}. Put secret values in \"environment\", never in a file you commit. Then press Refresh statuses. A failed server shows the agent own error text under its name.</string>
 </resources>

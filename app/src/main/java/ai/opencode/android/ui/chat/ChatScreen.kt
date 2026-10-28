@@ -279,9 +279,37 @@ fun ChatScreen(
                 ?.map { m -> QuickModel(OpenCodeApi.ModelRef(OpenCodeApi.ZEN_PROVIDER_ID, m.id), m.name, m.variants) }
                 ?: emptyList()
         }
-        fun variantsOf(pid: String, mid: String): List<String> =
-            state.providers?.entries?.firstOrNull { it.id == pid }?.models
-                ?.firstOrNull { it.id == mid }?.variants ?: emptyList()
+        // v11 (owner, B.107): one pass over the catalog per snapshot, not a scan
+        // per row per frame. Every provider except Zen, connected ones first.
+        val providerGroups = remember(state.providers) {
+            val snap = state.providers
+            if (snap == null) {
+                emptyList<QuickProvider>()
+            } else {
+                val connected = snap.connected.toSet()
+                snap.entries
+                    .filter { it.id != OpenCodeApi.ZEN_PROVIDER_ID && it.models.isNotEmpty() }
+                    .map { e ->
+                        QuickProvider(
+                            id = e.id,
+                            name = e.name,
+                            models = e.models.map { m ->
+                                QuickModel(OpenCodeApi.ModelRef(e.id, m.id), m.name, m.variants)
+                            },
+                            connected = e.id in connected,
+                        )
+                    }
+                    .sortedBy { !it.connected }
+            }
+        }
+        val variantIndex = remember(state.providers) {
+            val index = HashMap<String, List<String>>()
+            state.providers?.entries?.forEach { e ->
+                e.models.forEach { m -> index["${e.id}/${m.id}"] = m.variants }
+            }
+            index
+        }
+        fun variantsOf(pid: String, mid: String): List<String> = variantIndex["$pid/$mid"] ?: emptyList()
         ChatHeader(
             onOpenMenu = { drawerOpen = true },
             busy = state.busy,
@@ -301,6 +329,7 @@ fun ChatScreen(
             onOpenAddons = onOpenAddons,
             modelsLoading = state.providers == null,
             freeModels = freeQuick,
+            providerGroups = providerGroups,
             variantsOf = ::variantsOf,
             onPickWithVariant = { pid, mid, v ->
                 onPickModel(pid, mid)
@@ -499,6 +528,8 @@ private fun ChatHeader(
     // v9.41 (owner item 22): the quick switch also lists the FREE models (Zen)
     // and knows each listed model's thinking variants for its inline picker.
     freeModels: List<QuickModel> = emptyList(),
+    /** v11: connected providers (pinned under Zen) and the rest, folded. */
+    providerGroups: List<QuickProvider> = emptyList(),
     variantsOf: (String, String) -> List<String> = { _, _ -> emptyList() },
     onPickWithVariant: (String, String, String) -> Unit = { p, m, _ -> onPickModel(p, m) },
     onOpenProjects: () -> Unit,
@@ -568,6 +599,7 @@ private fun ChatHeader(
                 variantsOf = variantsOf,
                 onPickWithVariant = onPickWithVariant,
                 modelsLoading = modelsLoading,
+                providerGroups = providerGroups,
             )
         }
         Spacer(Modifier.width(8.dp))
@@ -627,46 +659,46 @@ private fun ModeSwitch(
                 maxLines = 1,
             )
         }
-        MaterialTheme(shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(20.dp))) {
-            DropdownMenu(
-                expanded = open,
-                onDismissRequest = { open = false },
-                modifier = Modifier.semantics { testTag = "mode_menu" },
-            ) {
+        if (open) {
+            // v11 (owner, B.107): Build/Plan slide up to about half the screen,
+            // like the model picker, instead of a small popup.
+            HalfScreenSheet(tag = "mode_menu", onDismiss = { open = false }) { close ->
                 val buildTitle = stringResource(R.string.chat_mode_build)
                 val planTitle = stringResource(R.string.chat_mode_plan)
-                ModeRow(
-                    title = buildTitle,
-                    body = stringResource(R.string.chat_mode_build_body),
-                    active = !plan,
-                    onClick = {
-                        open = false
-                        onPickMode(OpenCodeRepository.AGENT_BUILD)
-                    },
-                    modifier = Modifier.semantics {
-                        testTag = "mode_pick_build"
-                        contentDescription = buildTitle
-                    },
-                )
-                ModeRow(
-                    title = planTitle,
-                    body = stringResource(R.string.chat_mode_plan_body),
-                    active = plan,
-                    onClick = {
-                        open = false
-                        onPickMode(OpenCodeRepository.AGENT_PLAN)
-                    },
-                    modifier = Modifier.semantics {
-                        testTag = "mode_pick_plan"
-                        contentDescription = planTitle
-                    },
-                )
+                Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                    ModeRow(
+                        title = buildTitle,
+                        body = stringResource(R.string.chat_mode_build_body),
+                        active = !plan,
+                        onClick = {
+                            close()
+                            onPickMode(OpenCodeRepository.AGENT_BUILD)
+                        },
+                        modifier = Modifier.semantics {
+                            testTag = "mode_pick_build"
+                            contentDescription = buildTitle
+                        },
+                    )
+                    ModeRow(
+                        title = planTitle,
+                        body = stringResource(R.string.chat_mode_plan_body),
+                        active = plan,
+                        onClick = {
+                            close()
+                            onPickMode(OpenCodeRepository.AGENT_PLAN)
+                        },
+                        modifier = Modifier.semantics {
+                            testTag = "mode_pick_plan"
+                            contentDescription = planTitle
+                        },
+                    )
+                }
             }
         }
     }
 }
 
-/** One mode row: name, one-line truth, gold check on the active one. */
+/** One mode row: name, one-line truth, gold check on the active one (v11: a sheet row). */
 @Composable
 private fun ModeRow(
     title: String,
@@ -676,26 +708,28 @@ private fun ModeRow(
     modifier: Modifier = Modifier,
 ) {
     val chat = ChatTheme.chat
-    DropdownMenuItem(
-        text = {
-            Column {
-                Text(title, style = MaterialTheme.typography.labelLarge)
-                Text(body, style = MaterialTheme.typography.bodySmall, color = chat.muted)
-            }
-        },
-        trailingIcon = {
-            if (active) {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp).clearAndSetSemantics { },
-                )
-            }
-        },
-        onClick = onClick,
-        modifier = Modifier.widthIn(min = 220.dp).then(modifier),
-    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 24.dp, vertical = 12.dp)
+            .then(modifier),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleSmall)
+            Text(body, style = MaterialTheme.typography.bodySmall, color = chat.muted)
+        }
+        if (active) {
+            Icon(
+                imageVector = Icons.Filled.Check,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp).clearAndSetSemantics { },
+            )
+        }
+    }
 }
 
 /**

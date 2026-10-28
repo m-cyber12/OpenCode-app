@@ -7309,3 +7309,76 @@ Still open from the owner's list (not done in this round):
 - Settings: a richer Skills and MCP section (the text guidance above is in the brief; the UI is not).
 - Clone into a non-empty folder fails with "Destination path already exists and is
   not an empty directory". Needs a non-destructive init-and-fetch path, with a test.
+
+## 2026-10-28 - B.107 - owner bug round, part 2: the open items from B.106
+
+This round finishes the items B.106 left open. Nothing here was compiled or run
+on a device in this sandbox (no Kotlin compiler here). What was checked locally:
+the static gates (`check-ui-strings`, `check-ui-purity`, `check-ui-lists`,
+`check-ui-a11y`, `check-ascii`, `check-kotlin-balance`, `check-kotlin-comments`),
+all passing. Compile and JVM/UI results come from CI, and the owner's device
+pass is still the ground truth.
+
+Changed, and why:
+
+1. **Model and Build/Plan menus are half-screen sheets** (`HalfScreenSheet` in
+   `ModelQuickSwitch.kt`). They slide up to about half the screen, as the owner
+   asked, instead of the small popup. The Attach menu is unchanged on purpose.
+2. **Dropdown open lag.** The model list is a `LazyColumn` now, and it is composed
+   only while the sheet is open. Per-row catalog scans were replaced by one index,
+   built once per catalog snapshot (`variantIndex`, `providerGroups`). Folded groups
+   compose no rows. This is a code-level fix. The lag was not profiled on device.
+3. **Connected providers pinned directly under Zen; other providers folded.** The
+   menu order is current model, Free Models, connected providers, starred models,
+   other providers, then the Settings entry. Every provider group folds, and
+   connected groups start folded too, so the starred list stays on screen. This
+   is a deliberate choice, and the owner can flip the default.
+4. **Projects-page sessions no longer vanish or stall.** A failed per-project list
+   used to read as an empty list and replace the page's rows. It now keeps that
+   project's last rows. The 1.2 s retry loop is gone, which also keeps the
+   one-attempt rule.
+5. **Clone into a non-empty folder works** (`GitSync.initIntoExisting`). A GitHub
+   project's folder holds `AGENTS.md` before the first clone, which is the cause of
+   "Destination path already exists". The clone now goes in place: `git init`,
+   `origin`, fetch, then check out the default branch as a new local branch.
+   Existing files stay. A file the repository also has blocks the checkout, nothing
+   is overwritten, and a `.git` created by a failed attempt is removed again. Three
+   JVM tests in `GitSyncTest` cover this.
+6. **Loading.** The loading card is one centred column (indicator above the words),
+   not a side-by-side row. The red flash was caused by the first app calls after
+   HEALTHY, which can fail at the transport level. A transport failure in the first
+   10 seconds after HEALTHY now reads as "Starting". After that it reads as Offline.
+   There is no retry loop. The server already starts by itself once extraction
+   finishes, and the UI waits for HEALTHY, so no start logic changed. Not reproduced
+   here. The owner should confirm on device.
+7. **Skills, in Settings and in the brief.** A new Skills card lists every skill the
+   project and the app see, with its scope and file. It also has a form that writes a
+   new GLOBAL skill (`SkillCatalog.create`). An existing skill is never overwritten.
+   The form has the same fields Claude Code uses: a name, a "when to use it"
+   description, and the instructions. The brief's `extensions.md` is expanded to
+   match: the header rules, where skills live, how to create and load one, the MCP
+   config shape (`command`, `environment`, `enabled`, `timeout`, checked against
+   upstream's schema at the pinned commit), status checks, and the Node/bun note. A
+   new skill may need an agent restart to appear. The card says so. The app does NOT
+   call `/global/dispose`, because that would tear down instances that may be
+   mid-turn.
+8. **MCP section** gained a how-to paragraph with the config shape.
+
+Gate contract notes (stated loudly, as before):
+- The U10 gate counts exact `model_pick_` rows. Provider rows use `conn_`/`other_`
+  prefixes, so that count still means the starred list. The gate's order assumption
+  (starred rows visible without scrolling) holds only while the connected groups
+  stay folded. That is why they fold by default.
+- The Build/Plan menu is now a sheet. Its tags (`mode_menu`, `mode_pick_build`,
+  `mode_pick_plan`) are unchanged.
+- The welcome gate reads the stage card through the same tags, which are unchanged.
+
+Still open, and NOT decided by the agent:
+- **ICU for the bundled Node.** `phase4/scripts/10-build-payload.sh` builds Node with
+  `--with-intl=none`. That is the probable cause of the `\p{L}` failure in `rea`, and
+  it is still unverified. The fix means shipping ICU, which adds to the APK size. The
+  owner must choose. The brief's bun workaround stays in place until then.
+- **Settings Models card** already shows connected providers under Zen and folds
+  them. Non-connected providers stay on the Providers surface, as before.
+- **Device confirmation** of: the sheets' height and feel, the loading card, the
+  Projects rows, the non-empty clone, and the Skills card.
