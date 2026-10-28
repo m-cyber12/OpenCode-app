@@ -7394,7 +7394,7 @@ Still open, and NOT decided by the agent:
   ground truth for the sheets' feel, the loading card, the Projects rows, the
   non-empty clone, and the Skills card. The ICU decision remains open.
 
-### B.108 owner round (2026-10-28) - code written, CI NOT yet run at time of writing
+### B.108 owner round (2026-10-28) - code, CI result below
 
 Changes in this round, each with its evidence level stated honestly:
 
@@ -7436,3 +7436,25 @@ Changes in this round, each with its evidence level stated honestly:
 - **arm64 artifact (item 10).** Prepared, not applied:
   `docs/progress/arm64-artifact-split.md`. The workflow files cannot be pushed by the
   automation account.
+
+### B.108 CI result (recorded 2026-10-28)
+
+Three boards on the branch. The first two failed at compile/static stages; the third passed.
+
+- **40775603400** on `dc227baf` - failed at the static checks: gate tag
+  `thinking_level_high` had no literal `testTag` the static check could see. Fixed in
+  `02fa6193` (tag written as `"thinking_level_$id"`).
+- **40775887517** on `02fa6193` - failed to compile the androidTest sources: my U10
+  edit had dropped a line (`noSettingsTrip`). Fixed in `dfb0e386`.
+- **40780493038** on `dfb0e386` - **succeeded.** `P10-UNIT PASS: JVM tests=505
+  failures=0 errors=0`. `phase6_ui_fails=0`, `phase10_gate_fails=0`,
+  `phase9_gate_fails=0`. `P6_U10` passed on the new menu contract
+  (`levelRow=true noTriangles=true picked=[high]`). `TodoAndDiffTest` 8/8 and
+  `AccountRedactionTest` 3/3 ran and passed.
+
+What this result does NOT prove: the device behaviour. The owner's device pass is
+still the ground truth for the todo list (is it updating live), the diffs in the Changes
+page, the thinking chips at the top of the menu, the free models starred on a fresh
+install, and the MCP package form (a real `npx` start). The item-4 root cause (bundled
+Node built without ICU) and the arm64 artifact split (`docs/progress/arm64-artifact-split.md`,
+which the owner must apply) are both still open.
