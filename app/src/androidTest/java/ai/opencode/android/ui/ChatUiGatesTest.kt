@@ -2293,6 +2293,7 @@ class ChatUiGatesTest {
         rule.onAllNodesWithTag("model_pick_1")[0].performClick()
         rule.waitForIdle()
         val picked = modelPicks == 1 && pickedModels.contains("google/gemini-2.5-flash")
+        val noSettingsTrip = openSettings == 0
 
         // the build/plan switch, left of the status orb: two real agents, the
         // pick reports upstream's own name, and the chip shows the active mode
