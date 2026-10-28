@@ -64,6 +64,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -771,17 +772,33 @@ private fun ModelsSection(
                 )
             }
         }
+        // v10 (owner): every provider group folds like "Free Models" - a header
+        // row with a fold marker, expanded by default.
+        val groupOpen = remember { mutableStateMapOf<String, Boolean>() }
         for ((entry, list) in groups) {
-            Text(
-                text = entry.name,
-                style = MaterialTheme.typography.labelMedium,
-                color = chat.muted,
+            val open = groupOpen[entry.id] ?: true
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 10.dp, bottom = 2.dp, start = 4.dp)
-                    .semantics { testTag = "model_group_${entry.id}" },
-            )
-            ModelList(
+                    .clickable { groupOpen[entry.id] = !open }
+                    .padding(top = 6.dp, bottom = 2.dp, start = 4.dp, end = 4.dp)
+                    .semantics { testTag = "model_group_${entry.id}"; role = Role.Button },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = entry.name,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = chat.muted,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(
+                    imageVector = if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = chat.muted,
+                    modifier = Modifier.size(18.dp).clearAndSetSemantics { },
+                )
+            }
+            if (open) ModelList(
                 provider = entry,
                 models = list,
                 selectedModel = if (model?.providerID == entry.id) model.modelID else "",

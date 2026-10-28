@@ -87,6 +87,18 @@ class RuntimeManager private constructor(private val appContext: Context) {
         logger.host("state -> $status ($detail)")
     }
 
+    /** The WebView engine string the brief was last written with (see [relockBrief]). */
+    @Volatile private var briefEngine: String = "unknown"
+
+    /**
+     * The environment brief is the app's, never the model's. The
+     * app calls this before every prompt: it rewrites any brief file the agent
+     * changed and locks all of them read-only again. Returns true when the
+     * brief is in place (or was restored).
+     */
+    fun relockBrief(): Boolean =
+        runCatching { EnvironmentBrief.install(paths.xdgConfigOpencode, briefEngine) }.getOrDefault(false)
+
     /** Called by RuntimeService on start (idempotent). */
     fun start() {
         synchronized(restartLock) {
@@ -199,6 +211,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
             val engine = runCatching {
                 android.webkit.WebView.getCurrentWebViewPackage()?.let { "${it.packageName} ${it.versionName}" }
             }.getOrNull() ?: "unknown"
+            briefEngine = engine
             val briefed = runCatching { EnvironmentBrief.install(paths.xdgConfigOpencode, engine) }.getOrDefault(false)
             logger.host("environment brief: " + if (briefed) "installed (config.instructions)" else "skipped (user config left untouched)")
 

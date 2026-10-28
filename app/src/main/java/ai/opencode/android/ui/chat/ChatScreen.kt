@@ -20,6 +20,7 @@ import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
 import ai.opencode.android.ui.theme.goldAccentBrush
 import ai.opencode.android.ui.theme.goldenBackdrop
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.slideInHorizontally
@@ -245,6 +246,9 @@ fun ChatScreen(
     // it; it is not a popup. State lives here (not in the header) because the
     // header only holds the button that opens it.
     var drawerOpen by remember { mutableStateOf(false) }
+    // v10 (owner): the drawer is full-screen now, so the system back gesture is
+    // its close control (the scrim it used to tap is covered).
+    BackHandler(enabled = drawerOpen) { drawerOpen = false }
 
     // v9.35: root is a Box now - the conversation column underneath, the
     // preview page overlay on top of EVERYTHING (header, tabs included).
@@ -728,8 +732,17 @@ private fun StatusOrb(
             text = stringResource(R.string.chat_status_starting)
             color = chat.attention
         }
+        // v10 (owner): no catch-all "Needs attention" - the orb names the state.
+        availability == AgentAvailability.SERVER_UNREACHABLE -> {
+            text = stringResource(R.string.chat_status_offline)
+            color = MaterialTheme.colorScheme.error
+        }
+        availability == AgentAvailability.PROVIDER_UNREACHABLE -> {
+            text = stringResource(R.string.chat_status_model_unreachable)
+            color = MaterialTheme.colorScheme.error
+        }
         else -> {
-            text = stringResource(R.string.chat_status_attention)
+            text = stringResource(R.string.chat_status_error)
             color = MaterialTheme.colorScheme.error
         }
     }
@@ -914,6 +927,11 @@ private fun StatusArea(
     // Everything else here is unchanged - a real failure still says so, once.
     if (availability == AgentAvailability.RUNTIME_STARTING) {
         StartingRow(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+        return
+    }
+    // v10 (owner): losing the connection is shown by the status orb ("Offline"),
+    // once, and nothing more - no banner box stacked under the conversation.
+    if (availability == AgentAvailability.SERVER_UNREACHABLE || availability == AgentAvailability.PROVIDER_UNREACHABLE) {
         return
     }
     if (availability != AgentAvailability.READY && availability != AgentAvailability.ABORTED) {
@@ -1631,7 +1649,7 @@ private fun ChatConversationDrawer(
                 contentColor = MaterialTheme.colorScheme.onSurface,
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(topEnd = 22.dp, bottomEnd = 22.dp),
                 border = BorderStroke(1.dp, chat.toolBorder),
-                modifier = Modifier.fillMaxHeight().fillMaxWidth(0.66f),
+                modifier = Modifier.fillMaxHeight().fillMaxWidth(),
             ) {
                 Column(
                     Modifier

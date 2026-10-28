@@ -53,6 +53,29 @@ class EnvironmentBriefTest {
         }
     }
 
+    /**
+     * Owner rule: the brief is the app's text, not the model's. Every brief file
+     * is read-only after install, and a changed file is restored from the app's
+     * copy on the next install (the app calls it before every prompt).
+     */
+    @Test
+    fun briefFilesAreLockedAndRestoredWhenChanged() {
+        val dir = tmp.newFolder("opencode")
+        assertTrue(EnvironmentBrief.install(dir))
+        val brief = java.io.File(dir, EnvironmentBrief.FILE_NAME)
+        val topic = java.io.File(java.io.File(dir, EnvironmentBrief.BRIEFS_DIR), "tools.md")
+        assertFalse("main brief must be read-only", brief.canWrite())
+        assertFalse("topic brief must be read-only", topic.canWrite())
+
+        // Simulate the agent changing a file despite the lock (chmod + write).
+        topic.setWritable(true, true)
+        topic.writeText("edited by the model")
+        topic.setReadOnly()
+        assertTrue(EnvironmentBrief.install(dir))
+        assertEquals(EnvironmentBrief.topicBriefs().getValue("tools.md"), topic.readText())
+        assertFalse(topic.canWrite())
+    }
+
     @Test
     fun installingTwiceAddsNothingTwice() {
         val dir = tmp.newFolder("opencode")

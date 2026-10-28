@@ -55,14 +55,32 @@ object EnvironmentBrief {
         val dir = File(configDir, BRIEFS_DIR)
         dir.mkdirs()
         for ((name, text) in topicBriefs(engine)) {
-            val f = File(dir, name)
-            if (!f.isFile || f.readText() != text) f.writeText(text)
+            lockedWrite(File(dir, name), text)
         }
         val brief = File(configDir, FILE_NAME)
         val text = briefText(engine, dir.absolutePath)
-        if (!brief.isFile || brief.readText() != text) brief.writeText(text)
+        lockedWrite(brief, text)
         wireConfig(File(configDir, "config.json"), brief.absolutePath)
     }.getOrDefault(false)
+
+    /**
+     * The brief is the app's text, not the model's. Every brief file is kept
+     * READ-ONLY (an edit or write by the agent fails with EACCES), and every
+     * install re-checks the bytes: a file the agent changed anyway (chmod, a
+     * shell redirect after a chmod) is rewritten from the app's copy and locked
+     * again. The app calls [install] again before every prompt, so an edit
+     * made during one turn cannot survive into the next one.
+     */
+    internal fun lockedWrite(f: File, text: String) {
+        if (f.isFile && f.readText() == text) {
+            if (f.canWrite()) f.setReadOnly()
+            return
+        }
+        if (f.exists()) f.setWritable(true, true)
+        f.writeText(text)
+        f.setReadOnly()
+    }
+
 
     /**
      * Ensure config.json's `instructions` contains [briefPath].
@@ -183,6 +201,8 @@ what cannot have changed; read each topic brief at most once.
   Read BEFORE the first command in any project that has a package.json.
 - $briefsDir/tools.md - PATH order, exact installed tools, Android limits.
   Read before shelling out.
+- $briefsDir/extensions.md - MCP servers and skills: where they live, how to
+  register one. Read before adding either.
 """.trimIndent() + "\n"
     }
 
@@ -425,11 +445,47 @@ has the working package patterns - read it BEFORE touching any project with
 a package.json.
 """.trimIndent() + "\n"
 
+        // v10 (owner): MCP servers and skills, the way Claude Code users expect
+        // them to work. Every path and command here is upstream's own (skill
+        // discovery: `{skill,skills}/**/SKILL.md` under the config dirs) or was
+        // device-verified; the owner's npx MCP setup is the reference case.
+        val extensions = """
+# MCP servers & skills - read before adding either
+
+## Skills (instructions the agent loads on demand)
+- A skill is a folder with a `SKILL.md` (YAML header: name, description; then
+  the instructions). Discovery is upstream's: any `skill/` or `skills/` folder
+  under a config directory, searched for `**/SKILL.md`.
+- Project skill: `.opencode/skills/<name>/SKILL.md` in the project.
+- Global skill (every project of this app): `skills/<name>/SKILL.md` inside
+  the global config dir, next to `environment.md` (one level above `briefs/`).
+- Keep `SKILL.md` short. Reading a long one costs tokens on every later step:
+  read the header and only the sections the task needs.
+- Skills are loaded through the `skill` tool; name the skill you need.
+
+## MCP servers (external tools served by a local process)
+- Register in the project's `opencode.json` (or the global config):
+  `{"mcp": {"<name>": {"type": "local", "command": ["npx", "-y", "<package>"]}}}`
+  `npx` and `bunx` both work; `node` is Node 24 and `npm` is npm 11.
+- Remote `http`/`sse` MCP servers are NOT supported by this runtime (upstream
+  restriction). Only servers that run as a local process can connect.
+- Check the result with the Settings > MCP servers status, or ask `Refresh
+  statuses` there. `failed` shows upstream's own error text: quote it, do not
+  guess the cause.
+- Known Node limit: some installers crash with `Invalid regular expression`
+  on Unicode property escapes such as `\p{L}`. If a Node command fails that
+  way, run the package's JS entry point with `bun` instead
+  (`bun node_modules/<pkg>/<entry>.js`) and say so in your reply.
+- Installs go under the project; never install MCP servers globally into the
+  app's own runtime.
+""".trimIndent() + "\n"
+
         return linkedMapOf(
             "preview.md" to preview,
             "screenshots.md" to screenshots,
             "webapp.md" to webapp,
             "tools.md" to tools,
+            "extensions.md" to extensions,
         )
     }
 }

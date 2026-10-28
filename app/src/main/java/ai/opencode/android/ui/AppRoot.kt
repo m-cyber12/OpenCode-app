@@ -200,6 +200,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     fun markEmptyChatSeen() {
         if (emptyChatFirstLaunch) uiPrefs.edit().putBoolean("empty_chat_launch_seen", true).apply()
     }
+    // v9.42 (owner bug 1, the silent half): a GitHub sync that failed used to
+    // vanish into runCatching. It now says one small line until the next send.
+    var repoSyncError by remember { mutableStateOf("") }
     var projectName by rememberSaveable { mutableStateOf(store.activeName()) }
     var projects by remember { mutableStateOf(emptyList<Project>()) }
     // v9.30 (owner): GitHub projects must LOOK different on the projects page.
@@ -362,6 +365,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // the GitHub/non-GitHub boundary restarts the server with the right env
     // (same restart the Settings token save already uses).
     LaunchedEffect(projectName) {
+        // A GitHub error belongs to the project it happened in. Switching projects
+        // clears the chat's sync line and the clone manager's error, so it can no
+        // longer appear in another chat or on another project's create card.
+        repoSyncError = ""
+        githubClone.dismissError()
         githubClone.ensureProjectBranch(projectDir)
         if (projectName.isNotEmpty() && summary.ready) {
             val want = withContext(Dispatchers.IO) {
@@ -1241,9 +1249,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // ("connectors" from the Projects page's Connect button). Consumed once by
     // SettingsScreen (expand + scroll), then cleared when the page is left.
     var settingsFocus by remember { mutableStateOf<String?>(null) }
-    // v9.42 (owner bug 1, the silent half): a GitHub sync that failed used to
-    // vanish into runCatching. It now says one small line until the next send.
-    var repoSyncError by remember { mutableStateOf("") }
     val sendWaitLabel = when {
         repoSyncing -> stringResource(R.string.chat_wait_repo)
         pendingSend != null -> stringResource(R.string.chat_wait_boot)
@@ -1268,6 +1273,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // IS on disk - but a failure now says so in one small line instead of
     // dying silently inside runCatching.
     suspend fun promptGateAndSend(text: String) {
+        // The environment brief is the app's text: restore and re-lock it before
+        // every prompt, so nothing the agent changed in the last turn survives.
+        withContext(Dispatchers.IO) { runCatching { runtime.relockBrief() } }
         val isGithub = withContext(Dispatchers.IO) {
             ai.opencode.android.github.GithubProjectMeta.has(context, projectName) ||
                 ai.opencode.android.github.GitSync.isGithubProject(projectDir)
@@ -1382,8 +1390,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         val isGit = meta != null || ai.opencode.android.github.GitSync.isGithubProject(dir)
                         if (!isGit) ""
                         else {
+                            // Repo NAME only: the owner's account name stays out of the header.
                             val repo = ai.opencode.android.github.GitSync.originRepo(dir)
                                 .ifEmpty { meta?.repo ?: "" }
+                                .substringAfterLast('/')
                             val branch = ai.opencode.android.github.GitSync.currentBranch(dir)
                                 .ifEmpty { GitClone.projectBranch(projectName) }
                             listOf(repo, branch).filter { it.isNotBlank() }.joinToString(" · ")
@@ -1481,7 +1491,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // problem can never make the whole app look broken.
     val serverAvailability = when {
         uiState.serverReachable -> uiState.errorKind
-        summary.ready -> AgentAvailability.SERVER_UNREACHABLE
+        // v10 (owner): the runtime just reported healthy but the first server
+        // check has not answered yet - that is still the start, not an error.
+        // The red "not responding" line only appears once a real error exists.
+        summary.ready -> if (uiState.error.isBlank()) AgentAvailability.RUNTIME_STARTING else AgentAvailability.SERVER_UNREACHABLE
         // v9.41 (owner item 6): while the runtime is still coming up the
         // status is STARTING - gold, honest, NOT red. Before this, the cold
         // launch fell through to "whatever the last turn's error was" and the
