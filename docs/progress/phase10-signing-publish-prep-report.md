@@ -7382,3 +7382,14 @@ Still open, and NOT decided by the agent:
   them. Non-connected providers stay on the Providers surface, as before.
 - **Device confirmation** of: the sheets' height and feel, the loading card, the
   Projects rows, the non-empty clone, and the Skills card.
+
+### B.107 result (CI, recorded 2026-10-28)
+
+- Code commit `ab2ce1df`. Board **40755815878** (phase10-release) succeeded.
+- `GATES_SUMMARY.txt`: `phase6_ui_fails=0`, `phase10_gate_fails=0`, `phase9_gate_fails=0`.
+- JVM unit tests: 499 run, 0 failures, 0 errors (the B.106 board ran 482). The new
+  tests passed: `GitSyncTest` 7/7 (including the three non-empty-folder tests) and
+  `SkillCatalogTest` 9/9.
+- This is CI and emulator evidence only. The owner's device pass is still
+  ground truth for the sheets' feel, the loading card, the Projects rows, the
+  non-empty clone, and the Skills card. The ICU decision remains open.
