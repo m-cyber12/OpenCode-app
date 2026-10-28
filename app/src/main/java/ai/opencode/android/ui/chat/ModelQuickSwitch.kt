@@ -452,7 +452,6 @@ private fun ThinkingLevelRow(
         ) {
             for ((id, label) in options) {
                 val selected = activeVariant == id
-                val tag = "thinking_level_" + (id.ifEmpty { "default" })
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelLarge,
@@ -466,7 +465,8 @@ private fun ThinkingLevelRow(
                         .heightIn(min = 36.dp)
                         .padding(horizontal = 14.dp, vertical = 8.dp)
                         .semantics {
-                            testTag = tag
+                            // Literal tags, written so the static gate-tag check can see them.
+                            testTag = if (id.isEmpty()) "thinking_level_default" else "thinking_level_$id"
                             role = Role.Button
                             contentDescription = label
                             this.selected = selected
