@@ -124,6 +124,8 @@ class OpenCodeRepository(
         val selected: Transcript.SessionView? get() = transcript.session(selectedSession)
         val selectedInfo: OpenCodeApi.SessionInfo? get() = sessions.firstOrNull { it.id == selectedSession }
         val messages: List<Transcript.Message> get() = selected?.messages ?: emptyList()
+        /** The server's todo list for the selected session (see [Transcript.SessionView.todos]). */
+        val todos: List<TodoItem> get() = selected?.todos ?: emptyList()
         val pendingAsks: List<Transcript.Prompt> get() = selected?.pending ?: emptyList()
         val pendingQuestions: List<Transcript.Question> get() = selected?.questions ?: emptyList()
 
@@ -310,8 +312,12 @@ class OpenCodeRepository(
         scope.launch {
             try {
                 val list = api.messages(sid)
+                // The todo list is repaired with the messages: a missed
+                // `todo.updated` frame must not leave the bar on an old step.
+                val todos = runCatching { api.todos(sid) }.getOrNull()
                 if (_state.value.selectedSession == sid) {
                     transcript.loadMessages(sid, list)
+                    if (todos != null) transcript.setTodos(sid, todos)
                     publishTranscript(status)
                     // v9.42: the finished turn is what a cold restart should
                     // paint first, so the disk copy follows every turn end.
@@ -344,6 +350,7 @@ class OpenCodeRepository(
     fun refresh() {
         scope.launch {
             providersCache?.let { cached ->
+                seedFreeStars(cached)
                 _state.update { st ->
                     if (st.providers != null) st else st.copy(
                         providers = cached,
@@ -386,6 +393,7 @@ class OpenCodeRepository(
                         // (new chat, new project, fresh process), the PERSISTED
                         // last-used model is the answer - not "the first
                         // connected provider" (Phase 10 v4, item 3).
+                        seedFreeStars(p)
                         _state.update { st ->
                             st.copy(
                                 providers = p,
@@ -1104,6 +1112,17 @@ class OpenCodeRepository(
         val list = runCatching { modelPreference?.setStarred(ref, starred) }
             .getOrNull() ?: _state.value.starredModels
         _state.value = _state.value.copy(starredModels = list)
+    }
+
+    /**
+     * v11 (owner, B.108): the Zen "Free Models" start starred - once per install (see
+     * [ModelPreference.seedStarredOnce]); an unstar afterwards sticks.
+     */
+    private fun seedFreeStars(snap: OpenCodeApi.ProviderSnapshot) {
+        val zen = snap.entries.firstOrNull { it.id == OpenCodeApi.ZEN_PROVIDER_ID } ?: return
+        runCatching {
+            modelPreference?.seedStarredOnce(zen.models.map { OpenCodeApi.ModelRef(zen.id, it.id) })
+        }
     }
 
     /** Clear the client-side model hint so the server applies its own default. */

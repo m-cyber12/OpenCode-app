@@ -480,7 +480,12 @@ a package.json.
 - A local server (the only kind this runtime supports):
   `{"mcp": {"<name>": {"type": "local", "command": ["npx", "-y", "<package>"]}}}`
   Optional keys, all upstream's own: `environment` (an object of strings passed to the
-  process), `enabled` (true/false) and `timeout` (milliseconds).
+  process), `enabled` (true/false) and `timeout` (milliseconds). For an `npx` server put
+  `"timeout": 120000` in: the first start downloads the package, which takes longer
+  than the default.
+- The user can add a server in Settings > MCP servers > Add a server by typing only the
+  npm package name (the app builds the config and names the server). If you add one
+  yourself, the same config is what it writes.
 - A secret never goes into a file the user may commit. Put a placeholder in
   `environment`, and tell the user which value to fill in and where.
 - `npx` and `bunx` both work. `node` is Node 24 and `npm` is npm 11.

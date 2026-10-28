@@ -74,6 +74,25 @@ object WorkLog {
                 val meta = ToolMetaParser.parse(part.metadata)
                 val writes = kind == ToolKind.FILE_WRITE || kind == ToolKind.FILE_EDIT
                 if (!writes && !meta.hasDiff) continue
+                // apply_patch touches several files in one call: one row per file,
+                // each with its own patch and counts (owner, B.108).
+                if (meta.files.isNotEmpty()) {
+                    meta.files.forEachIndexed { i, f ->
+                        turn.add(
+                            Change(
+                                partId = "${part.id}#$i",
+                                file = f.path.ifBlank { f.movePath }.ifBlank { part.title },
+                                tool = part.tool,
+                                status = part.status,
+                                additions = f.additions,
+                                deletions = f.deletions,
+                                patch = f.patch,
+                                atMs = if (part.timeStart > 0) part.timeStart else message.createdMs,
+                            ),
+                        )
+                    }
+                    continue
+                }
                 val file = meta.diffFile.ifBlank { inputField(part.input, "filePath", "path") }
                 // v9.35 (owner): a brand-new file written by the `write` tool
                 // carried no server-side diff metadata, so the Diff page framed

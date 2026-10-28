@@ -1424,6 +1424,34 @@ private fun ConnectorsSection(
 
 // ---- MCP -------------------------------------------------------------------
 
+/**
+ * The name a package is added under: its last path segment without the version,
+ * with anything outside `[A-Za-z0-9_-]` turned into `-`. `@scope/server-x@1.2` ->
+ * `server-x`. Never empty (falls back to `server`).
+ */
+internal fun mcpNameForPackage(pkg: String): String {
+    val base = pkg.trim().substringAfterLast('/').substringBefore('@')
+    val safe = base.map { if (it.isLetterOrDigit() && it.code < 128 || it == '-' || it == '_') it else '-' }
+        .joinToString("")
+        .trim('-')
+        .take(40)
+    return safe.ifEmpty { "server" }
+}
+
+/**
+ * The OpenCode MCP config for an npm package, run through `npx -y` so a first start
+ * installs it. `timeout` is generous (ms) because that first install is slow.
+ */
+internal fun mcpPackageConfig(pkg: String, args: String): String {
+    val command = org.json.JSONArray().put("npx").put("-y").put(pkg.trim())
+    args.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }.forEach { command.put(it) }
+    return org.json.JSONObject()
+        .put("type", "local")
+        .put("command", command)
+        .put("timeout", 120000)
+        .toString()
+}
+
 @Composable
 private fun McpSection(
     entries: Map<String, OpenCodeApi.McpEntry>,
@@ -1437,6 +1465,11 @@ private fun McpSection(
     var name by rememberSaveable { mutableStateOf("") }
     var config by rememberSaveable { mutableStateOf("") }
     var persist by rememberSaveable { mutableStateOf(true) }
+    // v11 (owner, B.108): the easy path is one npm package name; the JSON box is the
+    // advanced path, behind a toggle, for servers that are not an npm package.
+    var pkg by rememberSaveable { mutableStateOf("") }
+    var pkgArgs by rememberSaveable { mutableStateOf("") }
+    var advanced by rememberSaveable { mutableStateOf(false) }
     // v8 fix round (owner's issue 7): a config that fails to parse as JSON used
     // to be swallowed silently - the button "did nothing". Now the form stays
     // open and says so.
@@ -1479,8 +1512,68 @@ private fun McpSection(
         for (entry in entries.values) {
             McpRow(entry = entry, onConnect = onConnect, onDisconnect = onDisconnect)
         }
-        if (adding) {
+        if (adding && !advanced) {
             Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.settings_mcp_quick_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.muted,
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = pkg,
+                onValueChange = { pkg = it },
+                label = { Text(stringResource(R.string.settings_mcp_package_label)) },
+                placeholder = { Text(stringResource(R.string.settings_mcp_package_placeholder)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().semantics { testTag = "mcp_package" },
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = pkgArgs,
+                onValueChange = { pkgArgs = it },
+                label = { Text(stringResource(R.string.settings_mcp_args_label)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().semantics { testTag = "mcp_package_args" },
+            )
+            if (pkg.isNotBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.settings_mcp_quick_name, mcpNameForPackage(pkg)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = chat.muted,
+                    modifier = Modifier.semantics { testTag = "mcp_package_name" },
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            OutlinedButton(
+                onClick = {
+                    if (onAdd(mcpNameForPackage(pkg), mcpPackageConfig(pkg, pkgArgs), true)) {
+                        adding = false
+                        pkg = ""
+                        pkgArgs = ""
+                    }
+                },
+                enabled = pkg.isNotBlank(),
+                modifier = Modifier.fillMaxWidth().height(46.dp).semantics { testTag = "mcp_add_package" },
+            ) {
+                Text(stringResource(R.string.settings_mcp_quick_add))
+            }
+            TextButton(
+                onClick = { advanced = true },
+                modifier = Modifier.height(44.dp).semantics { testTag = "mcp_advanced_toggle" },
+            ) {
+                Text(stringResource(R.string.settings_mcp_advanced))
+            }
+        }
+        if (adding && advanced) {
+            Spacer(Modifier.height(8.dp))
+            TextButton(
+                onClick = { advanced = false },
+                modifier = Modifier.height(44.dp).semantics { testTag = "mcp_package_toggle" },
+            ) {
+                Text(stringResource(R.string.settings_mcp_back_to_package))
+            }
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },

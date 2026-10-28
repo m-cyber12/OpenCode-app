@@ -7393,3 +7393,46 @@ Still open, and NOT decided by the agent:
 - This is CI and emulator evidence only. The owner's device pass is still
   ground truth for the sheets' feel, the loading card, the Projects rows, the
   non-empty clone, and the Skills card. The ICU decision remains open.
+
+### B.108 owner round (2026-10-28) - code written, CI NOT yet run at time of writing
+
+Changes in this round, each with its evidence level stated honestly:
+
+- **Account name out of the app (item 1).** `client/AccountRedaction.kt` scrubs the
+  `io.github.<x>.opencode` id to `<app>` and every learned GitHub login to `<owner>` in
+  transcript text, tool input/output/metadata, and shared diagnostics. The
+  `ProjectsScreen` repo picker shows the repo name only. The clone progress line
+  showed a literal `${meta.repo}` (an escape bug, fixed). Evidence: JVM tests
+  `AccountRedactionTest` (not yet run). **Not removed from the code or the store
+  listing:** the applicationId `io.github.mcyber12.opencode` (changing it installs a
+  second app and orphans data), and the two About URLs in `strings.xml`
+  (`settings_about_privacy_url`, `settings_opensource_notices_url`), which are
+  store-listing material. Both need the owner's decision.
+- **Todo list (item 2).** `todo.updated` frames replace the whole list
+  (`Transcript.onTodos`), and `GET /session/:id/todo` repairs it on refresh. The
+  root cause of the old "stuck on the first step" was NOT proven by reading code; this
+  change removes one suspected source (a stale `todowrite` output). Evidence: JVM
+  `TodoAndDiffTest`, not yet run.
+- **Diffs (item 3).** apply_patch reports `files[]` and an aggregate `diff`, with no
+  `filediff`. The app read only `filediff`, so each edit showed a blank row with +0 -0.
+  `ToolMetaParser` now reads `files[]`, and `WorkLog` gives one change row per file.
+  Counting now skips only real `---`/`+++` headers. Evidence: JVM tests, not yet run.
+- **Model menu (items 5-7).** Thinking level is a chip row at the TOP of the menu for
+  the current model. The per-model triangles, the star icons in the menu, and the
+  non-connected providers at the bottom are gone. The Zen free models start starred
+  once (`ModelPreference.seedStarredOnce`, a flag so an unstar sticks). U10 gate
+  contract changed loudly: the level chips replace the triangle rows, and a chip tap no
+  longer picks a model. Evidence: instrumented U10, not yet run.
+- **MCP setup (item 4, partial).** Settings > MCP servers > Add a server takes an npm
+  package name (and optional arguments), builds the `npx -y` config, and sets
+  `timeout: 120000` for the first download. The JSON form stays behind "Advanced". The
+  brief now tells the model to use the same timeout. **Not solved:** the root cause of
+  the owner's `Invalid regular expression` (`\p{L}`) failure is still the bundled Node
+  built with `--with-intl=none`, which is unverified and needs the owner's decision on
+  shipping ICU (APK size).
+- **Transitions (item 9, partial).** Already present: route crossfade (240 ms),
+  collapsible section expand/collapse, the half-screen sheets. A page-by-page audit was
+  NOT done in this round.
+- **arm64 artifact (item 10).** Prepared, not applied:
+  `docs/progress/arm64-artifact-split.md`. The workflow files cannot be pushed by the
+  automation account.

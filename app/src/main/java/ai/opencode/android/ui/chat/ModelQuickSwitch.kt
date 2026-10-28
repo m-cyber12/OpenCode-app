@@ -7,7 +7,10 @@ import ai.opencode.android.ui.common.rememberLoadingPulse
 import ai.opencode.android.ui.theme.ChatTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,9 +30,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -54,6 +57,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextOverflow
@@ -70,19 +74,18 @@ import kotlinx.coroutines.launch
  * popup on every open. The sheet appears on the tap itself (no waiting for the
  * list), and nothing about a collapsed group is composed at all.
  *
- * The order, top to bottom:
- *  1. the CURRENT model, with its active thinking level;
+ * The order, top to bottom (v11, owner B.108):
+ *  1. the CURRENT model, and its THINKING LEVEL as a row of chips right under it
+ *     ("Model default" first, then the levels the server reports);
  *  2. "Free Models" (Zen), collapsible, expanded by default;
- *  3. every CONNECTED provider, pinned directly under Zen. Each is a fold header
- *     (owner: "pin connected providers directly below Zen"), folded by default so
- *     the starred shortlist below it stays on screen;
- *  4. the starred shortlist;
- *  5. every other provider, a fold header too, folded by default, so a long
- *     catalog never crowds the menu;
- *  6. one "choose models in Settings" entry.
+ *  3. every CONNECTED provider, pinned directly under Zen, each a fold header,
+ *     folded by default so the starred shortlist stays on screen;
+ *  4. the starred shortlist - the only place a star is shown in this menu is the
+ *     Settings Models card, not here;
+ *  5. one "choose models in Settings" entry.
  *
- * A model with thinking levels shows a small triangle; tapping it opens the
- * level list inline, and a level tap picks the model AND its level in one go.
+ * Providers that are not connected are NOT listed here any more: they are added in
+ * Settings. There are no per-model triangles and no inline level lists.
  *
  * Pure: every list is a value and every choice is a callback, which is what
  * lets the Phase 6 gates render it with fabricated state.
@@ -158,8 +161,6 @@ fun ModelQuickSwitch(
     freeModels: List<QuickModel> = emptyList(),
     /** Thinking variants for any listed model, keyed `provider/model`. */
     variantsOf: (String, String) -> List<String> = { _, _ -> emptyList() },
-    /** v9.41: pick model AND level in one go (a level tap inside a row). */
-    onPickWithVariant: (String, String, String) -> Unit = { p, m, _ -> onPick(p, m) },
     /**
      * v9.42 (owner): "if we can't make model loading any faster, at least
      * replace 'No Model' with 'Loading' and an animation". True while the
@@ -236,24 +237,25 @@ fun ModelQuickSwitch(
         )
     }
 
+    // v11 (owner, B.108): the levels shown are the CURRENT model's own.
+    val levelsOfCurrent = current?.let { c -> variants.ifEmpty { variantsOf(c.providerID, c.modelID) } }.orEmpty()
+
     if (open) {
         HalfScreenSheet(tag = "model_quick_switch_menu", onDismiss = { open = false }) { close ->
             QuickModelList(
                 current = current,
                 currentText = currentText,
                 activeVariant = activeVariant,
+                levels = levelsOfCurrent,
+                modelsLoading = modelsLoading,
                 starred = starred,
                 freeModels = freeModels,
                 providerGroups = providerGroups,
-                variantsOf = variantsOf,
                 onPick = { p, m ->
                     close()
                     onPick(p, m)
                 },
-                onPickWithVariant = { p, m, v ->
-                    close()
-                    onPickWithVariant(p, m, v)
-                },
+                onPickVariant = onPickVariant,
                 onOpenSettings = {
                     close()
                     onOpenSettings()
@@ -263,25 +265,31 @@ fun ModelQuickSwitch(
     }
 }
 
-/** The lazy body of the sheet. Every group is a lazy section; a fold costs nothing. */
+/**
+ * The lazy body of the sheet. Every group is a lazy section; a fold costs nothing.
+ *
+ * v11 (owner, B.108): the thinking level sits at the TOP, beside the current model,
+ * as a row of level chips. The per-model triangles and inline level lists are gone,
+ * and so are the stars (the star icon belongs to Settings' Models card only). The
+ * providers that are not connected no longer appear at the bottom of the menu.
+ */
 @Composable
 private fun QuickModelList(
     current: OpenCodeApi.ModelRef?,
     currentText: String,
     activeVariant: String,
+    levels: List<String>,
+    modelsLoading: Boolean,
     starred: List<OpenCodeApi.ModelRef>,
     freeModels: List<QuickModel>,
     providerGroups: List<QuickProvider>,
-    variantsOf: (String, String) -> List<String>,
     onPick: (String, String) -> Unit,
-    onPickWithVariant: (String, String, String) -> Unit,
+    onPickVariant: (String) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val chat = ChatTheme.chat
-    // One expanded row at a time across the whole sheet: the key names it.
-    var expandedKey by remember { mutableStateOf<String?>(null) }
     var freeOpen by remember { mutableStateOf(true) } // expanded by default (owner)
-    // Every provider group folds by default (a tap opens it). Keyed by provider id.
+    // Every connected provider group folds by default (a tap opens it). Keyed by provider id.
     val groupOpen = remember { mutableStateMapOf<String, Boolean>() }
     fun isOpen(group: QuickProvider): Boolean = groupOpen[group.id] ?: false
 
@@ -289,7 +297,7 @@ private fun QuickModelList(
         modifier = Modifier.fillMaxSize().semantics { testTag = "model_quick_list" },
         contentPadding = PaddingValues(bottom = 24.dp),
     ) {
-        // ---- the current model, and its active thinking level ------------
+        // ---- the current model, and its thinking level (top of the menu) ----
         if (current != null) {
             item(key = "current") {
                 val variantSuffix = activeVariant.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
@@ -303,6 +311,21 @@ private fun QuickModelList(
                             .padding(horizontal = 20.dp, vertical = 10.dp)
                             .semantics { testTag = "model_current_row" },
                     )
+                    if (levels.isEmpty() && !modelsLoading) {
+                        // The catalog has answered and this model reports no levels.
+                        // While it is still loading, the menu says nothing (no claim).
+                        Text(
+                            text = stringResource(R.string.chat_thinking_empty),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = chat.muted,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 6.dp)
+                                .semantics { testTag = "thinking_empty" },
+                        )
+                    } else if (levels.isNotEmpty()) {
+                        ThinkingLevelRow(levels = levels, activeVariant = activeVariant, onPick = onPickVariant)
+                    }
                     HorizontalDivider(color = chat.toolBorder)
                 }
             }
@@ -322,15 +345,8 @@ private fun QuickModelList(
                 itemsIndexed(freeModels, key = { i, _ -> "free_$i" }) { index, qm ->
                     ModelLineRow(
                         model = qm,
-                        variantsOf = variantsOf,
-                        expanded = expandedKey == "free_$index",
-                        onToggleExpand = {
-                            expandedKey = if (expandedKey == "free_$index") null else "free_$index"
-                        },
-                        onPickModel = { onPick(qm.ref.providerID, qm.ref.modelID) },
-                        onPickLevel = { v -> onPickWithVariant(qm.ref.providerID, qm.ref.modelID, v) },
+                        onPick = { onPick(qm.ref.providerID, qm.ref.modelID) },
                         rowTag = "model_free_$index",
-                        levelTag = "free_vt_$index",
                         current = current,
                     )
                 }
@@ -343,12 +359,8 @@ private fun QuickModelList(
                 group = group,
                 open = isOpen(group),
                 onToggle = { groupOpen[group.id] = !isOpen(group) },
-                expandedKey = expandedKey,
-                onExpandKey = { k -> expandedKey = if (expandedKey == k) null else k },
-                variantsOf = variantsOf,
                 current = current,
                 onPick = onPick,
-                onPickWithVariant = onPickWithVariant,
             )
         }
 
@@ -378,34 +390,12 @@ private fun QuickModelList(
                 val pid = ref.providerID
                 val mid = ref.modelID
                 ModelLineRow(
-                    model = QuickModel(ref, ModelRefCodec.encode(ref), variantsOf(pid, mid)),
-                    variantsOf = variantsOf,
-                    expanded = expandedKey == "star_$index",
-                    onToggleExpand = {
-                        expandedKey = if (expandedKey == "star_$index") null else "star_$index"
-                    },
-                    onPickModel = { onPick(pid, mid) },
-                    onPickLevel = { v -> onPickWithVariant(pid, mid, v) },
+                    model = QuickModel(ref, ModelRefCodec.encode(ref)),
+                    onPick = { onPick(pid, mid) },
                     rowTag = "model_pick_$index",
-                    levelTag = "star_vt_$index",
                     current = current,
                 )
             }
-        }
-
-        // ---- every other provider, folded by default ----------------------
-        for (group in providerGroups.filter { !it.connected }) {
-            quickProviderGroup(
-                group = group,
-                open = isOpen(group),
-                onToggle = { groupOpen[group.id] = !isOpen(group) },
-                expandedKey = expandedKey,
-                onExpandKey = { k -> expandedKey = if (expandedKey == k) null else k },
-                variantsOf = variantsOf,
-                current = current,
-                onPick = onPick,
-                onPickWithVariant = onPickWithVariant,
-            )
         }
 
         item(key = "manage") {
@@ -421,13 +411,6 @@ private fun QuickModelList(
                     },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = null,
-                    tint = chat.muted.copy(alpha = 0.7f),
-                    modifier = Modifier.size(15.dp).clearAndSetSemantics { },
-                )
-                Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.chat_model_open_settings), style = MaterialTheme.typography.bodyMedium)
             }
         }
@@ -435,22 +418,78 @@ private fun QuickModelList(
 }
 
 /**
+ * The thinking-level chips for the CURRENT model: "Model default" first (the empty
+ * id), then each level the server reports, spelled as the server spells it. The
+ * active one is filled. A level tap sets it for the next send and leaves the menu open.
+ */
+@Composable
+private fun ThinkingLevelRow(
+    levels: List<String>,
+    activeVariant: String,
+    onPick: (String) -> Unit,
+) {
+    val chat = ChatTheme.chat
+    val primary = MaterialTheme.colorScheme.primary
+    val defaultLabel = stringResource(R.string.chat_thinking_default)
+    val options = listOf("" to defaultLabel) + levels.map { it to it }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp)
+            .semantics { testTag = "thinking_level_row" },
+    ) {
+        Text(
+            text = stringResource(R.string.chat_thinking_title),
+            style = MaterialTheme.typography.labelSmall,
+            color = chat.muted,
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 6.dp)
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            for ((id, label) in options) {
+                val selected = activeVariant == id
+                val tag = "thinking_level_" + (id.ifEmpty { "default" })
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (selected) primary else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(if (selected) primary.copy(alpha = 0.14f) else chat.toolContainer)
+                        .border(1.dp, if (selected) primary else chat.toolBorder, RoundedCornerShape(50))
+                        .clickable { onPick(id) }
+                        .heightIn(min = 36.dp)
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                        .semantics {
+                            testTag = tag
+                            role = Role.Button
+                            contentDescription = label
+                            this.selected = selected
+                        },
+                )
+            }
+        }
+    }
+}
+
+/**
  * One provider group below Zen: a fold header, and - only while it is open - its
- * models. Tags are `conn_<provider>_<i>` or `other_<provider>_<i>`, deliberately
- * outside the `model_pick_` and `star_vt_` families the starred list owns.
+ * models. Tags are `conn_<provider>_pick_<i>`, outside the `model_pick_` family the
+ * starred list owns.
  */
 private fun LazyListScope.quickProviderGroup(
     group: QuickProvider,
     open: Boolean,
     onToggle: () -> Unit,
-    expandedKey: String?,
-    onExpandKey: (String) -> Unit,
-    variantsOf: (String, String) -> List<String>,
     current: OpenCodeApi.ModelRef?,
     onPick: (String, String) -> Unit,
-    onPickWithVariant: (String, String, String) -> Unit,
 ) {
-    val prefix = (if (group.connected) "conn_" else "other_") + group.id
+    val prefix = "conn_" + group.id
     item(key = "head_$prefix") {
         QuickGroupHeader(
             title = group.name,
@@ -461,16 +500,10 @@ private fun LazyListScope.quickProviderGroup(
     }
     if (open) {
         itemsIndexed(group.models, key = { i, _ -> "${prefix}_$i" }) { index, qm ->
-            val key = "${prefix}_$index"
             ModelLineRow(
                 model = qm,
-                variantsOf = variantsOf,
-                expanded = expandedKey == key,
-                onToggleExpand = { onExpandKey(key) },
-                onPickModel = { onPick(qm.ref.providerID, qm.ref.modelID) },
-                onPickLevel = { v -> onPickWithVariant(qm.ref.providerID, qm.ref.modelID, v) },
+                onPick = { onPick(qm.ref.providerID, qm.ref.modelID) },
                 rowTag = "${prefix}_pick_$index",
-                levelTag = "${prefix}_vt_$index",
                 current = current,
             )
         }
@@ -516,119 +549,48 @@ private fun QuickGroupHeader(
 }
 
 /**
- * One model line: a star (gold when it is the active model), the name, and for
- * thinking-capable models a TRIANGLE that opens the level list inline. The name
- * and the triangle are SIBLINGS, not one clickable parent, so each keeps its own
- * tag in the semantics tree.
+ * One model line: the name, and a check mark on the active model. No star and no
+ * triangle here (v11, owner B.108): thinking levels live at the top of the menu.
  */
 @Composable
 private fun ModelLineRow(
     model: QuickModel,
-    variantsOf: (String, String) -> List<String>,
-    expanded: Boolean,
-    onToggleExpand: () -> Unit,
-    onPickModel: () -> Unit,
-    onPickLevel: (String) -> Unit,
+    onPick: () -> Unit,
     rowTag: String,
-    levelTag: String,
     current: OpenCodeApi.ModelRef?,
 ) {
-    val chat = ChatTheme.chat
+    val primary = MaterialTheme.colorScheme.primary
     val isSelected = current != null &&
         current.providerID == model.ref.providerID && current.modelID == model.ref.modelID
-    val levels = model.variants.ifEmpty { variantsOf(model.ref.providerID, model.ref.modelID) }
-    // Read here, not inside a semantics block: stringResource is a composable call.
-    val triangleLabel = stringResource(R.string.chat_thinking_expand) + ": " + model.label
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .heightIn(min = 48.dp)
-                .clickable(onClick = onPickModel)
-                .padding(horizontal = 8.dp, vertical = 10.dp)
-                .semantics {
-                    testTag = rowTag
-                    contentDescription = model.label
-                    role = Role.Button
-                },
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                // v9.41 (owner item 21): a REAL star replaces the checkmark.
-                // (material-icons-core has Star but no StarBorder, so the
-                // unstarred form is the same star drawn quiet.)
-                imageVector = Icons.Filled.Star,
-                contentDescription = null,
-                tint = if (isSelected) MaterialTheme.colorScheme.primary else chat.muted.copy(alpha = 0.45f),
-                modifier = Modifier.size(14.dp).clearAndSetSemantics { },
-            )
-            Spacer(Modifier.width(10.dp))
-            Text(
-                model.label,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-        }
-        if (levels.isNotEmpty()) {
-            // The little triangle: opens/closes the inline level picker.
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onToggleExpand)
-                    .semantics {
-                        testTag = "${levelTag}_toggle"
-                        role = Role.Button
-                        contentDescription = triangleLabel
-                    },
-            ) {
-                Icon(
-                    imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = chat.muted,
-                    modifier = Modifier.size(22.dp).clearAndSetSemantics { },
-                )
-            }
-        }
-    }
-    if (expanded && levels.isNotEmpty()) {
-        levels.forEachIndexed { index, id ->
-            ThinkingRow(
-                label = id,
-                onClick = { onPickLevel(id) },
-                modifier = Modifier.semantics { testTag = "${levelTag}_$index" },
-            )
-        }
-    }
-}
-
-/** The level-list row under a model: the variant id as the server spells it. */
-@Composable
-private fun ThinkingRow(
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 44.dp)
-            .clickable(onClick = onClick)
-            .padding(start = 44.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
-            .then(modifier),
+            .heightIn(min = 48.dp)
+            .clickable(onClick = onPick)
+            .padding(horizontal = 20.dp, vertical = 10.dp)
+            .semantics {
+                testTag = rowTag
+                contentDescription = model.label
+                role = Role.Button
+                selected = isSelected
+            },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = label,
+            text = model.label,
             style = MaterialTheme.typography.bodyMedium,
+            color = if (isSelected) primary else MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
         )
+        if (isSelected) {
+            Icon(
+                imageVector = Icons.Filled.Check,
+                contentDescription = null,
+                tint = primary,
+                modifier = Modifier.size(18.dp).clearAndSetSemantics { },
+            )
+        }
     }
 }

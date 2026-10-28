@@ -46,6 +46,13 @@ interface ModelPreference {
 
     /** Star or unstar one model. Returns the new shortlist. */
     fun setStarred(ref: OpenCodeApi.ModelRef, starred: Boolean): List<OpenCodeApi.ModelRef>
+
+    /**
+     * v11 (owner, B.108): the free (Zen) models start starred. Runs ONCE - the first
+     * time a non-empty free list is seen - so a model the user unstars stays unstarred.
+     * Returns the shortlist after the seed.
+     */
+    fun seedStarredOnce(defaults: List<OpenCodeApi.ModelRef>): List<OpenCodeApi.ModelRef>
 }
 
 /**
@@ -108,10 +115,23 @@ class PrefsModelPreference(private val prefs: SharedPreferences) : ModelPreferen
         return current
     }
 
+    override fun seedStarredOnce(defaults: List<OpenCodeApi.ModelRef>): List<OpenCodeApi.ModelRef> {
+        if (defaults.isEmpty() || prefs.getBoolean(KEY_FREE_SEEDED, false)) return starred()
+        val current = starred().toMutableList()
+        val keys = current.map { ModelRefCodec.encode(it) }.toMutableSet()
+        defaults.forEach { if (keys.add(ModelRefCodec.encode(it))) current.add(it) }
+        prefs.edit()
+            .putString(KEY_STARRED, current.joinToString("\n") { ModelRefCodec.encode(it) })
+            .putBoolean(KEY_FREE_SEEDED, true)
+            .apply()
+        return current
+    }
+
     companion object {
         const val PREFS = "model_prefs"
         const val KEY_LAST_MODEL = "last_model"
         const val KEY_STARRED = "starred_models"
+        const val KEY_FREE_SEEDED = "free_models_starred_v11"
 
         /** The app's store: one file, no secrets in it (only ids the server reported). */
         fun get(context: Context): ModelPreference =
@@ -138,6 +158,16 @@ class InMemoryModelPreference(
     }
 
     override fun starred(): List<OpenCodeApi.ModelRef> = list
+
+    private var freeSeeded = false
+
+    override fun seedStarredOnce(defaults: List<OpenCodeApi.ModelRef>): List<OpenCodeApi.ModelRef> {
+        if (defaults.isEmpty() || freeSeeded) return list
+        freeSeeded = true
+        val keys = list.map { ModelRefCodec.encode(it) }.toMutableSet()
+        list = list + defaults.filter { keys.add(ModelRefCodec.encode(it)) }
+        return list
+    }
 
     override fun setStarred(ref: OpenCodeApi.ModelRef, starred: Boolean): List<OpenCodeApi.ModelRef> {
         val key = ModelRefCodec.encode(ref)

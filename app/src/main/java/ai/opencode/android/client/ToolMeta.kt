@@ -15,6 +15,11 @@ import org.json.JSONObject
  *    deletions}, diagnostics}`.
  *  * read/glob/grep/webfetch: `title` + `state.output`, no diff.
  *
+ *  * apply_patch (`tool/apply_patch.ts`): NO `filediff`. Its metadata is one
+ *    aggregate `diff` for the whole patch plus `files: [{filePath, relativePath,
+ *    type, patch, additions, deletions, movePath}]`, one entry per file. Reading
+ *    only `filediff` showed those edits as a blank row with "+0 -0" (owner, B.108).
+ *
  * Parsing is pure (org.json only) so it is covered by JVM unit tests with the real
  * field names rather than being discovered on a device.
  */
@@ -28,9 +33,20 @@ data class ToolMeta(
     val additions: Int = 0,
     val deletions: Int = 0,
     val diagnosticsCount: Int = 0,
+    /** One entry per file for multi-file tools (apply_patch); empty otherwise. */
+    val files: List<ToolFile> = emptyList(),
 ) {
-    val hasDiff: Boolean get() = diff.isNotBlank() || additions > 0 || deletions > 0
+    val hasDiff: Boolean get() = diff.isNotBlank() || additions > 0 || deletions > 0 || files.isNotEmpty()
 }
+
+/** One file of a multi-file edit (apply_patch's `files` entry). */
+data class ToolFile(
+    val path: String,
+    val patch: String,
+    val additions: Int,
+    val deletions: Int,
+    val movePath: String = "",
+)
 
 object ToolMetaParser {
 
@@ -46,17 +62,80 @@ object ToolMetaParser {
                 diagCount += diagnostics.optJSONArray(k)?.length() ?: 0
             }
         }
+        val files = parseFiles(o.optJSONArray("files"))
+        val diff = o.optString("diff").ifBlank { filediff?.optString("patch") ?: "" }
+        // Counts: the server's own numbers when it sent them (edit/write `filediff`);
+        // otherwise the sum over apply_patch's files; otherwise counted from the patch
+        // itself, so a tool that sends a diff but no counts still shows real +/-.
+        val additions: Int
+        val deletions: Int
+        when {
+            filediff != null -> {
+                additions = filediff.optInt("additions")
+                deletions = filediff.optInt("deletions")
+            }
+            files.isNotEmpty() -> {
+                additions = files.sumOf { it.additions }
+                deletions = files.sumOf { it.deletions }
+            }
+            else -> {
+                val counted = countPatch(diff)
+                additions = counted.first
+                deletions = counted.second
+            }
+        }
         return ToolMeta(
             output = o.optString("output"),
             exit = if (o.has("exit") && !o.isNull("exit")) o.optInt("exit") else null,
             truncated = o.optBoolean("truncated"),
             outputPath = o.optString("outputPath"),
-            diff = o.optString("diff").ifBlank { filediff?.optString("patch") ?: "" },
+            diff = diff,
             diffFile = filediff?.optString("file") ?: o.optString("filePath"),
-            additions = filediff?.optInt("additions") ?: 0,
-            deletions = filediff?.optInt("deletions") ?: 0,
+            additions = additions,
+            deletions = deletions,
             diagnosticsCount = diagCount,
+            files = files,
         )
+    }
+
+    private fun parseFiles(arr: org.json.JSONArray?): List<ToolFile> {
+        if (arr == null) return emptyList()
+        val out = ArrayList<ToolFile>(arr.length())
+        for (i in 0 until arr.length()) {
+            val f = arr.optJSONObject(i) ?: continue
+            val path = f.optString("relativePath").ifBlank { f.optString("filePath") }
+            val patch = f.optString("patch")
+            val add = f.optInt("additions", -1).takeIf { it >= 0 } ?: countPatch(patch).first
+            val del = f.optInt("deletions", -1).takeIf { it >= 0 } ?: countPatch(patch).second
+            out.add(ToolFile(path = path, patch = patch, additions = add, deletions = del, movePath = f.optString("movePath")))
+        }
+        return out
+    }
+
+    /**
+     * Added and removed line counts of a unified patch. A file header is a `---` line
+     * immediately followed by its `+++` line (whatever the names are); those two lines
+     * are not changes. Any other `-` line is a removal even if its text begins with
+     * `--` (an SQL comment removed from a file reads as `--- comment`).
+     */
+    fun countPatch(patch: String): Pair<Int, Int> {
+        val lines = patch.lines()
+        var add = 0
+        var del = 0
+        var i = 0
+        while (i < lines.size) {
+            val line = lines[i]
+            if (line.startsWith("--- ") && i + 1 < lines.size && lines[i + 1].startsWith("+++ ")) {
+                i += 2
+                continue
+            }
+            when {
+                line.startsWith("+") -> add++
+                line.startsWith("-") -> del++
+            }
+            i++
+        }
+        return add to del
     }
 }
 

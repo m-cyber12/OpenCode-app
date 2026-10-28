@@ -628,7 +628,8 @@ private fun CreateProjectCard(
                             .semantics { testTag = "github_repo_dropdown" },
                     ) {
                         Text(
-                            text = pickedRepo?.fullName ?: stringResource(
+                            // v11 (owner, B.108): the repo NAME only - no account name on screen.
+                            text = pickedRepo?.name ?: stringResource(
                                 if (githubBusy && githubRepos.isEmpty()) {
                                     R.string.projects_github_loading
                                 } else {
@@ -649,7 +650,7 @@ private fun CreateProjectCard(
                                 text = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
-                                            text = repo.fullName,
+                                            text = repo.name,
                                             style = MaterialTheme.typography.bodySmall,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,

@@ -331,10 +331,6 @@ fun ChatScreen(
             freeModels = freeQuick,
             providerGroups = providerGroups,
             variantsOf = ::variantsOf,
-            onPickWithVariant = { pid, mid, v ->
-                onPickModel(pid, mid)
-                onPickThinking(v)
-            },
         )
 
         StatusArea(state = state, runtime = runtime, availability = availability, onDismissBanner = onDismissBanner)
@@ -531,7 +527,6 @@ private fun ChatHeader(
     /** v11: connected providers (pinned under Zen) and the rest, folded. */
     providerGroups: List<QuickProvider> = emptyList(),
     variantsOf: (String, String) -> List<String> = { _, _ -> emptyList() },
-    onPickWithVariant: (String, String, String) -> Unit = { p, m, _ -> onPickModel(p, m) },
     onOpenProjects: () -> Unit,
     onNewSession: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -597,7 +592,6 @@ private fun ChatHeader(
             
                 freeModels = freeModels,
                 variantsOf = variantsOf,
-                onPickWithVariant = onPickWithVariant,
                 modelsLoading = modelsLoading,
                 providerGroups = providerGroups,
             )
@@ -1003,16 +997,23 @@ private fun StatusArea(
         // So: walk ALL of the turn's todo calls newest-first and keep the
         // first one whose PARSE is non-empty - the previous complete list
         // stays on the bar until the new one has fully arrived.
-        val todos = remember(state.messages) {
-            val msgs = state.messages
-            val turnStart = msgs.indexOfLast { it.role == "user" }
-            val turn = if (turnStart >= 0) msgs.subList(turnStart + 1, msgs.size) else emptyList()
-            turn.asReversed().asSequence()
-                .flatMap { m -> m.parts.asReversed().asSequence() }
-                .filter { p -> ToolKinds.of(p.tool) == ToolKind.TODO && p.input.isNotBlank() }
-                .map { p -> TodoParser.parse(p.input, p.metadata) }
-                .firstOrNull { it.isNotEmpty() }
-                ?: emptyList()
+        // v11 (owner, B.108): the server's own todo list first (todo.updated and
+        // the repair read keep it current). The part-based parse stays as the
+        // fallback for a session whose list has not arrived yet.
+        val todos = remember(state.todos, state.messages) {
+          if (state.todos.isNotEmpty()) {
+            state.todos
+          } else {
+              val msgs = state.messages
+              val turnStart = msgs.indexOfLast { it.role == "user" }
+              val turn = if (turnStart >= 0) msgs.subList(turnStart + 1, msgs.size) else emptyList()
+              turn.asReversed().asSequence()
+                  .flatMap { m -> m.parts.asReversed().asSequence() }
+                  .filter { p -> ToolKinds.of(p.tool) == ToolKind.TODO && p.input.isNotBlank() }
+                  .map { p -> TodoParser.parse(p.input, p.metadata) }
+                  .firstOrNull { it.isNotEmpty() }
+                  ?: emptyList()
+          }
         }
         BusyBar(todos)
     }

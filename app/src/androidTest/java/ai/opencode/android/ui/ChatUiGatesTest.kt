@@ -2275,36 +2275,24 @@ class ChatUiGatesTest {
         val listed = countPrefix("model_pick_") == starred.size
         val idsShown = onScreenText().contains("openai/gpt-4o-mini") &&
             onScreenText().contains("gemini-2.5-flash")
-        // v9.42 (owner): the menu is minimal - NO thinking rows in the menu
-        // body any more. The levels are behind the row's triangle: starred row
-        // 0 is the current model (`openrouter/openai/gpt-4o-mini`, which the
-        // fixture gives four variants), so its triangle must exist and must
-        // open exactly those four level rows - the server's own ids, no more.
-        val thinkingSectionGone = !exists("thinking_default") &&
-            countPrefix("thinking_pick_") == 0 && !exists("thinking_empty")
-        val triangleShown = exists("star_vt_0_toggle")
-        rule.onAllNodesWithTag("star_vt_0_toggle")[0].performClick()
-        rule.waitForIdle()
-        // the level rows are `star_vt_0_<i>`; the triangle shares the prefix,
-        // so the count is the levels plus that one triangle.
-        val levelsOpened = countPrefix("star_vt_0_") == variantIds.size + 1
+        // v11 (owner, B.108): the thinking levels are a chip row at the TOP of the
+        // menu, for the CURRENT model (starred row 0 here, which the fixture gives
+        // four variants). There are no per-model triangles and no inline lists.
+        val levelRowAtTop = exists("thinking_level_row") && exists("thinking_level_default") &&
+            variantIds.all { exists("thinking_level_$it") }
+        val noTriangles = !exists("star_vt_0_toggle") && countPrefix("star_vt_") == 0
         shot("23-model-quick-switch.png")
 
-        // picking a level calls back with the SERVER'S OWN id and closes the menu
-        rule.onAllNodesWithTag("star_vt_0_2")[0].performClick()
+        // a level chip sets the level (the server's own id) and does NOT pick a model
+        rule.onAllNodesWithTag("thinking_level_high")[0].performClick()
         rule.waitForIdle()
-        // v9.41 contract kept: a level tap inside a row picks the MODEL and
-        // the level in one gesture (so modelPicks grows here too).
-        val thinkingPicked = thinkingPicks == listOf("high") && modelPicks == 1 &&
-            pickedModels.contains("openrouter/openai/gpt-4o-mini")
+        val thinkingPicked = thinkingPicks == listOf("high") && modelPicks == 0
 
-        // picking a model calls back with the two halves, and does NOT require Settings
-        rule.onAllNodesWithTag("model_quick_switch")[0].performClick()
-        rule.waitForIdle()
+        // picking a model (the menu is still open) calls back with the two halves,
+        // and does NOT require Settings
         rule.onAllNodesWithTag("model_pick_1")[0].performClick()
         rule.waitForIdle()
-        val picked = modelPicks == 2 && pickedModels.contains("google/gemini-2.5-flash")
-        val noSettingsTrip = openSettings == 0
+        val picked = modelPicks == 1 && pickedModels.contains("google/gemini-2.5-flash")
 
         // the build/plan switch, left of the status orb: two real agents, the
         // pick reports upstream's own name, and the chip shows the active mode
@@ -2401,22 +2389,24 @@ class ChatUiGatesTest {
         rule.waitForIdle()
         val emptyExplained = exists("model_quick_switch_empty") &&
             onScreenText().contains(context.getString(R.string.chat_model_empty))
-        val thinkingEmptyExplained = !exists("thinking_empty") && !exists("thinking_default")
+        // the catalog is still loading here (providers == null): no level row, and no
+        // "lists no thinking levels" claim either
+        val thinkingEmptyExplained = !exists("thinking_empty") && !exists("thinking_level_row")
         rule.onAllNodesWithTag("model_quick_switch_settings")[0].performClick()
         rule.waitForIdle()
         val settingsOffered = openSettings == 1
 
-        val settled = modelPicks == 2 && pickedModels.size == 2 && thinkingPicks.size == 1
+        val settled = modelPicks == 1 && pickedModels.size == 1 && thinkingPicks.size == 1
         gate(
             "U10",
             shown && labelNamesCurrent && menuOpen && listed && idsShown && picked && noSettingsTrip &&
-                thinkingSectionGone && triangleShown && levelsOpened && thinkingPicked && thinkingEmptyExplained &&
+                levelRowAtTop && noTriangles && thinkingPicked && thinkingEmptyExplained &&
                 modeShown && modeMenu && modePicked && modeLabelled &&
                 approveOffered && approveWired && planPathHidden &&
                 emptyExplained && settingsOffered && settled,
             "shown=$shown label=$labelNamesCurrent menu=$menuOpen listed=$listed/$idsShown " +
                 "picked=$picked/$pickedModels settingsTrip=$noSettingsTrip " +
-                "thinking=gone=$thinkingSectionGone triangle=$triangleShown levels=$levelsOpened " +
+                "levelRow=$levelRowAtTop noTriangles=$noTriangles " +
                 "picked=$thinkingPicks emptyNoRows=$thinkingEmptyExplained " +
                 "mode=$modeShown/$modeMenu/$modePicked/$modePicks label=$modeLabelled " +
                 "planApprove=$approveOffered/$approveWired pathHidden=$planPathHidden " +

@@ -31,6 +31,7 @@ object GithubProjectMeta {
     }
 
     fun write(context: Context, project: String, repo: String) {
+        ai.opencode.android.client.AccountRedaction.rememberRepo(repo)
         runCatching {
             val f = fileFor(context, project) ?: return
             f.parentFile?.mkdirs()
@@ -43,6 +44,8 @@ object GithubProjectMeta {
         if (!f.isFile) return null
         val o = JSONObject(f.readText())
         val repo = o.optString("repo")
+        // Learned here too, so an app restart scrubs the owner's name from the start.
+        ai.opencode.android.client.AccountRedaction.rememberRepo(repo)
         if (repo.isEmpty()) null else Meta(repo)
     }.getOrNull()
 

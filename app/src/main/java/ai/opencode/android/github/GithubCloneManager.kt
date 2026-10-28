@@ -56,7 +56,7 @@ class GithubCloneManager(
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(
                     phase = Phase.ERROR,
-                    error = t.message ?: t.javaClass.simpleName,
+                    error = ai.opencode.android.client.AccountRedaction.scrub(t.message ?: t.javaClass.simpleName),
                 )
             }
         }
@@ -88,7 +88,7 @@ class GithubCloneManager(
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(
                     phase = Phase.ERROR,
-                    error = t.message ?: t.javaClass.simpleName,
+                    error = ai.opencode.android.client.AccountRedaction.scrub(t.message ?: t.javaClass.simpleName),
                 )
             }
         }
@@ -135,7 +135,7 @@ class GithubCloneManager(
         try {
             withContext(Dispatchers.IO) {
                 if (!File(dir, ".git").isDirectory && meta != null) {
-                    _state.value = _state.value.copy(progress = "cloning ${'$'}{meta.repo}")
+                    _state.value = _state.value.copy(progress = "cloning ${meta.repo.substringAfterLast('/')}")
                     GitSync.cloneOnly(
                         cloneUrl = GithubRepos.cloneUrl(webBase, meta.repo),
                         targetDir = dir,
@@ -153,7 +153,7 @@ class GithubCloneManager(
         } catch (t: Throwable) {
             _state.value = _state.value.copy(
                 phase = Phase.ERROR, progress = "",
-                error = t.message ?: t.javaClass.simpleName,
+                error = ai.opencode.android.client.AccountRedaction.scrub(t.message ?: t.javaClass.simpleName),
             )
         }
     }

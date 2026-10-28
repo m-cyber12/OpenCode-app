@@ -131,6 +131,13 @@ class Transcript {
     private val messages = HashMap<String, Message>()
     private val sessionOrder = mutableListOf<String>()
 
+    /**
+     * The server's todo list per session, from `todo.updated` frames and the
+     * `GET /session/:id/todo` repair read. Authoritative: it is what upstream
+     * stored, not a reading of the tool parts (which can lag a frame behind).
+     */
+    private val todoLists = HashMap<String, List<TodoItem>>()
+
     /** Sessions with an in-flight turn, per `session.status`/`session.idle`. */
     private val busy = HashMap<String, Boolean>()
     /** Pending permission asks by session (server also exposes GET /permission). */
@@ -156,6 +163,7 @@ class Transcript {
                 questions = questions.values.filter { it.sessionID == sid },
                 error = errors[sid],
                 retry = retries[sid],
+                todos = todoLists[sid] ?: emptyList(),
             )
         },
     )
@@ -168,6 +176,8 @@ class Transcript {
         val questions: List<Question> = emptyList(),
         val error: TurnError? = null,
         val retry: RetryInfo? = null,
+        /** The server's todo list for this session (empty until one arrives). */
+        val todos: List<TodoItem> = emptyList(),
     )
 
     data class Snapshot(val sessions: List<SessionView>) {
@@ -226,6 +236,7 @@ class Transcript {
             type == "message.part.removed" -> onPartRemoved(props)
             type == "message.updated" -> onMessageUpdated(props)
             type == "session.updated" -> onSessionUpdated(props)
+            type == "todo.updated" -> onTodos(props)
             type == "session.deleted" -> onSessionDeleted(props)
             type == "session.error" -> onSessionError(props)
             EventFrame.isSessionStatus(type) -> onSessionStatus(props)
@@ -331,6 +342,29 @@ class Transcript {
         parts[idx] = parts[idx].copy(text = parts[idx].text + delta)
         messages[mid] = existing.copy(parts = parts)
         touch(sid)
+        dirty = true
+    }
+
+    /** `todo.updated`: `{sessionID, todos: [{content, status, priority}]}`. */
+    private fun onTodos(props: JSONObject) {
+        val todos = props.optJSONArray("todos") ?: return
+        val list = ArrayList<TodoItem>(todos.length())
+        for (i in 0 until todos.length()) {
+            val o = todos.optJSONObject(i) ?: continue
+            val content = o.optString("content").trim()
+            if (content.isEmpty()) continue
+            list.add(TodoItem(content = content, status = o.optString("status").trim().lowercase()))
+        }
+        setTodos(props.optString("sessionID"), list)
+    }
+
+    /** The repair read (`GET /session/:id/todo`) and live frames both land here. */
+    fun setTodos(sessionID: String, list: List<TodoItem>) {
+        if (sessionID.isEmpty()) return
+        // A todo list is the session's own state: it must show even before the first
+        // message of the session has arrived, so the session is registered here too.
+        touch(sessionID)
+        todoLists[sessionID] = list
         dirty = true
     }
 
@@ -516,21 +550,25 @@ class Transcript {
         val state = part.optJSONObject("state")
         val time = state?.optJSONObject("time")
         val metadata = state?.optJSONObject("metadata")
+        // v11 (owner, B.108): the account name and app id never reach the screen.
+        val scrub = AccountRedaction::scrub
         return Part(
             id = part.optString("id"),
             messageID = messageID,
             sessionID = sessionID,
             type = part.optString("type"),
-            text = part.optString("text"),
+            text = scrub(part.optString("text")),
             tool = part.optString("tool"),
             callID = part.optString("callID"),
             status = state?.optString("status") ?: "",
-            input = state?.opt("input")?.toString() ?: "",
-            output = state?.opt("output")?.toString()
-                ?: metadata?.optString("output") ?: "",
-            title = state?.optString("title") ?: part.optString("title"),
-            metadata = metadata?.toString() ?: "",
-            error = state?.optString("error") ?: "",
+            input = scrub(state?.opt("input")?.toString() ?: ""),
+            output = scrub(
+                state?.opt("output")?.toString()
+                    ?: metadata?.optString("output") ?: "",
+            ),
+            title = scrub(state?.optString("title") ?: part.optString("title")),
+            metadata = scrub(metadata?.toString() ?: ""),
+            error = scrub(state?.optString("error") ?: ""),
             timeStart = time?.optLong("start") ?: 0L,
             timeEnd = time?.optLong("end") ?: 0L,
             mime = part.optString("mime"),

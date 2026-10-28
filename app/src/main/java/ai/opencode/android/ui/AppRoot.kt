@@ -266,7 +266,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val loadDiagnostics: () -> Unit = {
         diagnosticsLoading = true
         scope.launch {
-            val text = withContext(Dispatchers.IO) { runtime.diagnostics().text }
+            val text = withContext(Dispatchers.IO) {
+                // v11 (owner, B.108): shared diagnostics carry no account name either.
+                ai.opencode.android.client.AccountRedaction.scrub(runtime.diagnostics().text)
+            }
             diagnosticsLines = text.split("\n")
             diagnosticsLoading = false
         }

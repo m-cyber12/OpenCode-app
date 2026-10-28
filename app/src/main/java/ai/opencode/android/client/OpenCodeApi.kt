@@ -170,6 +170,24 @@ class OpenCodeApi(
     }
 
     /** GET /session/:id/message?limit= — history with parts. */
+    /**
+     * GET /session/:id/todo - the server's own todo list for the session
+     * (upstream `session.todo`). It is the authoritative copy the todo bar reads
+     * after a turn, so a missed `todo.updated` frame cannot leave the bar on an
+     * old step. Malformed rows are skipped, never invented.
+     */
+    fun todos(sessionID: String): List<TodoItem> {
+        val arr = org.json.JSONArray(request("GET", "/session/$sessionID/todo").body)
+        val out = ArrayList<TodoItem>(arr.length())
+        for (i in 0 until arr.length()) {
+            val o = arr.optJSONObject(i) ?: continue
+            val content = o.optString("content").trim()
+            if (content.isEmpty()) continue
+            out.add(TodoItem(content = content, status = o.optString("status").trim().lowercase()))
+        }
+        return out
+    }
+
     fun messages(sessionID: String, limit: Int = 200): List<MessageInfo> {
         val arr = org.json.JSONArray(
             request("GET", "/session/$sessionID/message", query = mapOf("limit" to limit.toString())).body,
