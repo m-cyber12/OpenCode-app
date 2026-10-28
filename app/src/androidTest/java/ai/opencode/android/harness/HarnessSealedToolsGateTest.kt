@@ -377,6 +377,9 @@ class HarnessSealedToolsGateTest {
                 .getInt("payloadVersion")
             val staleBrief = File(paths.xdgConfigOpencode, EnvironmentBrief.FILE_NAME)
             staleBrief.parentFile?.mkdirs()
+            // The app locks its brief read-only; this gate plays the OLD app's stale
+            // copy, so it unlocks the file the way the old build left it.
+            if (staleBrief.exists()) staleBrief.setWritable(true, true)
             staleBrief.writeText("wget, apt. There is NO node binary at all\n")
             File(context.filesDir, "usr/lib/python3.13.zip").delete()
             for (name in listOf("node", "npm", "npx", "python", "python3")) {

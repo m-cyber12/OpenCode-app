@@ -1334,7 +1334,11 @@ class ChatUiGatesTest {
             availability = AgentAvailability.SERVER_UNREACHABLE,
         )
         val bText = onScreenText()
-        val bHeadline = bText.contains(context.getString(R.string.availability_server_unreachable))
+        // v10 (owner): connection loss is the status orb's "Offline" and nothing
+        // else - no banner box stacked under the conversation. The orb's label
+        // rides on its semantics; the banner tag must be absent.
+        val bHeadline = bText.contains(context.getString(R.string.chat_status_offline)) &&
+            !exists("availability_banner")
         val bSend = sendEnabled()
 
         // (c) the agent and its server are fine; the model service rejected the key
