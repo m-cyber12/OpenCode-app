@@ -7472,3 +7472,64 @@ which the owner must apply) are both still open.
   the owner's go-ahead.
 - Board **40802609766** on `4ffe0d30` **succeeded**: `P10-UNIT PASS: JVM tests=505
   failures=0 errors=0`, `phase6_ui_fails=0`, `phase10_gate_fails=0`, `phase9_gate_fails=0`.
+
+### ICU, app-id hiding, transitions, and the arm64 split (2026-10-29)
+
+Owner asks in this round: ship full ICU in the bundled Node (accepting a bigger APK),
+hide the app id from scripts and evidence, add transitions, and put arm64 in its own
+artifact. Status, from the evidence that actually reached the branch:
+
+- **Run 40827741536** on `b14ed790` (first full-ICU bootstrap): **failed** after about
+  2 h 20 min. The evidence push did not reach the branch, and the logs and the
+  `phase10-evidence` artifact could not be read from the sandbox (the artifact host
+  returned EOF on every attempt). The failing step is not known.
+- **Run 40843375618** on `a238509a`: **failed** at the Kotlin compile after about 31 min.
+  `Modifier.animateItem()` is not in Compose BOM 2024.06.00 (`ModelQuickSwitch.kt:505`,
+  `ProjectsScreen.kt:247`). The same evidence run showed the driver self-test failing:
+  the new `APP_ID` line exited before the checkout diagnosis, so an incomplete checkout
+  got `rc=1` instead of `rc=3`.
+- **Run 40850982684** on `a7e6c0a3`: compile **passed** (including
+  `compileDebugAndroidTestKotlin` and `testDebugUnitTest`), the driver self-test
+  **passed**, and the payload then **failed** after about 2 h 11 min:
+  `Node arm64-v8a has no bundled ICU data symbol`. Node itself had built. The check was
+  wrong in two ways: the ICU data symbol is `icudt78l_dat` (little-endian, the `l` is
+  set by `configure.py` from the host byte order), and `llvm-nm | grep -q` under
+  `pipefail` can report a present symbol as missing (SIGPIPE). Because the check runs
+  before `capture_node_cache`, that build's output was lost.
+- **Run 40868426546** on `65b02ccb` (fixed check): **result unknown.** The run completed,
+  but the GitHub API then returned `401 Bad credentials` and `git fetch` reports that the
+  GitHub token is no longer valid. The owner needs to reconnect GitHub in Arena before
+  the result can be read.
+
+Changes in this round (all pushed except the report and plan notes):
+
+- `ef739ab5` / `a7e6c0a3`: `animateItem()` replaced with `animateItemPlacement()` and an
+  `@OptIn(ExperimentalFoundationApi::class)` on the two functions. Compile is proven by
+  run 40850982684 (`compileDebugKotlin` passed). Device behaviour is not proven.
+- `a7e6c0a3`: `phase10/scripts/90-real-device-signed.sh` gets `APP_ID_FOUND`. When
+  `app/build.gradle.kts` is missing, the checkout gate (`HARNESS_CHECKOUT`) reports it.
+  The driver self-test's incomplete-checkout scenario passed locally (`rc=3`, all six
+  checks ok). Local run was cut short by a time limit; CI is the full check.
+- `65b02ccb`: ICU data check corrected (see run 40850982684).
+- `eb64d1a3`: arm64 split applied to the repo copy `phase10/workflow/phase10-release.yml`
+  (YAML parses, new step `opencode-android-arm64-v8a-test-only`). The live
+  `.github/workflows/phase10-release.yml` is NOT changed, because the bot token lacks the
+  `workflows` scope. The owner pastes steps 1-2 from `docs/progress/arm64-artifact-split.md`.
+- `00-run-phase10.sh` now copies `phase4/out/engine/build.status` into the evidence
+  (`payload-build-status.txt`), so a payload failure leaves its reason in git.
+- App-id hiding: the 18 scripts read `APP_ID` from `app/build.gradle.kts`; each
+  extraction was run on its real file and resolves `io.github.mcyber12.opencode`.
+  `scrub-evidence.py` replaces the id in new evidence. Manifests, `app/build.gradle.kts`,
+  and the functional adb and launch commands keep the real id.
+
+What is NOT proven yet:
+
+- Whether full-ICU Node builds and captures for arm64 within the 8 h payload boundary
+  (the build itself took about 2 h in run 40850982684, which is inside it).
+- That `\p{L}` works on device. That needs the bootstrap cache restored by a later run
+  and the device gate V7 (`harness-sealed-tools`) to pass. The owner's device pass is
+  the ground truth.
+- Todo, diff, MCP, transition and model-menu behaviour on the device. Only compile and
+  JVM tests are proven for them.
+- The line-by-line review (item 8) is not done. Targeted scans only: no crash-class
+  defect found.
