@@ -1,5 +1,6 @@
 P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, published identity, store package, compileSdk/targetSdk 36) + apk inspector self-test
 P10_API36_SDK PASS: compile platform and google_apis x86_64 image are exactly android-36
-P10_DRIVER_SELFTEST FAIL: see p10-driver-selftest.log - do NOT hand this driver to a phone
-P10-BUILD FAIL: kotlin compile or JVM unit tests failed (compiler-errors.txt)
+P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone (16 scenarios, pass=136 fail=0 - the scenario list and every check are in p10-driver-selftest.log)
+P10-UNIT PASS: JVM tests=505 failures=0 errors=0 skipped=0 (unit tests are NOT runtime evidence - the device gates below are)
+P10-BUILD FAIL: payload build failed
 P10_SUMMARY gates not reached (build/environment failure) - see 00-run-phase10.log
