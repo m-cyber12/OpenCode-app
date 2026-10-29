@@ -18,10 +18,10 @@ P10D_VISIBILITY_PRIVATE_ROOT_NOT_LIVE PASS :: :: the live project root is outsid
 P10D_VISIBILITY_SHARED_ROOT PASS :: :: the project root is on shared storage and outside Android/data: /storage/emulated/0/Documents/OpenCode (Android 14)
 P10D_VISIBILITY_DOCUMENTS_PROVIDER SKIP :: :: this device does not let a shell query the Documents provider (Error: Unsupported)
 P10D_VISIBILITY_SHELL_WRITE PASS :: :: a file written by the non-root shell in /storage/emulated/0/Documents/OpenCode/p10d-200028 was readable back: the directory is shared, ordinary storage
-P10D_VISIBILITY_SHELL_BASELINE PASS :: :: baseline holds: an unprivileged shell cannot read /data/data/io.github.mcyber12.opencode at all, so the PASSs above are real
+P10D_VISIBILITY_SHELL_BASELINE PASS :: :: baseline holds: an unprivileged shell cannot read /data/data/<app> at all, so the PASSs above are real
 P10D_FILES_APP_AND_SHELL PASS :: in-app browser path=/storage/emulated/0/Documents/OpenCode/p10d-200028; shell visibility rc=0 (see visibility.log for the raw ls/cat output)
 P10D_MEMORY PASS :: total PSS 120 MB (see meminfo.txt)
-P10D_STORAGE PASS :: on-device project storage: /storage/emulated/0/Documents/OpenCode=12M /storage/emulated/0/Documents/OpenCode=12M /storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces=12M /storage/emulated/0/Android/data/io.github.mcyber12.opencode=12M
+P10D_STORAGE PASS :: on-device project storage: /storage/emulated/0/Documents/OpenCode=12M /storage/emulated/0/Documents/OpenCode=12M /storage/emulated/0/Android/data/<app>/files/workspaces=12M /storage/emulated/0/Android/data/<app>=12M
 P10D_PACKAGING_SWEEP PASS :: no FATAL EXCEPTION / ClassNotFound / NoSuchMethod / NoClassDefFound / UnsatisfiedLink in the session's logcat
 P10D_NO_CRASH PASS :: no app crash in this session
 P10D_UI_DUMP PASS :: every accessibility dump was readable (24 dump(s) saved in ui/; last acquisition: /sdcard/p10d-ui.xml)
