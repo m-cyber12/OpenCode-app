@@ -7458,3 +7458,17 @@ page, the thinking chips at the top of the menu, the free models starred on a fr
 install, and the MCP package form (a real `npx` start). The item-4 root cause (bundled
 Node built without ICU) and the arm64 artifact split (`docs/progress/arm64-artifact-split.md`,
 which the owner must apply) are both still open.
+
+### B.108 follow-up (2026-10-29) - owner answers and final CI
+
+- Owner answers: the app id is **hidden everywhere** in the UI (not changed); the About
+  privacy and notices links **stay**; ICU **should ship** (see the plan below).
+- Hidden now, in addition to the earlier transcript/diagnostics scrub: the About "Package"
+  value, the global skill file path, workspace paths in Settings, and error text from
+  the repository's `fail()` helper.
+- Still open: the ICU change itself. A flag change alone is ignored because Node comes
+  from the `-v1` prebuilt cache, and a rebuild does not fit one runner. The plan and the
+  steps are in `docs/progress/node-icu-plan.md`. The agent has not started it, pending
+  the owner's go-ahead.
+- Board **40802609766** on `4ffe0d30` **succeeded**: `P10-UNIT PASS: JVM tests=505
+  failures=0 errors=0`, `phase6_ui_fails=0`, `phase10_gate_fails=0`, `phase9_gate_fails=0`.
