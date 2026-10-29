@@ -1,7 +1,7 @@
 P10_RELEASE_APK PASS :: MANIFEST package=<app> versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=36 debuggable=False
-P10_RELEASE_APK_DETAIL PASS :: CONTENTS entries=352 native_abis=arm64-v8a(25 libs,175.2MB),x86_64(25 libs,180.3MB) payload=True manifest_asset=True
-P10_SIZE PASS :: apkMb=173.0 capMb=200 headroomMb=27.0 native=arm64-v8a(25libs,175.2MB),x86_64(25libs,180.3MB)
+P10_RELEASE_APK_DETAIL PASS :: CONTENTS entries=352 native_abis=arm64-v8a(25 libs,210.9MB),x86_64(25 libs,216.0MB) payload=True manifest_asset=True
+P10_SIZE FAIL :: OVER the project's conservative 200 MiB universal-APK budget (not Play's current 500 MB AAB base-module limit): apkMb=200.8 capMb=200 headroomMb=-0.8 native=arm64-v8a(25libs,210.9MB),x86_64(25libs,216.0MB)
 P10_UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
-P10_TESTONLY_RELEASE PASS :: installable non-debuggable universal APK bytes=181396013 MiB=173.0 signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
-P10_TESTONLY_ARM64 PASS :: installable arm64-only APK bytes=109570916 MiB=104.5 x86_64=absent signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
-P10_RELEASE_AAB PASS :: CONTENTS entries=357 native_abis=arm64-v8a(25 libs,175.2MB),x86_64(25 libs,180.3MB) payload=True manifest_asset=True
+P10_TESTONLY_RELEASE FAIL :: signed universal APK exceeds 200 MiB: bytes=210530861
+P10_TESTONLY_ARM64 PASS :: installable arm64-only APK bytes=124111716 MiB=118.4 x86_64=absent signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
+P10_RELEASE_AAB PASS :: CONTENTS entries=357 native_abis=arm64-v8a(25 libs,210.9MB),x86_64(25 libs,216.0MB) payload=True manifest_asset=True

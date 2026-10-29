@@ -14,14 +14,14 @@ P6_U8 PASS :: rowsComposedBefore=24 after=24 firstVisible=true lastLazy=true scr
 P6_U9 PASS :: listed=true meta=true info=true(1)/true/true pathShown=true locationCopy=true openedDir=true upShown=true upWorks=true openedFile=true viewer=true body=true preview=true/true/true/true/true sandbox=true/true/true saveCopy=true/true closed=true empty=true v4Removed=copyPath:true,export:true,choose:true,reset:true panel=true/true/true fallback=true/true/true/true/true/true chosen=true/true/true
 P6_F1 PASS :: firstScreen=welcome workspaceStep=true stages=[extracting, starting, healthy] welcomeCopy=4/4 sampledLines=19 leakedTokens=[] continueBecameEnabled=false advancedToProjects=false advancedToChat=false supervisor=HEALTHY(restarts=0) screenshots=welcome:36099,projects:-1,chat:-1 detailLength=25
 P6_F2 PASS :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=false,chat=false,workspace=true) leakedTokens=[] screenshot=43240
-P6_F3 PASS :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:43240,projects:65876
-P6_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=36099, 02-first-run-ready.png=43240, 02b-first-run-workspace.png=43240, 04-first-run-projects.png=65876]
+P6_F3 PASS :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:43240,projects:66022
+P6_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=36099, 02-first-run-ready.png=43240, 02b-first-run-workspace.png=43240, 04-first-run-projects.png=66022]
 P6_L1 SKIP :: no assistant text from the server within 300s (busySeen=false, asksAnswered=0)
 P6_L2 SKIP :: no model served a turn, so no tool call can be observed: no assistant text from the server within 300s (busySeen=false, asksAnswered=0)
 P6_MODEL_AVAILABLE 0 :: no assistant text f
 P6_MODEL_AVAILABLE 0 :: no assistant text from the server within 300s (busySeen=false, asksAnswered=0)
 P6_X1 PASS :: api36Context=true nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=36 api=36 abi=x86_64 :: OCEXECPROBE ok
-P6_X2 PASS :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/<app>/files/probe-exec" (in directory "/data/app/~~N
+P6_X2 PASS :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/<app>/files/probe-exec" (in directory "/data/app/~~e
 P6_X3 PASS :: api36Context=true targetSdk=36 api=36 prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P6_S1 PASS :: sealed install ok=true files=1 verified=1 executables=1 problems=[] :: sealed payload: 1 data files (15 bytes, 1 verified), 0 data links, 1 executables from the APK
 P6_S2 PASS :: prefix exec symlink=true ran=true exit=0 targetSdk=36 api=36 :: OCEXECPROBE ok
@@ -37,6 +37,6 @@ P6_V3 PASS :: agent env PATH[0]=/data/user/0/<app>/files/bin (want /data/user/0/
 P6_V4 PASS :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-android) libcurl/8.10.1 mbedTLS' CURL_CA_PATH=/apex/com.android.conscrypt/cacerts isDir=true
 P6_V5 PASS :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
 P6_V6 PASS :: python ran=true exit=0 json='{"ok": true}' zlib.crc32='891568578' (want 891568578) output='{"ok": true} <NL> 891568578'
-P6_V7 PASS :: node/npm ran=true exit=0 output='v24.22.1 <NL> 11.19.1 <NL> 42'
+P6_V7 PASS :: node/npm ran=true exit=0 icu=true icuOut='true 1.234,5' output='v24.22.1 <NL> 11.19.1 <NL> 42'
 P6_V8 PASS :: wget ran=true exit=0 bytes=11 body='OC_WGET_OK' fixture=ok output='wget (OpenCode sealed curl backend) 1'
-P6_V9 PASS :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:vYd9+xzS6juLLZ/7MMEuGbGetb4MVLy3Lc4pgsgzLGU u0_a224@localhost (ED25519)'
+P6_V9 PASS :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:sfYWIsFd9T1Ih06EJTFvlw03ar1J2TLp6Rz/Ynis5dI u0_a224@localhost (ED25519)'
