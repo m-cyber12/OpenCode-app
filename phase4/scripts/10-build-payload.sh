@@ -1238,8 +1238,16 @@ tools-v8_gypfiles-v8.gyp.patch"
   # ICU is the reason this cache exists (\p{L} in RegExp needs the Unicode
   # property tables). Check the unstripped binary for the bundled ICU data
   # symbol: a no-Intl build cannot pass this.
-  "$NDK_BIN/llvm-nm" "$built" 2>/dev/null | grep -q 'icudt[0-9]*_dat' \
-    || { note "FATAL: Node $abi has no bundled ICU data symbol (full-icu not built)"; return 1; }
+  # The data symbol is icudt<major><endianness>_dat (configure.py sets endianness to
+  # sys.byteorder[0], so little-endian is icudt78l_dat). Run 40850982684 failed here
+  # with the old pattern 'icudt[0-9]*_dat', which cannot match the l. nm goes to a
+  # file, not into grep -q: with pipefail an early grep exit gives llvm-nm SIGPIPE.
+  "$NDK_BIN/llvm-nm" "$built" > "$WORK/nm-$abi.txt" 2>/dev/null || true
+  if ! grep -Eq 'icudt[0-9]+[lb]?_dat' "$WORK/nm-$abi.txt" \
+     && ! grep -aEq 'icudt[0-9]+[lb]' "$built"; then
+    note "FATAL: Node $abi has no bundled ICU data symbol (full-icu not built)"
+    return 1
+  fi
   note "node $abi: bundled ICU data symbol present"
   cp "$built" "$outdir/libnode.so"
   "$NDK_BIN/llvm-strip" "$outdir/libnode.so"
