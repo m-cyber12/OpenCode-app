@@ -1,9 +1,9 @@
-=== PHASE 10 START 2026-10-29T14:37:37Z ===
+=== PHASE 10 START 2026-10-29T18:12:47Z ===
 ########## 1/9 static checks (phase 9 invariants + phase 10 release invariants) ##########
-=== Phase 10 static checks 2026-10-29T14:37:37Z ===
+=== Phase 10 static checks 2026-10-29T18:12:48Z ===
 
 === phase 9 static checks (not weakened) ===
-=== Phase 9 static checks 2026-10-29T14:37:37Z ===
+=== Phase 9 static checks 2026-10-29T18:12:48Z ===
 OK   bash -n on 42 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8/phase9 driver
@@ -70,7 +70,7 @@ SELFTEST PASS (27 checks)
 OK   apk/aab inspector self-test
 
 === app/build.gradle.kts static checks (balance, order, run-#6 fix present, identity greps) ===
-GRADLE_CHECK file=app/build.gradle.kts findings=0 notes=0 identity=[versionName=1.18.23-phase10 versionCode=8 applicationId=io.github.mcyber12.opencode]
+GRADLE_CHECK file=app/build.gradle.kts findings=0 notes=0 identity=[versionName=1.18.23-phase10 versionCode=8 applicationId=<app>]
 GRADLE_CHECK PASS
 OK   app/build.gradle.kts static checks (balance, order, run-#6 fix present, identity greps)
 OK   bash -n on the phase10 scripts
@@ -106,7 +106,7 @@ PASS a visible match is not flagged (rc=0) (rc=0 out='1020 1740')
 PASS has still finds an off-screen node (a tag being present is news) (rc=0)
 PASS a device that marks everything not-shown does not blind the reader (rc=0)
 PASS attrs reports the attribute set and the hidden count (rc=0 out='nodes=4 2 node(s) marked shown=false\nbounds:4 class:4 clickable:4 content-desc:4 enabled:4 index:4 package:4 resource-id:4 shown:4 text:4')
-PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmpytlgkok7/broken.xml')
+PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmpapgrbtqo/broken.xml')
 p10d-ui selftest: 20 checks, 0 failed
 SELFTEST PASS
 OK   uiautomator dump reader self-test (tap targets, disabled states, diagnostics)
@@ -155,7 +155,200 @@ P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, 
 ########## 1a/9 exact Android 16 SDK + API 36 emulator image ##########
 yes: standard output: Broken pipe
 sdkmanager=/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager
-Loading package information...                                                  Loading local repository...                                                     [                                       ] 3% Loading local repository...        [                                       ] 3% Fetch remote repository...         [=                                      ] 3% Fetch remote repository...         [=                                      ] 4% Fetch remote repository...         [=                                      ] 5% Fetch remote repository...         [==                                     ] 5% Fetch remote repository...         [==                                     ] 6% Fetch remote repository...         [==                                     ] 7% Fetch remote repository...         [==                                     ] 7% Computing updates...               [===                                    ] 8% Computing updates...               [===                                    ] 10% Computing updates...              [===                                    ] 10% Installing Android Emulator       [===                                    ] 10% Downloading emulator-linux_x64-164[====                                   ] 10% Downloading emulator-linux_x64-164[====                                   ] 11% Downloading emulator-linux_x64-164[====                                   ] 12% Downloading emulator-linux_x64-164[=====                                  ] 13% Downloading emulator-linux_x64-164[=====                                  ] 14% Downloading emulator-linux_x64-164[=====                                  ] 15% Downloading emulator-linux_x64-164[======                                 ] 15% Downloading emulator-linux_x64-164[======                                 ] 16% Downloading emulator-linux_x64-164[======                                 ] 17% Downloading emulator-linux_x64-164[=======                                ] 18% Downloading emulator-linux_x64-164[=======                                ] 19% Downloading emulator-linux_x64-164[=======                                ] 20% Downloading emulator-linux_x64-164[========                               ] 20% Downloading emulator-linux_x64-164[========                               ] 21% Downloading emulator-linux_x64-164[========                               ] 21% Unzipping...                      [========                               ] 21% Unzipping... emulator/            [========                               ] 21% Unzipping... emulator/resources/  [========                               ] 21% Unzipping... emulator/qsn         [========                               ] 21% Unzipping... emulator/emulator    [========                               ] 21% Unzipping... emulator/netsimd     [========                               ] 22% Unzipping... emulator/netsimd     [========                               ] 22% Unzipping... emulator/bin64/      [========                               ] 22% Unzipping... emulator/qemu/       [========                               ] 22% Unzipping... emulator/NOTICE.txt  [========                               ] 22% Unzipping... emulator/crashpad_han[========                               ] 22% Unzipping... emulator/source.prope[========                               ] 22% Unzipping... emulator/nimble_bridg[========                               ] 22% Unzipping... emulator/LICENSE     [========                               ] 22% Unzipping... emulator/lib/        [========                               ] 22% Unzipping... emulator/qemu-img    [========                               ] 22% Unzipping... emulator/include/    [========                               ] 22% Unzipping... emulator/NOTICE.csv  [========                               ] 22% Unzipping... emulator/lib64/      [========                               ] 22% Unzipping... emulator/emulator-che[========                               ] 22% Unzipping... emulator/crashreport [========                               ] 22% Unzipping... emulator/mksdcard    [========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/sk[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/po[========                               ] 22% Unzipping... emulator/resources/ma[=========                              ] 23% Unzipping... emulator/resources/ma[=========                              ] 23% Unzipping... emulator/resources/sk[=========                              ] 23% Unzipping... emulator/resources/ma[=========                              ] 23% Unzipping... emulator/bin64/e2fsck[=========                              ] 23% Unzipping... emulator/bin64/fsck.e[=========                              ] 23% Unzipping... emulator/bin64/tune2f[=========                              ] 23% Unzipping... emulator/bin64/resize[=========                              ] 23% Unzipping... emulator/bin64/mkfs.e[=========                              ] 23% Unzipping... emulator/qemu/linux-x[=========                              ] 24% Unzipping... emulator/qemu/linux-x[=========                              ] 25% Unzipping... emulator/qemu/linux-x[==========                             ] 25% Unzipping... emulator/qemu/linux-x[==========                             ] 25% Unzipping... emulator/lib/emulator[==========                             ] 25% Unzipping... emulator/lib/rtc_serv[==========                             ] 25% Unzipping... emulator/lib/advanced[==========                             ] 25% Unzipping... emulator/lib/cmake/  [==========                             ] 25% Unzipping... emulator/lib/emulator[==========                             ] 25% Unzipping... emulator/lib/control_[==========                             ] 25% Unzipping... emulator/lib/emulated[==========                             ] 25% Unzipping... emulator/lib/rtc_serv[==========                             ] 25% Unzipping... emulator/lib/emu-orig[==========                             ] 25% Unzipping... emulator/lib/hardware[==========                             ] 25% Unzipping... emulator/lib/pkgconfi[==========                             ] 25% Unzipping... emulator/lib/pc-bios/[==========                             ] 25% Unzipping... emulator/lib/snapshot[==========                             ] 25% Unzipping... emulator/lib/adb_serv[==========                             ] 25% Unzipping... emulator/lib/hostapd.[==========                             ] 25% Unzipping... emulator/lib/grpc_end[==========                             ] 25% Unzipping... emulator/lib/ca-bundl[==========                             ] 25% Unzipping... emulator/lib/ui_contr[==========                             ] 25% Unzipping... emulator/lib/snapshot[==========                             ] 25% Unzipping... emulator/lib/ice_conf[==========                             ] 25% Unzipping... emulator/lib/libflatb[==========                             ] 26% Unzipping... emulator/lib/libflatb[==========                             ] 26% Unzipping... emulator/lib/emulator[==========                             ] 26% Unzipping... emulator/lib/waterfal[==========                             ] 26% Unzipping... emulator/lib/emulated[==========                             ] 26% Unzipping... emulator/lib/cmake/fl[==========                             ] 26% Unzipping... emulator/lib/pkgconfi[==========                             ] 26% Unzipping... emulator/lib/pc-bios/[==========                             ] 26% Unzipping... emulator/include/flat[==========                             ] 26% Unzipping... emulator/lib64/libgli[==========                             ] 26% Unzipping... emulator/lib64/libpro[==========                             ] 26% Unzipping... emulator/lib64/qt/   [==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libgfx[==========                             ] 26% Unzipping... emulator/lib64/gles_l[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/vulkan[==========                             ] 26% Unzipping... emulator/lib64/gles_s[==========                             ] 26% Unzipping... emulator/lib64/libemu[==========                             ] 26% Unzipping... emulator/lib64/libpro[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libtcm[==========                             ] 26% Unzipping... emulator/lib64/libima[==========                             ] 26% Unzipping... emulator/lib64/libc++[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libabs[==========                             ] 26% Unzipping... emulator/lib64/gles_a[==========                             ] 26% Unzipping... emulator/lib64/libsha[==========                             ] 26% Unzipping... emulator/lib64/libc++[==========                             ] 26% Unzipping... emulator/lib64/qt/res[==========                             ] 26% Unzipping... emulator/lib64/qt/lib[==========                             ] 26% Unzipping... emulator/lib64/qt/tra[==========                             ] 26% Unzipping... emulator/lib64/qt/plu[==========                             ] 26% Unzipping... emulator/lib64/qt/res[==========                             ] 27% Unzipping... emulator/lib64/qt/res[==========                             ] 27% Unzipping... emulator/lib64/qt/lib[===========                            ] 28% Unzipping... emulator/lib64/qt/lib[===========                            ] 29% Unzipping... emulator/lib64/qt/lib[===========                            ] 30% Unzipping... emulator/lib64/qt/lib[============                           ] 30% Unzipping... emulator/lib64/qt/lib[============                           ] 30% Unzipping... emulator/lib64/qt/tra[============                           ] 30% Unzipping... emulator/lib64/qt/plu[============                           ] 30% Unzipping... emulator/lib64/gles_l[============                           ] 31% Unzipping... emulator/lib64/gles_l[============                           ] 31% Unzipping... emulator/lib64/vulkan[============                           ] 32% Unzipping... emulator/lib64/vulkan[============                           ] 32% Unzipping... emulator/lib64/gles_s[============                           ] 32% Unzipping... emulator/lib64/gles_a[=============                          ] 33% Unzipping... emulator/lib64/gles_a[=====================                  ] 55% Unzipping... emulator/lib64/gles_a[=====================                  ] 55% Installing Google APIs Intel x86_6[=====================                  ] 55% Downloading x86_64-36_r07.zip... e[======================                 ] 55% Downloading x86_64-36_r07.zip... e[======================                 ] 56% Downloading x86_64-36_r07.zip... e[======================                 ] 57% Downloading x86_64-36_r07.zip... e[=======================                ] 58% Downloading x86_64-36_r07.zip... e[=======================                ] 59% Downloading x86_64-36_r07.zip... e[=======================                ] 60% Downloading x86_64-36_r07.zip... e[========================               ] 60% Downloading x86_64-36_r07.zip... e[========================               ] 61% Downloading x86_64-36_r07.zip... e[========================               ] 62% Downloading x86_64-36_r07.zip... e[=========================              ] 63% Downloading x86_64-36_r07.zip... e[=========================              ] 64% Downloading x86_64-36_r07.zip... e[=========================              ] 65% Downloading x86_64-36_r07.zip... e[==========================             ] 65% Downloading x86_64-36_r07.zip... e[==========================             ] 66% Downloading x86_64-36_r07.zip... e[==========================             ] 66% Unzipping... emulator/lib64/gles_a[==========================             ] 66% Unzipping... x86_64/NOTICE.txt    [==========================             ] 66% Unzipping... x86_64/VerifiedBootPa[==========================             ] 66% Unzipping... x86_64/advancedFeatur[==========================             ] 66% Unzipping... x86_64/build.prop    [==========================             ] 66% Unzipping... x86_64/data/empty_dat[==========================             ] 66% Unzipping... x86_64/data/local.pro[==========================             ] 66% Unzipping... x86_64/data/misc/Gold[==========================             ] 66% Unzipping... x86_64/data/misc/emul[==========================             ] 66% Unzipping... x86_64/data/misc/mode[==========================             ] 66% Unzipping... x86_64/data/misc/pixe[==========================             ] 66% Unzipping... x86_64/encryptionkey.[==========================             ] 66% Unzipping... x86_64/kernel-ranchu [==========================             ] 66% Unzipping... x86_64/kernel_cmdline[==========================             ] 66% Unzipping... x86_64/ramdisk.img   [==========================             ] 66% Unzipping... x86_64/source.propert[==========================             ] 66% Unzipping... x86_64/system.img    [==========================             ] 67% Unzipping... x86_64/system.img    [===========================            ] 68% Unzipping... x86_64/system.img    [===========================            ] 69% Unzipping... x86_64/system.img    [===========================            ] 70% Unzipping... x86_64/system.img    [============================           ] 70% Unzipping... x86_64/system.img    [============================           ] 71% Unzipping... x86_64/system.img    [============================           ] 72% Unzipping... x86_64/system.img    [=============================          ] 73% Unzipping... x86_64/system.img    [=============================          ] 74% Unzipping... x86_64/system.img    [=============================          ] 75% Unzipping... x86_64/system.img    [==============================         ] 75% Unzipping... x86_64/system.img    [==============================         ] 76% Unzipping... x86_64/system.img    [==============================         ] 77% Unzipping... x86_64/system.img    [==============================         ] 77% Unzipping... x86_64/vendor.img    [==============================         ] 78% Unzipping... x86_64/vendor.img    [=======================================] 100% Unzipping... x86_64/vendor.img   
+Loading package information...                                                  
+Loading local repository...                                                     
+[                                       ] 3% Loading local repository...        
+[                                       ] 3% Fetch remote repository...         
+[=                                      ] 3% Fetch remote repository...         
+[=                                      ] 4% Fetch remote repository...         
+[=                                      ] 5% Fetch remote repository...         
+[==                                     ] 5% Fetch remote repository...         
+[==                                     ] 6% Fetch remote repository...         
+[==                                     ] 7% Fetch remote repository...         
+[==                                     ] 7% Computing updates...               
+[===                                    ] 8% Computing updates...               
+[===                                    ] 10% Computing updates...              
+[===                                    ] 10% Installing Android Emulator       
+[===                                    ] 10% Downloading emulator-linux_x64-164
+[====                                   ] 10% Downloading emulator-linux_x64-164
+[====                                   ] 11% Downloading emulator-linux_x64-164
+[====                                   ] 12% Downloading emulator-linux_x64-164
+[=====                                  ] 13% Downloading emulator-linux_x64-164
+[=====                                  ] 14% Downloading emulator-linux_x64-164
+[=====                                  ] 15% Downloading emulator-linux_x64-164
+[======                                 ] 15% Downloading emulator-linux_x64-164
+[======                                 ] 16% Downloading emulator-linux_x64-164
+[======                                 ] 17% Downloading emulator-linux_x64-164
+[=======                                ] 18% Downloading emulator-linux_x64-164
+[=======                                ] 19% Downloading emulator-linux_x64-164
+[=======                                ] 20% Downloading emulator-linux_x64-164
+[========                               ] 20% Downloading emulator-linux_x64-164
+[========                               ] 21% Downloading emulator-linux_x64-164
+[========                               ] 21% Unzipping...                      
+[========                               ] 21% Unzipping... emulator/            
+[========                               ] 21% Unzipping... emulator/resources/  
+[========                               ] 21% Unzipping... emulator/qsn         
+[========                               ] 21% Unzipping... emulator/emulator    
+[========                               ] 21% Unzipping... emulator/netsimd     
+[========                               ] 22% Unzipping... emulator/netsimd     
+[========                               ] 22% Unzipping... emulator/bin64/      
+[========                               ] 22% Unzipping... emulator/qemu/       
+[========                               ] 22% Unzipping... emulator/NOTICE.txt  
+[========                               ] 22% Unzipping... emulator/crashpad_han
+[========                               ] 22% Unzipping... emulator/source.prope
+[========                               ] 22% Unzipping... emulator/nimble_bridg
+[========                               ] 22% Unzipping... emulator/LICENSE     
+[========                               ] 22% Unzipping... emulator/lib/        
+[========                               ] 22% Unzipping... emulator/qemu-img    
+[========                               ] 22% Unzipping... emulator/include/    
+[========                               ] 22% Unzipping... emulator/NOTICE.csv  
+[========                               ] 22% Unzipping... emulator/lib64/      
+[========                               ] 22% Unzipping... emulator/emulator-che
+[========                               ] 22% Unzipping... emulator/crashreport 
+[========                               ] 22% Unzipping... emulator/mksdcard    
+[========                               ] 22% Unzipping... emulator/resources/To
+[========                               ] 22% Unzipping... emulator/resources/de
+[========                               ] 22% Unzipping... emulator/resources/To
+[========                               ] 22% Unzipping... emulator/resources/de
+[========                               ] 22% Unzipping... emulator/resources/To
+[========                               ] 22% Unzipping... emulator/resources/ma
+[========                               ] 22% Unzipping... emulator/resources/de
+[========                               ] 22% Unzipping... emulator/resources/sk
+[========                               ] 22% Unzipping... emulator/resources/de
+[========                               ] 22% Unzipping... emulator/resources/ma
+[========                               ] 22% Unzipping... emulator/resources/po
+[========                               ] 22% Unzipping... emulator/resources/ma
+[=========                              ] 23% Unzipping... emulator/resources/ma
+[=========                              ] 23% Unzipping... emulator/resources/sk
+[=========                              ] 23% Unzipping... emulator/resources/ma
+[=========                              ] 23% Unzipping... emulator/bin64/e2fsck
+[=========                              ] 23% Unzipping... emulator/bin64/fsck.e
+[=========                              ] 23% Unzipping... emulator/bin64/tune2f
+[=========                              ] 23% Unzipping... emulator/bin64/resize
+[=========                              ] 23% Unzipping... emulator/bin64/mkfs.e
+[=========                              ] 23% Unzipping... emulator/qemu/linux-x
+[=========                              ] 24% Unzipping... emulator/qemu/linux-x
+[=========                              ] 25% Unzipping... emulator/qemu/linux-x
+[==========                             ] 25% Unzipping... emulator/qemu/linux-x
+[==========                             ] 25% Unzipping... emulator/lib/emulator
+[==========                             ] 25% Unzipping... emulator/lib/rtc_serv
+[==========                             ] 25% Unzipping... emulator/lib/advanced
+[==========                             ] 25% Unzipping... emulator/lib/cmake/  
+[==========                             ] 25% Unzipping... emulator/lib/emulator
+[==========                             ] 25% Unzipping... emulator/lib/control_
+[==========                             ] 25% Unzipping... emulator/lib/emulated
+[==========                             ] 25% Unzipping... emulator/lib/rtc_serv
+[==========                             ] 25% Unzipping... emulator/lib/emu-orig
+[==========                             ] 25% Unzipping... emulator/lib/hardware
+[==========                             ] 25% Unzipping... emulator/lib/pkgconfi
+[==========                             ] 25% Unzipping... emulator/lib/pc-bios/
+[==========                             ] 25% Unzipping... emulator/lib/snapshot
+[==========                             ] 25% Unzipping... emulator/lib/adb_serv
+[==========                             ] 25% Unzipping... emulator/lib/hostapd.
+[==========                             ] 25% Unzipping... emulator/lib/grpc_end
+[==========                             ] 25% Unzipping... emulator/lib/ca-bundl
+[==========                             ] 25% Unzipping... emulator/lib/ui_contr
+[==========                             ] 25% Unzipping... emulator/lib/snapshot
+[==========                             ] 25% Unzipping... emulator/lib/ice_conf
+[==========                             ] 25% Unzipping... emulator/lib/libflatb
+[==========                             ] 26% Unzipping... emulator/lib/libflatb
+[==========                             ] 26% Unzipping... emulator/lib/emulator
+[==========                             ] 26% Unzipping... emulator/lib/waterfal
+[==========                             ] 26% Unzipping... emulator/lib/emulated
+[==========                             ] 26% Unzipping... emulator/lib/cmake/fl
+[==========                             ] 26% Unzipping... emulator/lib/pkgconfi
+[==========                             ] 26% Unzipping... emulator/lib/pc-bios/
+[==========                             ] 26% Unzipping... emulator/include/flat
+[==========                             ] 26% Unzipping... emulator/lib64/libgli
+[==========                             ] 26% Unzipping... emulator/lib64/libpro
+[==========                             ] 26% Unzipping... emulator/lib64/qt/   
+[==========                             ] 26% Unzipping... emulator/lib64/liband
+[==========                             ] 26% Unzipping... emulator/lib64/libgfx
+[==========                             ] 26% Unzipping... emulator/lib64/gles_l
+[==========                             ] 26% Unzipping... emulator/lib64/liband
+[==========                             ] 26% Unzipping... emulator/lib64/vulkan
+[==========                             ] 26% Unzipping... emulator/lib64/gles_s
+[==========                             ] 26% Unzipping... emulator/lib64/libemu
+[==========                             ] 26% Unzipping... emulator/lib64/libpro
+[==========                             ] 26% Unzipping... emulator/lib64/liband
+[==========                             ] 26% Unzipping... emulator/lib64/libtcm
+[==========                             ] 26% Unzipping... emulator/lib64/libima
+[==========                             ] 26% Unzipping... emulator/lib64/libc++
+[==========                             ] 26% Unzipping... emulator/lib64/liband
+[==========                             ] 26% Unzipping... emulator/lib64/libabs
+[==========                             ] 26% Unzipping... emulator/lib64/gles_a
+[==========                             ] 26% Unzipping... emulator/lib64/libsha
+[==========                             ] 26% Unzipping... emulator/lib64/libc++
+[==========                             ] 26% Unzipping... emulator/lib64/qt/res
+[==========                             ] 26% Unzipping... emulator/lib64/qt/lib
+[==========                             ] 26% Unzipping... emulator/lib64/qt/tra
+[==========                             ] 26% Unzipping... emulator/lib64/qt/plu
+[==========                             ] 26% Unzipping... emulator/lib64/qt/res
+[==========                             ] 27% Unzipping... emulator/lib64/qt/res
+[==========                             ] 27% Unzipping... emulator/lib64/qt/lib
+[===========                            ] 28% Unzipping... emulator/lib64/qt/lib
+[===========                            ] 29% Unzipping... emulator/lib64/qt/lib
+[===========                            ] 30% Unzipping... emulator/lib64/qt/lib
+[============                           ] 30% Unzipping... emulator/lib64/qt/lib
+[============                           ] 30% Unzipping... emulator/lib64/qt/tra
+[============                           ] 30% Unzipping... emulator/lib64/qt/plu
+[============                           ] 30% Unzipping... emulator/lib64/gles_l
+[============                           ] 31% Unzipping... emulator/lib64/gles_l
+[============                           ] 31% Unzipping... emulator/lib64/vulkan
+[============                           ] 32% Unzipping... emulator/lib64/vulkan
+[============                           ] 32% Unzipping... emulator/lib64/gles_s
+[============                           ] 32% Unzipping... emulator/lib64/gles_a
+[=============                          ] 33% Unzipping... emulator/lib64/gles_a
+[=====================                  ] 55% Unzipping... emulator/lib64/gles_a
+[=====================                  ] 55% Installing Google APIs Intel x86_6
+[=====================                  ] 55% Downloading x86_64-36_r07.zip... e
+[======================                 ] 55% Downloading x86_64-36_r07.zip... e
+[======================                 ] 56% Downloading x86_64-36_r07.zip... e
+[======================                 ] 57% Downloading x86_64-36_r07.zip... e
+[=======================                ] 58% Downloading x86_64-36_r07.zip... e
+[=======================                ] 59% Downloading x86_64-36_r07.zip... e
+[=======================                ] 60% Downloading x86_64-36_r07.zip... e
+[========================               ] 60% Downloading x86_64-36_r07.zip... e
+[========================               ] 61% Downloading x86_64-36_r07.zip... e
+[========================               ] 62% Downloading x86_64-36_r07.zip... e
+[=========================              ] 63% Downloading x86_64-36_r07.zip... e
+[=========================              ] 64% Downloading x86_64-36_r07.zip... e
+[=========================              ] 65% Downloading x86_64-36_r07.zip... e
+[==========================             ] 65% Downloading x86_64-36_r07.zip... e
+[==========================             ] 66% Downloading x86_64-36_r07.zip... e
+[==========================             ] 66% Unzipping... emulator/lib64/gles_a
+[==========================             ] 66% Unzipping... x86_64/NOTICE.txt    
+[==========================             ] 66% Unzipping... x86_64/VerifiedBootPa
+[==========================             ] 66% Unzipping... x86_64/advancedFeatur
+[==========================             ] 66% Unzipping... x86_64/build.prop    
+[==========================             ] 66% Unzipping... x86_64/data/empty_dat
+[==========================             ] 66% Unzipping... x86_64/data/local.pro
+[==========================             ] 66% Unzipping... x86_64/data/misc/Gold
+[==========================             ] 66% Unzipping... x86_64/data/misc/emul
+[==========================             ] 66% Unzipping... x86_64/data/misc/mode
+[==========================             ] 66% Unzipping... x86_64/data/misc/pixe
+[==========================             ] 66% Unzipping... x86_64/encryptionkey.
+[==========================             ] 66% Unzipping... x86_64/kernel-ranchu 
+[==========================             ] 66% Unzipping... x86_64/kernel_cmdline
+[==========================             ] 66% Unzipping... x86_64/ramdisk.img   
+[==========================             ] 66% Unzipping... x86_64/source.propert
+[==========================             ] 66% Unzipping... x86_64/system.img    
+[==========================             ] 67% Unzipping... x86_64/system.img    
+[===========================            ] 68% Unzipping... x86_64/system.img    
+[===========================            ] 69% Unzipping... x86_64/system.img    
+[===========================            ] 70% Unzipping... x86_64/system.img    
+[============================           ] 70% Unzipping... x86_64/system.img    
+[============================           ] 71% Unzipping... x86_64/system.img    
+[============================           ] 72% Unzipping... x86_64/system.img    
+[=============================          ] 73% Unzipping... x86_64/system.img    
+[=============================          ] 74% Unzipping... x86_64/system.img    
+[=============================          ] 75% Unzipping... x86_64/system.img    
+[==============================         ] 75% Unzipping... x86_64/system.img    
+[==============================         ] 76% Unzipping... x86_64/system.img    
+[==============================         ] 77% Unzipping... x86_64/system.img    
+[==============================         ] 77% Unzipping... x86_64/vendor.img    
+[==============================         ] 78% Unzipping... x86_64/vendor.img    
+[=======================================] 100% Unzipping... x86_64/vendor.img   
 
 API36_SDK_READY platform=android-36 image=android-36/google_apis/x86_64
 P10_API36_SDK PASS: compile platform and google_apis x86_64 image are exactly android-36
@@ -205,7 +398,7 @@ SELFCHECK PASS (fixtures, driver needles and gate tags agree)
   ok   model marker written for the x86_64 carry-forward
   ok   a POSIX host says so, instead of leaving the path question open
   ok   visibility script reports its own verdicts
-  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-143903/p10-visible.txt
+  ok   the agent's file exists on (fake) SHARED storage: Documents/OpenCode/p10d-181419/p10-visible.txt
   ok   and NOT in Android/data (the location file managers cannot browse)
   ok   the in-app file browser names the shared location
   ok   v4: the storage screen no longer shows copy-path, export or the folder choosers
@@ -388,8 +581,8 @@ PAYLOAD STAGING SKIPPED: compile/test-only run, no APK was produced.
 > Task :app:preBuild
 > Task :app:preDebugBuild
 > Task :app:generateDebugBuildConfig
-> Task :app:generateDebugResValues
 > Task :app:checkDebugAarMetadata
+> Task :app:generateDebugResValues
 > Task :app:mapDebugSourceSetPaths
 > Task :app:generateDebugResources
 > Task :app:packageDebugResources
@@ -409,15 +602,15 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:processDebugAndroidTestManifest
 > Task :app:generateDebugAndroidTestBuildConfig
 > Task :app:checkDebugAndroidTestAarMetadata
+> Task :app:processDebugManifestForPackage
 > Task :app:generateDebugAndroidTestResValues FROM-CACHE
 > Task :app:mapDebugAndroidTestSourceSetPaths
 > Task :app:generateDebugAndroidTestResources
 > Task :app:preDebugUnitTestBuild
 > Task :app:javaPreCompileDebugUnitTest FROM-CACHE
-> Task :app:processDebugManifestForPackage
 > Task :app:mergeDebugAndroidTestResources
-> Task :app:processDebugAndroidTestResources
 > Task :app:processDebugResources
+> Task :app:processDebugAndroidTestResources
 > Task :app:compileDebugKotlin
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/client/UiError.kt:194:17 Parameter 'a' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/github/GithubCloneManager.kt:137:55 Condition 'meta != null' is always 'true'
@@ -1492,7 +1685,7 @@ MarkdownTest > atxHeadingsCarryTheirLevel PASSED
 
 MarkdownTest > unterminatedLinkStaysLiteralWhileStreaming PASSED
 
-BUILD SUCCESSFUL in 2m 57s
+BUILD SUCCESSFUL in 2m 36s
 35 actionable tasks: 33 executed, 2 from cache
 P10-UNIT PASS: JVM tests=505 failures=0 errors=0 skipped=0 (unit tests are NOT runtime evidence - the device gates below are)
 ########## 3/9 embedded runtime payload (pinned upstream; reused by every build below) ##########
@@ -1757,16 +1950,24 @@ tool_paramhlp.c:402:15: warning: 'strtok' is deprecated: strtok() is not thread-
 2 warnings generated.
 GIT_VERSION=2.48.1
     * new build flags
-    GEN hook-list.h
+    CC builtin/add.o
     * new prefix flags
-    CC builtin/bundle.o
+    CC builtin/am.o
     * new link flags
+    CC builtin/annotate.o
+    CC builtin/apply.o
+    CC builtin/archive.o
+    CC builtin/bisect.o
+    CC builtin/blame.o
+    CC builtin/branch.o
+    GEN hook-list.h
+    CC builtin/bundle.o
     CC builtin/cat-file.o
     CC builtin/check-attr.o
     CC builtin/check-ignore.o
     CC builtin/check-mailmap.o
-    CC builtin/check-ref-format.o
     CC builtin/checkout--worker.o
+    CC builtin/check-ref-format.o
     CC builtin/checkout-index.o
     CC builtin/checkout.o
     CC builtin/clean.o
@@ -2126,8 +2327,8 @@ builtin/revert.c:114:13: warning: default initialization of an object of type 'c
     CC xdiff-interface.o
     CC unix-socket.o
     CC unix-stream-server.o
-    CC sha1dc_git.o
     CC sha1dc/sha1.o
+    CC sha1dc_git.o
     CC sha1dc/ubc_check.o
     CC sha256/block/sha256.o
     CC compat/linux/procinfo.o
@@ -2159,14 +2360,6 @@ builtin/revert.c:114:13: warning: default initialization of an object of type 'c
     CC http.o
     CC http-walker.o
     CC git.o
-    CC builtin/add.o
-    CC builtin/am.o
-    CC builtin/annotate.o
-    CC builtin/apply.o
-    CC builtin/archive.o
-    CC builtin/bisect.o
-    CC builtin/blame.o
-    CC builtin/branch.o
     CC builtin/bugreport.o
     CC builtin/help.o
     CC help.o
@@ -2358,15 +2551,15 @@ tool_paramhlp.c:402:15: warning: 'strtok' is deprecated: strtok() is not thread-
 /usr/local/lib/android/sdk/ndk/30.0.16248370/toolchains/llvm/prebuilt/linux-x86_64/bin/../sysroot/usr/include/string.h:125:20: note: 'strtok' has been explicitly marked deprecated here
   125 |     __attribute__((__deprecated__("strtok() is not thread-safe; use strtok_r() instead")));
       |                    ^
-2 warnings generated.
 4 warnings generated.
+2 warnings generated.
 GIT_VERSION=2.48.1
     * new build flags
     GEN hook-list.h
-    CC builtin/bundle.o
     * new prefix flags
-    * new link flags
+    CC builtin/bundle.o
     CC builtin/cat-file.o
+    * new link flags
     CC builtin/check-attr.o
     CC builtin/check-ignore.o
     CC builtin/check-mailmap.o
@@ -2455,10 +2648,10 @@ GIT_VERSION=2.48.1
     CC builtin/rev-list.o
     CC builtin/rev-parse.o
     CC builtin/revert.o
+    CC builtin/rm.o
 builtin/revert.c:114:13: warning: default initialization of an object of type 'const char' leaves the object uninitialized [-Wdefault-const-init-var-unsafe]
   114 |         const char sentinel_value;
       |                    ^
-    CC builtin/rm.o
     CC builtin/send-pack.o
 1 warning generated.
     CC builtin/shortlog.o
@@ -2808,81 +3001,81 @@ Turn off this advice by setting config variable advice.detachedHead to false
 
     Updating crates.io index
  Downloading crates ...
-  Downloaded crossbeam-utils v0.8.21
-  Downloaded cfg-if v1.0.4
-  Downloaded aho-corasick v1.1.3
-  Downloaded crossbeam-deque v0.8.6
-  Downloaded walkdir v2.5.0
   Downloaded anyhow v1.0.100
-  Downloaded crossbeam-epoch v0.9.18
-  Downloaded same-file v1.0.6
-  Downloaded encoding_rs_io v0.1.7
-  Downloaded itoa v1.0.15
+  Downloaded cfg-if v1.0.4
   Downloaded cc v1.2.41
+  Downloaded memmap2 v0.9.9
+  Downloaded aho-corasick v1.1.3
+  Downloaded bstr v1.12.0
   Downloaded pkg-config v0.3.32
+  Downloaded crossbeam-deque v0.8.6
+  Downloaded log v0.4.28
+  Downloaded same-file v1.0.6
+  Downloaded termcolor v1.4.1
+  Downloaded encoding_rs_io v0.1.7
+  Downloaded jobserver v0.1.34
+  Downloaded shlex v1.3.0
+  Downloaded crossbeam-utils v0.8.21
   Downloaded find-msvc-tools v0.1.4
   Downloaded pcre2 v0.2.11
-  Downloaded ryu v1.0.20
-  Downloaded shlex v1.3.0
-  Downloaded termcolor v1.4.1
-  Downloaded jobserver v0.1.34
-  Downloaded lexopt v0.3.1
-  Downloaded log v0.4.28
-  Downloaded memmap2 v0.9.9
   Downloaded serde_core v1.0.228
-  Downloaded memchr v2.7.6
+  Downloaded itoa v1.0.15
+  Downloaded ryu v1.0.20
   Downloaded serde v1.0.228
   Downloaded textwrap v0.16.2
+  Downloaded walkdir v2.5.0
+  Downloaded crossbeam-epoch v0.9.18
+  Downloaded lexopt v0.3.1
+  Downloaded memchr v2.7.6
   Downloaded serde_json v1.0.145
-  Downloaded bstr v1.12.0
   Downloaded regex-syntax v0.8.8
   Downloaded regex-automata v0.4.13
-  Downloaded libc v0.2.177
   Downloaded pcre2-sys v0.2.10
+  Downloaded libc v0.2.177
   Downloaded encoding_rs v0.8.35
    Compiling libc v0.2.177
    Compiling memchr v2.7.6
-   Compiling log v0.4.28
    Compiling regex-syntax v0.8.8
+   Compiling log v0.4.28
    Compiling aho-corasick v1.1.3
    Compiling shlex v1.3.0
    Compiling find-msvc-tools v0.1.4
-   Compiling pkg-config v0.3.32
+   Compiling serde_core v1.0.228
    Compiling regex-automata v0.4.13
    Compiling jobserver v0.1.34
+   Compiling pkg-config v0.3.32
    Compiling cc v1.2.41
-   Compiling bstr v1.12.0
-   Compiling serde_core v1.0.228
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/matcher)
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.6u5thYM4RK/rg-src/crates/matcher)
    Compiling cfg-if v1.0.4
    Compiling crossbeam-utils v0.8.21
-   Compiling pcre2-sys v0.2.10
    Compiling encoding_rs v0.8.35
+   Compiling bstr v1.12.0
+   Compiling pcre2-sys v0.2.10
    Compiling serde_json v1.0.145
    Compiling serde v1.0.228
+   Compiling globset v0.4.18 (/tmp/tmp.6u5thYM4RK/rg-src/crates/globset)
    Compiling encoding_rs_io v0.1.7
-   Compiling globset v0.4.18 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/globset)
    Compiling memmap2 v0.9.9
-   Compiling termcolor v1.4.1
    Compiling ryu v1.0.20
    Compiling itoa v1.0.15
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/searcher)
+   Compiling termcolor v1.4.1
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.6u5thYM4RK/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
-   Compiling anyhow v1.0.100
    Compiling same-file v1.0.6
+   Compiling anyhow v1.0.100
    Compiling walkdir v2.5.0
-   Compiling grep-printer v0.3.1 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/printer)
+   Compiling grep-printer v0.3.1 (/tmp/tmp.6u5thYM4RK/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-cli v0.1.12 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.ckAxg8XzHp/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/ignore)
-   Compiling pcre2 v0.2.11
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/grep)
-   Compiling textwrap v0.16.2
+   Compiling grep-cli v0.1.12 (/tmp/tmp.6u5thYM4RK/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.6u5thYM4RK/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.6u5thYM4RK/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.6u5thYM4RK/rg-src/crates/ignore)
    Compiling lexopt v0.3.1
-    Finished `release` profile [optimized + debuginfo] target(s) in 41.98s
+   Compiling textwrap v0.16.2
+   Compiling pcre2 v0.2.11
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.6u5thYM4RK/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.6u5thYM4RK/rg-src/crates/grep)
+    Finished `release` profile [optimized + debuginfo] target(s) in 33.70s
 arm64-v8a Android ripgrep OK (stripped):  ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, stripped bytes=4777320
 --- Android ripgrep (x86_64, target=x86_64-linux-android) ---
 info: downloading component rust-std
@@ -2917,36 +3110,36 @@ Turn off this advice by setting config variable advice.detachedHead to false
    Compiling pkg-config v0.3.32
    Compiling regex-automata v0.4.13
    Compiling pcre2-sys v0.2.10
-   Compiling grep-matcher v0.1.8 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/matcher)
-   Compiling crossbeam-utils v0.8.21
+   Compiling grep-matcher v0.1.8 (/tmp/tmp.6u5thYM4RK/rg-src/crates/matcher)
    Compiling cfg-if v1.0.4
+   Compiling crossbeam-utils v0.8.21
    Compiling encoding_rs v0.8.35
    Compiling bstr v1.12.0
    Compiling serde_json v1.0.145
    Compiling serde v1.0.228
-   Compiling globset v0.4.18 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/globset)
+   Compiling globset v0.4.18 (/tmp/tmp.6u5thYM4RK/rg-src/crates/globset)
    Compiling encoding_rs_io v0.1.7
    Compiling memmap2 v0.9.9
    Compiling termcolor v1.4.1
    Compiling ryu v1.0.20
    Compiling itoa v1.0.15
-   Compiling grep-searcher v0.1.16 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/searcher)
+   Compiling grep-searcher v0.1.16 (/tmp/tmp.6u5thYM4RK/rg-src/crates/searcher)
    Compiling crossbeam-epoch v0.9.18
    Compiling same-file v1.0.6
    Compiling anyhow v1.0.100
    Compiling walkdir v2.5.0
+   Compiling grep-printer v0.3.1 (/tmp/tmp.6u5thYM4RK/rg-src/crates/printer)
    Compiling crossbeam-deque v0.8.6
-   Compiling grep-printer v0.3.1 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/printer)
-   Compiling grep-cli v0.1.12 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/cli)
-   Compiling grep-regex v0.1.14 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/regex)
-   Compiling ripgrep v15.1.0 (/tmp/tmp.ckAxg8XzHp/rg-src)
-   Compiling ignore v0.4.24 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/ignore)
-   Compiling textwrap v0.16.2
+   Compiling grep-cli v0.1.12 (/tmp/tmp.6u5thYM4RK/rg-src/crates/cli)
+   Compiling grep-regex v0.1.14 (/tmp/tmp.6u5thYM4RK/rg-src/crates/regex)
+   Compiling ripgrep v15.1.0 (/tmp/tmp.6u5thYM4RK/rg-src)
+   Compiling ignore v0.4.24 (/tmp/tmp.6u5thYM4RK/rg-src/crates/ignore)
    Compiling lexopt v0.3.1
+   Compiling textwrap v0.16.2
    Compiling pcre2 v0.2.11
-   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/pcre2)
-   Compiling grep v0.4.1 (/tmp/tmp.ckAxg8XzHp/rg-src/crates/grep)
-    Finished `release` profile [optimized + debuginfo] target(s) in 37.01s
+   Compiling grep-pcre2 v0.1.9 (/tmp/tmp.6u5thYM4RK/rg-src/crates/pcre2)
+   Compiling grep v0.4.1 (/tmp/tmp.6u5thYM4RK/rg-src/crates/grep)
+    Finished `release` profile [optimized + debuginfo] target(s) in 28.54s
 x86_64 Android ripgrep OK (stripped):  ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /system/bin/linker64, stripped bytes=5471536
 === [5/6] OpenCode server bundle @ 05ea5073be967c779d326929b2de6228dda4159d (pinned, fail-loud) ===
 upstream commit: 05ea5073be967c779d326929b2de6228dda4159d
@@ -4888,12 +5081,13 @@ Python/fileutils.c:682:1: warning: unused function 'encode_current_locale' [-Wun
 python x86_64: 7481128 bytes (stripped, static modules)
 python stdlib source zip: 4495301 bytes
 --- Node 24.22.1 (arm64-v8a, Android/Bionic, full-icu, no inspector/snapshot) ---
-node arm64-v8a: no prebuilt cache; reproducing from pinned source
-node arm64-v8a: ninja finished at 2026-10-29T18:08:01Z
-node arm64-v8a: bundled ICU data symbol present
-node arm64-v8a: 90035152 bytes stripped; npm shim 6192 bytes
-node arm64-v8a cache bootstrap: 34308 KB in 19 chunks
-NODE_CACHE_BOOTSTRAP_CAPTURED abi=arm64-v8a key=node-24.22.1-ndk28.2.13676358-termux-2d6b9d566c2e-icufull-v2
-P10 MODE node-cache-bootstrap: NODE_CACHE_BOOTSTRAP_CAPTURED abi=arm64-v8a key=node-24.22.1-ndk28.2.13676358-termux-2d6b9d566c2e-icufull-v2
+node arm64-v8a: restored verified node-24.22.1-ndk28.2.13676358-termux-2d6b9d566c2e-icufull-v2 (90035152 bytes)
+--- Node 24.22.1 (x86_64, Android/Bionic, full-icu, no inspector/snapshot) ---
+node x86_64: no prebuilt cache; reproducing from pinned source
+node x86_64: ninja finished at 2026-10-29T20:59:30Z
+node x86_64: bundled ICU data symbol present
+node x86_64: 92279992 bytes stripped; npm shim 5984 bytes
+node x86_64 cache bootstrap: 35372 KB in 19 chunks
+NODE_CACHE_BOOTSTRAP_CAPTURED abi=x86_64 key=node-24.22.1-ndk28.2.13676358-termux-2d6b9d566c2e-icufull-v2
+P10 MODE node-cache-bootstrap: NODE_CACHE_BOOTSTRAP_CAPTURED abi=x86_64 key=node-24.22.1-ndk28.2.13676358-termux-2d6b9d566c2e-icufull-v2
 P10 MODE node-cache-bootstrap: NO verdicts in this run; the next run restores this ABI and builds the other one
-=== PHASE 10 END 2026-10-29T18:08:34Z node-cache bootstrap captured ===
