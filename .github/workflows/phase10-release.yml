@@ -122,6 +122,16 @@ jobs:
             cp -r phase10/out/evidence/. docs/progress/phase10-evidence/ 2>/dev/null || true
           fi
           cp phase10/out/00-run-phase10.log docs/progress/phase10-evidence/ 2>/dev/null || true
+          # Payload build status and the Node ninja logs, kept even when the job is
+          # cancelled (this step runs under always()): a cancelled Node build must not
+          # leave no trace (run 40868426546).
+          mkdir -p docs/progress/phase10-evidence
+          if [ -f phase4/out/engine/build.status ]; then
+            tail -c 400000 phase4/out/engine/build.status > docs/progress/phase10-evidence/payload-build-status.txt 2>/dev/null || true
+          fi
+          for f in phase4/out/engine/node-ninja-*.log; do
+            [ -f "$f" ] && tail -c 300000 "$f" > "docs/progress/phase10-evidence/$(basename "$f")" 2>/dev/null || true
+          done
           rm -f docs/progress/phase10-evidence/emulator.log
           find docs/progress/phase10-evidence -type f -size +2M -delete 2>/dev/null || true
           git add -A docs/progress/phase10-evidence/ || true
@@ -152,6 +162,15 @@ jobs:
           path: |
             phase10/out/smoke/
             phase10/out/screenshots/
+            !phase10/out/smoke/TEST-ONLY-debugkey-app-release-arm64-v8a.apk
+          if-no-files-found: ignore
+
+      - name: "Upload the arm64-v8a test-only APK on its own"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencode-android-arm64-v8a-test-only
+          path: phase10/out/smoke/TEST-ONLY-debugkey-app-release-arm64-v8a.apk
           if-no-files-found: ignore
 
       - name: "Upload evidence + logs"

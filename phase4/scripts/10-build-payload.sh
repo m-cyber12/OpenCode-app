@@ -1230,8 +1230,12 @@ tools-v8_gypfiles-v8.gyp.patch"
       echo "target zlib path survived in a Node host Ninja rule" >&2
       exit 1
     fi
-    timeout 10800 "$ninja" -C out/Release -j4 >/dev/null
-  ) || { note "FATAL: Node build failed for $abi"; return 1; }
+    # ninja's output goes to a file the workflow copies into the evidence, so a
+    # build that is cancelled or fails leaves its last steps behind (run 40868426546
+    # was cancelled 2h40m into this step and left no trace of where it was).
+    timeout 10800 "$ninja" -C out/Release -j4 > "$ENGINE/node-ninja-$abi.log" 2>&1
+  ) || { tail -n 80 "$ENGINE/node-ninja-$abi.log" 2>/dev/null | tee -a "$STATUS"; note "FATAL: Node build failed for $abi"; return 1; }
+  note "node $abi: ninja finished at $(date -u +%FT%TZ)"
 
   local built="$src/out/Release/node"
   [ -f "$built" ] || { note "FATAL: Node output missing for $abi"; return 1; }

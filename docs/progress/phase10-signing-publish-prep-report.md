@@ -7496,10 +7496,12 @@ artifact. Status, from the evidence that actually reached the branch:
   set by `configure.py` from the host byte order), and `llvm-nm | grep -q` under
   `pipefail` can report a present symbol as missing (SIGPIPE). Because the check runs
   before `capture_node_cache`, that build's output was lost.
-- **Run 40868426546** on `65b02ccb` (fixed check): **result unknown.** The run completed,
-  but the GitHub API then returned `401 Bad credentials` and `git fetch` reports that the
-  GitHub token is no longer valid. The owner needs to reconnect GitHub in Arena before
-  the result can be read.
+- **Run 40868426546** on `65b02ccb` (fixed check): **cancelled** at 14:31 UTC, about
+  2 h 40 min in, during the arm64 Node build. The run log is not readable from the
+  sandbox, and the evidence keeps no ninja output, so the cancel reason is unknown. The
+  GitHub token expired during the run (`401 Bad credentials`); it was reconnected later.
+  Ninja output now goes to `phase4/out/engine/node-ninja-<abi>.log` and the workflow
+  copies it into the evidence, so a cancelled build leaves its last steps.
 
 Changes in this round (all pushed except the report and plan notes):
 
