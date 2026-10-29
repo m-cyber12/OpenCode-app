@@ -7502,6 +7502,16 @@ artifact. Status, from the evidence that actually reached the branch:
   GitHub token expired during the run (`401 Bad credentials`); it was reconnected later.
   Ninja output now goes to `phase4/out/engine/node-ninja-<abi>.log` and the workflow
   copies it into the evidence, so a cancelled build leaves its last steps.
+- **Run 40893344502** on `1380d50f` (workflow with the arm64 upload split; ninja output kept):
+  **succeeded** as the arm64 bootstrap. The full-ICU arm64 Node built: `bundled ICU data
+  symbol present`, `libnode.so` 90,035,152 bytes stripped, cache captured as 19 chunks
+  (34,308 KB, `node-cache/node-24.22.1-ndk28.2.13676358-termux-2d6b9d566c2e-icufull-v2/arm64-v8a`).
+  The payload then stopped by design (`NODE_CACHE_BOOTSTRAP_CAPTURED`), so there are no
+  device or release verdicts yet. The ninja step finished at 18:08 UTC and the pipeline started at
+  14:37 UTC; the ninja step timeout is 3 hours, so the margin is small. The APK size with
+  this library is not measured yet (the library is 90 MB before compression).
+  Next: run B builds x86_64 (arm64 restored from the cache) and captures it, then run C
+  restores both ABIs for the full verdicts.
 
 Changes in this round (all pushed except the report and plan notes):
 
