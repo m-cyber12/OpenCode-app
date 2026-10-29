@@ -5,10 +5,10 @@ inside the `opencode-android-smoke-test-only` artifact together with the smoke A
 the androidTest APK, the universal APK and the screenshots. To get the arm64 build the
 owner had to download all of them.
 
-**Status (2026-10-29):** the repo copy `phase10/workflow/phase10-release.yml` HAS the change
-(step 3 below, applied and YAML-checked). The live `.github/workflows/phase10-release.yml`
-is NOT changed: the automation account cannot push `.github/workflows/*` (its token lacks
-the `workflows` scope). Steps 1 and 2 are for the owner to paste into that file.
+**Status (2026-10-29): APPLIED.** `.github/workflows/phase10-release.yml` has the change
+(commit `1380d50f`, owner-approved). Run `40893344502` on that commit uploaded the arm64
+test-only APK as its own artifact (`opencode-android-arm64-v8a-test-only`). The repo copy
+`phase10/workflow/phase10-release.yml` carries the same change.
 No shell script is changed by this patch; the APK name and location do not move.
 
 ## Change to `.github/workflows/phase10-release.yml`

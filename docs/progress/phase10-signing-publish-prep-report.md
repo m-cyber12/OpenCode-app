@@ -7512,6 +7512,17 @@ artifact. Status, from the evidence that actually reached the branch:
   this library is not measured yet (the library is 90 MB before compression).
   Next: run B builds x86_64 (arm64 restored from the cache) and captures it, then run C
   restores both ABIs for the full verdicts.
+- **Run 40928631998** on `b1c30376` (run B: x86_64 bootstrap, arm64 restored from the cache):
+  **succeeded** as a bootstrap. `node x86_64: ninja finished at 20:59:30Z`, so the Node
+  ninja step took about 2 h 47 min against a 3 h timeout (about 13 min of margin).
+  `NODE_CACHE_BOOTSTRAP_CAPTURED abi=x86_64`. No verdicts yet.
+- **Next: run C (full run).** Both caches are in `docs/progress/phase10-evidence/node-cache/`
+  (22 files each). The payload restores both ABIs and builds nothing, and the device,
+  UI, smoke and release verdicts run for the first time with full ICU.
+
+Session note (2026-10-29, later): the agent's local branch had fallen behind origin
+(an older working tree at the `main` base). It was reset to origin `554520b0` after a
+full backup. No unique local work was lost (the backup showed no files that origin lacks).
 
 Changes in this round (all pushed except the report and plan notes):
 
