@@ -1,5 +1,5 @@
 [2026-10-29T23:00:59Z] === stage A: deterministic chat UI gates (no runtime, no model, no key) ===
-[2026-10-29T23:00:59Z] uninstalling <app> / <app>.test so the next gate really is a first run
+[2026-10-29T23:00:59Z] uninstalling io.github.mcyber12.opencode / io.github.mcyber12.opencode.test so the next gate really is a first run
 Performing Streamed Install
 Success
 Performing Streamed Install
@@ -63,7 +63,7 @@ drwxr-xr-x 3 runner runner    4096 Oct 29 22:59 ..
 [2026-10-29T23:01:51Z] P6-U13 PASS :: :: tabs=true chip=true wired=true screen=true stages=true newestFirst=true rows=2 counts=true patch=hidden:true,shown:true empty=true
 [2026-10-29T23:01:51Z] P6-U14 PASS :: :: screen=true rows=3 command=true output=true exit=true running=true failed=true log=hidden:true,shown:true tabBack=true empty=true
 [2026-10-29T23:01:51Z] === stage B: first-run experience on a freshly installed APK ===
-[2026-10-29T23:01:51Z] uninstalling <app> / <app>.test so the next gate really is a first run
+[2026-10-29T23:01:51Z] uninstalling io.github.mcyber12.opencode / io.github.mcyber12.opencode.test so the next gate really is a first run
 Performing Streamed Install
 Success
 Performing Streamed Install
@@ -210,7 +210,7 @@ drwxr-xr-x 3 runner runner    4096 Oct 29 22:59 ..
 -rw-r--r-- 1 runner runner   71984 Oct 29 23:01 30-mode-switch.png
 -rw-r--r-- 1 runner runner 1787626 Oct 29 22:59 99-final-host-screen.png
 [2026-10-29T23:07:29Z] P6-X1 PASS :: :: api36Context=true nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=36 api=36 abi=x86_64 :: OCEXECPROBE ok
-[2026-10-29T23:07:29Z] P6-X2 PASS :: :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/<app>/files/probe-exec" (in directory "/data/app/~~e
+[2026-10-29T23:07:29Z] P6-X2 PASS :: :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~e
 [2026-10-29T23:07:29Z] P6-X3 PASS :: :: api36Context=true targetSdk=36 api=36 prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 [2026-10-29T23:07:29Z] === stage E: sealed install (the kernel, proven on this device) ===
 [2026-10-29T23:07:29Z] === am instrument ai.opencode.android.harness.HarnessSealedInstallGateTest ===
@@ -356,7 +356,7 @@ drwxr-xr-x 3 runner runner    4096 Oct 29 22:59 ..
 -rw-r--r-- 1 runner runner 1787626 Oct 29 22:59 99-final-host-screen.png
 [2026-10-29T23:07:36Z] P6-V1 PASS :: :: sealed shell ran=true exit=0 api=36 :: OC_SEALED_SH_OK
 [2026-10-29T23:07:36Z] P6-V2 PASS :: :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
-[2026-10-29T23:07:36Z] P6-V3 PASS :: :: agent env PATH[0]=/data/user/0/<app>/files/bin (want /data/user/0/<app>/files/bin) SHELL=/data/user/0/<app>/files/bin/sh ran=true exit=0 out='1' tr=/da
+[2026-10-29T23:07:36Z] P6-V3 PASS :: :: agent env PATH[0]=/data/user/0/io.github.mcyber12.opencode/files/bin (want /data/user/0/io.github.mcyber12.opencode/files/bin) SHELL=/data/user/0/io.github.mcyber12.opencode/files/bin/sh ran=true exit=0 out='1' tr=/da
 [2026-10-29T23:07:36Z] P6-V4 PASS :: :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-android) libcurl/8.10.1 mbedTLS' CURL_CA_PATH=/apex/com.android.conscrypt/cacerts isDir=true
 [2026-10-29T23:07:36Z] P6-V5 PASS :: :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
 [2026-10-29T23:07:37Z] P6-V6 PASS :: :: python ran=true exit=0 json='{"ok": true}' zlib.crc32='891568578' (want 891568578) output='{"ok": true} <NL> 891568578'
