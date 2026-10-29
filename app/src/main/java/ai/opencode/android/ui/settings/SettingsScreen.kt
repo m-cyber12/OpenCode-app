@@ -1726,7 +1726,7 @@ private fun SkillsSection(
                     }
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = fileLabel + ": " + skill.file.absolutePath,
+                        text = fileLabel + ": " + ai.opencode.android.client.AccountRedaction.scrub(skill.file.absolutePath),
                         style = MonoSmall,
                         color = chat.muted,
                         maxLines = 2,
@@ -2094,7 +2094,7 @@ private fun WorkspaceSection(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text(ws.path, style = MonoSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(ai.opencode.android.client.AccountRedaction.scrub(ws.path), style = MonoSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
                                 stringResource(R.string.projects_workspace_project_count, ws.projectCount),
                                 style = MaterialTheme.typography.labelSmall,
@@ -2477,7 +2477,8 @@ private fun AboutSection(
         // support thread) needs and can never guess from the UI otherwise.
         KeyValueRow(
             label = stringResource(R.string.settings_about_package),
-            value = BuildConfig.APPLICATION_ID,
+            // v11 (owner, B.108): the app id is hidden everywhere; it shows as <app>.
+            value = ai.opencode.android.client.AccountRedaction.scrub(BuildConfig.APPLICATION_ID),
             mono = true,
         )
         KeyValueRow(

@@ -1273,7 +1273,10 @@ class OpenCodeRepository(
     }
 
     private fun fail(what: String, t: Throwable) {
-        _state.value = _state.value.copy(error = "$what failed: ${t.message}".take(500))
+        // v11 (owner, B.108): error text can carry the app-data path; scrub it on the way in.
+        _state.value = _state.value.copy(
+            error = AccountRedaction.scrub("$what failed: ${t.message}").take(500),
+        )
         noteCallFailure(t)
     }
 
