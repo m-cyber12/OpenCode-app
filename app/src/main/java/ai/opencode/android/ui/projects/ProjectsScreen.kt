@@ -11,6 +11,7 @@ import ai.opencode.android.ui.common.relativeTimeLabel
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -118,6 +119,7 @@ private sealed interface PageRow {
  * The screen stays a pure function of its parameters: every management action is
  * a callback the caller (AppRoot) wires to [ProjectStore] and the SAF transfer.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ProjectsScreen(
     projects: List<Project>,
@@ -244,7 +246,7 @@ fun ProjectsScreen(
                 }
             }
             items(items = pageRows, key = { it.key }) { row ->
-                Box(Modifier.fillMaxWidth().animateItem()) {
+                Box(Modifier.fillMaxWidth().animateItemPlacement()) {
                 when (row) {
                     is PageRow.Header -> ProjectRow(
                         project = row.project,

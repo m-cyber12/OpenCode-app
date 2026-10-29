@@ -75,8 +75,10 @@
 set -uo pipefail
 # The application id is read from app/build.gradle.kts (the one source of truth),
 # so this script never spells it out (owner, 2026-10-29). Evidence is scrubbed.
-APP_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../../app/build.gradle.kts" | head -n 1)"
-[ -n "$APP_ID" ] || { echo "FATAL: applicationId not found in app/build.gradle.kts" >&2; exit 1; }
+APP_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../../app/build.gradle.kts" 2>/dev/null | head -n 1)"
+# A missing or unreadable build file is reported by the checkout gate further down
+# (HARNESS_CHECKOUT), not here, so an incomplete checkout still gets its explanation.
+if [ -n "$APP_ID" ]; then APP_ID_FOUND=1; else APP_ID_FOUND=0; APP_ID="unresolved-app-id"; fi
 
 # WINDOWS / GIT BASH - the failure that produced the v2 "the app window never
 # appeared" verdict on a phone that was showing the app.
@@ -829,6 +831,7 @@ missing_helpers() { # prints the missing ones, one per line, empty when complete
   for rel in $HELPER_FILES; do
     [ -f "$DIR/$rel" ] || printf 'phase10/%s\n' "$rel"
   done
+  [ "${APP_ID_FOUND:-0}" = 1 ] || printf 'app/build.gradle.kts (the application id is read from it)\n'
 }
 
 PROBE_LOG=""

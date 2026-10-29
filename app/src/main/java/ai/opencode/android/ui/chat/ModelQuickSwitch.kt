@@ -7,6 +7,7 @@ import ai.opencode.android.ui.common.rememberLoadingPulse
 import ai.opencode.android.ui.theme.ChatTheme
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -484,6 +485,7 @@ private fun ThinkingLevelRow(
  * models. Tags are `conn_<provider>_pick_<i>`, outside the `model_pick_` family the
  * starred list owns.
  */
+@OptIn(ExperimentalFoundationApi::class)
 private fun LazyListScope.quickProviderGroup(
     group: QuickProvider,
     open: Boolean,
@@ -502,7 +504,7 @@ private fun LazyListScope.quickProviderGroup(
     }
     if (open) {
         itemsIndexed(group.models, key = { i, _ -> "${prefix}_$i" }) { index, qm ->
-            Box(Modifier.fillMaxWidth().animateItem()) {
+            Box(Modifier.fillMaxWidth().animateItemPlacement()) {
                 ModelLineRow(
                     model = qm,
                     onPick = { onPick(qm.ref.providerID, qm.ref.modelID) },
