@@ -1,5 +1,5 @@
-[2026-10-28T23:38:24Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=1.18.23-phase10 versionCode=8
-[2026-10-28T23:38:24Z] === gradle :app:assembleRelease :app:bundleRelease ===
+[2026-10-29T02:57:50Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=1.18.23-phase10 versionCode=8
+[2026-10-29T02:57:50Z] === gradle :app:assembleRelease :app:bundleRelease ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
@@ -27,9 +27,9 @@ to this project's gradle.properties.
 
 > Task :app:verifyAndStagePayload
 PAYLOAD STAGING: -PskipPayload=null SKIP_PAYLOAD=null
-PAYLOAD_SOURCE runtime-payload.tar.gz=17070727B runtime-manifest.json=477923B
+PAYLOAD_SOURCE runtime-payload.tar.gz=17072786B runtime-manifest.json=477923B
 Runtime payload OK: 2 complete ABI(s); staged assets + jniLibs to /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/assets / /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/jniLibs
-STAGED_ASSETS n=5 runtime-manifest.json(477923B), runtime-payload.tar.gz(17070727B), sealed-exec-arm64-v8a.txt(5132B), sealed-exec-x86_64.txt(5132B), sealed-report.json(146B)
+STAGED_ASSETS n=5 runtime-manifest.json(477923B), runtime-payload.tar.gz(17072786B), sealed-exec-arm64-v8a.txt(5132B), sealed-exec-x86_64.txt(5132B), sealed-report.json(146B)
 STAGED_JNILIBS n=50 arm64-v8a/libbun.so, x86_64/libbun.so, arm64-v8a/libc++_shared.so, x86_64/libc++_shared.so, arm64-v8a/libchildshim.so, x86_64/libchildshim.so, arm64-v8a/libcrypto.so, x86_64/libcrypto.so, arm64-v8a/libcurl.so, x86_64/libcurl.so, arm64-v8a/libexecshim.so, x86_64/libexecshim.so, arm64-v8a/libgit.so, x86_64/libgit.so, arm64-v8a/libgitremotehttp.so, x86_64/libgitremotehttp.so, arm64-v8a/libjq.so, x86_
 
 > Task :app:preBuild
@@ -54,32 +54,33 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:extractProguardFiles
 > Task :app:mergeReleaseResources
 > Task :app:mergeReleaseJniLibFolders
-> Task :app:desugarReleaseFileDependencies
 > Task :app:processReleaseManifestForPackage
-> Task :app:checkReleaseDuplicateClasses
+> Task :app:desugarReleaseFileDependencies
 > Task :app:mergeReleaseStartupProfile
+> Task :app:checkReleaseDuplicateClasses
 > Task :app:mergeReleaseNativeLibs
-> Task :app:processReleaseResources
-> Task :app:mergeExtDexRelease
 > Task :app:mergeReleaseArtProfile
-> Task :app:mergeReleaseShaders
-> Task :app:compileReleaseShaders NO-SOURCE
-> Task :app:generateReleaseAssets
+> Task :app:processReleaseResources
+> Task :app:stripReleaseDebugSymbols
+> Task :app:mergeExtDexRelease
 
 > Task :app:stripReleaseDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libbun.so, libc++_shared.so, libchildshim.so, libcrypto.so, libcurl.so, libexecshim.so, libgit.so, libgitremotehttp.so, libjq.so, libmksh.so, libnode.so, libnpmcli.so, libocexecprobe.so, libpython3.so, librg.so, libscp.so, libseccompshim.so, libsftp.so, libsshadd.so, libsshagent.so, libsshclient.so, libsshkeygen.so, libsshkeyscan.so, libtoybox.so, libwget.so.
 
-> Task :app:mergeReleaseAssets
+> Task :app:mergeReleaseShaders
 > Task :app:extractReleaseNativeSymbolTables
+> Task :app:compileReleaseShaders NO-SOURCE
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:generateReleaseAssets
+> Task :app:mergeReleaseAssets
 > Task :app:extractReleaseVersionControlInfo
-> Task :app:optimizeReleaseResources
+> Task :app:compressReleaseAssets
 > Task :app:collectReleaseDependencies
 > Task :app:sdkReleaseDependencyData
 > Task :app:writeReleaseAppMetadata
 > Task :app:writeReleaseSigningConfigVersions
+> Task :app:optimizeReleaseResources
 > Task :app:processApplicationManifestReleaseForBundle
-> Task :app:compressReleaseAssets
 > Task :app:configureReleaseDependencies
 > Task :app:parseReleaseIntegrityConfig
 > Task :app:bundleReleaseResources
@@ -116,7 +117,7 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/projects/ProjectsScreen.kt:123:5 Parameter 'onOpen' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:299:5 Parameter 'availability' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:302:9 Variable 'chat' is never used
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:2606:5 Parameter 'onClearModel' is never used
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/settings/SettingsScreen.kt:2607:5 Parameter 'onClearModel' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/terminal/TerminalScreen.kt:58:5 Parameter 'onBack' is never used
 
 > Task :app:compileReleaseJavaWithJavac
@@ -127,8 +128,8 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 > Task :app:mergeReleaseJavaResource
 > Task :app:mergeDexRelease
 > Task :app:compileReleaseArtProfile
-> Task :app:buildReleasePreBundle
 > Task :app:lintVitalAnalyzeRelease
+> Task :app:buildReleasePreBundle
 > Task :app:packageReleaseBundle
 > Task :app:packageRelease
 > Task :app:createReleaseApkListingFileRedirect
@@ -140,18 +141,18 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 > Task :app:lintVitalRelease
 > Task :app:assembleRelease
 
-BUILD SUCCESSFUL in 3m 57s
+BUILD SUCCESSFUL in 4m 23s
 60 actionable tasks: 56 executed, 4 from cache
-[2026-10-28T23:42:22Z] apk=app-release-unsigned.apk (181387045 bytes)
-[2026-10-28T23:42:22Z] aab=app-release.aab (167329174 bytes)
-[2026-10-28T23:42:22Z] RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=36 debuggable=False
-[2026-10-28T23:42:22Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=352 native_abis=arm64-v8a(25 libs,175.2MB),x86_64(25 libs,180.3MB) payload=True manifest_asset=True
-[2026-10-28T23:42:22Z] SIZE PASS :: apkMb=173.0 capMb=200 headroomMb=27.0 native=arm64-v8a(25libs,175.2MB),x86_64(25libs,180.3MB)
-[2026-10-28T23:42:22Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
-[2026-10-28T23:42:24Z] TESTONLY_RELEASE PASS :: installable non-debuggable universal APK bytes=181391917 MiB=173.0 signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
-[2026-10-28T23:42:25Z] TESTONLY_ARM64 PASS :: installable arm64-only APK bytes=109570916 MiB=104.5 x86_64=absent signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
-[2026-10-28T23:42:26Z] RELEASE_AAB PASS :: CONTENTS entries=357 native_abis=arm64-v8a(25 libs,175.2MB),x86_64(25 libs,180.3MB) payload=True manifest_asset=True
-[2026-10-28T23:42:27Z] sha256:
-93589cc072986017f11025d7dd9d3e2604ae133a39a27f171d8a11a915c038a2  ./app-release-unsigned.apk
-35a3f17e0c59ae3859cb70c5f25b464df5f4a317a53195a86a3294df8762c17e  ./app-release.aab
-[2026-10-28T23:42:27Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/release/HOW-TO-SIGN-ON-PHONE.txt + sha256.txt (phone-signing rules + this build's exact bytes)
+[2026-10-29T03:02:14Z] apk=app-release-unsigned.apk (181387201 bytes)
+[2026-10-29T03:02:14Z] aab=app-release.aab (167329453 bytes)
+[2026-10-29T03:02:14Z] RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=36 debuggable=False
+[2026-10-29T03:02:14Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=352 native_abis=arm64-v8a(25 libs,175.2MB),x86_64(25 libs,180.3MB) payload=True manifest_asset=True
+[2026-10-29T03:02:14Z] SIZE PASS :: apkMb=173.0 capMb=200 headroomMb=27.0 native=arm64-v8a(25libs,175.2MB),x86_64(25libs,180.3MB)
+[2026-10-29T03:02:14Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
+[2026-10-29T03:02:17Z] TESTONLY_RELEASE PASS :: installable non-debuggable universal APK bytes=181396013 MiB=173.0 signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
+[2026-10-29T03:02:19Z] TESTONLY_ARM64 PASS :: installable arm64-only APK bytes=109570916 MiB=104.5 x86_64=absent signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
+[2026-10-29T03:02:19Z] RELEASE_AAB PASS :: CONTENTS entries=357 native_abis=arm64-v8a(25 libs,175.2MB),x86_64(25 libs,180.3MB) payload=True manifest_asset=True
+[2026-10-29T03:02:19Z] sha256:
+efa263e0a7738f773d40b45781c72cb1d3f9f5042651feb823aaadefe16a0dfe  ./app-release-unsigned.apk
+348f766b4c48db17cb5a91f06e962c23e413bbb8369d007551bff2a17df98dc0  ./app-release.aab
+[2026-10-29T03:02:19Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/release/HOW-TO-SIGN-ON-PHONE.txt + sha256.txt (phone-signing rules + this build's exact bytes)
