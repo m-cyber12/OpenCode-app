@@ -69,6 +69,10 @@ collect_evidence() {
   cp "$MAINLOG" "$EV/00-run-phase10.log" 2>/dev/null || true
   cp "$OUT/emulator.log" "$EV/" 2>/dev/null || true
   cp "$ROOT/phase4/out/engine/assets/runtime-manifest.json" "$EV/runtime-manifest.json" 2>/dev/null || true
+  # The payload build status (every FATAL line and the tail of each failed sub-build,
+  # including the Node/ICU configure and build tails). Without this a payload
+  # failure leaves no readable reason in the evidence (run 40827741536, 2026-10-29).
+  tail -c 400000 "$ROOT/phase4/out/engine/build.status" > "$EV/payload-build-status.txt" 2>/dev/null || true
   mkdir -p "$EV/jvm-unit-tests" "$EV/phase6"
   cp "$ROOT"/app/build/test-results/testDebugUnitTest/*.xml "$EV/jvm-unit-tests/" 2>/dev/null || true
   cp -r "$ROOT/phase6/out/evidence/." "$EV/phase6/" 2>/dev/null || true
