@@ -102,35 +102,40 @@ else
 fi
 p10 RELEASE_APK_DETAIL 0 "$(grep -a '^CONTENTS ' "$APK_REPORT" | head -1 | tr -s ' ' | cut -c1-240)"
 
-# ---- conservative project budget: 200 MiB universal direct APK --------------
+# ---- project budget: universal direct APK ----------------------------------
 #
-# Keep the owner's 200 MiB project budget as a deliberately conservative signal
-# for the universal direct-download APK. It is NOT Google's current hard Play
-# limit: Play's current documented AAB base-module limit is 500 MB compressed,
-# and crossing 200 MB causes a non-blocking mobile-data warning. Play measures
-# generated device APKs rather than this two-ABI universal proxy. If the proxy
-# fits this tighter budget every ABI split fits it too; 180 MiB warns while
-# there is still room to plan. Play Console remains the authoritative size
-# calculation after an AAB is signed with the upload key and uploaded.
-SIZE_DETAIL="$(python3 - "$APK_REPORT" <<'PY'
+# OWNER-ACCEPTED RAISE (2026-10-28, ICU ask): the owner chose to ship full ICU in
+# the bundled Node "accepting a bigger APK". The universal test APK with full ICU
+# measured 210,530,861 bytes (200.8 MiB). Before ICU the same proxy was 181,396,013
+# bytes (173.0 MiB, the B.108 run's evidence), so ICU adds about 27.8 MiB, and that
+# alone crossed the old 200 MiB cap. The cap
+# is now 230 MiB, and the gate still FAILS loudly above that value. The warning
+# line moves to 210 MiB. These are the project's own numbers, not Play's: Play's
+# documented AAB base-module limit is 500 MB compressed, and crossing 200 MB
+# causes only a non-blocking mobile-data warning. Play Console remains the
+# authoritative size calculation after an AAB is signed and uploaded.
+SIZE_CAP_MB=230
+SIZE_WARN_MB=210
+SIZE_DETAIL="$(python3 - "$APK_REPORT" "$SIZE_CAP_MB" <<'PY'
 import re, sys
 txt = open(sys.argv[1], errors="replace").read()
+cap = float(sys.argv[2])
 m = re.search(r"^ARTIFACT .* bytes=(\d+)", txt, re.M)
 mb = int(m.group(1)) / 1048576.0 if m else -1.0
 # non-greedy up to " payload=": the field itself contains spaces
 # ("arm64-v8a(8 libs,126.4MB)"), so \S+ would stop at the first one.
 c = re.search(r"native_abis=(.+?) payload=", txt)
 nat = c.group(1).replace(" ", "") if c else "unknown"
-print("apkMb=%.1f capMb=200 headroomMb=%.1f native=%s" % (mb, 200.0 - mb, nat))
+print("apkMb=%.1f capMb=%.0f headroomMb=%.1f native=%s" % (mb, cap, cap - mb, nat))
 PY
 )"
 SIZE_MB="$(printf '%s' "$SIZE_DETAIL" | sed -n 's/.*apkMb=\([0-9.]*\).*/\1/p')"
 if [ -z "$SIZE_MB" ]; then
   p10 SIZE 1 "could not measure the release APK size (no ARTIFACT bytes= line); the cap is unchecked"
-elif awk -v m="$SIZE_MB" 'BEGIN{exit !(m > 200)}'; then
-  p10 SIZE 1 "OVER the project's conservative 200 MiB universal-APK budget (not Play's current 500 MB AAB base-module limit): $SIZE_DETAIL"
-elif awk -v m="$SIZE_MB" 'BEGIN{exit !(m > 180)}'; then
-  p10 SIZE 0 "within the project's conservative budget but close: $SIZE_DETAIL (plan the next tool against this number)"
+elif awk -v m="$SIZE_MB" -v c="$SIZE_CAP_MB" 'BEGIN{exit !(m > c)}'; then
+  p10 SIZE 1 "OVER the project's $SIZE_CAP_MB MiB universal-APK budget (owner-accepted raise, see the budget note above; not Play's 500 MB AAB base-module limit): $SIZE_DETAIL"
+elif awk -v m="$SIZE_MB" -v w="$SIZE_WARN_MB" 'BEGIN{exit !(m > w)}'; then
+  p10 SIZE 0 "within the project's $SIZE_CAP_MB MiB budget but close: $SIZE_DETAIL (plan the next tool against this number)"
 else
   p10 SIZE 0 "$SIZE_DETAIL"
 fi
@@ -208,10 +213,10 @@ else
       --expect-native-abi arm64-v8a --expect-native-abi x86_64 \
       --json "$EV/p10-testonly-release-universal.json" > "$UNIVERSAL_REPORT" 2>&1; then
     UNIVERSAL_BYTES=$(stat -c%s "$TEST_UNIVERSAL")
-    if [ "$UNIVERSAL_BYTES" -le $((200 * 1024 * 1024)) ]; then
+    if [ "$UNIVERSAL_BYTES" -le $((SIZE_CAP_MB * 1024 * 1024)) ]; then
       p10 TESTONLY_RELEASE 0 "installable non-debuggable universal APK bytes=$UNIVERSAL_BYTES MiB=$(awk -v b="$UNIVERSAL_BYTES" 'BEGIN{printf "%.1f",b/1048576}') signed=v2/v3 cert_matches_smoke=${UNIVERSAL_CERT:0:16}..."
     else
-      p10 TESTONLY_RELEASE 1 "signed universal APK exceeds 200 MiB: bytes=$UNIVERSAL_BYTES"
+      p10 TESTONLY_RELEASE 1 "signed universal APK exceeds $SIZE_CAP_MB MiB: bytes=$UNIVERSAL_BYTES"
     fi
   else
     p10 TESTONLY_RELEASE 1 "zipalign/sign/inspect failed: $(grep -a '^FINDING' "$UNIVERSAL_REPORT" 2>/dev/null | head -3 | tr '\n' ';' | cut -c1-220)"
@@ -239,10 +244,10 @@ else
         --expect-min-sdk 29 --expect-target-sdk 36 --expect-native-abi arm64-v8a \
         --json "$EV/p10-testonly-release-arm64.json" > "$ARM_REPORT" 2>&1; then
     ARM_BYTES=$(stat -c%s "$TEST_ARM64")
-    if [ "$ARM_BYTES" -le $((200 * 1024 * 1024)) ]; then
+    if [ "$ARM_BYTES" -le $((SIZE_CAP_MB * 1024 * 1024)) ]; then
       p10 TESTONLY_ARM64 0 "installable arm64-only APK bytes=$ARM_BYTES MiB=$(awk -v b="$ARM_BYTES" 'BEGIN{printf "%.1f",b/1048576}') x86_64=absent signed=v2/v3 cert_matches_smoke=${ARM_CERT:0:16}..."
     else
-      p10 TESTONLY_ARM64 1 "signed arm64-only APK exceeds 200 MiB: bytes=$ARM_BYTES"
+      p10 TESTONLY_ARM64 1 "signed arm64-only APK exceeds $SIZE_CAP_MB MiB: bytes=$ARM_BYTES"
     fi
   else
     p10 TESTONLY_ARM64 1 "arm64 trim/align/sign/inspect failed or x86_64 survived: $(grep -a '^FINDING' "$ARM_REPORT" 2>/dev/null | head -3 | tr '\n' ';' | cut -c1-220)"

@@ -7516,9 +7516,26 @@ artifact. Status, from the evidence that actually reached the branch:
   **succeeded** as a bootstrap. `node x86_64: ninja finished at 20:59:30Z`, so the Node
   ninja step took about 2 h 47 min against a 3 h timeout (about 13 min of margin).
   `NODE_CACHE_BOOTSTRAP_CAPTURED abi=x86_64`. No verdicts yet.
-- **Next: run C (full run).** Both caches are in `docs/progress/phase10-evidence/node-cache/`
-  (22 files each). The payload restores both ABIs and builds nothing, and the device,
-  UI, smoke and release verdicts run for the first time with full ICU.
+- **Run 40962787560** on `eeedec4e` (run C: full run, both Node caches restored):
+  **failed on the size budget only.** Verified: both caches restored and checksum-checked
+  (`node arm64-v8a: restored verified ... (90035152 bytes)`, `node x86_64: ... (92279992 bytes)`);
+  `P10-PAYLOAD PASS` (sha256 `0a8f14b2b4a69a95`, 2621 files); `P10-DEVICE PASS` (fresh
+  exact API 36 AVD); all P6 UI, first-run, exec and sealed-install gates PASS, including
+  `P6_U10` (`picked=[high]`, `noTriangles=true`) and `P6_X1`-`P6_X3` (exec under the
+  nativeLibraryDir, appData refused, prefix symlink). Failing: `P10_SIZE` and
+  `P10_TESTONLY_RELEASE` against the 200 MiB budget. Live-model gates `P6_L1/L2` and
+  `P10_SMOKE_UI_L1/L2` are SKIP (no model answered within 300 s; no provider key here).
+  The V7 ICU probe (`harness-sealed-tools`) is in the androidTest sources; read its
+  verdict in the next run's evidence.
+- **ICU size cost, measured:** the universal test APK was 181,396,013 bytes (173.0 MiB)
+  before ICU (B.108 evidence) and 210,530,861 bytes (200.8 MiB) with ICU, so ICU adds
+  about 27.8 MiB. The arm64-only test APK is 124,111,716 bytes (118.4 MiB).
+- **Budget raise (owner-accepted for ICU, 2026-10-28 answer "accepting a bigger APK"):**
+  `phase10/scripts/40-release-verify.sh` now uses `SIZE_CAP_MB=230` (warn at 210). The gate
+  still FAILS loudly above 230 MiB. This is the project's own proxy budget, not Play's limit.
+  The owner should confirm the new number.
+- **Next: run D (full run with the raised budget).** Expected to finish the release
+  verdicts. Anything still red is reported as is.
 
 Session note (2026-10-29, later): the agent's local branch had fallen behind origin
 (an older working tree at the `main` base). It was reset to origin `554520b0` after a
