@@ -209,7 +209,21 @@ if [ ! -f "$ROOT/phase4/out/engine/assets/runtime-manifest.json" ]; then
   # reached x86_64 after four hours (the existing toolchain + one V8 build).
   # Keep a finite eight-hour payload boundary under the workflow's nine-hour
   # job cap, leaving roughly one hour for the measured device/release stages.
-  run_c 28800 "bash '$ROOT/phase4/scripts/10-build-payload.sh'" || record_fatal "payload build failed"
+  # P4_NODE_CAPTURE_STOP=1: a Node ICU cache that is missing for an ABI is
+  # built, captured as sub-2 MiB chunks in the evidence tree, and the run stops
+  # there (one full-icu V8 build per six-hour job). The next run restores it.
+  run_c 28800 "P4_NODE_CAPTURE_STOP=1 bash '$ROOT/phase4/scripts/10-build-payload.sh'" || record_fatal "payload build failed"
+  if [ ! -f "$ROOT/phase4/out/engine/assets/runtime-manifest.json" ]; then
+    BOOT=$(grep -a '^NODE_CACHE_BOOTSTRAP_CAPTURED' "$ROOT/phase4/out/engine/build.status" 2>/dev/null | tail -1)
+    if [ -n "$BOOT" ]; then
+      note_gate "P10 MODE node-cache-bootstrap: $BOOT"
+      note_gate "P10 MODE node-cache-bootstrap: NO verdicts in this run; the next run restores this ABI and builds the other one"
+      collect_evidence; push_evidence
+      echo "=== PHASE 10 END $(date -u +%FT%TZ) node-cache bootstrap captured ===" | tee -a "$MAINLOG"
+      exit 0
+    fi
+    record_fatal "payload build produced no runtime manifest and no Node cache capture"
+  fi
 else
   echo "reusing phase4/out/engine payload" | tee -a "$MAINLOG"
 fi

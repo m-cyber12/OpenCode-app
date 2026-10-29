@@ -1,32 +1,46 @@
-# Shipping ICU in the bundled Node (owner decision, 2026-10-28)
+# Shipping ICU in the bundled Node (owner decision, 2026-10-28; go-ahead 2026-10-29)
 
 **Owner's choice:** ship ICU in the bundled Node, accept a bigger APK.
-**Status:** decided, NOT yet implemented. A naive flag change would fail CI.
+**Status (2026-10-29):** implemented in `phase4/scripts/10-build-payload.sh`; the
+multi-run cache bootstrap is running on CI. Verdicts are pending until the bootstrap
+finishes and a full run passes the device gate. Nothing here is proven on a device yet.
 
-## What is wrong
-`phase4/scripts/10-build-payload.sh` configures Node with `--with-intl=none`. Without ICU,
-V8 rejects Unicode property escapes, so `/[\p{L}\p{N}]/u` fails with
-`Invalid regular expression`. That is the owner's `rea` report.
+## What was wrong
+Node was configured with `--with-intl=none`. Without ICU, V8 rejects Unicode property
+escapes, so `/[\p{L}\p{N}]/u` fails with `Invalid regular expression`. That is the owner's
+`rea` report (2026-10-28).
 
-## Why it is not a one-line change
-- Node is not rebuilt on every run. It is restored from a checksum-pinned prebuilt
-  cache whose key is `NODE_CACHE_KEY="node-${NODE_PIN}-ndk${NDK_PIN}-termux-...-v1"`
-  (`phase4/scripts/10-build-payload.sh`, around line 1099).
-- Changing only the flag leaves the old `-v1` cache in place, so the flag has no effect.
-- Bumping the key to `-v2` forces a from-source build of Node and V8 for both ABIs. The
-  script's own comment says this takes nearly the whole six-hour GitHub runner limit, so
-  one board would be cancelled. A multi-run bootstrap (the `node-cache` chunks under
-  `docs/progress/phase10-evidence/`) would be needed.
+## What changed
+1. `--with-intl=none` became `--with-intl=full-icu`. The ICU sources and the full data
+   (`deps/icu-small/source/data/in/icudt78l.dat.bz2`) come from the Node 24.22.1 tarball.
+   Locally, `configure.py` with the same flags completes, and the ninja graph contains the
+   `icudata` target (`gen/icudt78_dat.c`). Full ICU was chosen over small-icu so that
+   non-English locale formatting also works; the APK grows by the data size.
+2. `NODE_CACHE_KEY` `-v1` became `-v2` (`...-icufull-v2`). The old no-ICU cache is no longer
+   used and was removed from the tree (it stays in git history).
+3. The build fails if the unstripped binary has no `icudt*_dat` symbol, so a no-ICU build
+   cannot be captured by mistake.
+4. One ABI per CI job. The old cache for two ABIs did not fit in one six-hour job. The
+   payload step now runs with `P4_NODE_CAPTURE_STOP=1`. When an ABI's cache is missing,
+   that ABI is built, captured as sub-2 MiB chunks under `docs/progress/phase10-evidence/`
+   (the existing always-run post-step commits that directory), and the run stops with the
+   marker `NODE_CACHE_BOOTSTRAP_CAPTURED`. `phase10/scripts/00-run-phase10.sh` records that as
+   a "node-cache-bootstrap" mode with no verdicts.
+5. The device gate V7 (`HarnessSealedToolsGateTest.v7_nodeAndNpmRunFromTheSealedPrefix`,
+   run by phase 6's `harness-sealed-tools`) now also runs
+   `node -e "console.log(/\p{L}/u.test('a') + ' ' + new Intl.NumberFormat('de-DE').format(1234.5))"`
+   and requires `true 1.234,5`. The German grouping only works with full ICU.
 
-## The change, when it is done
-1. In `10-build-payload.sh`, replace `--with-intl=none` with `--with-intl=small-icu`.
-   small-icu is English-only locale data with the full Unicode property tables.
-   Use full-icu only if locale support is needed; it is much larger.
-2. Bump `NODE_CACHE_KEY` `-v1` to `-v2` so the old cache is not reused.
-3. Run the bootstrap over several boards so each ABI finishes inside the runner limit.
-4. Measure the new libnode.so size. Check the APK against the 200 MiB budget.
-5. Verify on a board: `node -e "console.log(/[\p{L}\p{N}]/u.test('a'))"` prints `true`.
+## Bootstrap sequence (each step is one CI run on the branch)
+- Run A: arm64-v8a is missing, so it is built and captured; the run stops.
+- Run B: arm64-v8a is restored; x86_64 is built and captured; the run stops.
+- Run C: both are restored; the full payload, emulator, UI gates and release run.
+Each run after A and B needs a new commit on the branch to start; the evidence commit
+itself does not trigger the workflow (`paths-ignore`).
 
-## Needs the owner's go-ahead
-Steps 2 to 4 cost several CI boards and change the APK size. The agent will not start
-them unless the owner says so.
+## Known risks
+- The first from-source full-ICU build is unproven. If it fails, the run records a FATAL
+  in `GATES_SUMMARY.txt` and the next run starts over at that ABI.
+- The bundled data adds an estimated 25–35 MB per ABI (not measured yet) to the native libraries. The cache chunks
+  add the compressed size to git once per ABI.
+- The APK size has to be re-measured against the earlier 221.65 MiB report.

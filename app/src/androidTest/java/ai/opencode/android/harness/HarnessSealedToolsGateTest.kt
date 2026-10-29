@@ -236,12 +236,19 @@ class HarnessSealedToolsGateTest {
                 "node -e \"console.log(require('oc-local-gate').answer)\""
             val run = shellIn(env, script)
             val lines = run.output.trim().split("\n").map { it.trim() }
-            val ok = run.ran && run.exitCode == 0 &&
+            // Full ICU (owner, 2026-10-28): \p{L} in RegExp, and locale formatting
+            // that a no-Intl or English-only build cannot produce (German grouping).
+            val icu = shellIn(
+                env,
+                "node -e \"console.log(/\\p{L}/u.test('a') + ' ' + new Intl.NumberFormat('de-DE').format(1234.5))\"",
+            )
+            val icuOk = icu.ran && icu.exitCode == 0 && icu.output.trim() == "true 1.234,5"
+            val ok = run.ran && run.exitCode == 0 && icuOk &&
                 lines.getOrNull(0) == "v24.22.1" &&
                 lines.getOrNull(1) == "11.19.1" &&
                 lines.getOrNull(2) == "42"
             val compact = run.output.trim().replace("\n", " <NL> ").take(1000)
-            ok to "node/npm ran=${run.ran} exit=${run.exitCode} output='$compact'"
+            ok to "node/npm ran=${run.ran} exit=${run.exitCode} icu=$icuOk icuOut='${icu.output.trim().take(120)}' output='$compact'"
         }.getOrElse { t -> false to "threw ${t.javaClass.simpleName}: ${t.message}" }
         printGate("V7", measured.first, measured.second)
     }

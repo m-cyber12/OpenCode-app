@@ -1084,19 +1084,24 @@ build_python_stdlib() {
 # Node 24: a REAL Android/Bionic executable, not the 4 KiB-aligned libnode from
 # nodejs-mobile (which cannot run on 16 KiB-page devices and has no main()).
 # Upstream labels Android unsupported, so use the pinned Termux Android fixes
-# current for this exact Node release. Dependencies stay bundled; Intl,
-# inspector, snapshots and code cache are omitted because this is the user's
-# CLI tool, not the OpenCode server (Bun remains the server in additive step 1).
+# current for this exact Node release. Dependencies stay bundled. ICU is FULL
+# (--with-intl=full-icu, from the ICU sources and data bundled in the Node
+# tarball): RegExp \p{L} and Intl need it, and the owner accepted the larger
+# APK for that (owner, 2026-10-28). Inspector, snapshots and code cache stay
+# omitted: this is the user's CLI tool, not the OpenCode server (Bun remains
+# the server in additive step 1).
 #
-# A source build remains the authoritative recipe, but two V8 ABIs take almost
-# the entire six-hour GitHub-hosted runner maximum (board 40253463934 built both
-# and was cancelled after debug assembly). A checksum-pinned prebuilt cache in
-# phase4/prebuilt therefore makes verification runs practical. The one-time CI
-# bootstrap writes sub-2 MiB chunks under evidence because the existing always
-# post-step commits that directory even when the hosted runner is cancelled.
+# A source build remains the authoritative recipe, and a full-icu V8 build is
+# slower than the no-Intl one that the previous -v1 cache came from, so one job
+# cannot build both ABIs. The cache is therefore bootstrapped one ABI per
+# CI run: P4_NODE_CAPTURE_STOP=1 (set by phase10/scripts/00-run-phase10.sh)
+# builds the first missing ABI, captures it as sub-2 MiB chunks under
+# docs/progress/phase10-evidence (the always post-step commits that directory,
+# even when a runner is cancelled), and stops with NODE_CACHE_BOOTSTRAP_CAPTURED.
+# Once both ABIs are captured, later runs restore them and build the full APK.
 # Set P4_REBUILD_NODE=1 to ignore the cache and reproduce from source.
 # ---------------------------------------------------------------------------
-NODE_CACHE_KEY="node-${NODE_PIN}-ndk${NDK_PIN}-termux-${NODE_TERMUX_PATCH_PIN:0:12}-v1"
+NODE_CACHE_KEY="node-${NODE_PIN}-ndk${NDK_PIN}-termux-${NODE_TERMUX_PATCH_PIN:0:12}-icufull-v2"
 NODE_PREBUILT_ROOT="$DIR/prebuilt/$NODE_CACHE_KEY"
 NODE_BOOTSTRAP_ROOT="$DIR/../docs/progress/phase10-evidence/node-cache/$NODE_CACHE_KEY"
 
@@ -1160,7 +1165,7 @@ build_node() {  # $1=abi $2=target triple $3=node dest cpu $4=gyp arch
   fi
   [ -x "$ninja" ] || { note "FATAL: Node needs Ninja (not found on PATH or under Android SDK)"; return 1; }
   local patchdir="$WORK/termux-node-patches"
-  note "--- Node $NODE_PIN ($abi, Android/Bionic, no Intl/inspector/snapshot) ---"
+  note "--- Node $NODE_PIN ($abi, Android/Bionic, full-icu, no inspector/snapshot) ---"
   if [ "${P4_REBUILD_NODE:-0}" != "1" ]; then
     if restore_node_cache "$abi"; then
       return 0
@@ -1209,7 +1214,7 @@ tools-v8_gypfiles-v8.gyp.patch"
     export GYP_DEFINES="target_arch=$gyparch v8_target_arch=$gyparch android_target_arch=$gyparch host_os=linux OS=android android_ndk_path=$ndkhome"
     /usr/bin/python3 configure.py \
       --dest-cpu="$destcpu" --dest-os=android --cross-compiling \
-      --openssl-no-asm --with-intl=none --without-inspector \
+      --openssl-no-asm --with-intl=full-icu --without-inspector \
       --without-node-snapshot --without-node-code-cache \
       --shared-zlib --shared-zlib-includes="$zprefix/include" \
       --shared-zlib-libpath="$zprefix/lib" \
@@ -1230,6 +1235,12 @@ tools-v8_gypfiles-v8.gyp.patch"
 
   local built="$src/out/Release/node"
   [ -f "$built" ] || { note "FATAL: Node output missing for $abi"; return 1; }
+  # ICU is the reason this cache exists (\p{L} in RegExp needs the Unicode
+  # property tables). Check the unstripped binary for the bundled ICU data
+  # symbol: a no-Intl build cannot pass this.
+  "$NDK_BIN/llvm-nm" "$built" 2>/dev/null | grep -q 'icudt[0-9]*_dat' \
+    || { note "FATAL: Node $abi has no bundled ICU data symbol (full-icu not built)"; return 1; }
+  note "node $abi: bundled ICU data symbol present"
   cp "$built" "$outdir/libnode.so"
   "$NDK_BIN/llvm-strip" "$outdir/libnode.so"
   chmod 755 "$outdir/libnode.so"
@@ -1252,6 +1263,13 @@ tools-v8_gypfiles-v8.gyp.patch"
   capture_node_cache "$abi" \
     || { note "FATAL: could not capture reproducible Node cache for $abi"; return 1; }
   rm -rf "$src"  # one V8 output tree at a time: runner disk is a real limit
+  # One ABI per CI job: a full-icu V8 build for both ABIs does not fit in one
+  # six-hour hosted-runner job. The bootstrap captures this ABI, then stops
+  # with a marker; the next run restores it and builds the other ABI.
+  if [ "${P4_NODE_CAPTURE_STOP:-0}" = "1" ]; then
+    note "NODE_CACHE_BOOTSTRAP_CAPTURED abi=$abi key=$NODE_CACHE_KEY"
+    exit 0
+  fi
 }
 
 # OpenSSH client suite. One shared libcrypto per ABI avoids statically repeating
