@@ -16,6 +16,10 @@
 # only artifact anyone will want to read in that case (phase 4 lesson: never let
 # an early failure swallow the log).
 set -uo pipefail
+# The application id is read from app/build.gradle.kts (the one source of truth),
+# so this script never spells it out (owner, 2026-10-29). Evidence is scrubbed.
+APP_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../../app/build.gradle.kts" | head -n 1)"
+[ -n "$APP_ID" ] || { echo "FATAL: applicationId not found in app/build.gradle.kts" >&2; exit 1; }
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "$DIR/.." && pwd)"
 OUT="$DIR/out"
@@ -65,7 +69,7 @@ run_c() {
   [ "$rc" = 0 ] || { echo "STEP_FAILED rc=$rc: ${*}" | tee -a "$MAINLOG"; return 1; }
   return 0
 }
-PKG="io.github.mcyber12.opencode.debug"
+PKG="${APP_ID}.debug"
 
 echo "=== PHASE 5 START $(date -u +%FT%TZ) staged=$STAGED ===" | tee -a "$MAINLOG"
 SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"

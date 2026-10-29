@@ -27,6 +27,10 @@
 #   P10_GRADLE_ONLY=1 / phase10/CI_GRADLE_ONLY: compile + JVM tests only.
 #   P10_SKIP_SMOKE=1, P10_SKIP_P9GATES=1, P10_SKIP_SHOTS=1: skip one stage.
 set -uo pipefail
+# The application id is read from app/build.gradle.kts (the one source of truth),
+# so this script never spells it out (owner, 2026-10-29). Evidence is scrubbed.
+APP_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../../app/build.gradle.kts" | head -n 1)"
+[ -n "$APP_ID" ] || { echo "FATAL: applicationId not found in app/build.gradle.kts" >&2; exit 1; }
 
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "$DIR/.." && pwd)"
@@ -89,6 +93,8 @@ push_evidence() {
   cp -r "$EV/." "$ROOT/docs/progress/phase10-evidence/" 2>/dev/null || true
   rm -f "$ROOT/docs/progress/phase10-evidence/emulator.log" 2>/dev/null || true
   find "$ROOT/docs/progress/phase10-evidence" -type f -size +2M -delete 2>/dev/null || true
+  # The application id is hidden from committed evidence (owner, 2026-10-29).
+  python3 "$DIR/scripts/scrub-evidence.py" "$ROOT/docs/progress/phase10-evidence" || true
   # Store screenshots are listing assets, not evidence: they live in docs/store.
   if [ -d "$ROOT/docs/store/screenshots" ] && compgen -G "$ROOT/docs/store/screenshots/*.png" >/dev/null; then
     git -C "$ROOT" add -A docs/store/screenshots/ 2>/dev/null || true
@@ -360,10 +366,10 @@ else
   # package with it - a released app is never installed in CI, so uninstalling
   # the id cannot touch one).
   echo "p9 preamble: removing the smoke build so port 4111 belongs to the debug runtime again" | tee -a "$MAINLOG"
-  adb shell am force-stop io.github.mcyber12.opencode >/dev/null 2>&1 || true
-  adb shell am force-stop io.github.mcyber12.opencode.debug >/dev/null 2>&1 || true
-  adb uninstall io.github.mcyber12.opencode.test >/dev/null 2>&1 || true
-  adb uninstall io.github.mcyber12.opencode >/dev/null 2>&1 || true
+  adb shell am force-stop ${APP_ID} >/dev/null 2>&1 || true
+  adb shell am force-stop ${APP_ID}.debug >/dev/null 2>&1 || true
+  adb uninstall ${APP_ID}.test >/dev/null 2>&1 || true
+  adb uninstall ${APP_ID} >/dev/null 2>&1 || true
   sleep 3
   P9RC=0
   bash "$ROOT/phase9/scripts/20-gates.sh" >> "$MAINLOG" 2>&1 || P9RC=$?

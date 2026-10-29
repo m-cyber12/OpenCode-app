@@ -12,11 +12,27 @@ taps is a real node with `clickable="true" enabled="true"` - so the run exercise
 driver's own `ui find` -> `input tap` path instead of a shortcut.
 """
 import os
+import re
 import struct
 import sys
 import zlib
 
-PKG = "io.github.mcyber12.opencode"
+
+def _app_id():
+    """applicationId, read from app/build.gradle.kts: the one source of truth.
+    No script spells the id out (owner, 2026-10-29)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(here, "..", "..", "app", "build.gradle.kts"), encoding="utf-8") as f:
+        m = re.search(r'applicationId = "([^"]+)"', f.read())
+    if not m:
+        raise SystemExit("applicationId not found in app/build.gradle.kts")
+    return m.group(1)
+
+
+APP_ID = _app_id()
+
+
+PKG = APP_ID
 
 HEAD = ("<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>\n"
         "<hierarchy rotation=\"0\">\n")

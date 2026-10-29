@@ -7,6 +7,7 @@ import ai.opencode.android.ui.theme.MonoSmall
 import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.delay
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -32,7 +33,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -166,6 +167,8 @@ fun SectionCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     var expanded by rememberSaveable(title, collapsible) { mutableStateOf(!collapsible || initiallyExpanded) }
+    // The fold marker turns (finite 220 ms) instead of snapping to the other glyph.
+    val chevronTurn by animateFloatAsState(targetValue = if (expanded) 180f else 0f, animationSpec = tween(220), label = "section_chevron")
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
@@ -197,10 +200,10 @@ fun SectionCard(
                 )
                 if (collapsible) {
                     Icon(
-                        imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                        imageVector = Icons.Filled.KeyboardArrowDown,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp).clearAndSetSemantics { },
+                        modifier = Modifier.size(20.dp).rotate(chevronTurn).clearAndSetSemantics { },
                     )
                 }
             }

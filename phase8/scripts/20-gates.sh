@@ -30,6 +30,10 @@
 # from inside the app process to logcat AND an on-device file; this script
 # counts the deduplicated union, so a gate that never ran cannot pass.
 set -uo pipefail
+# The application id is read from app/build.gradle.kts (the one source of truth),
+# so this script never spells it out (owner, 2026-10-29). Evidence is scrubbed.
+APP_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../../app/build.gradle.kts" | head -n 1)"
+[ -n "$APP_ID" ] || { echo "FATAL: applicationId not found in app/build.gradle.kts" >&2; exit 1; }
 
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "$DIR/.." && pwd)"
@@ -42,8 +46,8 @@ LOG="$EV/gates.log"
 : > "$SUMMARY"; : > "$LOG"
 log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
 
-PKG="io.github.mcyber12.opencode.debug"
-TEST_PKG="io.github.mcyber12.opencode.debug.test"
+PKG="${APP_ID}.debug"
+TEST_PKG="${APP_ID}.debug.test"
 RUNNER="$TEST_PKG/androidx.test.runner.AndroidJUnitRunner"
 FILES="/data/data/$PKG/files"
 PORT=4111
@@ -86,7 +90,7 @@ stage_drivers() { # phase4 lib + phase8 drivers onto the device
 run_js_on_device() { # $1=script-in-$DEVJS [argv...] ; needs PASSWD
   local script="$1"; shift
   local out rc
-  out=$(rash "cd '$DEVJS' && timeout -k 5 ${P8_DRIVER_TIMEOUT:-900} env OPENCODE_BASE=\"http://127.0.0.1:$PORT\" OPENCODE_SERVER_PASSWORD=\"$PASSWD\" OPENCODE_SERVER_USERNAME=opencode OPENCODE_DIRECTORY=\"$WORKDIR\" OPENCODE_BUN_BIN=\"$FILES/bin/bun\" P8_PERF_MODEL=\"${P8_PERF_MODEL:-}\" P8_PERF_KEY=\"${P8_PERF_KEY:-}\" P8_HIST_TURNS=\"${P8_HIST_TURNS:-40}\" P8_HIST_MODEL=\"${P8_HIST_MODEL:-}\" P8_KEY_FILE=\"$FILES/harness/model-key\" P8_LARGE_FILES=\"${P8_LARGE_FILES:-2000}\" P8_LARGE_FILE_MB=\"${P8_LARGE_FILE_MB:-50}\" '$FILES/bin/bun' '$script' $* 2>&1; echo \"DEVJS_RC=\$?\"")
+  out=$(rash "cd '$DEVJS' && timeout -k 5 ${P8_DRIVER_TIMEOUT:-900} env P8_APP_FILES=\"/data/data/${APP_ID}.debug/files\" OPENCODE_BASE=\"http://127.0.0.1:$PORT\" OPENCODE_SERVER_PASSWORD=\"$PASSWD\" OPENCODE_SERVER_USERNAME=opencode OPENCODE_DIRECTORY=\"$WORKDIR\" OPENCODE_BUN_BIN=\"$FILES/bin/bun\" P8_PERF_MODEL=\"${P8_PERF_MODEL:-}\" P8_PERF_KEY=\"${P8_PERF_KEY:-}\" P8_HIST_TURNS=\"${P8_HIST_TURNS:-40}\" P8_HIST_MODEL=\"${P8_HIST_MODEL:-}\" P8_KEY_FILE=\"$FILES/harness/model-key\" P8_LARGE_FILES=\"${P8_LARGE_FILES:-2000}\" P8_LARGE_FILE_MB=\"${P8_LARGE_FILE_MB:-50}\" '$FILES/bin/bun' '$script' $* 2>&1; echo \"DEVJS_RC=\$?\"")
   rc=$(printf '%s' "$out" | sed -n 's/.*DEVJS_RC=\([0-9]*\).*/\1/p' | tail -1)
   printf '%s\n' "$out" | grep -v '^DEVJS_RC='
   return "${rc:-1}"

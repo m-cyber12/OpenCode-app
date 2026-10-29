@@ -30,6 +30,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -45,6 +46,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +56,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -240,6 +244,7 @@ fun ProjectsScreen(
                 }
             }
             items(items = pageRows, key = { it.key }) { row ->
+                Box(Modifier.fillMaxWidth().animateItem()) {
                 when (row) {
                     is PageRow.Header -> ProjectRow(
                         project = row.project,
@@ -279,6 +284,7 @@ fun ProjectsScreen(
                         projectName = row.projectName,
                         onNewSession = { onNewSession(row.projectName) },
                     )
+                }
                 }
             }
             val previous = workspaces.filterNot { it.current }
@@ -720,6 +726,7 @@ private fun ProjectRow(
     val opened = relativeTimeLabel(project.lastOpenedMs, now)
     val menuLabel = stringResource(R.string.projects_menu, project.name)
     var menuOpen by remember { mutableStateOf(false) }
+    val turn by animateFloatAsState(targetValue = if (expanded) 90f else 0f, animationSpec = tween(220), label = "project_turn")
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = if (active) chat.selectedContainer else chat.toolContainer,
@@ -831,12 +838,13 @@ private fun ProjectRow(
                         )
                     }
                 }
-                Text(
-                    text = if (expanded) "▾" else "▸",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = chat.muted,
+                Icon(
+                    imageVector = Icons.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = chat.muted,
                     modifier = Modifier
-                        .width(20.dp)
+                        .size(22.dp)
+                        .rotate(turn)
                         .clearAndSetSemantics { },
                 )
             }
@@ -940,6 +948,7 @@ private fun HistorySection(
 ) {
     val chat = ChatTheme.chat
     var open by rememberSaveable { mutableStateOf(false) }
+    val turn by animateFloatAsState(targetValue = if (open) 90f else 0f, animationSpec = tween(220), label = "history_turn")
     Surface(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         color = MaterialTheme.colorScheme.surface,
@@ -965,11 +974,11 @@ private fun HistorySection(
                     color = chat.muted,
                     modifier = Modifier.weight(1f),
                 )
-                Text(
-                    text = if (open) "▾" else "▸",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = chat.muted,
-                    modifier = Modifier.clearAndSetSemantics { },
+                Icon(
+                    imageVector = Icons.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = chat.muted,
+                    modifier = Modifier.size(22.dp).rotate(turn).clearAndSetSemantics { },
                 )
             }
             if (open) {

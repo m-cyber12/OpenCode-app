@@ -55,6 +55,10 @@
 #
 # Usage: bash phase10/scripts/test-90-real-device.sh [--keep]
 set -uo pipefail
+# The application id is read from app/build.gradle.kts (the one source of truth),
+# so this script never spells it out (owner, 2026-10-29). Evidence is scrubbed.
+APP_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../../app/build.gradle.kts" | head -n 1)"
+[ -n "$APP_ID" ] || { echo "FATAL: applicationId not found in app/build.gradle.kts" >&2; exit 1; }
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "$DIR/.." && pwd)"
 KEEP=0
@@ -231,7 +235,7 @@ check "$(grep -qE '^P10D_VISIBILITY_(LOCATION|SHELL_LIST|SHELL_READ|OLD_ROOT_EMP
 PROJ=$(cat "$TMP/dev/project" 2>/dev/null)
 check "$([ -s "$TMP/dev/shared/Documents/OpenCode/$PROJ/p10-visible.txt" ] && echo 0 || echo 1)" \
   "the agent's file exists on (fake) SHARED storage: Documents/OpenCode/$PROJ/p10-visible.txt"
-check "$([ -e "$TMP/dev/ext/io.github.mcyber12.opencode/files/workspaces/$PROJ/p10-visible.txt" ] && echo 1 || echo 0)" \
+check "$([ -e "$TMP/dev/ext/${APP_ID}/files/workspaces/$PROJ/p10-visible.txt" ] && echo 1 || echo 0)" \
   "and NOT in Android/data (the location file managers cannot browse)"
 check "$(grep -qa '^P10D_FILES_SCREEN PASS.*Documents/OpenCode' "$OUT/SUMMARY.txt" && echo 0 || echo 1)" \
   "the in-app file browser names the shared location"

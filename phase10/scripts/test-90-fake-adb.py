@@ -29,9 +29,24 @@ import re
 import shutil
 import sys
 
+
+def _app_id():
+    """applicationId, read from app/build.gradle.kts: the one source of truth.
+    No script spells the id out (owner, 2026-10-29)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(here, "..", "..", "app", "build.gradle.kts"), encoding="utf-8") as f:
+        m = re.search(r'applicationId = "([^"]+)"', f.read())
+    if not m:
+        raise SystemExit("applicationId not found in app/build.gradle.kts")
+    return m.group(1)
+
+
+APP_ID = _app_id()
+
+
 ROOT = os.environ.get("P10D_FAKE_ROOT", "")
 SCENARIO = os.environ.get("P10D_FAKE_SCENARIO", "happy")
-PKG = "io.github.mcyber12.opencode"
+PKG = APP_ID
 EXT_PREFIX = "/storage/emulated/0/Android/data/%s" % PKG
 # Phase 10 continuation v3: the shipping default root is shared storage. The fake
 # phone serves that path from the fixture filesystem exactly like the app-specific

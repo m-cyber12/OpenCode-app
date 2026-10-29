@@ -14,20 +14,36 @@ undiagnosable:
 Usage: python3 phase10/scripts/test-p10d-ui.py
 """
 import os
+import re
 import subprocess
 import sys
 import tempfile
+
+
+def _app_id():
+    """applicationId, read from app/build.gradle.kts: the one source of truth.
+    No script spells the id out (owner, 2026-10-29)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(here, "..", "..", "app", "build.gradle.kts"), encoding="utf-8") as f:
+        m = re.search(r'applicationId = "([^"]+)"', f.read())
+    if not m:
+        raise SystemExit("applicationId not found in app/build.gradle.kts")
+    return m.group(1)
+
+
+APP_ID = _app_id()
+
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 READER = os.path.join(HERE, "p10d-ui.py")
 
 APP_XML = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <hierarchy rotation="0">
-<node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="io.github.mcyber12.opencode" content-desc="" clickable="false" enabled="true" bounds="[0,0][1080,1920]">
- <node index="0" text="OpenCode" resource-id="" class="android.view.View" package="io.github.mcyber12.opencode" content-desc="" clickable="false" enabled="true" bounds="[400,100][680,150]" />
- <node index="1" text="Continue" resource-id="welcome_continue" class="android.view.View" package="io.github.mcyber12.opencode" content-desc="" clickable="true" enabled="false" bounds="[20,600][1060,680]" />
- <node index="2" text="Send" resource-id="composer_send" class="android.view.View" package="io.github.mcyber12.opencode" content-desc="" clickable="true" enabled="true" bounds="[980,1700][1060,1780]" />
- <node index="3" text="" resource-id="files_location_path" class="android.view.View" package="io.github.mcyber12.opencode" content-desc="Folder" clickable="false" enabled="true" bounds="[10,200][1070,260]" />
+<node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="@APP_ID@" content-desc="" clickable="false" enabled="true" bounds="[0,0][1080,1920]">
+ <node index="0" text="OpenCode" resource-id="" class="android.view.View" package="@APP_ID@" content-desc="" clickable="false" enabled="true" bounds="[400,100][680,150]" />
+ <node index="1" text="Continue" resource-id="welcome_continue" class="android.view.View" package="@APP_ID@" content-desc="" clickable="true" enabled="false" bounds="[20,600][1060,680]" />
+ <node index="2" text="Send" resource-id="composer_send" class="android.view.View" package="@APP_ID@" content-desc="" clickable="true" enabled="true" bounds="[980,1700][1060,1780]" />
+ <node index="3" text="" resource-id="files_location_path" class="android.view.View" package="@APP_ID@" content-desc="Folder" clickable="false" enabled="true" bounds="[10,200][1070,260]" />
 </node>
 </hierarchy>
 """
@@ -55,10 +71,10 @@ BLANK_XML = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 # coordinates, so the visible node has to win.
 SHOWN_XML = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <hierarchy rotation="0">
-<node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="io.github.mcyber12.opencode" content-desc="" clickable="false" enabled="true" shown="true" bounds="[0,0][1080,1920]">
- <node index="0" text="Send" resource-id="composer_send" class="android.view.View" package="io.github.mcyber12.opencode" content-desc="" clickable="true" enabled="true" shown="false" bounds="[10,10][90,60]" />
- <node index="1" text="Send" resource-id="composer_send" class="android.view.View" package="io.github.mcyber12.opencode" content-desc="" clickable="true" enabled="true" shown="true" bounds="[980,1700][1060,1780]" />
- <node index="2" text="Project files" resource-id="open_files" class="android.view.View" package="io.github.mcyber12.opencode" content-desc="" clickable="true" enabled="true" shown="false" bounds="[10,90][200,140]" />
+<node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="@APP_ID@" content-desc="" clickable="false" enabled="true" shown="true" bounds="[0,0][1080,1920]">
+ <node index="0" text="Send" resource-id="composer_send" class="android.view.View" package="@APP_ID@" content-desc="" clickable="true" enabled="true" shown="false" bounds="[10,10][90,60]" />
+ <node index="1" text="Send" resource-id="composer_send" class="android.view.View" package="@APP_ID@" content-desc="" clickable="true" enabled="true" shown="true" bounds="[980,1700][1060,1780]" />
+ <node index="2" text="Project files" resource-id="open_files" class="android.view.View" package="@APP_ID@" content-desc="" clickable="true" enabled="true" shown="false" bounds="[10,90][200,140]" />
 </node>
 </hierarchy>
 """
@@ -69,12 +85,19 @@ SHOWN_XML = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 # which would be the false-FAIL this whole change exists to remove.
 ALL_HIDDEN_XML = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <hierarchy rotation="0">
-<node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="io.github.mcyber12.opencode" content-desc="" clickable="false" enabled="true" shown="false" bounds="[0,0][1080,1920]">
- <node index="0" text="Projects" resource-id="projects_screen" class="android.view.View" package="io.github.mcyber12.opencode" content-desc="" clickable="false" enabled="true" shown="false" bounds="[40,200][400,260]" />
- <node index="1" text="New project" resource-id="projects_new" class="android.view.View" package="io.github.mcyber12.opencode" content-desc="" clickable="true" enabled="true" shown="false" bounds="[20,600][1060,680]" />
+<node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="@APP_ID@" content-desc="" clickable="false" enabled="true" shown="false" bounds="[0,0][1080,1920]">
+ <node index="0" text="Projects" resource-id="projects_screen" class="android.view.View" package="@APP_ID@" content-desc="" clickable="false" enabled="true" shown="false" bounds="[40,200][400,260]" />
+ <node index="1" text="New project" resource-id="projects_new" class="android.view.View" package="@APP_ID@" content-desc="" clickable="true" enabled="true" shown="false" bounds="[20,600][1060,680]" />
 </node>
 </hierarchy>
 """
+
+
+APP_XML = APP_XML.replace("@APP_ID@", APP_ID)
+DIALOG_XML = DIALOG_XML.replace("@APP_ID@", APP_ID)
+BLANK_XML = BLANK_XML.replace("@APP_ID@", APP_ID)
+SHOWN_XML = SHOWN_XML.replace("@APP_ID@", APP_ID)
+ALL_HIDDEN_XML = ALL_HIDDEN_XML.replace("@APP_ID@", APP_ID)
 
 
 def run(path, *args):
@@ -111,9 +134,9 @@ def main():
         rc, out = run(app, "has", "FOLDER")
         checks.append(("matching is case-insensitive and covers content-desc", rc == 0, "rc=%s" % rc))
 
-        rc, out = run(app, "package", "io.github.mcyber12.opencode")
+        rc, out = run(app, "package", APP_ID)
         checks.append(("the app owning the window is detectable", rc == 0, "rc=%s" % rc))
-        rc, out = run(dlg, "package", "io.github.mcyber12.opencode")
+        rc, out = run(dlg, "package", APP_ID)
         checks.append(("a system dialog does NOT look like the app", rc == 1, "rc=%s" % rc))
 
         rc, out = run(dlg, "has", "isn't responding")

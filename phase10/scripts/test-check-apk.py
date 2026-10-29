@@ -14,6 +14,7 @@ apk-signing-block-like trailer must be reported as signed.
 Usage: python3 phase10/scripts/test-check-apk.py        (exit 0 = the checker works)
 """
 import os
+import re
 import struct
 import subprocess
 import sys
@@ -24,6 +25,21 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 CHECK = os.path.join(HERE, "check-apk.py")
 sys.path.insert(0, HERE)
 import importlib.util  # noqa: E402
+
+
+def _app_id():
+    """applicationId, read from app/build.gradle.kts: the one source of truth.
+    No script spells the id out (owner, 2026-10-29)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(here, "..", "..", "app", "build.gradle.kts"), encoding="utf-8") as f:
+        m = re.search(r'applicationId = "([^"]+)"', f.read())
+    if not m:
+        raise SystemExit("applicationId not found in app/build.gradle.kts")
+    return m.group(1)
+
+
+APP_ID = _app_id()
+
 
 spec = importlib.util.spec_from_file_location("check_apk", CHECK)
 check_apk = importlib.util.module_from_spec(spec)
@@ -102,7 +118,7 @@ def end_element(name_idx):
         struct.pack("<I", NO_INDEX) + struct.pack("<II", NO_INDEX, name_idx)
 
 
-def build_axml(package="io.github.mcyber12.opencode", version_code=8,
+def build_axml(package=None, version_code=8,
                version_name="1.18.23-phase10", debuggable=False, with_icon=True,
                label_mode="string"):
     """label_mode selects how android:label is ENCODED, which is the whole point
@@ -112,6 +128,7 @@ def build_axml(package="io.github.mcyber12.opencode", version_code=8,
                   emits for @string/app_name in a binary manifest
       "literal"   TYPE_STRING -> "OpenCode" (a translatable-nit the check rejects)
     """
+    package = package or APP_ID
     strings = []
     idx = {}
 
@@ -236,7 +253,7 @@ def main():
     with zipfile.ZipFile(apk) as zf:
         mf = check_apk.parse_manifest(zf.read("AndroidManifest.xml"))
     checks = [
-        (mf["package"] == "io.github.mcyber12.opencode", "package read back: %r" % mf["package"]),
+        (mf["package"] == APP_ID, "package read back: %r" % mf["package"]),
         (mf["versionCode"] == 8, "versionCode read back: %r" % mf["versionCode"]),
         (mf["versionName"] == "1.18.23-phase10", "versionName read back: %r" % mf["versionName"]),
         (mf["minSdk"] == 29 and mf["targetSdk"] == 36, "sdk levels: %r/%r" % (mf["minSdk"], mf["targetSdk"])),
@@ -270,7 +287,7 @@ def main():
             fails.append("parse: " + msg)
 
     # 2. full checker run with the right expectations -> PASS
-    rc, out = run([apk, "--expect-package", "io.github.mcyber12.opencode",
+    rc, out = run([apk, "--expect-package", APP_ID,
                    "--expect-version-name", "1.18.23-phase10", "--expect-version-code", "8",
                    "--expect-not-debuggable", "--expect-unsigned", "--expect-icon",
                    "--expect-payload", "--expect-min-sdk", "29", "--expect-target-sdk", "36",
@@ -314,7 +331,7 @@ def main():
     # versionName GLUED to its field name, exactly like a real bundle's printable
     # runs (run #7: the standalone-token form does not exist there, and the
     # exact-match rule failed a bundle that carries the right version).
-    proto = (b"\x0a\x1e" + b"io.github.mcyber12.opencode"
+    proto = (b"\x0a\x1e" + APP_ID.encode("ascii")
              + b"\x12\x13" + b"versionName1.18.23-phase10")
     with zipfile.ZipFile(aab, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("base/manifest/AndroidManifest.xml", proto)
@@ -324,7 +341,7 @@ def main():
         for abi in ("arm64-v8a",):
             zf.writestr("base/lib/%s/libbun.so" % abi, b"\x7fELF")
     rc, out = run([aab, "--expect-native-abi", "arm64-v8a", "--expect-payload",
-                   "--expect-package", "io.github.mcyber12.opencode",
+                   "--expect-package", APP_ID,
                    "--expect-version-name", "1.18.23-phase10"])
     if rc != 0:
         fails.append("AAB survey failed: %s" % out[-300:])

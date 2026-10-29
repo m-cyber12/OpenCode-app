@@ -21,6 +21,10 @@
 # process to logcat AND an on-device file; the host counts the deduplicated
 # union so a gate that never ran cannot pass.
 set -uo pipefail
+# The application id is read from app/build.gradle.kts (the one source of truth),
+# so this script never spells it out (owner, 2026-10-29). Evidence is scrubbed.
+APP_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../../app/build.gradle.kts" | head -n 1)"
+[ -n "$APP_ID" ] || { echo "FATAL: applicationId not found in app/build.gradle.kts" >&2; exit 1; }
 
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "$DIR/.." && pwd)"
@@ -32,8 +36,8 @@ LOG="$EV/gates.log"
 : > "$SUMMARY"; : > "$LOG"
 log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
 
-PKG="io.github.mcyber12.opencode.debug"
-TEST_PKG="io.github.mcyber12.opencode.debug.test"
+PKG="${APP_ID}.debug"
+TEST_PKG="${APP_ID}.debug.test"
 RUNNER="$TEST_PKG/androidx.test.runner.AndroidJUnitRunner"
 FILES="/data/data/$PKG/files"
 PORT=4111

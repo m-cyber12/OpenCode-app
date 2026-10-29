@@ -73,6 +73,10 @@
 # Usage: bash phase10/scripts/90-real-device-signed.sh [--apk PATH] [--out DIR]
 #          [--cert-sha256 HEX] [--skip-live] [--timeout-scale N]
 set -uo pipefail
+# The application id is read from app/build.gradle.kts (the one source of truth),
+# so this script never spells it out (owner, 2026-10-29). Evidence is scrubbed.
+APP_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../../app/build.gradle.kts" | head -n 1)"
+[ -n "$APP_ID" ] || { echo "FATAL: applicationId not found in app/build.gradle.kts" >&2; exit 1; }
 
 # WINDOWS / GIT BASH - the failure that produced the v2 "the app window never
 # appeared" verdict on a phone that was showing the app.
@@ -289,7 +293,7 @@ done
 
 command -v adb >/dev/null 2>&1 || { echo "FATAL: adb not on PATH (install platform-tools)"; exit 2; }
 adb get-state >/dev/null 2>&1 || { echo "FATAL: no device visible to adb (plug the phone in, enable USB debugging, accept the prompt)"; exit 2; }
-PKG="io.github.mcyber12.opencode"
+PKG="${APP_ID}"
 SHOT_N=0
 SHOT_UNVERIFIED=0
 LAST_DUMP=""

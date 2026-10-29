@@ -25,6 +25,10 @@
 # Mechanics (base64-over-stdin run-as, host bun as the HTTP driver, adb forward)
 # are inherited from phase4/scripts/20-device-gates.sh, which proved them in CI.
 set -uo pipefail
+# The application id is read from app/build.gradle.kts (the one source of truth),
+# so this script never spells it out (owner, 2026-10-29). Evidence is scrubbed.
+APP_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../../app/build.gradle.kts" | head -n 1)"
+[ -n "$APP_ID" ] || { echo "FATAL: applicationId not found in app/build.gradle.kts" >&2; exit 1; }
 
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "$DIR/.." && pwd)"
@@ -38,8 +42,8 @@ LOG="$EV/integration-gates.log"
 : > "$SUMMARY"; : > "$LOG"
 log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
 
-PKG="io.github.mcyber12.opencode.debug"
-TEST_PKG="io.github.mcyber12.opencode.debug.test"
+PKG="${APP_ID}.debug"
+TEST_PKG="${APP_ID}.debug.test"
 TEST_CLASS="ai.opencode.android.client.OpenCodeClientGatesTest"
 FILES="/data/data/$PKG/files"
 PORT=4111

@@ -15,6 +15,10 @@
 # the CI host with bun over `adb forward` (loopback to the app's server, using
 # the app-generated password). Reuses the proven mechanics; only the host is new.
 set -uo pipefail
+# The application id is read from app/build.gradle.kts (the one source of truth),
+# so this script never spells it out (owner, 2026-10-29). Evidence is scrubbed.
+APP_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../../app/build.gradle.kts" | head -n 1)"
+[ -n "$APP_ID" ] || { echo "FATAL: applicationId not found in app/build.gradle.kts" >&2; exit 1; }
 
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$DIR/out"
@@ -27,7 +31,7 @@ LOG="$EV/device-gates.log"
 : > "$SUMMARY"; : > "$LOG"
 log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
 
-PKG="io.github.mcyber12.opencode.debug"
+PKG="${APP_ID}.debug"
 FILES="/data/data/$PKG/files"
 PORT=4111
 WORKDIR="$FILES/workspaces/gates"

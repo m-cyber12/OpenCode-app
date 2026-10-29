@@ -5,6 +5,8 @@ import ai.opencode.android.client.ModelRefCodec
 import ai.opencode.android.client.OpenCodeApi
 import ai.opencode.android.ui.common.rememberLoadingPulse
 import ai.opencode.android.ui.theme.ChatTheme
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -32,7 +34,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -50,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -500,12 +502,14 @@ private fun LazyListScope.quickProviderGroup(
     }
     if (open) {
         itemsIndexed(group.models, key = { i, _ -> "${prefix}_$i" }) { index, qm ->
-            ModelLineRow(
-                model = qm,
-                onPick = { onPick(qm.ref.providerID, qm.ref.modelID) },
-                rowTag = "${prefix}_pick_$index",
-                current = current,
-            )
+            Box(Modifier.fillMaxWidth().animateItem()) {
+                ModelLineRow(
+                    model = qm,
+                    onPick = { onPick(qm.ref.providerID, qm.ref.modelID) },
+                    rowTag = "${prefix}_pick_$index",
+                    current = current,
+                )
+            }
         }
     }
 }
@@ -519,6 +523,7 @@ private fun QuickGroupHeader(
     onToggle: () -> Unit,
 ) {
     val chat = ChatTheme.chat
+    val foldTurn by animateFloatAsState(targetValue = if (expanded) 180f else 0f, animationSpec = tween(220), label = "group_fold")
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -540,10 +545,10 @@ private fun QuickGroupHeader(
             modifier = Modifier.weight(1f),
         )
         Icon(
-            imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+            imageVector = Icons.Filled.KeyboardArrowDown,
             contentDescription = null,
             tint = chat.muted,
-            modifier = Modifier.size(18.dp).clearAndSetSemantics { },
+            modifier = Modifier.size(18.dp).rotate(foldTurn).clearAndSetSemantics { },
         )
     }
 }

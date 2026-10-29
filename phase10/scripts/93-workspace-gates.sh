@@ -29,9 +29,13 @@
 #
 # Usage: bash phase10/scripts/93-workspace-gates.sh [--pkg PKG] [--out DIR]
 set -uo pipefail
+# The application id is read from app/build.gradle.kts (the one source of truth),
+# so this script never spells it out (owner, 2026-10-29). Evidence is scrubbed.
+APP_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../../app/build.gradle.kts" | head -n 1)"
+[ -n "$APP_ID" ] || { echo "FATAL: applicationId not found in app/build.gradle.kts" >&2; exit 1; }
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "$DIR/.." && pwd)"
-PKG="${P10_WS_PKG:-io.github.mcyber12.opencode.debug}"
+PKG="${P10_WS_PKG:-${APP_ID}.debug}"
 OUT="${P10_WS_OUT:-$DIR/out/workspace}"
 while [ $# -gt 0 ]; do
   case "$1" in

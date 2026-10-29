@@ -32,6 +32,10 @@
 # The verdict bundle lands in ./p8d-out/ on the PC. Send that folder back (or
 # paste the contents of p8d-out/SUMMARY.txt) and the phase report folds it in.
 set -uo pipefail
+# The application id is read from app/build.gradle.kts (the one source of truth),
+# so this script never spells it out (owner, 2026-10-29). Evidence is scrubbed.
+APP_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../../app/build.gradle.kts" | head -n 1)"
+[ -n "$APP_ID" ] || { echo "FATAL: applicationId not found in app/build.gradle.kts" >&2; exit 1; }
 cd "$(dirname "$0")"
 ROOT="$(cd .. && pwd)"
 OUT="p8d-out"
@@ -53,8 +57,8 @@ rd() { # $1=id $2=rc $3=detail
 
 APK="${1:-app-debug.apk}"
 TAPK="${2:-app-debug-androidTest.apk}"
-PKG="io.github.mcyber12.opencode.debug"
-TEST_PKG="io.github.mcyber12.opencode.debug.test"
+PKG="${APP_ID}.debug"
+TEST_PKG="${APP_ID}.debug.test"
 RUNNER="$TEST_PKG/androidx.test.runner.AndroidJUnitRunner"
 FILES="/data/data/$PKG/files"
 PORT=4111

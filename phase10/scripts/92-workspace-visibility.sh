@@ -40,9 +40,13 @@
 #   bash phase10/scripts/92-workspace-visibility.sh [--pkg PKG] [--project NAME]
 #        [--root PATH] [--out DIR] [--expect-file RELPATH] [--expect-content REGEX]
 set -uo pipefail
+# The application id is read from app/build.gradle.kts (the one source of truth),
+# so this script never spells it out (owner, 2026-10-29). Evidence is scrubbed.
+APP_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../../app/build.gradle.kts" | head -n 1)"
+[ -n "$APP_ID" ] || { echo "FATAL: applicationId not found in app/build.gradle.kts" >&2; exit 1; }
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "$DIR/.." && pwd)"
-PKG="io.github.mcyber12.opencode"
+PKG="${APP_ID}"
 PROJECT=""
 WS_ROOT=""
 EXPECT="p10-visible.txt"

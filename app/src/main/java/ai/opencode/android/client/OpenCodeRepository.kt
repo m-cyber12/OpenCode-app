@@ -5,6 +5,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -68,6 +70,16 @@ class OpenCodeRepository(
     private val transcriptDisk: TranscriptDisk? = null,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) {
+
+    /**
+     * v11 (owner, B.108 follow-up): while a turn runs, the todo bar re-reads the
+     * server's own list every few seconds, so a missed `todo.updated` frame cannot
+     * pin the bar on an old step. One GET per tick; the first failure ends the poll
+     * for that turn (one attempt, then report - no retry loop); an idle frame or a
+     * session switch ends it too; a hard cap bounds it if no idle frame ever comes.
+     */
+    private var todoPoll: Job? = null
+
 
     data class UiState(
         val streaming: Boolean = false,
@@ -204,6 +216,8 @@ class OpenCodeRepository(
             // that way). A turn that ENDS is therefore also a repair point: fetch the
             // authoritative messages for the selected session, which is cheap and
             // bounded (one request per turn, single-flight).
+            // A turn that ends in an error sends no idle frame, so the todo poll stops on either.
+            if (EventFrame.isSessionIdle(ev.type) || ev.type == "session.error") stopTodoPoll()
             if (EventFrame.isSessionIdle(ev.type)) {
                 refreshMessages("turn ended", force = true)
             } else if (EventFrame.isSessionStatus(ev.type) &&
@@ -619,6 +633,7 @@ class OpenCodeRepository(
                 // while the server had the answer, and the screen is what the user
                 // sees).
                 refreshMessages("transcript after prompt", force = true)
+                startTodoPoll(sid)
             } catch (t: Throwable) {
                 fail("prompt_async", t)
             } finally {
@@ -1327,6 +1342,31 @@ class OpenCodeRepository(
         }
     }
 
+    private fun startTodoPoll(sid: String) {
+        todoPoll?.cancel()
+        todoPoll = scope.launch {
+            for (tick in 0 until TODO_POLL_MAX_TICKS) {
+                delay(TODO_POLL_MS)
+                if (_state.value.selectedSession != sid) break
+                val todos = try {
+                    api.todos(sid)
+                } catch (t: Throwable) {
+                    Log.d("OpenCode/repo", "todo poll ended for this turn: ${t.message}")
+                    break
+                }
+                if (_state.value.selectedSession == sid) {
+                    transcript.setTodos(sid, todos)
+                    publishTranscript("todo poll")
+                }
+            }
+        }
+    }
+
+    private fun stopTodoPoll() {
+        todoPoll?.cancel()
+        todoPoll = null
+    }
+
     private fun publishTranscript(status: String) {
         val snap = transcript.snapshot()
         // v9.40: refresh() now runs its sections concurrently, so this write
@@ -1422,6 +1462,9 @@ class OpenCodeRepository(
     }
 
     companion object {
+        /** The todo poll during a turn: every 3 s, capped at 30 minutes of ticks. */
+        private const val TODO_POLL_MS = 3_000L
+        private const val TODO_POLL_MAX_TICKS = 600
         /** OpenCode's default coding agent; the shell endpoint requires one. */
         const val SHELL_AGENT = "build"
 

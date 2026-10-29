@@ -31,6 +31,10 @@
 #
 # Usage: bash phase10/scripts/50-smoke-gates.sh    (device must be booted)
 set -uo pipefail
+# The application id is read from app/build.gradle.kts (the one source of truth),
+# so this script never spells it out (owner, 2026-10-29). Evidence is scrubbed.
+APP_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../../app/build.gradle.kts" | head -n 1)"
+[ -n "$APP_ID" ] || { echo "FATAL: applicationId not found in app/build.gradle.kts" >&2; exit 1; }
 
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "$DIR/.." && pwd)"
@@ -42,9 +46,9 @@ LOG="$EV/smoke-gates.log"
 : > "$LOG"
 log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
 
-PKG="io.github.mcyber12.opencode"           # the RELEASE applicationId (smoke uses it)
+PKG="${APP_ID}"           # the RELEASE applicationId (smoke uses it)
 TEST_PKG="$PKG.test"
-DEBUG_PKG="io.github.mcyber12.opencode.debug"
+DEBUG_PKG="${APP_ID}.debug"
 FILES="/data/data/$PKG/files"
 
 PASS=0; FAIL=0; SKIP=0
@@ -120,7 +124,7 @@ DO NOT TRY TO INSTALL:
 BEFORE INSTALLING:
   - this run's smoke and release-shaped TEST-ONLY APKs all use the same key;
     they update one another without an uninstall. If a DIFFERENTLY signed build
-    of io.github.mcyber12.opencode is present, Android refuses the mismatch;
+    of ${APP_ID} is present, Android refuses the mismatch;
     only then must it be uninstalled. Projects under Documents/OpenCode survive
     an uninstall; in-app sessions and settings do not.
   - TEST-ONLY-debugkey-app-smoke-androidTest.apk is the instrumentation
@@ -156,7 +160,7 @@ the stock Android installer shows that one useless sentence for MANY
 different system errors. On the owner's phone the true error - surfaced
 by an installer app that prints "System details" - was:
   INSTALL_FAILED_UPDATE_INCOMPATIBLE: Existing package
-  io.github.mcyber12.opencode signatures do not match newer version
+  ${APP_ID} signatures do not match newer version
 Meaning: a build of this app signed with ANOTHER certificate is still
 present on the phone (visible or leftover), and Android refuses any APK
 signed differently. It has nothing to do with the APK being broken.
@@ -166,8 +170,8 @@ Fix, in order:
   2. If no OpenCode is listed but the error stays, remove the ghost
      package over self-adb (route 3 above):
        adb shell pm list packages -u | grep opencode
-       adb shell pm uninstall io.github.mcyber12.opencode
-       (if refused):  adb shell pm uninstall --user 0 io.github.mcyber12.opencode
+       adb shell pm uninstall ${APP_ID}
+       (if refused):  adb shell pm uninstall --user 0 ${APP_ID}
   3. Install the new APK. Then STAY on one certificate: pick your own
      keystore, back it up, sign every future release with it, and
      updates will install without any of this.

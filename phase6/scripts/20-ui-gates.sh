@@ -27,6 +27,10 @@
 # filesDir with run-as + base64 (adb pull cannot read /data/data, and
 # /sdcard/Android/data is off limits to the shell uid on API 30+).
 set -uo pipefail
+# The application id is read from app/build.gradle.kts (the one source of truth),
+# so this script never spells it out (owner, 2026-10-29). Evidence is scrubbed.
+APP_ID="$(sed -n 's/^[[:space:]]*applicationId = "\([^"]*\)".*/\1/p' "$(dirname "${BASH_SOURCE[0]}")/../../app/build.gradle.kts" | head -n 1)"
+[ -n "$APP_ID" ] || { echo "FATAL: applicationId not found in app/build.gradle.kts" >&2; exit 1; }
 
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "$DIR/.." && pwd)"
@@ -42,9 +46,9 @@ log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
 # app - the release-shaped `smoke` variant (applicationId without the .debug
 # suffix) - without changing what Phases 6/7/8/9 exercise. The default is the
 # debug build, exactly as before.
-PKG="${P6_PKG:-io.github.mcyber12.opencode.debug}"
+PKG="${P6_PKG:-${APP_ID}.debug}"
 TEST_PKG="${P6_TEST_PKG:-${P6_PKG:+$P6_PKG.test}}"
-TEST_PKG="${TEST_PKG:-io.github.mcyber12.opencode.debug.test}"
+TEST_PKG="${TEST_PKG:-${APP_ID}.debug.test}"
 # The test package label differs when a caller overrides PKG: derive it when the
 # caller only gave us the target package.
 case "$PKG" in *".debug") : ;; *) [ -n "${P6_TEST_PKG:-}" ] || TEST_PKG="$PKG.test" ;; esac
