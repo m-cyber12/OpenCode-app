@@ -239,7 +239,9 @@ else
 fi
 MFV=$(python3 -c 'import json,sys;m=json.load(open(sys.argv[1]));print("payloadVersion=%s opencode=%s@%s bun=%s git=%s rg=%s sha256=%s files=%d"%(m["payloadVersion"],m["opencodeVersion"],m["opencodeCommit"][:12],m["bunVersion"],m["gitVersion"],m["rgVersion"],m["payloadSha256"][:16],len(m["files"])))' "$ROOT/phase4/out/engine/assets/runtime-manifest.json")
 note_gate "P10-PAYLOAD PASS: $MFV"
-( cd "$ROOT/phase4/out/engine" && tar czf "$REL/runtime-payload-engine.tar.gz" assets jniLibs 2>/dev/null ) || true
+# No second copy of the payload in the release folder: the same bytes are inside the
+# APK and the AAB, and the copy was 188 MB of the unsigned-release artifact (owner
+# decision 2026-10-30). The runtime manifest below is still published.
 cp "$ROOT/phase4/out/engine/assets/runtime-manifest.json" "$REL/" 2>/dev/null || true
 
 step "4/9 fresh emulator at a phone-sized screen (1080x1920 @ 420dpi)"

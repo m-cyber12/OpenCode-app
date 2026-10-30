@@ -159,6 +159,20 @@ for b in bad:
 sys.exit(1 if bad else 0)
 PYCHK
 
+{
+  echo
+  echo "=== node ICU cache for the pinned key (warn only: a missing cache is a planned bootstrap, not a failure) ==="
+  KEY="$(bash -c 'set -u; eval "$(grep -E "^(NODE_PIN|NDK_PIN|NODE_TERMUX_PATCH_PIN)=" "$1")"; echo "node-${NODE_PIN}-ndk${NDK_PIN}-termux-${NODE_TERMUX_PATCH_PIN:0:12}-icufull-v2"' _ "$ROOT/phase4/scripts/10-build-payload.sh")"
+  echo "key=$KEY"
+  for abi in arm64-v8a x86_64; do
+    d="$ROOT/docs/progress/phase10-evidence/node-cache/$KEY/$abi"
+    if [ -f "$d/archive.sha256" ] && compgen -G "$d/node-runtime.tgz.part-*" >/dev/null; then
+      echo "OK   node cache $abi (committed)"
+    else
+      echo "WARN no committed Node cache for $abi under this key: the next payload run builds it from source (about 3 h) and stops after capturing it"
+    fi
+  done
+} | tee -a "$LOG"
 echo | tee -a "$LOG"
 echo "=== phase 10 static checks summary rc=$RC ===" | tee -a "$LOG"
 grep -a '^FAIL' "$LOG" | head -40 | tee -a "$LOG" >/dev/null || true

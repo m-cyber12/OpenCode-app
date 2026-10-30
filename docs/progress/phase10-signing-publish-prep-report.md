@@ -7624,3 +7624,21 @@ Open decisions for the owner (not done here):
    could change the build host under the pipeline. Pinning the runner image is a workflow
    change for the owner to approve.
 4. Docs-only commits must use `[skip ci]`. Each unskipped push costs about 77 min.
+
+### The three CI decisions, applied (2026-10-30, owner: "do all three")
+
+1. **Release artifact without the second payload copy.** `00-run-phase10.sh` no longer writes
+   `runtime-payload-engine.tar.gz` into the release folder. The same bytes are in the APK and
+   the AAB. Expected saving: about 188 MB of `opencode-android-unsigned-release`. The phase9
+   pipeline still writes its own copy (not changed here).
+2. **Node cache key kept stable.** It is recorded as a RULE beside `NODE_CACHE_KEY` in
+   `10-build-payload.sh`. `30-static-checks.sh` now prints `WARN` for each ABI with no committed
+   cache under the current key. Warnings do not fail the run.
+3. **Runner pinned.** The phase10 job is `runs-on: ubuntu-24.04` in `.github/workflows/` and in
+   the `phase10/workflow/` template copy. The public runner-images README lists `ubuntu-latest`
+   as Ubuntu 24.04 today, so this changes nothing now and stops a silent move to 26.04. The
+   other workflows still use `ubuntu-latest` (not run on this branch).
+
+Verification for these changes: the static checks pass locally (the cache block reports both
+ABIs committed under the current key). A negative test with a changed pin prints two WARN lines
+and no FAIL. The verifying run is the next full pipeline on this commit.

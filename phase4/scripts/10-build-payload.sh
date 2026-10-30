@@ -1101,6 +1101,10 @@ build_python_stdlib() {
 # Once both ABIs are captured, later runs restore them and build the full APK.
 # Set P4_REBUILD_NODE=1 to ignore the cache and reproduce from source.
 # ---------------------------------------------------------------------------
+# RULE (owner, 2026-10-30): do not change NODE_PIN, NDK_PIN, NODE_TERMUX_PATCH_PIN or the
+# -icufull-v2 tag without a planned bootstrap. A new key means no committed cache, so each
+# ABI is built from source (about 3 h, one ABI per run). phase10/scripts/30-static-checks.sh
+# prints a WARN line for each ABI that has no committed cache for the current key.
 NODE_CACHE_KEY="node-${NODE_PIN}-ndk${NDK_PIN}-termux-${NODE_TERMUX_PATCH_PIN:0:12}-icufull-v2"
 NODE_PREBUILT_ROOT="$DIR/prebuilt/$NODE_CACHE_KEY"
 NODE_BOOTSTRAP_ROOT="$DIR/../docs/progress/phase10-evidence/node-cache/$NODE_CACHE_KEY"
