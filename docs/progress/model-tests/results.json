@@ -53,7 +53,9 @@
     {
       "id": "H-BRIEF-VIDEO-TOPIC",
       "area": "brief",
-      "status": "pending",
+      "status": "ci-verified",
+      "ci_run": "41043245846 (commit 95058c42): success; JVM tests 506, 0 failures; videoBriefCarriesTheTestedRecipe passed; main brief 829 words (limit < 830); universal APK 200.8 MiB (cap 230)",
+      "earlier_ci_failure": "41039155088 (commit 8f711d1d): main brief 850 words failed mainBriefIndexesEveryTopicFileAndStaysLean; fixed by shortening the index line",
       "evidence": "app/src/main/java/ai/opencode/android/runtime/EnvironmentBrief.kt (video.md topic) and app/src/test/java/ai/opencode/android/runtime/EnvironmentBriefTest.kt (videoBriefCarriesTheTestedRecipe)",
       "not_proven": "Kotlin compile and JVM tests: the sandbox has no JDK. Only the CI run proves them. The embedded script was checked byte-for-byte against make-video.mjs and runs under Node 22."
     }

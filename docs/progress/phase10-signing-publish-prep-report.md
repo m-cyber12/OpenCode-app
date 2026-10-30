@@ -7654,3 +7654,9 @@ Owner: "teach the models how to make videos with coding; test skills and MCP; re
 - **Regex (host):** `/[\p{L}\p{N}]/u` compiles on host Node 22 with ICU 78.2. The bundled Node 24 on the phone is still unproven (device gate V7).
 - **Test data:** `docs/progress/model-tests/PROMPTS.md` (27 prompts for the phone pass) and `results.json` (host results plus one pending entry per prompt). Host and static results are marked as such and are not phone results.
 - **Not done:** no capable model was run here (no provider access), so model behaviour is still pending the phone pass.
+
+### Video topic CI result (2026-10-30)
+
+- Run 41043245846 on `95058c42`: success. JVM tests 506, 0 failures. Gates PASS 202, SKIP 9, FAIL 0. Universal APK 200.8 MiB (cap 230).
+- The first run on `8f711d1d` (41039155088) failed one JVM test: the main brief had 850 words against a limit of under 830. The index line is now 11 words; the main brief is 829. Headroom is zero: any new main-brief line needs a trim elsewhere.
+- Still pending: the phone pass (`docs/progress/model-tests/PROMPTS.md`).
