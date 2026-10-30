@@ -7591,3 +7591,36 @@ What is NOT proven yet:
   JVM tests are proven for them.
 - The line-by-line review (item 8) is not done. Targeted scans only: no crash-class
   defect found.
+
+### CI time and artifacts - what the run page shows (2026-10-30)
+
+The owner reported (phone screenshot of run #253) that CI looked far slower than before and
+that no artifact appeared. Both are explained by which run was opened:
+
+- **#253 (run `40928631998`, commit `b1c30376`) is the x86_64 Node bootstrap.** It took
+  167 min because the full-ICU V8 build runs from source for that ABI. It stops by design
+  after capturing the cache, so it uploads only `phase10-evidence` (about 0.2 MB). The
+  earlier arm64 bootstrap, run #252 (`40893344502`), took 211 min. That docs commit did
+  not carry `[skip ci]`, which is why it started a bootstrap run. It should have.
+- **#255 (run `40972215297`, commit `c52f3920`) is the full run.** It took 77 min, the same
+  as the last green full runs before ICU (`4ffe0d30` 78 min, `dfb0e386` 76 min,
+  `b30dac89` 77 min). Its artifacts are:
+  - `opencode-android-unsigned-release` 578 MB: `app-release-unsigned.apk` 210.5 MB,
+    `app-release.aab` 196.5 MB, `runtime-payload-engine.tar.gz` 188 MB (a copy of the
+    payload already inside the APK and AAB; nothing else reads it), manifest, hashes.
+  - `opencode-android-smoke-test-only` 413 MB: universal test APK 210.5 MB, smoke APK
+    234.6 MB, androidTest APK, screenshots. The arm64 test APK is excluded from this
+    artifact (the split works).
+  - `opencode-android-arm64-v8a-test-only` 110 MB.
+  - `phase10-evidence` 6.9 MB.
+- **The Node cache is in git now.** `docs/progress/phase10-evidence/node-cache` is 69 MB.
+  Each run restores from it, so the bootstrap should not repeat unless the Node cache key
+  changes (Node pin, NDK pin, termux patch pin, or the `-icufull-v2` tag).
+
+Open decisions for the owner (not done here):
+1. Drop `runtime-payload-engine.tar.gz` from the release artifact, to cut about 188 MB.
+2. Keep the bootstrap cache key stable. Changing any pinned input costs about 3 h per ABI.
+3. The runner annotation says `ubuntu-latest` moves to Ubuntu 26 from 2026-10-19. That
+   could change the build host under the pipeline. Pinning the runner image is a workflow
+   change for the owner to approve.
+4. Docs-only commits must use `[skip ci]`. Each unskipped push costs about 77 min.
