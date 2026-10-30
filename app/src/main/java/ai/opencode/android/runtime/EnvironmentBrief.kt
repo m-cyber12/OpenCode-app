@@ -501,7 +501,23 @@ a package.json.
   property escapes such as `\p{L}`. If a Node command fails that way, run the package's
   JavaScript entry point with `bun` instead (`bun node_modules/<pkg>/<entry>.js`), and
   say so in your reply.
-- Install MCP packages under the project. Never install them into the app's own runtime.
+- Install MCP packages under your home folder (see "Commands on any path" below), not in
+  the project folder and never in the app's own runtime.
+
+## Commands on any path (noexec folders)
+- Folders on shared storage, such as `Documents/OpenCode`, and any folder the user picks
+  there, are mounted noexec. The kernel refuses to run any file in them, including
+  `./script.sh` and `node_modules/.bin/*` shims (`Permission denied`, exit 126). No tool can
+  fix that from inside the folder. Run such files through an interpreter instead:
+  `sh script.sh`, `node path/entry.js`, `python3 script.py`.
+- Your home folder allows execution. Install a package that brings a command there:
+  `npm install --prefix "${'$'}HOME/tools/<name>" <package>`.
+- An MCP server's `command` is not run by a shell, so `${'$'}HOME` is not expanded. Run
+  `echo ${'$'}HOME` first, then write the full path, for example
+  `{"type": "local", "command": ["node", "/data/user/0/<app>/files/home/tools/<name>/node_modules/<package>/<entry>.js"]}`.
+  Use the JavaScript entry file (see the package's `bin` field), not a `.bin` shim.
+- Before you tell the user that a command works, run it once from the folder they chose.
+  If it fails with exit 126, say so, then use the route above.
 """.trimIndent() + "\n"
 
         val video = """

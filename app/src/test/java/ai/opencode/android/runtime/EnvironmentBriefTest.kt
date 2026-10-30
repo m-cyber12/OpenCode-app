@@ -438,4 +438,20 @@ class EnvironmentBriefTest {
         assertTrue(video.contains("decode_rc=0"))
         assertTrue(EnvironmentBrief.briefText().contains("video.md"))
     }
+
+    /**
+     * Owner, 2026-10-30: shims must work in every folder. On shared storage the
+     * kernel refuses to exec files (exit 126), so the brief must send models to an
+     * interpreter and to the home folder, and must not tell them to install into
+     * the project.
+     */
+    @Test
+    fun extensionsBriefRoutesCommandsAwayFromNoexecFolders() {
+        val ext = EnvironmentBrief.topicBriefs().getValue("extensions.md")
+        assertTrue(ext.contains("## Commands on any path (noexec folders)"))
+        assertTrue(ext.contains("exit 126"))
+        assertTrue(ext.contains("npm install --prefix \"\$HOME/tools/<name>\""))
+        assertTrue(ext.contains("echo \$HOME"))
+        assertFalse(ext.contains("Install MCP packages under the project"))
+    }
 }

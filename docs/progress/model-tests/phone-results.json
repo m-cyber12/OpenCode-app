@@ -241,8 +241,8 @@
         "D2",
         "D4"
       ],
-      "status": "open; owner: do not change the storage root for now",
-      "detail": "Phone 11:20: npx works, but its .bin shim fails (exit 126), then npm install --no-bin-links rea-agents was started and the owner stopped it. Phone 11:41: pwd is /storage/emulated/0/Documents/OpenCode/mobile-10; touch t.sh, chmod +x, ./t.sh gives Permission denied. Shared storage is noexec. Workaround candidates that do not change the root: run MCP entries as node <path-to-entry> (not via npx or .bin); and a brief change that tells models this. The brief is 829/830 words, so a change needs another part trimmed."
+      "status": "brief part and test added (extensions.md, Commands on any path); CI pending; phone check pending. Main brief unchanged (829 words).",
+      "detail": "Phone 11:20: npx works, but its .bin shim fails (exit 126), then npm install --no-bin-links rea-agents was started and the owner stopped it. Phone 11:41: pwd is /storage/emulated/0/Documents/OpenCode/mobile-10; touch t.sh, chmod +x, ./t.sh gives Permission denied. Shared storage is noexec. Workaround candidates that do not change the root: run MCP entries as node <path-to-entry> (not via npx or .bin); and a brief change that tells models this. The brief is 829/830 words, so a change needs another part trimmed. Owner 2026-10-30: shims must work in every path; users usually pick their own folder. Decision: MCP and tool packages install under the app home ($HOME/tools/<name>, exec-allowed), run through node; the shared-storage root is unchanged."
     }
   ]
 }
