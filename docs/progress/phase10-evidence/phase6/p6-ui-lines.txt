@@ -62,11 +62,11 @@ P6-L2 SKIP :: :: no model served a turn, so no tool call can be observed: no ass
 P6_X1 PASS :: api36Context=t
 P6_X1 PASS :: api36Context=true nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=36 api=36 abi=x86_64 :: OCEXECPROBE ok
 P6_X2 PASS :: api36Context=t
-P6_X2 PASS :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/<app>/files/probe-exec" (in directory "/data/app/~~G
+P6_X2 PASS :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~G
 P6_X3 PASS :: api36Context=t
 P6_X3 PASS :: api36Context=true targetSdk=36 api=36 prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P6-X1 PASS :: :: api36Context=true nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=36 api=36 abi=x86_64 :: OCEXECPROBE ok
-P6-X2 PASS :: :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/<app>/files/probe-exec" (in directory "/data/app/~~G
+P6-X2 PASS :: :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~G
 P6-X3 PASS :: :: api36Context=true targetSdk=36 api=36 prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P6_S1 PASS :: sealed install ok=t
 P6_S1 PASS :: sealed install ok=true files=1 verified=1 executables=1 problems=[] :: sealed payload: 1 data files (15 bytes, 1 verified), 0 data links, 1 executables from the APK
@@ -96,7 +96,7 @@ P6_V10 PASS :: upgradeResult=Extracted markerVersion=7->7 reextractReason=true b
 P6_V2 PASS :: pipeline
 P6_V2 PASS :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
 P6_V3 PASS :: agent env PATH[0]=/data/use
-P6_V3 PASS :: agent env PATH[0]=/data/user/0/<app>/files/bin (want /data/user/0/<app>/files/bin) SHELL=/data/user/0/<app>/files/bin/sh ran=true exit=0 out='1' tr=/data/user/0/<app>/files/bin/tr
+P6_V3 PASS :: agent env PATH[0]=/data/user/0/io.github.mcyber12.opencode/files/bin (want /data/user/0/io.github.mcyber12.opencode/files/bin) SHELL=/data/user/0/io.github.mcyber12.opencode/files/bin/sh ran=true exit=0 out='1' tr=/data/user/0/io.github.mcyber12.opencode/files/bin/tr
 P6_V4 PASS :: cu
 P6_V4 PASS :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-android) libcurl/8.10.1 mbedTLS' CURL_CA_PATH=/apex/com.android.conscrypt/cacerts isDir=true
 P6_V5 PASS :: jq
@@ -111,7 +111,7 @@ P6_V9 PASS :: openssh
 P6_V9 PASS :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:wJdThAfYyIhwr0ooUGReuGez5EOWhuA9CGdNJguw/50 u0_a224@localhost (ED25519)'
 P6-V1 PASS :: :: sealed shell ran=true exit=0 api=36 :: OC_SEALED_SH_OK
 P6-V2 PASS :: :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
-P6-V3 PASS :: :: agent env PATH[0]=/data/user/0/<app>/files/bin (want /data/user/0/<app>/files/bin) SHELL=/data/user/0/<app>/files/bin/sh ran=true exit=0 out='1' tr=/da
+P6-V3 PASS :: :: agent env PATH[0]=/data/user/0/io.github.mcyber12.opencode/files/bin (want /data/user/0/io.github.mcyber12.opencode/files/bin) SHELL=/data/user/0/io.github.mcyber12.opencode/files/bin/sh ran=true exit=0 out='1' tr=/da
 P6-V4 PASS :: :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-android) libcurl/8.10.1 mbedTLS' CURL_CA_PATH=/apex/com.android.conscrypt/cacerts isDir=true
 P6-V5 PASS :: :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
 P6-V6 PASS :: :: python ran=true exit=0 json='{"ok": true}' zlib.crc32='891568578' (want 891568578) output='{"ok": true} <NL> 891568578'
