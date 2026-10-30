@@ -7642,3 +7642,15 @@ Open decisions for the owner (not done here):
 Verification for these changes: the static checks pass locally (the cache block reports both
 ABIs committed under the current key). A negative test with a changed pin prints two WARN lines
 and no FAIL. The verifying run is the next full pipeline on this commit.
+
+### Video recipe in the brief, and model test data (2026-10-30)
+
+Owner: "teach the models how to make videos with coding; test skills and MCP; record the results as data; write test prompts; I test the harness on the phone."
+
+- **Brief (Kotlin, `EnvironmentBrief.kt`):** new topic `video.md`, linked from the main brief's index. It teaches the WebAssembly ffmpeg route (`@ffmpeg/core` 0.12.10, installed by npm). The app ships no native ffmpeg. The embedded `make-video.mjs` is byte-identical to the script that was tested here (`docs/progress/model-tests/make-video.mjs`). Covered by `videoBriefCarriesTheTestedRecipe` (JVM). Kotlin compile and the JVM tests are NOT proven until the CI run for this commit.
+- **Host tests (not phone):** the recipe encoded 320x240x30, 640x360x72, 1280x720x48 and 1280x720x240 frames to H.264 MP4, and each output decodes (`decode_rc=0`). The 1280x720 x 240-frame run used an 885 MB raw buffer and took 7 s on this host.
+- **MCP (host):** `rea-agents` 6.8.0 answered `initialize` and listed 229 tools in 0.5 s once installed. The first `npx` attempt got no reply within 240 s. One attempt only, no retry, not diagnosed.
+- **Skills (static):** the header rule matches upstream at `05ea5073` (`name` required, otherwise the skill is dropped silently). Checked against two sample skills.
+- **Regex (host):** `/[\p{L}\p{N}]/u` compiles on host Node 22 with ICU 78.2. The bundled Node 24 on the phone is still unproven (device gate V7).
+- **Test data:** `docs/progress/model-tests/PROMPTS.md` (27 prompts for the phone pass) and `results.json` (host results plus one pending entry per prompt). Host and static results are marked as such and are not phone results.
+- **Not done:** no capable model was run here (no provider access), so model behaviour is still pending the phone pass.

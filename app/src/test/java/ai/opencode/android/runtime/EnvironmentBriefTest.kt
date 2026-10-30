@@ -425,4 +425,17 @@ class EnvironmentBriefTest {
         assertTrue(main.contains("token-free origin"))
         assertTrue(main.contains("no extra branches"))
     }
+
+    /**
+     * The video recipe is the one the model is told to run. It must name the
+     * pinned core version and the script file, and the main brief must point to it.
+     */
+    @Test
+    fun videoBriefCarriesTheTestedRecipe() {
+        val video = EnvironmentBrief.topicBriefs().getValue("video.md")
+        assertTrue(video.contains("npm install @ffmpeg/core@0.12.10"))
+        assertTrue(video.contains("make-video.mjs"))
+        assertTrue(video.contains("decode_rc=0"))
+        assertTrue(EnvironmentBrief.briefText().contains("video.md"))
+    }
 }

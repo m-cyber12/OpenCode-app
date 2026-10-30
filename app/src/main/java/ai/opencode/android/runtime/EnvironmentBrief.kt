@@ -203,6 +203,8 @@ what cannot have changed; read each topic brief at most once.
   Read before shelling out.
 - $briefsDir/extensions.md - MCP servers and skills: where they live, how to
   register one. Read before adding either.
+- $briefsDir/video.md - making an MP4 video (or a GIF or animation) from code: the tested
+  WebAssembly ffmpeg recipe, because the app has no native ffmpeg. Read before you make any video.
 """.trimIndent() + "\n"
     }
 
@@ -503,12 +505,102 @@ a package.json.
 - Install MCP packages under the project. Never install them into the app's own runtime.
 """.trimIndent() + "\n"
 
+        val video = """
+# Making videos from code (MP4) - read before you make any video, GIF or animation
+
+The app has NO native ffmpeg. Video works through a WebAssembly build of ffmpeg
+(the npm package `@ffmpeg/core`, version 0.12.10), run by Node.js 24 that the app
+bundles. This route was tested on a Linux host with Node 22 (round trip: 30 frames
+encoded to H.264 MP4 and decoded back, 30 of 30 frames). It is NOT yet proven on the
+phone: if a step fails there, quote the error and say so; do not guess.
+
+## Steps
+1. In the project folder, install the core once:
+   `npm install @ffmpeg/core@0.12.10`
+   (on shared storage npm may need `--no-bin-links`). Do not install the other
+   `@ffmpeg/*` packages: the script below only needs the core.
+2. Write `make-video.mjs` in the project folder with exactly this content, then
+   change only the settings (W, H, FPS, N) and `drawFrame` for your video:
+
+```js
+// Makes out.mp4 from frames drawn by this script. Run it in the project folder:
+//   node make-video.mjs
+// Needs @ffmpeg/core 0.12.10 installed in this project (npm install @ffmpeg/core@0.12.10).
+import fs from "fs";
+
+// Settings: change these, and drawFrame, for your video.
+const W = 320, H = 240, FPS = 10, N = 30;
+
+// The ffmpeg WebAssembly build is written for a web worker. It needs the two
+// globals a worker has, and nothing else from a browser.
+const coreDir = "./node_modules/@ffmpeg/core/dist/esm";
+globalThis.self = { location: { href: "file://" + process.cwd() + "/" + coreDir.slice(2) + "/" } };
+const createFFmpegCore = (await import(coreDir + "/ffmpeg-core.js")).default;
+const logs = [];
+const core = await createFFmpegCore({
+  wasmBinary: fs.readFileSync(coreDir + "/ffmpeg-core.wasm"),
+  print: (m) => logs.push(m),
+  printErr: (m) => logs.push(m),
+});
+
+// Draw frame f into px: raw RGBA, 4 bytes per pixel, row by row.
+function drawFrame(f, px) {
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const o = (y * W + x) * 4;
+      const inSquare = x > f * 8 && x < f * 8 + 60 && y > 90 && y < 150;
+      px[o] = inSquare ? 255 : 20;
+      px[o + 1] = 60;
+      px[o + 2] = inSquare ? 40 : 200;
+      px[o + 3] = 255;
+    }
+  }
+}
+
+const frames = new Uint8Array(W * H * 4 * N);
+for (let f = 0; f < N; f++) {
+  drawFrame(f, frames.subarray(f * W * H * 4, (f + 1) * W * H * 4));
+}
+core.FS.writeFile("frames.raw", frames);
+
+const rc = core.exec("-f", "rawvideo", "-pix_fmt", "rgba", "-s", W + "x" + H, "-r", String(FPS),
+  "-i", "frames.raw", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "ultrafast",
+  "-movflags", "+faststart", "out.mp4");
+if (rc !== 0) {
+  console.error("encode failed, rc=" + rc + " last log: " + logs.slice(-3).join(" | "));
+  process.exit(1);
+}
+// Check the file decodes end to end before you report success.
+const check = core.exec("-v", "error", "-i", "out.mp4", "-f", "null", "-");
+fs.writeFileSync("out.mp4", core.FS.readFile("out.mp4"));
+console.log("wrote out.mp4 bytes=" + fs.statSync("out.mp4").size + " decode_rc=" + check);
+if (check !== 0) process.exit(1);
+```
+
+3. Run `node make-video.mjs`. It writes `out.mp4` in the project folder and checks
+   that the file decodes. A line `wrote out.mp4 ... decode_rc=0` means success.
+4. Show the result: the file is `out.mp4`. To show it in the preview, write an
+   `index.html` containing `<video controls src="out.mp4"></video>` and hand it off as
+   the preview brief says. (The hand-off is not yet tested on the phone.)
+
+## Limits (measured on the host, not the phone)
+- The whole video is held in memory as raw RGBA: width x height x 4 x frames bytes.
+  Tested: 320x240 x 30 frames; 640x360 x 72 frames; 1280x720 x 48 frames and
+  1280x720 x 240 frames (885 MB raw buffer, 10 s of video, 7 s to encode).
+  Larger sizes were not tested. Keep the raw buffer small on a phone (start
+  with 640x360 and 10 to 15 seconds at 24 fps) and report any memory error verbatim.
+- There is no canvas, no browser and no PNG decoder in this runtime. Draw pixels
+  yourself in `drawFrame`, or use plain JavaScript to rasterise shapes and text.
+- Audio is not included. Output is H.264 (libx264) in yuv420p with the faststart flag.
+""".trimIndent() + "\n"
+
         return linkedMapOf(
             "preview.md" to preview,
             "screenshots.md" to screenshots,
             "webapp.md" to webapp,
             "tools.md" to tools,
             "extensions.md" to extensions,
+            "video.md" to video,
         )
     }
 }

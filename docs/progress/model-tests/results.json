@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "date": "2026-10-30",
+    "branch": "arena/01a0b9d5-opencode-app",
+    "prompts": "docs/progress/model-tests/PROMPTS.md",
+    "status_values": ["pass", "fail", "partial", "skip", "pending", "host-verified", "static-verified"],
+    "rule": "host-verified and static-verified are NOT phone results. Only a phone run sets pass or fail for a prompt.",
+    "model_note": "No capable model was run in this sandbox (no provider access). Model behaviour is pending the phone pass."
+  },
+  "host": [
+    {
+      "id": "H-VIDEO-ENCODE",
+      "area": "video",
+      "status": "host-verified",
+      "host": "Linux x64, Node v22.22.3, @ffmpeg/core 0.12.10",
+      "evidence": "docs/progress/model-tests/make-video.mjs",
+      "result": {
+        "320x240_30frames": "ok, 5698 bytes, decode_rc=0, round trip 30/30 frames",
+        "640x360_72frames": "ok, 6725 bytes, decode_rc=0, under 1 s",
+        "1280x720_48frames": "ok, 7447 bytes, decode_rc=0, 2 s",
+        "1280x720_240frames": "ok, 15224 bytes, decode_rc=0, 7 s, raw RGBA buffer 885 MB"
+      },
+      "not_proven": "phone, Android Node 24, memory limits on a phone, npm install time on a phone"
+    },
+    {
+      "id": "H-MCP-REA",
+      "area": "mcp",
+      "status": "host-verified",
+      "host": "Linux x64, Node v22.22.3, rea-agents 6.8.0 installed locally",
+      "evidence": "docs/progress/model-tests/rea-mcp-probe-host.json",
+      "result": "initialize ok (serverInfo rea 6.8.0), tools/list returned 229 tools, answered in 0.5 s once installed",
+      "problems": [
+        "First attempt with npx -y rea-agents@6.8.0 got no initialize reply within 240 s. One attempt only, no retry. The package is installed by npm in about 5 s here, so the wait was the server start under npx. Not diagnosed."
+      ],
+      "engine_warning": "rea-agents requires node ^22.23.4 || ^24.22.1 || >=26.12.1. Host Node is 22.22.3, so npm printed EBADENGINE. The app's bundled Node is 24.22.1, which satisfies it."
+    },
+    {
+      "id": "H-REGEX-UNICODE",
+      "area": "node",
+      "status": "host-verified",
+      "evidence": "docs/progress/model-tests/regex-unicode-host.json",
+      "result": "Node v22.22.3 with ICU 78.2: /[\\p{L}\\p{N}]/u compiles and runs",
+      "not_proven": "bundled Node 24 on the phone. The owner's device failure happened with the older Node build (no full ICU). The device gate V7 must pass."
+    },
+    {
+      "id": "H-SKILL-FRONTMATTER",
+      "area": "skills",
+      "status": "static-verified",
+      "evidence": "docs/progress/model-tests/check-skill-frontmatter.mjs, skill-frontmatter-host.json",
+      "source": "upstream anomalyco/opencode at 05ea5073, packages/opencode/src/skill/index.ts: a SKILL.md is loaded only if its frontmatter has a string name; a missing name is dropped silently",
+      "result": "good-video-skill loaded as make-mp4-video; bad-no-name-skill not loaded"
+    },
+    {
+      "id": "H-BRIEF-VIDEO-TOPIC",
+      "area": "brief",
+      "status": "pending",
+      "evidence": "app/src/main/java/ai/opencode/android/runtime/EnvironmentBrief.kt (video.md topic) and app/src/test/java/ai/opencode/android/runtime/EnvironmentBriefTest.kt (videoBriefCarriesTheTestedRecipe)",
+      "not_proven": "Kotlin compile and JVM tests: the sandbox has no JDK. Only the CI run proves them. The embedded script was checked byte-for-byte against make-video.mjs and runs under Node 22."
+    }
+  ],
+  "phone": [
+    { "id": "A1", "area": "brief", "status": "pending", "notes": "" },
+    { "id": "B1", "area": "video", "status": "pending", "notes": "" },
+    { "id": "B2", "area": "video", "status": "pending", "notes": "" },
+    { "id": "C1", "area": "skills", "status": "pending", "notes": "" },
+    { "id": "C2", "area": "skills", "status": "pending", "notes": "" },
+    { "id": "C3", "area": "skills", "status": "pending", "notes": "" },
+    { "id": "D1", "area": "mcp", "status": "pending", "notes": "" },
+    { "id": "D2", "area": "mcp", "status": "pending", "notes": "" },
+    { "id": "D3", "area": "mcp", "status": "pending", "notes": "" },
+    { "id": "D4", "area": "mcp", "status": "pending", "notes": "" },
+    { "id": "E1", "area": "tools", "status": "pending", "notes": "" },
+    { "id": "E2", "area": "diffs", "status": "pending", "notes": "" },
+    { "id": "E3", "area": "node", "status": "pending", "notes": "" },
+    { "id": "E4", "area": "node", "status": "pending", "notes": "" },
+    { "id": "F1", "area": "preview", "status": "pending", "notes": "" },
+    { "id": "F2", "area": "screenshots", "status": "pending", "notes": "" },
+    { "id": "F3", "area": "questions", "status": "pending", "notes": "" },
+    { "id": "F4", "area": "plan", "status": "pending", "notes": "" },
+    { "id": "G1", "area": "github", "status": "pending", "notes": "" },
+    { "id": "H1", "area": "ui", "status": "pending", "notes": "" },
+    { "id": "H2", "area": "ui", "status": "pending", "notes": "" },
+    { "id": "H3", "area": "ui", "status": "pending", "notes": "" },
+    { "id": "H4", "area": "ui", "status": "pending", "notes": "" },
+    { "id": "H5", "area": "ui", "status": "pending", "notes": "" },
+    { "id": "H6", "area": "ui", "status": "pending", "notes": "" },
+    { "id": "H7", "area": "ui", "status": "pending", "notes": "" },
+    { "id": "H8", "area": "ui", "status": "pending", "notes": "" }
+  ]
+}
