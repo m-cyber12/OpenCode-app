@@ -1,7 +1,7 @@
-=== Phase 10 static checks 2026-10-29T23:18:28Z ===
+=== Phase 10 static checks 2026-10-30T07:11:17Z ===
 
 === phase 9 static checks (not weakened) ===
-=== Phase 9 static checks 2026-10-29T23:18:28Z ===
+=== Phase 9 static checks 2026-10-30T07:11:17Z ===
 OK   bash -n on 42 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8/phase9 driver
@@ -68,7 +68,7 @@ SELFTEST PASS (27 checks)
 OK   apk/aab inspector self-test
 
 === app/build.gradle.kts static checks (balance, order, run-#6 fix present, identity greps) ===
-GRADLE_CHECK file=app/build.gradle.kts findings=0 notes=0 identity=[versionName=1.18.23-phase10 versionCode=8 applicationId=io.github.mcyber12.opencode]
+GRADLE_CHECK file=app/build.gradle.kts findings=0 notes=0 identity=[versionName=1.18.23-phase10 versionCode=8 applicationId=<app>]
 GRADLE_CHECK PASS
 OK   app/build.gradle.kts static checks (balance, order, run-#6 fix present, identity greps)
 OK   bash -n on the phase10 scripts
@@ -104,7 +104,7 @@ PASS a visible match is not flagged (rc=0) (rc=0 out='1020 1740')
 PASS has still finds an off-screen node (a tag being present is news) (rc=0)
 PASS a device that marks everything not-shown does not blind the reader (rc=0)
 PASS attrs reports the attribute set and the hidden count (rc=0 out='nodes=4 2 node(s) marked shown=false\nbounds:4 class:4 clickable:4 content-desc:4 enabled:4 index:4 package:4 resource-id:4 shown:4 text:4')
-PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmpo_vrfhl3/broken.xml')
+PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmp97450moj/broken.xml')
 p10d-ui selftest: 20 checks, 0 failed
 SELFTEST PASS
 OK   uiautomator dump reader self-test (tap targets, disabled states, diagnostics)
@@ -147,6 +147,11 @@ OK   no infinite animations in the UI layer (Compose test clock)
 
 === android string resources: apostrophes escaped (aapt2 rule) ===
 OK   android string resources: apostrophes escaped (aapt2 rule)
+
+=== node ICU cache for the pinned key (warn only: a missing cache is a planned bootstrap, not a failure) ===
+key=node-24.22.1-ndk28.2.13676358-termux-2d6b9d566c2e-icufull-v2
+OK   node cache arm64-v8a (committed)
+OK   node cache x86_64 (committed)
 
 === phase 10 static checks summary rc=0 ===
 FAIL phase9/workflow/phase9-release.yml: triggers on ['arena/01a0a540-opencode-app'] but this session works on arena/01a0b9d5-opencode-app (the workflow would never run)
