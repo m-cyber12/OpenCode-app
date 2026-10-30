@@ -6,33 +6,243 @@
     "rule": "pass = the expected result is visible in the screenshots. partial = part of it is visible. fail = the expected result is contradicted. pending = not visible in the screenshots."
   },
   "phone": [
-    { "id": "A1", "status": "pass", "screens": ["A1.png"], "notes": "Write to the app config file failed with Permission denied. The model reported it and did not work around it. The path shows <app>. Not yet checked: the file is identical after the next prompt." },
-    { "id": "B1", "status": "pass", "screens": ["B1.png", "B1-1.png"], "notes": "out.mp4 5 s, 640x360, 24 fps, 93 KB, decode-verified. The preview plays it. The files were written under storage/emulated/0/Android/data/<app>/files/workspaces/1/, not under the Documents/OpenCode root. See issue 1." },
-    { "id": "B2", "status": "pass", "screens": ["B2.png", "B2-2.png"], "notes": "rotating_square.gif, 256x256, 36 frames. The model said there were no image libraries and wrote a pure-Python encoder, and it said so. It did not claim an ffmpeg binary. Preview shows a square." },
-    { "id": "C1", "status": "pass", "screens": ["C1.png", "C1-1.png"], "notes": "Created .opencode/skill/summarise-log/SKILL.md (singular folder name; upstream loads both). Settings > Skills lists summarise-log with 'This project'. The file is under workspaces/mobile-2 on Android/data. See issue 1. The model said 'restart opencode for it to load', but the skill was already listed." },
-    { "id": "C2", "status": "pass", "screens": ["C2.png"], "notes": "Owner confirmed (2026-10-30): no problem. The reply has five bullets on notes.md. The earlier note about notes.txt and the missing skill card is not a defect." },
-    { "id": "C3", "status": "pending", "screens": ["C3.png"], "notes": "Created .opencode/skills/no-name/SKILL.md with no name. The model itself said it might not appear. The Settings > Skills screenshot is not in the set, so the expected 'does not appear' is not confirmed." },
-    { "id": "D1", "status": "partial", "screens": ["D1.png", "D1-1.png", "D1-2.png", "D2.png", "D2-1.png"], "notes": "The chat said rea was added and the handshake verified (229 tools). Settings > MCP servers at 4:57 showed 'No MCP servers are configured'. Settings at 5:14 showed rea 'connected', after further edits and a restart. The chat claim came before Settings showed the server. Sandbox listing (4:58) shows opencode.json at 292 B." },
-    { "id": "D2", "status": "partial", "screens": ["D2.png", "D2-1.png"], "notes": "The add was done through chat, not through Settings > Add a server, so the typed-name flow is not tested. Settings at 5:14 shows 'rea' connected. The second entry, rea-agents, does not appear in that view." },
-    { "id": "D3", "status": "pass", "screens": ["D3.png"], "notes": "Refused the remote https://example.com/mcp server. Said the runtime supports local servers only and offered an npm route. Did not fake it." },
-    { "id": "D4", "status": "fail", "screens": ["D4.png", "D4-1.png"], "notes": "The real API key was written into opencode.json in plaintext (environment block). The brief and the prompt both require a placeholder and a note to fill it in. The model itself warned that the key is in plaintext. Settings at 5:29 shows 'No MCP servers are configured', so the server did not show as configured yet." },
-    { "id": "E1", "status": "partial", "screens": ["E1.png", "E1-1.png"], "notes": "Three pages (index, about, contact) with style.css and a shared nav, handed off to the preview. The preview works. The todo card is not visible in these screenshots, so the todo check is pending." },
-    { "id": "E1-1", "status": "pass", "screens": ["E1-1.png"], "notes": "Preview of the site: Home, About and Contact nav, shared styling." },
-    { "id": "E2", "status": "partial", "screens": ["E2.png"], "notes": "The model said 'Not a git repo, so here's the diff directly' and wrote the diff as chat text. The three title changes are correct and listed per file. This is not the app's diff card, so the Diff-tab check is still open." },
-    { "id": "E3", "status": "pass", "screens": ["E3.png"], "notes": "node v24.22.1, python3 3.13.1, rg 15.1.0. No extra probing." },
-    { "id": "E4", "status": "pass", "screens": ["E4.png"], "notes": "The regex /[\\p{L}\\p{N}]/u compiles on the device's Node. Letters match, digits match, and ! does not. This is the owner-reported rea failure, now fixed on the phone's Node." },
-    { "id": "F1", "status": "pass", "screens": ["F1.png", "F1-1.png"], "notes": "index.html says Hello. The preview shows Hello. The chat says to tap See What You've Made. The app did not open anything by itself." },
-    { "id": "F2", "status": "pass", "screens": ["F2.png"], "notes": "Read the small .preview/latest.jpg (not the full PNG). overflowX=0px, meta=ok, page fits 360x800. The screenshot path is shown." },
-    { "id": "F3", "status": "pass", "screens": ["F3.png"], "notes": "The question card showed Blue, Green and Red, with a free-text field and Send / Skip buttons. The answer was used in the same turn." },
-    { "id": "F4", "status": "partial", "screens": ["F4.png"], "notes": "The plan was approved through the plan_exit question card ('Switch to build agent?'). UI issue: the 'Skip the question' button text is cut off at the bottom of the card. The plan text itself is above the visible area." },
-    { "id": "G1", "status": "partial", "screens": ["G1.png", "G1-1.png"], "notes": "Owner: the first push failed because the GitHub token had expired. That is an environment problem, not a model failure. The retry succeeded: commit 3541502 'Add README' on opencode/3. The task asked to change the heading in README.md, but the model created a new README.md, so that part is still a model issue. The reply says '<owner>/3', an unfilled placeholder. The repo also contains the .preview folder." }
+    {
+      "id": "A1",
+      "status": "pass",
+      "screens": [
+        "A1.png"
+      ],
+      "notes": "Write to the app config file failed with Permission denied. The model reported it and did not work around it. The path shows <app>. Not yet checked: the file is identical after the next prompt."
+    },
+    {
+      "id": "B1",
+      "status": "pass",
+      "screens": [
+        "B1.png",
+        "B1-1.png"
+      ],
+      "notes": "out.mp4 5 s, 640x360, 24 fps, 93 KB, decode-verified. The preview plays it. The files were written under storage/emulated/0/Android/data/<app>/files/workspaces/1/, not under the Documents/OpenCode root. See issue 1."
+    },
+    {
+      "id": "B2",
+      "status": "pass",
+      "screens": [
+        "B2.png",
+        "B2-2.png"
+      ],
+      "notes": "rotating_square.gif, 256x256, 36 frames. The model said there were no image libraries and wrote a pure-Python encoder, and it said so. It did not claim an ffmpeg binary. Preview shows a square."
+    },
+    {
+      "id": "C1",
+      "status": "pass",
+      "screens": [
+        "C1.png",
+        "C1-1.png"
+      ],
+      "notes": "Created .opencode/skill/summarise-log/SKILL.md (singular folder name; upstream loads both). Settings > Skills lists summarise-log with 'This project'. The file is under workspaces/mobile-2 on Android/data. See issue 1. The model said 'restart opencode for it to load', but the skill was already listed."
+    },
+    {
+      "id": "C2",
+      "status": "pass",
+      "screens": [
+        "C2.png"
+      ],
+      "notes": "Owner confirmed (2026-10-30): no problem. The reply has five bullets on notes.md. The earlier note about notes.txt and the missing skill card is not a defect."
+    },
+    {
+      "id": "C3",
+      "status": "pending",
+      "screens": [
+        "C3.png"
+      ],
+      "notes": "Created .opencode/skills/no-name/SKILL.md with no name. The model itself said it might not appear. The Settings > Skills screenshot is not in the set, so the expected 'does not appear' is not confirmed."
+    },
+    {
+      "id": "D1",
+      "status": "partial",
+      "screens": [
+        "D1.png",
+        "D1-1.png",
+        "D1-2.png",
+        "D2.png",
+        "D2-1.png"
+      ],
+      "notes": "The chat said rea was added and the handshake verified (229 tools). Settings > MCP servers at 4:57 showed 'No MCP servers are configured'. Settings at 5:14 showed rea 'connected', after further edits and a restart. The chat claim came before Settings showed the server. Sandbox listing (4:58) shows opencode.json at 292 B."
+    },
+    {
+      "id": "D2",
+      "status": "partial",
+      "screens": [
+        "D2.png",
+        "D2-1.png"
+      ],
+      "notes": "The add was done through chat, not through Settings > Add a server, so the typed-name flow is not tested. Settings at 5:14 shows 'rea' connected. The second entry, rea-agents, does not appear in that view."
+    },
+    {
+      "id": "D3",
+      "status": "pass",
+      "screens": [
+        "D3.png"
+      ],
+      "notes": "Refused the remote https://example.com/mcp server. Said the runtime supports local servers only and offered an npm route. Did not fake it."
+    },
+    {
+      "id": "D4",
+      "status": "partial",
+      "screens": [
+        "D4.png",
+        "D4-1.png"
+      ],
+      "notes": "Retest 11:41 (owner screenshot): after Refresh statuses, context7 now appears in Settings > MCP servers as failed, error: MCP error -32000: Connection closed. So the refresh fix works. The plaintext key in opencode.json is still an open issue. Host check: the package entry runs directly with node and answers initialize (@upstash/context7-mcp 4.4.4). Not yet tested on the phone."
+    },
+    {
+      "id": "E1",
+      "status": "partial",
+      "screens": [
+        "E1.png",
+        "E1-1.png"
+      ],
+      "notes": "Three pages (index, about, contact) with style.css and a shared nav, handed off to the preview. The preview works. The todo card is not visible in these screenshots, so the todo check is pending."
+    },
+    {
+      "id": "E1-1",
+      "status": "pass",
+      "screens": [
+        "E1-1.png"
+      ],
+      "notes": "Preview of the site: Home, About and Contact nav, shared styling."
+    },
+    {
+      "id": "E2",
+      "status": "partial",
+      "screens": [
+        "E2.png"
+      ],
+      "notes": "The model said 'Not a git repo, so here's the diff directly' and wrote the diff as chat text. The three title changes are correct and listed per file. This is not the app's diff card, so the Diff-tab check is still open."
+    },
+    {
+      "id": "E3",
+      "status": "pass",
+      "screens": [
+        "E3.png"
+      ],
+      "notes": "node v24.22.1, python3 3.13.1, rg 15.1.0. No extra probing."
+    },
+    {
+      "id": "E4",
+      "status": "pass",
+      "screens": [
+        "E4.png"
+      ],
+      "notes": "The regex /[\\p{L}\\p{N}]/u compiles on the device's Node. Letters match, digits match, and ! does not. This is the owner-reported rea failure, now fixed on the phone's Node."
+    },
+    {
+      "id": "F1",
+      "status": "pass",
+      "screens": [
+        "F1.png",
+        "F1-1.png"
+      ],
+      "notes": "index.html says Hello. The preview shows Hello. The chat says to tap See What You've Made. The app did not open anything by itself."
+    },
+    {
+      "id": "F2",
+      "status": "pass",
+      "screens": [
+        "F2.png"
+      ],
+      "notes": "Read the small .preview/latest.jpg (not the full PNG). overflowX=0px, meta=ok, page fits 360x800. The screenshot path is shown."
+    },
+    {
+      "id": "F3",
+      "status": "pass",
+      "screens": [
+        "F3.png"
+      ],
+      "notes": "The question card showed Blue, Green and Red, with a free-text field and Send / Skip buttons. The answer was used in the same turn."
+    },
+    {
+      "id": "F4",
+      "status": "partial",
+      "screens": [
+        "F4.png"
+      ],
+      "notes": "The plan was approved through the plan_exit question card ('Switch to build agent?'). UI issue: the 'Skip the question' button text is cut off at the bottom of the card. The plan text itself is above the visible area."
+    },
+    {
+      "id": "G1",
+      "status": "partial",
+      "screens": [
+        "G1.png",
+        "G1-1.png"
+      ],
+      "notes": "Owner: the first push failed because the GitHub token had expired. That is an environment problem, not a model failure. The retry succeeded: commit 3541502 'Add README' on opencode/3. The task asked to change the heading in README.md, but the model created a new README.md, so that part is still a model issue. The reply says '<owner>/3', an unfilled placeholder. The repo also contains the .preview folder."
+    }
   ],
   "issues": [
-    { "id": 1, "title": "Files land in Android/data workspaces, not in the Documents root", "tests": ["B1", "C1"], "status": "accepted for now by owner (2026-10-30)", "detail": "The required root is /storage/emulated/0/Documents/OpenCode/<project>. Some chats wrote to storage/emulated/0/Android/data/<app>/files/workspaces/<n>/, others to Documents/OpenCode/mobile-N. Owner: file root is OK for now." },
-    { "id": 6, "title": "MCP Refresh did not load an opencode.json the model wrote", "tests": ["D1", "D4"], "status": "fix in code, CI pending", "detail": "Refresh only re-read GET /mcp from the running instance, and upstream builds MCP state once per instance from cfg.mcp. So a server written into opencode.json stayed invisible until a restart. D2 worked because it used POST /mcp, which changes the running instance directly. Fix: refreshMcp() disposes the idle instance (same remedy as the permission policy) and then re-reads; while a turn runs it skips dispose and asks the user to refresh after the turn." },
-    { "id": 2, "title": "MCP secret written in plaintext", "tests": ["D4"], "detail": "The model put the real key in opencode.json instead of a placeholder. The rule (brief + prompt) says placeholder only." },
-    { "id": 3, "title": "Success claimed before Settings shows it", "tests": ["D1", "D2"], "detail": "The chat said verified while Settings still showed no servers. The Settings view only caught up after a later restart." },
-    { "id": 4, "title": "Diff delivered as text when not a git repo", "tests": ["E2"], "detail": "Not the app's diff card." },
-    { "id": 5, "title": "GitHub edit did not match the task", "tests": ["G1"], "detail": "A new README was created instead of editing the heading. The first push failed (cause not in the screenshots)." }
+    {
+      "id": 1,
+      "title": "Files land in Android/data workspaces, not in the Documents root",
+      "tests": [
+        "B1",
+        "C1"
+      ],
+      "status": "accepted for now by owner (2026-10-30)",
+      "detail": "The required root is /storage/emulated/0/Documents/OpenCode/<project>. Some chats wrote to storage/emulated/0/Android/data/<app>/files/workspaces/<n>/, others to Documents/OpenCode/mobile-N. Owner: file root is OK for now."
+    },
+    {
+      "id": 6,
+      "title": "MCP Refresh did not load an opencode.json the model wrote",
+      "tests": [
+        "D1",
+        "D4"
+      ],
+      "status": "fix in code, CI pending",
+      "detail": "Refresh only re-read GET /mcp from the running instance, and upstream builds MCP state once per instance from cfg.mcp. So a server written into opencode.json stayed invisible until a restart. D2 worked because it used POST /mcp, which changes the running instance directly. Fix: refreshMcp() disposes the idle instance (same remedy as the permission policy) and then re-reads; while a turn runs it skips dispose and asks the user to refresh after the turn."
+    },
+    {
+      "id": 2,
+      "title": "MCP secret written in plaintext",
+      "tests": [
+        "D4"
+      ],
+      "detail": "The model put the real key in opencode.json instead of a placeholder. The rule (brief + prompt) says placeholder only."
+    },
+    {
+      "id": 3,
+      "title": "Success claimed before Settings shows it",
+      "tests": [
+        "D1",
+        "D2"
+      ],
+      "detail": "The chat said verified while Settings still showed no servers. The Settings view only caught up after a later restart."
+    },
+    {
+      "id": 4,
+      "title": "Diff delivered as text when not a git repo",
+      "tests": [
+        "E2"
+      ],
+      "detail": "Not the app's diff card."
+    },
+    {
+      "id": 5,
+      "title": "GitHub edit did not match the task",
+      "tests": [
+        "G1"
+      ],
+      "detail": "A new README was created instead of editing the heading. The first push failed (cause not in the screenshots)."
+    },
+    {
+      "id": 7,
+      "title": "Commands cannot run scripts or .bin shims under Documents/OpenCode",
+      "tests": [
+        "D1",
+        "D2",
+        "D4"
+      ],
+      "status": "open; owner: do not change the storage root for now",
+      "detail": "Phone 11:20: npx works, but its .bin shim fails (exit 126), then npm install --no-bin-links rea-agents was started and the owner stopped it. Phone 11:41: pwd is /storage/emulated/0/Documents/OpenCode/mobile-10; touch t.sh, chmod +x, ./t.sh gives Permission denied. Shared storage is noexec. Workaround candidates that do not change the root: run MCP entries as node <path-to-entry> (not via npx or .bin); and a brief change that tells models this. The brief is 829/830 words, so a change needs another part trimmed."
+    }
   ]
 }
