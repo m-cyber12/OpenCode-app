@@ -7534,8 +7534,26 @@ artifact. Status, from the evidence that actually reached the branch:
   `phase10/scripts/40-release-verify.sh` now uses `SIZE_CAP_MB=230` (warn at 210). The gate
   still FAILS loudly above 230 MiB. This is the project's own proxy budget, not Play's limit.
   The owner should confirm the new number.
-- **Next: run D (full run with the raised budget).** Expected to finish the release
-  verdicts. Anything still red is reported as is.
+- **Run D** (below) is the next step after this bullet.
+
+- **Run 40972215297** on `c52f3920` (run D: full run with the owner-accepted budget):
+  **succeeded.** `PHASE 10 END ... rc=0`. `GATES_SUMMARY.txt`: 208 PASS, 9 SKIP, **0 FAIL**.
+  - ICU, device and smoke: `P6_V7 PASS` and `P10_SMOKE_UI_V7 PASS` (`node/npm ran=true exit=0
+    icu=true icuOut='true 1.234,5' output='v24.22.1 <NL> 11.19.1 <NL> 42'`). That is `\p{L}`
+    working and German locale formatting, so the bundled Node has full ICU on the device.
+  - Size: `P10_SIZE PASS apkMb=200.8 capMb=230 headroomMb=29.2`;
+    `P10_TESTONLY_RELEASE PASS` universal 210,530,861 bytes; `P10_TESTONLY_ARM64 PASS`
+    arm64-only 124,111,716 bytes (118.4 MiB).
+  - Payload `P10-PAYLOAD PASS` (sha256 `352c0a0f52859283`); unit `JVM tests=505 failures=0`;
+    `P10-DEVICE PASS` (API 36 AVD); phase6 `ui_gates_pass=38 ui_gates_fail=0 ui_gates_skip=2`.
+  - Still SKIP (not PASS): `P6_L1`, `P6_L2`, `P10_SMOKE_UI_L1`, `P10_SMOKE_UI_L2` (no model
+    answered in 300 s, because no provider key is present in CI), and
+    `P10_WS_VISIBILITY_DOCUMENTS_PROVIDER` (the device does not let a shell query the
+    Documents provider). The live-model behaviour (todo, diffs, MCP, tool calls with a real
+    model) is therefore NOT verified by this run.
+- **Still open:** the owner must confirm the 230 MiB budget. The owner device pass is the
+  ground truth for the todo list, diffs, MCP setup, transitions, the model menu, and the
+  ICU build on a real phone. The line-by-line review (item 8) is not done.
 
 Session note (2026-10-29, later): the agent's local branch had fallen behind origin
 (an older working tree at the `main` base). It was reset to origin `554520b0` after a
