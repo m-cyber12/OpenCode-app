@@ -203,8 +203,7 @@ what cannot have changed; read each topic brief at most once.
   Read before shelling out.
 - $briefsDir/extensions.md - MCP servers and skills: where they live, how to
   register one. Read before adding either.
-- $briefsDir/video.md - making an MP4 video (or a GIF or animation) from code: the tested
-  WebAssembly ffmpeg recipe, because the app has no native ffmpeg. Read before you make any video.
+- $briefsDir/video.md - make any MP4 video from code (tested recipe).
 """.trimIndent() + "\n"
     }
 
