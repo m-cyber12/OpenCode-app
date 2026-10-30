@@ -70,7 +70,7 @@ SELFTEST PASS (27 checks)
 OK   apk/aab inspector self-test
 
 === app/build.gradle.kts static checks (balance, order, run-#6 fix present, identity greps) ===
-GRADLE_CHECK file=app/build.gradle.kts findings=0 notes=0 identity=[versionName=1.18.23-phase10 versionCode=8 applicationId=<app>]
+GRADLE_CHECK file=app/build.gradle.kts findings=0 notes=0 identity=[versionName=1.18.23-phase10 versionCode=8 applicationId=io.github.mcyber12.opencode]
 GRADLE_CHECK PASS
 OK   app/build.gradle.kts static checks (balance, order, run-#6 fix present, identity greps)
 OK   bash -n on the phase10 scripts
@@ -160,200 +160,7 @@ P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, 
 ########## 1a/9 exact Android 16 SDK + API 36 emulator image ##########
 yes: standard output: Broken pipe
 sdkmanager=/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager
-Loading package information...                                                  
-Loading local repository...                                                     
-[                                       ] 3% Loading local repository...        
-[                                       ] 3% Fetch remote repository...         
-[=                                      ] 3% Fetch remote repository...         
-[=                                      ] 4% Fetch remote repository...         
-[=                                      ] 5% Fetch remote repository...         
-[==                                     ] 5% Fetch remote repository...         
-[==                                     ] 6% Fetch remote repository...         
-[==                                     ] 7% Fetch remote repository...         
-[==                                     ] 7% Computing updates...               
-[===                                    ] 8% Computing updates...               
-[===                                    ] 10% Computing updates...              
-[===                                    ] 10% Installing Android Emulator       
-[===                                    ] 10% Downloading emulator-linux_x64-167
-[====                                   ] 10% Downloading emulator-linux_x64-167
-[====                                   ] 11% Downloading emulator-linux_x64-167
-[====                                   ] 12% Downloading emulator-linux_x64-167
-[=====                                  ] 13% Downloading emulator-linux_x64-167
-[=====                                  ] 14% Downloading emulator-linux_x64-167
-[=====                                  ] 15% Downloading emulator-linux_x64-167
-[======                                 ] 15% Downloading emulator-linux_x64-167
-[======                                 ] 16% Downloading emulator-linux_x64-167
-[======                                 ] 17% Downloading emulator-linux_x64-167
-[=======                                ] 18% Downloading emulator-linux_x64-167
-[=======                                ] 19% Downloading emulator-linux_x64-167
-[=======                                ] 20% Downloading emulator-linux_x64-167
-[========                               ] 20% Downloading emulator-linux_x64-167
-[========                               ] 21% Downloading emulator-linux_x64-167
-[========                               ] 21% Unzipping...                      
-[========                               ] 21% Unzipping... emulator/            
-[========                               ] 21% Unzipping... emulator/resources/  
-[========                               ] 21% Unzipping... emulator/qsn         
-[========                               ] 21% Unzipping... emulator/emulator    
-[========                               ] 21% Unzipping... emulator/netsimd     
-[========                               ] 22% Unzipping... emulator/netsimd     
-[========                               ] 22% Unzipping... emulator/bin64/      
-[========                               ] 22% Unzipping... emulator/qemu/       
-[========                               ] 22% Unzipping... emulator/NOTICE.txt  
-[========                               ] 22% Unzipping... emulator/crashpad_han
-[========                               ] 22% Unzipping... emulator/source.prope
-[========                               ] 22% Unzipping... emulator/nimble_bridg
-[========                               ] 22% Unzipping... emulator/LICENSE     
-[========                               ] 22% Unzipping... emulator/lib/        
-[========                               ] 22% Unzipping... emulator/qemu-img    
-[========                               ] 22% Unzipping... emulator/include/    
-[========                               ] 22% Unzipping... emulator/NOTICE.csv  
-[========                               ] 22% Unzipping... emulator/lib64/      
-[========                               ] 22% Unzipping... emulator/emulator-che
-[========                               ] 22% Unzipping... emulator/crashreport 
-[========                               ] 22% Unzipping... emulator/mksdcard    
-[========                               ] 22% Unzipping... emulator/resources/To
-[========                               ] 22% Unzipping... emulator/resources/de
-[========                               ] 22% Unzipping... emulator/resources/To
-[========                               ] 22% Unzipping... emulator/resources/de
-[========                               ] 22% Unzipping... emulator/resources/To
-[========                               ] 22% Unzipping... emulator/resources/ma
-[========                               ] 22% Unzipping... emulator/resources/de
-[========                               ] 22% Unzipping... emulator/resources/sk
-[========                               ] 22% Unzipping... emulator/resources/de
-[========                               ] 22% Unzipping... emulator/resources/ma
-[========                               ] 22% Unzipping... emulator/resources/po
-[========                               ] 22% Unzipping... emulator/resources/ma
-[=========                              ] 23% Unzipping... emulator/resources/ma
-[=========                              ] 23% Unzipping... emulator/resources/sk
-[=========                              ] 23% Unzipping... emulator/resources/ma
-[=========                              ] 23% Unzipping... emulator/bin64/e2fsck
-[=========                              ] 23% Unzipping... emulator/bin64/fsck.e
-[=========                              ] 23% Unzipping... emulator/bin64/tune2f
-[=========                              ] 23% Unzipping... emulator/bin64/resize
-[=========                              ] 23% Unzipping... emulator/bin64/mkfs.e
-[=========                              ] 23% Unzipping... emulator/qemu/linux-x
-[=========                              ] 24% Unzipping... emulator/qemu/linux-x
-[=========                              ] 25% Unzipping... emulator/qemu/linux-x
-[==========                             ] 25% Unzipping... emulator/qemu/linux-x
-[==========                             ] 25% Unzipping... emulator/lib/emulator
-[==========                             ] 25% Unzipping... emulator/lib/rtc_serv
-[==========                             ] 25% Unzipping... emulator/lib/advanced
-[==========                             ] 25% Unzipping... emulator/lib/cmake/  
-[==========                             ] 25% Unzipping... emulator/lib/emulator
-[==========                             ] 25% Unzipping... emulator/lib/control_
-[==========                             ] 25% Unzipping... emulator/lib/emulated
-[==========                             ] 25% Unzipping... emulator/lib/rtc_serv
-[==========                             ] 25% Unzipping... emulator/lib/emu-orig
-[==========                             ] 25% Unzipping... emulator/lib/hardware
-[==========                             ] 25% Unzipping... emulator/lib/pkgconfi
-[==========                             ] 25% Unzipping... emulator/lib/pc-bios/
-[==========                             ] 25% Unzipping... emulator/lib/snapshot
-[==========                             ] 25% Unzipping... emulator/lib/adb_serv
-[==========                             ] 25% Unzipping... emulator/lib/hostapd.
-[==========                             ] 25% Unzipping... emulator/lib/grpc_end
-[==========                             ] 25% Unzipping... emulator/lib/ca-bundl
-[==========                             ] 25% Unzipping... emulator/lib/ui_contr
-[==========                             ] 25% Unzipping... emulator/lib/snapshot
-[==========                             ] 25% Unzipping... emulator/lib/ice_conf
-[==========                             ] 25% Unzipping... emulator/lib/libflatb
-[==========                             ] 26% Unzipping... emulator/lib/libflatb
-[==========                             ] 26% Unzipping... emulator/lib/emulator
-[==========                             ] 26% Unzipping... emulator/lib/waterfal
-[==========                             ] 26% Unzipping... emulator/lib/emulated
-[==========                             ] 26% Unzipping... emulator/lib/cmake/fl
-[==========                             ] 26% Unzipping... emulator/lib/pkgconfi
-[==========                             ] 26% Unzipping... emulator/lib/pc-bios/
-[==========                             ] 26% Unzipping... emulator/include/flat
-[==========                             ] 26% Unzipping... emulator/lib64/libgli
-[==========                             ] 26% Unzipping... emulator/lib64/libpro
-[==========                             ] 26% Unzipping... emulator/lib64/qt/   
-[==========                             ] 26% Unzipping... emulator/lib64/liband
-[==========                             ] 26% Unzipping... emulator/lib64/libgfx
-[==========                             ] 26% Unzipping... emulator/lib64/gles_l
-[==========                             ] 26% Unzipping... emulator/lib64/liband
-[==========                             ] 26% Unzipping... emulator/lib64/vulkan
-[==========                             ] 26% Unzipping... emulator/lib64/gles_s
-[==========                             ] 26% Unzipping... emulator/lib64/libemu
-[==========                             ] 26% Unzipping... emulator/lib64/libpro
-[==========                             ] 26% Unzipping... emulator/lib64/liband
-[==========                             ] 26% Unzipping... emulator/lib64/libtcm
-[==========                             ] 26% Unzipping... emulator/lib64/libima
-[==========                             ] 26% Unzipping... emulator/lib64/libc++
-[==========                             ] 26% Unzipping... emulator/lib64/liband
-[==========                             ] 26% Unzipping... emulator/lib64/libabs
-[==========                             ] 26% Unzipping... emulator/lib64/gles_a
-[==========                             ] 26% Unzipping... emulator/lib64/libsha
-[==========                             ] 26% Unzipping... emulator/lib64/libc++
-[==========                             ] 26% Unzipping... emulator/lib64/qt/res
-[==========                             ] 26% Unzipping... emulator/lib64/qt/lib
-[==========                             ] 26% Unzipping... emulator/lib64/qt/tra
-[==========                             ] 26% Unzipping... emulator/lib64/qt/plu
-[==========                             ] 26% Unzipping... emulator/lib64/qt/res
-[==========                             ] 27% Unzipping... emulator/lib64/qt/res
-[==========                             ] 27% Unzipping... emulator/lib64/qt/lib
-[===========                            ] 28% Unzipping... emulator/lib64/qt/lib
-[===========                            ] 29% Unzipping... emulator/lib64/qt/lib
-[===========                            ] 30% Unzipping... emulator/lib64/qt/lib
-[============                           ] 30% Unzipping... emulator/lib64/qt/lib
-[============                           ] 30% Unzipping... emulator/lib64/qt/tra
-[============                           ] 30% Unzipping... emulator/lib64/qt/plu
-[============                           ] 30% Unzipping... emulator/lib64/gles_l
-[============                           ] 31% Unzipping... emulator/lib64/gles_l
-[============                           ] 31% Unzipping... emulator/lib64/vulkan
-[============                           ] 32% Unzipping... emulator/lib64/vulkan
-[============                           ] 32% Unzipping... emulator/lib64/gles_s
-[============                           ] 32% Unzipping... emulator/lib64/gles_a
-[=============                          ] 33% Unzipping... emulator/lib64/gles_a
-[=====================                  ] 55% Unzipping... emulator/lib64/gles_a
-[=====================                  ] 55% Installing Google APIs Intel x86_6
-[=====================                  ] 55% Downloading x86_64-36_r07.zip... e
-[======================                 ] 55% Downloading x86_64-36_r07.zip... e
-[======================                 ] 56% Downloading x86_64-36_r07.zip... e
-[======================                 ] 57% Downloading x86_64-36_r07.zip... e
-[=======================                ] 58% Downloading x86_64-36_r07.zip... e
-[=======================                ] 59% Downloading x86_64-36_r07.zip... e
-[=======================                ] 60% Downloading x86_64-36_r07.zip... e
-[========================               ] 60% Downloading x86_64-36_r07.zip... e
-[========================               ] 61% Downloading x86_64-36_r07.zip... e
-[========================               ] 62% Downloading x86_64-36_r07.zip... e
-[=========================              ] 63% Downloading x86_64-36_r07.zip... e
-[=========================              ] 64% Downloading x86_64-36_r07.zip... e
-[=========================              ] 65% Downloading x86_64-36_r07.zip... e
-[==========================             ] 65% Downloading x86_64-36_r07.zip... e
-[==========================             ] 66% Downloading x86_64-36_r07.zip... e
-[==========================             ] 66% Unzipping... emulator/lib64/gles_a
-[==========================             ] 66% Unzipping... x86_64/NOTICE.txt    
-[==========================             ] 66% Unzipping... x86_64/VerifiedBootPa
-[==========================             ] 66% Unzipping... x86_64/advancedFeatur
-[==========================             ] 66% Unzipping... x86_64/build.prop    
-[==========================             ] 66% Unzipping... x86_64/data/empty_dat
-[==========================             ] 66% Unzipping... x86_64/data/local.pro
-[==========================             ] 66% Unzipping... x86_64/data/misc/Gold
-[==========================             ] 66% Unzipping... x86_64/data/misc/emul
-[==========================             ] 66% Unzipping... x86_64/data/misc/mode
-[==========================             ] 66% Unzipping... x86_64/data/misc/pixe
-[==========================             ] 66% Unzipping... x86_64/encryptionkey.
-[==========================             ] 66% Unzipping... x86_64/kernel-ranchu 
-[==========================             ] 66% Unzipping... x86_64/kernel_cmdline
-[==========================             ] 66% Unzipping... x86_64/ramdisk.img   
-[==========================             ] 66% Unzipping... x86_64/source.propert
-[==========================             ] 66% Unzipping... x86_64/system.img    
-[==========================             ] 67% Unzipping... x86_64/system.img    
-[===========================            ] 68% Unzipping... x86_64/system.img    
-[===========================            ] 69% Unzipping... x86_64/system.img    
-[===========================            ] 70% Unzipping... x86_64/system.img    
-[============================           ] 70% Unzipping... x86_64/system.img    
-[============================           ] 71% Unzipping... x86_64/system.img    
-[============================           ] 72% Unzipping... x86_64/system.img    
-[=============================          ] 73% Unzipping... x86_64/system.img    
-[=============================          ] 74% Unzipping... x86_64/system.img    
-[=============================          ] 75% Unzipping... x86_64/system.img    
-[==============================         ] 75% Unzipping... x86_64/system.img    
-[==============================         ] 76% Unzipping... x86_64/system.img    
-[==============================         ] 77% Unzipping... x86_64/system.img    
-[==============================         ] 77% Unzipping... x86_64/vendor.img    
-[==============================         ] 78% Unzipping... x86_64/vendor.img    
-[=======================================] 100% Unzipping... x86_64/vendor.img   
+Loading package information...                                                  Loading local repository...                                                     [                                       ] 3% Loading local repository...        [                                       ] 3% Fetch remote repository...         [=                                      ] 3% Fetch remote repository...         [=                                      ] 4% Fetch remote repository...         [=                                      ] 5% Fetch remote repository...         [==                                     ] 5% Fetch remote repository...         [==                                     ] 6% Fetch remote repository...         [==                                     ] 7% Fetch remote repository...         [==                                     ] 7% Computing updates...               [===                                    ] 8% Computing updates...               [===                                    ] 10% Computing updates...              [===                                    ] 10% Installing Android Emulator       [===                                    ] 10% Downloading emulator-linux_x64-167[====                                   ] 10% Downloading emulator-linux_x64-167[====                                   ] 11% Downloading emulator-linux_x64-167[====                                   ] 12% Downloading emulator-linux_x64-167[=====                                  ] 13% Downloading emulator-linux_x64-167[=====                                  ] 14% Downloading emulator-linux_x64-167[=====                                  ] 15% Downloading emulator-linux_x64-167[======                                 ] 15% Downloading emulator-linux_x64-167[======                                 ] 16% Downloading emulator-linux_x64-167[======                                 ] 17% Downloading emulator-linux_x64-167[=======                                ] 18% Downloading emulator-linux_x64-167[=======                                ] 19% Downloading emulator-linux_x64-167[=======                                ] 20% Downloading emulator-linux_x64-167[========                               ] 20% Downloading emulator-linux_x64-167[========                               ] 21% Downloading emulator-linux_x64-167[========                               ] 21% Unzipping...                      [========                               ] 21% Unzipping... emulator/            [========                               ] 21% Unzipping... emulator/resources/  [========                               ] 21% Unzipping... emulator/qsn         [========                               ] 21% Unzipping... emulator/emulator    [========                               ] 21% Unzipping... emulator/netsimd     [========                               ] 22% Unzipping... emulator/netsimd     [========                               ] 22% Unzipping... emulator/bin64/      [========                               ] 22% Unzipping... emulator/qemu/       [========                               ] 22% Unzipping... emulator/NOTICE.txt  [========                               ] 22% Unzipping... emulator/crashpad_han[========                               ] 22% Unzipping... emulator/source.prope[========                               ] 22% Unzipping... emulator/nimble_bridg[========                               ] 22% Unzipping... emulator/LICENSE     [========                               ] 22% Unzipping... emulator/lib/        [========                               ] 22% Unzipping... emulator/qemu-img    [========                               ] 22% Unzipping... emulator/include/    [========                               ] 22% Unzipping... emulator/NOTICE.csv  [========                               ] 22% Unzipping... emulator/lib64/      [========                               ] 22% Unzipping... emulator/emulator-che[========                               ] 22% Unzipping... emulator/crashreport [========                               ] 22% Unzipping... emulator/mksdcard    [========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/To[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/sk[========                               ] 22% Unzipping... emulator/resources/de[========                               ] 22% Unzipping... emulator/resources/ma[========                               ] 22% Unzipping... emulator/resources/po[========                               ] 22% Unzipping... emulator/resources/ma[=========                              ] 23% Unzipping... emulator/resources/ma[=========                              ] 23% Unzipping... emulator/resources/sk[=========                              ] 23% Unzipping... emulator/resources/ma[=========                              ] 23% Unzipping... emulator/bin64/e2fsck[=========                              ] 23% Unzipping... emulator/bin64/fsck.e[=========                              ] 23% Unzipping... emulator/bin64/tune2f[=========                              ] 23% Unzipping... emulator/bin64/resize[=========                              ] 23% Unzipping... emulator/bin64/mkfs.e[=========                              ] 23% Unzipping... emulator/qemu/linux-x[=========                              ] 24% Unzipping... emulator/qemu/linux-x[=========                              ] 25% Unzipping... emulator/qemu/linux-x[==========                             ] 25% Unzipping... emulator/qemu/linux-x[==========                             ] 25% Unzipping... emulator/lib/emulator[==========                             ] 25% Unzipping... emulator/lib/rtc_serv[==========                             ] 25% Unzipping... emulator/lib/advanced[==========                             ] 25% Unzipping... emulator/lib/cmake/  [==========                             ] 25% Unzipping... emulator/lib/emulator[==========                             ] 25% Unzipping... emulator/lib/control_[==========                             ] 25% Unzipping... emulator/lib/emulated[==========                             ] 25% Unzipping... emulator/lib/rtc_serv[==========                             ] 25% Unzipping... emulator/lib/emu-orig[==========                             ] 25% Unzipping... emulator/lib/hardware[==========                             ] 25% Unzipping... emulator/lib/pkgconfi[==========                             ] 25% Unzipping... emulator/lib/pc-bios/[==========                             ] 25% Unzipping... emulator/lib/snapshot[==========                             ] 25% Unzipping... emulator/lib/adb_serv[==========                             ] 25% Unzipping... emulator/lib/hostapd.[==========                             ] 25% Unzipping... emulator/lib/grpc_end[==========                             ] 25% Unzipping... emulator/lib/ca-bundl[==========                             ] 25% Unzipping... emulator/lib/ui_contr[==========                             ] 25% Unzipping... emulator/lib/snapshot[==========                             ] 25% Unzipping... emulator/lib/ice_conf[==========                             ] 25% Unzipping... emulator/lib/libflatb[==========                             ] 26% Unzipping... emulator/lib/libflatb[==========                             ] 26% Unzipping... emulator/lib/emulator[==========                             ] 26% Unzipping... emulator/lib/waterfal[==========                             ] 26% Unzipping... emulator/lib/emulated[==========                             ] 26% Unzipping... emulator/lib/cmake/fl[==========                             ] 26% Unzipping... emulator/lib/pkgconfi[==========                             ] 26% Unzipping... emulator/lib/pc-bios/[==========                             ] 26% Unzipping... emulator/include/flat[==========                             ] 26% Unzipping... emulator/lib64/libgli[==========                             ] 26% Unzipping... emulator/lib64/libpro[==========                             ] 26% Unzipping... emulator/lib64/qt/   [==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libgfx[==========                             ] 26% Unzipping... emulator/lib64/gles_l[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/vulkan[==========                             ] 26% Unzipping... emulator/lib64/gles_s[==========                             ] 26% Unzipping... emulator/lib64/libemu[==========                             ] 26% Unzipping... emulator/lib64/libpro[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libtcm[==========                             ] 26% Unzipping... emulator/lib64/libima[==========                             ] 26% Unzipping... emulator/lib64/libc++[==========                             ] 26% Unzipping... emulator/lib64/liband[==========                             ] 26% Unzipping... emulator/lib64/libabs[==========                             ] 26% Unzipping... emulator/lib64/gles_a[==========                             ] 26% Unzipping... emulator/lib64/libsha[==========                             ] 26% Unzipping... emulator/lib64/libc++[==========                             ] 26% Unzipping... emulator/lib64/qt/res[==========                             ] 26% Unzipping... emulator/lib64/qt/lib[==========                             ] 26% Unzipping... emulator/lib64/qt/tra[==========                             ] 26% Unzipping... emulator/lib64/qt/plu[==========                             ] 26% Unzipping... emulator/lib64/qt/res[==========                             ] 27% Unzipping... emulator/lib64/qt/res[==========                             ] 27% Unzipping... emulator/lib64/qt/lib[===========                            ] 28% Unzipping... emulator/lib64/qt/lib[===========                            ] 29% Unzipping... emulator/lib64/qt/lib[===========                            ] 30% Unzipping... emulator/lib64/qt/lib[============                           ] 30% Unzipping... emulator/lib64/qt/lib[============                           ] 30% Unzipping... emulator/lib64/qt/tra[============                           ] 30% Unzipping... emulator/lib64/qt/plu[============                           ] 30% Unzipping... emulator/lib64/gles_l[============                           ] 31% Unzipping... emulator/lib64/gles_l[============                           ] 31% Unzipping... emulator/lib64/vulkan[============                           ] 32% Unzipping... emulator/lib64/vulkan[============                           ] 32% Unzipping... emulator/lib64/gles_s[============                           ] 32% Unzipping... emulator/lib64/gles_a[=============                          ] 33% Unzipping... emulator/lib64/gles_a[=====================                  ] 55% Unzipping... emulator/lib64/gles_a[=====================                  ] 55% Installing Google APIs Intel x86_6[=====================                  ] 55% Downloading x86_64-36_r07.zip... e[======================                 ] 55% Downloading x86_64-36_r07.zip... e[======================                 ] 56% Downloading x86_64-36_r07.zip... e[======================                 ] 57% Downloading x86_64-36_r07.zip... e[=======================                ] 58% Downloading x86_64-36_r07.zip... e[=======================                ] 59% Downloading x86_64-36_r07.zip... e[=======================                ] 60% Downloading x86_64-36_r07.zip... e[========================               ] 60% Downloading x86_64-36_r07.zip... e[========================               ] 61% Downloading x86_64-36_r07.zip... e[========================               ] 62% Downloading x86_64-36_r07.zip... e[=========================              ] 63% Downloading x86_64-36_r07.zip... e[=========================              ] 64% Downloading x86_64-36_r07.zip... e[=========================              ] 65% Downloading x86_64-36_r07.zip... e[==========================             ] 65% Downloading x86_64-36_r07.zip... e[==========================             ] 66% Downloading x86_64-36_r07.zip... e[==========================             ] 66% Unzipping... emulator/lib64/gles_a[==========================             ] 66% Unzipping... x86_64/NOTICE.txt    [==========================             ] 66% Unzipping... x86_64/VerifiedBootPa[==========================             ] 66% Unzipping... x86_64/advancedFeatur[==========================             ] 66% Unzipping... x86_64/build.prop    [==========================             ] 66% Unzipping... x86_64/data/empty_dat[==========================             ] 66% Unzipping... x86_64/data/local.pro[==========================             ] 66% Unzipping... x86_64/data/misc/Gold[==========================             ] 66% Unzipping... x86_64/data/misc/emul[==========================             ] 66% Unzipping... x86_64/data/misc/mode[==========================             ] 66% Unzipping... x86_64/data/misc/pixe[==========================             ] 66% Unzipping... x86_64/encryptionkey.[==========================             ] 66% Unzipping... x86_64/kernel-ranchu [==========================             ] 66% Unzipping... x86_64/kernel_cmdline[==========================             ] 66% Unzipping... x86_64/ramdisk.img   [==========================             ] 66% Unzipping... x86_64/source.propert[==========================             ] 66% Unzipping... x86_64/system.img    [==========================             ] 67% Unzipping... x86_64/system.img    [===========================            ] 68% Unzipping... x86_64/system.img    [===========================            ] 69% Unzipping... x86_64/system.img    [===========================            ] 70% Unzipping... x86_64/system.img    [============================           ] 70% Unzipping... x86_64/system.img    [============================           ] 71% Unzipping... x86_64/system.img    [============================           ] 72% Unzipping... x86_64/system.img    [=============================          ] 73% Unzipping... x86_64/system.img    [=============================          ] 74% Unzipping... x86_64/system.img    [=============================          ] 75% Unzipping... x86_64/system.img    [==============================         ] 75% Unzipping... x86_64/system.img    [==============================         ] 76% Unzipping... x86_64/system.img    [==============================         ] 77% Unzipping... x86_64/system.img    [==============================         ] 77% Unzipping... x86_64/vendor.img    [==============================         ] 78% Unzipping... x86_64/vendor.img    [=======================================] 100% Unzipping... x86_64/vendor.img   
 
 API36_SDK_READY platform=android-36 image=android-36/google_apis/x86_64
 P10_API36_SDK PASS: compile platform and google_apis x86_64 image are exactly android-36
@@ -43143,10 +42950,7 @@ PAYLOAD_READY
 P10-PAYLOAD PASS: payloadVersion=7 opencode=1.18.23@05ea5073be96 bun=1.3.14 git=v2.48.1 rg=15.1.0 sha256=794031a848a9ed7d files=2621
 ########## 4/9 fresh emulator at a phone-sized screen (1080x1920 @ 420dpi) ##########
 system image: android-36/google_apis/x86_64
-Loading local repository...                                                     
-[=========                              ] 25% Loading local repository...       
-[=========                              ] 25% Fetch remote repository...        
-[=======================================] 100% Fetch remote repository...       
+Loading local repository...                                                     [=========                              ] 25% Loading local repository...       [=========                              ] 25% Fetch remote repository...        [=======================================] 100% Fetch remote repository...       
 Auto-selecting single ABI x86_64
 Do you wish to create a custom hardware profile? [no] --- emulator accel-check
 accel:
@@ -43290,7 +43094,7 @@ Unable to strip the following libraries, packaging them as they are: libbun.so, 
 BUILD SUCCESSFUL in 1m 17s
 69 actionable tasks: 37 executed, 4 from cache, 28 up-to-date
 [2026-10-30T07:55:28Z] === stage A: deterministic chat UI gates (no runtime, no model, no key) ===
-[2026-10-30T07:55:28Z] uninstalling <app>.debug / <app>.debug.test so the next gate really is a first run
+[2026-10-30T07:55:28Z] uninstalling io.github.mcyber12.opencode.debug / io.github.mcyber12.opencode.debug.test so the next gate really is a first run
 Performing Streamed Install
 Success
 Performing Streamed Install
@@ -43314,7 +43118,7 @@ Success
 [2026-10-30T07:56:25Z] P6-U13 PASS :: :: tabs=true chip=true wired=true screen=true stages=true newestFirst=true rows=2 counts=true patch=hidden:true,shown:true empty=true
 [2026-10-30T07:56:25Z] P6-U14 PASS :: :: screen=true rows=3 command=true output=true exit=true running=true failed=true log=hidden:true,shown:true tabBack=true empty=true
 [2026-10-30T07:56:25Z] === stage B: first-run experience on a freshly installed APK ===
-[2026-10-30T07:56:25Z] uninstalling <app>.debug / <app>.debug.test so the next gate really is a first run
+[2026-10-30T07:56:25Z] uninstalling io.github.mcyber12.opencode.debug / io.github.mcyber12.opencode.debug.test so the next gate really is a first run
 Performing Streamed Install
 Success
 Performing Streamed Install
@@ -43340,7 +43144,7 @@ Success
 [2026-10-30T08:01:55Z] harness-exec runner trailer: OK
 [2026-10-30T08:01:55Z] screenshots pulled: 5
 [2026-10-30T08:01:55Z] P6-X1 PASS :: :: api36Context=true nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=36 api=36 abi=x86_64 :: OCEXECPROBE ok
-[2026-10-30T08:01:55Z] P6-X2 PASS :: :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/<app>.debug/files/probe-exec" (in directory "/data/a
+[2026-10-30T08:01:55Z] P6-X2 PASS :: :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode.debug/files/probe-exec" (in directory "/data/a
 [2026-10-30T08:01:55Z] P6-X3 PASS :: :: api36Context=true targetSdk=36 api=36 prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 [2026-10-30T08:01:55Z] === stage E: sealed install (the kernel, proven on this device) ===
 [2026-10-30T08:01:55Z] === am instrument ai.opencode.android.harness.HarnessSealedInstallGateTest ===
@@ -43366,7 +43170,7 @@ Success
 [2026-10-30T08:02:01Z] screenshots pulled: 5
 [2026-10-30T08:02:01Z] P6-V1 PASS :: :: sealed shell ran=true exit=0 api=36 :: OC_SEALED_SH_OK
 [2026-10-30T08:02:01Z] P6-V2 PASS :: :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
-[2026-10-30T08:02:01Z] P6-V3 PASS :: :: agent env PATH[0]=/data/user/0/<app>.debug/files/bin (want /data/user/0/<app>.debug/files/bin) SHELL=/data/user/0/<app>.debug/files/bin/sh ran=true exi
+[2026-10-30T08:02:01Z] P6-V3 PASS :: :: agent env PATH[0]=/data/user/0/io.github.mcyber12.opencode.debug/files/bin (want /data/user/0/io.github.mcyber12.opencode.debug/files/bin) SHELL=/data/user/0/io.github.mcyber12.opencode.debug/files/bin/sh ran=true exi
 [2026-10-30T08:02:01Z] P6-V4 PASS :: :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-android) libcurl/8.10.1 mbedTLS' CURL_CA_PATH=/apex/com.android.conscrypt/cacerts isDir=true
 [2026-10-30T08:02:01Z] P6-V5 PASS :: :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
 [2026-10-30T08:02:01Z] P6-V6 PASS :: :: python ran=true exit=0 json='{"ok": true}' zlib.crc32='891568578' (want 891568578) output='{"ok": true} <NL> 891568578'
@@ -43385,7 +43189,7 @@ device_abi=x86_64
 android_sdk=36
 phase6 UI gates rc=0
 ########## 5b/9 workspace location + visibility (Phase 10 continuation: files must not be a black box) ##########
-[2026-10-30T08:02:02Z] installing <app>.debug + its test APK (keeps data: the runtime the gates talk to is already up)
+[2026-10-30T08:02:02Z] installing io.github.mcyber12.opencode.debug + its test APK (keeps data: the runtime the gates talk to is already up)
 [2026-10-30T08:02:05Z] appops MANAGE_EXTERNAL_STORAGE: MANAGE_EXTERNAL_STORAGE: allow
 [2026-10-30T08:02:05Z] shared-storage default: ls: /storage/emulated/0/Documents/OpenCode: No such file or directory
 [2026-10-30T08:02:05Z] === am instrument ai.opencode.android.projects.WorkspaceIsolationGatesTest (W1-W7) ===
@@ -43396,22 +43200,22 @@ P7_W1_PROJECT_LIFECYCLE PASS :: created=p7-life-1793347331723 renamed=p7-renamed
 P7_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=t
 P7_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_a67e2381"}'
 P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: p
-P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1793347331748/AGENTS.md globalFile=/data/user/0/<app>.debug/files/xdg/config/opencode/AGENTS.md
+P7_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1793347331748/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
 P7_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/sto
-P7_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/<app>.debug/files/workspaces serverWrote=true readBack=true marker=P10_VISIBLE_1793347330998 project=w4-storage-1793347330997 shellStatus=200 dirOnDisk=true size=26
+P7_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces serverWrote=true readBack=true marker=P10_VISIBLE_1793347330998 project=w4-storage-1793347330997 shellStatus=200 dirOnDisk=true size=26
 P7_W5_SIBLING_PROJECT_CONFINEMENT PASS :: wsRoot=/sto
 P7_W5_SIBLING_PROJECT_CONFINEMENT PASS :: wsRoot=/storage/emulated/0/Documents/OpenCode/p10ws-1793347329989 project=1 seesOwn=true seesSibling=false seesWorkspaceFile=false refused=sibling:true,workspace:true,deep:true readOwn=true/true chatNoFolder=true shape=true chatOwned=true session=ses_e742b5d93ffeJHt4EQo3Om5kQd siblingBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server ' workspaceBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server ' deepBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server '
 P7_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: f
-P7_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/<app>.debug/files/p10w6-workspace mode=CHOSEN whenSwitched=[] hid=true oldStillOnDisk=true markerIntact=true pendingProjects=3 pendingNamesOldRoot=true movedBack=3 rootNow=/storage/emulated/0/Android/data/<app>.debug/files/p10w6-workspace namesAfterMove=[p10w6, w4-storage-1793347330997, 1] contentKept=true before=[p10w6, w4-storage-1793347330997]
+P7_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w6-workspace mode=CHOSEN whenSwitched=[] hid=true oldStillOnDisk=true markerIntact=true pendingProjects=3 pendingNamesOldRoot=true movedBack=3 rootNow=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w6-workspace namesAfterMove=[p10w6, w4-storage-1793347330997, 1] contentKept=true before=[p10w6, w4-storage-1793347330997]
 P7_W7_PICKER_FOLDER_SWITCHES PASS :: u
-P7_W7_PICKER_FOLDER_SWITCHES PASS :: uri=content://com.android.externalstorage.documents/tree/primary%3AAndroid%2Fdata%2F<app>.debug%2Ffiles%2Fp10w7-picked resolved=/storage/emulated/0/Android/data/<app>.debug/files/p10w7-picked ok=true from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/<app>.debug/files/p10w7-picked rootNow=/storage/emulated/0/Android/data/<app>.debug/files/p10w7-picked pinned=/storage/emulated/0/Android/data/<app>.debug/files/p10w7-picked
+P7_W7_PICKER_FOLDER_SWITCHES PASS :: uri=content://com.android.externalstorage.documents/tree/primary%3AAndroid%2Fdata%2Fio.github.mcyber12.opencode.debug%2Ffiles%2Fp10w7-picked resolved=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w7-picked ok=true from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w7-picked rootNow=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w7-picked pinned=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w7-picked
 W1_PROJECT_LIFECYCLE PASS :: :: created=p7-life-1793347331723 renamed=p7-renamed-1793347331723 adopted=p7-adopted-1793347331723 delete=true
 W2_WORKSPACE_ISOLATION PASS :: :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_a67e2381"}'
-W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1793347331748/AGENTS.md globalFile=/data/user/0/<app>.debug/files/xdg/config/opencode/AGENTS.md
-W4_WORKSPACE_VISIBLE PASS :: :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/<app>.debug/files/workspaces serverWrote=true readBack=true marker=P10_VISIBLE_1793347330998 project=w4-storage-1793347330997 shellStatus=200 dirOnDisk=true size=26
+W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1793347331748/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
+W4_WORKSPACE_VISIBLE PASS :: :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces serverWrote=true readBack=true marker=P10_VISIBLE_1793347330998 project=w4-storage-1793347330997 shellStatus=200 dirOnDisk=true size=26
 W5_SIBLING_PROJECT_CONFINEMENT PASS :: :: wsRoot=/storage/emulated/0/Documents/OpenCode/p10ws-1793347329989 project=1 seesOwn=true seesSibling=false seesWorkspaceFile=false refused=sibling:true,workspace:true,deep:true readOwn=true/true chatNoFolder=true shape=true chatOwned=true session=ses_e742b5d93ffeJHt4EQo3Om5kQd siblingBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server ' workspaceBody='{"name":"
-W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: :: from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/<app>.debug/files/p10w6-workspace mode=CHOSEN whenSwitched=[] hid=true oldStillOnDisk=true markerIntact=true pendingProjects=3 pendingNamesOldRoot=true movedBack=3 rootNow=/storage/emulated/0/Android/data/<app>.debug/files/p10w6-workspace namesAfterMove=[p10w6, w4-storage-
-W7_PICKER_FOLDER_SWITCHES PASS :: :: uri=content://com.android.externalstorage.documents/tree/primary%3AAndroid%2Fdata%2F<app>.debug%2Ffiles%2Fp10w7-picked resolved=/storage/emulated/0/Android/data/<app>.debug/files/p10w7-picked ok=true from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/<app>.debug/files/p10w7-picked rootNow=/storage/emu
+W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: :: from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w6-workspace mode=CHOSEN whenSwitched=[] hid=true oldStillOnDisk=true markerIntact=true pendingProjects=3 pendingNamesOldRoot=true movedBack=3 rootNow=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w6-workspace namesAfterMove=[p10w6, w4-storage-
+W7_PICKER_FOLDER_SWITCHES PASS :: :: uri=content://com.android.externalstorage.documents/tree/primary%3AAndroid%2Fdata%2Fio.github.mcyber12.opencode.debug%2Ffiles%2Fp10w7-picked resolved=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w7-picked ok=true from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w7-picked rootNow=/storage/emu
 [2026-10-30T08:02:13Z] === visibility from outside the app (non-root adb shell), project='w4-storage-1793347330997' root='/storage/emulated/0/Documents/OpenCode' ===
 [2026-10-30T08:02:14Z] pass=14 fail=0 skip=1
 ########## 6/9 release-shaped SMOKE build (release applicationId + packaging, debug-key signed) ##########
@@ -43420,16 +43224,16 @@ W7_PICKER_FOLDER_SWITCHES PASS :: :: uri=content://com.android.externalstorage.d
 [2026-10-30T08:03:26Z] smoke testApk=/home/runner/work/OpenCode-app/OpenCode-app/app/build/outputs/apk/androidTest/smoke/app-smoke-androidTest.apk
 [2026-10-30T08:03:26Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/smoke/INSTALL-README.txt (which artifact file is installable, and why)
 [2026-10-30T08:03:27Z] === inspecting the smoke APK (identity, payload, abis, signing) ===
-P10_SMOKE_APK PASS :: MANIFEST package=<app> versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=36 debuggable=True
-[2026-10-30T08:03:27Z] P10_SMOKE_APK PASS :: MANIFEST package=<app> versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=36 debuggable=True
-P10_NO_DEBUG_ID PASS :: applicationId=<app> (debug id <app>.debug correctly absent)
-[2026-10-30T08:03:27Z] P10_NO_DEBUG_ID PASS :: applicationId=<app> (debug id <app>.debug correctly absent)
+P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=36 debuggable=True
+[2026-10-30T08:03:27Z] P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=36 debuggable=True
+P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
+[2026-10-30T08:03:27Z] P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
 [2026-10-30T08:03:27Z] === installing the smoke build (fresh) ===
 Performing Streamed Install
 Success
 Performing Streamed Install
 Success
-[2026-10-30T08:03:29Z] === Phase 6 UI gates against the SMOKE build (P6_PKG=<app>) ===
+[2026-10-30T08:03:29Z] === Phase 6 UI gates against the SMOKE build (P6_PKG=io.github.mcyber12.opencode) ===
 P10_SMOKE_UI PASS :: pass=38 fail=0 skip=2 on the release-shaped build (identical gates to the debug run)
 [2026-10-30T08:09:54Z] P10_SMOKE_UI PASS :: pass=38 fail=0 skip=2 on the release-shaped build (identical gates to the debug run)
 P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
@@ -43437,7 +43241,7 @@ P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape 
 
 P10_SMOKE_SUMMARY pass=4 fail=0 skip=0
 ########## 7/9 store screenshots from the real app on a phone-sized screen ##########
-[2026-10-30T08:09:54Z] === launching <app> ===
+[2026-10-30T08:09:54Z] === launching io.github.mcyber12.opencode ===
 [2026-10-30T08:10:01Z] captured 01-welcome.png (1080x1920)
 [2026-10-30T08:10:03Z] could not find 'Continue' on screen (welcome action)
 [2026-10-30T08:10:03Z] no 'Continue' on screen - the app already advanced past the welcome (capturing where it landed)
@@ -43457,12 +43261,12 @@ STORE-ASSETS PASS: 2 screenshots in /home/runner/work/OpenCode-app/OpenCode-app/
 NOTE: these files are store assets, not evidence. The gate verdicts that
       produced them are in docs/progress/phase10-evidence/.
 ########## 8/9 release APK + AAB (CI produces them UNSIGNED) + byte-level inspection ##########
-[2026-10-30T08:10:13Z] expected identity: applicationId=<app> versionName=1.18.23-phase10 versionCode=8
+[2026-10-30T08:10:13Z] expected identity: applicationId=io.github.mcyber12.opencode versionName=1.18.23-phase10 versionCode=8
 [2026-10-30T08:10:13Z] === gradle :app:assembleRelease :app:bundleRelease ===
 [2026-10-30T08:12:37Z] apk=app-release-unsigned.apk (210526389 bytes)
 [2026-10-30T08:12:37Z] aab=app-release.aab (196464592 bytes)
-P10_RELEASE_APK PASS :: MANIFEST package=<app> versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=36 debuggable=False
-[2026-10-30T08:12:37Z] RELEASE_APK PASS :: MANIFEST package=<app> versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=36 debuggable=False
+P10_RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=36 debuggable=False
+[2026-10-30T08:12:37Z] RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=36 debuggable=False
 P10_RELEASE_APK_DETAIL PASS :: CONTENTS entries=352 native_abis=arm64-v8a(25 libs,210.9MB),x86_64(25 libs,216.0MB) payload=True manifest_asset=True
 [2026-10-30T08:12:37Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=352 native_abis=arm64-v8a(25 libs,210.9MB),x86_64(25 libs,216.0MB) payload=True manifest_asset=True
 P10_SIZE PASS :: apkMb=200.8 capMb=230 headroomMb=29.2 native=arm64-v8a(25libs,210.9MB),x86_64(25libs,216.0MB)
@@ -43504,3 +43308,226 @@ gates_pass=7 gates_fail=0 gates_skip=0
 device_abi=x86_64
 android_sdk=36
 ########## summary ##########
+P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, published identity, store package, compileSdk/targetSdk 36) + apk inspector self-test
+P10_API36_SDK PASS: compile platform and google_apis x86_64 image are exactly android-36
+P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone (16 scenarios, pass=136 fail=0 - the scenario list and every check are in p10-driver-selftest.log)
+P10-UNIT PASS: JVM tests=505 failures=0 errors=0 skipped=0 (unit tests are NOT runtime evidence - the device gates below are)
+P10-PAYLOAD PASS: payloadVersion=7 opencode=1.18.23@05ea5073be96 bun=1.3.14 git=v2.48.1 rg=15.1.0 sha256=794031a848a9ed7d files=2621
+P10-DEVICE PASS: fresh exact API 36 AVD on 16 (Physical size: 1080x1920 density=Physical density: 160)
+P6_U1 PASS ::
+P6_U1 PASS :: rows=602 composedAtBottom=47 composedAtTop=45 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
+P6_U10 PASS :: shown=t
+P6_U10 PASS :: shown=true label=true menu=true listed=true/true picked=true/[google/gemini-2.5-flash] settingsTrip=true levelRow=true noTriangles=true picked=[high] emptyNoRows=true mode=true/true/true/[plan, build] label=true planApprove=true/true pathHidden=true emptyExplained=true offered=true
+P6_U11 PASS :: su
+P6_U11 PASS :: surface=true search=true/true/true keyOnly=true/true activated=true star=true/true/true/true collapsedFirst=true/true addTile=true custom=true/true/true reported=(openrouter, openai/gpt-4o-mini, false)
+P6_U12 PASS :: onboa
+P6_U12 PASS :: onboarding=true/true/true/true v4Removed=true/true wired=true/true message=true hidden=true controls=true settings=true/true/true/true note=true
+P6_U13 PASS :: tabs=t
+P6_U13 PASS :: tabs=true chip=true wired=true screen=true stages=true newestFirst=true rows=2 counts=true patch=hidden:true,shown:true empty=true
+P6_U14 PASS :: sc
+P6_U14 PASS :: screen=true rows=3 command=true output=true exit=true running=true failed=true log=hidden:true,shown:true tabBack=true empty=true
+P6_U2 PASS :: collapsedByDefault=t
+P6_U2 PASS :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true todoChecklist=true(collapsed=true) briefHidden=true
+P6_U3 PASS :: ask=t
+P6_U3 PASS :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true inlineInTranscript=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[staging]])] preview=true/true/true/true/true/true
+P6_U4 PASS ::
+P6_U4 PASS :: runtimeDown=true(body=true,send=true) serverUnreachable=true(send=true) (v9.42: the composer stays open in every state) startingLooksLikeLoading=true/noBanner=true queued=true providerAuth=true(rawKept=true,send=true) starting=true(send=true) headlinesDistinct=true chatLeaks=[] welcome
+P6_U5 PASS :: busyBa
+P6_U5 PASS :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true noActionsWhileStreaming=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true copy=true/true like=true dislike=true turnErrorKept=true 
+P6_U6 PASS :: heading=t
+P6_U6 PASS :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true table=true/true
+P6_U7 PASS :: inte
+P6_U7 PASS :: interactive={chat=25, sessions=8, projects=6, welcome=2, welcome-unsupported=2, settings=13, files=4} total=60 unnamed=0 filesControls=[About this folder, Up one level Up one level, main.kt KT, app Folder]
+P6_U8 PASS ::
+P6_U8 PASS :: rowsComposedBefore=24 after=24 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true revertNote=true emptyState=true/true
+P6_U9 PASS :: listed=t
+P6_U9 PASS :: listed=true meta=true info=true(1)/true/true pathShown=true locationCopy=true openedDir=true upShown=true upWorks=true openedFile=true viewer=true body=true preview=true/true/true/true/true sandbox=true/true/true saveCopy=true/true closed=true empty=true v4Removed=copyPath:true,export:
+P6_F1 PASS :: fi
+P6_F1 PASS :: firstScreen=welcome workspaceStep=true stages=[extracting, starting, healthy] welcomeCopy=4/4 sampledLines=19 leakedTokens=[] continueBecameEnabled=false advancedToProjects=false advancedToChat=false supervisor=HEALTHY(restarts=0) screenshots=welcome:36099,projects:-1,chat:-1 detailLen
+P6_F2 PASS :: status=HEALTHY
+P6_F2 PASS :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=false,chat=false,workspace=true) leakedTokens=[] screenshot=43330
+P6_F3 PASS :: wo
+P6_F3 PASS :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:43330,projects:66238
+P6_F4 PASS :: count=4 usable=4 welcome=t
+P6_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=36099, 02-first-run-ready.png=43330, 02b-first-run-workspace.png=43330, 04-first-run-projects.png=66238]
+P6_L1 SKIP :: no assistant text f
+P6_L1 SKIP :: no assistant text from the server within 300s (busySeen=false, asksAnswered=0)
+P6_L2 SKIP :: no model se
+P6_L2 SKIP :: no model served a turn, so no tool call can be observed: no assistant text from the server within 300s (busySeen=false, asksAnswered=0)
+P6_X1 PASS :: api36Context=t
+P6_X1 PASS :: api36Context=true nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=36 api=36 abi=x86_64 :: OCEXECPROBE ok
+P6_X2 PASS :: api36Context=t
+P6_X2 PASS :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode.debug/files/probe-exec" (in directory "/data/a
+P6_X3 PASS :: api36Context=t
+P6_X3 PASS :: api36Context=true targetSdk=36 api=36 prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
+P6_S1 PASS :: sealed install ok=t
+P6_S1 PASS :: sealed install ok=true files=1 verified=1 executables=1 problems=[] :: sealed payload: 1 data files (15 bytes, 1 verified), 0 data links, 1 executables from the APK
+P6_S2 PASS :: p
+P6_S2 PASS :: prefix exec symlink=true ran=true exit=0 targetSdk=36 api=36 :: OCEXECPROBE ok
+P6_S3 PASS :: exec audit publishable=t
+P6_S3 PASS :: exec audit publishable=true shipped=1 outside=[] scanned=4 failure=null
+P6_S4 PASS :: uninstall files=2 bytes=15 p
+P6_S4 PASS :: uninstall files=2 bytes=15 problems=[] probeStillInApk=true :: removed 2 files, reclaimed 15 bytes
+P6_T1 PASS :: sealed manifest links=213 missingTools=[] un
+P6_T1 PASS :: sealed manifest links=213 missingTools=[] unresolved=[] repaired=false linked=0 alreadyCorrect=213 errors=[] missingTargets=[]
+P6_T2 PASS ::
+P6_T2 PASS :: rg ran=true exit=0 :: ripgrep 15.1.0 (rev af60c2de9d)
+P6_T3 PASS :: exec audit publishable=t
+P6_T3 PASS :: exec audit publishable=true shipped=213 manifestLinks=213 outside=[] scanned=213 failure=null
+P6_V1 PASS :: sealed shell
+P6_V1 PASS :: sealed shell ran=true exit=0 api=36 :: OC_SEALED_SH_OK
+P6_V10 PASS :: upg
+P6_V10 PASS :: upgradeResult=Extracted markerVersion=7->7 reextractReason=true briefRefreshed=true links=sealed layout: 5 linked, 208 already correct, 0 missing targets, 0 errors agentTools=11/11 missing=none exit=0 output='SHELL_COREUTILS_AGENT_OK <NL> BUN_AGENT_OK <NL> GIT_AGENT_OK <NL> RG_AGENT_O
+P6_V2 PASS :: pipeline
+P6_V2 PASS :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
+P6_V3 PASS :: agent env PATH[0]=/data/use
+P6_V3 PASS :: agent env PATH[0]=/data/user/0/io.github.mcyber12.opencode.debug/files/bin (want /data/user/0/io.github.mcyber12.opencode.debug/files/bin) SHELL=/data/user/0/io.github.mcyber12.opencode.debug/files/bin/sh ran=true exit=0 out='1' tr=/data/user/0/io.github.mcyber12.opencode.debug/files/b
+P6_V4 PASS :: cu
+P6_V4 PASS :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-android) libcurl/8.10.1 mbedTLS' CURL_CA_PATH=/apex/com.android.conscrypt/cacerts isDir=true
+P6_V5 PASS :: jq
+P6_V5 PASS :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
+P6_V6 PASS :: python
+P6_V6 PASS :: python ran=true exit=0 json='{"ok": true}' zlib.crc32='891568578' (want 891568578) output='{"ok": true} <NL> 891568578'
+P6_V7 PASS :: node/npm
+P6_V7 PASS :: node/npm ran=true exit=0 icu=true icuOut='true 1.234,5' output='v24.22.1 <NL> 11.19.1 <NL> 42'
+P6_V8 PASS :: wget
+P6_V8 PASS :: wget ran=true exit=0 bytes=11 body='OC_WGET_OK' fixture=ok output='wget (OpenCode sealed curl backend) 1'
+P6_V9 PASS :: openssh
+P6_V9 PASS :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:nDMR/pq4nnuiDnekym5/os0ffMKt3bDr8VGqcpqOmT0 u0_a218@localhost (ED25519)'
+P6-UI totals: ui_gates_pass=38 ui_gates_fail=0 ui_gates_skip=2
+P9_PROVSEL_CLEANUP PASS :: dummy c
+P9_PROVSEL_CLEANUP PASS :: dummy credential removed: connected=false
+P9_PROVSEL_REBUILT PASS :: afte
+P9_PROVSEL_REBUILT PASS :: after POST /global/dispose: connected=true instanceSource=api models=363 (was instanceSource=custom before the dispose)
+P9_PROVSEL_STALE PASS :: afte
+P9_PROVSEL_STALE PASS :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
+P9_PROVSEL_TURN PASS :: p
+P9_PROVSEL_TURN PASS :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode default
+P9_PROVSEL_STALE PASS :: :: after a bare PUT /auth/openrouter: connected=true instanceSource=custom reproduced=true :: reproduced=true means auth.json has the key but the loaded instance still serves the credential-less catalog entry (the carried Phase 8 defect)
+P9_PROVSEL_REBUILT PASS :: :: after POST /global/dispose: connected=true instanceSource=api models=363 (was instanceSource=custom before the dispose)
+P9_PROVSEL_TURN PASS :: :: prompt_async=204 userMessage.model=openrouter/openai/gpt-4o-mini modelNotFound=false serverSelected=[llm.runtime=ai-sdk llm.provider=openrouter llm.model=openai/gpt-4o-mini] :: the turn was created against the configured provider, not the bundled opencode d
+P9_PROVSEL_CLEANUP PASS :: :: dummy credential removed: connected=false
+P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
+P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
+P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=794031a848a9ed7d 
+P10_NO_DEBUG_ID PASS :: applicationId=io.github.mcyber12.opencode (debug id io.github.mcyber12.opencode.debug correctly absent)
+P10_NO_R8_STRIPPING PASS :: release keeps isMinifyEnabled=false: the code shape the gates exercised is the code shape that ships (no reflection/JNI stripping to discover late)
+P10_RELEASE_AAB PASS :: CONTENTS entries=357 native_abis=arm64-v8a(25 libs,210.9MB),x86_64(25 libs,216.0MB) payload=True manifest_asset=True
+P10_RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=36 debuggable=False
+P10_RELEASE_APK_DETAIL PASS :: CONTENTS entries=352 native_abis=arm64-v8a(25 libs,210.9MB),x86_64(25 libs,216.0MB) payload=True manifest_asset=True
+P10_SIZE PASS :: apkMb=200.8 capMb=230 headroomMb=29.2 native=arm64-v8a(25libs,210.9MB),x86_64(25libs,216.0MB)
+P10_SMOKE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=1.18.23-phase10 minSdk=29 targetSdk=36 debuggable=True
+P10_SMOKE_UI PASS :: pass=38 fail=0 skip=2 on the release-shaped build (identical gates to the debug run)
+P10_SMOKE_UI_F1 PASS :: fi
+P10_SMOKE_UI_F1 PASS :: firstScreen=welcome workspaceStep=true stages=[extracting, starting, healthy] welcomeCopy=4/4 sampledLines=19 leakedTokens=[] continueBecameEnabled=false advancedToProjects=false advancedToChat=false supervisor=HEALTHY(restarts=0) screenshots=welcome:36099,projects:-1,chat:-1
+P10_SMOKE_UI_F2 PASS :: status=HEALTHY
+P10_SMOKE_UI_F2 PASS :: status=HEALTHY restarts=0 waitedSeconds=0 sawWelcome=false readyStageShown=false continueEnabled=false advancedWithoutATap=true(projects=false,chat=false,workspace=true) leakedTokens=[] screenshot=43240
+P10_SMOKE_UI_F3 PASS :: wo
+P10_SMOKE_UI_F3 PASS :: workspaceStep=true folder=true picker=true action=true v4Removed=true landedOnProjects=true workspaceShown=true firstExpanded=true landedInChat=true composerEnabled=true leakedTokens=[] screenshots=step:43240,projects:66022
+P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=t
+P10_SMOKE_UI_F4 PASS :: count=4 usable=4 welcome=true ready=true chat=true [01-first-run-welcome.png=36099, 02-first-run-ready.png=43240, 02b-first-run-workspace.png=43240, 04-first-run-projects.png=66022]
+P10_SMOKE_UI_L1 SKIP :: no assistant text f
+P10_SMOKE_UI_L1 SKIP :: no assistant text from the server within 300s (busySeen=false, asksAnswered=0)
+P10_SMOKE_UI_L2 SKIP :: no model se
+P10_SMOKE_UI_L2 SKIP :: no model served a turn, so no tool call can be observed: no assistant text from the server within 300s (busySeen=false, asksAnswered=0)
+P10_SMOKE_UI_S1 PASS :: sealed install ok=t
+P10_SMOKE_UI_S1 PASS :: sealed install ok=true files=1 verified=1 executables=1 problems=[] :: sealed payload: 1 data files (15 bytes, 1 verified), 0 data links, 1 executables from the APK
+P10_SMOKE_UI_S2 PASS :: p
+P10_SMOKE_UI_S2 PASS :: prefix exec symlink=true ran=true exit=0 targetSdk=36 api=36 :: OCEXECPROBE ok
+P10_SMOKE_UI_S3 PASS :: exec audit publishable=t
+P10_SMOKE_UI_S3 PASS :: exec audit publishable=true shipped=1 outside=[] scanned=4 failure=null
+P10_SMOKE_UI_S4 PASS :: uninstall files=2 bytes=15 p
+P10_SMOKE_UI_S4 PASS :: uninstall files=2 bytes=15 problems=[] probeStillInApk=true :: removed 2 files, reclaimed 15 bytes
+P10_SMOKE_UI_T1 PASS :: sealed manifest links=213 missingTools=[] un
+P10_SMOKE_UI_T1 PASS :: sealed manifest links=213 missingTools=[] unresolved=[] repaired=false linked=0 alreadyCorrect=213 errors=[] missingTargets=[]
+P10_SMOKE_UI_T2 PASS ::
+P10_SMOKE_UI_T2 PASS :: rg ran=true exit=0 :: ripgrep 15.1.0 (rev af60c2de9d)
+P10_SMOKE_UI_T3 PASS :: exec audit publishable=t
+P10_SMOKE_UI_T3 PASS :: exec audit publishable=true shipped=213 manifestLinks=213 outside=[] scanned=213 failure=null
+P10_SMOKE_UI_U1 PASS ::
+P10_SMOKE_UI_U1 PASS :: rows=602 composedAtBottom=47 composedAtTop=45 newestVisible=true oldestVisible=true newestUncomposed=true jumpToLatest=true(label='2 new') jumpedToNewest=true
+P10_SMOKE_UI_U10 PASS :: shown=t
+P10_SMOKE_UI_U10 PASS :: shown=true label=true menu=true listed=true/true picked=true/[google/gemini-2.5-flash] settingsTrip=true levelRow=true noTriangles=true picked=[high] emptyNoRows=true mode=true/true/true/[plan, build] label=true planApprove=true/true pathHidden=true emptyExplained=true offer
+P10_SMOKE_UI_U11 PASS :: su
+P10_SMOKE_UI_U11 PASS :: surface=true search=true/true/true keyOnly=true/true activated=true star=true/true/true/true collapsedFirst=true/true addTile=true custom=true/true/true reported=(openrouter, openai/gpt-4o-mini, false)
+P10_SMOKE_UI_U12 PASS :: onboa
+P10_SMOKE_UI_U12 PASS :: onboarding=true/true/true/true v4Removed=true/true wired=true/true message=true hidden=true controls=true settings=true/true/true/true note=true
+P10_SMOKE_UI_U13 PASS :: tabs=t
+P10_SMOKE_UI_U13 PASS :: tabs=true chip=true wired=true screen=true stages=true newestFirst=true rows=2 counts=true patch=hidden:true,shown:true empty=true
+P10_SMOKE_UI_U14 PASS :: sc
+P10_SMOKE_UI_U14 PASS :: screen=true rows=3 command=true output=true exit=true running=true failed=true log=hidden:true,shown:true tabBack=true empty=true
+P10_SMOKE_UI_U2 PASS :: collapsedByDefault=t
+P10_SMOKE_UI_U2 PASS :: collapsedByDefault=true/true headline=true/true expandedShowsOutput=true output=true input=true exit=true diff=true/true/true diagnostics=true failedCardOpen=true failedStatus=true todoChecklist=true(collapsed=true) briefHidden=true
+P10_SMOKE_UI_U3 PASS :: ask=t
+P10_SMOKE_UI_U3 PASS :: ask=true commandVerbatim=true alwaysScope=true kind=true once=true always=true reject=true question=true questionText=true optionShown=true inlineInTranscript=true optionClicked=true answered=true skipped=true answersSeen=[(que_gate1, [[staging]])] preview=true/true/true/true
+P10_SMOKE_UI_U4 PASS ::
+P10_SMOKE_UI_U4 PASS :: runtimeDown=true(body=true,send=true) serverUnreachable=true(send=true) (v9.42: the composer stays open in every state) startingLooksLikeLoading=true/noBanner=true queued=true providerAuth=true(rawKept=true,send=true) starting=true(send=true) headlinesDistinct=true chatLeaks=
+P10_SMOKE_UI_U5 PASS :: busyBa
+P10_SMOKE_UI_U5 PASS :: busyBar=true streamingIndicator=true stopShown=true sendHidden=true workingLabel=true stopCallback=true noActionsWhileStreaming=true retryText=true retryDetail=true retryAction=true undoAction=true redoAction=true callbacks=true copy=true/true like=true dislike=true turnError
+P10_SMOKE_UI_U6 PASS :: heading=t
+P10_SMOKE_UI_U6 PASS :: heading=true boldWithWeight=true inlineCode=true bullets=true quote=true codeBlocks=2 codeBodies=2 codeText=true distinctColors=6 unterminatedFenceIsCode=true noSyntaxLeak=true table=true/true
+P10_SMOKE_UI_U7 PASS :: inte
+P10_SMOKE_UI_U7 PASS :: interactive={chat=25, sessions=8, projects=6, welcome=2, welcome-unsupported=2, settings=13, files=4} total=60 unnamed=0 filesControls=[About this folder, Up one level Up one level, main.kt KT, app Folder]
+P10_SMOKE_UI_U8 PASS ::
+P10_SMOKE_UI_U8 PASS :: rowsComposedBefore=24 after=24 firstVisible=true lastLazy=true scrolledToLast=true firstUncomposed=true switch=true delete=true renameEditor=true rename=true new=true busyPill=true waitingPill=true untitled=true revertNote=true emptyState=true/true
+P10_SMOKE_UI_U9 PASS :: listed=t
+P10_SMOKE_UI_U9 PASS :: listed=true meta=true info=true(1)/true/true pathShown=true locationCopy=true openedDir=true upShown=true upWorks=true openedFile=true viewer=true body=true preview=true/true/true/true/true sandbox=true/true/true saveCopy=true/true closed=true empty=true v4Removed=copyPath:tr
+P10_SMOKE_UI_V1 PASS :: sealed shell
+P10_SMOKE_UI_V1 PASS :: sealed shell ran=true exit=0 api=36 :: OC_SEALED_SH_OK
+P10_SMOKE_UI_V10 PASS :: upg
+P10_SMOKE_UI_V10 PASS :: upgradeResult=Extracted markerVersion=7->7 reextractReason=true briefRefreshed=true links=sealed layout: 5 linked, 208 already correct, 0 missing targets, 0 errors agentTools=11/11 missing=none exit=0 output='SHELL_COREUTILS_AGENT_OK <NL> BUN_AGENT_OK <NL> GIT_AGENT_OK <NL>
+P10_SMOKE_UI_V2 PASS :: pipeline
+P10_SMOKE_UI_V2 PASS :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
+P10_SMOKE_UI_V3 PASS :: agent env PATH[0]=/data/use
+P10_SMOKE_UI_V3 PASS :: agent env PATH[0]=/data/user/0/io.github.mcyber12.opencode/files/bin (want /data/user/0/io.github.mcyber12.opencode/files/bin) SHELL=/data/user/0/io.github.mcyber12.opencode/files/bin/sh ran=true exit=0 out='1' tr=/data/user/0/io.github.mcyber12.opencode/files/bin/tr
+P10_SMOKE_UI_V4 PASS :: cu
+P10_SMOKE_UI_V4 PASS :: curl ran=true exit=0 out='curl 8.10.1 (x86_64-pc-linux-android) libcurl/8.10.1 mbedTLS' CURL_CA_PATH=/apex/com.android.conscrypt/cacerts isDir=true
+P10_SMOKE_UI_V5 PASS :: jq
+P10_SMOKE_UI_V5 PASS :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
+P10_SMOKE_UI_V6 PASS :: python
+P10_SMOKE_UI_V6 PASS :: python ran=true exit=0 json='{"ok": true}' zlib.crc32='891568578' (want 891568578) output='{"ok": true} <NL> 891568578'
+P10_SMOKE_UI_V7 PASS :: node/npm
+P10_SMOKE_UI_V7 PASS :: node/npm ran=true exit=0 icu=true icuOut='true 1.234,5' output='v24.22.1 <NL> 11.19.1 <NL> 42'
+P10_SMOKE_UI_V8 PASS :: wget
+P10_SMOKE_UI_V8 PASS :: wget ran=true exit=0 bytes=11 body='OC_WGET_OK' fixture=ok output='wget (OpenCode sealed curl backend) 1'
+P10_SMOKE_UI_V9 PASS :: openssh
+P10_SMOKE_UI_V9 PASS :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:3VYh81C6wx/OVJf75KQ3gD0xd0Mz/+FBUthWom3vhaA u0_a224@localhost (ED25519)'
+P10_SMOKE_UI_X1 PASS :: api36Context=t
+P10_SMOKE_UI_X1 PASS :: api36Context=true nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=36 api=36 abi=x86_64 :: OCEXECPROBE ok
+P10_SMOKE_UI_X2 PASS :: api36Context=t
+P10_SMOKE_UI_X2 PASS :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/io.github.mcyber12.opencode/files/probe-exec" (in directory "/data/app/~~Q
+P10_SMOKE_UI_X3 PASS :: api36Context=t
+P10_SMOKE_UI_X3 PASS :: api36Context=true targetSdk=36 api=36 prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
+P10_STORE_ASSETS PASS :: 512 icon + 1024x500 feature graphic + 2 screenshots at a real screen size
+P10_TESTONLY_ARM64 PASS :: installable arm64-only APK bytes=124115812 MiB=118.4 x86_64=absent signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
+P10_TESTONLY_RELEASE PASS :: installable non-debuggable universal APK bytes=210534957 MiB=200.8 signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
+P10_UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
+P10_WS_VISIBILITY_DOCUMENTS_PROVIDER SKIP :: this device does not let a shell query the Documents provider (Error while accessing provider:com.android.externalstorage.documents)
+P10_WS_VISIBILITY_LOCATION PASS :: the project root exists and holds 2 project(s): /storage/emulated/0/Documents/OpenCode (source: app-reported (W4 gate), Android 16)
+P10_WS_VISIBILITY_PRIVATE_ROOT_NOT_LIVE PASS :: the live project root is outside /data: /storage/emulated/0/Documents/OpenCode
+P10_WS_VISIBILITY_SHARED_ROOT PASS :: the project root is on shared storage and outside Android/data: /storage/emulated/0/Documents/OpenCode (Android 16)
+P10_WS_VISIBILITY_SHELL_BASELINE PASS :: baseline holds: an unprivileged shell cannot read /data/data/io.github.mcyber12.opencode.debug at all, so the PASSs above are real
+P10_WS_VISIBILITY_SHELL_LIST PASS :: a non-root shell lists the project directory (/storage/emulated/0/Documents/OpenCode/w4-storage-1793347330997): 2 lines
+P10_WS_VISIBILITY_SHELL_READ PASS :: read p10-visible.txt from outside the app: 'P10_VISIBLE_1793347330998' (matches /P10_VISIBLE_/)
+P10_WS_VISIBILITY_SHELL_WRITE PASS :: a file written by the non-root shell in /storage/emulated/0/Documents/OpenCode/w4-storage-1793347330997 was readable back: the directory is shared, ordinary storage
+P10_WS_W1_PROJECT_LIFECYCLE PASS :: c
+P10_WS_W1_PROJECT_LIFECYCLE PASS :: created=p7-life-1793347331723 renamed=p7-renamed-1793347331723 adopted=p7-adopted-1793347331723 delete=true
+P10_WS_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=t
+P10_WS_W2_WORKSPACE_ISOLATION PASS :: listA=1 seesOwn=true seesOtherProject=false seesOutside=false readOwnA=true readOwnB=true escapeRefused=true escapeBody='{"name":"UnknownError","data":{"message":"Unexpected server error. Check server logs for details.","ref":"err_a67e2381"}'
+P10_WS_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: p
+P10_WS_W3_MEMORY_INSPECTABLE_REMOVABLE PASS :: projectFile=/storage/emulated/0/Documents/OpenCode/p7-memory-1793347331748/AGENTS.md globalFile=/data/user/0/io.github.mcyber12.opencode.debug/files/xdg/config/opencode/AGENTS.md
+P10_WS_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/sto
+P10_WS_W4_WORKSPACE_VISIBLE PASS :: mode=PUBLIC wsRoot=/storage/emulated/0/Documents/OpenCode fileManagerVisible=true shared=true underAndroidData=false underData=false external=false allFilesAccess=true grantHonoured=true legacyRoot=/data/user/0/io.github.mcyber12.opencode.debug/files/workspaces se
+P10_WS_W5_SIBLING_PROJECT_CONFINEMENT PASS :: wsRoot=/sto
+P10_WS_W5_SIBLING_PROJECT_CONFINEMENT PASS :: wsRoot=/storage/emulated/0/Documents/OpenCode/p10ws-1793347329989 project=1 seesOwn=true seesSibling=false seesWorkspaceFile=false refused=sibling:true,workspace:true,deep:true readOwn=true/true chatNoFolder=true shape=true chatOwned=true session=ses_e74
+P10_WS_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: f
+P10_WS_W6_WORKSPACE_SWITCH_HIDES_AND_DELETES_NOTHING PASS :: from=/storage/emulated/0/Documents/OpenCode to=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w6-workspace mode=CHOSEN whenSwitched=[] hid=true oldStillOnDisk=true markerIntact=true pendingProjects=3 pendingNam
+P10_WS_W7_PICKER_FOLDER_SWITCHES PASS :: u
+P10_WS_W7_PICKER_FOLDER_SWITCHES PASS :: uri=content://com.android.externalstorage.documents/tree/primary%3AAndroid%2Fdata%2Fio.github.mcyber12.opencode.debug%2Ffiles%2Fp10w7-picked resolved=/storage/emulated/0/Android/data/io.github.mcyber12.opencode.debug/files/p10w7-picked ok=true from=/storage/e
+STORE-ASSETS PASS: 2 screenshots in /home/runner/work/OpenCode-app/OpenCode-app/docs/store/screenshots (0 rejected)
+P10_SUMMARY 2026-10-30T08:17:22Z
+phase6_ui_fails=0 phase10_gate_fails=0 phase9_gate_fails=0
+NOTE: PASS lines above are real gate executions on the emulator/device. Unit and
+      compile lines are NOT runtime evidence. UNSIGNED release artifacts are
+      expected in CI: signing is the human step (docs/RELEASE.md).
+=== PHASE 10 END 2026-10-30T08:17:22Z rc=0 ===
