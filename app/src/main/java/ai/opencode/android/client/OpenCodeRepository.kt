@@ -826,9 +826,25 @@ class OpenCodeRepository(
         scope.launch { runCatching { api.connectMcp(name) }.onFailure { fail("mcp connect", it) } }
     }
 
-    /** Re-read `GET /mcp` (statuses change when the server reconnects). */
+    /**
+     * Refresh the MCP statuses. A server that the agent (or a person) wrote into
+     * `opencode.json` is only loaded when OpenCode builds its instance, and that
+     * happens once per instance: a plain re-read keeps showing the old list
+     * (owner report 2026-10-30, the rea and context7 setups). So when no turn is
+     * running, dispose the loaded instances first, the same remedy the permission
+     * policy uses, and then read again. While a turn runs, dispose is skipped
+     * because it would tear down the live turn; the notice asks for a refresh
+     * after the turn ends.
+     */
     fun refreshMcp() {
         scope.launch {
+            if (_state.value.busy) {
+                _state.value = _state.value.copy(notice = "MCP: finish the current turn, then refresh statuses")
+                runCatching { api.mcpEntries() }
+                    .onSuccess { _state.value = _state.value.copy(mcp = it) }
+                return@launch
+            }
+            runCatching { api.dispose() }
             runCatching { api.mcpEntries() }
                 .onSuccess { _state.value = _state.value.copy(mcp = it) }
                 .onFailure { fail("mcp", it) }
