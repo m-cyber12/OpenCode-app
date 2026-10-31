@@ -452,7 +452,7 @@ class EnvironmentBriefTest {
         assertTrue(ext.contains("exit 126"))
         assertTrue(ext.contains("npm install --prefix \"\$HOME/tools/<name>\""))
         assertTrue(ext.contains("echo \$HOME"))
-        assertTrue(ext.contains("the bash tool now handles this for you"))
+        assertTrue(ext.contains("The bash tool now handles this for you"))
         assertFalse(ext.contains("Install MCP packages under the project"))
     }
 }

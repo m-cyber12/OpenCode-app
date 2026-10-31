@@ -8,7 +8,7 @@ class ManifestTest {
 
     private val json = """
     {
-      "payloadVersion": 7,
+      "payloadVersion": 8,
       "opencodeCommit": "05ea5073be967c779d326929b2de6228dda4159d",
       "opencodeVersion": "1.18.23",
       "bunVersion": "1.3.14",
@@ -25,7 +25,7 @@ class ManifestTest {
     @Test
     fun roundTripsVersionsAndEntries() {
         val m = RuntimeManifest.fromJson(json)
-        assertEquals(7, m.payloadVersion)
+        assertEquals(8, m.payloadVersion)
         assertEquals("1.18.23", m.opencodeVersion)
         assertEquals("1.3.14", m.bunVersion)
         assertEquals(2, m.entries.size)
