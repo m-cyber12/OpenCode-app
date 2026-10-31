@@ -157,7 +157,7 @@ Status key: **Yes** = present and tested on the phone or in CI; **Partial** = so
 | P1-7 | Change impact simulator | No | |
 | P1-8 | Adversarial code review | No | |
 | P1-9 | Self-healing with retry limits | No | Runtime restarts with backoff exist (`RestartBackoff`); that is a different thing |
-| P1-10 | Visual QA | Partial | Preview works; responsive width check passed on the phone (F2). Console capture not checked |
+| P1-10 | Visual QA | Partial | Preview works; responsive width check passed on the phone (F2). Console capture not checked. Watch and tap built 2026-10-31 (`.preview/act.json`, JVM tests; owner device run pending). Taps are DOM events, not OS touch |
 | P1-11 | Intent to tests | No | |
 | P1-12 | Background engineering | Partial | `RuntimeService` (foreground service) keeps the server running; no background engineering tasks |
 | 13 | Personal engineering benchmark | No | `PROMPTS.md` (27 phone tests) is a start |

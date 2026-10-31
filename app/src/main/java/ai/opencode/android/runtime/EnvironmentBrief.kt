@@ -298,6 +298,39 @@ Under a dev server's cold compile or HMR churn a capture can report
 `timeout` - retry once the route is warm. `.preview/latest.jpg` can lag
 the live pane; check its mtime before trusting it. The app appends a
 BUDGET line when captures pile up - treat it as "switch to REPORT text".
+
+# Watching and tapping the live preview
+
+Use this when the bug is in behaviour (a button does nothing, a form fails,
+a menu is hidden), not in the look. Write `.preview/act.json` while the user
+has the Preview pane open; the app runs your steps there, so the user sees
+each tap:
+  {"id": "login-1", "steps": [
+    {"tap": {"text": "Sign in"}},
+    {"type": {"selector": "#email", "value": "me@example.com"}},
+    {"tap": {"selector": "button[type=submit]"}},
+    {"wait": {"ms": 800}},
+    {"snapshot": true}]}
+- Steps: tap (by "text" = visible label, or "selector" = CSS), type (text
+  fields only), scroll {"y": px}, wait {"ms": up to 5000}, snapshot. At most 20
+  steps. Tap "x"/"y" (CSS px) only when text and selector cannot name the target.
+- The first batch of each preview session asks the user to allow it.
+- Read `.preview/act-result.txt` FIRST. One line also lands in console.log:
+    ACT login-1 failed steps=2/4 ms=1930
+     1 tap text="Sign in" ok -> hit=button.primary at 180,640
+     2 type selector=#email ok -> typed 16 chars
+     3 tap selector=button[type=submit] FAILED: obstructed by div.cookie-banner
+     2 step(s) skipped after the first failure
+    CONSOLE errors=1
+- "obstructed by X" means the user cannot tap it either: a layout bug. Fix the
+  overlap; do not tap through it.
+- `snapshot` lists the tappable elements (tag, text, id). Use it to find labels
+  before you guess selectors.
+- Taps are dispatched events at the element's centre, after a hit test. They are
+  not OS-level touch; a bug that only shows with real touch needs the user's
+  phone.
+- If the result file is missing, or its id is not yours, the pane is closed or
+  not on your page: ask the user to open the preview.
 """.trimIndent() + "\n"
 
         val webapp = """

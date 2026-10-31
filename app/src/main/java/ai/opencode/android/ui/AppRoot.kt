@@ -2193,6 +2193,8 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         canStop = previewPort > 0 && previewProjectDir?.let {
                             previewServers[it.absolutePath]
                         }?.let { it.running && it.port == previewPort } == true,
+                        // Watch and tap: the pane's project, where .preview/act.json is read.
+                        projectDir = previewProjectDir,
                     ),
                     // v9.37 (owner): a project's console shows only ITS ports -
                     // the ones owned by this project (a previous project's still

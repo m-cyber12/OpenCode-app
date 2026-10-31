@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +33,8 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,7 +51,14 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.unit.dp
 import ai.opencode.android.R
+import ai.opencode.android.preview.ParseResult
+import ai.opencode.android.preview.PendingBatch
+import ai.opencode.android.preview.PreviewActions
+import ai.opencode.android.preview.PreviewDriver
 import ai.opencode.android.ui.common.StopGlyph
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
 import android.webkit.WebSettings
@@ -99,6 +109,8 @@ data class PreviewUi(
      *  is showing, i.e. there is something the app can actually stop. An
      *  external dev server is the agent's process; the app never kills it. */
     val canStop: Boolean = false,
+    /** The project whose page the pane shows: where `.preview/act.json` is watched (watch and tap). */
+    val projectDir: java.io.File? = null,
 )
 
 /**
@@ -232,6 +244,78 @@ fun ChatPreviewOverlay(
     val latestConsole = remember { mutableStateOf(onConsole) }
     latestConsole.value = onConsole
     val webRef = remember { mutableStateOf<WebView?>(null) }
+
+    // Watch and tap (agent.md Visual QA; owner defaults 2026-10-31). The agent
+    // writes .preview/act.json; this loop runs it on the open pane and writes
+    // .preview/act-result.txt. The first batch of each preview session asks the
+    // user. "Session" is this overlay's lifetime: closing the pane clears it.
+    val errorLines = remember { ArrayList<String>() }
+    var gate by remember { mutableStateOf<PendingBatch?>(null) }
+    var sessionAllowed by remember { mutableStateOf(false) }
+    val actionDir = preview.projectDir
+    LaunchedEffect(actionDir) {
+        val dir = actionDir ?: return@LaunchedEffect
+        val file = java.io.File(dir, ".preview/${PreviewActions.ACTION_FILE}")
+        while (true) {
+            kotlinx.coroutines.delay(1000)
+            // Read once and delete, so the agent can send the same batch again.
+            val text = withContext(Dispatchers.IO) {
+                runCatching { if (file.isFile) file.readText().also { file.delete() } else "" }.getOrDefault("")
+            }
+            if (text.isEmpty()) continue
+            val report = when (val parsed = PreviewActions.parse(text)) {
+                is ParseResult.Invalid -> "ACT invalid: ${parsed.reason}"
+                is ParseResult.Ok -> {
+                    val allowed = sessionAllowed || run {
+                        val decision = CompletableDeferred<Boolean>()
+                        gate = PendingBatch(parsed.batch, decision)
+                        val answer = decision.await()
+                        gate = null
+                        if (answer) sessionAllowed = true
+                        answer
+                    }
+                    if (allowed) {
+                        errorLines.clear()
+                        PreviewDriver.runBatch(webRef.value, parsed.batch) { errorLines.toList() }
+                    } else {
+                        "ACT ${parsed.batch.id} denied by the user"
+                    }
+                }
+            }
+            withContext(Dispatchers.IO) {
+                runCatching {
+                    val folder = java.io.File(dir, ".preview").apply { mkdirs() }
+                    java.io.File(folder, PreviewActions.RESULT_FILE).writeText(report + "\n")
+                }
+            }
+            latestConsole.value(report.substringBefore('\n'))
+        }
+    }
+    gate?.let { pending ->
+        AlertDialog(
+            onDismissRequest = { pending.decision.complete(false) },
+            title = { Text(stringResource(R.string.preview_act_gate_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.preview_act_gate_body,
+                        pending.batch.steps.size,
+                        PreviewActions.describe(pending.batch),
+                    ),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { pending.decision.complete(true) }) {
+                    Text(stringResource(R.string.preview_act_gate_allow))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pending.decision.complete(false) }) {
+                    Text(stringResource(R.string.preview_act_gate_deny))
+                }
+            },
+        )
+    }
     // Back walks the page's own history first; only an empty history leaves
     // the preview - fading back to the chat, console still live.
     BackHandler(preview.phase != PreviewState.CLOSED) {
@@ -346,7 +430,13 @@ fun ChatPreviewOverlay(
                         url = preview.url,
                         webRef = webRef,
                         onCapture = { bmp -> latestCapture.value(bmp) },
-                        onConsole = { line -> latestConsole.value(line) },
+                        onConsole = { line ->
+                            // Errors since a batch started are part of its report.
+                            if ((line.startsWith("ERROR") || line.startsWith("LOAD_ERROR")) && errorLines.size < 50) {
+                                errorLines.add(line)
+                            }
+                            latestConsole.value(line)
+                        },
                     )
                 }
             }
