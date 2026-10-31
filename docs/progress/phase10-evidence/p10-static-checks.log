@@ -1,7 +1,7 @@
-=== Phase 10 static checks 2026-10-30T20:22:28Z ===
+=== Phase 10 static checks 2026-10-31T11:25:11Z ===
 
 === phase 9 static checks (not weakened) ===
-=== Phase 9 static checks 2026-10-30T20:22:28Z ===
+=== Phase 9 static checks 2026-10-31T11:25:11Z ===
 OK   bash -n on 42 phase scripts
 OK   py_compile on every phase python script
 OK   node --check on every phase8/phase9 driver
@@ -46,7 +46,7 @@ check-ui-purity: 28 ui files scanned, 0 findings
 OK   ui purity (screens are functions of state)
 
 === versions.lock == RuntimeVersion.kt == build.gradle versionName (shipped == pinned) ===
-OK lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 7} versionName=1.18.23-phase10 manifestSha=n/a 
+OK lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 8} versionName=1.18.23-phase10 manifestSha=n/a 
 OK   versions.lock == RuntimeVersion.kt == build.gradle versionName (shipped == pinned)
 
 === release docs present (README, ARCHITECTURE, RUNTIME, SECURITY, TESTING, capability matrix) ===
@@ -104,7 +104,7 @@ PASS a visible match is not flagged (rc=0) (rc=0 out='1020 1740')
 PASS has still finds an off-screen node (a tag being present is news) (rc=0)
 PASS a device that marks everything not-shown does not blind the reader (rc=0)
 PASS attrs reports the attribute set and the hidden count (rc=0 out='nodes=4 2 node(s) marked shown=false\nbounds:4 class:4 clickable:4 content-desc:4 enabled:4 index:4 package:4 resource-id:4 shown:4 text:4')
-PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmpi_fl_8dt/broken.xml')
+PASS an unreadable dump is reported, not matched (rc=3 out='UI_DUMP_UNREADABLE /tmp/tmp0ipmivi7/broken.xml')
 p10d-ui selftest: 20 checks, 0 failed
 SELFTEST PASS
 OK   uiautomator dump reader self-test (tap targets, disabled states, diagnostics)
