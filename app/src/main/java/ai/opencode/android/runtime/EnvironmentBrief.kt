@@ -507,9 +507,13 @@ a package.json.
 ## Commands on any path (noexec folders)
 - Folders on shared storage, such as `Documents/OpenCode`, and any folder the user picks
   there, are mounted noexec. The kernel refuses to run any file in them, including
-  `./script.sh` and `node_modules/.bin/*` shims (`Permission denied`, exit 126). No tool can
-  fix that from inside the folder. Run such files through an interpreter instead:
-  `sh script.sh`, `node path/entry.js`, `python3 script.py`.
+  `./script.sh` and `node_modules/.bin/*` shims (`Permission denied`, exit 126).
+  The bash tool now handles this for you: when you call a file by its path (`./x`,
+  `node_modules/.bin/x`) and the file cannot be executed, the tool runs it through its
+  interpreter (`sh`, `node` or `python3`, from the shebang or the extension). Limits: a
+  relative path after `cd` in the same command, and bare names found through PATH, are
+  not rewritten. If one of those fails with exit 126, run it yourself as
+  `sh script.sh`, `node path/entry.js` or `python3 script.py`.
 - Your home folder allows execution. Install a package that brings a command there:
   `npm install --prefix "${'$'}HOME/tools/<name>" <package>`.
 - An MCP server's `command` is not run by a shell, so `${'$'}HOME` is not expanded. Run

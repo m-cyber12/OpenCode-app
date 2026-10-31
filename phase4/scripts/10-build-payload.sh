@@ -76,7 +76,7 @@ OPENSSL_PIN="3.6.5"
 ONIGURUMA_PIN="6.9.10"
 BUN_PIN="1.3.14"
 RG_PIN="15.1.0"
-PAYLOAD_VERSION=7   # 7 = Phase 9: bare OPENCODE_VERSION + pre-seeded @opencode-ai/plugin tree (plugin-seed/); 6 = bare version only; 5 = Phase 5 launcher/Keystore layout
+PAYLOAD_VERSION=8   # 8 = noexec shell patch (bash tool runs non-exec paths via their interpreter); 7 = Phase 9: bare OPENCODE_VERSION + pre-seeded @opencode-ai/plugin tree (plugin-seed/); 6 = bare version only; 5 = Phase 5 launcher/Keystore layout
 STATUS="$ENGINE/build.status"
 : > "$STATUS"
 note() { echo "$*" | tee -a "$STATUS"; }
@@ -646,6 +646,11 @@ fi
 GOT_COMMIT="$(cd "$WORK/opencode" && git rev-parse HEAD)"
 note "upstream commit: $GOT_COMMIT"
 [ "$GOT_COMMIT" = "$PINNED_COMMIT" ] || { note "FATAL: checked out $GOT_COMMIT != pin $PINNED_COMMIT"; exit 1; }
+# Owner 2026-10-31: shims must work in every folder. Route non-executable
+# path-like commands (noexec shared storage) through their interpreter. Fails
+# the build loudly if upstream moved the anchors. See payload/patches/.
+python3 "$DIR/payload/patches/apply-noexec-shell.py" "$WORK/opencode" \
+  || { note "FATAL: noexec shell patch did not apply"; exit 1; }
 curl -fsSL --max-time 90 -o "$WORK/models-dev.json" "https://models.dev/api.json" \
   || echo '{}' > "$WORK/models-dev.json"
 if ! ( cd "$WORK/opencode" && timeout 600 bun install >/tmp/p4-bun-install.log 2>&1 ); then
@@ -794,7 +799,7 @@ for dirpath, _, names in os.walk(stage):
         data = open(p, "rb").read()
         files[rel] = {"sha256": hashlib.sha256(data).hexdigest(), "size": len(data)}
 manifest = {
-    "payloadVersion": int(os.environ.get("PAYLOAD_VERSION", "7")),
+    "payloadVersion": int(os.environ.get("PAYLOAD_VERSION", "8")),
     "opencodeCommit": commit,
     "opencodeVersion": "1.18.23",
     "bunVersion": "1.3.14",
