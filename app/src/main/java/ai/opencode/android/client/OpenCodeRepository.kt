@@ -848,6 +848,41 @@ class OpenCodeRepository(
             runCatching { api.mcpEntries() }
                 .onSuccess { _state.value = _state.value.copy(mcp = it) }
                 .onFailure { fail("mcp", it) }
+            connectDeclaredMcp()
+        }
+    }
+
+    /**
+     * Fallback for D1/D4 (2026-10-31): on the device a server the agent wrote into
+     * the project's opencode.json did not appear after Refresh, while a server
+     * added through [OpenCodeApi.addMcp] (POST /mcp) did. So Refresh also reads the
+     * project file and connects, through POST /mcp, each declared server that the
+     * runtime does not list yet. Nothing is persisted here; the file stays the
+     * source of truth, and a server the runtime refuses is reported by name.
+     */
+    private fun connectDeclaredMcp() {
+        val text = runCatching { api.fileContent("opencode.json") }.getOrNull()
+        if (text.isNullOrBlank()) return
+        val declared = runCatching { JSONObject(text).optJSONObject("mcp") }.getOrNull() ?: return
+        val present = _state.value.mcp.keys
+        var connected = 0
+        val refused = mutableListOf<String>()
+        for (name in declared.keys()) {
+            if (name in present) continue
+            val cfg = declared.optJSONObject(name) ?: continue
+            if (!cfg.optBoolean("enabled", true)) continue
+            val body = JSONObject(cfg.toString())
+            if (!body.has("type") && body.has("command")) body.put("type", "local")
+            runCatching { api.addMcp(name, body) }
+                .onSuccess { connected++ }
+                .onFailure { refused += "$name: " + AccountRedaction.scrub(it.message.orEmpty()).take(120) }
+        }
+        if (connected > 0) {
+            runCatching { api.mcpEntries() }.onSuccess { _state.value = _state.value.copy(mcp = it) }
+        }
+        if (connected > 0 || refused.isNotEmpty()) {
+            val tail = if (refused.isEmpty()) "" else "; refused: " + refused.joinToString(" | ")
+            _state.value = _state.value.copy(notice = "MCP: connected $connected from opencode.json$tail")
         }
     }
 
