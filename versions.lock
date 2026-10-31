@@ -209,7 +209,7 @@ android_host:
   agp: 8.5.2
   gradle: 8.9
   compose_bom: 2024.06.00
-  payload_version: 8     # bumped on payload/layout change; drives re-extraction (8 = noexec shell patch: bash tool runs non-executable path-like commands through their interpreter; 7 = Phase 9: bare OPENCODE_VERSION define + pre-seeded @opencode-ai/plugin tree)
+  payload_version: 9     # bumped on payload/layout change; drives re-extraction (9 = stdin password + config guard; 8 = noexec shell patch: bash tool runs non-executable path-like commands through their interpreter; 7 = Phase 9: bare OPENCODE_VERSION define + pre-seeded @opencode-ai/plugin tree)
   # per-ABI JNI executables (Android extracts to nativeLibraryDir, exec-allowed):
   jni_libs:
     - { name: libbun.so,  source: "@oven/bun-linux-{x64|aarch64}-android@1.3.14", bionic: true }

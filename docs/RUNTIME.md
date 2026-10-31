@@ -64,9 +64,13 @@ P8-SERVERKILL / P8-CRASH / P8-LIFECYCLELOG (0 illegal transitions).
 
 `HOME=files/home`, `XDG_{DATA,CONFIG,STATE,CACHE}_HOME=files/xdg/...`,
 `TMPDIR=files/xdg/tmp`, `PATH=files/bin:/system/bin`, `OPENCODE_SERVER_PORT=4111`,
-`OPENCODE_SECCOMP_SHIM=<nativeLibraryDir>/libseccompshim.so`, plus the
-per-install Basic-auth password. Nothing is world-readable; everything is
-under the app UID.
+`OPENCODE_SECCOMP_SHIM=<nativeLibraryDir>/libseccompshim.so`. The per-install
+Basic-auth password is NOT in this environment: the host writes it to the
+launcher's stdin (one line) and the launcher hides it from everything it starts
+(payload 9; `phase4/payload/launcher.js`, host test `launcher.test.mjs`). Reason:
+the exec-time environment is readable by same-UID processes through
+`/proc/<pid>/environ`, and the agent's shell runs as that UID. Nothing is
+world-readable; everything is under the app UID.
 
 ### Seccomp / W^X shims
 

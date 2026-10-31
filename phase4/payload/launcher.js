@@ -46,11 +46,27 @@ if (mdnsRequested) {
   console.error("SERVER_MDNS_REFUSED reason=loopback-only-policy (no LAN discovery while bound to " + hostname + ")");
 }
 process.env.OPENCODE_SERVER_USERNAME ||= "opencode";
-if (!process.env.OPENCODE_SERVER_PASSWORD) {
+
+// The server password reaches this process on stdin (the app writes one line
+// and closes the pipe). It is then NOT in the exec-time environment, which
+// /proc/<pid>/environ exposes to every process running as the same app UID.
+// An environment value is still accepted, for the host gate scripts only.
+const SECRET_ENV = "OPENCODE_SERVER_PASSWORD";
+let serverPassword = process.env.OPENCODE_SERVER_PASSWORD || "";
+if (!serverPassword) {
+  try {
+    serverPassword = readSecretLine();
+  } catch (err) {
+    console.error("FATAL: could not read the server password from stdin: " + (err && err.message));
+    process.exit(2);
+  }
+}
+if (!serverPassword) {
   // The host always supplies this; hard-fail rather than binding unauthenticated.
-  console.error("FATAL: OPENCODE_SERVER_PASSWORD not set by the host");
+  console.error("FATAL: no server password (stdin line or OPENCODE_SERVER_PASSWORD)");
   process.exit(2);
 }
+protectSecretEnv(serverPassword);
 
 // Optional model key from the app secrets dir (never on a command line).
 if (!process.env.OPENROUTER_API_KEY) {
@@ -98,6 +114,68 @@ function installSeccompShim() {
     else console.error("[seccomp] opencode_seccomp_init returned " + rc);
   } catch (e) {
     console.error("[seccomp] failed to load shim: " + (e && e.message ? e.message : e));
+  }
+}
+
+// Read one line from stdin (fd 0) without buffering past the newline. The
+// host writes the password and closes the pipe, so EOF also ends the line.
+function readSecretLine() {
+  const chunks = [];
+  const one = Buffer.alloc(1);
+  for (;;) {
+    let n;
+    try {
+      n = fs.readSync(0, one, 0, 1, null);
+    } catch (err) {
+      if (err.code === "EAGAIN") {
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+        continue;
+      }
+      if (err.code === "EOF") break;
+      throw err;
+    }
+    if (n === 0 || one[0] === 0x0a) break;
+    chunks.push(one[0]);
+    if (chunks.length > 4096) throw new Error("secret line too long");
+  }
+  return Buffer.from(chunks).toString("utf8").replace(/\r$/, "").trim();
+}
+
+// Keep the server password out of everything this process starts (the shell
+// tool, MCP servers, LSP servers, git). Upstream reads OPENCODE_SERVER_PASSWORD
+// once, when its modules load, so the value must still be readable in-process.
+// What the children see is controlled here:
+//  - process.env becomes a view that hides the key from enumeration. Spreads
+//    ({...process.env}), child_process defaults (named and default imports)
+//    and cross-spawn then leave it out. Direct reads still return the value.
+//  - Bun.spawn/spawnSync with no env option copy the native environment, not
+//    process.env (tested), so they get an explicit copy without the key.
+// Tested under Bun 1.3.14 (see phase4/payload/launcher.test.mjs).
+function protectSecretEnv(secret) {
+  process.env[SECRET_ENV] = secret;
+  const real = process.env;
+  process.env = new Proxy(real, {
+    ownKeys: (target) => Reflect.ownKeys(target).filter((k) => k !== SECRET_ENV),
+    getOwnPropertyDescriptor: (target, k) =>
+      k === SECRET_ENV ? undefined : Reflect.getOwnPropertyDescriptor(target, k),
+  });
+  const scrubbed = (env) => {
+    const out = { ...(env || process.env) };
+    delete out[SECRET_ENV];
+    return out;
+  };
+  if (typeof Bun !== "undefined") {
+    for (const name of ["spawn", "spawnSync"]) {
+      const original = Bun[name];
+      if (typeof original !== "function") continue;
+      Bun[name] = function (first, second, ...rest) {
+        if (first && typeof first === "object" && !Array.isArray(first)) {
+          return original.call(this, { ...first, env: scrubbed(first.env) }, second, ...rest);
+        }
+        const opts = second || {};
+        return original.call(this, first, { ...opts, env: scrubbed(opts.env) }, ...rest);
+      };
+    }
   }
 }
 

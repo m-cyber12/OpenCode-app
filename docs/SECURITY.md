@@ -37,6 +37,15 @@ files, and the loopback server that can run a shell in the app's sandbox.
 - Basic auth on loopback protects against other apps on the device only as far
   as the password stays private; it is stored encrypted and never logged, and
   the test harness's export of it is gated behind a debug-only marker file.
+  Payload 9: the password is handed to the server on stdin, not in its
+  environment, and the server hides it from every process it starts (the agent's
+  shell, MCP and LSP servers). Before payload 9 the shell could read it from its
+  environment. Not covered: the shell can still read the app's own files, such as
+  `auth.json` (provider keys), because it runs as the app UID.
+- Config files are guarded: a session "allow for session" never covers writes to
+  `opencode.json`, `.mcp.json` or `.opencode/`, nor shell or external-directory
+  requests that name them. Each such request prompts. Limit: the shell check is
+  textual (see `phase4/payload/patches/permission-guard.ts`).
 - Backups: `android:allowBackup` is off; nothing of the runtime is exported.
 
 ## Incidents and clean-up (Phase 8 -> 9)

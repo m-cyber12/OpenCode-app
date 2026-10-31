@@ -44,10 +44,15 @@ object RuntimeEnv {
         f.isDirectory && !f.list().isNullOrEmpty()
     }
 
+    /**
+     * The child's environment. The server password is deliberately NOT in it:
+     * [RuntimeProcess.start] hands it to the launcher on stdin, because the
+     * exec-time environment is readable (/proc/<pid>/environ) by every process
+     * running as the app UID, including the agent's shell.
+     */
     fun build(
         paths: RuntimePaths,
         abi: String,
-        password: String,
         hostname: String = SERVER_BIND_HOSTNAME,
         githubToken: String? = null,
     ): Map<String, String> {
@@ -111,7 +116,6 @@ object RuntimeEnv {
         env["OPENCODE_SERVER_HOSTNAME"] = hostname
         env["OPENCODE_SERVER_PORT"] = SERVER_PORT.toString()
         env["OPENCODE_SERVER_USERNAME"] = SERVER_USER
-        env["OPENCODE_SERVER_PASSWORD"] = password
         // v9.34 (owner: approving a plan must let the model CONTINUE working in
         // the same turn - no stop, no hand-off prompt). Upstream's experimental
         // plan mode is exactly that flow: the plan agent writes a plan file,

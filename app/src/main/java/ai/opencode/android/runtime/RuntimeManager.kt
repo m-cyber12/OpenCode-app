@@ -268,7 +268,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
                 if (githubToken != null) "github connector: token -> env 'key' (github project; value withheld)"
                 else "github connector: env 'key' ABSENT (no token, or active project is not a GitHub project)",
             )
-            val env = RuntimeEnv.build(paths, ok.abi, password, bindHost, githubToken = githubToken)
+            val env = RuntimeEnv.build(paths, ok.abi, bindHost, githubToken = githubToken)
 
             // ---- 4. start / health / crash loop --------------------------
             var attempts = 0
@@ -276,7 +276,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
                 attempts++
                 publish(RuntimeStatus.STARTING, "starting OpenCode server (attempt $attempts)", attempts - 1)
                 try {
-                    process.start(env)
+                    process.start(env, password)
                     // A stop or a newer start can race with the short launch
                     // window. Do not let an invalidated supervisor pump or
                     // health-check a process owned by a newer generation.

@@ -93,7 +93,7 @@ class HarnessSealedToolsGateTest {
         val measured = runCatching {
             HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
             val paths = RuntimePaths.get(context)
-            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi())
             val bin = paths.binDir.absolutePath
             val firstOnPath = env["PATH"]?.split(File.pathSeparator)?.firstOrNull()
             val shellEnv = env["SHELL"]
@@ -131,7 +131,7 @@ class HarnessSealedToolsGateTest {
         val measured = runCatching {
             HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
             val paths = RuntimePaths.get(context)
-            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi())
             val caPath = env["CURL_CA_PATH"]
             val run = shellIn(env, "curl --version | head -1")
             val caOk = !caPath.isNullOrBlank() && File(caPath).isDirectory
@@ -158,7 +158,7 @@ class HarnessSealedToolsGateTest {
         val measured = runCatching {
             HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
             val paths = RuntimePaths.get(context)
-            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi())
             val run = shellIn(env, "echo '{\"a\":1}' | jq -r .a; echo '\"abc\"' | jq -r 'test(\"b\")'")
             val lines = run.output.trim().split("\n").map { it.trim() }
             val ok = run.ran && run.exitCode == 0 &&
@@ -187,7 +187,7 @@ class HarnessSealedToolsGateTest {
         val measured = runCatching {
             HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
             val paths = RuntimePaths.get(context)
-            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi())
             // The shell quotes must be OUTSIDE Python's single quotes. The
             // previous inverse (`-c '... {'ok': True} ...'`) was valid shell,
             // but adjacent quote segments stripped the inner quotes and Python
@@ -221,7 +221,7 @@ class HarnessSealedToolsGateTest {
         val measured = runCatching {
             HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
             val paths = RuntimePaths.get(context)
-            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi())
             val root = File(context.filesDir, "npm-local-gate")
             root.deleteRecursively()
             val dep = File(root, "dep").apply { mkdirs() }
@@ -267,7 +267,7 @@ class HarnessSealedToolsGateTest {
         val measured = runCatching {
             HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
             val paths = RuntimePaths.get(context)
-            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi())
             val body = "OC_WGET_OK\n".toByteArray()
             val serverError = AtomicReference<Throwable?>(null)
             val server = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
@@ -328,7 +328,7 @@ class HarnessSealedToolsGateTest {
         val measured = runCatching {
             HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
             val paths = RuntimePaths.get(context)
-            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi())
             val key = File(context.cacheDir, "v9-openssh-ed25519")
             key.delete()
             File(key.absolutePath + ".pub").delete()
@@ -401,7 +401,7 @@ class HarnessSealedToolsGateTest {
             val markerVersionAfter = org.json.JSONObject(paths.extractionMarker.readText())
                 .getInt("payloadVersion")
 
-            val env = RuntimeEnv.build(paths, HarnessSeal.abi(), "gate")
+            val env = RuntimeEnv.build(paths, HarnessSeal.abi())
             val script =
                 "sha256sum </dev/null >/dev/null && echo SHELL_COREUTILS_AGENT_OK; " +
                     "bun --version >/dev/null && echo BUN_AGENT_OK; " +

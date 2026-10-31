@@ -50,8 +50,13 @@ class RuntimeProcess(
     /** Current server pid (from /proc), or -1. */
     val pid: Int get() = findServerPid()
 
+    /**
+     * @param serverPassword handed to the launcher on stdin, one line, then the
+     *   pipe is closed. It is never placed in [env]: the exec-time environment
+     *   is readable by same-UID processes through /proc/<pid>/environ.
+     */
     @Synchronized
-    fun start(env: Map<String, String>) {
+    fun start(env: Map<String, String>, serverPassword: String) {
         val bun = paths.bunBinary()
         require(bun.canExecute()) { "bun binary not executable: $bun" }
         require(paths.launcher.isFile) { "launcher missing: ${paths.launcher}" }
@@ -92,6 +97,17 @@ class RuntimeProcess(
         }
         val p = pb.start()
         process = p
+        // Deliver the password on the launcher's stdin (see launcher.js
+        // readSecretLine). Closing the pipe ends the line for the reader.
+        try {
+            p.outputStream.use { out ->
+                out.write((serverPassword + "\n").toByteArray(Charsets.UTF_8))
+                out.flush()
+            }
+        } catch (e: java.io.IOException) {
+            logger.host("server launch: could not hand the password to the launcher (${e.message})")
+            throw e
+        }
         // The child may take a moment to appear in /proc; retry briefly.
         var sp = -1
         for (i in 0..20) {

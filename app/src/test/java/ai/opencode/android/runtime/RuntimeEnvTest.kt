@@ -40,7 +40,7 @@ class RuntimeEnvTest {
     @Test
     fun buildPointsEveryWritablePathAtAppPrivateStorage() {
         val p = paths()
-        val env = RuntimeEnv.build(p, "arm64-v8a", "password-123")
+        val env = RuntimeEnv.build(p, "arm64-v8a")
 
         for (key in listOf("HOME", "XDG_DATA_HOME", "XDG_CONFIG_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME", "TMPDIR")) {
             val v = env[key]
@@ -64,7 +64,7 @@ class RuntimeEnvTest {
     @Test
     fun buildPutstheBundledToolsFirstOnThePath() {
         val p = paths()
-        val env = RuntimeEnv.build(p, "x86_64", "password-123")
+        val env = RuntimeEnv.build(p, "x86_64")
         val path = env["PATH"]!!
         val entries = path.split(File.pathSeparator)
         assertEquals(p.binDir.absolutePath, entries.first())
@@ -89,21 +89,23 @@ class RuntimeEnvTest {
         // user has not connected GitHub - the brief tells the model that an
         // unset `key` means "not connected, ask the user".
         val p = paths()
-        val without = RuntimeEnv.build(p, "arm64-v8a", "pw")
+        val without = RuntimeEnv.build(p, "arm64-v8a")
         assertFalse(without.containsKey("key"))
-        val blank = RuntimeEnv.build(p, "arm64-v8a", "pw", githubToken = "  ")
+        val blank = RuntimeEnv.build(p, "arm64-v8a", githubToken = "  ")
         assertFalse(blank.containsKey("key"))
-        val with = RuntimeEnv.build(p, "arm64-v8a", "pw", githubToken = "ghp_example1234567890abcd")
+        val with = RuntimeEnv.build(p, "arm64-v8a", githubToken = "ghp_example1234567890abcd")
         assertEquals("ghp_example1234567890abcd", with["key"])
     }
 
     @Test
     fun buildCarriesTheServerAuthAndIdentity() {
         val p = paths()
-        val env = RuntimeEnv.build(p, "arm64-v8a", "the-loopback-password")
+        val env = RuntimeEnv.build(p, "arm64-v8a")
 
         assertEquals(RuntimeEnv.SERVER_USER, env["OPENCODE_SERVER_USERNAME"])
-        assertEquals("the-loopback-password", env["OPENCODE_SERVER_PASSWORD"])
+        // The password never enters the child environment (see RuntimeEnv.build).
+        assertFalse("server password must not be in the exec environment", env.containsKey("OPENCODE_SERVER_PASSWORD"))
+        assertFalse("no password value in any environment entry", env.values.any { it.contains("the-loopback-password") })
         assertEquals(RuntimeEnv.SERVER_PORT.toString(), env["OPENCODE_SERVER_PORT"])
         assertEquals(LoopbackGuard.SERVER_BIND_HOSTNAME, env["OPENCODE_SERVER_HOSTNAME"])
         // v9.34: plan approval rides upstream's experimental plan mode, whose
@@ -126,10 +128,10 @@ class RuntimeEnvTest {
     @Test
     fun buildHonoursALoopbackHostnameOverrideButNothingElse() {
         val p = paths()
-        assertEquals("127.0.0.1", RuntimeEnv.build(p, "arm64-v8a", "pw", hostname = "127.0.0.1")["OPENCODE_SERVER_HOSTNAME"])
+        assertEquals("127.0.0.1", RuntimeEnv.build(p, "arm64-v8a", hostname = "127.0.0.1")["OPENCODE_SERVER_HOSTNAME"])
         // localhost/::1 are loopback literals, so they are honoured verbatim.
-        assertEquals("localhost", RuntimeEnv.build(p, "arm64-v8a", "pw", hostname = "localhost")["OPENCODE_SERVER_HOSTNAME"])
-        assertEquals("::1", RuntimeEnv.build(p, "arm64-v8a", "pw", hostname = "::1")["OPENCODE_SERVER_HOSTNAME"])
+        assertEquals("localhost", RuntimeEnv.build(p, "arm64-v8a", hostname = "localhost")["OPENCODE_SERVER_HOSTNAME"])
+        assertEquals("::1", RuntimeEnv.build(p, "arm64-v8a", hostname = "::1")["OPENCODE_SERVER_HOSTNAME"])
     }
 
     @Test
