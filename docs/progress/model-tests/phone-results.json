@@ -241,7 +241,7 @@
         "D2",
         "D4"
       ],
-      "status": "fixed in build: payload patch (phase4/payload/patches) makes the bash tool run non-executable path-like commands through their interpreter; PAYLOAD_VERSION 8; CI green (run 41199211096: JVM 507, gates 208 PASS, 0 FAIL). Phone check pending: install the new APK, then run ./t.sh and node_modules/.bin/<cmd> in Documents/OpenCode/<project>.",
+      "status": "fixed on phone (owner, 2026-10-31, 17:12 screenshot): in Documents/OpenCode/mobile-11, ./t.sh ran (sh fallback) and node_modules/.bin/hello ran under Node v24.22.1 (bin cmd ran OK: v24.22.1). Built by CI run 41199211096.",
       "detail": "Phone 11:20: npx works, but its .bin shim fails (exit 126), then npm install --no-bin-links rea-agents was started and the owner stopped it. Phone 11:41: pwd is /storage/emulated/0/Documents/OpenCode/mobile-10; touch t.sh, chmod +x, ./t.sh gives Permission denied. Shared storage is noexec. Workaround candidates that do not change the root: run MCP entries as node <path-to-entry> (not via npx or .bin); and a brief change that tells models this. The brief is 829/830 words, so a change needs another part trimmed. Owner 2026-10-30: shims must work in every path; users usually pick their own folder. Decision: MCP and tool packages install under the app home ($HOME/tools/<name>, exec-allowed), run through node; the shared-storage root is unchanged."
     }
   ]
