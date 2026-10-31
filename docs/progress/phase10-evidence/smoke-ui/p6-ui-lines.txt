@@ -62,11 +62,11 @@ P6-L2 SKIP :: :: no model served a turn, so no tool call can be observed: no ass
 P6_X1 PASS :: api36Context=t
 P6_X1 PASS :: api36Context=true nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=36 api=36 abi=x86_64 :: OCEXECPROBE ok
 P6_X2 PASS :: api36Context=t
-P6_X2 PASS :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/<app>/files/probe-exec" (in directory "/data/app/~~e
+P6_X2 PASS :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/<app>/files/probe-exec" (in directory "/data/app/~~B
 P6_X3 PASS :: api36Context=t
 P6_X3 PASS :: api36Context=true targetSdk=36 api=36 prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P6-X1 PASS :: :: api36Context=true nativeLibraryDir exec ran=true exit=0 marker=true targetSdk=36 api=36 abi=x86_64 :: OCEXECPROBE ok
-P6-X2 PASS :: :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/<app>/files/probe-exec" (in directory "/data/app/~~e
+P6-X2 PASS :: :: api36Context=true appData exec refused=true ran=false exit=-1 api=36 targetSdk=36 :: IOException: Cannot run program "/data/user/0/<app>/files/probe-exec" (in directory "/data/app/~~B
 P6-X3 PASS :: :: api36Context=true targetSdk=36 api=36 prefix symlink exec linked=true ran=true exit=0 :: OCEXECPROBE ok
 P6_S1 PASS :: sealed install ok=t
 P6_S1 PASS :: sealed install ok=true files=1 verified=1 executables=1 problems=[] :: sealed payload: 1 data files (15 bytes, 1 verified), 0 data links, 1 executables from the APK
@@ -92,7 +92,7 @@ P6-T3 PASS :: :: exec audit publishable=true shipped=213 manifestLinks=213 outsi
 P6_V1 PASS :: sealed shell
 P6_V1 PASS :: sealed shell ran=true exit=0 api=36 :: OC_SEALED_SH_OK
 P6_V10 PASS :: upg
-P6_V10 PASS :: upgradeResult=Extracted markerVersion=7->7 reextractReason=true briefRefreshed=true links=sealed layout: 5 linked, 208 already correct, 0 missing targets, 0 errors agentTools=11/11 missing=none exit=0 output='SHELL_COREUTILS_AGENT_OK <NL> BUN_AGENT_OK <NL> GIT_AGENT_OK <NL> RG_AGENT_OK <NL> CURL_AGENT_OK <NL> WGET_AGENT_OK <NL> JQ_AGENT_OK <NL> OPENSSH_AGENT_OK <NL> NODE_AGENT_OK v24.22.1 <NL> NPM_AGENT_OK 11.19.1 <NL> PYTHON_AGENT_OK 3.13.1'
+P6_V10 PASS :: upgradeResult=Extracted markerVersion=8->8 reextractReason=true briefRefreshed=true links=sealed layout: 5 linked, 208 already correct, 0 missing targets, 0 errors agentTools=11/11 missing=none exit=0 output='SHELL_COREUTILS_AGENT_OK <NL> BUN_AGENT_OK <NL> GIT_AGENT_OK <NL> RG_AGENT_OK <NL> CURL_AGENT_OK <NL> WGET_AGENT_OK <NL> JQ_AGENT_OK <NL> OPENSSH_AGENT_OK <NL> NODE_AGENT_OK v24.22.1 <NL> NPM_AGENT_OK 11.19.1 <NL> PYTHON_AGENT_OK 3.13.1'
 P6_V2 PASS :: pipeline
 P6_V2 PASS :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
 P6_V3 PASS :: agent env PATH[0]=/data/use
@@ -108,7 +108,7 @@ P6_V7 PASS :: node/npm ran=true exit=0 icu=true icuOut='true 1.234,5' output='v2
 P6_V8 PASS :: wget
 P6_V8 PASS :: wget ran=true exit=0 bytes=11 body='OC_WGET_OK' fixture=ok output='wget (OpenCode sealed curl backend) 1'
 P6_V9 PASS :: openssh
-P6_V9 PASS :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:jwnsNt7xZksJR0bolcyCfZhDnOS+1asY/RvhYWDn9xw u0_a224@localhost (ED25519)'
+P6_V9 PASS :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:18Ltuda/yXDVOOLv5Ud/carF1E9Kx+xbsv2WAXQ8JRI u0_a224@localhost (ED25519)'
 P6-V1 PASS :: :: sealed shell ran=true exit=0 api=36 :: OC_SEALED_SH_OK
 P6-V2 PASS :: :: pipeline ran=true exit=0 output='1' (expected '1') :: 1
 P6-V3 PASS :: :: agent env PATH[0]=/data/user/0/<app>/files/bin (want /data/user/0/<app>/files/bin) SHELL=/data/user/0/<app>/files/bin/sh ran=true exit=0 out='1' tr=/da
@@ -117,5 +117,5 @@ P6-V5 PASS :: :: jq ran=true exit=0 field='1' regex='true' (want 1 then true)
 P6-V6 PASS :: :: python ran=true exit=0 json='{"ok": true}' zlib.crc32='891568578' (want 891568578) output='{"ok": true} <NL> 891568578'
 P6-V7 PASS :: :: node/npm ran=true exit=0 icu=true icuOut='true 1.234,5' output='v24.22.1 <NL> 11.19.1 <NL> 42'
 P6-V8 PASS :: :: wget ran=true exit=0 bytes=11 body='OC_WGET_OK' fixture=ok output='wget (OpenCode sealed curl backend) 1'
-P6-V9 PASS :: :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:jwnsNt7xZksJR0bolcyCfZhDnOS+1
-P6-V10 PASS :: :: upgradeResult=Extracted markerVersion=7->7 reextractReason=true briefRefreshed=true links=sealed layout: 5 linked, 208 already correct, 0 missing targets, 0 errors agentTools=11/11 missing=none exit=0 output='SHELL_CO
+P6-V9 PASS :: :: openssh ran=true exit=0 private=411 public=99 output='OpenSSH_10.6p1, OpenSSL 3.6.5 29 Sep 2026 <NL> user git <NL> OC_SSH_KEYGEN_OK <NL> OC_SSH_AGENT_OK <NL> OC_SSH_ADD_OK <NL> 256 SHA256:18Ltuda/yXDVOOLv5Ud/carF1E9Kx
+P6-V10 PASS :: :: upgradeResult=Extracted markerVersion=8->8 reextractReason=true briefRefreshed=true links=sealed layout: 5 linked, 208 already correct, 0 missing targets, 0 errors agentTools=11/11 missing=none exit=0 output='SHELL_CO
