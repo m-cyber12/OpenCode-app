@@ -4,6 +4,11 @@ name: node26-android-spike
 # spike in spike/node26/. The output is an artifact, not a commit, so it does not
 # add to the repository. The shipping Node 24 pin is not changed.
 on:
+  push:
+    branches: [arena/01a0b9d5-opencode-app]
+    paths:
+      - 'spike/node26/**'
+      - '.github/workflows/node26-android-spike.yml'
   workflow_dispatch:
 
 jobs:
