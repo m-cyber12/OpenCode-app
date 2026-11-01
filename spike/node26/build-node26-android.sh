@@ -9,7 +9,9 @@
 # Usage:
 #   build-node26-android.sh               full build (CI, needs the Android NDK)
 #   build-node26-android.sh --prepare-only   fetch + apply patches, no NDK needed
-set -euo pipefail
+set -Eeuo pipefail
+# Any unplanned failure is also reported as an annotation with the command that failed.
+trap 'echo "::error title=node26-spike::unplanned failure at line $LINENO: $BASH_COMMAND (exit $?)"' ERR
 
 NODE_VERSION="26.4.0"
 TERMUX_PIN="2d6b9d566c2e933c50e675198a0d7847a96deb61"   # same pin as the Node 24 recipe
