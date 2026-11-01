@@ -86,7 +86,30 @@ fi
 # 4. Toolchain checks (CI image provides the NDK and Ninja).
 # Same lookup as the Node 24 recipe: pinned NDK, and Ninja from PATH or the SDK tree.
 note "installed NDKs: $(ls "$ANDROID_HOME/ndk" 2>/dev/null | paste -sd' ' - || true)"
-[ -x "$NDK_BIN/${TRIPLE}29-clang" ] || fatal "pinned NDK $NDK_PIN not found at $NDK_HOME (installed: $(ls "$ANDROID_HOME/ndk" 2>/dev/null | paste -sd' ' - || true))"
+# Node 26's V8 uses std::atomic_ref. Run 41342281398 showed the pinned NDK 28.2
+# libc++ rejects it ("no member named 'atomic_ref' in namespace 'std'"). So pick the
+# first candidate whose clang compiles a probe with -std=gnu++20. The chosen NDK is
+# annotated. This is a spike choice only; the shipping Node 24 pin is unchanged.
+probe_ndk() {  # $1 = clang wrapper
+  printf '#include <atomic>\nint main() { int x = 0; std::atomic_ref<int>(x).store(1, std::memory_order_relaxed); return x - 1; }\n' > "$WORK/probe.cc"
+  "$1" -std=gnu++20 -fsyntax-only "$WORK/probe.cc" > "$WORK/probe.log" 2>&1
+}
+CHOSEN=""
+for v in "$NDK_PIN" 30.0.16248370 29.0.14206865; do
+  clang="$ANDROID_HOME/ndk/$v/toolchains/llvm/prebuilt/linux-x86_64/bin/${TRIPLE}29-clang"
+  if [ ! -x "$clang" ]; then note "ndk $v: not installed"; continue; fi
+  if probe_ndk "$clang"; then CHOSEN="$v"; break; fi
+  note "ndk $v: std::atomic_ref probe failed: $(head -n 2 "$WORK/probe.log" | tr '\n' ' ' | cut -c1-200)"
+done
+[ -n "$CHOSEN" ] || fatal "no installed NDK compiles std::atomic_ref (candidates: $NDK_PIN 30.0.16248370 29.0.14206865)"
+if [ "$CHOSEN" != "$NDK_PIN" ]; then
+  echo "::notice title=node26-spike::using NDK $CHOSEN (pinned $NDK_PIN failed the atomic_ref probe)"
+fi
+NDK_PIN="$CHOSEN"
+NDK_HOME="$ANDROID_HOME/ndk/$NDK_PIN"
+NDK_BIN="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
+note "ndk: $NDK_PIN"
+[ -x "$NDK_BIN/${TRIPLE}29-clang" ] || fatal "NDK $NDK_PIN has no clang wrapper"
 NINJA="$(command -v ninja || true)"
 if [ -z "$NINJA" ]; then
   NINJA="$(find "$(dirname "$ANDROID_HOME")" "$ANDROID_HOME" -type f -name ninja -perm -111 2>/dev/null | sort -r | head -1 || true)"
