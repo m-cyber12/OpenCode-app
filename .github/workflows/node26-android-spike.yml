@@ -1,0 +1,37 @@
+name: node26-android-spike
+
+# Manual only. Builds Node 26 as an Android/Bionic arm64 executable for the
+# spike in spike/node26/. The output is an artifact, not a commit, so it does not
+# add to the repository. The shipping Node 24 pin is not changed.
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    permissions:
+      contents: read
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      NODE26_OUT: /tmp/node26-out
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Node 26 for Android (arm64)
+        run: bash spike/node26/build-node26-android.sh
+        shell: bash
+
+      - name: Upload binary and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: node26-android-arm64
+          path: |
+            /tmp/node26-out/report.txt
+            /tmp/node26-out/node-ninja.log
+            /tmp/node26-out/node26-arm64/bin/node
+          retention-days: 14
+          if-no-files-found: warn
