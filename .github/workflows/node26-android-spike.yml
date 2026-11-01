@@ -25,6 +25,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # The runner image does not ship the pinned NDK 28.2.13676358 (it has 27.3 and
+      # 30.0). The Node 24 recipe falls back to another NDK and logs drift; this spike
+      # installs the pinned NDK instead, so the build script can stay strict.
+      - name: Install pinned NDK 28.2.13676358
+        shell: bash
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -maxdepth 3 -name sdkmanager -type f 2>/dev/null | head -1)"
+          if [ ! -x "$SDKMANAGER" ]; then
+            echo "::error title=node26-spike::sdkmanager not found under $ANDROID_HOME/cmdline-tools"
+            exit 1
+          fi
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          if ! "$SDKMANAGER" --install "ndk;28.2.13676358" > "$RUNNER_TEMP/ndk-install.log" 2>&1; then
+            tail -n 40 "$RUNNER_TEMP/ndk-install.log"
+            echo "::error title=node26-spike::NDK 28.2.13676358 install failed"
+            exit 1
+          fi
+          ls "$ANDROID_HOME/ndk"
+
       - name: Build Node 26 for Android (arm64)
         run: bash spike/node26/build-node26-android.sh
         shell: bash

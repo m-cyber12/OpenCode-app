@@ -28,7 +28,9 @@ NDK_BIN="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
 mkdir -p "$WORK"
 : > "$REPORT"
 note() { echo "$(date -u +%FT%TZ) $*" | tee -a "$REPORT"; }
-fatal() { note "FATAL: $*"; exit 1; }
+# GitHub shows ::error:: lines as check-run annotations, which can be read through
+# the API when the job log cannot be downloaded from the sandbox.
+fatal() { note "FATAL: $*"; echo "::error title=node26-spike::$*"; exit 1; }
 
 note "node26 spike: node v$NODE_VERSION, termux $TERMUX_PIN, zlib $ZLIB_PIN, ndk $NDK_PIN"
 
@@ -80,9 +82,15 @@ if [ "$PREPARE_ONLY" = "--prepare-only" ]; then
 fi
 
 # 4. Toolchain checks (CI image provides the NDK and Ninja).
-[ -x "$NDK_BIN/${TRIPLE}29-clang" ] || fatal "NDK $NDK_PIN not found at $NDK_HOME"
+# Same lookup as the Node 24 recipe: pinned NDK, and Ninja from PATH or the SDK tree.
+note "installed NDKs: $(ls "$ANDROID_HOME/ndk" 2>/dev/null | paste -sd' ' - || true)"
+[ -x "$NDK_BIN/${TRIPLE}29-clang" ] || fatal "pinned NDK $NDK_PIN not found at $NDK_HOME (installed: $(ls "$ANDROID_HOME/ndk" 2>/dev/null | paste -sd' ' - || true))"
 NINJA="$(command -v ninja || true)"
-[ -x "$NINJA" ] || fatal "ninja not on PATH"
+if [ -z "$NINJA" ]; then
+  NINJA="$(find "$(dirname "$ANDROID_HOME")" "$ANDROID_HOME" -type f -name ninja -perm -111 2>/dev/null | sort -r | head -1 || true)"
+fi
+[ -n "$NINJA" ] && [ -x "$NINJA" ] || fatal "ninja not found on PATH or under the Android SDK"
+note "ninja: $NINJA"
 note "toolchain: $("$NDK_BIN/${TRIPLE}29-clang" --version | head -1)"
 
 # 5. zlib for Android (Node links it with --shared-zlib).
