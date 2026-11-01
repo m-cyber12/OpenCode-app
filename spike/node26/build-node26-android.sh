@@ -82,6 +82,20 @@ grep -q '#if 0  // spike: Android has no V8 trap handler' "$WORK/node-src/deps/v
   || fatal "api.cc trap-handler guard was not applied"
 note "api.cc: TryHandleWebAssemblyTrapPosix guarded for Android"
 
+# Run 41355013606 failed at the host mksnapshot link with `undefined symbol:
+# v8_internal_simulator_ProbeMemory`. Host mksnapshot builds the arm64 simulator for
+# cross builds, and the simulator sees the trap handler as supported on the Linux host,
+# so it references trap-handler symbols that its link does not provide. The Termux
+# patch removed this trap-handler configuration for Node 24. Here the same effect is
+# applied as a configuration change: no trap handler, for host tools and for Android,
+# which is exactly what the Android target already gets.
+perl -0pi -e 's/#define V8_TRAP_HANDLER_SUPPORTED true/#define V8_TRAP_HANDLER_SUPPORTED false  \/\/ spike: no V8 trap handler (host tools too)/g; s/^#define V8_TRAP_HANDLER_VIA_SIMULATOR\n//mg' \
+  "$WORK/node-src/deps/v8/src/trap-handler/trap-handler.h"
+if grep -q 'SUPPORTED true' "$WORK/node-src/deps/v8/src/trap-handler/trap-handler.h"; then
+  fatal "trap-handler.h still enables the trap handler"
+fi
+note "trap-handler.h: V8 trap handler disabled for this build"
+
 ( cd "$WORK/node-src"
   # Same runtime rewrites as the Node 24 recipe: the app's data dir replaces the
   # Termux prefix, and child_process honours the sealed SHELL at runtime.
@@ -171,7 +185,7 @@ fi
 note "ninja start $(date -u +%FT%TZ)"
 timeout 14400 "$NINJA" -C out/Release -j4 > "$OUT/node-ninja.log" 2>&1 \
   || { tail -n 80 "$OUT/node-ninja.log" | tee -a "$REPORT"
-       fatal "node build failed: $(grep -m3 -E 'FAILED:|error:|Error ' "$OUT/node-ninja.log" | tr '\n' ' ' | cut -c1-900)"; }
+       fatal "node build failed: $(grep -E 'FAILED:|undefined symbol' "$OUT/node-ninja.log" | sort -u | head -n 12 | tr '\n' ' ' | cut -c1-1500)"; }
 note "ninja finished $(date -u +%FT%TZ)"
 
 # 7. Verify the output the same way the Node 24 recipe does.
