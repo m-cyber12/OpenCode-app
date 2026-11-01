@@ -142,7 +142,6 @@ itself, do NOT start your own server). A watched port already taken
 belongs to ANOTHER project - never kill it; take the next free one and
 record it. A hand-off lights the user's "See What You've Made" console
 with "Project updated" - they tap when ready; announce it, never grab.
-Read the preview brief ONCE before your first hand-off.
 
 ## Ship clean
 Raw providers can leak chat markers (pipe-wrapped tokens, stray fences)
@@ -199,6 +198,7 @@ what cannot have changed; read each topic brief at most once.
 - $briefsDir/webapp.md - running a real/cloned framework project (Next,
   Vite, ...): npm/Bun installs, dev servers, readiness, missing-env crashes.
   Read BEFORE the first command in any project that has a package.json.
+- $briefsDir/acceptance.md - before a multi-step build: acceptance sheet.
 - $briefsDir/tools.md - PATH order, exact installed tools, Android limits.
   Read before shelling out.
 - $briefsDir/extensions.md - MCP servers and skills: where they live, how to
@@ -646,10 +646,39 @@ if (check !== 0) process.exit(1);
 - Audio is not included. Output is H.264 (libx264) in yuv420p with the faststart flag.
 """.trimIndent() + "\n"
 
+        val acceptance = """
+# Acceptance criteria - write the sheet before a multi-step build
+
+For a request with more than one behaviour or an unclear part, write the
+sheet FIRST, before you change code. Create `.acceptance/criteria.json` at
+the project root:
+{"request": "Improve login without breaking the API",
+ "unclear": ["Which API clients must keep working?"],
+ "criteria": [
+  {"id": "AC1", "text": "POST /login returns 200 and a token for valid credentials", "check": "npm test -- login", "status": "open"},
+  {"id": "AC2", "text": "Existing /v1/users responses are unchanged", "check": "npm test -- api", "status": "open"}]}
+
+- id: 1-20 letters, digits, `-` or `_`, unique. text: one measurable behaviour, 1-300 characters.
+- check: the command that proves it (optional).
+- status: open, pass or fail. Set pass or fail only after you ran the check,
+  and put the real result line in evidence. A pass with no evidence shows as UNVERIFIED.
+- unclear: questions that change the work. Ask the user with the `question`
+  tool before you finish, and delete each item once it is answered.
+- Limits: 30 criteria, 10 unclear items.
+
+The app writes `.acceptance/report.txt` within about 2 seconds of each save.
+Read it after each update. Say COMPLETE only when its first line starts with
+ACCEPTANCE COMPLETE; otherwise report what is still open, failed or unverified.
+The app does not run your checks or read your code; it checks the sheet's
+shape and counts. Quote real output as evidence, never a guess.
+Keep the sheet small: one criterion per behaviour the user asked for.
+""".trimIndent() + "\n"
+
         return linkedMapOf(
             "preview.md" to preview,
             "screenshots.md" to screenshots,
             "webapp.md" to webapp,
+            "acceptance.md" to acceptance,
             "tools.md" to tools,
             "extensions.md" to extensions,
             "video.md" to video,

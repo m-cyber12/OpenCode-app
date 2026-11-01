@@ -762,6 +762,32 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         }
     }
 
+    // Intent-to-tests (agent.md 11, first slice): the agent's acceptance sheet
+    // .acceptance/criteria.json is checked for shape and counts, and the verdict
+    // goes to .acceptance/report.txt. The app does not run the checks. The file is
+    // re-read every tick and compared by text (not by mtime, which shared storage
+    // may round to seconds), so a partial write is picked up by the next tick.
+    LaunchedEffect(projectDir) {
+        val dir = projectDir ?: return@LaunchedEffect
+        val sheet = File(dir, "${ai.opencode.android.task.AcceptanceCheck.DIR}/${ai.opencode.android.task.AcceptanceCheck.SHEET_FILE}")
+        var lastText = ""
+        while (true) {
+            kotlinx.coroutines.delay(1500)
+            val text = withContext(Dispatchers.IO) {
+                runCatching { if (sheet.isFile) sheet.readText() else "" }.getOrDefault("")
+            }
+            if (text.isEmpty() || text == lastText) continue
+            lastText = text
+            withContext(Dispatchers.IO) {
+                runCatching {
+                    val report = ai.opencode.android.task.AcceptanceCheck.report(ai.opencode.android.task.AcceptanceCheck.parse(text))
+                    val out = File(dir, ai.opencode.android.task.AcceptanceCheck.DIR).apply { mkdirs() }
+                    File(out, ai.opencode.android.task.AcceptanceCheck.REPORT_FILE).writeText(report)
+                }
+            }
+        }
+    }
+
     // v9.9 (owner): the app WATCHES the loopback - a connect-probe of ~15
     // ports every 2.5s is microseconds of kernel work (Android denies
     // /proc/net/tcp, so probing is the honest way to know). v9.37 (owner):

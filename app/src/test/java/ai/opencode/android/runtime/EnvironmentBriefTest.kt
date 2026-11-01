@@ -455,4 +455,13 @@ class EnvironmentBriefTest {
         assertTrue(ext.contains("The bash tool now handles this for you"))
         assertFalse(ext.contains("Install MCP packages under the project"))
     }
+
+    @Test
+    fun acceptanceSheetIsIndexedAndSaysWhatTheAppChecks() {
+        assertTrue(EnvironmentBrief.briefText().contains("acceptance.md"))
+        val topic = EnvironmentBrief.topicBriefs().getValue("acceptance.md")
+        assertTrue(topic.contains(".acceptance/criteria.json"))
+        assertTrue(topic.contains(".acceptance/report.txt"))
+        assertTrue(topic.contains("does not run your checks"))
+    }
 }
