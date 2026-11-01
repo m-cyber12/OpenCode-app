@@ -123,7 +123,10 @@ cd "$WORK/node-src"
   --openssl-no-asm --with-intl=full-icu --without-inspector \
   --without-node-snapshot --without-node-code-cache \
   --shared-zlib --shared-zlib-includes="$ZPREFIX/include" --shared-zlib-libpath="$ZPREFIX/lib" \
-  --without-npm --without-corepack --ninja >/dev/null
+  --without-npm --ninja > "$OUT/node-configure.log" 2>&1 \
+  || fatal "configure.py failed: $(tail -n 4 "$OUT/node-configure.log" | tr '\n' ' ')"
+# Node 26 made corepack opt-in (--with-corepack), so Node 24's --without-corepack
+# is no longer a valid flag here; leaving it out means corepack is not installed.
 # Cross-configure leaks target paths into host tools (same fix as the Node 24 recipe).
 find out/Release/obj.host -name '*.ninja' -type f -exec \
   sed -i -e "s|-I$ZPREFIX/include||g" -e "s|-L$ZPREFIX/lib||g" {} +
