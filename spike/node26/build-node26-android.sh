@@ -70,6 +70,18 @@ for p in $PATCHES; do
 done
 note "patches applied: $(echo $PATCHES | wc -w) (skipped: deps-v8-src-trap-handler-trap-handler.h.patch, see script comment)"
 
+# Run 41342916704: with the trap-handler patch skipped, mksnapshot failed to link on
+# `undefined symbol: trap_handler::TryHandleSignal`. api.cc calls TryHandleSignal
+# whenever V8_TRAP_HANDLER_SUPPORTED is true, and the posix entry point is compiled
+# that way in the mksnapshot build. Android has no V8 trap handler, so this entry
+# point returns false (what the #else branch already does). The change is limited to
+# that one #if line.
+perl -0pi -e 's/(bool TryHandleWebAssemblyTrapPosix\(.*?\{\n)#if V8_ENABLE_WEBASSEMBLY && V8_TRAP_HANDLER_SUPPORTED\n/$1#if 0  \/\/ spike: Android has no V8 trap handler; this reference cannot link\n/s' \
+  "$WORK/node-src/deps/v8/src/api/api.cc"
+grep -q '#if 0  // spike: Android has no V8 trap handler' "$WORK/node-src/deps/v8/src/api/api.cc" \
+  || fatal "api.cc trap-handler guard was not applied"
+note "api.cc: TryHandleWebAssemblyTrapPosix guarded for Android"
+
 ( cd "$WORK/node-src"
   # Same runtime rewrites as the Node 24 recipe: the app's data dir replaces the
   # Termux prefix, and child_process honours the sealed SHELL at runtime.
