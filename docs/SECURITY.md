@@ -20,6 +20,7 @@ files, and the loopback server that can run a shell in the app's sandbox.
 | No root; the one special access is disclosed | needs `INTERNET`, `FOREGROUND_SERVICE(_SPECIAL_USE)`, `POST_NOTIFICATIONS` (13+), and - only to write projects where a file manager can see them - the user-granted `MANAGE_EXTERNAL_STORAGE` special access. No root, no `WRITE_EXTERNAL_STORAGE`/`READ_EXTERNAL_STORAGE`, no location | stock phone runs (Phase 8 device suite); `check-apk.py` asserts exactly this permission set on the built APK (`P10_APK_PERMISSIONS`, 27-check self-test) |
 | Permissions for agent actions | upstream's permission requests surface as a sheet; standing policy (ask / allow-for-session) stored per project; nothing auto-approved by default | P6-U3, P7 permission gates |
 | Preview tap and type (watch and tap) | the agent's `.preview/act.json` runs taps, typing and scrolls inside the open preview WebView only: no shell, no file access, no native bridge. The first batch of each preview session asks the user (Allow / Deny); the pane stays visible, every step is in the result text, and at most 20 steps and 5 s per wait. Values are JSON-quoted before they reach the page script | JVM `PreviewActionsTest` (parse limits, quoting, report); device run pending (owner) |
+| Background tasks (`.tasks/<name>.json`) | the agent can queue a prompt that runs in its own session of the open project, one at a time, with a time limit (1-60 min, abort at the limit) and a completion file. Tools use the same permission gate as chat; nothing is auto-approved, so a prompt the user does not see stalls until the limit. No token budget (upstream does not expose one). Runs only while the app is open | JVM `BackgroundTaskTest` (parse limits, safe relative path, timeout abort, status failures); device run pending (owner) |
 | Workspace boundaries | one OpenCode instance per workspace directory (`?directory=`); tools operate relative to it | P7-W2 |
 | Log hygiene | supervisor/crash logs redact env; the Phase 8 harness redacts provider error URLs (a Google error message embeds the key in the URL - see incident below) | Phase 8 §3.1.8 |
 
@@ -47,6 +48,9 @@ files, and the loopback server that can run a shell in the app's sandbox.
   `opencode.json`, `.mcp.json` or `.opencode/`, nor shell or external-directory
   requests that name them. Each such request prompts. Limit: the shell check is
   textual (see `phase4/payload/patches/permission-guard.ts`).
+- Background tasks have a time limit but no token or cost budget, and they run
+  with the app's own permissions. A task can use every tool the user has allowed
+  for the session; there is no separate allow-list for unattended work.
 - Watch and tap runs in the page the user is looking at, so it can press any
   control on that page, including a payment or a delete button. The gate is
   the user's Allow, once per preview session; it does not check what the

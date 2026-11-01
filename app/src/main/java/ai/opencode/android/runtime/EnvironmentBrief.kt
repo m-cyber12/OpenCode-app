@@ -157,7 +157,7 @@ YOU push: set git user.name/email once and
 commit + push after EVERY logical change - starting with the very first
 prompt's edits, never waiting to be asked:
 `git push https://x-access-token:${'$'}key@github.com/<owner>/<repo>.git HEAD`
-(owner/repo: `git remote get-url origin`). Stay there -
+(`git remote -v`). Stay there -
 no extra branches unless the user asks; never print or commit it;
 `key` also works for GitHub REST via fetch. The project's
 AGENTS.md repeats these rules. Unset `key` = NOT a GitHub project:
@@ -177,8 +177,8 @@ with no closing prose - never say "ready to build" or tell the user
 to switch modes.
 
 ## Cost - every wasted step is billed
-The whole conversation, including EVERY image ever read, is re-sent to the
-model on each tool step. This steers READING, never your tools: capture
+The whole conversation, including EVERY image ever read, is re-sent on each
+tool step. This steers READING, never your tools: capture
 ANY page/route any time - writes cost nothing. But read the small
 `.preview/latest.jpg` by default; a full `screenshots/*.png` only when
 pixel detail truly matters - roughly one read per fix round. Text first:
@@ -199,6 +199,7 @@ what cannot have changed; read each topic brief at most once.
   Vite, ...): npm/Bun installs, dev servers, readiness, missing-env crashes.
   Read BEFORE the first command in any project that has a package.json.
 - $briefsDir/acceptance.md - before a multi-step build: acceptance sheet.
+- $briefsDir/background.md - unattended tasks.
 - $briefsDir/tools.md - PATH order, exact installed tools, Android limits.
   Read before shelling out.
 - $briefsDir/extensions.md - MCP servers and skills: where they live, how to
@@ -646,6 +647,35 @@ if (check !== 0) process.exit(1);
 - Audio is not included. Output is H.264 (libx264) in yuv420p with the faststart flag.
 """.trimIndent() + "\n"
 
+        val background = """
+# Background tasks - unattended work with a finish line
+
+Use this for long work that needs no answers from the user: a technical-debt
+review, missing tests, dependency updates, a branch review. Never use it for
+anything you must discuss with the user.
+
+Write `.tasks/<name>.json` at the project root, with a new name for every task:
+{"prompt": "Review the dependencies and write the findings to reports/deps.md.",
+ "minutes": 20,
+ "done_when": {"file": "reports/deps.md"}}
+
+- prompt: the whole task, self-contained, 1-4000 characters. It runs in a new
+  session with no memory of this chat, so put the context in the prompt.
+- minutes: time limit, 1-60 (default 20). At the limit the app aborts the turn.
+- done_when.file: a project file the prompt tells the task to write. The task
+  is DONE only when that file exists and is not empty, and the turn has ended.
+- One task runs at a time; the others wait their turn.
+- The app writes `.tasks/<name>.result.txt`. Its first line is
+  `TASK <name> DONE|INCOMPLETE|TIMEOUT|FAILED`, then the session id and the
+  last reply. Read it when you come back; do not poll for it.
+- Permissions: a task uses the same permission prompts as chat. A prompt the
+  user does not see stalls the task until its time limit. Keep the prompt to
+  work that needs no approval.
+- No token or cost budget exists here. The time limit is the only cap.
+- The app must stay open. To run a task again, use a new name: a spec that
+  already has a result file is not run twice.
+""".trimIndent() + "\n"
+
         val acceptance = """
 # Acceptance criteria - write the sheet before a multi-step build
 
@@ -679,6 +709,7 @@ Keep the sheet small: one criterion per behaviour the user asked for.
             "screenshots.md" to screenshots,
             "webapp.md" to webapp,
             "acceptance.md" to acceptance,
+            "background.md" to background,
             "tools.md" to tools,
             "extensions.md" to extensions,
             "video.md" to video,

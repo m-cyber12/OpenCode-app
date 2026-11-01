@@ -464,4 +464,14 @@ class EnvironmentBriefTest {
         assertTrue(topic.contains(".acceptance/report.txt"))
         assertTrue(topic.contains("does not run your checks"))
     }
+
+    @Test
+    fun backgroundTasksAreIndexedAndStateTheirLimits() {
+        assertTrue(EnvironmentBrief.briefText().contains("background.md"))
+        val topic = EnvironmentBrief.topicBriefs().getValue("background.md")
+        assertTrue(topic.contains(".tasks/<name>.json"))
+        assertTrue(topic.contains(".tasks/<name>.result.txt"))
+        assertTrue(topic.contains("One task runs at a time"))
+        assertTrue(topic.contains("No token or cost budget exists here"))
+    }
 }

@@ -788,6 +788,57 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         }
     }
 
+    // Background engineering (agent.md 12, first slice): each .tasks/<name>.json
+    // runs one at a time in its own session of the open project, with a time limit
+    // and a completion file, and the verdict goes to .tasks/<name>.result.txt. It
+    // runs while the app is open; closing the app stops the watch, and the server
+    // turn it started ends at its own pace.
+    LaunchedEffect(projectDir, repository) {
+        val dir = projectDir ?: return@LaunchedEffect
+        val api = repository.api
+        val port = object : ai.opencode.android.task.BackgroundTask.Port {
+            override fun createSession(title: String): String = api.createSession(title).id
+            override fun prompt(sessionID: String, text: String) {
+                api.promptAsync(sessionID, text)
+            }
+            override fun busy(sessionID: String): Boolean = api.sessionStatus()[sessionID]?.busy == true
+            override fun abort(sessionID: String) {
+                api.abortSession(sessionID)
+            }
+            override fun lastReply(sessionID: String): String =
+                api.messages(sessionID).lastOrNull { it.role == "assistant" }
+                    ?.parts?.filter { it.optString("type") == "text" }
+                    ?.joinToString("") { it.optString("text") }
+                    .orEmpty()
+        }
+        while (true) {
+            kotlinx.coroutines.delay(3000)
+            if (!summary.ready) continue
+            val file = withContext(Dispatchers.IO) { ai.opencode.android.task.BackgroundTask.pending(dir) } ?: continue
+            val name = file.name.removeSuffix(".json")
+            val report = withContext(Dispatchers.IO) {
+                runCatching {
+                    when (val parsed = ai.opencode.android.task.BackgroundTask.parse(name, file.readText())) {
+                        is ai.opencode.android.task.BackgroundTask.Parsed.Invalid ->
+                            ai.opencode.android.task.BackgroundTask.invalidReport(name, parsed.reason)
+                        is ai.opencode.android.task.BackgroundTask.Parsed.Ok -> {
+                            val spec = parsed.spec
+                            val finished = ai.opencode.android.task.BackgroundTask.run(
+                                spec,
+                                port,
+                                doneExists = { ai.opencode.android.task.BackgroundTask.doneFileReady(dir, spec) },
+                            )
+                            ai.opencode.android.task.BackgroundTask.report(spec, finished)
+                        }
+                    }
+                }.getOrElse { "TASK $name FAILED: ${it.message}\n" }
+            }
+            withContext(Dispatchers.IO) {
+                runCatching { ai.opencode.android.task.BackgroundTask.resultFile(dir, name).writeText(report) }
+            }
+        }
+    }
+
     // v9.9 (owner): the app WATCHES the loopback - a connect-probe of ~15
     // ports every 2.5s is microseconds of kernel work (Android denies
     // /proc/net/tcp, so probing is the honest way to know). v9.37 (owner):
