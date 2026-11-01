@@ -157,7 +157,7 @@ YOU push: set git user.name/email once and
 commit + push after EVERY logical change - starting with the very first
 prompt's edits, never waiting to be asked:
 `git push https://x-access-token:${'$'}key@github.com/<owner>/<repo>.git HEAD`
-(`git remote -v`). Stay there -
+(`git remote get-url origin`). Stay there -
 no extra branches unless the user asks; never print or commit it;
 `key` also works for GitHub REST via fetch. The project's
 AGENTS.md repeats these rules. Unset `key` = NOT a GitHub project:
@@ -198,7 +198,7 @@ what cannot have changed; read each topic brief at most once.
 - $briefsDir/webapp.md - running a real/cloned framework project (Next,
   Vite, ...): npm/Bun installs, dev servers, readiness, missing-env crashes.
   Read BEFORE the first command in any project that has a package.json.
-- $briefsDir/acceptance.md - before a multi-step build: acceptance sheet.
+- $briefsDir/acceptance.md - multi-step build: acceptance sheet.
 - $briefsDir/background.md - unattended tasks.
 - $briefsDir/tools.md - PATH order, exact installed tools, Android limits.
   Read before shelling out.
