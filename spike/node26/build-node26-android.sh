@@ -135,7 +135,8 @@ if find out/Release/obj.host -name '*.ninja' -type f -exec grep -lF "$ZPREFIX" {
 fi
 note "ninja start $(date -u +%FT%TZ)"
 timeout 14400 "$NINJA" -C out/Release -j4 > "$OUT/node-ninja.log" 2>&1 \
-  || { tail -n 80 "$OUT/node-ninja.log" | tee -a "$REPORT"; fatal "node build failed (log: node-ninja.log)"; }
+  || { tail -n 80 "$OUT/node-ninja.log" | tee -a "$REPORT"
+       fatal "node build failed: $(grep -m3 -E 'FAILED:|error:|Error ' "$OUT/node-ninja.log" | tr '\n' ' ' | cut -c1-900)"; }
 note "ninja finished $(date -u +%FT%TZ)"
 
 # 7. Verify the output the same way the Node 24 recipe does.
