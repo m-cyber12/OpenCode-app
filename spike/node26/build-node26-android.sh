@@ -185,7 +185,11 @@ fi
 note "ninja start $(date -u +%FT%TZ)"
 timeout 14400 "$NINJA" -C out/Release -j4 > "$OUT/node-ninja.log" 2>&1 \
   || { tail -n 80 "$OUT/node-ninja.log" | tee -a "$REPORT"
-       fatal "node build failed: $(grep -E 'FAILED:|undefined symbol' "$OUT/node-ninja.log" | sort -u | head -n 12 | tr '\n' ' ' | cut -c1-1500)"; }
+       # Annotation text is capped at 64 KB; the first failing action's output is the useful part.
+       first_fail="$(grep -m1 -n 'FAILED:' "$OUT/node-ninja.log" | cut -d: -f1 || true)"
+       detail="$(sed -n "${first_fail:-1},$((${first_fail:-1}+40))p" "$OUT/node-ninja.log" | cut -c1-300)"
+       echo "::group::first failing ninja action (40 lines)"; echo "$detail"; echo "::endgroup::"
+       fatal "node build failed at ninja line ${first_fail:-?}; see the step log group above"; }
 note "ninja finished $(date -u +%FT%TZ)"
 
 # 7. Verify the output the same way the Node 24 recipe does.
