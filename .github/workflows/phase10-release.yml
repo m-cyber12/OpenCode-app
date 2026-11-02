@@ -194,3 +194,42 @@ jobs:
             echo "NO_PHASE10_SUMMARY - the pipeline did not reach its gate stage"
             exit 1
           fi
+
+      # ---- Node 26 TEST-ONLY copy (spike/node26). Release artifacts above are untouched.
+      # Everything below is continue-on-error, so it cannot fail the release gates.
+      - name: "Node 26 spike: restore the Android Node 26 build from cache (key = spike/node26 files)"
+        if: always() && github.event.inputs.gradle_only != 'true'
+        id: node26cache
+        continue-on-error: true
+        uses: actions/cache@v4
+        with:
+          path: /tmp/node26-out/node26-arm64
+          key: node26-arm64-${{ hashFiles('spike/node26/**') }}
+
+      - name: "Node 26 spike: build Node 26.4.0 for Android arm64 (about 2-3 h, cache miss only)"
+        if: always() && github.event.inputs.gradle_only != 'true' && steps.node26cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        env:
+          NODE26_OUT: /tmp/node26-out
+        run: bash spike/node26/build-node26-android.sh
+        shell: bash
+
+      - name: "Node 26 TEST ONLY: add libnode26.so to a copy of the arm64 test APK (same debug signer)"
+        if: always() && github.event.inputs.gradle_only != 'true'
+        continue-on-error: true
+        shell: bash
+        run: |
+          SRC=phase10/out/smoke/TEST-ONLY-debugkey-app-release-arm64-v8a.apk
+          if [ ! -f "$SRC" ]; then
+            echo "::notice title=node26-test-apk::no arm64 test-only APK from this run; skipped"
+            exit 0
+          fi
+          bash .github/scripts/node26-inject-test-apk.sh "$SRC" /tmp/node26-out/node26-arm64 node26-test/NODE26-TEST-ONLY-arm64-v8a.apk
+
+      - name: "Upload the Node 26 TEST-ONLY APK (debug-signed, not a release)"
+        if: always() && github.event.inputs.gradle_only != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencode-android-arm64-v8a-node26-test-only
+          path: node26-test/
+          if-no-files-found: ignore

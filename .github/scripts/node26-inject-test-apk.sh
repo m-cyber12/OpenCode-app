@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# TEST ONLY. Makes a copy of the phase10 arm64 test APK with the Node 26 spike binary
+# added as lib/arm64-v8a/libnode26.so. The copy is signed with the same debug key as
+# the source (androiddebugkey, from the runner's ~/.android/debug.keystore), so it can
+# be installed over the test APK from the same run. The release APK is never touched.
+#
+# Usage: inject-node26-test-apk.sh <source.apk> <node26-dir> <out.apk>
+#   <node26-dir> contains bin/node and optionally bin/libc++_shared.so.
+set -Eeuo pipefail
+trap 'echo "::error title=node26-test-apk::unplanned failure at line $LINENO: $BASH_COMMAND"' ERR
+
+SRC="$1"; NODE_DIR="$2"; OUT="$3"
+ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+KS="${HOME}/.android/debug.keystore"
+
+fatal() { echo "::error title=node26-test-apk::$*"; exit 1; }
+[ -f "$SRC" ] || fatal "source APK missing: $SRC"
+[ -x "$NODE_DIR/bin/node" ] || fatal "Node 26 binary missing: $NODE_DIR/bin/node"
+[ -f "$KS" ] || fatal "debug keystore missing ($KS); the phase10 build creates it"
+BT="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)"
+ZIPALIGN="${BT}zipalign"
+APKSIGNER="${BT}apksigner"
+[ -x "$ZIPALIGN" ] && [ -x "$APKSIGNER" ] || fatal "zipalign/apksigner not found in $BT"
+
+WORK="$(mktemp -d)"
+cp "$SRC" "$WORK/in.apk"
+if unzip -l "$WORK/in.apk" | grep -q 'lib/arm64-v8a/libc++_shared.so'; then
+  zip -q -d "$WORK/in.apk" 'lib/arm64-v8a/libc++_shared.so'
+  echo "replacing existing lib/arm64-v8a/libc++_shared.so with the NDK one Node 26 was built with"
+fi
+mkdir -p "$WORK/add/lib/arm64-v8a"
+cp "$NODE_DIR/bin/node" "$WORK/add/lib/arm64-v8a/libnode26.so"
+if [ -f "$NODE_DIR/bin/libc++_shared.so" ]; then
+  cp "$NODE_DIR/bin/libc++_shared.so" "$WORK/add/lib/arm64-v8a/libc++_shared.so"
+fi
+( cd "$WORK/add" && zip -q -0 "$WORK/in.apk" lib/arm64-v8a/*.so )
+"$ZIPALIGN" -f -P 16 4 "$WORK/in.apk" "$WORK/aligned.apk"
+mkdir -p "$(dirname "$OUT")"
+"$APKSIGNER" sign --ks "$KS" --ks-key-alias androiddebugkey \
+  --ks-pass pass:android --key-pass pass:android --out "$OUT" "$WORK/aligned.apk"
+
+# Same signer as the source, and the Node 26 entry is present.
+src_digest="$("$APKSIGNER" verify --print-certs "$SRC" | grep 'certificate SHA-256 digest' | head -n 1)"
+out_digest="$("$APKSIGNER" verify --print-certs "$OUT" | grep 'certificate SHA-256 digest' | head -n 1)"
+[ -n "$src_digest" ] && [ "$src_digest" = "$out_digest" ] || fatal "signer differs from the source APK"
+unzip -l "$OUT" | grep -q 'lib/arm64-v8a/libnode26.so' || fatal "libnode26.so missing from the output APK"
+echo "signer: $out_digest"
+sha256sum "$OUT"
+ls -la "$OUT"

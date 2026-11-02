@@ -46,3 +46,16 @@ the same Termux patches, zlib, NDK and configure flags as the shipping Node 24.2
 
 Verified: the CI build completes and the ICU data symbol is present (run 41436063697).
 Not yet verified: the ELF checks on the real binary (the next run asserts them), and running the binary on a device.
+
+## Test APK on the phone (2026-11-02)
+
+- The phase10 release workflow now ends with three steps (all `continue-on-error`, release
+  artifacts untouched): restore or build Node 26 (cache key = `spike/node26/**`), copy the arm64
+  TEST-ONLY APK and add `lib/arm64-v8a/libnode26.so` (plus the NDK `libc++_shared.so`) with
+  `.github/scripts/node26-inject-test-apk.sh`, then upload artifact
+  `opencode-android-arm64-v8a-node26-test-only`.
+- Signed with the same debug key as the source APK, so it installs over the test APK from the same run.
+- Settings > Diagnostics lists a "Node 26 spike probe (test build only)" section: `node --version`
+  and a small `-p` script, with exit codes and output. The release APK reports "not bundled".
+- Not verified until the owner runs it on a phone: whether Node 26 starts inside the app's
+  runtime (linker, libc++, SELinux), and the output of the probe.

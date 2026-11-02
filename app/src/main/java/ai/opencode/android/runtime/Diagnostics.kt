@@ -68,6 +68,10 @@ data class Diagnostics(
             }
             sb.appendLine()
 
+            sb.appendLine("## Node 26 spike probe (test build only)")
+            sb.appendLine(Node26Probe.report(paths.nativeLibraryDir, paths.filesDir))
+            sb.appendLine()
+
             sb.appendLine("## Layout")
             sb.appendLine("filesDir=${paths.filesDir}")
             sb.appendLine("nativeLibraryDir=${paths.nativeLibraryDir}")
