@@ -13,6 +13,7 @@ set -Eeuo pipefail
 # Any unplanned failure is also reported as an annotation with the command that failed.
 trap 'echo "::error title=node26-spike::unplanned failure at line $LINENO: $BASH_COMMAND (exit $?)"' ERR
 
+ROOT="$(cd "$(dirname "$0")" && pwd)"
 NODE_VERSION="26.4.0"
 TERMUX_PIN="2d6b9d566c2e933c50e675198a0d7847a96deb61"   # same pin as the Node 24 recipe
 ZLIB_PIN="v1.3.1"                                       # same pin as the Node 24 recipe
@@ -55,9 +56,7 @@ tar xzf "$WORK/termux.tgz" -C "$WORK/termux-patches" --strip-components=3 \
 
 # 3. Apply the same build/runtime patch list the Node 24 recipe applies, minus the
 #    V8 trap-handler patch. That patch deletes the whole trap-handler support block
-#    for the v24 header. Node 26's header already excludes Android in every support
-#    condition and has `#error` if the trap handler is enabled on Android, so the
-#    build itself checks the guard. Any other patch failing stops the build.
+#    for the v24 header. The Android trap-handler setup is handled by step 3b.
 PATCHES="avoid-ficlone-ioctl.patch common.gypi.patch
 deps-uv-src-unix-core.c.patch deps-uv-src-unix-process.c.patch deps-uv-uv.gyp.patch
 deps-uvwasi-src-uvwasi.c.patch deps-v8-src-flags-flag-definitions.h.patch
@@ -68,33 +67,23 @@ tools-v8_gypfiles-v8.gyp.patch"
 for p in $PATCHES; do
   patch -p1 -s -d "$WORK/node-src" < "$WORK/termux-patches/$p" || fatal "patch failed: $p"
 done
-note "patches applied: $(echo $PATCHES | wc -w) (skipped: deps-v8-src-trap-handler-trap-handler.h.patch, see script comment)"
+note "termux patches applied: $(echo $PATCHES | wc -w) (skipped: deps-v8-src-trap-handler-trap-handler.h.patch)"
 
-# Run 41342916704: with the trap-handler patch skipped, mksnapshot failed to link on
-# `undefined symbol: trap_handler::TryHandleSignal`. api.cc calls TryHandleSignal
-# whenever V8_TRAP_HANDLER_SUPPORTED is true, and the posix entry point is compiled
-# that way in the mksnapshot build. Android has no V8 trap handler, so this entry
-# point returns false (what the #else branch already does). The change is limited to
-# that one #if line.
-perl -0pi -e 's/(bool TryHandleWebAssemblyTrapPosix\(.*?\{\n)#if V8_ENABLE_WEBASSEMBLY && V8_TRAP_HANDLER_SUPPORTED\n/$1#if 0  \/\/ spike: Android has no V8 trap handler; this reference cannot link\n/s' \
-  "$WORK/node-src/deps/v8/src/api/api.cc"
-grep -q '#if 0  // spike: Android has no V8 trap handler' "$WORK/node-src/deps/v8/src/api/api.cc" \
-  || fatal "api.cc trap-handler guard was not applied"
-note "api.cc: TryHandleWebAssemblyTrapPosix guarded for Android"
-
-# Run 41355013606 failed at the host mksnapshot link with `undefined symbol:
-# v8_internal_simulator_ProbeMemory`. Host mksnapshot builds the arm64 simulator for
-# cross builds, and the simulator sees the trap handler as supported on the Linux host,
-# so it references trap-handler symbols that its link does not provide. The Termux
-# patch removed this trap-handler configuration for Node 24. Here the same effect is
-# applied as a configuration change: no trap handler, for host tools and for Android,
-# which is exactly what the Android target already gets.
-perl -0pi -e 's/#define V8_TRAP_HANDLER_SUPPORTED true/#define V8_TRAP_HANDLER_SUPPORTED false  \/\/ spike: no V8 trap handler (host tools too)/g; s/^#define V8_TRAP_HANDLER_VIA_SIMULATOR\n//mg' \
-  "$WORK/node-src/deps/v8/src/trap-handler/trap-handler.h"
-if grep -q 'SUPPORTED true' "$WORK/node-src/deps/v8/src/trap-handler/trap-handler.h"; then
-  fatal "trap-handler.h still enables the trap handler"
-fi
-note "trap-handler.h: V8 trap handler disabled for this build"
+# 3b. Upstream nodejs/node PR #65774 (open; head 98da35b1, issue #65771): V8 POSIX
+#     trap-handler sources are compiled for Android builds, including the host
+#     arm64-simulator helper, while Android trap-handler ACTIVATION stays off.
+#     Earlier spike runs used local workarounds instead (an api.cc `#if 0` guard and a
+#     global V8_TRAP_HANDLER_SUPPORTED=false). Those left the host mksnapshot linking
+#     against trap-handler symbols that were never compiled (runs 41342916704,
+#     41355013606). The upstream change fixes the source selection rather than hiding
+#     the references, so the workarounds are removed.
+UPSTREAM_PATCH="$ROOT/patches/nodejs-pr65774-v8-android-posix-trap.patch"
+patch -p1 -s -d "$WORK/node-src" < "$UPSTREAM_PATCH" || fatal "upstream PR 65774 patch did not apply"
+grep -q '!V8_OS_ANDROID' "$WORK/node-src/deps/v8/src/trap-handler/trap-handler.h" \
+  || fatal "trap-handler.h: Android exclusion from the simulator branch missing"
+grep -q 'OS in "linux mac win openharmony android"' "$WORK/node-src/tools/v8_gypfiles/v8.gyp" \
+  || fatal "v8.gyp: Android not added to the simulator trap-handler sources"
+note "upstream PR 65774 applied: Android POSIX trap-handler sources, activation off"
 
 ( cd "$WORK/node-src"
   # Same runtime rewrites as the Node 24 recipe: the app's data dir replaces the
@@ -131,11 +120,10 @@ done
 if [ "$CHOSEN" != "$NDK_PIN" ]; then
   echo "::notice title=node26-spike::using NDK $CHOSEN (pinned $NDK_PIN failed the atomic_ref probe)"
 fi
-NDK_PIN="$CHOSEN"
-NDK_HOME="$ANDROID_HOME/ndk/$NDK_PIN"
+NDK_HOME="$ANDROID_HOME/ndk/$CHOSEN"
 NDK_BIN="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
-note "ndk: $NDK_PIN"
-[ -x "$NDK_BIN/${TRIPLE}29-clang" ] || fatal "NDK $NDK_PIN has no clang wrapper"
+note "ndk: $CHOSEN"
+[ -x "$NDK_BIN/${TRIPLE}29-clang" ] || fatal "NDK $CHOSEN has no clang wrapper"
 NINJA="$(command -v ninja || true)"
 if [ -z "$NINJA" ]; then
   NINJA="$(find "$(dirname "$ANDROID_HOME")" "$ANDROID_HOME" -type f -name ninja -perm -111 2>/dev/null | sort -r | head -1 || true)"
@@ -159,6 +147,8 @@ note "zlib built: $(stat -c%s "$ZPREFIX/lib/libz.a") bytes"
 
 # 6. Node itself. Same flags as the Node 24 recipe: full ICU, no inspector,
 #    no snapshot, no code cache, no bundled npm/corepack (the app ships its own).
+#    Node 26 additions: --v8-disable-temporal-support (Temporal is Rust; a host-only
+#    rustup toolchain cannot produce the Android static library for the link).
 NDKHOME_ABS="$(cd "$NDK_HOME" && pwd)"
 export PATH="$NDK_BIN:$PATH"
 export CC="$NDK_BIN/${TRIPLE}29-clang" CXX="$NDK_BIN/${TRIPLE}29-clang++" LINK="$NDK_BIN/${TRIPLE}29-clang++"
@@ -172,6 +162,7 @@ cd "$WORK/node-src"
   --openssl-no-asm --with-intl=full-icu --without-inspector \
   --without-node-snapshot --without-node-code-cache \
   --shared-zlib --shared-zlib-includes="$ZPREFIX/include" --shared-zlib-libpath="$ZPREFIX/lib" \
+  --v8-disable-temporal-support \
   --without-npm --ninja > "$OUT/node-configure.log" 2>&1 \
   || fatal "configure.py failed: $(tail -n 4 "$OUT/node-configure.log" | tr '\n' ' ')"
 # Node 26 made corepack opt-in (--with-corepack), so Node 24's --without-corepack
@@ -183,13 +174,21 @@ if find out/Release/obj.host -name '*.ninja' -type f -exec grep -lF "$ZPREFIX" {
   fatal "target zlib path survived in a host Ninja rule"
 fi
 note "ninja start $(date -u +%FT%TZ)"
-timeout 14400 "$NINJA" -C out/Release -j4 > "$OUT/node-ninja.log" 2>&1 \
-  || { tail -n 80 "$OUT/node-ninja.log" | tee -a "$REPORT"
-       # Annotation text is capped at 64 KB; the first failing action's output is the useful part.
-       first_fail="$(grep -m1 -n 'FAILED:' "$OUT/node-ninja.log" | cut -d: -f1 || true)"
-       detail="$(sed -n "${first_fail:-1},$((${first_fail:-1}+40))p" "$OUT/node-ninja.log" | cut -c1-300)"
-       echo "::group::first failing ninja action (40 lines)"; echo "$detail"; echo "::endgroup::"
-       fatal "node build failed at ninja line ${first_fail:-?}; see the step log group above"; }
+if ! timeout 14400 "$NINJA" -C out/Release -j4 > "$OUT/node-ninja.log" 2>&1; then
+  tail -n 80 "$OUT/node-ninja.log" >> "$REPORT"
+  # The first failing action (FAILED: line and what follows) is the useful part.
+  first_fail="$(grep -m1 -n 'FAILED:' "$OUT/node-ninja.log" | cut -d: -f1 || true)"
+  start="${first_fail:-1}"
+  detail="$(sed -n "${start},$((start+40))p" "$OUT/node-ninja.log" | cut -c1-300 || true)"
+  echo "::group::first failing ninja action (line $start, 40 lines)"
+  echo "$detail"
+  echo "::endgroup::"
+  # Same text as an annotation, newlines escaped, capped at 12 KB, so it can be read
+  # through the API when the job log cannot be downloaded.
+  esc="$(printf '%s\n' "$detail" | head -c 12000 | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk '{printf "%s%%0A", $0}')"
+  echo "::error title=node26-ninja-failure::$esc"
+  fatal "node build failed at ninja line $start (annotation: node26-ninja-failure)"
+fi
 note "ninja finished $(date -u +%FT%TZ)"
 
 # 7. Verify the output the same way the Node 24 recipe does.

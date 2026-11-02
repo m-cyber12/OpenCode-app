@@ -5,12 +5,12 @@ the same Termux patches, zlib, NDK and configure flags as the shipping Node 24.2
 
 - Script: `build-node26-android.sh` (`--prepare-only` fetches and patches, no NDK needed).
 - Workflow: `.github/workflows/node26-android-spike.yml` (CI artifact `node26-android-arm64`).
+- Upstream patch: `patches/nodejs-pr65774-v8-android-posix-trap.patch` (nodejs/node PR #65774,
+  open, head `98da35b1`; issue #65771). Applied after the Termux patches.
 - Output stays outside the repo (`/tmp/node26-out` in CI). Nothing large is committed.
 - Shipping Node 24 pin (`phase4/scripts/10-build-payload.sh`) is not changed by this spike.
 
-## Status (2026-11-01)
-
-Runs on this branch (manual by push, about 2 h each):
+## Status
 
 | Run | Result |
 |---|---|
@@ -21,14 +21,18 @@ Runs on this branch (manual by push, about 2 h each):
 | 41342916704 | host `mksnapshot` link: `undefined symbol trap_handler::TryHandleSignal` |
 | 41355013606 | host `mksnapshot` link: `undefined symbol v8_internal_simulator_ProbeMemory` |
 | 41363662179 | V8 `mksnapshot` links; `node_mksnapshot` fails (log not readable from the sandbox) |
+| 41383009551 | failed at ninja line 61263 with NDK 30.0; first failing action not readable (only annotations are) |
 
-Fixes so far are in the script: NDK probe, V8 trap-handler configuration for
-host tools (no trap handler, as the Android target already has), and a guard at the
-posix trap entry point in `api.cc`.
+## Changes after 41383009551 (2026-11-02)
 
-Open: the `node_mksnapshot` failure. The next run annotates the first failing ninja
-action so the cause is visible in the workflow log.
+- Replaced the local trap-handler workarounds (api.cc `#if 0` guard, global
+  `V8_TRAP_HANDLER_SUPPORTED=false`) with upstream nodejs/node PR #65774. The PR
+  compiles the Android POSIX trap-handler sources and keeps Android trap-handler
+  activation off. The old workarounds hid missing symbols rather than fixing source selection.
+- Added `--v8-disable-temporal-support` (Node 26 Temporal is Rust; the cross-build cannot link it
+  with a host-only rustup toolchain). Also used by the community Android build for Node 26
+  (`andiasriefail/node-android-build`, `patches/26/custom/configure-args`).
+- The first failing ninja action is now written to an `::error::` annotation (newlines escaped,
+  12 KB cap), so the cause can be read through the API when the log download fails.
 
 Not yet verified: the full build, the ICU check on the output, and running the binary on a device.
-
-_Run requested 2026-11-02 (owner approved, option 1): next build with the ninja-action annotation from `83f2a1bc`._
