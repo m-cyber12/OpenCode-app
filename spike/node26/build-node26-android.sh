@@ -210,6 +210,30 @@ chmod 755 "$DEST/bin/node"
   echo "--- LOAD segment alignment (16 KiB pages = 0x4000)"; "$NDK_BIN/llvm-readelf" -lW "$DEST/bin/node" | awk '/LOAD/ {print $NF}' | sort | uniq -c
   echo "--- NEEDED libraries"; "$NDK_BIN/llvm-readelf" -d "$DEST/bin/node" | grep NEEDED || true
 } | tee -a "$REPORT"
+# ELF-CHECK-BEGIN
+# Assertions on the output. The report cannot be read from the sandbox (artifact
+# download is blocked), so a wrong interpreter or alignment must fail the job itself.
+# Expect: AArch64 ELF, Bionic linker, every LOAD segment aligned to 16 KiB (0x4000).
+ELF_WANT_INTERP="/system/bin/linker64"
+ELF_BIN="${ELF_BIN:-$DEST/bin/node}"
+ELF_RE="${ELF_RE:-$NDK_BIN/llvm-readelf}"
+lout="$("$ELF_RE" -l "$ELF_BIN" || true)"
+interp="$(printf '%s\n' "$lout" | sed -n 's/.*Requesting program interpreter: \([^]]*\)\].*/\1/p' | head -n 1)"
+hdr="$("$ELF_RE" -h "$ELF_BIN" || true)"
+case "$hdr" in *AArch64*) machine_ok=yes ;; *) machine_ok=no ;; esac
+lw="$("$ELF_RE" -lW "$ELF_BIN" || true)"
+load_total=0; load_small=0
+while read -r a; do
+  [ -n "$a" ] || continue
+  load_total=$((load_total + 1))
+  [ $((a)) -ge 16384 ] || load_small=$((load_small + 1))
+done <<< "$(printf '%s\n' "$lw" | awk '$1 == "LOAD" {print $NF}')"
+note "elf: interpreter=${interp:-none} aarch64=$machine_ok load_segments=$load_total below_16k=$load_small"
+echo "::notice title=node26-elf::interpreter=${interp:-none} aarch64=$machine_ok LOAD=$load_total below16k=$load_small"
+[ "$interp" = "$ELF_WANT_INTERP" ] || fatal "interpreter '${interp:-none}', expected $ELF_WANT_INTERP"
+[ "$machine_ok" = yes ] || fatal "binary is not an AArch64 ELF"
+[ "$load_total" -gt 0 ] && [ "$load_small" -eq 0 ] || fatal "$load_small of $load_total LOAD segment(s) below 16 KiB"
+# ELF-CHECK-END
 if "$NDK_BIN/llvm-readelf" -d "$DEST/bin/node" | grep -q 'libc++_shared.so'; then
   cp "$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/$TRIPLE/libc++_shared.so" "$DEST/bin/"
   note "copied libc++_shared.so beside node (needed at run time)"

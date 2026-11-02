@@ -24,6 +24,14 @@ the same Termux patches, zlib, NDK and configure flags as the shipping Node 24.2
 | 41383009551 | failed at ninja line 61263 with NDK 30.0; first failing action not readable (only annotations are) |
 | 41436063697 | **success**: Node 26.4.0 arm64 built for Android with NDK 30.0.16248370 and PR 65774; ICU data check passed (the script fails otherwise). ELF and alignment report not readable from the sandbox (artifact blob download blocked). Not run on a device. |
 
+## Verification after 41436063697 (2026-11-02)
+
+- The script now checks the output and fails the job if the interpreter is not
+  `/system/bin/linker64`, the binary is not AArch64, or any LOAD segment is aligned below 16 KiB.
+  The result is also written as a `node26-elf` notice annotation, because the artifact cannot be
+  downloaded from the sandbox.
+- Tested the check against a mock good output (passes) and host `/bin/ls` (fails for the right reasons).
+
 ## Changes after 41383009551 (2026-11-02)
 
 - Replaced the local trap-handler workarounds (api.cc `#if 0` guard, global
@@ -37,5 +45,4 @@ the same Termux patches, zlib, NDK and configure flags as the shipping Node 24.2
   12 KB cap), so the cause can be read through the API when the log download fails.
 
 Verified: the CI build completes and the ICU data symbol is present (run 41436063697).
-Not yet verified: the ELF interpreter and 16 KiB alignment (printed to the report, not readable here),
-and running the binary on a device.
+Not yet verified: the ELF checks on the real binary (the next run asserts them), and running the binary on a device.
