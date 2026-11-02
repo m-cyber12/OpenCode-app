@@ -22,6 +22,7 @@ the same Termux patches, zlib, NDK and configure flags as the shipping Node 24.2
 | 41355013606 | host `mksnapshot` link: `undefined symbol v8_internal_simulator_ProbeMemory` |
 | 41363662179 | V8 `mksnapshot` links; `node_mksnapshot` fails (log not readable from the sandbox) |
 | 41383009551 | failed at ninja line 61263 with NDK 30.0; first failing action not readable (only annotations are) |
+| 41436063697 | **success**: Node 26.4.0 arm64 built for Android with NDK 30.0.16248370 and PR 65774; ICU data check passed (the script fails otherwise). ELF and alignment report not readable from the sandbox (artifact blob download blocked). Not run on a device. |
 
 ## Changes after 41383009551 (2026-11-02)
 
@@ -35,4 +36,6 @@ the same Termux patches, zlib, NDK and configure flags as the shipping Node 24.2
 - The first failing ninja action is now written to an `::error::` annotation (newlines escaped,
   12 KB cap), so the cause can be read through the API when the log download fails.
 
-Not yet verified: the full build, the ICU check on the output, and running the binary on a device.
+Verified: the CI build completes and the ICU data symbol is present (run 41436063697).
+Not yet verified: the ELF interpreter and 16 KiB alignment (printed to the report, not readable here),
+and running the binary on a device.
