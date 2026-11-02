@@ -30,3 +30,5 @@ Open: the `node_mksnapshot` failure. The next run annotates the first failing ni
 action so the cause is visible in the workflow log.
 
 Not yet verified: the full build, the ICU check on the output, and running the binary on a device.
+
+_Run requested 2026-11-02 (owner approved, option 1): next build with the ninja-action annotation from `83f2a1bc`._
