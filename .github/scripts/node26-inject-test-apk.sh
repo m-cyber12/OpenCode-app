@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # TEST ONLY. Makes a copy of the phase10 arm64 test APK with the Node 26 spike binary
-# added as lib/arm64-v8a/libnode26.so. The copy is signed with the same debug key as
-# the source (androiddebugkey, from the runner's ~/.android/debug.keystore), so it can
-# be installed over the test APK from the same run. The release APK is never touched.
+# added as lib/arm64-v8a/libnode26.so. The copy is signed with the committed PUBLIC
+# test-only key (app/testonly-debug-signing.p12, alias androiddebugkey), the same key
+# that signs the phase10 test APK, so it installs as an update over it. The release
+# APK is never touched.
 #
 # Usage: inject-node26-test-apk.sh <source.apk> <node26-dir> <out.apk>
 #   <node26-dir> contains bin/node and optionally bin/libc++_shared.so.
@@ -11,12 +12,12 @@ trap 'echo "::error title=node26-test-apk::unplanned failure at line $LINENO: $B
 
 SRC="$1"; NODE_DIR="$2"; OUT="$3"
 ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
-KS="${HOME}/.android/debug.keystore"
+KS="${TESTONLY_STORE:-app/testonly-debug-signing.p12}"
 
 fatal() { echo "::error title=node26-test-apk::$*"; exit 1; }
 [ -f "$SRC" ] || fatal "source APK missing: $SRC"
 [ -x "$NODE_DIR/bin/node" ] || fatal "Node 26 binary missing: $NODE_DIR/bin/node"
-[ -f "$KS" ] || fatal "debug keystore missing ($KS); the phase10 build creates it"
+[ -f "$KS" ] || fatal "test-only signing key missing: $KS"
 BT="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)"
 ZIPALIGN="${BT}zipalign"
 APKSIGNER="${BT}apksigner"
@@ -36,8 +37,12 @@ fi
 ( cd "$WORK/add" && zip -q -0 "$WORK/in.apk" lib/arm64-v8a/*.so )
 "$ZIPALIGN" -f -P 16 4 "$WORK/in.apk" "$WORK/aligned.apk"
 mkdir -p "$(dirname "$OUT")"
-"$APKSIGNER" sign --ks "$KS" --ks-key-alias androiddebugkey \
-  --ks-pass pass:android --key-pass pass:android --out "$OUT" "$WORK/aligned.apk"
+# Same signing scheme as phase10/scripts/40-release-verify.sh sign_testonly().
+"$APKSIGNER" sign --ks "$KS" --ks-type PKCS12 --ks-key-alias androiddebugkey \
+  --ks-pass pass:android --key-pass pass:android \
+  --v1-signing-enabled false --v2-signing-enabled true \
+  --v3-signing-enabled true --v4-signing-enabled false \
+  --out "$OUT" "$WORK/aligned.apk"
 
 # Same signer as the source, and the Node 26 entry is present.
 src_digest="$("$APKSIGNER" verify --print-certs "$SRC" | grep 'certificate SHA-256 digest' | head -n 1)"
