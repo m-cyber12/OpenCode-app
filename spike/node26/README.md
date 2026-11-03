@@ -59,3 +59,12 @@ Not yet verified: the ELF checks on the real binary (the next run asserts them),
   and a small `-p` script, with exit codes and output. The release APK reports "not bundled".
 - Not verified until the owner runs it on a phone: whether Node 26 starts inside the app's
   runtime (linker, libc++, SELinux), and the output of the probe.
+
+## Device result (2026-11-03, realme RMX3830, Android 15, SDK 35, arm64)
+
+- Node 26.4.0 runs inside the app: `libnode26.so --version` exit 0 (`v26.4.0`); `-p` script exit 0
+  (ICU 78.3, V8 14.6.202.34-node.21, `Intl.Segmenter` works, time zone `Asia/Tehran`).
+- The binary is 93,170,928 bytes (about 88.9 MiB), stripped. The release APK is about 200.8 MiB
+  against a 230 MiB cap, so bundling it as-is would put the APK near 290 MiB. Size is now the blocker.
+- Not tested: the OpenCode v2 server on Node 26, and any server routes. The Bun server path
+  (v1 1.18.23) started and reported healthy in the same diagnostics.
