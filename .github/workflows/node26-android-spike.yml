@@ -13,6 +13,12 @@ on:
 
 jobs:
   build:
+    # Two ICU modes in parallel: full-icu (the shipped default) and small-icu (root + en).
+    # Each job uploads its own report, so the size difference can be read from both.
+    strategy:
+      fail-fast: false
+      matrix:
+        icu: [full-icu, small-icu]
     runs-on: ubuntu-latest
     timeout-minutes: 300
     permissions:
@@ -21,6 +27,7 @@ jobs:
       ANDROID_HOME: /usr/local/lib/android/sdk
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
       NODE26_OUT: /tmp/node26-out
+      NODE26_ICU: ${{ matrix.icu }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,7 +51,7 @@ jobs:
           fi
           ls "$ANDROID_HOME/ndk"
 
-      - name: Build Node 26 for Android (arm64)
+      - name: Build Node 26 for Android (arm64, ${{ matrix.icu }})
         run: bash spike/node26/build-node26-android.sh
         shell: bash
 
@@ -52,7 +59,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: node26-android-arm64
+          name: node26-android-arm64-${{ matrix.icu }}
           path: |
             /tmp/node26-out/report.txt
             /tmp/node26-out/node-ninja.log

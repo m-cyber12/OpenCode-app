@@ -68,3 +68,11 @@ Not yet verified: the ELF checks on the real binary (the next run asserts them),
   against a 230 MiB cap, so bundling it as-is would put the APK near 290 MiB. Size is now the blocker.
 - Not tested: the OpenCode v2 server on Node 26, and any server routes. The Bun server path
   (v1 1.18.23) started and reported healthy in the same diagnostics.
+
+## Size experiment (2026-11-03)
+
+- Blocker: the stripped binary is 93,170,928 bytes (88.9 MiB). The APK budget is 230 MiB.
+- Plan: build both ICU modes in parallel (`NODE26_ICU=full-icu|small-icu`, matrix in
+  `node26-android-spike.yml`). The build prints a symbol-size breakdown (`size-breakdown.py`) from the
+  unstripped binary, so the ICU share is measured rather than guessed.
+- The phase10 test APK still uses full-icu, cached on `spike/node26/**`.

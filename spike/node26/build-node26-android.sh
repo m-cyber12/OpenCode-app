@@ -19,6 +19,9 @@ TERMUX_PIN="2d6b9d566c2e933c50e675198a0d7847a96deb61"   # same pin as the Node 2
 ZLIB_PIN="v1.3.1"                                       # same pin as the Node 24 recipe
 NDK_PIN="28.2.13676358"                                 # same pin as the Node 24 recipe
 TRIPLE="aarch64-linux-android"
+# ICU mode: full-icu (all locales, the shipped default) or small-icu (root + en only).
+NODE26_ICU="${NODE26_ICU:-full-icu}"
+[ "$NODE26_ICU" = "full-icu" ] || [ "$NODE26_ICU" = "small-icu" ] || { echo "bad NODE26_ICU=$NODE26_ICU" >&2; exit 1; }
 PREPARE_ONLY="${1:-}"
 
 OUT="${NODE26_OUT:-/tmp/node26-out}"
@@ -159,7 +162,7 @@ export GYP_DEFINES="target_arch=arm64 v8_target_arch=arm64 android_target_arch=a
 cd "$WORK/node-src"
 /usr/bin/python3 configure.py \
   --dest-cpu=arm64 --dest-os=android --cross-compiling \
-  --openssl-no-asm --with-intl=full-icu --without-inspector \
+  --openssl-no-asm --with-intl=$NODE26_ICU --without-inspector \
   --without-node-snapshot --without-node-code-cache \
   --shared-zlib --shared-zlib-includes="$ZPREFIX/include" --shared-zlib-libpath="$ZPREFIX/lib" \
   --v8-disable-temporal-support \
@@ -197,7 +200,13 @@ BUILT="$WORK/node-src/out/Release/node"
 "$NDK_BIN/llvm-nm" "$BUILT" > "$WORK/nm.txt" 2>/dev/null || true
 grep -Eq 'icudt[0-9]+[lb]?_dat' "$WORK/nm.txt" || grep -aEq 'icudt[0-9]+[lb]' "$BUILT" \
   || fatal "no bundled ICU data (full-icu not built)"
-note "ICU data symbol: present"
+note "ICU data symbol: present (icu mode: $NODE26_ICU)"
+
+# Size breakdown of the unstripped binary (where the bytes are). The stripped size is
+# printed at the end; this breakdown is what decides the next size lever.
+"$NDK_BIN/llvm-nm" --print-size --defined-only "$BUILT" > "$WORK/nm-size.txt" 2>/dev/null || true
+note "unstripped size: $(stat -c%s "$BUILT") bytes"
+python3 "$ROOT/size-breakdown.py" "$WORK/nm-size.txt" "$NODE26_ICU" | tee -a "$REPORT"
 
 DEST="$OUT/node26-arm64"
 mkdir -p "$DEST/bin"
@@ -240,4 +249,5 @@ if "$NDK_BIN/llvm-readelf" -d "$DEST/bin/node" | grep -q 'libc++_shared.so'; the
 fi
 sha256sum "$DEST/bin/node" | tee -a "$REPORT"
 ls -la "$DEST/bin/node" | tee -a "$REPORT"
+echo "::notice title=node26-size::icu=$NODE26_ICU stripped=$(stat -c%s "$DEST/bin/node") bytes (libc++ $(stat -c%s "$DEST/bin/libc++_shared.so" 2>/dev/null || echo none))"
 note "done: $DEST/bin/node (not run here: this host is x86_64 Linux, the binary targets Android)"
