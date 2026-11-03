@@ -214,7 +214,23 @@ jobs:
         run: bash spike/node26/build-node26-android.sh
         shell: bash
 
-      - name: "Node 26 TEST ONLY: add libnode26.so to a copy of the arm64 test APK (same debug signer)"
+      # ---- OpenCode v2 TEST-ONLY bundle for the Node 26 probe (spike/opencode-v2). Not in the release.
+      - name: "Node 26 v2 TEST ONLY: set up Bun 1.4.4 (the v2 repo pin)"
+        if: always() && github.event.inputs.gradle_only != 'true'
+        continue-on-error: true
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+
+      - name: "Node 26 v2 TEST ONLY: build the OpenCode v2.2.5 Node bundle (linux-arm64 assets)"
+        if: always() && github.event.inputs.gradle_only != 'true'
+        continue-on-error: true
+        env:
+          V2_OUT: /tmp/v2-out
+        run: bash spike/opencode-v2/build-v2-bundle.sh
+        shell: bash
+
+      - name: "Node 26 TEST ONLY: add libnode26.so (+ v2 bundle when built) to a copy of the arm64 test APK (same debug signer)"
         if: always() && github.event.inputs.gradle_only != 'true'
         continue-on-error: true
         shell: bash
@@ -224,7 +240,13 @@ jobs:
             echo "::notice title=node26-test-apk::no arm64 test-only APK from this run; skipped"
             exit 0
           fi
-          bash .github/scripts/node26-inject-test-apk.sh "$SRC" /tmp/node26-out/node26-arm64 node26-test/NODE26-TEST-ONLY-arm64-v8a.apk
+          V2ARG=""
+          if [ -f /tmp/v2-out/node26-v2.zip ]; then
+            V2ARG=/tmp/v2-out/node26-v2.zip
+          else
+            echo "::warning title=node26-test-apk::v2 bundle not built; the APK carries Node 26 only"
+          fi
+          bash .github/scripts/node26-inject-test-apk.sh "$SRC" /tmp/node26-out/node26-arm64 node26-test/NODE26-TEST-ONLY-arm64-v8a.apk $V2ARG
 
       - name: "Upload the Node 26 TEST-ONLY APK (debug-signed, not a release)"
         if: always() && github.event.inputs.gradle_only != 'true'

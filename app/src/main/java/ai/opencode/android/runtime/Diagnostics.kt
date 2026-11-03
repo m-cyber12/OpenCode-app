@@ -72,6 +72,10 @@ data class Diagnostics(
             sb.appendLine(Node26Probe.report(paths.nativeLibraryDir, paths.filesDir))
             sb.appendLine()
 
+            sb.appendLine("## OpenCode v2 on Node 26 probe (test build only)")
+            sb.appendLine(Node26V2Probe.report(context, paths.nativeLibraryDir, paths.filesDir))
+            sb.appendLine()
+
             sb.appendLine("## Layout")
             sb.appendLine("filesDir=${paths.filesDir}")
             sb.appendLine("nativeLibraryDir=${paths.nativeLibraryDir}")
