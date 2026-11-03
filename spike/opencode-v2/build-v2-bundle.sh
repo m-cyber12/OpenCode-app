@@ -7,14 +7,28 @@
 # Source: anomalyco/opencode at the tag below (v2.2.5). Bun 1.4.4 is the
 # packageManager pin in that repo.
 set -Eeuo pipefail
-trap 'echo "::error title=node26-v2::unplanned failure at line $LINENO: $BASH_COMMAND"' ERR
 
 V2_REPO="${V2_REPO:-https://github.com/anomalyco/opencode}"
 V2_TAG="${V2_TAG:-v2.2.5}"
 V2_WORK="${V2_WORK:-/tmp/v2-src}"
 V2_OUT="${V2_OUT:-/tmp/v2-out}"
 
-fatal() { echo "::error title=node26-v2::$*"; exit 1; }
+LOG="${V2_LOG:-/tmp/v2-build.log}"
+: > "$LOG"
+
+# The step log is not downloadable from the sandbox, so a failure posts the tail of
+# this build log as one annotation (newlines encoded for the workflow command).
+annotate() {
+  local reason="$1" tail_text
+  tail_text="reason: ${reason}"$'\n'"$(tail -c 3000 "$LOG" 2>/dev/null || true)"
+  tail_text="${tail_text//'%'/%25}"
+  tail_text="${tail_text//$'\r'/%0D}"
+  tail_text="${tail_text//$'\n'/%0A}"
+  echo "::error title=node26-v2 build failed::${tail_text}"
+}
+fail_with_log() { annotate "$1"; echo "$1"; exit 1; }
+trap 'fail_with_log "unplanned failure at line $LINENO: $BASH_COMMAND"' ERR
+fatal() { fail_with_log "$*"; }
 command -v bun >/dev/null 2>&1 || fatal "bun is not on PATH (setup-bun step missing?)"
 command -v zip >/dev/null 2>&1 || fatal "zip is not installed"
 
@@ -23,12 +37,15 @@ git clone --depth 1 --branch "$V2_TAG" "$V2_REPO" "$V2_WORK"
 echo "v2 source: $(git -C "$V2_WORK" rev-parse --short HEAD) ($V2_TAG)"
 
 cd "$V2_WORK"
-bun install --frozen-lockfile
+# Frozen install on this x64 runner would skip the linux-arm64 native packages (the
+# platform fields in bun.lock). build-node.ts runs `bun install --os=* --cpu=*` itself
+# unless --skip-install is given, so leave that out.
+bun install --frozen-lockfile 2>&1 | tee -a "$LOG"
 
 # --bundle-only skips the SEA binary (needs a Node 26 builder and nodejs.org).
 # OPENCODE_TARGET=linux-arm64 picks the arm64 asset set, matching the phone.
 cd packages/cli
-OPENCODE_TARGET=linux-arm64 bun run script/build-node.ts --bundle-only --skip-install
+OPENCODE_TARGET=linux-arm64 bun run script/build-node.ts --bundle-only 2>&1 | tee -a "$LOG"
 
 [ -f dist-node/opencode.mjs ] || fatal "dist-node/opencode.mjs was not produced"
 [ -d dist-node/assets ] || fatal "dist-node/assets was not produced"
