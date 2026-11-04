@@ -110,7 +110,6 @@ internal object Node26V2Probe {
         val pb = ProcessBuilder(
             bin.absolutePath,
             "--experimental-ffi",
-            "--use-system-ca",
             "--disable-warning=ExperimentalWarning",
             entry.absolutePath,
             "serve",
@@ -270,10 +269,15 @@ internal object Node26V2Probe {
         return "$waited; messages HTTP $c4 -> ${verdict(b4)}"
     }
 
+    /** Shows the text around the first "error" in the message list, not just its tail. */
     private fun verdict(body: String): String {
         val items = runCatching { unwrapArray(body).length() }.getOrDefault(-1)
-        val tag = if (body.contains("error", ignoreCase = true)) "ERROR-IN-MESSAGES" else "CHECK-TEXT"
-        return "$tag items=$items tail=${body.replace("\n", " ").takeLast(260)}"
+        val flat = body.replace("\n", " ")
+        val at = flat.indexOf("error", ignoreCase = true)
+        if (at < 0) return "CHECK-TEXT items=$items tail=${flat.takeLast(260)}"
+        val from = (at - 80).coerceAtLeast(0)
+        val to = (at + 320).coerceAtMost(flat.length)
+        return "ERROR-IN-MESSAGES items=$items near-error=<<${flat.substring(from, to)}>>"
     }
 
     /** Accepts either a bare JSON array or an object with a "data" array. */

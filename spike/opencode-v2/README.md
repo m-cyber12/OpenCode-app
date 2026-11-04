@@ -63,3 +63,10 @@ Once `/api/config` answers, the probe starts one background sweep per app run:
 Pass for this slice: at least one model returns a real reply (`CHECK-TEXT` with the
 word OK in the last messages). Errors are recorded per model, not treated as failures
 of the server.
+
+### Run 3 finding: TLS failed for every model (2026-11-04)
+
+Every model failed in 1–4 s with an error in the messages. The device has no `/etc/ssl/certs`,
+and the server ran with `--use-system-ca`. With that flag Node loads only the OS certificates
+and drops its built-in roots, so every HTTPS call to a provider failed. The flag is removed
+for Android. The sweep now shows the text around the first "error" in each message list.
