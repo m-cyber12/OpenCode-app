@@ -76,3 +76,9 @@ Not yet verified: the ELF checks on the real binary (the next run asserts them),
   `node26-android-spike.yml`). The build prints a symbol-size breakdown (`size-breakdown.py`) from the
   unstripped binary, so the ICU share is measured rather than guessed.
 - The phase10 test APK still uses full-icu, cached on `spike/node26/**`.
+
+## Inspector ON (2026-11-04)
+
+- The OpenCode v2 bundle imports `node:inspector` when it loads. The device probe failed with
+  `ERR_INSPECTOR_NOT_AVAILABLE` because the build had `--without-inspector` (copied from the Node 24
+  recipe). The flag is removed. The binary grows by the inspector module (size not measured yet).

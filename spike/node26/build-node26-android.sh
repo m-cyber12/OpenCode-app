@@ -160,9 +160,11 @@ export CFLAGS="-O2 -fPIE -D__TERMUX__" CXXFLAGS="-O2 -fPIE -D__TERMUX__"
 export LDFLAGS="-pie -Wl,-z,max-page-size=16384"
 export GYP_DEFINES="target_arch=arm64 v8_target_arch=arm64 android_target_arch=arm64 host_os=linux OS=android android_ndk_path=$NDKHOME_ABS"
 cd "$WORK/node-src"
+# Inspector stays ON: the OpenCode v2 bundle imports node:inspector at load time.
+# --without-inspector (copied from the Node 24 recipe) fails with ERR_INSPECTOR_NOT_AVAILABLE.
 /usr/bin/python3 configure.py \
   --dest-cpu=arm64 --dest-os=android --cross-compiling \
-  --openssl-no-asm --with-intl=$NODE26_ICU --without-inspector \
+  --openssl-no-asm --with-intl=$NODE26_ICU \
   --without-node-snapshot --without-node-code-cache \
   --shared-zlib --shared-zlib-includes="$ZPREFIX/include" --shared-zlib-libpath="$ZPREFIX/lib" \
   --v8-disable-temporal-support \
