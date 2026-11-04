@@ -45,3 +45,21 @@ client, which still talks to the v1 API. Those come after this slice passes.
   modules (node-pty, parcel watcher, fff, ffi-rs) may fail to load. That shows up in the
   log and decides the next step.
 - The probe runs only in the test APK. The release APK never gets `node26-v2.zip`.
+
+## Slice 2: sessions and every model (test only)
+
+Once `/api/config` answers, the probe starts one background sweep per app run:
+
+- `GET /api/model` lists every model the bundled v2 server knows.
+- For each model it creates one session (`POST /api/session`, with the model set),
+  sends `Reply with exactly: OK` (`POST /api/session/:id/prompt`), waits up to 120 s
+  (`POST /api/experimental/session/:id/wait`), then reads the messages
+  (`GET /api/session/:id/message`).
+- No provider keys are configured, so paid providers are expected to fail with a
+  missing-key error. Free routes that need no key may answer.
+- The sweep stops after 45 minutes in total. Results show in later Diagnostics calls
+  (open Diagnostics again to refresh them).
+
+Pass for this slice: at least one model returns a real reply (`CHECK-TEXT` with the
+word OK in the last messages). Errors are recorded per model, not treated as failures
+of the server.
