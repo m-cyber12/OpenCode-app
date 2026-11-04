@@ -7,6 +7,7 @@
 # Source: anomalyco/opencode at the tag below (v2.2.5). Bun 1.4.4 is the
 # packageManager pin in that repo.
 set -Eeuo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 V2_REPO="${V2_REPO:-https://github.com/anomalyco/opencode}"
 V2_TAG="${V2_TAG:-v2.2.5}"
@@ -49,6 +50,11 @@ OPENCODE_TARGET=linux-arm64 bun run script/build-node.ts --bundle-only 2>&1 | te
 
 [ -f dist-node/opencode.mjs ] || fatal "dist-node/opencode.mjs was not produced"
 [ -d dist-node/assets ] || fatal "dist-node/assets was not produced"
+
+# TEST ONLY: the node-pty loader has no Android build; stub it so the server can start.
+NODE_PTY_UTILS="dist-node/assets/@lydell/node-pty-linux-arm64/lib/utils.js"
+[ -f "$NODE_PTY_UTILS" ] || fatal "node-pty loader not found in the assets: $NODE_PTY_UTILS"
+python3 "$HERE/stub-node-pty.py" "$NODE_PTY_UTILS" 2>&1 | tee -a "$LOG"
 
 rm -rf "$V2_OUT"
 mkdir -p "$V2_OUT/stage"
