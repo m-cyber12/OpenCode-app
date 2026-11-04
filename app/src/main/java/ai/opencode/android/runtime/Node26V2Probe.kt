@@ -9,6 +9,7 @@ import java.net.SocketTimeoutException
 import java.net.URL
 import java.security.SecureRandom
 import java.util.Base64
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipInputStream
 
@@ -34,6 +35,7 @@ internal object Node26V2Probe {
     private const val SWEEP_BUDGET_MS = 45L * 60_000L
     private const val LOG_CHARS = 3000
     private const val SWEEP_LINES = 400
+    private const val SWEEP_PARALLEL = 4
 
     private val lock = Any()
     private var proc: Process? = null
@@ -42,6 +44,10 @@ internal object Node26V2Probe {
     private var sweepStarted = false
     private var sweepDone = false
     private val sweepOut = ArrayList<String>()
+    private var sweepTotal = 0
+    private var sweepFinished = 0
+    private var sweepInFlight = 0
+    private var sweepStartedAt = 0L
 
     fun report(context: Context, nativeLibraryDir: File, filesDir: File): String {
         val hasAsset = runCatching { context.assets.open(ASSET).close() }.isSuccess
@@ -194,31 +200,49 @@ internal object Node26V2Probe {
 
     private fun sweep(pw: String) {
         val started = System.currentTimeMillis()
+        synchronized(lock) { sweepStartedAt = started }
         try {
+            emit("GET /api/model requested")
             val (code, body) = request(BASE, pw, "GET", "/api/model", null, 60_000)
             if (code !in 200..299) {
                 emit("model list failed: HTTP $code ${body.take(300)}")
                 return
             }
             val models = unwrapArray(body)
-            emit("models listed: ${models.length()}")
-            for (i in 0 until models.length()) {
-                if (System.currentTimeMillis() - started > SWEEP_BUDGET_MS) {
-                    emit("stopped: 45 min budget reached before model ${i + 1}")
-                    break
+            val total = models.length()
+            synchronized(lock) { sweepTotal = total }
+            emit("models listed: $total after ${(System.currentTimeMillis() - started) / 1000}s; $SWEEP_PARALLEL at a time")
+            val pool = Executors.newFixedThreadPool(SWEEP_PARALLEL)
+            for (i in 0 until total) {
+                pool.execute {
+                    synchronized(lock) { sweepInFlight++ }
+                    try {
+                        if (System.currentTimeMillis() - started > SWEEP_BUDGET_MS) {
+                            emit("skipped [${i + 1}/$total]: 45 min budget reached")
+                        } else {
+                            val m = models.getJSONObject(i)
+                            val provider = m.optString("providerID")
+                            val modelId = m.optString("id")
+                            val head = "[${i + 1}/$total] $provider/$modelId enabled=${m.optBoolean("enabled")} status=${m.optString("status")}"
+                            val t0 = System.currentTimeMillis()
+                            val result = try {
+                                sweepOne(pw, provider, modelId)
+                            } catch (e: Exception) {
+                                "ERROR ${e.javaClass.simpleName}: ${e.message?.take(160)}"
+                            }
+                            emit("$head (${(System.currentTimeMillis() - t0) / 1000}s) -> $result")
+                        }
+                    } finally {
+                        synchronized(lock) {
+                            sweepInFlight--
+                            sweepFinished++
+                        }
+                    }
                 }
-                val m = models.getJSONObject(i)
-                val provider = m.optString("providerID")
-                val modelId = m.optString("id")
-                val head = "[${i + 1}/${models.length()}] $provider/$modelId enabled=${m.optBoolean("enabled")} status=${m.optString("status")}"
-                val result = try {
-                    sweepOne(pw, provider, modelId)
-                } catch (e: Exception) {
-                    "ERROR ${e.javaClass.simpleName}: ${e.message?.take(160)}"
-                }
-                emit("$head -> $result")
             }
-            emit("DONE")
+            pool.shutdown()
+            pool.awaitTermination(SWEEP_BUDGET_MS + 120_000L, TimeUnit.MILLISECONDS)
+            emit("DONE in ${(System.currentTimeMillis() - started) / 1000}s")
         } catch (e: Exception) {
             emit("sweep stopped: ${e.javaClass.simpleName}: ${e.message?.take(200)}")
         } finally {
@@ -266,10 +290,25 @@ internal object Node26V2Probe {
     }
 
     private fun appendSweep(sb: StringBuilder) {
-        val snapshot = synchronized(lock) { Pair(sweepOut.toList(), sweepDone) }
-        sb.appendLine("--- sweep results (${snapshot.first.size} lines, done=${snapshot.second}) ---")
-        snapshot.first.takeLast(120).forEach { sb.appendLine(it) }
+        val snap = synchronized(lock) {
+            SweepSnapshot(sweepOut.toList(), sweepDone, sweepTotal, sweepFinished, sweepInFlight, sweepStartedAt)
+        }
+        val elapsed = if (snap.startedAt == 0L) 0L else (System.currentTimeMillis() - snap.startedAt) / 1000
+        sb.appendLine(
+            "--- sweep: finished ${snap.finished}/${snap.total}, in flight ${snap.inFlight}, " +
+                "elapsed ${elapsed}s, done=${snap.done} ---",
+        )
+        snap.lines.takeLast(160).forEach { sb.appendLine(it) }
     }
+
+    private class SweepSnapshot(
+        val lines: List<String>,
+        val done: Boolean,
+        val total: Int,
+        val finished: Int,
+        val inFlight: Int,
+        val startedAt: Long,
+    )
 
     private fun appendServerLog(sb: StringBuilder) {
         val tail = synchronized(lock) { serverLog.toString().takeLast(LOG_CHARS) }
