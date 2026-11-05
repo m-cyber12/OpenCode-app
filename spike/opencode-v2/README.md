@@ -70,3 +70,10 @@ Every model failed in 1–4 s with an error in the messages. The device has no `
 and the server ran with `--use-system-ca`. With that flag Node loads only the OS certificates
 and drops its built-in roots, so every HTTPS call to a provider failed. The flag is removed
 for Android. The sweep now shows the text around the first "error" in each message list.
+
+### Run 4 finding: HTTP 426 "OpenCode 1.18.0 or newer is required" (2026-11-05)
+
+TLS works now, and Zen answers. The error came from the User-Agent. The v2 bundle reads its
+version and channel from `OPENCODE_VERSION` and `OPENCODE_CHANNEL`. Unset, both are `local`, so
+the User-Agent was `opencode/local/local/opencode`. The build now sets `OPENCODE_VERSION=2.2.5` and
+`OPENCODE_CHANNEL=latest`, as the upstream release build does.

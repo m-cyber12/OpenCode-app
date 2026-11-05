@@ -46,7 +46,10 @@ bun install --frozen-lockfile 2>&1 | tee -a "$LOG"
 # --bundle-only skips the SEA binary (needs a Node 26 builder and nodejs.org).
 # OPENCODE_TARGET=linux-arm64 picks the arm64 asset set, matching the phone.
 cd packages/cli
-OPENCODE_TARGET=linux-arm64 bun run script/build-node.ts --bundle-only 2>&1 | tee -a "$LOG"
+# Zen reads the User-Agent (opencode/<channel>/<version>/opencode) and rejects anything below 1.18.0.
+# Without these two variables the bundle reports "local"/"local" and gets HTTP 426 on free models
+# (device run 4, 2026-11-05). Use the release channel and the v2.2.5 release version.
+OPENCODE_VERSION=2.2.5 OPENCODE_CHANNEL=latest OPENCODE_TARGET=linux-arm64 bun run script/build-node.ts --bundle-only 2>&1 | tee -a "$LOG"
 
 [ -f dist-node/opencode.mjs ] || fatal "dist-node/opencode.mjs was not produced"
 [ -d dist-node/assets ] || fatal "dist-node/assets was not produced"
