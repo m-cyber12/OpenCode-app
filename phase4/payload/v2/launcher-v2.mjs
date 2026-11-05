@@ -13,7 +13,7 @@
 // well as in the Kotlin host. There is no mDNS flag in the v2 serve command.
 
 import { pathToFileURL } from "node:url"
-import { resolve } from "node:path"
+import { resolve, basename } from "node:path"
 
 export const LOOPBACK = new Set(["127.0.0.1", "localhost", "::1"])
 const MIN_PASSWORD_CHARS = 16
@@ -55,21 +55,34 @@ export async function readPasswordLine(stream) {
   return line
 }
 
+// Progress goes to stderr, which the Android host copies into the runtime log.
+// A silent exit is what a launcher bug looks like from outside, so every step is logged.
+function log(line) {
+  process.stderr.write(`[launcher-v2] ${line}\n`)
+}
+
 export async function main(argv, stdin) {
+  log("main entered")
   const [entry, ...rest] = argv
   if (!entry) throw new Error("usage: launcher-v2.mjs <opencode.mjs> --hostname H --port P")
   const { hostname, port } = parseArgs(rest)
   const password = await readPasswordLine(stdin)
   stdin.destroy?.()
+  log(`password received (${password.length} chars); binding ${hostname}:${port}`)
 
   process.env.OPENCODE_SERVER_PASSWORD = password
   // The v2 CLI parses process.argv when its module loads.
   process.argv = [process.argv[0], resolve(entry), "serve", "--hostname", hostname, "--port", String(port)]
+  log("importing OpenCode bundle")
   await import(pathToFileURL(resolve(entry)).href)
+  log("OpenCode bundle imported")
 }
 
-// Run only when executed directly, not when a test imports this file.
-const isMain = process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href
+// Run when this file is the script Node was started with. Compare by file name, not
+// by URL: when the launcher is reached through a symlink, Node reports the real path
+// in import.meta.url, a URL comparison fails, and the process used to exit 0 silently
+// without loading the bundle (reproduced 2026-11-05 on the device path).
+const isMain = process.argv[1] !== undefined && basename(process.argv[1]) === "launcher-v2.mjs"
 if (isMain) {
   main(process.argv.slice(2), process.stdin).catch((err) => {
     process.stderr.write(`[launcher-v2] ${err?.message ?? err}\n`)

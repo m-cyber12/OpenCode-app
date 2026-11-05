@@ -2,7 +2,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { spawn } from "node:child_process"
-import { mkdtempSync, writeFileSync } from "node:fs"
+import { mkdtempSync, writeFileSync, symlinkSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -89,4 +89,26 @@ test("end to end: missing password exits non-zero", async () => {
   const r = await runLauncher(["--hostname", "127.0.0.1", "--port", "4111"], "")
   assert.notEqual(r.code, 0)
   assert.match(r.err, /missing or too short/)
+})
+
+test("end to end through a symlink still loads the bundle (device regression 2026-11-05)", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "launcher-v2-link-"))
+  const linkDir = join(dir, "link")
+  symlinkSync(here, linkDir)
+  const stub = join(dir, "opencode.mjs")
+  writeFileSync(stub, 'process.stdout.write(JSON.stringify({ pw: process.env.OPENCODE_SERVER_PASSWORD }) + "\\n")\n')
+  const r = await new Promise((resolve) => {
+    const child = spawn(process.execPath, [join(linkDir, "launcher-v2.mjs"), stub, "--hostname", "127.0.0.1", "--port", "4111"], {
+      env: { PATH: process.env.PATH ?? "" },
+    })
+    let out = ""
+    let err = ""
+    child.stdout.on("data", (d) => (out += d))
+    child.stderr.on("data", (d) => (err += d))
+    child.on("close", (code) => resolve({ code, out, err }))
+    child.stdin.end(`${PW}\n`)
+  })
+  assert.equal(r.code, 0, r.err)
+  assert.equal(JSON.parse(r.out.trim()).pw, PW)
+  assert.match(r.err, /OpenCode bundle imported/)
 })

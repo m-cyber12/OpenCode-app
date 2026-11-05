@@ -163,6 +163,12 @@ class RuntimeProcess(
         return listOf(entry, paths.launcher.absolutePath)
     }
 
+    /** Diagnostics: whether the child we started is still running, or its exit code. */
+    fun state(): String {
+        val p = process ?: return "no process"
+        return if (p.isAlive) "alive" else "exited code=${p.exitValue()}"
+    }
+
     /** Drain child stdout/stderr into the host runtime log (prevents pipe blocking). */
     fun pumpStdio() {
         val p = process ?: return

@@ -327,7 +327,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
                         logger.host("integration check failed: ${report.exceptionOrNull()?.message}")
                     }
                 } else {
-                    logger.crash("server did not become healthy: $h")
+                    logger.crash("server did not become healthy: $h (process ${process.state()})")
                     // Process may still be (sickly) alive — kill it before retry.
                     process.stop(graceWindowMs = 2000)
                     if (!backoffOrGiveUp(attempts, gen)) break
