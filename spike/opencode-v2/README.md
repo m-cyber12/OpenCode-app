@@ -77,3 +77,11 @@ TLS works now, and Zen answers. The error came from the User-Agent. The v2 bundl
 version and channel from `OPENCODE_VERSION` and `OPENCODE_CHANNEL`. Unset, both are `local`, so
 the User-Agent was `opencode/local/local/opencode`. The build now sets `OPENCODE_VERSION=2.2.5` and
 `OPENCODE_CHANNEL=latest`, as the upstream release build does.
+
+### Run 5 result: Zen free-quota limit, parked (2026-11-05)
+
+With the User-Agent fixed, every free model reached Zen and got HTTP 429
+`FreeUsageLimitError` ("Free usage limit reached"). Main OpenCode gets the same limit on this device
+and network, so this is Zen's quota, not the v2 path. Parked by the owner. The v2 test slice
+(server starts, Basic auth, request reaches the provider) is done. A model answer needs a free
+quota window or a provider key, and no paid keys are planned.
