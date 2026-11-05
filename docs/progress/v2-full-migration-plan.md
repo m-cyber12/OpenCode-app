@@ -74,3 +74,9 @@ These exist in v1 today. Each one needs a v2 equivalent and a test.
 - Node ICU mode (full vs small) not measured. Measure in phase 1 or 5.
 - Zen quota (429) blocks full model tests on this network.
 - Owner's pushes need `workflows` scope.
+
+## Progress log
+
+- 2026-11-05 Phase 1, slice 1 (`phase4/payload/v2/launcher-v2.mjs` + tests, 9/9 on Node 22.22.3): stdin password, loopback-only bind, `serve` argv. Not yet wired into the build or the APK.
+- Plan change: the release APK cannot carry v1 and v2 side by side (cap 230 MiB). v1 is removed in the same change that ships v2 (phase 5 merged into the release switch-over). Intermediate commits use `[skip ci]` until the release is green.
+- Finding (v2.2.5 source): the v2 CLI hides `OPENCODE_SERVER_PASSWORD` from child processes (`packages/cli/src/env.ts` `session()`). The Bun-era `Bun.spawn` wrappers are not needed for v2.
