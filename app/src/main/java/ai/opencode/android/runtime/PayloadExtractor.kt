@@ -5,6 +5,7 @@ import java.io.File
 import java.io.InputStream
 import java.security.MessageDigest
 import java.util.zip.GZIPInputStream
+import java.util.zip.ZipInputStream
 
 /**
  * First-run extraction with validation and corruption recovery.
@@ -34,6 +35,52 @@ class PayloadExtractor(
         data class AlreadyValid(val manifest: RuntimeManifest) : Result()
         data class Extracted(val manifest: RuntimeManifest) : Result()
         data class Failed(val reason: String, val cause: Throwable? = null) : Result()
+
+        /** v2 engine: the bundle is in place. [fresh] is true when this call extracted it. */
+        data class V2Ready(val fresh: Boolean) : Result()
+    }
+
+    /**
+     * v2 engine (migration phase 1): extract the node26-v2.zip asset into
+     * [RuntimePaths.v2Root]. Reuses the marker-file pattern of the v2 probe: a
+     * complete extraction has `.complete`, and an interrupted one is wiped and
+     * redone. Entry names are checked so nothing lands outside the root.
+     */
+    fun ensureExtractedV2(): Result {
+        if (paths.v2Marker.isFile && paths.v2Entry.isFile && paths.v2Launcher.isFile) {
+            return Result.V2Ready(fresh = false)
+        }
+        return try {
+            paths.v2Root.deleteRecursively()
+            paths.v2Root.mkdirs()
+            val base = paths.v2Root.canonicalPath + File.separator
+            context.assets.open(ServerEngine.V2_ASSET).use { raw ->
+                ZipInputStream(raw).use { zip ->
+                    while (true) {
+                        val item = zip.nextEntry ?: break
+                        val out = File(paths.v2Root, item.name).canonicalFile
+                        if (!out.path.startsWith(base)) {
+                            return Result.Failed("unsafe entry in ${ServerEngine.V2_ASSET}: ${item.name}")
+                        }
+                        if (item.isDirectory) {
+                            out.mkdirs()
+                        } else {
+                            out.parentFile?.mkdirs()
+                            out.outputStream().use { zip.copyTo(it) }
+                        }
+                        zip.closeEntry()
+                    }
+                }
+            }
+            if (!paths.v2Entry.isFile || !paths.v2Launcher.isFile) {
+                return Result.Failed("v2 payload incomplete: opencode.mjs or launcher-v2.mjs missing")
+            }
+            paths.v2Marker.writeText("ok")
+            logger.host("v2 bundle extracted to ${paths.v2Root.name}")
+            Result.V2Ready(fresh = true)
+        } catch (t: Throwable) {
+            Result.Failed("v2 payload extraction failed: ${t.message}", t)
+        }
     }
 
     fun manifestFromAssets(): RuntimeManifest? = try {

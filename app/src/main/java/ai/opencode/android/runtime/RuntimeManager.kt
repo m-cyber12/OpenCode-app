@@ -216,8 +216,18 @@ class RuntimeManager private constructor(private val appContext: Context) {
             logger.host("environment brief: " + if (briefed) "installed (config.instructions)" else "skipped (user config left untouched)")
 
             // ---- 2. extraction + validation -------------------------------
+            // Engine choice (migration phase 1): V2 only when the APK carries both the
+            // Node 26 binary and the v2 bundle. Release keeps V1 until switch-over.
+            val hasV2Asset = runCatching { appContext.assets.list("")?.contains(ServerEngine.V2_ASSET) == true }
+                .getOrDefault(false)
+            val serverEngine = ServerEngine.select(
+                hasNode26Binary = paths.node26Binary().isFile,
+                hasV2Asset = hasV2Asset,
+            )
+            logger.host("server engine: $serverEngine")
+
             publish(RuntimeStatus.EXTRACTING, "validating embedded runtime")
-            val ext = extractor.ensureExtracted()
+            val ext = if (serverEngine == ServerEngine.V2) extractor.ensureExtractedV2() else extractor.ensureExtracted()
             if (ext is PayloadExtractor.Result.Failed) {
                 // Corruption we cannot recover from = the APK payload itself is
                 // unreadable; report clearly rather than looping.
@@ -276,7 +286,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
                 attempts++
                 publish(RuntimeStatus.STARTING, "starting OpenCode server (attempt $attempts)", attempts - 1)
                 try {
-                    process.start(env, password)
+                    process.start(env, password, engine = serverEngine, hostname = bindHost)
                     // A stop or a newer start can race with the short launch
                     // window. Do not let an invalidated supervisor pump or
                     // health-check a process owned by a newer generation.
@@ -289,7 +299,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
                 }
 
                 if (!running || gen != generation) break
-                val h = health.waitHealthy(password, timeoutMs = 45_000)
+                val h = health.waitHealthy(password, timeoutMs = 45_000, engine = serverEngine)
                 if (!running || gen != generation) break
                 if (h != null && h.healthy) {
                     logger.host("health check OK: $h")

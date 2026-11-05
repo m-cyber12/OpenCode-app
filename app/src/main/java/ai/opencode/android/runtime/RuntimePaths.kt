@@ -216,6 +216,19 @@ class RuntimePaths private constructor(
     val gitRemoteHttpsLink: File = File(binDir, "git-remote-https")
     val gitRemoteHttpLink: File = File(binDir, "git-remote-http")
 
+    /** v2 engine (migration phase 1): Node 26 binary, installed as a JNI lib. */
+    fun node26Binary(): File = File(nativeLibraryDir, "libnode26.so")
+
+    /** v2 engine: extracted bundle root (opencode.mjs, assets/, launcher-v2.mjs). */
+    val v2Root: File = File(runtimeDir, "v2")
+    val v2Entry: File = File(v2Root, "opencode.mjs")
+    val v2Launcher: File = File(v2Root, "launcher-v2.mjs")
+    val v2Marker: File = File(v2Root, ".complete")
+
+    /** The live-server marker for an engine: its launcher path, matched in /proc cmdlines. */
+    fun launcherPath(engine: ServerEngine): File =
+        if (engine == ServerEngine.V2) v2Launcher else launcher
+
     /** The actual bun executable in nativeLibraryDir (installed by the package manager). */
     fun bunBinary(): File = File(nativeLibraryDir, "libbun.so")
     /** Real Git executable built against the Android NDK/Bionic libc. */

@@ -32,7 +32,7 @@ class RuntimeProcess(
      * Excludes our own process. -1 when no server is present.
      */
     fun findServerPid(): Int {
-        val marker = paths.launcher.absolutePath
+        val marker = activeMarker
         val selfPid = runCatching { android.os.Process.myPid() }.getOrDefault(-1)
         val procs = File("/proc").listFiles() ?: return -1
         for (proc in procs) {
@@ -56,7 +56,83 @@ class RuntimeProcess(
      *   is readable by same-UID processes through /proc/<pid>/environ.
      */
     @Synchronized
-    fun start(env: Map<String, String>, serverPassword: String) {
+    fun start(
+        env: Map<String, String>,
+        serverPassword: String,
+        engine: ServerEngine = ServerEngine.V1,
+        hostname: String = RuntimeEnv.SERVER_BIND_HOSTNAME,
+    ) {
+        // The live-server marker for /proc scans is the launcher of the engine being started.
+        activeMarker = paths.launcherPath(engine).absolutePath
+        val command: List<String> = if (engine == ServerEngine.V2) {
+            v2Command(env, hostname)
+        } else {
+            v1Command(env)
+        }
+        // Duplicate-process prevention: kill any live server for THIS payload
+        // before starting (also covers a crashed app leaving the server behind).
+        killStaleServer()
+
+        val pb = ProcessBuilder(command)
+        pb.directory(paths.filesDir)
+        pb.redirectErrorStream(false)
+        pb.environment().apply {
+            clear()
+            putAll(commandEnv)
+        }
+        val p = pb.start()
+        process = p
+        // Deliver the password on the launcher's stdin (see launcher.js
+        // readSecretLine, launcher-v2.mjs readPasswordLine). Closing the pipe ends the line.
+        try {
+            p.outputStream.use { out ->
+                out.write((serverPassword + "\n").toByteArray(Charsets.UTF_8))
+                out.flush()
+            }
+        } catch (e: java.io.IOException) {
+            logger.host("server launch: could not hand the password to the launcher (${e.message})")
+            throw e
+        }
+        // The child may take a moment to appear in /proc; retry briefly.
+        var sp = -1
+        for (i in 0..20) {
+            sp = findServerPid()
+            if (sp > 0) break
+            Thread.sleep(100)
+        }
+        if (sp > 0) paths.pidFile.writeText(sp.toString())
+        logger.host("server started: pid=$sp engine=$engine abi=${env["OPENCODE_RUNTIME_ABI"]} port=${RuntimeEnv.SERVER_PORT}")
+    }
+
+    /** Environment for the child process; set by the command builders below. */
+    private var commandEnv: Map<String, String> = emptyMap()
+
+    /** Launcher path used to find a live server in /proc (per engine). */
+    @Volatile
+    private var activeMarker: String = paths.launcher.absolutePath
+
+    /** v2 engine: Node 26 runs the launcher, which runs the v2 bundle. No Bun shims. */
+    private fun v2Command(env: Map<String, String>, hostname: String): List<String> {
+        val node = paths.node26Binary()
+        require(node.canExecute()) { "node26 binary not executable: $node" }
+        require(paths.v2Launcher.isFile) { "v2 launcher missing: ${paths.v2Launcher}" }
+        require(paths.v2Entry.isFile) { "v2 bundle missing: ${paths.v2Entry}" }
+        commandEnv = HashMap(env)
+        return listOf(
+            node.absolutePath,
+            "--experimental-ffi",
+            "--disable-warning=ExperimentalWarning",
+            paths.v2Launcher.absolutePath,
+            paths.v2Entry.absolutePath,
+            "--hostname",
+            hostname,
+            "--port",
+            RuntimeEnv.SERVER_PORT.toString(),
+        )
+    }
+
+    /** v1 engine: the exec shim (or bun directly) runs the Bun launcher. Removed at switch-over. */
+    private fun v1Command(env: Map<String, String>): List<String> {
         val bun = paths.bunBinary()
         require(bun.canExecute()) { "bun binary not executable: $bun" }
         require(paths.launcher.isFile) { "launcher missing: ${paths.launcher}" }
@@ -78,45 +154,13 @@ class RuntimeProcess(
         }
         val entry = if (exec.canExecute()) exec.absolutePath else bun.absolutePath
 
-        // Duplicate-process prevention: kill any live server for THIS payload
-        // before starting (also covers a crashed app leaving the server behind).
-        killStaleServer()
-
         val fullEnv = HashMap(env)
         // Tell the shim what to exec and where the preload handler lives.
         fullEnv["OPENCODE_BUN_EXEC"] = bun.absolutePath
         fullEnv["OPENCODE_SECCOMP_SHIM"] =
             java.io.File(paths.nativeLibraryDir, "libseccompshim.so").absolutePath
-
-        val pb = ProcessBuilder(entry, paths.launcher.absolutePath)
-        pb.directory(paths.filesDir)
-        pb.redirectErrorStream(false)
-        pb.environment().apply {
-            clear()
-            putAll(fullEnv)
-        }
-        val p = pb.start()
-        process = p
-        // Deliver the password on the launcher's stdin (see launcher.js
-        // readSecretLine). Closing the pipe ends the line for the reader.
-        try {
-            p.outputStream.use { out ->
-                out.write((serverPassword + "\n").toByteArray(Charsets.UTF_8))
-                out.flush()
-            }
-        } catch (e: java.io.IOException) {
-            logger.host("server launch: could not hand the password to the launcher (${e.message})")
-            throw e
-        }
-        // The child may take a moment to appear in /proc; retry briefly.
-        var sp = -1
-        for (i in 0..20) {
-            sp = findServerPid()
-            if (sp > 0) break
-            Thread.sleep(100)
-        }
-        if (sp > 0) paths.pidFile.writeText(sp.toString())
-        logger.host("server started: pid=$sp abi=${env["OPENCODE_RUNTIME_ABI"]} port=${RuntimeEnv.SERVER_PORT}")
+        commandEnv = fullEnv
+        return listOf(entry, paths.launcher.absolutePath)
     }
 
     /** Drain child stdout/stderr into the host runtime log (prevents pipe blocking). */
@@ -199,7 +243,7 @@ class RuntimeProcess(
      * root inside the app sandbox; ignores processes we can't signal).
      */
     fun killStaleServer() {
-        val marker = paths.launcher.absolutePath
+        val marker = activeMarker
         val selfPid = runCatching { android.os.Process.myPid() }.getOrDefault(-1)
         var killed = 0
         val procList = File("/proc").listFiles() ?: return
@@ -224,7 +268,7 @@ class RuntimeProcess(
     }
 
     fun countLiveServers(): Int {
-        val marker = paths.launcher.absolutePath
+        val marker = activeMarker
         val selfPid = runCatching { android.os.Process.myPid() }.getOrDefault(-1)
         var n = 0
         for (proc in File("/proc").listFiles() ?: return 0) {

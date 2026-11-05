@@ -63,6 +63,8 @@ rm -rf "$V2_OUT"
 mkdir -p "$V2_OUT/stage"
 cp dist-node/opencode.mjs "$V2_OUT/stage/"
 cp -r dist-node/assets "$V2_OUT/stage/"
+# The launcher ships with the bundle so the two always match (migration phase 1).
+cp "$HERE/../../phase4/payload/v2/launcher-v2.mjs" "$V2_OUT/stage/"
 ( cd "$V2_OUT/stage" && zip -q -r -6 "$V2_OUT/node26-v2.zip" . )
 rm -rf "$V2_OUT/stage"
 

@@ -17,10 +17,10 @@ class HealthChecker(
         override fun toString(): String = "healthy=$healthy http=$code body=${body.take(200)}"
     }
 
-    fun probe(password: String, timeoutMs: Int = 4000): Health {
+    fun probe(password: String, timeoutMs: Int = 4000, engine: ServerEngine = ServerEngine.V1): Health {
         var conn: HttpURLConnection? = null
         return try {
-            conn = (URL("http://127.0.0.1:$port/global/health").openConnection() as HttpURLConnection).apply {
+            conn = (URL("http://127.0.0.1:$port${engine.healthPath}").openConnection() as HttpURLConnection).apply {
                 connectTimeout = timeoutMs
                 readTimeout = timeoutMs
                 requestMethod = "GET"
@@ -34,7 +34,7 @@ class HealthChecker(
             val code = conn.responseCode
             val stream = if (code in 200..299) conn.inputStream else conn.errorStream
             val body = stream?.bufferedReader()?.use { it.readText() } ?: ""
-            val healthy = code in 200..299 && body.contains("\"healthy\"", ignoreCase = true)
+            val healthy = code in 200..299 && body.contains(engine.healthMarker, ignoreCase = true)
             Health(healthy, code, body)
         } catch (t: Throwable) {
             Health(false, -1, t.message ?: t.javaClass.simpleName)
@@ -47,11 +47,16 @@ class HealthChecker(
      * Wait for health after a start. Returns the first healthy probe, or null
      * after [timeoutMs]. Bounded — never blocks forever.
      */
-    fun waitHealthy(password: String, timeoutMs: Long = 45_000, intervalMs: Long = 1000): Health? {
+    fun waitHealthy(
+        password: String,
+        timeoutMs: Long = 45_000,
+        intervalMs: Long = 1000,
+        engine: ServerEngine = ServerEngine.V1,
+    ): Health? {
         val deadline = System.currentTimeMillis() + timeoutMs
         var last: Health? = null
         while (System.currentTimeMillis() < deadline) {
-            val h = probe(password)
+            val h = probe(password, engine = engine)
             last = h
             if (h.healthy) return h
             Thread.sleep(intervalMs)
