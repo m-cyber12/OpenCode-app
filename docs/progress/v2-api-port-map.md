@@ -1,0 +1,73 @@
+# v1 → v2 API port map (Phase 4 working document)
+
+Source: OpenCode v2.2.5 (`packages/protocol/src/groups/*.ts`, `packages/schema/src/event*.ts`). Each row is a call the app makes today (`client/OpenCodeApi.kt`), with its v2 equivalent. "TBD" = no direct equivalent found yet; decide before porting.
+
+## Status of the runtime (done)
+
+- Server starts on Node 26 with the v2 bundle; health on `GET /api/info` (body has `"version"`). Verified on device 2026-11-06 (`version 2.2.5`, healthy in ~4 s after start).
+- The UI still shows "Offline" and "Event stream: reconnecting" because the app calls v1 routes. Expected until this port lands.
+
+## Calls
+
+| App call (v1) | v2 equivalent | Notes |
+|---|---|---|
+| `GET /global/health` | `GET /api/info` | Done in the runtime (`ServerEngine.V2`). |
+| `GET /global/event` (SSE) | `GET /api/event` (SSE, optional `types` filter) | Event envelope differs (`id`, `created`, `type`, `data`, `location`). Parser rewrite. |
+| `GET /global/config` | `GET /api/config` | |
+| `PATCH` config | `PATCH /api/experimental/config` | Experimental. |
+| `POST /global/dispose` | TBD | v2 emits `global.disposed`; no route found. |
+| `GET /provider` | `GET /api/provider`, `GET /api/provider/:providerID` | |
+| `GET /api/model` (used by sweep) | `GET /api/model`, `GET /api/model/default` | Returns `id`, `providerID`, `enabled`, `status`. |
+| `GET /session` | `GET /api/session` | |
+| `POST /session` | `POST /api/session` | Body `model: {id, providerID}`; returns `data.id`. |
+| `GET/PATCH/DELETE /session/:id` | `GET /api/session/:id`, `PATCH /api/session/:id`, `DELETE /api/session/:id` | |
+| `GET /session/status` | `GET /api/session/active` | Check shape. |
+| `GET /session/:id/message` | `GET /api/session/:id/message` | Returns `{data, cursor}`. Message shape differs (see below). |
+| `POST /session/:id/prompt_async` | `POST /api/session/:id/prompt` | Body `{text}`. Wait with `POST /api/experimental/session/:id/wait` (204). |
+| `POST /session/:id/abort` | `POST /api/session/:id/interrupt` | |
+| `POST /session/:id/shell` | `POST /api/session/:id/shell` | Shell tool is `shell` in v2 (was `bash`). |
+| `POST /session/:id/revert` | `POST /api/session/:id/revert/stage` then `/revert/commit` | Two steps in v2. |
+| `POST /session/:id/unrevert` | `DELETE /api/session/:id/revert` | "clear". |
+| `POST /session/:id/summarize` | `POST /api/session/:id/compact` | |
+| `GET /session/:id/todo` | TBD | No todo group found in v2 protocol. |
+| `GET /permission` | `GET /api/permission/request` | |
+| `POST /permission/:id/reply` | `POST /api/session/:id/permission/:requestID/reply` | Event `permission.asked` / `permission.replied`. |
+| `GET /question` | `GET /api/session/:id/form` | v2 "form" replaces question (`form.created`, `form.replied`, `form.cancelled`). |
+| `POST /question/:id/reply` / `reject` | `POST /api/session/:id/form/:formID/reply` / `DELETE .../form/:formID` | |
+| `PUT /auth/:providerID` | `POST /api/credential` (+ `/activate`) | Keystore-held credentials stay in the app. |
+| `GET /mcp` | `GET /api/mcp` | |
+| `POST /mcp/:name/connect` | `POST /api/experimental/mcp/:server/connect` | |
+| `POST /mcp/:name/disconnect` | `POST /api/experimental/mcp/:server/disconnect` | |
+| (MCP add, Settings) | `PUT /api/experimental/mcp/:server` | Add or update a server. |
+| `GET /file` | `GET /api/fs/list` | |
+| `GET /file/content` | `GET /api/fs/read/*` | |
+| (find) | `GET /api/fs/find` | |
+
+## Events the chat depends on (v2 names)
+
+- Text: `session.text.started`, `session.text.delta`, `session.text.ended`
+- Reasoning: `session.reasoning.started|delta|ended`
+- Tools: `session.tool.input.started|delta|ended`, `session.tool.called`, `session.tool.failed`
+- Steps: `session.step.started|streamed|ended|failed`
+- Turn state: `session.execution.started|succeeded|failed|interrupted`, `session.idle`, `session.status`
+- Messages: `session.message.content.updated`
+- Permissions and forms: `permission.asked|replied`, `form.created|replied|cancelled`
+- Errors and retries: `session.execution.failed`, `session.retry.scheduled`
+- MCP: `mcp.status.changed`, `mcp.tools.changed`, `mcp.resources.changed`
+
+## Message parts (v2 `session-message.ts`, part types)
+
+`text`, `reasoning`, `tool`, `file`, `patch`, `step-start`, `step-finish`, `subtask`, `agent`, `compaction`, `retry`. The chat screen must map these to its existing render types. TBD: confirm each field name against `packages/schema/src/session-message.ts` before writing the parser.
+
+## Not in v2 (decide per feature)
+
+- v1 plugins: not supported (accepted 2026-11-05).
+- v1 `/mcp` config write path: write through `/api/experimental/mcp/:server`.
+- Acceptance and background-task features (P1-11, P1-12): they read files and run prompts, so they depend only on prompt and events.
+
+## Next steps
+
+1. Read `session-message.ts` and the `session.*` event payloads; write the Kotlin data classes.
+2. Replace the event parser (`/global/event`) with `/api/event`; keep the reconnect loop.
+3. Port `OpenCodeApi.kt` calls in the order: info, config, model, session list/create, prompt, message, events, permissions, forms, MCP, files.
+4. JVM tests with recorded v2 JSON samples; device check via Diagnostics.
