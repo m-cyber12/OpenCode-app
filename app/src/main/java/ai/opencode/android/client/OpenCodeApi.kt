@@ -4,6 +4,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.util.Base64
+import ai.opencode.android.client.v2.V2Mapping
 
 /**
  * HTTP client for the local OpenCode server API.
@@ -46,12 +47,16 @@ class OpenCodeApi(
     private fun encodeQuery(path: String, query: Map<String, String>): String {
         val q = LinkedHashMap<String, String>(query)
         val dir = directory
-        // Instance-scoped routes need the directory context; global routes
-        // tolerate it being absent, so only add it when known.
-        if (dir != null && !q.containsKey("directory") && path !in GLOBAL_PATHS) q["directory"] = dir
+        // OpenCode v2 scopes location routes with the deepObject query
+        // `location[directory]=<dir>`. The instance-free routes (health, event
+        // stream) take no scope. A caller that sets `directory` explicitly (the
+        // session list filter) keeps its own value.
+        if (dir != null && !q.containsKey("directory") && !q.containsKey("location[directory]") && path !in UNSCOPED_PATHS) {
+            q["location[directory]"] = dir
+        }
         if (q.isEmpty()) return path
         val suffix = q.entries.joinToString("&") { (k, v) ->
-            k + "=" + URLEncoder.encode(v, "UTF-8")
+            URLEncoder.encode(k, "UTF-8") + "=" + URLEncoder.encode(v, "UTF-8")
         }
         return path + (if (path.contains('?')) "&" else "?") + suffix
     }
@@ -66,7 +71,7 @@ class OpenCodeApi(
         val conn = (URL(baseUrl + full).openConnection() as HttpURLConnection).apply {
             requestMethod = method
             connectTimeout = connectTimeoutMs
-            readTimeout = if (method == "GET" && path.startsWith("/global/event")) Int.MAX_VALUE / 4 else readTimeoutMs
+            readTimeout = if (method == "GET" && path.startsWith("/api/event")) Int.MAX_VALUE / 4 else readTimeoutMs
             instanceFollowRedirects = false
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Authorization", "Basic " + authHeader())
@@ -107,13 +112,17 @@ class OpenCodeApi(
 
     // ---- global / lifecycle ------------------------------------------------
 
-    /** GET /global/health — `{healthy, version}`. */
+    /** GET /api/info — server identity; the body carries `version`. */
     fun health(): org.json.JSONObject =
-        org.json.JSONObject(request("GET", "/global/health").body)
+        org.json.JSONObject(request("GET", "/api/info").body)
 
-    /** POST /global/dispose — tears down every loaded OpenCode instance. */
+    /**
+     * POST /api/location/reload — rebuilds every loaded location so config and
+     * credential changes take effect (v1 `global.dispose`). Pending permissions
+     * and forms are cancelled by the server.
+     */
     fun dispose() {
-        request("POST", "/global/dispose")
+        request("POST", "/api/location/reload")
     }
 
     // ---- sessions ----------------------------------------------------------
@@ -122,36 +131,37 @@ class OpenCodeApi(
     fun listSessions(limit: Int = 50, roots: Boolean? = null, directory: String? = null): List<SessionInfo> {
         val q = LinkedHashMap<String, String>()
         q["limit"] = limit.toString()
-        if (roots != null) q["roots"] = roots.toString()
-        // `?directory=` is upstream's session filter (Session.list:
-        // `eq(SessionTable.directory, input.directory)`); the instance directory is
-        // appended automatically by [encodeQuery] when this is omitted, so this
-        // override lets a caller ask about a *different* workspace than the one
-        // currently pinned - used to delete a project's history on project delete.
-        if (directory != null) q["directory"] = directory
-        val arr = org.json.JSONArray(request("GET", "/session", query = q).body)
-        return (0 until arr.length()).map { SessionInfo.from(arr.getJSONObject(it)) }
+        // v2 `GET /api/session` filters by a top-level `directory` (SessionsQuery),
+        // not by the location deepObject. `roots` has no v2 equivalent and is ignored.
+        (directory ?: this.directory)?.let { q["directory"] = it }
+        val data = org.json.JSONObject(request("GET", "/api/session", query = q).body).optJSONArray("data")
+            ?: org.json.JSONArray()
+        return (0 until data.length()).map { SessionInfo.from(V2Mapping.session(data.getJSONObject(it))) }
     }
 
-    /** POST /session — create a session server-side (the server owns ids). */
+    /** POST /api/session — create a session at the pinned location (the server owns ids). */
     fun createSession(title: String? = null): SessionInfo {
         val body = org.json.JSONObject()
         if (title != null) body.put("title", title)
-        return SessionInfo.from(org.json.JSONObject(request("POST", "/session", body.toString()).body))
+        directory?.let { body.put("location", org.json.JSONObject().put("directory", it)) }
+        val data = org.json.JSONObject(request("POST", "/api/session", body.toString()).body).getJSONObject("data")
+        return SessionInfo.from(V2Mapping.session(data))
     }
 
-    /** GET /session/:id */
-    fun getSession(sessionID: String): SessionInfo =
-        SessionInfo.from(org.json.JSONObject(request("GET", "/session/$sessionID").body))
+    /** GET /api/session/:id */
+    fun getSession(sessionID: String): SessionInfo {
+        val data = org.json.JSONObject(request("GET", "/api/session/$sessionID").body).getJSONObject("data")
+        return SessionInfo.from(V2Mapping.session(data))
+    }
 
-    /** POST /session/:id/abort — interrupt the running turn. */
+    /** POST /api/session/:id/interrupt — stop the running turn. */
     fun abortSession(sessionID: String) {
-        request("POST", "/session/$sessionID/abort")
+        request("POST", "/api/session/$sessionID/interrupt", "{}")
     }
 
     /** DELETE /session/:id — upstream's `session.remove`; the server deletes. */
     fun deleteSession(sessionID: String) {
-        request("DELETE", "/session/$sessionID")
+        request("DELETE", "/api/session/$sessionID")
     }
 
     /**
@@ -162,11 +172,9 @@ class OpenCodeApi(
      * the model that writes the summary.
      */
     fun summarizeSession(sessionID: String, providerID: String, modelID: String, auto: Boolean = false) {
-        val body = org.json.JSONObject()
-            .put("providerID", providerID)
-            .put("modelID", modelID)
-        if (auto) body.put("auto", true)
-        request("POST", "/session/$sessionID/summarize", body.toString())
+        // v2 `POST /api/session/:id/compact` uses the session's own model; the
+        // summary model arguments have no v2 field and are not sent.
+        request("POST", "/api/session/$sessionID/compact", "{}")
     }
 
     /** GET /session/:id/message?limit= — history with parts. */
@@ -177,22 +185,27 @@ class OpenCodeApi(
      * old step. Malformed rows are skipped, never invented.
      */
     fun todos(sessionID: String): List<TodoItem> {
-        val arr = org.json.JSONArray(request("GET", "/session/$sessionID/todo").body)
-        val out = ArrayList<TodoItem>(arr.length())
-        for (i in 0 until arr.length()) {
-            val o = arr.optJSONObject(i) ?: continue
-            val content = o.optString("content").trim()
-            if (content.isEmpty()) continue
-            out.add(TodoItem(content = content, status = o.optString("status").trim().lowercase()))
-        }
-        return out
+        // OpenCode v2 has no todo route yet (port map: TBD). An empty list is
+        // reported honestly; the todo bar stays hidden until that is ported.
+        return emptyList()
     }
 
+    /**
+     * GET /api/session/:id/message — the newest [limit] messages (the endpoint caps a
+     * page at 200), returned oldest first as v1 `{info, parts}` objects.
+     */
     fun messages(sessionID: String, limit: Int = 200): List<MessageInfo> {
-        val arr = org.json.JSONArray(
-            request("GET", "/session/$sessionID/message", query = mapOf("limit" to limit.toString())).body,
+        val page = limit.coerceIn(1, 200)
+        val body = org.json.JSONObject(
+            request(
+                "GET",
+                "/api/session/$sessionID/message",
+                query = mapOf("limit" to page.toString(), "order" to "desc"),
+            ).body,
         )
-        return (0 until arr.length()).map { MessageInfo.from(arr.getJSONObject(it)) }
+        val data = body.optJSONArray("data") ?: org.json.JSONArray()
+        val mapped = V2Mapping.messages(data, sessionID, newestFirst = true)
+        return (0 until mapped.length()).map { MessageInfo.from(mapped.getJSONObject(it)) }
     }
 
     /**
@@ -212,30 +225,44 @@ class OpenCodeApi(
         variant: String? = null,
         attachments: List<Attachment> = emptyList(),
     ): Int {
-        val parts = org.json.JSONArray()
-        if (text.isNotEmpty()) {
-            parts.put(org.json.JSONObject().put("type", "text").put("text", text))
+        // v2 keeps model, agent and variant on the session, not on each prompt, so
+        // they are set first (only when they change for this session).
+        if (model != null) syncModel(sessionID, model, variant)
+        if (agent != null) syncAgent(sessionID, agent)
+        val body = org.json.JSONObject().put("text", text)
+        if (attachments.isNotEmpty()) {
+            val files = org.json.JSONArray()
+            for (a in attachments) {
+                val f = org.json.JSONObject().put("uri", a.url)
+                if (a.filename.isNotEmpty()) f.put("name", a.filename)
+                files.put(f)
+            }
+            body.put("files", files)
         }
-        for (a in attachments) {
-            val f = org.json.JSONObject().put("type", "file").put("mime", a.mime).put("url", a.url)
-            if (a.filename.isNotEmpty()) f.put("filename", a.filename)
-            parts.put(f)
-        }
-        val body = org.json.JSONObject().put("parts", parts)
-        if (model != null) {
-            body.put(
-                "model",
-                org.json.JSONObject().put("providerID", model.providerID).put("modelID", model.bareModelID),
-            )
-        }
-        if (agent != null) body.put("agent", agent)
-        // Upstream `PromptInput.variant` (session/prompt.ts): the reasoning
-        // variant of THIS turn's model, by the id the model's own `variants`
-        // record lists (e.g. "low" | "medium" | "high" | "xhigh"). The server
-        // records it on the user message and applies the variant's provider
-        // settings; an absent field means the model's default effort.
-        if (!variant.isNullOrEmpty()) body.put("variant", variant)
-        return request("POST", "/session/$sessionID/prompt_async", body.toString()).status
+        return request("POST", "/api/session/$sessionID/prompt", body.toString()).status
+    }
+
+    /** Last model/variant pushed to each session, so a turn does not re-send an unchanged model. */
+    private val syncedModel = HashMap<String, String>()
+    private val syncedAgent = HashMap<String, String>()
+
+    /** POST /api/session/:id/model when the model or variant differs from the last one sent. */
+    private fun syncModel(sessionID: String, model: ModelRef, variant: String?) {
+        val key = "${model.providerID}/${model.bareModelID}/${variant.orEmpty()}"
+        if (syncedModel[sessionID] == key) return
+        val ref = org.json.JSONObject()
+            .put("id", model.bareModelID)
+            .put("providerID", model.providerID)
+        if (!variant.isNullOrEmpty()) ref.put("variant", variant)
+        request("POST", "/api/session/$sessionID/model", org.json.JSONObject().put("model", ref).toString())
+        syncedModel[sessionID] = key
+    }
+
+    /** POST /api/session/:id/agent when the agent differs from the last one sent. */
+    private fun syncAgent(sessionID: String, agent: String) {
+        if (syncedAgent[sessionID] == agent) return
+        request("POST", "/api/session/$sessionID/agent", org.json.JSONObject().put("agent", agent).toString())
+        syncedAgent[sessionID] = agent
     }
 
     /**
@@ -244,72 +271,54 @@ class OpenCodeApi(
      * is `{sessionID, messageID, partID?}` and nothing else, so this is exactly the
      * call the TUI's `session.undo` command makes.
      */
-    fun revert(sessionID: String, messageID: String, partID: String? = null): org.json.JSONObject {
-        val body = org.json.JSONObject().put("messageID", messageID)
-        if (partID != null) body.put("partID", partID)
-        return org.json.JSONObject(request("POST", "/session/$sessionID/revert", body.toString()).body)
+    fun revert(sessionID: String, messageID: String, partID: String? = null): org.json.JSONObject =
+        notPorted("revert (v2: stage then commit)")
+
+    /** Clears a staged revert ("redo"). Slice 2: v2 `DELETE /api/session/:id/revert`. */
+    fun unrevert(sessionID: String): org.json.JSONObject = notPorted("unrevert")
+
+    /** PATCH /api/session/:id — rename a session (upstream owns titles; we only ask). */
+    fun updateSessionTitle(sessionID: String, title: String): SessionInfo {
+        val body = org.json.JSONObject().put("title", title).toString()
+        val data = org.json.JSONObject(request("PATCH", "/api/session/$sessionID", body).body).getJSONObject("data")
+        return SessionInfo.from(V2Mapping.session(data))
     }
 
-    /** POST /session/:id/unrevert — upstream's "redo": clears a staged revert. */
-    fun unrevert(sessionID: String): org.json.JSONObject =
-        org.json.JSONObject(request("POST", "/session/$sessionID/unrevert", "{}").body)
-
-    /** PATCH /session/:id — rename a session (upstream owns titles; we only ask). */
-    fun updateSessionTitle(sessionID: String, title: String): SessionInfo =
-        SessionInfo.from(
-            org.json.JSONObject(
-                request("PATCH", "/session/$sessionID", org.json.JSONObject().put("title", title).toString()).body,
-            ),
-        )
+    /**
+     * Raised by a method whose v2 route is not ported yet (migration phase 4, slice 2).
+     * It fails loudly rather than returning an empty answer that looks real.
+     */
+    private fun notPorted(what: String): Nothing =
+        throw ApiException(501, "", "$what is not on OpenCode v2 yet (migration phase 4, slice 2)")
 
     /**
      * POST /session/:id/shell — run a shell command *through the server's*
      * shell path (recorded as a real tool part on the transcript).
      */
-    fun shell(sessionID: String, command: String, agent: String): Int {
-        // ShellInput (upstream, pinned): { agent, command, model?, messageID? }
-        // - nothing else. Sending extra keys would be silently stripped, so the
-        // client keeps exactly the documented shape.
-        val body = org.json.JSONObject()
-            .put("agent", agent)
-            .put("command", command)
-        return request("POST", "/session/$sessionID/shell", body.toString()).status
-    }
+    fun shell(sessionID: String, command: String, agent: String): Int =
+        notPorted("shell command (v2: POST /api/session/:id/shell)")
 
     /** Same call as [shell], returning the response body (diagnostic gates). */
-    fun shellOutput(sessionID: String, command: String, agent: String): String {
-        val body = org.json.JSONObject()
-            .put("agent", agent)
-            .put("command", command)
-        return request("POST", "/session/$sessionID/shell", body.toString()).body
-    }
+    fun shellOutput(sessionID: String, command: String, agent: String): String =
+        notPorted("shell command (v2: POST /api/session/:id/shell)")
 
     // ---- permissions -------------------------------------------------------
 
-    /** GET /permission — pending permission asks for this instance. */
-    fun pendingPermissions(): List<PermissionRequest> {
-        val arr = org.json.JSONArray(request("GET", "/permission").body)
-        return (0 until arr.length()).map { PermissionRequest.from(arr.getJSONObject(it)) }
-    }
+    /**
+     * Pending permission asks. Slice 1 reports none: the v2 list route is not wired
+     * yet, so a tool call that needs approval waits until the turn is stopped.
+     * Slice 2 replaces this with `GET /api/permission/request` and the reply below.
+     */
+    fun pendingPermissions(): List<PermissionRequest> = emptyList()
 
-    /** POST /permission/:requestID/reply — once | always | reject. */
-    fun replyPermission(requestID: String, reply: String, message: String? = null) {
-        val body = org.json.JSONObject().put("reply", reply)
-        if (message != null) body.put("message", message)
-        request("POST", "/permission/$requestID/reply", body.toString())
-    }
+    /** POST /permission/:requestID/reply — once | always | reject. Slice 2. */
+    fun replyPermission(requestID: String, reply: String, message: String? = null): Unit =
+        notPorted("permission reply")
 
     // ---- MCP ---------------------------------------------------------------
 
     /** GET /mcp — name -> {status} for every configured MCP server. */
-    fun mcpStatus(): Map<String, String> {
-        val obj = org.json.JSONObject(request("GET", "/mcp").body)
-        val out = LinkedHashMap<String, String>()
-        for (k in obj.keys()) {
-            out[k] = obj.optJSONObject(k)?.optString("status") ?: obj.optString(k)
-        }
-        return out
-    }
+    fun mcpStatus(): Map<String, String> = emptyMap()
 
     /**
      * GET /mcp with upstream's own status object kept whole.
@@ -323,17 +332,8 @@ class OpenCodeApi(
      * gate K4 asserts on it; the UI uses this one.
      */
     fun mcpEntries(): Map<String, McpEntry> {
-        val obj = org.json.JSONObject(request("GET", "/mcp").body)
-        val out = LinkedHashMap<String, McpEntry>()
-        for (k in obj.keys()) {
-            val o = obj.optJSONObject(k)
-            out[k] = McpEntry(
-                name = k,
-                status = o?.optString("status") ?: obj.optString(k),
-                error = o?.optString("error") ?: "",
-            )
-        }
-        return out
+        // Slice 2: v2 `GET /api/mcp`. Until then no servers are reported.
+        return emptyMap()
     }
 
     /**
@@ -343,16 +343,15 @@ class OpenCodeApi(
      * instead of only after its next event frame.
      */
     fun sessionStatus(): Map<String, SessionStatusInfo> {
-        val obj = org.json.JSONObject(request("GET", "/session/status").body)
+        // v2 `GET /api/session/active` lists running sessions only (`{type: "running"}`);
+        // an idle session is simply absent, which the status map already means.
+        val data = org.json.JSONObject(request("GET", "/api/session/active").body).optJSONObject("data")
+            ?: org.json.JSONObject()
+        val obj = V2Mapping.activeStatus(data)
         val out = LinkedHashMap<String, SessionStatusInfo>()
         for (k in obj.keys()) {
             val o = obj.optJSONObject(k) ?: continue
-            out[k] = SessionStatusInfo(
-                type = o.optString("type"),
-                attempt = o.optInt("attempt"),
-                message = o.optString("message"),
-                nextMs = o.optLong("next"),
-            )
+            out[k] = SessionStatusInfo(type = o.optString("type"))
         }
         return out
     }
@@ -360,29 +359,17 @@ class OpenCodeApi(
     // ---- questions (upstream's question tool blocks a turn like an ask) -----
 
     /** GET /question — pending question requests (`QuestionV1.Request`). */
-    fun pendingQuestions(): List<QuestionRequest> {
-        val arr = org.json.JSONArray(request("GET", "/question").body)
-        return (0 until arr.length()).map { QuestionRequest.from(arr.getJSONObject(it)) }
-    }
+    fun pendingQuestions(): List<QuestionRequest> = emptyList() // slice 2: v2 forms
 
     /**
      * POST /question/:requestID/reply — `{answers: [[label, ...], ...]}`, one array
      * of selected labels per question, in order. Upstream's own shape.
      */
-    fun replyQuestion(requestID: String, answers: List<List<String>>) {
-        val arr = org.json.JSONArray()
-        for (a in answers) {
-            val one = org.json.JSONArray()
-            for (label in a) one.put(label)
-            arr.put(one)
-        }
-        request("POST", "/question/$requestID/reply", org.json.JSONObject().put("answers", arr).toString())
-    }
+    fun replyQuestion(requestID: String, answers: List<List<String>>): Unit =
+        notPorted("question reply (v2: form reply)")
 
-    /** POST /question/:requestID/reject — decline to answer (the agent continues). */
-    fun rejectQuestion(requestID: String) {
-        request("POST", "/question/$requestID/reject", "{}")
-    }
+    /** Decline to answer (the agent continues). Slice 2: v2 form cancel. */
+    fun rejectQuestion(requestID: String): Unit = notPorted("question reject (v2: form cancel)")
 
     /**
      * POST /mcp — connect an MCP server for this instance with an OpenCode MCP
@@ -390,24 +377,24 @@ class OpenCodeApi(
      * Note: this endpoint is instance state, it does NOT persist across a
      * restart; durable config goes through [patchGlobalConfig].
      */
-    fun addMcp(name: String, config: org.json.JSONObject): org.json.JSONObject {
-        val body = org.json.JSONObject().put("name", name).put("config", config)
-        return org.json.JSONObject(request("POST", "/mcp", body.toString()).body)
-    }
+    fun addMcp(name: String, config: org.json.JSONObject): org.json.JSONObject = notPorted("MCP add (slice 2)")
 
-    fun connectMcp(name: String) {
-        request("POST", "/mcp/$name/connect")
-    }
+    fun connectMcp(name: String): Unit = notPorted("MCP connect (slice 2)")
 
-    fun disconnectMcp(name: String) {
-        request("POST", "/mcp/$name/disconnect")
-    }
+    fun disconnectMcp(name: String): Unit = notPorted("MCP disconnect (slice 2)")
 
     // ---- providers / credentials -------------------------------------------
 
     /** GET /provider — `{all, default, connected}` from OpenCode itself. */
     fun providers(): ProviderSnapshot {
-        val obj = org.json.JSONObject(request("GET", "/provider").body)
+        // v2 splits this across three routes; V2Mapping rebuilds the v1 document
+        // so the parsing below stays the same.
+        val providers = org.json.JSONObject(request("GET", "/api/provider").body).optJSONArray("data")
+            ?: org.json.JSONArray()
+        val models = org.json.JSONObject(request("GET", "/api/model").body).optJSONArray("data")
+            ?: org.json.JSONArray()
+        val defaultModel = org.json.JSONObject(request("GET", "/api/model/default").body).optJSONObject("data")
+        val obj = V2Mapping.providerDocument(providers, models, defaultModel)
         val all = obj.optJSONArray("all") ?: org.json.JSONArray()
         val ids = ArrayList<String>(all.length())
         for (i in 0 until all.length()) {
@@ -470,43 +457,34 @@ class OpenCodeApi(
      * PUT /auth/:providerID — OpenCode's own credential store (`auth login`).
      * This is the normal upstream mechanism; the app is only a client of it.
      */
-    fun setProviderAuth(providerID: String, apiKey: String, metadata: org.json.JSONObject? = null) {
-        val body = org.json.JSONObject()
-            .put("type", "api")
-            .put("key", apiKey)
-        if (metadata != null) body.put("metadata", metadata)
-        request("PUT", "/auth/$providerID", body.toString())
-    }
+    fun setProviderAuth(providerID: String, apiKey: String, metadata: org.json.JSONObject? = null): Unit =
+        notPorted("provider credential (v2: POST /api/credential, slice 2)")
 
     fun deleteProviderAuth(providerID: String): Boolean =
-        request("DELETE", "/auth/$providerID").body.trim() == "true"
+        notPorted("provider credential removal (slice 2)")
 
     // ---- config (OpenCode's normal configuration mechanism) ---------------
 
     /** GET /global/config — the raw global opencode.json(c) document. */
     fun globalConfig(): org.json.JSONObject =
-        org.json.JSONObject(request("GET", "/global/config").body)
+        // Slice 2: v2 `GET /api/config` (its shape differs: `shell`, `subagent`, ...).
+        // Until then the policy reads as empty, which the UI shows as "not loaded".
+        org.json.JSONObject()
 
     /**
-     * PATCH /global/config — jsonc-patches the global config file through the
-     * server (used for durable MCP + permission policy instead of the app
-     * inventing its own settings store).
+     * Config writes. Slice 2: v2 `PATCH /api/experimental/config`. Failing here
+     * keeps the ask-by-default enforcement honest: it reports that it could not run.
      */
     fun patchGlobalConfig(patch: org.json.JSONObject): org.json.JSONObject =
-        org.json.JSONObject(request("PATCH", "/global/config", patch.toString()).body)
+        notPorted("config write (v2: PATCH /api/experimental/config)")
 
     // ---- files (read side; the server keeps ownership of writes) ----------
 
-    /** GET /file?path= — file/dir listing for the instance directory. */
-    fun fileList(path: String = ""): List<FileEntry> {
-        val arr = org.json.JSONArray(request("GET", "/file", query = mapOf("path" to path)).body)
-        return (0 until arr.length()).map { FileEntry.from(arr.getJSONObject(it)) }
-    }
+    /** File and directory listing. Slice 2: v2 `GET /api/fs/list`. */
+    fun fileList(path: String = ""): List<FileEntry> = notPorted("file list (v2: GET /api/fs/list)")
 
-    /** GET /file/content?path= */
-    fun fileContent(path: String): String =
-        org.json.JSONObject(request("GET", "/file/content", query = mapOf("path" to path)).body)
-            .optString("content")
+    /** File content. Slice 2: v2 `GET /api/fs/read/*`. */
+    fun fileContent(path: String): String = notPorted("file read (v2: GET /api/fs/read)")
 
     // ---- models ------------------------------------------------------------
 
@@ -753,7 +731,8 @@ class OpenCodeApi(
          */
         const val ZEN_PROVIDER_ID = "opencode"
         /** Routes that must NOT carry a directory (instance resolution). */
-        private val GLOBAL_PATHS = setOf("/global/health", "/global/dispose", "/global/config", "/global/event")
+        /** Routes that take no location scope: server identity and the event stream. */
+        private val UNSCOPED_PATHS = setOf("/api/info", "/api/event")
 
     }
 }

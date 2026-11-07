@@ -21,8 +21,12 @@ object V2Translator {
     /** One v1 frame: event name and its properties object. */
     data class Frame(val type: String, val props: JSONObject)
 
-    /** Translate one v2 event. Unknown or incomplete events produce no frames. */
-    fun translate(type: String, data: JSONObject): List<Frame> {
+    /**
+     * Translate one v2 event. [created] is the envelope's `created` (epoch ms); it is
+     * used for the message timestamp because `data` does not carry it. Unknown or
+     * incomplete events produce no frames.
+     */
+    fun translate(type: String, data: JSONObject, created: Long = 0L): List<Frame> {
         val sid = data.optString("sessionID")
         // Every event this slice handles is scoped to a session; without one, drop it.
         if (sid.isEmpty()) return emptyList()
@@ -32,7 +36,7 @@ object V2Translator {
                 listOf(status(sid, "idle"), Frame("session.idle", JSONObject().put("sessionID", sid)))
             "session.execution.failed" -> failure(sid, data.optJSONObject("error"))
             "session.step.failed" -> failure(sid, data.optJSONObject("error"))
-            "session.step.started" -> stepStarted(sid, data)
+            "session.step.started" -> stepStarted(sid, data, created)
             "session.text.started" -> partStarted(sid, data, "text")
             "session.reasoning.started" -> partStarted(sid, data, "reasoning")
             "session.text.delta" -> partDelta(sid, data, "text")
@@ -42,6 +46,17 @@ object V2Translator {
             "session.idle" -> listOf(Frame("session.idle", JSONObject().put("sessionID", sid)))
             else -> emptyList()
         }
+    }
+
+    /**
+     * Parse one raw `/api/event` SSE payload (`{id, created, type, data}`) and translate it.
+     * Malformed JSON or a missing type yields no frames instead of an exception.
+     */
+    fun translateEnvelope(raw: String): List<Frame> {
+        val envelope = runCatching { JSONObject(raw) }.getOrNull() ?: return emptyList()
+        val type = envelope.optString("type")
+        if (type.isEmpty()) return emptyList()
+        return translate(type, envelope.optJSONObject("data") ?: JSONObject(), envelope.optLong("created", 0L))
     }
 
     /** The part id is stable across started, delta and ended frames of the same text. */
@@ -64,14 +79,14 @@ object V2Translator {
         )
     }
 
-    private fun stepStarted(sid: String, data: JSONObject): List<Frame> {
+    private fun stepStarted(sid: String, data: JSONObject, created: Long): List<Frame> {
         val mid = data.optString("assistantMessageID")
         if (mid.isEmpty()) return emptyList()
         val info = JSONObject()
             .put("id", mid)
             .put("sessionID", sid)
             .put("role", "assistant")
-            .put("time", JSONObject().put("created", data.optLong("created", 0L)))
+            .put("time", JSONObject().put("created", created))
         return listOf(Frame("message.updated", JSONObject().put("info", info)))
     }
 

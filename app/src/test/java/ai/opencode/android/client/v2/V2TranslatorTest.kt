@@ -55,13 +55,15 @@ class V2TranslatorTest {
     fun step_started_creates_the_assistant_message() {
         val f = V2Translator.translate(
             "session.step.started",
-            data("""{"sessionID":"$sid","assistantMessageID":"$mid","created":1700000000000}"""),
+            data("""{"sessionID":"$sid","assistantMessageID":"$mid"}"""),
+            created = 1700000000000L,
         )
         assertEquals(listOf("message.updated"), f.map { it.type })
         val info = f[0].props.getJSONObject("info")
         assertEquals(mid, info.getString("id"))
         assertEquals(sid, info.getString("sessionID"))
         assertEquals("assistant", info.getString("role"))
+        assertEquals(1700000000000L, info.getJSONObject("time").getLong("created"))
     }
 
     @Test
@@ -103,6 +105,24 @@ class V2TranslatorTest {
     @Test
     fun events_without_a_session_are_dropped() {
         assertTrue(V2Translator.translate("session.execution.started", data("""{}""")).isEmpty())
+    }
+
+    @Test
+    fun envelope_is_unwrapped_and_malformed_input_is_dropped() {
+        val f = V2Translator.translateEnvelope(
+            """{"id":"evt_1","created":42,"type":"session.execution.started","data":{"sessionID":"$sid"}}""",
+        )
+        assertEquals(listOf("session.status"), f.map { it.type })
+        assertTrue(V2Translator.translateEnvelope("not json").isEmpty())
+        assertTrue(V2Translator.translateEnvelope("""{"id":"evt_2","data":{"sessionID":"$sid"}}""").isEmpty())
+    }
+
+    @Test
+    fun envelope_created_time_reaches_the_assistant_message() {
+        val f = V2Translator.translateEnvelope(
+            """{"id":"evt_3","created":42,"type":"session.step.started","data":{"sessionID":"$sid","assistantMessageID":"$mid"}}""",
+        )
+        assertEquals(42L, f[0].props.getJSONObject("info").getJSONObject("time").getLong("created"))
     }
 
     @Test

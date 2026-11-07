@@ -11,6 +11,7 @@ import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.nio.charset.StandardCharsets.UTF_8
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -20,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * Round-trips the client against a local stand-in HTTP server so the *wire
  * shape* is verified (method, path, query, body, auth header) without a device.
  * The on-device instrumented test then proves the same code against the real
- * OpenCode server; these two together are what backs "the app is a client of
+ * OpenCode v2 server; these two together are what backs "the app is a client of
  * the upstream API" - nothing here re-implements server behavior, it only
  * records what the client sends.
  *
@@ -44,16 +45,18 @@ class OpenCodeApiHttpTest {
         val contentLengthHeader: String?,
     )
 
-    /** `streamThenClose` mimics `GET /global/event`: no length, body until EOF. */
+    /** `streamThenClose` mimics `GET /api/event`: no length, body until EOF. */
     private class Resp(val status: Int, val body: String, val streamThenClose: Boolean = false)
 
     private val seen = ConcurrentLinkedQueue<Record>()
     @Volatile private var lastExchange: Record? = null
     @Volatile private var responseBody: String = "{}"
     @Volatile private var responseStatus: Int = 200
+    /** Per-path bodies for calls that read several routes (providers, messages). */
+    private val bodyByPath = ConcurrentHashMap<String, String>()
     private var fake: FakeHttp? = null
 
-    private fun respondTo(rec: Record): Resp = Resp(responseStatus, responseBody)
+    private fun respondTo(rec: Record): Resp = Resp(responseStatus, bodyByPath[rec.path] ?: responseBody)
 
     @Before
     fun up() {
@@ -61,6 +64,7 @@ class OpenCodeApiHttpTest {
         lastExchange = null
         responseBody = "{}"
         responseStatus = 200
+        bodyByPath.clear()
         fake = FakeHttp(
             onRequest = { rec -> seen.add(rec); lastExchange = rec },
             responder = { rec -> respondTo(rec) },
@@ -80,36 +84,65 @@ class OpenCodeApiHttpTest {
         directory = "/data/user/0/ai.opencode.android/files/workspaces/proj",
     )
 
-    // ---- wire shape ---------------------------------------------------------
+    // ---- wire shape: connect and sessions -----------------------------------
 
     @Test
-    fun healthIsGlobalAndCarriesBasicAuth() {
-        responseBody = """{"healthy":true,"version":"1.18.23"}"""
+    fun healthIsApiInfoAndCarriesBasicAuth() {
+        responseBody = """{"version":"2.2.5"}"""
         val h = api().health()
-        assertTrue(h.getBoolean("healthy"))
+        assertEquals("2.2.5", h.getString("version"))
         val r = lastExchange!!
         assertEquals("GET", r.method)
-        assertEquals("/global/health", r.path)
-        assertEquals("global routes must not be directory-scoped", "", r.query)
+        assertEquals("/api/info", r.path)
+        assertEquals("unscoped routes must not carry a location", "", r.query)
         val expected = "Basic " + java.util.Base64.getEncoder().encodeToString("opencode:secret-pw".toByteArray())
         assertEquals(expected, r.auth)
     }
 
     @Test
-    fun sessionCreateIsDirectoryScopedAndPassesTitle() {
-        responseBody = """{"id":"ses_abc","title":"t1","directory":"/x"}"""
+    fun sessionCreateIsLocationScopedAndMapsTheV2Envelope() {
+        responseBody = """{"data":{"id":"ses_abc","title":"t1","location":{"directory":"/x"},
+            "projectID":"prj_1","cost":0,"time":{"created":1000,"updated":2000}}}"""
         val s = api().createSession("t1")
         assertEquals("ses_abc", s.id)
+        assertEquals("/x", s.directory)
+        assertEquals(2000L, s.updatedAt)
         val r = lastExchange!!
         assertEquals("POST", r.method)
-        assertEquals("/session", r.path)
-        assertTrue(r.query, r.query.contains("directory=%2Fdata%2Fuser%2F0"))
-        assertEquals(JSONObject(r.body).getString("title"), "t1")
+        assertEquals("/api/session", r.path)
+        assertTrue(r.query, r.query.contains("location%5Bdirectory%5D=%2Fdata%2Fuser%2F0"))
+        val body = JSONObject(r.body)
+        assertEquals("t1", body.getString("title"))
+        assertEquals("/data/user/0/ai.opencode.android/files/workspaces/proj", body.getJSONObject("location").getString("directory"))
     }
 
-    /** A body-carrying POST must say how long the body is, or the server waits. */
     @Test
-    fun promptAsyncSendsUpstreamPartShape() {
+    fun sessionListUsesTheTopLevelDirectoryFilter() {
+        responseBody = """{"data":[{"id":"ses_1","title":"a","location":{"directory":"/p"},"time":{"created":1,"updated":5}}],
+            "cursor":{}}"""
+        val list = api().listSessions(limit = 20, directory = "/other")
+        assertEquals(listOf("ses_1"), list.map { it.id })
+        val r = lastExchange!!
+        assertEquals("GET", r.method)
+        assertEquals("/api/session", r.path)
+        assertTrue(r.query, r.query.contains("directory=%2Fother"))
+        assertTrue(r.query, r.query.contains("limit=20"))
+        assertTrue("the explicit filter replaces the location scope", !r.query.contains("location"))
+    }
+
+    @Test
+    fun abortInterruptsTheSession() {
+        api().abortSession("ses_1")
+        val r = lastExchange!!
+        assertEquals("POST", r.method)
+        assertEquals("/api/session/ses_1/interrupt", r.path)
+    }
+
+    // ---- wire shape: prompt --------------------------------------------------
+
+    /** Model and agent are session settings in v2: sent once, then only the prompt. */
+    @Test
+    fun promptSyncsModelAndAgentThenSendsTheText() {
         responseStatus = 204
         responseBody = ""
         val status = api().promptAsync(
@@ -120,139 +153,182 @@ class OpenCodeApiHttpTest {
             variant = "high",
         )
         assertEquals(204, status)
-        val r = lastExchange!!
-        assertEquals("/session/ses_1/prompt_async", r.path)
-        val body = JSONObject(r.body)
-        assertEquals("text", body.getJSONArray("parts").getJSONObject(0).getString("type"))
-        assertEquals("hello", body.getJSONArray("parts").getJSONObject(0).getString("text"))
-        assertEquals("big-pickle", body.getJSONObject("model").getString("modelID"))
-        // Upstream PromptInput.agent / .variant, verbatim (build/plan mode and
-        // the model's reasoning variant id).
-        assertEquals("plan", body.getString("agent"))
-        assertEquals("high", body.getString("variant"))
+        assertEquals(
+            listOf("/api/session/ses_1/model", "/api/session/ses_1/agent", "/api/session/ses_1/prompt"),
+            seen.map { it.path },
+        )
+        val model = JSONObject(seen.elementAt(0).body).getJSONObject("model")
+        assertEquals("big-pickle", model.getString("id"))
+        assertEquals("opencode", model.getString("providerID"))
+        assertEquals("high", model.getString("variant"))
+        assertEquals("plan", JSONObject(seen.elementAt(1).body).getString("agent"))
+        assertEquals("hello", JSONObject(seen.elementAt(2).body).getString("text"))
     }
 
-    /** Default prompts must NOT invent agent/variant fields the user never chose. */
     @Test
-    fun promptAsyncOmitsAgentAndVariantWhenUnset() {
+    fun promptDoesNotResendAnUnchangedModel() {
         responseStatus = 204
         responseBody = ""
-        api().promptAsync("ses_1", "hello")
-        val body = JSONObject(lastExchange!!.body)
-        assertTrue(body.toString(), !body.has("agent"))
-        assertTrue(body.toString(), !body.has("variant"))
-    }
-
-    /**
-     * `GET /provider` model rows carry `variants` (upstream `Model.variants`,
-     * a record keyed by the ids `PromptInput.variant` accepts). The parser must
-     * surface exactly those keys, and `variantsOf` must resolve them for a
-     * ModelRef whose model id arrives with or without the provider prefix.
-     */
-    @Test
-    fun providersParsesTheModelsOwnVariantIds() {
-        responseBody = """{"all":[{"id":"openai","name":"OpenAI","models":{
-            "gpt-5":{"id":"gpt-5","name":"GPT-5","status":"active",
-                     "variants":{"low":{},"medium":{},"high":{},"xhigh":{}}},
-            "gpt-4o-mini":{"id":"gpt-4o-mini","name":"GPT-4o mini","status":"active"}
-        }}],"default":{},"connected":["openai"]}"""
-        val snap = api().providers()
-        // Set comparison: the JVM org.json (unlike Android's) does not promise
-        // key order, and the CONTRACT is "exactly these ids", not their order.
-        val expected = setOf("low", "medium", "high", "xhigh")
-        val gpt5 = snap.modelsOf("openai").first { it.id == "gpt-5" }
-        assertEquals(expected, gpt5.variants.toSet())
-        assertEquals(emptyList<String>(), snap.modelsOf("openai").first { it.id == "gpt-4o-mini" }.variants)
-        assertEquals(expected, snap.variantsOf(OpenCodeApi.ModelRef("openai", "gpt-5")).toSet())
-        // The default-map shape "openai/gpt-5" must find the same row.
-        assertEquals(expected, snap.variantsOf(OpenCodeApi.ModelRef("openai", "openai/gpt-5")).toSet())
-        assertEquals(emptyList<String>(), snap.variantsOf(null))
-    }
-
-    @Test
-    fun permissionReplyUsesTheUpstreamRoute() {
-        responseBody = "true"
-        api().replyPermission("per_9", "once")
-        val r = lastExchange!!
-        assertEquals("POST", r.method)
-        assertEquals("/permission/per_9/reply", r.path)
-        assertEquals("once", JSONObject(r.body).getString("reply"))
-    }
-
-    @Test
-    fun authProvisioningUsesProviderIdRoute() {
-        responseBody = "true"
-        api().setProviderAuth("openrouter", "sk-or-TEST")
-        assertEquals("/auth/openrouter", lastExchange!!.path)
-        assertEquals("PUT", lastExchange!!.method)
-        val body = JSONObject(lastExchange!!.body)
-        assertEquals("api", body.getString("type"))
-        assertEquals("sk-or-TEST", body.getString("key"))
-    }
-
-    @Test
-    fun mcpAddPostsNameAndConfig() {
-        responseBody = """{"status":"connected"}"""
-        val out = api().addMcp("gates", JSONObject("""{"type":"local","command":["bun","x.js"]}"""))
-        assertEquals("connected", out.getString("status"))
-        assertEquals("/mcp", lastExchange!!.path)
-        assertEquals("gates", JSONObject(lastExchange!!.body).getString("name"))
-    }
-
-    /**
-     * The durable-config route is `PATCH /global/config`, and the JVM's
-     * `HttpURLConnection` refuses the method outright
-     * (`ProtocolException: Invalid HTTP method: PATCH`). Android's OkHttp-backed
-     * implementation accepts it, so production is fine - but a JVM harness has *no*
-     * coverage of this path, which is why gate K9 (instrumented, on device) exists.
-     * Asserting the JDK limitation here keeps that gap visible in code instead of
-     * leaving a test that silently passes nothing.
-     */
-    @Test
-    fun patchMethodIsAndroidOnly() {
-        responseBody = """{"info":{},"changed":true}"""
-        val err = runCatching { api().patchGlobalConfig(JSONObject("""{"permission":{"bash":"ask"}}""")) }
-            .exceptionOrNull()
-        assertTrue(
-            "expected the JDK's PATCH rejection on the JVM, got: $err",
-            err is java.net.ProtocolException && err.message!!.contains("PATCH"),
+        val api = api()
+        api.promptAsync("ses_1", "one", OpenCodeApi.ModelRef("opencode", "big-pickle"))
+        api.promptAsync("ses_1", "two", OpenCodeApi.ModelRef("opencode", "big-pickle"))
+        assertEquals(
+            listOf("/api/session/ses_1/model", "/api/session/ses_1/prompt", "/api/session/ses_1/prompt"),
+            seen.map { it.path },
         )
     }
 
+    @Test
+    fun promptOmitsFilesWhenNoneAndMapsAttachmentsToUri() {
+        responseStatus = 204
+        responseBody = ""
+        api().promptAsync("ses_1", "plain")
+        assertTrue(!JSONObject(lastExchange!!.body).has("files"))
+
+        api().promptAsync(
+            "ses_1",
+            "with file",
+            attachments = listOf(OpenCodeApi.Attachment("notes.txt", "text/plain", "file:///x/notes.txt", 3)),
+        )
+        val files = JSONObject(lastExchange!!.body).getJSONArray("files")
+        assertEquals("file:///x/notes.txt", files.getJSONObject(0).getString("uri"))
+        assertEquals("notes.txt", files.getJSONObject(0).getString("name"))
+    }
+
+    // ---- wire shape: providers, status, messages -----------------------------
+
     /**
-     * DELETE with no body: HttpURLConnection would otherwise omit Content-Length
-     * entirely, and a server that keeps the connection open then blocks. The client
-     * sends `Content-Length: 0` (framing choice, not an API change); this pins it.
+     * The v1 provider document is rebuilt from three v2 routes. Disabled models are
+     * dropped, a provider is "connected" when it has an enabled model, and the
+     * variant ids come from the model's own variant list.
      */
     @Test
-    fun bodylessRequestsDeclareZeroLength() {
-        responseBody = "true"
-        api().deleteProviderAuth("openrouter")
+    fun providersAreBuiltFromTheV2Routes() {
+        bodyByPath["/api/provider"] = """{"data":[{"id":"openai","name":"OpenAI","activation":"auto"},
+            {"id":"off","name":"Off","activation":"disabled"}],"location":{"directory":"/p"}}"""
+        bodyByPath["/api/model"] = """{"data":[
+            {"id":"gpt-5","providerID":"openai","name":"GPT-5","status":"active","enabled":true,
+             "variants":[{"id":"low"},{"id":"medium"},{"id":"high"},{"id":"xhigh"}]},
+            {"id":"gpt-old","providerID":"openai","name":"Old","status":"deprecated","enabled":false},
+            {"id":"m1","providerID":"off","name":"M1","status":"active","enabled":true}],"location":{"directory":"/p"}}"""
+        bodyByPath["/api/model/default"] = """{"data":{"id":"gpt-5","providerID":"openai"},"location":{"directory":"/p"}}"""
+        val snap = api().providers()
+        assertEquals(listOf("openai"), snap.connected)
+        assertEquals(listOf("gpt-5"), snap.modelsOf("openai").map { it.id })
+        assertEquals(setOf("low", "medium", "high", "xhigh"), snap.modelsOf("openai")[0].variants.toSet())
+        assertEquals("gpt-5", snap.defaultModel["openai"])
+        assertEquals(emptyList<String>(), snap.modelsOf("off"))
+        assertEquals(setOf("low", "medium", "high", "xhigh"), snap.variantsOf(OpenCodeApi.ModelRef("openai", "gpt-5")).toSet())
+    }
+
+    @Test
+    fun activeSessionsBecomeBusyStatus() {
+        responseBody = """{"data":{"ses_1":{"type":"running"}}}"""
+        val status = api().sessionStatus()
+        assertEquals("/api/session/active", lastExchange!!.path)
+        assertTrue(status["ses_1"]!!.busy)
+        assertEquals(setOf("ses_1"), status.keys)
+    }
+
+    /** The v2 message page is newest-first; the client returns it oldest-first, mapped to v1 parts. */
+    @Test
+    fun messagesAreMappedOldestFirstWithStablePartIds() {
+        responseBody = """{"data":[
+            {"id":"msg_a","type":"assistant","agent":"build","model":{"id":"m","providerID":"p"},
+             "content":[{"type":"reasoning","text":"think"},{"type":"text","text":"Hello"}],
+             "time":{"created":2,"completed":3}},
+            {"id":"msg_u","type":"user","text":"hi","files":[],"agents":[],"skills":[],"time":{"created":1}}
+            ],"cursor":{}}"""
+        val list = api().messages("ses_1", limit = 50)
+        assertEquals("/api/session/ses_1/message", lastExchange!!.path)
+        assertTrue(lastExchange!!.query, lastExchange!!.query.contains("order=desc"))
+        assertTrue(lastExchange!!.query, lastExchange!!.query.contains("limit=50"))
+        assertEquals(listOf("msg_u", "msg_a"), list.map { it.id })
+        assertEquals("user", list[0].role)
+        assertEquals("hi", list[0].parts[0].getString("text"))
+        assertEquals("assistant", list[1].role)
+        assertEquals(listOf("reasoning", "text"), list[1].parts.map { it.getString("type") })
+        assertEquals("msg_a:text:1", list[1].parts[1].getString("id"))
+        assertEquals("msg_a:reasoning:0", list[1].parts[0].getString("id"))
+        assertEquals(3L, list[1].info!!.getJSONObject("time").getLong("completed"))
+    }
+
+    @Test
+    fun assistantErrorBecomesANamedErrorObject() {
+        responseBody = """{"data":[{"id":"msg_e","type":"assistant","agent":"build",
+            "model":{"id":"m","providerID":"p"},"content":[],
+            "error":{"type":"provider.free-limit","message":"Free usage limit reached.","status":429},
+            "time":{"created":1}}],"cursor":{}}"""
+        val msg = api().messages("ses_1").single()
+        val err = msg.info!!.getJSONObject("error")
+        assertEquals("provider.free-limit", err.getString("name"))
+        assertEquals("Free usage limit reached.", err.getJSONObject("data").getString("message"))
+        assertEquals(429, err.getJSONObject("data").getInt("statusCode"))
+    }
+
+    // ---- not ported yet: fail loudly, send nothing ---------------------------
+
+    @Test
+    fun portsNotDoneYetFailWithoutSendingARequest() {
+        val calls: List<() -> Any?> = listOf(
+            { api().revert("ses_1", "msg_1") },
+            { api().unrevert("ses_1") },
+            { api().shell("ses_1", "ls", "build") },
+            { api().replyPermission("per_1", "once") },
+            { api().replyQuestion("q_1", listOf(listOf("a"))) },
+            { api().addMcp("x", JSONObject()) },
+            { api().setProviderAuth("openrouter", "k") },
+            { api().patchGlobalConfig(JSONObject()) },
+            { api().fileContent("opencode.json") },
+        )
+        for (call in calls) {
+            val err = runCatching { call() }.exceptionOrNull()
+            assertTrue("expected not-ported error, got $err", err is OpenCodeApi.ApiException)
+            assertEquals(501, (err as OpenCodeApi.ApiException).status)
+        }
+        assertEquals(0, seen.size)
+    }
+
+    /** Lists whose routes are not ported report empty rather than failing the whole refresh. */
+    @Test
+    fun portedAsEmptyListsMakeNoRequest() {
+        assertEquals(emptyList<Any>(), api().pendingPermissions())
+        assertEquals(emptyList<Any>(), api().pendingQuestions())
+        assertEquals(emptyList<Any>(), api().todos("ses_1"))
+        assertEquals(emptyMap<String, Any>(), api().mcpEntries())
+        assertEquals(0, seen.size)
+    }
+
+    /** A body-less POST declares Content-Length: 0 so the server does not wait for a body. */
+    @Test
+    fun disposeReloadsTheLocationWithZeroLengthFraming() {
+        responseStatus = 204
+        responseBody = ""
+        api().dispose()
         val r = lastExchange!!
-        assertEquals("DELETE", r.method)
-        assertEquals("/auth/openrouter", r.path)
+        assertEquals("POST", r.method)
+        assertEquals("/api/location/reload", r.path)
         assertEquals("0", r.contentLengthHeader)
-        assertEquals("", r.body)
     }
 
     @Test
     fun non2xxBecomesTypedError() {
         responseStatus = 404
-        responseBody = """{"name":"UnknownError","data":{"message":"nope"}}"""
+        responseBody = """{"name":"NotFoundError","message":"session not found"}"""
         val err = runCatching { api().getSession("ses_missing") }.exceptionOrNull()
         assertTrue(err is OpenCodeApi.ApiException)
         assertEquals(404, (err as OpenCodeApi.ApiException).status)
-        assertTrue(err.body.contains("UnknownError"))
+        assertTrue(err.body.contains("NotFoundError"))
     }
 
-    /** The event-stream client, end to end, against a real socket. */
+    /** The v2 event stream, end to end, against a real socket: envelopes become v1 frames. */
     @Test
-    fun eventStreamParsesFramesAndReconnects() {
+    fun eventStreamTranslatesV2EnvelopesAndReconnects() {
         val hits = AtomicInteger()
-        val frames = "event: message\n" +
-            "data: {\"payload\":{\"type\":\"session.updated\",\"properties\":{\"sessionID\":\"s1\"}}}\n\n" +
-            "data: {\"payload\":{\"type\":\"sync\",\"syncEvent\":{\"type\":\"message.part.updated.1\"," +
-            "\"data\":{\"sessionID\":\"s1\"}}}}\n\n"
+        val frames = "data: {\"id\":\"evt_0\",\"created\":1,\"type\":\"server.connected\",\"data\":{}}\n\n" +
+            "data: {\"id\":\"evt_1\",\"created\":2,\"type\":\"session.execution.started\",\"data\":{\"sessionID\":\"s1\"}}\n\n" +
+            "data: {\"id\":\"evt_2\",\"created\":3,\"type\":\"session.text.delta\",\"data\":" +
+            "{\"sessionID\":\"s1\",\"assistantMessageID\":\"msg_1\",\"ordinal\":0,\"delta\":\"hi\"}}\n\n"
         val sse = FakeHttp(
             onRequest = { hits.incrementAndGet() },
             responder = { Resp(200, frames, streamThenClose = true) },
@@ -263,7 +339,6 @@ class OpenCodeApiHttpTest {
             baseUrl = "http://127.0.0.1:${sse.port}",
             username = "opencode",
             password = "secret-pw",
-            directory = null,
             onEvent = { ev ->
                 types.add(ev.type)
                 got.countDown()
@@ -272,14 +347,14 @@ class OpenCodeApiHttpTest {
         )
         try {
             stream.start()
-            assertTrue("two events must arrive (got $types)", got.await(20, TimeUnit.SECONDS))
-            // The stream is a subscription, not a one-shot: after the server closed
-            // the body the client must reconnect on its own.
+            assertTrue("two translated events must arrive (got $types)", got.await(20, TimeUnit.SECONDS))
+            // The stream is a subscription: after the server closed the body the client reconnects.
             val deadline = System.currentTimeMillis() + 10_000
             while (hits.get() < 2 && System.currentTimeMillis() < deadline) Thread.sleep(150)
             assertTrue("stream should have reconnected (hits=${hits.get()})", hits.get() >= 2)
-            assertTrue(types.toString(), types.contains("session.updated"))
-            assertTrue(types.toString(), types.contains("message.part.updated"))
+            assertTrue(types.toString(), types.contains("session.status"))
+            assertTrue(types.toString(), types.contains("message.part.delta"))
+            assertTrue("server.connected is not a v1 frame", !types.contains("server.connected"))
         } finally {
             stream.stop()
             sse.close()

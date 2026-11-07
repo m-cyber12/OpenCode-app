@@ -1,5 +1,6 @@
 package ai.opencode.android.client
 
+import ai.opencode.android.client.v2.V2Translator
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -9,24 +10,26 @@ import java.util.Base64
  * Server-sent-events client for OpenCode's event stream.
  *
  * The app does not poll for progress and does not reconstruct agent state
- * locally: it subscribes to the server's own stream (`GET /global/event`, the
- * same one the TUI and the desktop app consume) and reduces the frames it
- * receives. Frames are `event: message` + `data: {directory, project, payload}`
- * where `payload.type` is the event type; a keepalive `server.heartbeat` is
- * emitted by the server every 10s (Local.heartbeat in server.ts), so a quiet
- * stream longer than that means the connection died and we reconnect.
+ * locally: it subscribes to the server's own stream (`GET /api/event`, OpenCode
+ * v2) and reduces the frames it receives through [V2Translator]. Each SSE data
+ * line is a v2 envelope `{id, created, type, data}`. The v1 `/global/event`
+ * path is gone with the v1 server.
  */
 class OpenCodeEventStream(
     baseUrl: String,
     private val username: String,
     private val password: String,
-    /** Absolute workspace directory; scopes the stream like every other call. */
+    /** Unused by the v2 stream, which covers every location; kept for the call sites. */
     private val directory: String? = null,
     /** Called for every event frame (background thread). */
     private val onEvent: (Event) -> Unit,
     private val onStatus: (String) -> Unit = {},
-    private val heartbeatTimeoutMs: Long = 25_000,
-    private val path: String = "/global/event",
+    /**
+     * OpenCode v2 sends no heartbeat frame, so a quiet turn (a long tool run) looks
+     * the same as a dead socket. 120 s is the silence budget before reconnecting.
+     */
+    private val heartbeatTimeoutMs: Long = 120_000,
+    private val path: String = "/api/event",
 ) {
 
     data class Event(val type: String, val properties: JSONObject, val frame: JSONObject)
@@ -55,7 +58,7 @@ class OpenCodeEventStream(
                 val opened = readStream()
                 if (!running) break
                 // A clean end-of-stream (e.g. server instance disposed) also
-                // reconnects: OpenCode closes /global/event on dispose.
+                // reconnects: OpenCode closes the stream on dispose or reload.
                 backoff = if (opened) 250L else backoff
                 onStatus("stream ended; reconnecting")
             } catch (t: Throwable) {
@@ -71,14 +74,8 @@ class OpenCodeEventStream(
 
     /** @return true if at least one frame was delivered before the stream ended. */
     private fun readStream(): Boolean {
-        // /global/event is instance-agnostic (it fans out every directory), so
-        // the directory is only appended to the instance-scoped stream.
-        val dir = directory
-        val url = if (dir != null && !path.startsWith("/global/")) {
-            base + path + "?directory=" + encode(dir)
-        } else {
-            base + path
-        }
+        // /api/event covers every location, so no scope is added.
+        val url = base + path
         val conn = (URL(url).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             connectTimeout = 8_000
@@ -133,6 +130,13 @@ class OpenCodeEventStream(
     }
 
     private fun dispatch(raw: String) {
+        if (path.startsWith("/api/")) {
+            // v2 envelope `{id, created, type, data}`: translate to the v1 frames the
+            // transcript reads. Unknown events produce nothing.
+            val envelope = runCatching { JSONObject(raw) }.getOrElse { return }
+            for (f in V2Translator.translateEnvelope(raw)) onEvent(Event(f.type, f.props, envelope))
+            return
+        }
         val frame = runCatching { JSONObject(raw) }.getOrElse { return }
         val payload = frame.optJSONObject("payload") ?: frame
         val type = EventFrame.deriveType(payload)
@@ -140,5 +144,4 @@ class OpenCodeEventStream(
         onEvent(Event(type, EventFrame.properties(payload), payload))
     }
 
-    private fun encode(v: String): String = java.net.URLEncoder.encode(v, "UTF-8")
 }

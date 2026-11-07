@@ -2,6 +2,12 @@
 
 Source: OpenCode v2.2.5 (`packages/protocol/src/groups/*.ts`, `packages/schema/src/event*.ts`). Each row is a call the app makes today (`client/OpenCodeApi.kt`), with its v2 equivalent. "TBD" = no direct equivalent found yet; decide before porting.
 
+## Status (2026-11-07)
+
+- Slice 1 done in code (`client/v2/`, `OpenCodeApi.kt`, `OpenCodeEventStream.kt`): connect, sessions, prompt, interrupt, history, models, active status, text and reasoning stream, errors. JVM tests in `OpenCodeApiHttpTest` and `v2/V2TranslatorTest`.
+- Not ported (throw status 501): revert, unrevert, shell, permission reply, question reply and reject, MCP add and connect, provider credentials, config write, file read and list. Empty for now: pending permissions and questions, todos, MCP list.
+- Event stream: `/api/event` (no `directory` scope); v2 sends no heartbeat, so the silence budget is 120 s.
+
 ## Status of the runtime (done)
 
 - Server starts on Node 26 with the v2 bundle; health on `GET /api/info` (body has `"version"`). Verified on device 2026-11-06 (`version 2.2.5`, healthy in ~4 s after start).
@@ -29,7 +35,7 @@ Source: OpenCode v2.2.5 (`packages/protocol/src/groups/*.ts`, `packages/schema/s
 | `POST /session/:id/revert` | `POST /api/session/:id/revert/stage` then `/revert/commit` | Two steps in v2. |
 | `POST /session/:id/unrevert` | `DELETE /api/session/:id/revert` | "clear". |
 | `POST /session/:id/summarize` | `POST /api/session/:id/compact` | |
-| `GET /session/:id/todo` | TBD | No todo group found in v2 protocol. |
+| `GET /session/:id/todo` | TBD | No todo group found in v2 protocol. Slice 1: empty list. |
 | `GET /permission` | `GET /api/permission/request` | |
 | `POST /permission/:id/reply` | `POST /api/session/:id/permission/:requestID/reply` | Event `permission.asked` / `permission.replied`. |
 | `GET /question` | `GET /api/session/:id/form` | v2 "form" replaces question (`form.created`, `form.replied`, `form.cancelled`). |
