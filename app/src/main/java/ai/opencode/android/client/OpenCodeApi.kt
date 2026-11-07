@@ -483,7 +483,7 @@ class OpenCodeApi(
     /** File and directory listing. Slice 2: v2 `GET /api/fs/list`. */
     fun fileList(path: String = ""): List<FileEntry> = notPorted("file list (v2: GET /api/fs/list)")
 
-    /** File content. Slice 2: v2 `GET /api/fs/read/*`. */
+    /** File content. Slice 2: v2 `GET /api/fs/read/<path>`. */
     fun fileContent(path: String): String = notPorted("file read (v2: GET /api/fs/read)")
 
     // ---- models ------------------------------------------------------------
