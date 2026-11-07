@@ -1,18 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="ai.opencode.android.client.OpenCodeApiHttpTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-06T19:11:55" hostname="runnervm7aw5e" time="0.44">
+<testsuite name="ai.opencode.android.client.OpenCodeApiHttpTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-11-07T12:40:20" hostname="runnervm7aw5e" time="0.495">
   <properties/>
-  <testcase name="mcpAddPostsNameAndConfig" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.062"/>
-  <testcase name="permissionReplyUsesTheUpstreamRoute" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.011"/>
-  <testcase name="non2xxBecomesTypedError" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.013"/>
-  <testcase name="providersParsesTheModelsOwnVariantIds" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.005"/>
-  <testcase name="healthIsGlobalAndCarriesBasicAuth" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.003"/>
-  <testcase name="promptAsyncSendsUpstreamPartShape" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.007"/>
-  <testcase name="promptAsyncOmitsAgentAndVariantWhenUnset" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.006"/>
-  <testcase name="authProvisioningUsesProviderIdRoute" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.004"/>
-  <testcase name="patchMethodIsAndroidOnly" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.001"/>
-  <testcase name="sessionCreateIsDirectoryScopedAndPassesTitle" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.004"/>
-  <testcase name="bodylessRequestsDeclareZeroLength" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.006"/>
-  <testcase name="eventStreamParsesFramesAndReconnects" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.317"/>
+  <testcase name="promptSyncsModelAndAgentThenSendsTheText" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.063"/>
+  <testcase name="messagesAreMappedOldestFirstWithStablePartIds" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.016"/>
+  <testcase name="non2xxBecomesTypedError" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.014"/>
+  <testcase name="sessionCreateIsLocationScopedAndMapsTheV2Envelope" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.007"/>
+  <testcase name="sessionListUsesTheTopLevelDirectoryFilter" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.005"/>
+  <testcase name="providersAreBuiltFromTheV2Routes" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.015"/>
+  <testcase name="promptDoesNotResendAnUnchangedModel" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.022"/>
+  <testcase name="portsNotDoneYetFailWithoutSendingARequest" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.005"/>
+  <testcase name="disposeReloadsTheLocationWithZeroLengthFraming" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.005"/>
+  <testcase name="eventStreamTranslatesV2EnvelopesAndReconnects" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.324"/>
+  <testcase name="portedAsEmptyListsMakeNoRequest" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.001"/>
+  <testcase name="activeSessionsBecomeBusyStatus" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.003"/>
+  <testcase name="promptOmitsFilesWhenNoneAndMapsAttachmentsToUri" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.004"/>
+  <testcase name="healthIsApiInfoAndCarriesBasicAuth" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.003"/>
+  <testcase name="abortInterruptsTheSession" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.002"/>
+  <testcase name="assistantErrorBecomesANamedErrorObject" classname="ai.opencode.android.client.OpenCodeApiHttpTest" time="0.003"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
