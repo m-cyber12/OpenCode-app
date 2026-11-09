@@ -2,10 +2,12 @@
 
 Source: OpenCode v2.2.5 (`packages/protocol/src/groups/*.ts`, `packages/schema/src/event*.ts`). Each row is a call the app makes today (`client/OpenCodeApi.kt`), with its v2 equivalent. "TBD" = no direct equivalent found yet; decide before porting.
 
-## Status (2026-11-07)
+## Status (2026-11-09; the first bullet was written 2026-11-07)
 
 - Slice 1 done in code (`client/v2/`, `OpenCodeApi.kt`, `OpenCodeEventStream.kt`): connect, sessions, prompt, interrupt, history, models, active status, text and reasoning stream, errors. JVM tests in `OpenCodeApiHttpTest` and `v2/V2TranslatorTest`.
-- Not ported (throw status 501): revert, unrevert, shell, permission reply, question reply and reject, MCP add and connect, provider credentials, config write, file read and list. Empty for now: pending permissions and questions, todos, MCP list.
+- Slice 2 done in code (2026-11-09): permissions (list and reply), forms as questions (list, reply, reject).
+- Slice 3 done in code (2026-11-09): MCP list (`GET /api/mcp`), add (`PUT /api/experimental/mcp/:server`, v1 `enabled` becomes v2 `disabled`), connect and disconnect; file list (`GET /api/fs/list`) and file read (`GET /api/fs/read/*`, text). JVM tests in `OpenCodeApiHttpTest`.
+- Not ported (throw status 501): revert, unrevert, shell, provider credentials, config write (`patchGlobalConfig`). Empty for now: todos.
 - Event stream: `/api/event` (no `directory` scope); v2 sends no heartbeat, so the silence budget is 120 s.
 
 ## Status of the runtime (done)

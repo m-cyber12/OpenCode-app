@@ -324,7 +324,7 @@ class OpenCodeApi(
     // ---- MCP ---------------------------------------------------------------
 
     /** GET /mcp — name -> {status} for every configured MCP server. */
-    fun mcpStatus(): Map<String, String> = emptyMap()
+    fun mcpStatus(): Map<String, String> = mcpEntries().mapValues { it.value.status }
 
     /**
      * GET /mcp with upstream's own status object kept whole.
@@ -338,8 +338,19 @@ class OpenCodeApi(
      * gate K4 asserts on it; the UI uses this one.
      */
     fun mcpEntries(): Map<String, McpEntry> {
-        // Slice 2: v2 `GET /api/mcp`. Until then no servers are reported.
-        return emptyMap()
+        // v2 `GET /api/mcp` -> `{location, data: Mcp.Server[]}`; each server's status is
+        // a tagged object `{status, error?}` (connected, pending, disabled, failed, needs_auth).
+        val data = org.json.JSONObject(request("GET", "/api/mcp").body).optJSONArray("data")
+            ?: org.json.JSONArray()
+        val out = LinkedHashMap<String, McpEntry>()
+        for (i in 0 until data.length()) {
+            val server = data.optJSONObject(i) ?: continue
+            val name = server.optString("name")
+            val st = server.optJSONObject("status") ?: continue
+            if (name.isEmpty()) continue
+            out[name] = McpEntry(name, st.optString("status"), st.optString("error"))
+        }
+        return out
     }
 
     /**
@@ -406,11 +417,22 @@ class OpenCodeApi(
      * Note: this endpoint is instance state, it does NOT persist across a
      * restart; durable config goes through [patchGlobalConfig].
      */
-    fun addMcp(name: String, config: org.json.JSONObject): org.json.JSONObject = notPorted("MCP add (slice 2)")
+    fun addMcp(name: String, config: org.json.JSONObject): org.json.JSONObject {
+        // v2 `PUT /api/experimental/mcp/:server` connects the server at once; it replaces
+        // a server with the same name. The reply is 204, so the status is read back.
+        val body = org.json.JSONObject().put("config", V2Mapping.mcpConfig(config))
+        request("PUT", "/api/experimental/mcp/${pathSegment(name)}", body.toString())
+        val status = mcpEntries()[name]?.status ?: "unknown"
+        return org.json.JSONObject().put("status", status)
+    }
 
-    fun connectMcp(name: String): Unit = notPorted("MCP connect (slice 2)")
+    fun connectMcp(name: String) {
+        request("POST", "/api/experimental/mcp/${pathSegment(name)}/connect")
+    }
 
-    fun disconnectMcp(name: String): Unit = notPorted("MCP disconnect (slice 2)")
+    fun disconnectMcp(name: String) {
+        request("POST", "/api/experimental/mcp/${pathSegment(name)}/disconnect")
+    }
 
     // ---- providers / credentials -------------------------------------------
 
@@ -510,10 +532,25 @@ class OpenCodeApi(
     // ---- files (read side; the server keeps ownership of writes) ----------
 
     /** File and directory listing. Slice 2: v2 `GET /api/fs/list`. */
-    fun fileList(path: String = ""): List<FileEntry> = notPorted("file list (v2: GET /api/fs/list)")
+    fun fileList(path: String = ""): List<FileEntry> {
+        // v2 `GET /api/fs/list?path=` -> `{location, data: FileSystem.Entry[]}`; entry paths
+        // stay relative to the workspace location.
+        val query = if (path.isEmpty()) emptyMap() else mapOf("path" to path)
+        val data = org.json.JSONObject(request("GET", "/api/fs/list", query = query).body)
+            .optJSONArray("data") ?: org.json.JSONArray()
+        return (0 until data.length()).mapNotNull { data.optJSONObject(it) }
+            .map { FileEntry(path = it.optString("path"), type = it.optString("type")) }
+    }
 
-    /** File content. Slice 2: v2 `GET /api/fs/read/<path>`. */
-    fun fileContent(path: String): String = notPorted("file read (v2: GET /api/fs/read)")
+    /** File content as text. v2 `GET /api/fs/read/<relative path>`; the server confines it to the location. */
+    fun fileContent(path: String): String {
+        val segments = path.split("/").filter { it.isNotEmpty() }.joinToString("/") { pathSegment(it) }
+        return request("GET", "/api/fs/read/$segments").body
+    }
+
+    /** Percent-encodes one path segment (spaces as %20, not the form-encoding '+'). */
+    private fun pathSegment(s: String): String =
+        URLEncoder.encode(s, "UTF-8").replace("+", "%20")
 
     // ---- models ------------------------------------------------------------
 

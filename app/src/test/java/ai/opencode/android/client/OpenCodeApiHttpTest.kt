@@ -303,10 +303,8 @@ class OpenCodeApiHttpTest {
             { api().revert("ses_1", "msg_1") },
             { api().unrevert("ses_1") },
             { api().shell("ses_1", "ls", "build") },
-            { api().addMcp("x", JSONObject()) },
             { api().setProviderAuth("openrouter", "k") },
             { api().patchGlobalConfig(JSONObject()) },
-            { api().fileContent("opencode.json") },
         )
         for (call in calls) {
             val err = runCatching { call() }.exceptionOrNull()
@@ -320,8 +318,76 @@ class OpenCodeApiHttpTest {
     @Test
     fun portedAsEmptyListsMakeNoRequest() {
         assertEquals(emptyList<Any>(), api().todos("ses_1"))
-        assertEquals(emptyMap<String, Any>(), api().mcpEntries())
         assertEquals(0, seen.size)
+    }
+
+    // ---- MCP and files (v2 routes) ------------------------------------------
+
+    /** The status is a tagged object; the error text is kept, not flattened away. */
+    @Test
+    fun mcpListReadsEveryServerWithItsStatusAndError() {
+        bodyByPath["/api/mcp"] = """{"location":{"directory":"/p"},"data":[
+            {"name":"ctx","status":{"status":"failed","error":"boom"}},
+            {"name":"rea","status":{"status":"connected"}}]}"""
+        val m = api().mcpEntries()
+        assertEquals("/api/mcp", lastExchange!!.path)
+        assertEquals(setOf("ctx", "rea"), m.keys)
+        assertEquals("failed", m["ctx"]!!.status)
+        assertEquals("boom", m["ctx"]!!.error)
+        assertTrue(m["rea"]!!.connected)
+        assertEquals("connected", api().mcpStatus()["rea"])
+    }
+
+    /** A v1 config (`enabled`, ms timeout) is sent as a v2 `Mcp.ServerConfig`. */
+    @Test
+    fun mcpAddSendsTheV2ConfigAndReadsBackTheStatus() {
+        bodyByPath["/api/mcp"] = """{"data":[{"name":"rea","status":{"status":"connected"}}]}"""
+        val cfg = JSONObject(
+            """{"type":"local","command":["npx","rea"],"enabled":false,"timeout":5000,"unknown_key":1}""",
+        )
+        val status = api().addMcp("rea", cfg).getString("status")
+        assertEquals("connected", status)
+        val put = seen.elementAt(0)
+        assertEquals("PUT", put.method)
+        assertEquals("/api/experimental/mcp/rea", put.path)
+        val c = JSONObject(put.body).getJSONObject("config")
+        assertEquals("local", c.getString("type"))
+        assertEquals("npx", c.getJSONArray("command").getString(0))
+        assertTrue(c.getBoolean("disabled"))
+        assertEquals(5000L, c.getJSONObject("timeout").getLong("execution"))
+        assertTrue(!c.has("enabled"))
+        assertTrue(!c.has("unknown_key"))
+    }
+
+    @Test
+    fun mcpConnectAndDisconnectUseTheServerRoutes() {
+        api().connectMcp("ctx")
+        api().disconnectMcp("ctx")
+        assertEquals(
+            listOf("/api/experimental/mcp/ctx/connect", "/api/experimental/mcp/ctx/disconnect"),
+            seen.map { it.path },
+        )
+        assertEquals(listOf("POST", "POST"), seen.map { it.method })
+    }
+
+    @Test
+    fun fileListPassesTheRelativePathAndScopesToTheWorkspace() {
+        bodyByPath["/api/fs/list"] = """{"data":[{"path":"src","type":"directory"},{"path":"opencode.json","type":"file"}]}"""
+        val list = api().fileList("")
+        assertEquals(listOf("src", "opencode.json"), list.map { it.path })
+        assertEquals("directory", list[0].type)
+        assertTrue(lastExchange!!.query.contains("location%5Bdirectory%5D="))
+        api().fileList("src")
+        assertTrue(lastExchange!!.query.contains("path=src"))
+    }
+
+    /** The file path is encoded per segment, so a space is %20 and the slashes stay. */
+    @Test
+    fun fileReadEncodesEachSegmentAndReturnsTheText() {
+        bodyByPath["/api/fs/read/docs/my%20notes.md"] = "hello"
+        assertEquals("hello", api().fileContent("docs/my notes.md"))
+        assertEquals("GET", lastExchange!!.method)
+        assertEquals("/api/fs/read/docs/my%20notes.md", lastExchange!!.path)
     }
 
     private val pickForm = """{"id":"frm_1","sessionID":"ses_1","title":"Pick",

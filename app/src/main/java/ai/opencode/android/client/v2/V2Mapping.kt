@@ -276,6 +276,29 @@ object V2Mapping {
         return out
     }
 
+    /**
+     * A v1 MCP config (`enabled`, `timeout` in ms, as read from `opencode.json` or the
+     * Settings form) -> the v2 `Mcp.ServerConfig` body. `enabled: false` becomes
+     * `disabled: true`; a v1 `timeout` becomes the v2 execution timeout. Keys v2 does not
+     * know are dropped, so an unknown key cannot make the server refuse the config.
+     */
+    fun mcpConfig(v1: JSONObject): JSONObject {
+        val remote = !v1.has("command") && v1.has("url")
+        val out = JSONObject().put("type", if (remote) "remote" else "local")
+        if (remote) {
+            out.put("url", v1.optString("url"))
+            v1.optJSONObject("headers")?.let { out.put("headers", it) }
+            if (v1.has("oauth")) out.put("oauth", v1.get("oauth"))
+        } else {
+            out.put("command", v1.optJSONArray("command") ?: JSONArray())
+            v1.optJSONObject("environment")?.let { out.put("environment", it) }
+            v1.optString("cwd").takeIf { it.isNotEmpty() }?.let { out.put("cwd", it) }
+        }
+        if (v1.has("enabled") && !v1.optBoolean("enabled", true)) out.put("disabled", true)
+        if (v1.has("timeout")) out.put("timeout", JSONObject().put("execution", v1.optLong("timeout")))
+        return out
+    }
+
     private fun stringArray(arr: JSONArray?): JSONArray {
         val out = JSONArray()
         if (arr != null) for (i in 0 until arr.length()) out.put(arr.optString(i))
