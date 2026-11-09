@@ -38,7 +38,7 @@ These exist in v1 today. Each one needs a v2 equivalent and a test.
 ### Phase 1: v2 runtime in the release build
 - Release build ships `libnode26.so` (as jniLibs, already proven in test APK) and the v2 bundle zip.
 - New v2 launcher (Node, no Bun APIs). Keep the invariants above in the Node form.
-- Keep v1 in the tree for this phase only, behind a switch (`OPENCODE_ENGINE=v2`), so the app can fall back.
+- Single swap (owner-approved 2026-11-08): v1 is not kept behind a switch. v1 and v2 cannot both ship under the 230 MiB cap, so v1 and Bun are removed in the same change that ships v2. Until then, the release gates stay red by design (option A).
 - Gate: CI green; test-only probe passes on device (server, auth, models list, shell tool).
 
 ### Phase 2: security invariants on v2
