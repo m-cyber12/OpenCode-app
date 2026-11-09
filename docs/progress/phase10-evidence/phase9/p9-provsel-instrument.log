@@ -9,7 +9,7 @@ ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 404 on POST /api/locat
 	at ai.opencode.android.client.ProviderSelectionGatesTest.g02_disposeRebuildsWithCredential(ProviderSelectionGatesTest.kt:170)
 
 Error in g03_turnSelectsConfiguredProvider(ai.opencode.android.client.ProviderSelectionGatesTest):
-ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 400 on POST /api/session/ses_e49bb018bffewpPVN2hG0mh8oP/prompt?location%5Bdirectory%5D=%2Fstorage%2Femulated%2F0%2FDocuments%2FOpenCode%2F1: {"_tag":"InvalidRequestError","message":"Missing key\n  at [\"prompt\"]","kind":"Payload"}
+ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 400 on POST /api/session/ses_e41459536ffepPGPZffrEo0qoW/prompt?location%5Bdirectory%5D=%2Fstorage%2Femulated%2F0%2FDocuments%2FOpenCode%2F1: {"_tag":"InvalidRequestError","message":"Missing key\n  at [\"prompt\"]","kind":"Payload"}
 	at ai.opencode.android.client.OpenCodeApi.request(OpenCodeApi.kt:98)
 	at ai.opencode.android.client.OpenCodeApi.request$default(OpenCodeApi.kt:69)
 	at ai.opencode.android.client.OpenCodeApi.promptAsync(OpenCodeApi.kt:242)
@@ -17,7 +17,7 @@ ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 400 on POST /api/sessi
 	at ai.opencode.android.client.ProviderSelectionGatesTest.g03_turnSelectsConfiguredProvider(ProviderSelectionGatesTest.kt:189)
 
 
-Time: 1,443.295
+Time: 1,444.365
 There were 2 failures:
 1) g02_disposeRebuildsWithCredential(ai.opencode.android.client.ProviderSelectionGatesTest)
 ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 404 on POST /api/location/reload?location%5Bdirectory%5D=%2Fstorage%2Femulated%2F0%2FDocuments%2FOpenCode%2F1: {"error":"Not Found"}
@@ -26,7 +26,7 @@ ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 404 on POST /api/locat
 	at ai.opencode.android.client.OpenCodeApi.dispose(OpenCodeApi.kt:125)
 	at ai.opencode.android.client.ProviderSelectionGatesTest.g02_disposeRebuildsWithCredential(ProviderSelectionGatesTest.kt:170)
 2) g03_turnSelectsConfiguredProvider(ai.opencode.android.client.ProviderSelectionGatesTest)
-ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 400 on POST /api/session/ses_e49bb018bffewpPVN2hG0mh8oP/prompt?location%5Bdirectory%5D=%2Fstorage%2Femulated%2F0%2FDocuments%2FOpenCode%2F1: {"_tag":"InvalidRequestError","message":"Missing key\n  at [\"prompt\"]","kind":"Payload"}
+ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 400 on POST /api/session/ses_e41459536ffepPGPZffrEo0qoW/prompt?location%5Bdirectory%5D=%2Fstorage%2Femulated%2F0%2FDocuments%2FOpenCode%2F1: {"_tag":"InvalidRequestError","message":"Missing key\n  at [\"prompt\"]","kind":"Payload"}
 	at ai.opencode.android.client.OpenCodeApi.request(OpenCodeApi.kt:98)
 	at ai.opencode.android.client.OpenCodeApi.request$default(OpenCodeApi.kt:69)
 	at ai.opencode.android.client.OpenCodeApi.promptAsync(OpenCodeApi.kt:242)
