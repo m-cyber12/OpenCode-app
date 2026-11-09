@@ -12,8 +12,8 @@ import org.json.JSONObject
  * `ordinal`, `delta`, `text`, `error`). Schemas: `packages/schema/src/session-event.ts`
  * in OpenCode v2.2.5.
  *
- * Scope of this slice: live text and reasoning, turn status, errors. Tools,
- * permissions, forms, sessions list and history are later slices of phase 4
+ * Scope: live text and reasoning, turn status, errors, permission asks. Tools,
+ * forms and MCP events are later slices of phase 4
  * (see docs/progress/v2-full-migration-plan.md).
  */
 object V2Translator {
@@ -27,7 +27,8 @@ object V2Translator {
      * incomplete events produce no frames.
      */
     fun translate(type: String, data: JSONObject, created: Long = 0L): List<Frame> {
-        val sid = data.optString("sessionID")
+        // Form events nest the session under `form`; every other event carries it at the top.
+        val sid = data.optString("sessionID").ifEmpty { data.optJSONObject("form")?.optString("sessionID").orEmpty() }
         // Every event this slice handles is scoped to a session; without one, drop it.
         if (sid.isEmpty()) return emptyList()
         return when (type) {
@@ -44,6 +45,20 @@ object V2Translator {
             "session.text.ended" -> partEnded(sid, data, "text")
             "session.reasoning.ended" -> partEnded(sid, data, "reasoning")
             "session.idle" -> listOf(Frame("session.idle", JSONObject().put("sessionID", sid)))
+            "permission.asked" -> listOf(Frame("permission.asked", V2Mapping.permissionRequest(data)))
+            "form.created" -> data.optJSONObject("form")?.let { V2Mapping.formRequest(it) }
+                ?.let { listOf(Frame("question.asked", it)) } ?: emptyList()
+            "form.replied" -> listOf(answered("question.replied", sid, data))
+            "form.cancelled" -> listOf(answered("question.rejected", sid, data))
+            "permission.replied" -> listOf(
+                Frame(
+                    "permission.replied",
+                    JSONObject()
+                        .put("sessionID", sid)
+                        .put("requestID", data.optString("requestID"))
+                        .put("reply", data.optString("reply")),
+                ),
+            )
             else -> emptyList()
         }
     }
@@ -61,6 +76,9 @@ object V2Translator {
 
     /** The part id is stable across started, delta and ended frames of the same text. */
     fun partID(messageID: String, kind: String, ordinal: Int): String = "$messageID:$kind:$ordinal"
+
+    private fun answered(type: String, sid: String, data: JSONObject): Frame =
+        Frame(type, JSONObject().put("sessionID", sid).put("requestID", data.optString("id")))
 
     private fun status(sid: String, type: String): Frame =
         Frame(

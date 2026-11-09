@@ -266,6 +266,35 @@ class OpenCodeApiHttpTest {
         assertEquals(429, err.getJSONObject("data").getInt("statusCode"))
     }
 
+    /** v2 permission requests come back as v1-shaped rows the transcript already renders. */
+    @Test
+    fun pendingPermissionsMapTheV2RequestShape() {
+        responseBody = """{"data":[{"id":"per_1","sessionID":"ses_1","action":"bash",
+            "resources":["ls -la"],"save":["bash *"],"metadata":{"command":"ls -la"},
+            "source":{"type":"tool","messageID":"msg_1","id":"call_9"}}],"location":{"directory":"/p"}}"""
+        val list = api().pendingPermissions()
+        assertEquals("/api/permission/request", lastExchange!!.path)
+        val p = list.single()
+        assertEquals("per_1", p.id)
+        assertEquals("ses_1", p.sessionID)
+        assertEquals("bash", p.permission)
+        assertEquals(listOf("ls -la"), p.patterns)
+        assertEquals(listOf("bash *"), p.always)
+        assertEquals("call_9", p.toolCallID)
+    }
+
+    /** The reply goes through the owning session, with the decision in `decision`. */
+    @Test
+    fun permissionReplyPostsTheDecisionThroughTheSession() {
+        responseStatus = 204
+        responseBody = ""
+        api().replyPermission("ses_1", "per_1", "always")
+        val r = lastExchange!!
+        assertEquals("POST", r.method)
+        assertEquals("/api/session/ses_1/permission/per_1/reply", r.path)
+        assertEquals("always", JSONObject(r.body).getString("decision"))
+    }
+
     // ---- not ported yet: fail loudly, send nothing ---------------------------
 
     @Test
@@ -274,8 +303,6 @@ class OpenCodeApiHttpTest {
             { api().revert("ses_1", "msg_1") },
             { api().unrevert("ses_1") },
             { api().shell("ses_1", "ls", "build") },
-            { api().replyPermission("per_1", "once") },
-            { api().replyQuestion("q_1", listOf(listOf("a"))) },
             { api().addMcp("x", JSONObject()) },
             { api().setProviderAuth("openrouter", "k") },
             { api().patchGlobalConfig(JSONObject()) },
@@ -292,11 +319,71 @@ class OpenCodeApiHttpTest {
     /** Lists whose routes are not ported report empty rather than failing the whole refresh. */
     @Test
     fun portedAsEmptyListsMakeNoRequest() {
-        assertEquals(emptyList<Any>(), api().pendingPermissions())
-        assertEquals(emptyList<Any>(), api().pendingQuestions())
         assertEquals(emptyList<Any>(), api().todos("ses_1"))
         assertEquals(emptyMap<String, Any>(), api().mcpEntries())
         assertEquals(0, seen.size)
+    }
+
+    private val pickForm = """{"id":"frm_1","sessionID":"ses_1","title":"Pick",
+        "fields":[
+          {"type":"multiselect","key":"tools","title":"Tools","description":"Which","options":[
+             {"value":"a","label":"Alpha"},{"value":"b","label":"Beta","description":"second"}]},
+          {"type":"boolean","key":"ok","title":"OK?"},
+          {"type":"string","key":"name","title":"Name"},
+          {"type":"string","key":"secret","title":"Hidden","hidden":true}]}"""
+
+    /** Each visible form field becomes one question; hidden fields are not asked. */
+    @Test
+    fun formsBecomeQuestionsWithTheirOptions() {
+        responseBody = """{"data":[$pickForm],"location":{"directory":"/p"}}"""
+        val list = api().pendingQuestions()
+        assertEquals("/api/form", lastExchange!!.path)
+        val q = list.single()
+        assertEquals("frm_1", q.id)
+        assertEquals("ses_1", q.sessionID)
+        assertEquals(3, q.items.size)
+        assertEquals("Tools", q.items[0].header)
+        assertEquals("Which", q.items[0].question)
+        assertEquals(listOf("Alpha", "Beta"), q.items[0].options.map { it.label })
+        assertTrue(q.items[0].multiple)
+        assertEquals(listOf("Yes", "No"), q.items[1].options.map { it.label })
+        assertTrue(q.items[2].custom)
+        assertEquals(emptyList<String>(), q.items[2].options.map { it.label })
+    }
+
+    /** A form with a web step cannot be answered here, so it is not offered. */
+    @Test
+    fun formsWithAWebStepAreNotOffered() {
+        responseBody = """{"data":[{"id":"frm_2","sessionID":"ses_1","title":"Login",
+            "fields":[{"type":"external","key":"oauth","url":"https://example.invalid"}]}]}"""
+        assertEquals(emptyList<Any>(), api().pendingQuestions())
+    }
+
+    /** The reply reads the form, converts labels back to option values, and posts `answer`. */
+    @Test
+    fun replyQuestionConvertsLabelsToTheFormAnswer() {
+        bodyByPath["/api/session/ses_1/form/frm_1"] = """{"data":$pickForm}"""
+        responseBody = ""
+        api().replyQuestion("ses_1", "frm_1", listOf(listOf("Alpha", "Beta"), listOf("No"), listOf("my name")))
+        assertEquals(
+            listOf("/api/session/ses_1/form/frm_1", "/api/session/ses_1/form/frm_1/reply"),
+            seen.map { it.path },
+        )
+        val answer = JSONObject(seen.elementAt(1).body).getJSONObject("answer")
+        assertEquals(listOf("a", "b"), answer.getJSONArray("tools").let { a -> (0 until a.length()).map { a.getString(it) } })
+        assertEquals(false, answer.getBoolean("ok"))
+        assertEquals("my name", answer.getString("name"))
+        assertTrue(!answer.has("secret"))
+    }
+
+    @Test
+    fun rejectQuestionCancelsTheForm() {
+        responseStatus = 204
+        responseBody = ""
+        api().rejectQuestion("ses_1", "frm_1")
+        val r = lastExchange!!
+        assertEquals("DELETE", r.method)
+        assertEquals("/api/session/ses_1/form/frm_1", r.path)
     }
 
     /** A body-less POST declares Content-Length: 0 so the server does not wait for a body. */

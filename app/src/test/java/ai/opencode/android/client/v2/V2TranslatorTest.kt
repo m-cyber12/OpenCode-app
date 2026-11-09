@@ -126,6 +126,52 @@ class V2TranslatorTest {
     }
 
     @Test
+    fun permission_ask_becomes_a_v1_permission_frame() {
+        val f = V2Translator.translateEnvelope(
+            """{"id":"evt_p","created":1,"type":"permission.asked","data":{"id":"per_7","sessionID":"$sid",
+            "action":"bash","resources":["rm -rf build"],"save":["bash *"],"source":{"type":"tool","messageID":"$mid","id":"call_3"}}}""",
+        )
+        assertEquals(listOf("permission.asked"), f.map { it.type })
+        val p = f[0].props
+        assertEquals("per_7", p.getString("id"))
+        assertEquals("bash", p.getString("permission"))
+        assertEquals("rm -rf build", p.getJSONArray("patterns").getString(0))
+        assertEquals("call_3", p.getJSONObject("tool").getString("callID"))
+    }
+
+    @Test
+    fun permission_reply_becomes_a_v1_replied_frame() {
+        val f = V2Translator.translateEnvelope(
+            """{"id":"evt_r","created":2,"type":"permission.replied","data":{"sessionID":"$sid","requestID":"per_7","reply":"once"}}""",
+        )
+        assertEquals(listOf("permission.replied"), f.map { it.type })
+        assertEquals("per_7", f[0].props.getString("requestID"))
+        assertEquals("once", f[0].props.getString("reply"))
+    }
+
+    @Test
+    fun form_created_becomes_a_question_frame_and_reply_or_cancel_settle_it() {
+        val created = V2Translator.translateEnvelope(
+            """{"id":"evt_f","created":1,"type":"form.created","data":{"form":{"id":"frm_9","sessionID":"$sid","title":"T",
+            "fields":[{"type":"string","key":"name","title":"Name"}]}}}""",
+        )
+        assertEquals(listOf("question.asked"), created.map { it.type })
+        assertEquals("frm_9", created[0].props.getString("id"))
+        assertEquals("$sid", created[0].props.getString("sessionID"))
+
+        val replied = V2Translator.translateEnvelope(
+            """{"id":"evt_g","created":2,"type":"form.replied","data":{"id":"frm_9","sessionID":"$sid","answer":{}}}""",
+        )
+        assertEquals("question.replied", replied[0].type)
+        assertEquals("frm_9", replied[0].props.getString("requestID"))
+
+        val cancelled = V2Translator.translateEnvelope(
+            """{"id":"evt_h","created":3,"type":"form.cancelled","data":{"id":"frm_9","sessionID":"$sid"}}""",
+        )
+        assertEquals("question.rejected", cancelled[0].type)
+    }
+
+    @Test
     fun unknown_events_are_ignored_for_now() {
         assertTrue(V2Translator.translate("session.tool.called", data("""{"sessionID":"$sid"}""")).isEmpty())
     }

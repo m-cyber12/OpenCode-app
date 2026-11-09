@@ -766,8 +766,13 @@ class OpenCodeRepository(
 
     /** The three upstream replies; the server decides what "always" means. */
     fun replyPermission(requestID: String, reply: String) {
+        // v2 replies through the owning session, which the pending ask carries.
+        val sid = transcript.prompt(requestID)?.sessionID.orEmpty()
         scope.launch {
-            runCatching { api.replyPermission(requestID, reply) }
+            runCatching {
+                check(sid.isNotEmpty()) { "unknown permission request $requestID" }
+                api.replyPermission(sid, requestID, reply)
+            }
                 .onSuccess { _state.value = _state.value.copy(notice = "permission $reply for $requestID") }
                 .onFailure { fail("permission reply", it) }
         }
@@ -778,16 +783,24 @@ class OpenCodeRepository(
      * order the server listed them (`QuestionV1.Reply`).
      */
     fun replyQuestion(requestID: String, answers: List<List<String>>) {
+        val sid = transcript.question(requestID)?.sessionID.orEmpty()
         scope.launch {
-            runCatching { api.replyQuestion(requestID, answers) }
+            runCatching {
+                check(sid.isNotEmpty()) { "unknown question $requestID" }
+                api.replyQuestion(sid, requestID, answers)
+            }
                 .onSuccess { _state.value = _state.value.copy(notice = "question answered") }
                 .onFailure { fail("question reply", it) }
         }
     }
 
     fun rejectQuestion(requestID: String) {
+        val sid = transcript.question(requestID)?.sessionID.orEmpty()
         scope.launch {
-            runCatching { api.rejectQuestion(requestID) }
+            runCatching {
+                check(sid.isNotEmpty()) { "unknown question $requestID" }
+                api.rejectQuestion(sid, requestID)
+            }
                 .onSuccess { _state.value = _state.value.copy(notice = "question declined") }
                 .onFailure { fail("question reject", it) }
         }

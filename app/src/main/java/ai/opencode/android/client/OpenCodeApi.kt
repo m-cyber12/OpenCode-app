@@ -304,16 +304,22 @@ class OpenCodeApi(
 
     // ---- permissions -------------------------------------------------------
 
-    /**
-     * Pending permission asks. Slice 1 reports none: the v2 list route is not wired
-     * yet, so a tool call that needs approval waits until the turn is stopped.
-     * Slice 2 replaces this with `GET /api/permission/request` and the reply below.
-     */
-    fun pendingPermissions(): List<PermissionRequest> = emptyList()
+    /** GET /api/permission/request — pending permission asks for this location, as v1-shaped rows. */
+    fun pendingPermissions(): List<PermissionRequest> {
+        val data = org.json.JSONObject(request("GET", "/api/permission/request").body).optJSONArray("data")
+            ?: org.json.JSONArray()
+        return (0 until data.length()).map { PermissionRequest.from(V2Mapping.permissionRequest(data.getJSONObject(it))) }
+    }
 
-    /** POST /permission/:requestID/reply — once | always | reject. Slice 2. */
-    fun replyPermission(requestID: String, reply: String, message: String? = null): Unit =
-        notPorted("permission reply")
+    /**
+     * POST /api/session/:id/permission/:requestID/reply — once | always | reject.
+     * v2 routes the reply through the owning session, so the session id is required.
+     */
+    fun replyPermission(sessionID: String, requestID: String, reply: String, message: String? = null) {
+        val body = org.json.JSONObject().put("decision", reply)
+        if (message != null) body.put("message", message)
+        request("POST", "/api/session/$sessionID/permission/$requestID/reply", body.toString())
+    }
 
     // ---- MCP ---------------------------------------------------------------
 
@@ -359,17 +365,40 @@ class OpenCodeApi(
     // ---- questions (upstream's question tool blocks a turn like an ask) -----
 
     /** GET /question — pending question requests (`QuestionV1.Request`). */
-    fun pendingQuestions(): List<QuestionRequest> = emptyList() // slice 2: v2 forms
+    /** GET /api/form — pending forms (v1 questions) for this location. Forms the app cannot answer are left out. */
+    fun pendingQuestions(): List<QuestionRequest> {
+        val data = org.json.JSONObject(request("GET", "/api/form").body).optJSONArray("data") ?: org.json.JSONArray()
+        val out = ArrayList<QuestionRequest>(data.length())
+        for (i in 0 until data.length()) {
+            val q = data.optJSONObject(i)?.let { V2Mapping.formRequest(it) } ?: continue
+            out.add(QuestionRequest.from(q))
+        }
+        return out
+    }
 
     /**
      * POST /question/:requestID/reply — `{answers: [[label, ...], ...]}`, one array
      * of selected labels per question, in order. Upstream's own shape.
      */
-    fun replyQuestion(requestID: String, answers: List<List<String>>): Unit =
-        notPorted("question reply (v2: form reply)")
+    fun replyQuestion(sessionID: String, requestID: String, answers: List<List<String>>) {
+        // The answer needs the form's own field definitions (keys, option values), so the
+        // form is read first; the app keeps no copy of it.
+        val form = org.json.JSONObject(request("GET", "/api/session/$sessionID/form/$requestID").body)
+            .getJSONObject("data")
+        val fields = V2Mapping.askableFields(form.optJSONArray("fields") ?: org.json.JSONArray())
+            ?: throw ApiException(501, "", "this form needs a web step and cannot be answered in the app")
+        val answer = V2Mapping.answerFor(fields, answers)
+        request(
+            "POST",
+            "/api/session/$sessionID/form/$requestID/reply",
+            org.json.JSONObject().put("answer", answer).toString(),
+        )
+    }
 
-    /** Decline to answer (the agent continues). Slice 2: v2 form cancel. */
-    fun rejectQuestion(requestID: String): Unit = notPorted("question reject (v2: form cancel)")
+    /** Decline to answer (the agent continues). */
+    fun rejectQuestion(sessionID: String, requestID: String) {
+        request("DELETE", "/api/session/$sessionID/form/$requestID")
+    }
 
     /**
      * POST /mcp — connect an MCP server for this instance with an OpenCode MCP

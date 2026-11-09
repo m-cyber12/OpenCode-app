@@ -483,7 +483,8 @@ class Transcript {
 
     private fun onQuestionAsked(props: JSONObject) {
         val id = firstString(props, "id", "requestID")
-        if (id.isEmpty() || !id.startsWith("que_")) return
+        // "que_" is the v1 question id; "frm_" is a v2 form (see client/v2/V2Mapping).
+        if (id.isEmpty() || !(id.startsWith("que_") || id.startsWith("frm_"))) return
         val sid = props.optString("sessionID")
         val raw = props.optJSONArray("questions")
         val items = ArrayList<QuestionItem>()

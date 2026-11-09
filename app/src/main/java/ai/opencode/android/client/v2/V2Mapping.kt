@@ -162,6 +162,126 @@ object V2Mapping {
         return out
     }
 
+    /**
+     * `Permission.Request` (v2) -> the v1 permission object read by `PermissionRequest.from`
+     * and `Transcript.onAsked`. `action` is the permission name, `resources` the patterns,
+     * `save` what an "always" reply would cover, and the tool source becomes `tool.callID`.
+     */
+    fun permissionRequest(o: JSONObject): JSONObject {
+        val out = JSONObject()
+            .put("id", o.optString("id"))
+            .put("sessionID", o.optString("sessionID"))
+            .put("permission", o.optString("action"))
+            .put("patterns", stringArray(o.optJSONArray("resources")))
+            .put("always", stringArray(o.optJSONArray("save")))
+        o.optJSONObject("metadata")?.let { out.put("metadata", it) }
+        o.optJSONObject("source")?.optString("id")?.takeIf { it.isNotEmpty() }?.let {
+            out.put("tool", JSONObject().put("callID", it).put("messageID", o.optJSONObject("source")?.optString("messageID").orEmpty()))
+        }
+        return out
+    }
+
+    /**
+     * The fields the app can answer. Hidden fields take their default, so they are not asked.
+     * A form with an `external` field (an OAuth or web step) is not offered in the app.
+     */
+    fun askableFields(fields: JSONArray): List<JSONObject>? {
+        val out = ArrayList<JSONObject>()
+        for (i in 0 until fields.length()) {
+            val f = fields.optJSONObject(i) ?: continue
+            when (f.optString("type")) {
+                "external" -> return null
+                else -> if (!f.optBoolean("hidden", false)) out.add(f)
+            }
+        }
+        return out
+    }
+
+    /**
+     * `Form.Info` -> the v1 question object read by `QuestionRequest.from`. One form
+     * field becomes one question. Yes/no fields become two labelled options, and
+     * free-text or number fields become custom answers. Returns null for a form the
+     * app cannot answer.
+     */
+    fun formRequest(form: JSONObject): JSONObject? {
+        val fields = askableFields(form.optJSONArray("fields") ?: JSONArray()) ?: return null
+        val questions = JSONArray()
+        for (f in fields) {
+            val type = f.optString("type")
+            val options = JSONArray()
+            when (type) {
+                "boolean" -> {
+                    options.put(JSONObject().put("label", "Yes").put("description", ""))
+                    options.put(JSONObject().put("label", "No").put("description", ""))
+                }
+                "string", "multiselect" -> f.optJSONArray("options")?.let { arr ->
+                    for (i in 0 until arr.length()) {
+                        val o = arr.optJSONObject(i) ?: continue
+                        options.put(
+                            JSONObject()
+                                .put("label", o.optString("label").ifEmpty { o.optString("value") })
+                                .put("description", o.optString("description")),
+                        )
+                    }
+                }
+            }
+            val hasOptions = options.length() > 0
+            val customDefault = !hasOptions
+            questions.put(
+                JSONObject()
+                    .put("header", f.optString("title").ifEmpty { f.optString("key") })
+                    .put("question", f.optString("description").ifEmpty { f.optString("title").ifEmpty { f.optString("key") } })
+                    .put("options", options)
+                    .put("multiple", type == "multiselect")
+                    .put("custom", if (f.has("custom")) f.optBoolean("custom") else customDefault),
+            )
+        }
+        return JSONObject()
+            .put("id", form.optString("id"))
+            .put("sessionID", form.optString("sessionID"))
+            .put("questions", questions)
+    }
+
+    /**
+     * Turns the app's answers (one list of selected labels per visible field, in order)
+     * into a v2 `Form.Answer`. Labels map back to option values; `Yes`/`No` map to booleans;
+     * numbers are parsed; free text is kept as typed. Empty answers are left out.
+     */
+    fun answerFor(fields: List<JSONObject>, answers: List<List<String>>): JSONObject {
+        val out = JSONObject()
+        fields.forEachIndexed { index, f ->
+            val labels = answers.getOrElse(index) { emptyList() }.map { it.trim() }.filter { it.isNotEmpty() }
+            if (labels.isEmpty()) return@forEachIndexed
+            val key = f.optString("key")
+            val options = f.optJSONArray("options") ?: JSONArray()
+            fun valueOf(label: String): String {
+                for (i in 0 until options.length()) {
+                    val o = options.optJSONObject(i) ?: continue
+                    if (o.optString("label") == label) return o.optString("value")
+                }
+                return label
+            }
+            when (f.optString("type")) {
+                "multiselect" -> {
+                    val arr = JSONArray()
+                    labels.forEach { arr.put(valueOf(it)) }
+                    out.put(key, arr)
+                }
+                "boolean" -> out.put(key, labels.first().equals("yes", true) || labels.first().equals("true", true))
+                "number" -> labels.first().toDoubleOrNull()?.let { out.put(key, it) }
+                "integer" -> labels.first().toIntOrNull()?.let { out.put(key, it) }
+                else -> out.put(key, valueOf(labels.first()))
+            }
+        }
+        return out
+    }
+
+    private fun stringArray(arr: JSONArray?): JSONArray {
+        val out = JSONArray()
+        if (arr != null) for (i in 0 until arr.length()) out.put(arr.optString(i))
+        return out
+    }
+
     /** v2 `SessionError.Error` -> v1 `NamedError`-style object read by `turnErrorOf`. */
     fun errorOf(e: JSONObject?): JSONObject? {
         if (e == null) return null

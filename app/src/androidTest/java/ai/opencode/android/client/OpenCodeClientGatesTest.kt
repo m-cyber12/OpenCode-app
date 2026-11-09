@@ -279,7 +279,7 @@ class OpenCodeClientGatesTest {
             }
             val req = asks.peek()!!
             val id = req.getString("id")
-            api.replyPermission(id, "once")
+            api.replyPermission(req.getString("sessionID"), id, "once")
             val settled = waitForMarker(api, session, "P5_K5_PERM_OK", 240)
             val pendingAfterReply = runCatching { api.pendingPermissions().size }.getOrDefault(-1)
             gate(
