@@ -140,7 +140,8 @@ object V2Mapping {
                 when (c.optString("type")) {
                     "text" -> parts.put(textPart(id, sessionID, "text", i, c.optString("text")))
                     "reasoning" -> parts.put(textPart(id, sessionID, "reasoning", i, c.optString("text")))
-                    // Tool calls, files and patches are the next slice.
+                    "tool" -> toolItem(id, sessionID, c)?.let { parts.put(it) }
+                    // Files and patches are the next slice.
                 }
             }
         }
@@ -314,6 +315,50 @@ object V2Mapping {
         return JSONObject()
             .put("name", e.optString("type").ifEmpty { "UnknownError" })
             .put("data", data)
+    }
+
+    /**
+     * One assistant tool item from history. The state maps by name: streaming is pending
+     * in v1 terms, and the other statuses (running, completed, error) keep their names.
+     */
+    private fun toolItem(messageID: String, sessionID: String, c: JSONObject): JSONObject? {
+        val callID = c.optString("id")
+        if (callID.isEmpty()) return null
+        val state = c.optJSONObject("state") ?: return null
+        val status = when (val s = state.optString("status")) {
+            "streaming" -> "pending"
+            else -> s
+        }
+        val started = c.optJSONObject("time")?.optLong("created", 0L) ?: 0L
+        return V2Translator.toolPart(
+            sessionID,
+            messageID,
+            callID,
+            c.optString("name"),
+            status,
+            input = state.opt("input"),
+            output = contentText(state.optJSONArray("content")),
+            metadata = state.optJSONObject("metadata"),
+            error = state.optJSONObject("error")?.optString("message").orEmpty(),
+            startedMs = started,
+        )
+    }
+
+    /**
+     * Tool content as the text the tool card shows. Text items are kept; a file item shows
+     * its name (or uri) so the card says what was produced.
+     */
+    fun contentText(content: JSONArray?): String {
+        if (content == null) return ""
+        val lines = ArrayList<String>(content.length())
+        for (i in 0 until content.length()) {
+            val item = content.optJSONObject(i) ?: continue
+            when (item.optString("type")) {
+                "text" -> lines.add(item.optString("text"))
+                "file" -> lines.add(item.optString("name").ifEmpty { item.optString("uri") })
+            }
+        }
+        return lines.joinToString("\n")
     }
 
     private fun textPart(messageID: String, sessionID: String, kind: String, ordinal: Int, text: String): JSONObject =

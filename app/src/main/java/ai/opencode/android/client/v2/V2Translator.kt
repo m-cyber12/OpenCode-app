@@ -45,6 +45,25 @@ object V2Translator {
             "session.text.ended" -> partEnded(sid, data, "text")
             "session.reasoning.ended" -> partEnded(sid, data, "reasoning")
             "session.idle" -> listOf(Frame("session.idle", JSONObject().put("sessionID", sid)))
+            "session.tool.input.started" -> toolFrame(sid, data, "pending", tool = data.optString("name"), created = created)
+            "session.tool.input.ended" -> toolFrame(sid, data, "pending", input = toolInput(data.optString("text")))
+            "session.tool.called" -> toolFrame(sid, data, "running", tool = data.optString("name"), input = data.optJSONObject("input"))
+            "session.tool.progress" -> toolFrame(sid, data, "running", metadata = data.optJSONObject("metadata"))
+            "session.tool.success" -> toolFrame(
+                sid,
+                data,
+                "completed",
+                output = V2Mapping.contentText(data.optJSONArray("content")),
+                metadata = data.optJSONObject("metadata"),
+            )
+            "session.tool.failed" -> toolFrame(
+                sid,
+                data,
+                "error",
+                output = V2Mapping.contentText(data.optJSONArray("content")),
+                metadata = data.optJSONObject("metadata"),
+                error = data.optJSONObject("error")?.optString("message").orEmpty().ifEmpty { "The tool failed." },
+            )
             "permission.asked" -> listOf(Frame("permission.asked", V2Mapping.permissionRequest(data)))
             "form.created" -> data.optJSONObject("form")?.let { V2Mapping.formRequest(it) }
                 ?.let { listOf(Frame("question.asked", it)) } ?: emptyList()
@@ -72,6 +91,63 @@ object V2Translator {
         val type = envelope.optString("type")
         if (type.isEmpty()) return emptyList()
         return translate(type, envelope.optJSONObject("data") ?: JSONObject(), envelope.optLong("created", 0L))
+    }
+
+    /**
+     * One tool call as a v1 tool part. The id depends only on the message and the call, so the
+     * live frames and a reloaded history produce the same part. [status] is the v1 status
+     * (pending, running, completed, error); [input] is an object, or the raw text while streaming.
+     */
+    fun toolPart(
+        sid: String,
+        mid: String,
+        callID: String,
+        tool: String,
+        status: String,
+        input: Any? = null,
+        output: String = "",
+        metadata: JSONObject? = null,
+        error: String = "",
+        startedMs: Long = 0L,
+    ): JSONObject {
+        val state = JSONObject().put("status", status)
+        if (input != null) state.put("input", input)
+        if (output.isNotEmpty()) state.put("output", output)
+        if (metadata != null && metadata.length() > 0) state.put("metadata", metadata)
+        if (error.isNotEmpty()) state.put("error", error)
+        if (startedMs > 0L) state.put("time", JSONObject().put("start", startedMs))
+        return JSONObject()
+            .put("id", toolPartID(mid, callID))
+            .put("messageID", mid)
+            .put("sessionID", sid)
+            .put("type", "tool")
+            .put("tool", tool)
+            .put("callID", callID)
+            .put("state", state)
+    }
+
+    fun toolPartID(messageID: String, callID: String): String = "$messageID:tool:$callID"
+
+    /** The tool input as an object when it is JSON, otherwise the raw text. */
+    fun toolInput(text: String): Any =
+        runCatching { JSONObject(text) }.getOrNull() ?: text
+
+    private fun toolFrame(
+        sid: String,
+        data: JSONObject,
+        status: String,
+        tool: String = "",
+        input: Any? = null,
+        output: String = "",
+        metadata: JSONObject? = null,
+        error: String = "",
+        created: Long = 0L,
+    ): List<Frame> {
+        val mid = data.optString("assistantMessageID")
+        val callID = data.optString("id")
+        if (mid.isEmpty() || callID.isEmpty()) return emptyList()
+        val part = toolPart(sid, mid, callID, tool, status, input, output, metadata, error, created)
+        return listOf(Frame("message.part.updated", JSONObject().put("sessionID", sid).put("messageID", mid).put("part", part)))
     }
 
     /** The part id is stable across started, delta and ended frames of the same text. */

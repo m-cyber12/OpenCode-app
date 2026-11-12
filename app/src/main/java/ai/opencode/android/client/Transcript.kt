@@ -379,11 +379,19 @@ class Transcript {
         touch(sid)
         val p = partOf(sid, mid, part)
         val existing = messages[mid]
+        val prev = existing?.parts?.firstOrNull { it.id == p.id }
+        // v2 sends a tool's name only with the start of the call; later frames for the
+        // same call keep the name and call id that the earlier frame set.
+        val fresh = if (prev != null && p.tool.isEmpty()) {
+            p.copy(tool = prev.tool, callID = p.callID.ifEmpty { prev.callID })
+        } else {
+            p
+        }
         val parts = ArrayList(existing?.parts ?: emptyList())
-        val idx = parts.indexOfFirst { it.id == p.id }
+        val idx = parts.indexOfFirst { it.id == fresh.id }
         // A streamed part can arrive complete after its deltas; the server's copy
         // is authoritative, so it replaces whatever the deltas accumulated.
-        if (idx >= 0) parts[idx] = p else parts.add(p)
+        if (idx >= 0) parts[idx] = fresh else parts.add(fresh)
         // A tool part moving to running/completed means the turn is still live.
         messages[mid] = (existing ?: Message(mid, sid, part.optString("role"), emptyList(), false))
             .copy(parts = parts)

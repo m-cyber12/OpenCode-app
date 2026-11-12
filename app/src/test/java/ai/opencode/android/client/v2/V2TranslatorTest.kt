@@ -149,6 +149,79 @@ class V2TranslatorTest {
         assertEquals("once", f[0].props.getString("reply"))
     }
 
+    /** One call keeps one part id from input start to success; the name comes from the start only. */
+    @Test
+    fun a_tool_call_is_one_part_from_start_to_success() {
+        val mid = "msg_t1"
+        val id = "call_1"
+        val start = V2Translator.translate(
+            "session.tool.input.started",
+            data("""{"sessionID":"$sid","assistantMessageID":"$mid","id":"$id","name":"shell"}"""),
+            created = 100L,
+        )
+        val p0 = start[0].props.getJSONObject("part")
+        assertEquals(V2Translator.toolPartID(mid, id), p0.getString("id"))
+        assertEquals("shell", p0.getString("tool"))
+        assertEquals("pending", p0.getJSONObject("state").getString("status"))
+        assertEquals(100L, p0.getJSONObject("state").getJSONObject("time").getLong("start"))
+
+        val called = V2Translator.translate(
+            "session.tool.called",
+            data("""{"sessionID":"$sid","assistantMessageID":"$mid","id":"$id","input":{"command":"ls"},"executed":true}"""),
+        )
+        val p1 = called[0].props.getJSONObject("part")
+        assertEquals(p0.getString("id"), p1.getString("id"))
+        assertEquals("running", p1.getJSONObject("state").getString("status"))
+        assertEquals("ls", p1.getJSONObject("state").getJSONObject("input").getString("command"))
+
+        val done = V2Translator.translate(
+            "session.tool.success",
+            data(
+                """{"sessionID":"$sid","assistantMessageID":"$mid","id":"$id","executed":true,
+                "content":[{"type":"text","text":"a.txt"},{"type":"file","uri":"file:///x","mime":"text/plain","name":"x.txt"}],
+                "metadata":{"exit":0}}""",
+            ),
+        )
+        val p2 = done[0].props.getJSONObject("part")
+        assertEquals("completed", p2.getJSONObject("state").getString("status"))
+        assertEquals("a.txt\nx.txt", p2.getJSONObject("state").getString("output"))
+        assertEquals(0, p2.getJSONObject("state").getJSONObject("metadata").getInt("exit"))
+        assertTrue("the later frame names no tool; the transcript keeps the name", !p2.has("tool") || p2.getString("tool").isEmpty())
+    }
+
+    @Test
+    fun a_failed_tool_call_carries_its_error_message() {
+        val f = V2Translator.translate(
+            "session.tool.failed",
+            data(
+                """{"sessionID":"$sid","assistantMessageID":"msg_t2","id":"call_2","executed":true,
+                "error":{"_tag":"Tool.Error","message":"permission denied"}}""",
+            ),
+        )
+        val state = f[0].props.getJSONObject("part").getJSONObject("state")
+        assertEquals("error", state.getString("status"))
+        assertEquals("permission denied", state.getString("error"))
+    }
+
+    /** History and the stream give the same part id, so reloading does not duplicate a call. */
+    @Test
+    fun a_reloaded_tool_item_matches_the_streamed_part_id() {
+        val msg = JSONObject(
+            """{"id":"msg_t3","type":"assistant","time":{"created":5},"agent":"build",
+            "content":[{"type":"tool","id":"call_3","name":"shell",
+              "state":{"status":"completed","input":{"command":"ls"},
+                "content":[{"type":"text","text":"a.txt"}],"metadata":{"exit":0}},
+              "time":{"created":6}}]}""",
+        )
+        val mapped = V2Mapping.message(msg, sid)!!
+        val part = mapped.getJSONArray("parts").getJSONObject(0)
+        assertEquals("tool", part.getString("type"))
+        assertEquals(V2Translator.toolPartID("msg_t3", "call_3"), part.getString("id"))
+        assertEquals("shell", part.getString("tool"))
+        assertEquals("a.txt", part.getJSONObject("state").getString("output"))
+        assertEquals("ls", part.getJSONObject("state").getJSONObject("input").getString("command"))
+    }
+
     @Test
     fun form_created_becomes_a_question_frame_and_reply_or_cancel_settle_it() {
         val created = V2Translator.translateEnvelope(

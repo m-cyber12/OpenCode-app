@@ -25,6 +25,28 @@ class TodoAndDiffTest {
     private fun todoFrame(vararg rows: JSONObject): JSONObject =
         JSONObject().put("sessionID", "s1").put("todos", org.json.JSONArray(rows.toList()))
 
+    /** v2 names a tool only when the call starts; a later frame for the same call keeps the name. */
+    @Test
+    fun a_later_tool_frame_without_a_name_keeps_the_tool_name() {
+        val t = Transcript()
+        val part = { state: String, withName: Boolean ->
+            JSONObject()
+                .put("id", "msg_x:tool:call_9")
+                .put("messageID", "msg_x")
+                .put("sessionID", "s1")
+                .put("type", "tool")
+                .put("callID", if (withName) "call_9" else "")
+                .put("tool", if (withName) "shell" else "")
+                .put("state", JSONObject().put("status", state))
+        }
+        t.apply("message.part.updated", JSONObject().put("sessionID", "s1").put("messageID", "msg_x").put("part", part("pending", true)))
+        t.apply("message.part.updated", JSONObject().put("sessionID", "s1").put("messageID", "msg_x").put("part", part("completed", false)))
+        val p = t.snapshot().session("s1")!!.messages.first().parts.single()
+        assertEquals("shell", p.tool)
+        assertEquals("call_9", p.callID)
+        assertEquals("completed", p.status)
+    }
+
     @Test
     fun todoUpdatedReplacesTheWholeListEachTime() {
         val t = Transcript()
