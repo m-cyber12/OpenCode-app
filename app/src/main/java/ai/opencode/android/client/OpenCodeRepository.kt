@@ -68,6 +68,8 @@ class OpenCodeRepository(
      * while the network answers. See [TranscriptDisk].
      */
     private val transcriptDisk: TranscriptDisk? = null,
+    /** OpenCode's global config folder on this device; the app writes the config file there. */
+    private val globalConfigDir: java.io.File? = null,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) {
 
@@ -177,7 +179,13 @@ class OpenCodeRepository(
             }
     }
 
-    val api = OpenCodeApi(baseUrl = baseUrl, username = username, password = password, directory = workspaceDir)
+    val api = OpenCodeApi(
+        baseUrl = baseUrl,
+        username = username,
+        password = password,
+        directory = workspaceDir,
+        globalConfigDir = globalConfigDir,
+    )
 
     var workspaceDir: String? = workspaceDir
         private set

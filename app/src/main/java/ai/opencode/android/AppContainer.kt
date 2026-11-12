@@ -55,6 +55,9 @@ class AppContainer private constructor(private val context: Context) {
             username = RuntimeEnv.SERVER_USER,
             password = password,
             workspaceDir = workspaceDir,
+            // The global config folder: the app edits opencode.json(c) there (v2 has no
+            // comment-keeping write of its own for MCP and permissions).
+            globalConfigDir = paths.xdgConfigOpencode,
             // The model the user last used and their starred quick-switch list live
             // in SharedPreferences, so a rebuilt repository (new project, new chat,
             // app restart) starts from the user's own choice instead of the first

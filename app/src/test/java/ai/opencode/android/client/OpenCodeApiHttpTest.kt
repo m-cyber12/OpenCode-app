@@ -304,7 +304,6 @@ class OpenCodeApiHttpTest {
             { api().unrevert("ses_1") },
             { api().shell("ses_1", "ls", "build") },
             { api().setProviderAuth("openrouter", "k") },
-            { api().patchGlobalConfig(JSONObject()) },
         )
         for (call in calls) {
             val err = runCatching { call() }.exceptionOrNull()
@@ -312,6 +311,51 @@ class OpenCodeApiHttpTest {
             assertEquals(501, (err as OpenCodeApi.ApiException).status)
         }
         assertEquals(0, seen.size)
+    }
+
+    // ---- global config (option B: the app edits the file, then reloads) -----
+
+    private fun configApi(dir: java.io.File) = OpenCodeApi(
+        baseUrl = "http://127.0.0.1:${fake!!.port}",
+        username = "opencode",
+        password = "secret-pw",
+        directory = "/data/user/0/ai.opencode.android/files/workspaces/proj",
+        globalConfigDir = dir,
+    )
+
+    /** A write keeps the user's comments, sets the rule, reloads the server, and reads back the same policy. */
+    @Test
+    fun configWriteKeepsCommentsSetsThePolicyAndReloads() {
+        val dir = java.nio.file.Files.createTempDirectory("cfg").toFile()
+        val file = java.io.File(dir, "opencode.jsonc")
+        val original = "// my notes\n{\n  \"model\": \"x/y\" // keep\n}\n"
+        file.writeText(original)
+        responseStatus = 200
+
+        val api = configApi(dir)
+        api.patchGlobalConfig(JSONObject().put("permission", JSONObject().put("bash", "ask")))
+
+        val text = file.readText()
+        assertTrue(text, text.startsWith("// my notes\n"))
+        assertTrue(text, text.contains("// keep"))
+        val reads = api.globalConfig().getJSONObject("permission")
+        assertEquals("ask", reads.getString("bash"))
+        assertTrue(seen.any { it.method == "POST" && it.path == "/api/location/reload" })
+        dir.deleteRecursively()
+    }
+
+    /** A config the app cannot parse is never written over. */
+    @Test
+    fun configWriteRefusesToTouchABrokenFile() {
+        val dir = java.nio.file.Files.createTempDirectory("cfg").toFile()
+        val file = java.io.File(dir, "opencode.json")
+        file.writeText("[not an object")
+        val err = runCatching { configApi(dir).patchGlobalConfig(JSONObject().put("permission", JSONObject())) }
+            .exceptionOrNull()
+        assertTrue("expected a refusal, got $err", err != null)
+        assertEquals("[not an object", file.readText())
+        assertEquals(0, seen.size)
+        dir.deleteRecursively()
     }
 
     /** Lists whose routes are not ported report empty rather than failing the whole refresh. */

@@ -300,6 +300,76 @@ object V2Mapping {
         return out
     }
 
+    /** v1 permission key -> v2 action name. Most names are unchanged; `bash` is `shell`. */
+    fun v2Action(v1: String): String = when (v1) {
+        "bash" -> "shell"
+        "write", "patch", "apply_patch" -> "edit"
+        else -> v1
+    }
+
+    /** v2 action name -> the v1 key the Settings table edits (`shell` shows as `bash`). */
+    fun v1Action(v2: String): String = if (v2 == "shell") "bash" else v2
+
+    /**
+     * The v2 `permissions` list after a v1 permission policy is written. Existing rules for the
+     * actions in the policy are dropped; their new rules are appended. Rules are ordered and the
+     * last match wins, so the appended rules win. A string value applies to every resource; an
+     * object value maps a resource pattern to its effect.
+     */
+    fun mergePermissionRules(existing: JSONArray?, policy: JSONObject): JSONArray {
+        val managed = policy.keys().asSequence().map { v2Action(it) }.toSet()
+        val out = JSONArray()
+        if (existing != null) {
+            for (i in 0 until existing.length()) {
+                val rule = existing.optJSONObject(i) ?: continue
+                if (rule.optString("action") !in managed) out.put(rule)
+            }
+        }
+        for (key in policy.keys()) {
+            val action = v2Action(key)
+            when (val value = policy.opt(key)) {
+                is String -> out.put(permissionRule(action, "*", value))
+                is JSONObject -> {
+                    for (pattern in value.keys()) {
+                        val effect = value.optString(pattern)
+                        if (effect.isNotEmpty()) out.put(permissionRule(action, pattern, effect))
+                    }
+                }
+            }
+        }
+        return out
+    }
+
+    /**
+     * The v1 permission policy the Settings table reads, from the v2 `permissions` list. A rule
+     * on every resource becomes a string; rules on specific patterns become an object. The last
+     * rule for an action or pattern wins, as it does on the server.
+     */
+    fun permissionPolicy(rules: JSONArray?): JSONObject {
+        // action -> (resource -> effect), in the order the rules appear
+        val byAction = LinkedHashMap<String, LinkedHashMap<String, String>>()
+        if (rules != null) {
+            for (i in 0 until rules.length()) {
+                val rule = rules.optJSONObject(i) ?: continue
+                val key = v1Action(rule.optString("action"))
+                val resource = rule.optString("resource")
+                val effect = rule.optString("effect")
+                if (key.isEmpty() || resource.isEmpty() || effect.isEmpty()) continue
+                byAction.getOrPut(key) { LinkedHashMap() }[resource] = effect
+            }
+        }
+        val out = JSONObject()
+        for ((key, patterns) in byAction) {
+            val onlyAll = patterns.size == 1 && patterns.containsKey("*")
+            if (onlyAll) out.put(key, patterns.getValue("*"))
+            else out.put(key, JSONObject(patterns))
+        }
+        return out
+    }
+
+    private fun permissionRule(action: String, resource: String, effect: String): JSONObject =
+        JSONObject().put("action", action).put("resource", resource).put("effect", effect)
+
     private fun stringArray(arr: JSONArray?): JSONArray {
         val out = JSONArray()
         if (arr != null) for (i in 0 until arr.length()) out.put(arr.optString(i))

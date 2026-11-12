@@ -4,7 +4,11 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.util.Base64
+import ai.opencode.android.client.v2.JsoncEdit
 import ai.opencode.android.client.v2.V2Mapping
+
+/** One lock for every config write in the process, so two repositories cannot interleave edits. */
+private val CONFIG_WRITE_LOCK = Any()
 
 /**
  * HTTP client for the local OpenCode server API.
@@ -26,6 +30,12 @@ class OpenCodeApi(
     var directory: String? = null,
     private val connectTimeoutMs: Int = 5_000,
     private val readTimeoutMs: Int = 40_000,
+    /**
+     * OpenCode's global config folder on this device (the app's own `xdg/config/opencode`).
+     * The app is the same user as the server, so it reads and writes the config file itself.
+     * Null means the folder is not known, and config reads report nothing and writes fail.
+     */
+    private val globalConfigDir: java.io.File? = null,
 ) {
 
     /** Raised for any non-2xx response or transport failure. */
@@ -517,17 +527,71 @@ class OpenCodeApi(
     // ---- config (OpenCode's normal configuration mechanism) ---------------
 
     /** GET /global/config — the raw global opencode.json(c) document. */
-    fun globalConfig(): org.json.JSONObject =
-        // Slice 2: v2 `GET /api/config` (its shape differs: `shell`, `subagent`, ...).
-        // Until then the policy reads as empty, which the UI shows as "not loaded".
-        org.json.JSONObject()
+    fun globalConfig(): org.json.JSONObject {
+        // v2 keeps the policy as a `permissions` list; the Settings table reads the v1 map.
+        val file = configFile() ?: return org.json.JSONObject()
+        if (!file.isFile) return org.json.JSONObject()
+        val v2 = JsoncEdit.parseObject(file.readText())
+        return org.json.JSONObject().put("permission", V2Mapping.permissionPolicy(v2.optJSONArray("permissions")))
+    }
 
     /**
      * Config writes. Slice 2: v2 `PATCH /api/experimental/config`. Failing here
      * keeps the ask-by-default enforcement honest: it reports that it could not run.
      */
-    fun patchGlobalConfig(patch: org.json.JSONObject): org.json.JSONObject =
-        notPorted("config write (v2: PATCH /api/experimental/config)")
+    fun patchGlobalConfig(patch: org.json.JSONObject): org.json.JSONObject = synchronized(CONFIG_WRITE_LOCK) {
+        // v2's own PATCH only changes `shell`, so the file is edited here. Comments survive
+        // (JsoncEdit). The result is parsed before anything is written, then the server reloads.
+        val file = configFile() ?: throw ApiException(-1, "", "the global config folder is not known to the app")
+        file.parentFile?.mkdirs()
+        var text = if (file.isFile) file.readText() else "{}\n"
+        for (key in patch.keys()) {
+            // Re-read the text each time, so a second key sees the first key's edit.
+            val current = JsoncEdit.parseObject(text)
+            text = when (key) {
+                "mcp" -> {
+                    // v2 keeps servers under `mcp.servers`; other `mcp` keys (timeout) are kept as they are.
+                    val mcp = org.json.JSONObject(current.optJSONObject("mcp")?.toString() ?: "{}")
+                    val servers = mcp.optJSONObject("servers") ?: org.json.JSONObject()
+                    val add = patch.getJSONObject(key)
+                    for (name in add.keys()) servers.put(name, V2Mapping.mcpConfig(add.getJSONObject(name)))
+                    mcp.put("servers", servers)
+                    JsoncEdit.withKey(text, "mcp", mcp.toString(2))
+                }
+                "permission" -> {
+                    val rules = V2Mapping.mergePermissionRules(
+                        current.optJSONArray("permissions"),
+                        patch.getJSONObject(key),
+                    )
+                    JsoncEdit.withKey(text, "permissions", rules.toString(2))
+                }
+                else -> throw ApiException(501, "", "config key \"$key\" is not written by the app yet")
+            }
+        }
+        // Parsing is the check: a broken edit throws here, before the real file is touched.
+        val result = JsoncEdit.parseObject(text)
+        writeAtomically(file, if (text.endsWith("\n")) text else "$text\n")
+        dispose()
+        result
+    }
+
+    /** The global config file: the existing `opencode.json` or `opencode.jsonc`, else a new `.jsonc`. */
+    private fun configFile(): java.io.File? {
+        val dir = globalConfigDir ?: return null
+        val existing = listOf("opencode.json", "opencode.jsonc").map { java.io.File(dir, it) }
+            .filter { it.isFile }
+            .lastOrNull()
+        return existing ?: java.io.File(dir, "opencode.jsonc")
+    }
+
+    private fun writeAtomically(file: java.io.File, text: String) {
+        val tmp = java.io.File(file.parentFile, file.name + ".tmp")
+        tmp.writeText(text)
+        if (!tmp.renameTo(file)) {
+            file.writeText(text)
+            tmp.delete()
+        }
+    }
 
     // ---- files (read side; the server keeps ownership of writes) ----------
 

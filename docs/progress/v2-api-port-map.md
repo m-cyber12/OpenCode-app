@@ -8,8 +8,9 @@ Source: OpenCode v2.2.5 (`packages/protocol/src/groups/*.ts`, `packages/schema/s
 - Slice 2 done in code (2026-11-09): permissions (list and reply), forms as questions (list, reply, reject).
 - Slice 3 done in code (2026-11-09): MCP list (`GET /api/mcp`), add (`PUT /api/experimental/mcp/:server`, v1 `enabled` becomes v2 `disabled`), connect and disconnect; file list (`GET /api/fs/list`) and file read (`GET /api/fs/read/*`, text). JVM tests in `OpenCodeApiHttpTest`.
 - Slice 4 done in code (2026-11-09): agent tool calls, live and in history. `session.tool.input.started|ended`, `session.tool.called|progress|success|failed` become one v1 tool part per call (id `messageID:tool:callID`); an assistant `tool` item in history maps to the same part. A later frame with no name keeps the name (`Transcript`).
-- Not ported (throw status 501): revert, unrevert, shell command, provider credentials, config write (`patchGlobalConfig`). Empty for now: todos.
-- Config write: v2 `PATCH /api/experimental/config` accepts only `{shell}` (`Config.Patch`). The MCP "save to config" and the permission guard write other keys, so they need a file-level write (`POST /api/experimental/fs/write`) or an owner decision. Not decided yet.
+- Slice 5 done in code (2026-11-12, option B): config write. The app edits `opencode.json` (or `opencode.jsonc`) in the global config folder itself, keeping comments (`JsoncEdit`), checks the result parses, writes atomically, then `POST /api/location/reload`. `mcp` writes go to `mcp.servers`; `permission` writes go to the v2 `permissions` rule list (v1 `bash` is `shell`; last rule wins). `globalConfig()` reads the rule list back as the v1 policy map. Only `mcp` and `permission` keys are written; others return 501. Limit: a whole `mcp` value is replaced, so comments inside that block are lost. JVM tests: `JsoncEditTest` and the config tests in `OpenCodeApiHttpTest`.
+- Not ported (throw status 501): revert, unrevert, shell command, provider credentials. Empty for now: todos.
+- Config write: v2 `PATCH /api/experimental/config` accepts only `{shell}` (`Config.Patch`). Decided 2026-11-12 (owner, option B): comment-preserving edit of the file by the app, then reload. See slice 5 above.
 - Shell: v2 `POST /api/session/:id/shell` returns 204; output arrives as `session.shell.started|ended` (durable) and as `shell` items in history. Map to a tool part named `shell`. Not yet done.
 - Revert: v2 is two steps (`revert/stage` with `messageID`, `files`; then `revert/commit`); clear is `DELETE /api/session/:id/revert`. Redo depends on the staged marker, so the semantics need a test before porting. Not yet done.
 - Event stream: `/api/event` (no `directory` scope); v2 sends no heartbeat, so the silence budget is 120 s.
@@ -74,7 +75,7 @@ Source: OpenCode v2.2.5 (`packages/protocol/src/groups/*.ts`, `packages/schema/s
 ## Not in v2 (decide per feature)
 
 - v1 plugins: not supported (accepted 2026-11-05).
-- v1 `/mcp` config write path: write through `/api/experimental/mcp/:server`.
+- v1 `/mcp` config write path: the live server uses `PUT /api/experimental/mcp/:server`; the persisted copy is written to `mcp.servers` in the config file (slice 5).
 - Acceptance and background-task features (P1-11, P1-12): they read files and run prompts, so they depend only on prompt and events.
 
 ## Next steps
