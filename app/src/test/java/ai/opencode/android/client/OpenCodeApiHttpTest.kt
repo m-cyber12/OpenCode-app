@@ -302,7 +302,6 @@ class OpenCodeApiHttpTest {
         val calls: List<() -> Any?> = listOf(
             { api().revert("ses_1", "msg_1") },
             { api().unrevert("ses_1") },
-            { api().shell("ses_1", "ls", "build") },
             { api().setProviderAuth("openrouter", "k") },
         )
         for (call in calls) {
@@ -311,6 +310,19 @@ class OpenCodeApiHttpTest {
             assertEquals(501, (err as OpenCodeApi.ApiException).status)
         }
         assertEquals(0, seen.size)
+    }
+
+    /** A shell command is one POST with the command only (no v1 agent); v2 answers 204. */
+    @Test
+    fun shellPostsTheCommandAndReturnsNoContent() {
+        responseStatus = 204
+        responseBody = ""
+        val status = api().shell("ses_1", "ls -la", "build")
+        assertEquals(204, status)
+        val rec = seen.single()
+        assertEquals("POST", rec.method)
+        assertEquals("/api/session/ses_1/shell", rec.path)
+        assertEquals("{\"command\":\"ls -la\"}", rec.body)
     }
 
     // ---- global config (option B: the app edits the file, then reloads) -----

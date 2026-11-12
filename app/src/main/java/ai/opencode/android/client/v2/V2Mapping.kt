@@ -109,6 +109,7 @@ object V2Mapping {
      * therefore share one id.
      */
     fun message(o: JSONObject, sessionID: String): JSONObject? {
+        if (o.optString("type") == "shell") return shellMessage(o, sessionID)
         val id = o.optString("id")
         if (id.isEmpty()) return null
         val created = o.optJSONObject("time")?.optLong("created") ?: 0L
@@ -146,6 +147,31 @@ object V2Mapping {
             }
         }
         return JSONObject().put("info", info).put("parts", parts)
+    }
+
+    /**
+     * A shell command from history: the same message and tool part the live stream builds
+     * (see [V2Translator.shellFrames]), so a reload shows the card the way it was left.
+     */
+    private fun shellMessage(o: JSONObject, sessionID: String): JSONObject? {
+        val shellID = o.optString("shellID")
+        if (shellID.isEmpty()) return null
+        val time = o.optJSONObject("time")
+        val created = time?.optLong("created", 0L) ?: 0L
+        val mid = V2Translator.shellMessageID(shellID)
+        val infoTime = JSONObject().put("created", created)
+        time?.optLong("completed", 0L)?.takeIf { it > 0L }?.let { infoTime.put("completed", it) }
+        val info = JSONObject()
+            .put("id", mid)
+            .put("sessionID", sessionID)
+            .put("role", "assistant")
+            .put("time", infoTime)
+        val exit = if (o.has("exit")) o.optInt("exit") else null
+        val output = o.optJSONObject("output")?.optString("output").orEmpty()
+        val part = V2Translator.shellPart(
+            sessionID, mid, shellID, o.optString("command"), o.optString("status"), exit, output, created,
+        )
+        return JSONObject().put("info", info).put("parts", JSONArray().put(part))
     }
 
     /**

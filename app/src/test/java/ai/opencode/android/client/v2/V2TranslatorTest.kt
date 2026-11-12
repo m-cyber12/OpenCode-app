@@ -248,4 +248,55 @@ class V2TranslatorTest {
     fun unknown_events_are_ignored_for_now() {
         assertTrue(V2Translator.translate("session.tool.called", data("""{"sessionID":"$sid"}""")).isEmpty())
     }
+
+    // ---- shell commands (slice 6) -------------------------------------------
+
+    private val shellStarted = """{"sessionID":"$sid","shell":{"id":"sh_1","status":"running","command":"ls","cwd":"/x","shell":"/bin/sh","file":"/f","metadata":{},"time":{"started":1000}}}"""
+
+    private fun shellEnded(status: String, exit: Int, output: String) =
+        """{"sessionID":"$sid","shell":{"id":"sh_1","status":"$status","exit":$exit,"command":"ls","cwd":"/x","shell":"/bin/sh","file":"/f","metadata":{},"time":{"started":1000,"completed":2000}},"output":{"output":"$output","cursor":4,"size":4,"truncated":false}}"""
+
+    private fun partOf(frames: List<V2Translator.Frame>) =
+        frames.single { it.type == "message.part.updated" }.props.getJSONObject("part")
+
+    @Test
+    fun shell_started_opens_a_running_shell_part_under_its_own_message() {
+        val f = V2Translator.translate("session.shell.started", data(shellStarted), 1000L)
+        assertEquals(listOf("message.updated", "message.part.updated"), f.map { it.type })
+        assertEquals("assistant", f[0].props.getJSONObject("info").getString("role"))
+        val part = partOf(f)
+        assertEquals("shell", part.getString("tool"))
+        assertEquals("running", part.getJSONObject("state").getString("status"))
+        assertEquals("ls", part.getJSONObject("state").getJSONObject("input").getString("command"))
+    }
+
+    @Test
+    fun shell_ended_settles_the_same_part_with_its_output() {
+        val started = partOf(V2Translator.translate("session.shell.started", data(shellStarted), 1000L))
+        val ended = partOf(V2Translator.translate("session.shell.ended", data(shellEnded("exited", 0, "a\\nb\\n")), 2000L))
+        assertEquals(started.getString("id"), ended.getString("id"))
+        assertEquals("completed", ended.getJSONObject("state").getString("status"))
+        assertEquals("a\nb\n", ended.getJSONObject("state").getString("output"))
+    }
+
+    @Test
+    fun shell_exit_code_and_timeout_are_errors() {
+        val failed = partOf(V2Translator.translate("session.shell.ended", data(shellEnded("exited", 2, "")), 0L))
+        assertEquals("error", failed.getJSONObject("state").getString("status"))
+        assertEquals("exit 2", failed.getJSONObject("state").getString("error"))
+        assertEquals("error", V2Translator.shellState("timeout", null).first)
+        assertEquals("timed out", V2Translator.shellState("timeout", null).second)
+    }
+
+    /** A reloaded history item lands on the same part id as the live frames, so nothing is shown twice. */
+    @Test
+    fun shell_history_item_matches_the_live_part() {
+        val live = partOf(V2Translator.translate("session.shell.ended", data(shellEnded("exited", 0, "x")), 2000L))
+        val item = data("""{"id":"msg_9","type":"shell","shellID":"sh_1","command":"ls","status":"exited","exit":0,"output":{"output":"x","cursor":1,"size":1,"truncated":false},"time":{"created":1000,"completed":2000}}""")
+        val mapped = V2Mapping.message(item, sid)!!
+        val part = mapped.getJSONArray("parts").getJSONObject(0)
+        assertEquals(live.getString("id"), part.getString("id"))
+        assertEquals("completed", part.getJSONObject("state").getString("status"))
+        assertEquals("x", part.getJSONObject("state").getString("output"))
+    }
 }

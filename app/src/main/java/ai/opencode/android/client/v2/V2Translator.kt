@@ -64,6 +64,8 @@ object V2Translator {
                 metadata = data.optJSONObject("metadata"),
                 error = data.optJSONObject("error")?.optString("message").orEmpty().ifEmpty { "The tool failed." },
             )
+            "session.shell.started" -> shellFrames(sid, data, created)
+            "session.shell.ended" -> shellFrames(sid, data, created)
             "permission.asked" -> listOf(Frame("permission.asked", V2Mapping.permissionRequest(data)))
             "form.created" -> data.optJSONObject("form")?.let { V2Mapping.formRequest(it) }
                 ?.let { listOf(Frame("question.asked", it)) } ?: emptyList()
@@ -148,6 +150,76 @@ object V2Translator {
         if (mid.isEmpty() || callID.isEmpty()) return emptyList()
         val part = toolPart(sid, mid, callID, tool, status, input, output, metadata, error, created)
         return listOf(Frame("message.part.updated", JSONObject().put("sessionID", sid).put("messageID", mid).put("part", part)))
+    }
+
+    /**
+     * The message that holds one shell command. A shell is not an assistant turn, so it gets its own
+     * message id, derived from the shell id: the live frames and a reloaded history then agree.
+     */
+    fun shellMessageID(shellID: String): String = "shell:$shellID"
+
+    /**
+     * One shell command as a v1 `shell` tool part. [status] is the v2 shell status (running,
+     * exited, timeout, killed); [exit] is the exit code once the command has exited.
+     */
+    fun shellPart(
+        sid: String,
+        mid: String,
+        shellID: String,
+        command: String,
+        status: String,
+        exit: Int?,
+        output: String,
+        startedMs: Long,
+    ): JSONObject {
+        val (state, error) = shellState(status, exit)
+        return toolPart(
+            sid,
+            mid,
+            shellID,
+            "shell",
+            state,
+            input = JSONObject().put("command", command),
+            output = output,
+            error = error,
+            startedMs = startedMs,
+        )
+    }
+
+    /** v2 shell status -> the v1 tool status, and the error text for a run that did not succeed. */
+    fun shellState(status: String, exit: Int?): Pair<String, String> = when (status) {
+        "exited" -> if (exit == null || exit == 0) "completed" to "" else "error" to "exit $exit"
+        "timeout" -> "error" to "timed out"
+        "killed" -> "error" to "killed"
+        else -> "running" to ""
+    }
+
+    /**
+     * `session.shell.started` and `session.shell.ended` carry the shell's info (and, on end, its
+     * output). Both become a message.updated (the shell's own message) and one tool part, so the
+     * card starts running and then settles on the same part id.
+     */
+    private fun shellFrames(sid: String, data: JSONObject, created: Long): List<Frame> {
+        val shell = data.optJSONObject("shell") ?: return emptyList()
+        val shellID = shell.optString("id")
+        if (shellID.isEmpty()) return emptyList()
+        val mid = shellMessageID(shellID)
+        val time = shell.optJSONObject("time")
+        val started = time?.optLong("started", 0L)?.takeIf { it > 0L } ?: created
+        val exit = if (shell.has("exit")) shell.optInt("exit") else null
+        val output = data.optJSONObject("output")?.optString("output").orEmpty()
+        val info = JSONObject()
+            .put("id", mid)
+            .put("sessionID", sid)
+            .put("role", "assistant")
+            .put("time", JSONObject().put("created", started).also { t ->
+                time?.optLong("completed", 0L)?.takeIf { it > 0L }?.let { t.put("completed", it) }
+            })
+        val part = shellPart(sid, mid, shellID, shell.optString("command"), shell.optString("status"), exit, output, started)
+        return listOf(
+            Frame("message.updated", JSONObject().put("info", info)),
+            Frame("message.part.updated", JSONObject().put("sessionID", sid).put("messageID", mid).put("part", part)),
+        )
     }
 
     /** The part id is stable across started, delta and ended frames of the same text. */

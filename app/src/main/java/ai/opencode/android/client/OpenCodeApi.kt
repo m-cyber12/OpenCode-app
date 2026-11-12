@@ -302,15 +302,20 @@ class OpenCodeApi(
         throw ApiException(501, "", "$what is not on OpenCode v2 yet (migration phase 4, slice 2)")
 
     /**
-     * POST /session/:id/shell — run a shell command *through the server's*
-     * shell path (recorded as a real tool part on the transcript).
+     * POST /api/session/:id/shell — run one shell command in the session's directory. v2 answers
+     * 204 with no body; the output arrives on the stream as `session.shell.started|ended` and is
+     * shown as a `shell` tool part. [agent] is a v1 field: v2 does not take it, so it is not sent.
+     * Returns the HTTP status (204 on success).
      */
     fun shell(sessionID: String, command: String, agent: String): Int =
-        notPorted("shell command (v2: POST /api/session/:id/shell)")
+        request("POST", "/api/session/$sessionID/shell", org.json.JSONObject().put("command", command).toString()).status
 
-    /** Same call as [shell], returning the response body (diagnostic gates). */
+    /**
+     * Same call as [shell], returning the response body (diagnostic gates). On v2 the body is
+     * empty, because the output is not in the response (see [shell]).
+     */
     fun shellOutput(sessionID: String, command: String, agent: String): String =
-        notPorted("shell command (v2: POST /api/session/:id/shell)")
+        request("POST", "/api/session/$sessionID/shell", org.json.JSONObject().put("command", command).toString()).body
 
     // ---- permissions -------------------------------------------------------
 
