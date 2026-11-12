@@ -77,10 +77,14 @@ class JsoncEditTest {
         val policy = JSONObject().put("bash", "ask").put("read", JSONObject().put("*.env", "deny"))
         val merged = V2Mapping.mergePermissionRules(existing, policy)
 
+        // org.json does not keep key order, so the appended rules are found by action, not by index.
         val rules = (0 until merged.length()).map { merged.getJSONObject(it) }
-        assertEquals(listOf("grep", "shell", "read"), rules.map { it.getString("action") })
-        assertEquals("ask", rules[1].getString("effect"))
-        assertEquals("*.env", rules[2].getString("resource"))
+        assertEquals(3, rules.size)
+        assertEquals("allow", rules.single { it.getString("action") == "grep" }.getString("effect"))
+        assertEquals("ask", rules.single { it.getString("action") == "shell" }.getString("effect"))
+        val read = rules.single { it.getString("action") == "read" }
+        assertEquals("*.env", read.getString("resource"))
+        assertEquals("deny", read.getString("effect"))
     }
 
     @Test
