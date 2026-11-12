@@ -1,27 +1,27 @@
-[2026-11-12T09:50:31Z] device: Android 16 (API 36); package=<app>.debug
-[2026-11-12T09:50:31Z] live project root: /storage/emulated/0/Documents/OpenCode (source: app-reported (W4 gate))
-[2026-11-12T09:50:31Z] --- non-root shell, live project root (/storage/emulated/0/Documents/OpenCode) ---
+[2026-11-12T17:34:18Z] device: Android 16 (API 36); package=<app>.debug
+[2026-11-12T17:34:18Z] live project root: /storage/emulated/0/Documents/OpenCode (source: app-reported (W4 gate))
+[2026-11-12T17:34:18Z] --- non-root shell, live project root (/storage/emulated/0/Documents/OpenCode) ---
 total 16
-drwxrws--- 2 u0_a211 media_rw 4096 2026-11-12 09:37 1
-drwxrws--- 2 u0_a211 media_rw 4096 2026-11-12 09:45 w4-storage-1794476730070
-[2026-11-12T09:50:31Z] --- non-root shell, the app-private root ---
+drwxrws--- 2 u0_a208 media_rw 4096 2026-11-12 17:21 1
+drwxrws--- 2 u0_a208 media_rw 4096 2026-11-12 17:29 w4-storage-1794504558323
+[2026-11-12T17:34:18Z] --- non-root shell, the app-private root ---
 ls: /data/data/<app>.debug/files/workspaces: Permission denied
 P10D_VISIBILITY_LOCATION PASS :: the project root exists and holds 2 project(s): /storage/emulated/0/Documents/OpenCode (source: app-reported (W4 gate), Android 16)
-[2026-11-12T09:50:31Z] --- project listing (/storage/emulated/0/Documents/OpenCode/w4-storage-1794476730070) ---
+[2026-11-12T17:34:18Z] --- project listing (/storage/emulated/0/Documents/OpenCode/w4-storage-1794504558323) ---
 total 0
-P10D_VISIBILITY_SHELL_LIST PASS :: a non-root shell lists the project directory (/storage/emulated/0/Documents/OpenCode/w4-storage-1794476730070): 1 lines
-P10D_VISIBILITY_SHELL_READ SKIP :: p10-visible.txt is not in /storage/emulated/0/Documents/OpenCode/w4-storage-1794476730070 and the directory has no files yet (the turn that writes it was skipped)
+P10D_VISIBILITY_SHELL_LIST PASS :: a non-root shell lists the project directory (/storage/emulated/0/Documents/OpenCode/w4-storage-1794504558323): 1 lines
+P10D_VISIBILITY_SHELL_READ SKIP :: p10-visible.txt is not in /storage/emulated/0/Documents/OpenCode/w4-storage-1794504558323 and the directory has no files yet (the turn that writes it was skipped)
 P10D_VISIBILITY_PRIVATE_ROOT_NOT_LIVE PASS :: the live project root is outside /data: /storage/emulated/0/Documents/OpenCode
 P10D_VISIBILITY_SHARED_ROOT PASS :: the project root is on shared storage and outside Android/data: /storage/emulated/0/Documents/OpenCode (Android 16)
 P10D_VISIBILITY_DOCUMENTS_PROVIDER SKIP :: this device does not let a shell query the Documents provider (Error while accessing provider:com.android.externalstorage.documents)
-P10D_VISIBILITY_SHELL_WRITE PASS :: a file written by the non-root shell in /storage/emulated/0/Documents/OpenCode/w4-storage-1794476730070 was readable back: the directory is shared, ordinary storage
+P10D_VISIBILITY_SHELL_WRITE PASS :: a file written by the non-root shell in /storage/emulated/0/Documents/OpenCode/w4-storage-1794504558323 was readable back: the directory is shared, ordinary storage
 P10D_VISIBILITY_SHELL_BASELINE PASS :: baseline holds: an unprivileged shell cannot read /data/data/<app>.debug at all, so the PASSs above are real
-workspace visibility 2026-11-12T09:50:32Z pkg=<app>.debug android=16 api=36
+workspace visibility 2026-11-12T17:34:20Z pkg=<app>.debug android=16 api=36
 live_root=/storage/emulated/0/Documents/OpenCode source=app-reported (W4 gate)
 shared_storage_candidate=/storage/emulated/0/Documents/OpenCode
 app_external_candidate=/storage/emulated/0/Android/data/<app>.debug/files/workspaces
 app_external_listing=1 lines
 internal_root=/data/data/<app>.debug/files/workspaces
-project=/storage/emulated/0/Documents/OpenCode/w4-storage-1794476730070 expect=p10-visible.txt expect_content=P10_VISIBLE_
+project=/storage/emulated/0/Documents/OpenCode/w4-storage-1794504558323 expect=p10-visible.txt expect_content=P10_VISIBLE_
 pass=6 fail=0 skip=2
-[2026-11-12T09:50:32Z] pass=6 fail=0 skip=2 (log: /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/workspace/visibility/workspace-visibility.log)
+[2026-11-12T17:34:20Z] pass=6 fail=0 skip=2 (log: /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/workspace/visibility/workspace-visibility.log)
