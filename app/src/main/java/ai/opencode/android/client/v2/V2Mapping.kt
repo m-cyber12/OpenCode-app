@@ -362,7 +362,11 @@ object V2Mapping {
         for ((key, patterns) in byAction) {
             val onlyAll = patterns.size == 1 && patterns.containsKey("*")
             if (onlyAll) out.put(key, patterns.getValue("*"))
-            else out.put(key, JSONObject(patterns))
+            else {
+                val obj = JSONObject()
+                for ((resource, effect) in patterns) obj.put(resource, effect)
+                out.put(key, obj)
+            }
         }
         return out
     }

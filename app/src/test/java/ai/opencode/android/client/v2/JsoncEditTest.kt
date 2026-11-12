@@ -30,7 +30,7 @@ class JsoncEditTest {
         val text = "{\n  \"model\": \"x/y\" // keep me\n}\n"
         val out = JsoncEdit.withKey(text, "permissions", "[]")
         assertTrue(out.contains("// keep me"))
-        assertEquals(JSONArray(), JsoncEdit.parseObject(out).getJSONArray("permissions"))
+        assertEquals(0, JsoncEdit.parseObject(out).getJSONArray("permissions").length())
     }
 
     @Test
