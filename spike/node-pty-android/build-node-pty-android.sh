@@ -158,7 +158,17 @@ while read -r sym; do
   case "$base" in napi_*|node_api_*) continue;; esac
   grep -qx "$base" "$defined" || missing="$missing $base"
 done < <("$NM" -D --undefined-only "$SO" | awk '{print $NF}')
-[ -z "$missing" ] || fail "undefined symbols not provided by the NEEDED system libraries:$missing"
+if [ -n "$missing" ]; then
+  # Diagnostic only: which static archive members reference the missing symbols.
+  for a in $(find "$PREBUILT" -name 'libc++_static.a' -o -name 'libc++abi.a' -o -name 'libunwind.a' 2>/dev/null); do
+    for m in $missing; do
+      if "$NM" -A --undefined-only "$a" 2>/dev/null | grep -q " U $m\$"; then
+        echo "::notice title=node-pty-android::archive $(basename "$a") references $m"
+      fi
+    done
+  done
+  fail "undefined symbols not provided by the NEEDED system libraries:$missing"
+fi
 log "undefined symbols: all provided (Node-API from the host node process, the rest by NEEDED libraries)"
 
 # 7. Package in the platform layout (lib/ from the registry, the Bionic pty.node replaces the glibc one)
