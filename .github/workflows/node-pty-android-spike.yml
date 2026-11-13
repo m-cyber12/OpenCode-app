@@ -1,0 +1,65 @@
+name: node-pty-android-spike
+
+# TEST ONLY. Phase 3 spike (terminal) of the OpenCode v2 migration: builds the Bionic
+# arm64 native addon for @lydell/node-pty. Output is an artifact, not a commit. Runs
+# only when this spike or this workflow changes, so it does not touch the release gates.
+on:
+  push:
+    branches: [arena/01a0b9d5-opencode-app]
+    paths:
+      - 'spike/node-pty-android/**'
+      - '.github/workflows/node-pty-android-spike.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      NODE_PTY_OUT: /tmp/node-pty-android-out
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22 (runs node-gyp; the addon targets Node 26 headers)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Same pinned NDK as the Node 26 spike, so the two Android builds match.
+      - name: Install pinned NDK 28.2.13676358
+        shell: bash
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -maxdepth 3 -name sdkmanager -type f 2>/dev/null | head -1)"
+          if [ ! -x "$SDKMANAGER" ]; then
+            echo "::error title=node-pty-android::sdkmanager not found under $ANDROID_HOME/cmdline-tools"
+            exit 1
+          fi
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          if ! "$SDKMANAGER" --install "ndk;28.2.13676358" > "$RUNNER_TEMP/ndk-install.log" 2>&1; then
+            tail -n 40 "$RUNNER_TEMP/ndk-install.log"
+            echo "::error title=node-pty-android::NDK 28.2.13676358 install failed"
+            exit 1
+          fi
+          ls "$ANDROID_HOME/ndk"
+
+      - name: Build node-pty for Android arm64 and run the ELF checks
+        run: bash spike/node-pty-android/build-node-pty-android.sh
+        shell: bash
+
+      - name: Upload the Bionic addon, the package and the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-pty-android-arm64
+          path: |
+            /tmp/node-pty-android-out/report.txt
+            /tmp/node-pty-android-out/pty.node
+            /tmp/node-pty-android-out/node-pty-linux-arm64-android.tgz
+            /tmp/node-pty-android-out/work/gyp-build.log
+          retention-days: 14
+          if-no-files-found: warn
