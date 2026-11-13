@@ -98,6 +98,7 @@ for lib in libc.so libutil.so; do
   [ -f "$LIBDIR/$lib" ] || { log "stub $lib: absent at API $API"; continue; }
   hits="$("$TC/llvm-nm" -D --defined-only "$LIBDIR/$lib" | awk '{print $NF}' | grep -i 'pty' || true)"
   log "stub $lib pty symbols: $(echo $hits)"
+  echo "::notice title=node-pty-android::stub $lib pty symbols: $(echo $hits)"
 done
 
 # 5. Build with NDK clang (node-gyp cross-compile: CC/CXX/AR/LINK point at the NDK)
