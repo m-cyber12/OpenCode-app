@@ -276,16 +276,26 @@ class OpenCodeApi(
     }
 
     /**
-     * POST /session/:id/revert — upstream's own "undo message": stages a revert to
-     * [messageID] (restoring the file snapshots it took). `SessionRevert.RevertInput`
-     * is `{sessionID, messageID, partID?}` and nothing else, so this is exactly the
-     * call the TUI's `session.undo` command makes.
+     * POST /api/session/:id/revert/stage — "undo to this message". Stages a revert to [messageID]
+     * and restores the files it covers, but keeps the later messages until the revert is committed.
+     * v2 commits the staged revert by itself when the next prompt runs (the later messages are then
+     * deleted), so this app never calls `revert/commit`. [partID] is a v1 field and is not sent.
+     * Returns the staged revert (`data`).
      */
-    fun revert(sessionID: String, messageID: String, partID: String? = null): org.json.JSONObject =
-        notPorted("revert (v2: stage then commit)")
+    fun revert(sessionID: String, messageID: String, partID: String? = null): org.json.JSONObject {
+        val body = org.json.JSONObject().put("messageID", messageID).toString()
+        val res = request("POST", "/api/session/$sessionID/revert/stage", body)
+        return org.json.JSONObject(res.body).optJSONObject("data") ?: org.json.JSONObject()
+    }
 
-    /** Clears a staged revert ("redo"). Slice 2: v2 `DELETE /api/session/:id/revert`. */
-    fun unrevert(sessionID: String): org.json.JSONObject = notPorted("unrevert")
+    /**
+     * DELETE /api/session/:id/revert — clears a staged revert and restores the files it changed.
+     * This is the "redo" back to the newest state; it only works before the revert is committed.
+     */
+    fun unrevert(sessionID: String): org.json.JSONObject {
+        request("DELETE", "/api/session/$sessionID/revert")
+        return org.json.JSONObject()
+    }
 
     /** PATCH /api/session/:id — rename a session (upstream owns titles; we only ask). */
     fun updateSessionTitle(sessionID: String, title: String): SessionInfo {

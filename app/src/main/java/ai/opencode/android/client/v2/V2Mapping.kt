@@ -26,6 +26,12 @@ object V2Mapping {
             .put("projectID", o.optString("projectID"))
             .put("cost", o.optDouble("cost", 0.0))
             .put("time", JSONObject().put("created", created).put("updated", updated))
+            // The staged revert marker: the app shows it and offers redo while it is set.
+            .also { out ->
+                o.optJSONObject("revert")?.optString("messageID")?.takeIf { it.isNotEmpty() }?.let {
+                    out.put("revert", JSONObject().put("messageID", it))
+                }
+            }
     }
 
     /** `GET /api/session/active` `data` (`{sessionID: {type: "running"}}`) -> the v1 status map. */

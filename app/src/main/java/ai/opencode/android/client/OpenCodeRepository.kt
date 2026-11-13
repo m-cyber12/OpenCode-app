@@ -618,6 +618,9 @@ class OpenCodeRepository(
                     )
                 }
                 val used = _state.value.model
+                // v2 commits a staged revert when a prompt runs, which clears the marker on the
+                // server. Remember whether one was set, so the session list can drop it below.
+                val hadRevert = _state.value.sessions.firstOrNull { it.id == sid }?.revertMessageID.orEmpty().isNotEmpty()
                 api.promptAsync(
                     sid,
                     trimmed,
@@ -635,6 +638,7 @@ class OpenCodeRepository(
                     notice = "",
                 )
                 publishTranscript("prompt accepted")
+                if (hadRevert) refreshSessionList(sid)
                 // The user's own turn is on the server now; take it from there rather
                 // than waiting for a frame that may have been emitted before this
                 // client subscribed (run #16: the transcript stayed empty for 120s

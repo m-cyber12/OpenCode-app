@@ -300,8 +300,6 @@ class OpenCodeApiHttpTest {
     @Test
     fun portsNotDoneYetFailWithoutSendingARequest() {
         val calls: List<() -> Any?> = listOf(
-            { api().revert("ses_1", "msg_1") },
-            { api().unrevert("ses_1") },
             { api().setProviderAuth("openrouter", "k") },
         )
         for (call in calls) {
@@ -323,6 +321,39 @@ class OpenCodeApiHttpTest {
         assertEquals("POST", rec.method)
         assertEquals("/api/session/ses_1/shell", rec.path)
         assertEquals("{\"command\":\"ls -la\"}", rec.body)
+    }
+
+    // ---- revert (slice 7): stage, clear, and the marker in the session list ----
+
+    /** Undo stages a boundary: one POST with the message id; the staged revert comes back in `data`. */
+    @Test
+    fun revertStagesTheBoundaryAndSendsOnlyTheMessageId() {
+        responseBody = """{"data":{"messageID":"msg_2"}}"""
+        val staged = api().revert("ses_1", "msg_2")
+        assertEquals("msg_2", staged.getString("messageID"))
+        val rec = seen.single()
+        assertEquals("POST", rec.method)
+        assertEquals("/api/session/ses_1/revert/stage", rec.path)
+        assertEquals("{\"messageID\":\"msg_2\"}", rec.body)
+    }
+
+    /** Redo (back to the newest state) clears the staged revert with one DELETE. */
+    @Test
+    fun unrevertDeletesTheStagedRevert() {
+        responseStatus = 204
+        responseBody = ""
+        api().unrevert("ses_1")
+        val rec = seen.single()
+        assertEquals("DELETE", rec.method)
+        assertEquals("/api/session/ses_1/revert", rec.path)
+    }
+
+    /** The staged marker from `Session.Info.revert` reaches the app as `revertMessageID`. */
+    @Test
+    fun sessionListCarriesTheStagedRevertMarker() {
+        responseBody = """{"data":[{"id":"ses_1","title":"t","location":{"directory":"/p"},"time":{"created":1,"updated":2},"revert":{"messageID":"msg_2"}}]}"""
+        val list = api().listSessions()
+        assertEquals("msg_2", list.single().revertMessageID)
     }
 
     // ---- global config (option B: the app edits the file, then reloads) -----
