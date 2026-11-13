@@ -1,9 +1,9 @@
-[2026-11-13T12:39:59Z] === P9 stage 1: provider selection (the carried defect, reproduced then fixed) ===
-[2026-11-13T12:44:45Z] === am instrument ai.opencode.android.client.ProviderSelectionGatesTest ===
-[2026-11-13T13:08:50Z] instrument rc=0 (provsel)
+[2026-11-13T14:57:01Z] === P9 stage 1: provider selection (the carried defect, reproduced then fixed) ===
+[2026-11-13T15:01:48Z] === am instrument ai.opencode.android.client.ProviderSelectionGatesTest ===
+[2026-11-13T15:25:52Z] instrument rc=0 (provsel)
 
 Error in g03_turnSelectsConfiguredProvider(ai.opencode.android.client.ProviderSelectionGatesTest):
-ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 400 on POST /api/session/ses_e2b00ed44ffeKr7pGLX8HSXtlu/prompt?location%5Bdirectory%5D=%2Fstorage%2Femulated%2F0%2FDocuments%2FOpenCode%2F1: {"_tag":"InvalidRequestError","message":"Missing key\n  at [\"prompt\"]","kind":"Payload"}
+ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 400 on POST /api/session/ses_e2a8377ebffe7ovERa2aZog3x2/prompt?location%5Bdirectory%5D=%2Fstorage%2Femulated%2F0%2FDocuments%2FOpenCode%2F1: {"_tag":"InvalidRequestError","message":"Missing key\n  at [\"prompt\"]","kind":"Payload"}
 	at ai.opencode.android.client.OpenCodeApi.request(OpenCodeApi.kt:114)
 	at ai.opencode.android.client.OpenCodeApi.request$default(OpenCodeApi.kt:85)
 	at ai.opencode.android.client.OpenCodeApi.promptAsync(OpenCodeApi.kt:258)
@@ -11,7 +11,7 @@ ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 400 on POST /api/sessi
 	at ai.opencode.android.client.ProviderSelectionGatesTest.g03_turnSelectsConfiguredProvider(ProviderSelectionGatesTest.kt:189)
 
 
-Time: 1,442.941
+Time: 1,443.05
 There were 2 failures:
 1) g02_disposeRebuildsWithCredential(ai.opencode.android.client.ProviderSelectionGatesTest)
 ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 404 on POST /api/location/reload?location%5Bdirectory%5D=%2Fstorage%2Femulated%2F0%2FDocuments%2FOpenCode%2F1: {"error":"Not Found"}
@@ -20,7 +20,7 @@ ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 404 on POST /api/locat
 	at ai.opencode.android.client.OpenCodeApi.dispose(OpenCodeApi.kt:141)
 	at ai.opencode.android.client.ProviderSelectionGatesTest.g02_disposeRebuildsWithCredential(ProviderSelectionGatesTest.kt:170)
 2) g03_turnSelectsConfiguredProvider(ai.opencode.android.client.ProviderSelectionGatesTest)
-ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 400 on POST /api/session/ses_e2b00ed44ffeKr7pGLX8HSXtlu/prompt?location%5Bdirectory%5D=%2Fstorage%2Femulated%2F0%2FDocuments%2FOpenCode%2F1: {"_tag":"InvalidRequestError","message":"Missing key\n  at [\"prompt\"]","kind":"Payload"}
+ai.opencode.android.client.OpenCodeApi$ApiException: HTTP 400 on POST /api/session/ses_e2a8377ebffe7ovERa2aZog3x2/prompt?location%5Bdirectory%5D=%2Fstorage%2Femulated%2F0%2FDocuments%2FOpenCode%2F1: {"_tag":"InvalidRequestError","message":"Missing key\n  at [\"prompt\"]","kind":"Payload"}
 	at ai.opencode.android.client.OpenCodeApi.request(OpenCodeApi.kt:114)
 	at ai.opencode.android.client.OpenCodeApi.request$default(OpenCodeApi.kt:85)
 	at ai.opencode.android.client.OpenCodeApi.promptAsync(OpenCodeApi.kt:258)
@@ -31,20 +31,20 @@ FAILURES!!!
 Tests run: 4,  Failures: 2
 
 
-[2026-11-13T13:08:50Z] P9_PROVSEL_STALE SKIP :: :: server not healthy
-[2026-11-13T13:08:50Z] P9_PROVSEL_REBUILT FAIL
-[2026-11-13T13:08:50Z] P9_PROVSEL_TURN FAIL
-[2026-11-13T13:08:50Z] P9_PROVSEL_CLEANUP SKIP :: :: server not healthy
-[2026-11-13T13:08:50Z] === P9 stage 2: runtime version string + plugin install ===
-[2026-11-13T13:13:36Z] P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
-[2026-11-13T13:13:36Z] npm registry probe from the app uid: REG200
-[2026-11-13T13:16:11Z] P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
-[2026-11-13T13:16:11Z] === P9 stage 3: versions.lock == manifest == RuntimeVersion.kt == APK ===
-OK lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 9} versionName=1.18.23-phase10 manifestSha=4126c37bbcc89df8 
-[2026-11-13T13:16:11Z] P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 9} versionName=1.18.23-phase10 manifestSha=4126c37bbcc89df8 
-[2026-11-13T13:16:11Z] === evidence pull ===
-[2026-11-13T13:16:12Z] === P9 SUMMARY ===
-P9_SUMMARY 2026-11-13T13:16:11Z
+[2026-11-13T15:25:52Z] P9_PROVSEL_STALE SKIP :: :: server not healthy
+[2026-11-13T15:25:52Z] P9_PROVSEL_REBUILT FAIL
+[2026-11-13T15:25:52Z] P9_PROVSEL_TURN FAIL
+[2026-11-13T15:25:52Z] P9_PROVSEL_CLEANUP SKIP :: :: server not healthy
+[2026-11-13T15:25:52Z] === P9 stage 2: runtime version string + plugin install ===
+[2026-11-13T15:30:38Z] P9_VERSION PASS :: /global/health version='1.18.23' == versions.lock '1.18.23' (bare semver; the old '-android' suffix is gone)
+[2026-11-13T15:30:38Z] npm registry probe from the app uid: REG200
+[2026-11-13T15:33:14Z] P9_PLUGIN PASS :: @opencode-ai/plugin@1.18.23 present under xdg/config/opencode (payload seed); no on-device npm install attempted (install-failed lines +0, exit-159 crashes +0 in 150 s; total 159s this boot=0)
+[2026-11-13T15:33:14Z] === P9 stage 3: versions.lock == manifest == RuntimeVersion.kt == APK ===
+OK lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 9} versionName=1.18.23-phase10 manifestSha=32267d616ffed86a 
+[2026-11-13T15:33:14Z] P9_LOCK PASS :: lock={'opencodeCommit': '05ea5073be967c779d326929b2de6228dda4159d', 'opencodeVersion': '1.18.23', 'bunVersion': '1.3.14', 'gitVersion': 'v2.48.1', 'rgVersion': '15.1.0', 'payloadVersion': 9} versionName=1.18.23-phase10 manifestSha=32267d616ffed86a 
+[2026-11-13T15:33:14Z] === evidence pull ===
+[2026-11-13T15:33:14Z] === P9 SUMMARY ===
+P9_SUMMARY 2026-11-13T15:33:14Z
 gates_pass=3 gates_fail=2 gates_skip=2
 device_abi=x86_64
 android_sdk=36
