@@ -93,6 +93,24 @@ else
   sed -i "s/'-lutil'/$STATIC_CXX/" "$PKG/binding.gyp"
 fi
 grep -q "c++_static" "$PKG/binding.gyp" || fail "could not add the static libc++ link flags to binding.gyp"
+
+# compiler-rt's aarch64 builtins reference memfd_create (API 30). The app's minSdk is 29, where
+# Bionic has no memfd_create. A WEAK fallback in the addon is used only when libc does not
+# provide the symbol; on API 30+ libc's definition wins (it is searched first at load time).
+cat > "$PKG/src/unix/memfd_weak.c" <<'CSRC'
+/* Phase 3 spike (TEST ONLY): weak fallback for memfd_create on Bionic API 29. */
+#include <errno.h>
+#include <sys/types.h>
+__attribute__((weak)) int memfd_create(const char *name, unsigned int flags) {
+  (void)name;
+  (void)flags;
+  errno = ENOSYS;
+  return -1;
+}
+CSRC
+sed -i "s#'src/unix/pty.cc',#'src/unix/pty.cc', 'src/unix/memfd_weak.c',#" "$PKG/binding.gyp"
+grep -q "memfd_weak.c" "$PKG/binding.gyp" || fail "could not add memfd_weak.c to binding.gyp"
+log "memfd_create: weak fallback compiled into the addon (API 29 has none; API 30+ libc wins)"
 log "libutil: $UTIL_LINK; libc++: static"
 
 # Bionic declares forkpty/openpty in <pty.h> from API 23. This is only a record of what
