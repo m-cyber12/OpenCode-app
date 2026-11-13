@@ -299,4 +299,30 @@ class V2TranslatorTest {
         assertEquals("completed", part.getJSONObject("state").getString("status"))
         assertEquals("x", part.getJSONObject("state").getString("output"))
     }
+
+    // ---- compaction (slice 9) ------------------------------------------------
+
+    private fun compaction(status: String, extra: String = "") =
+        data("""{"id":"msg_c1","type":"compaction","status":"$status","reason":"auto","summary":"short summary",$extra"time":{"created":1000}}""")
+
+    /** A completed compaction becomes the assistant summary message v1 kept (summary flag, text part). */
+    @Test
+    fun completed_compaction_is_a_summary_message() {
+        val m = V2Mapping.message(compaction("completed", """"model":{"providerID":"openrouter","id":"m1"},"""), sid)!!
+        val info = m.getJSONObject("info")
+        assertEquals("assistant", info.getString("role"))
+        assertTrue(info.getBoolean("summary"))
+        assertEquals("openrouter", info.getString("providerID"))
+        assertEquals("m1", info.getString("modelID"))
+        val part = m.getJSONArray("parts").getJSONObject(0)
+        assertEquals("text", part.getString("type"))
+        assertEquals("short summary", part.getString("text"))
+    }
+
+    /** A running or failed compaction has no summary to show yet. */
+    @Test
+    fun running_and_failed_compactions_map_to_nothing() {
+        assertEquals(null, V2Mapping.message(compaction("running"), sid))
+        assertEquals(null, V2Mapping.message(compaction("failed"), sid))
+    }
 }

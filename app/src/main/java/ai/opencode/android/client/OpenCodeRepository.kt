@@ -1419,6 +1419,8 @@ class OpenCodeRepository(
     }
 
     private fun startTodoPoll(sid: String) {
+        // No todo route on v2 (see V2_HAS_TODO_ROUTE): polling would only republish the transcript.
+        if (!V2_HAS_TODO_ROUTE) return
         todoPoll?.cancel()
         todoPoll = scope.launch {
             for (tick in 0 until TODO_POLL_MAX_TICKS) {

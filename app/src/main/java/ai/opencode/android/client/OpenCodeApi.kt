@@ -7,6 +7,12 @@ import java.util.Base64
 import ai.opencode.android.client.v2.JsoncEdit
 import ai.opencode.android.client.v2.V2Mapping
 
+/**
+ * OpenCode v2 has no session todo route (v1 had `GET /session/:id/todo`). The todo bar reads the
+ * latest `todowrite` tool part instead, so the app does not poll for a list. Flip this when v2 gets one.
+ */
+internal val V2_HAS_TODO_ROUTE: Boolean = false
+
 /** One lock for every config write in the process, so two repositories cannot interleave edits. */
 private val CONFIG_WRITE_LOCK = Any()
 

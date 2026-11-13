@@ -397,6 +397,24 @@ class OpenCodeApiHttpTest {
         assertEquals(1, seen.size)
     }
 
+    /** Compact (v1 summarize) is one POST to the v2 compact route; the summary model is the session's own. */
+    @Test
+    fun summarizeSessionPostsToTheV2CompactRoute() {
+        responseBody = """{"data":{"id":"msg_c1","type":"compaction","status":"running","reason":"manual","summary":"","time":{"created":1}}}"""
+        api().summarizeSession("ses_1", "openrouter", "m1")
+        val rec = seen.single()
+        assertEquals("POST", rec.method)
+        assertEquals("/api/session/ses_1/compact", rec.path)
+        assertEquals("{}", rec.body)
+    }
+
+    /** v2 has no todo route: the list is empty and no request is sent. */
+    @Test
+    fun todosAreEmptyWithoutARequestOnV2() {
+        assertEquals(emptyList<Any>(), api().todos("ses_1"))
+        assertEquals(0, seen.size)
+    }
+
     // ---- global config (option B: the app edits the file, then reloads) -----
 
     private fun configApi(dir: java.io.File) = OpenCodeApi(

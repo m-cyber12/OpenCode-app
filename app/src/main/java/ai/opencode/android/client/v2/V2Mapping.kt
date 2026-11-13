@@ -116,6 +116,7 @@ object V2Mapping {
      */
     fun message(o: JSONObject, sessionID: String): JSONObject? {
         if (o.optString("type") == "shell") return shellMessage(o, sessionID)
+        if (o.optString("type") == "compaction") return compactionMessage(o, sessionID)
         val id = o.optString("id")
         if (id.isEmpty()) return null
         val created = o.optJSONObject("time")?.optLong("created") ?: 0L
@@ -152,6 +153,30 @@ object V2Mapping {
                 }
             }
         }
+        return JSONObject().put("info", info).put("parts", parts)
+    }
+
+    /**
+     * A completed compaction from history, as the assistant summary message v1 kept (`summary: true`,
+     * one text part with the summary). A running or failed compaction has no summary to show, so it
+     * maps to nothing. v2 gives a compaction only one time (`created`), so both times use it.
+     */
+    private fun compactionMessage(o: JSONObject, sessionID: String): JSONObject? {
+        if (o.optString("status") != "completed") return null
+        val id = o.optString("id")
+        if (id.isEmpty()) return null
+        val created = o.optJSONObject("time")?.optLong("created", 0L) ?: 0L
+        val info = JSONObject()
+            .put("id", id)
+            .put("sessionID", sessionID)
+            .put("role", "assistant")
+            .put("summary", true)
+            .put("time", JSONObject().put("created", created).put("completed", created))
+        o.optJSONObject("model")?.let {
+            info.put("providerID", it.optString("providerID"))
+            info.put("modelID", it.optString("id"))
+        }
+        val parts = JSONArray().put(textPart(id, sessionID, "text", 0, o.optString("summary")))
         return JSONObject().put("info", info).put("parts", parts)
     }
 
