@@ -397,6 +397,38 @@ object V2Mapping {
         return out
     }
 
+    /** The keys a v1 string-valued `permission` applies to, for the Settings view. */
+    private val POLICY_ACTIONS = listOf("bash", "edit", "read", "webfetch", "external_directory")
+
+    /**
+     * The v1 policy the Settings table shows for one config file. The server applies the legacy
+     * `permission` block first (normalize: `permission` is migrated into rules) and the native
+     * `permissions` rules after it, so for an action the native rules name, they win. A string
+     * `permission` applies to every policy action. Object rules from both sides are merged by
+     * pattern, native winning for the same pattern. Pattern order across the two sides is not
+     * kept, so this is a view, not a copy of the server's evaluation.
+     */
+    fun effectivePolicy(legacy: Any?, rules: JSONArray?): JSONObject {
+        val out = JSONObject()
+        when (legacy) {
+            is JSONObject -> for (key in legacy.keys()) out.put(v1Action(v2Action(key)), legacy.get(key))
+            is String -> for (key in POLICY_ACTIONS) out.put(key, legacy)
+        }
+        val native = permissionPolicy(rules)
+        for (key in native.keys()) {
+            val value = native.get(key)
+            val earlier = out.opt(key)
+            if (value is JSONObject && earlier is JSONObject) {
+                val merged = JSONObject(earlier.toString())
+                for (pattern in value.keys()) merged.put(pattern, value.get(pattern))
+                out.put(key, merged)
+            } else {
+                out.put(key, value)
+            }
+        }
+        return out
+    }
+
     /**
      * The v1 permission policy the Settings table reads, from the v2 `permissions` list. A rule
      * on every resource becomes a string; rules on specific patterns become an object. The last

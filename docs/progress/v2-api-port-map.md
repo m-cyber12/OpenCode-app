@@ -17,6 +17,7 @@ Source: OpenCode v2.2.5 (`packages/protocol/src/groups/*.ts`, `packages/schema/s
 - Config write: v2 `PATCH /api/experimental/config` accepts only `{shell}` (`Config.Patch`). Decided 2026-11-12 (owner, option B): comment-preserving edit of the file by the app, then reload. See slice 5 above.
 - Shell: done in slice 6 (see above).
 - Revert: done in slice 7 (see above).
+- Config migration is done by the v2 server, not the app. `packages/core/src/config/normalize.ts` reads a v1 file: the `permission` block becomes `permissions` rules (`bash`→`shell`, `write`/`patch`/`apply_patch`→`edit`, `task`→`subagent`), legacy `mcp.<name>` servers merge into `mcp.servers`, and native `permissions` rules come after the migrated ones (so they win). Unsupported keys (`logLevel`, `server`, and others) are reported as diagnostics. The app reads the same effective view (`V2Mapping.effectivePolicy`, slice 9 sweep): before this fix it read only `permissions`, so `enforceAskDefaults` could write `ask` over a user's legacy `allow`.
 - Event stream: `/api/event` (no `directory` scope); v2 sends no heartbeat, so the silence budget is 120 s.
 
 ## Status of the runtime (done)
@@ -46,7 +47,7 @@ Source: OpenCode v2.2.5 (`packages/protocol/src/groups/*.ts`, `packages/schema/s
 | `POST /session/:id/revert` | `POST /api/session/:id/revert/stage` then `/revert/commit` | Two steps in v2. |
 | `POST /session/:id/unrevert` | `DELETE /api/session/:id/revert` | "clear". |
 | `POST /session/:id/summarize` | `POST /api/session/:id/compact` | |
-| `GET /session/:id/todo` | TBD | No todo group found in v2 protocol. Slice 1: empty list. |
+| `GET /session/:id/todo` | none in v2 | No todo route in v2.2.5. Empty list with no request; the todo poll is off (`V2_HAS_TODO_ROUTE`, slice 9). The todo bar reads the latest `todowrite` tool part. |
 | `GET /permission` | `GET /api/permission/request` | |
 | `POST /permission/:id/reply` | `POST /api/session/:id/permission/:requestID/reply` | Event `permission.asked` / `permission.replied`. |
 | `GET /question` | `GET /api/session/:id/form` | v2 "form" replaces question (`form.created`, `form.replied`, `form.cancelled`). |

@@ -311,13 +311,6 @@ class OpenCodeApi(
     }
 
     /**
-     * Raised by a method whose v2 route is not ported yet (migration phase 4, slice 2).
-     * It fails loudly rather than returning an empty answer that looks real.
-     */
-    private fun notPorted(what: String): Nothing =
-        throw ApiException(501, "", "$what is not on OpenCode v2 yet (migration phase 4, slice 2)")
-
-    /**
      * POST /api/session/:id/shell — run one shell command in the session's directory. v2 answers
      * 204 with no body; the output arrives on the stream as `session.shell.started|ended` and is
      * shown as a `shell` tool part. [agent] is a v1 field: v2 does not take it, so it is not sent.
@@ -580,11 +573,13 @@ class OpenCodeApi(
 
     /** GET /global/config — the raw global opencode.json(c) document. */
     fun globalConfig(): org.json.JSONObject {
-        // v2 keeps the policy as a `permissions` list; the Settings table reads the v1 map.
+        // The Settings table reads the v1 map. It must show what the server applies: the legacy
+        // `permission` block the file still carries, with the native `permissions` rules over it.
         val file = configFile() ?: return org.json.JSONObject()
         if (!file.isFile) return org.json.JSONObject()
         val v2 = JsoncEdit.parseObject(file.readText())
-        return org.json.JSONObject().put("permission", V2Mapping.permissionPolicy(v2.optJSONArray("permissions")))
+        val policy = V2Mapping.effectivePolicy(v2.opt("permission"), v2.optJSONArray("permissions"))
+        return org.json.JSONObject().put("permission", policy)
     }
 
     /**
