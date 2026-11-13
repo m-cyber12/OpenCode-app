@@ -91,10 +91,14 @@ else
 fi
 log "libutil: $UTIL_LINK"
 
+# Bionic declares forkpty/openpty in <pty.h> from API 23 (libc). The symbol lists are
+# captured first: piping into `grep -q` under pipefail gives a false "not found".
 for sym in forkpty openpty; do
   found=""
   for lib in libc.so libutil.so; do
-    if [ -f "$LIBDIR/$lib" ] && "$TC/llvm-nm" -D --defined-only "$LIBDIR/$lib" | awk '{print $NF}' | grep -qx "$sym"; then
+    [ -f "$LIBDIR/$lib" ] || continue
+    syms="$("$TC/llvm-nm" -D --defined-only "$LIBDIR/$lib" | awk '{print $NF}')"
+    if grep -qx "$sym" <<< "$syms"; then
       found="$lib"
     fi
   done
