@@ -530,14 +530,45 @@ class OpenCodeApi(
     }
 
     /**
-     * PUT /auth/:providerID — OpenCode's own credential store (`auth login`).
-     * This is the normal upstream mechanism; the app is only a client of it.
+     * Stores [apiKey] as the provider's key (v1 `PUT /auth/:id` replaced the one stored key).
+     * On v2 the provider is an integration (`Provider.ID` is the integration ID). `connect/key` runs
+     * the provider's key method, stores the key and makes it the active one. The older key
+     * credentials of the same integration are then removed, so the server keeps one key, as v1 did.
+     * [metadata] is a v1 field and is not sent (v2 takes form answers instead).
      */
-    fun setProviderAuth(providerID: String, apiKey: String, metadata: org.json.JSONObject? = null): Unit =
-        notPorted("provider credential (v2: POST /api/credential, slice 2)")
+    fun setProviderAuth(providerID: String, apiKey: String, metadata: org.json.JSONObject? = null) {
+        val before = keyCredentialIDs(providerID)
+        request(
+            "POST",
+            "/api/integration/${pathSegment(providerID)}/connect/key",
+            org.json.JSONObject().put("key", apiKey).toString(),
+        )
+        for (id in before) request("DELETE", "/api/credential/${pathSegment(id)}")
+    }
 
-    fun deleteProviderAuth(providerID: String): Boolean =
-        notPorted("provider credential removal (slice 2)")
+    /**
+     * Removes every stored key of the provider (v1 `DELETE /auth/:id`). Returns false when there was
+     * nothing to remove. OAuth and env connections are not touched.
+     */
+    fun deleteProviderAuth(providerID: String): Boolean {
+        val ids = keyCredentialIDs(providerID)
+        for (id in ids) request("DELETE", "/api/credential/${pathSegment(id)}")
+        return ids.isNotEmpty()
+    }
+
+    /**
+     * The IDs of the key credentials of one integration, from `GET /api/integration/:id`. That route
+     * lists connections without their secret values; `GET /api/credential` would return every secret.
+     */
+    private fun keyCredentialIDs(providerID: String): List<String> {
+        val data = org.json.JSONObject(request("GET", "/api/integration/${pathSegment(providerID)}").body)
+            .optJSONObject("data") ?: return emptyList()
+        val connections = data.optJSONArray("connections") ?: return emptyList()
+        return (0 until connections.length()).mapNotNull { i ->
+            connections.optJSONObject(i)?.takeIf { it.optString("type") == "credential" && it.optString("method") == "key" }
+                ?.optString("id")?.takeIf { it.isNotEmpty() }
+        }
+    }
 
     // ---- config (OpenCode's normal configuration mechanism) ---------------
 

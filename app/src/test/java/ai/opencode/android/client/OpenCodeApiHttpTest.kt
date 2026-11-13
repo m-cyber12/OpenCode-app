@@ -300,7 +300,6 @@ class OpenCodeApiHttpTest {
     @Test
     fun portsNotDoneYetFailWithoutSendingARequest() {
         val calls: List<() -> Any?> = listOf(
-            { api().setProviderAuth("openrouter", "k") },
         )
         for (call in calls) {
             val err = runCatching { call() }.exceptionOrNull()
@@ -354,6 +353,48 @@ class OpenCodeApiHttpTest {
         responseBody = """{"data":[{"id":"ses_1","title":"t","location":{"directory":"/p"},"time":{"created":1,"updated":2},"revert":{"messageID":"msg_2"}}]}"""
         val list = api().listSessions()
         assertEquals("msg_2", list.single().revertMessageID)
+    }
+
+    // ---- provider credentials (slice 8): integration key connect and remove ----
+
+    /** A key set: read the integration, store the new key (activates it), then remove the older key credentials. */
+    @Test
+    fun setProviderAuthStoresTheNewKeyThenRemovesTheOlderOnes() {
+        responseBody = """{"location":{"directory":"/p"},"data":{"id":"openrouter","name":"OpenRouter","methods":[],
+            "connections":[{"type":"credential","id":"cred_old","label":"a","method":"key"},
+            {"type":"env","name":"OPENROUTER_API_KEY"}]}}"""
+        api().setProviderAuth("openrouter", "sk-new")
+        assertEquals(
+            listOf(
+                "GET /api/integration/openrouter",
+                "POST /api/integration/openrouter/connect/key",
+                "DELETE /api/credential/cred_old",
+            ),
+            seen.map { "${it.method} ${it.path}" },
+        )
+        assertEquals("{\"key\":\"sk-new\"}", seen.elementAt(1).body)
+    }
+
+    /** Removing a provider removes each of its key credentials and reports that something was removed. */
+    @Test
+    fun deleteProviderAuthRemovesEveryKeyCredential() {
+        responseBody = """{"location":{"directory":"/p"},"data":{"id":"openrouter","name":"OpenRouter","methods":[],
+            "connections":[{"type":"credential","id":"cred_1","label":"a","method":"key"},
+            {"type":"credential","id":"cred_2","label":"b","method":"key"},
+            {"type":"credential","id":"cred_oauth","label":"c","method":"oauth"}]}}"""
+        assertTrue(api().deleteProviderAuth("openrouter"))
+        assertEquals(
+            listOf("DELETE /api/credential/cred_1", "DELETE /api/credential/cred_2"),
+            seen.drop(1).map { "${it.method} ${it.path}" },
+        )
+    }
+
+    /** No stored key: removal reports false and sends no delete. */
+    @Test
+    fun deleteProviderAuthWithNoKeyIsFalseAndSendsNoDelete() {
+        responseBody = """{"location":{"directory":"/p"},"data":{"id":"openrouter","name":"OpenRouter","methods":[],"connections":[]}}"""
+        assertEquals(false, api().deleteProviderAuth("openrouter"))
+        assertEquals(1, seen.size)
     }
 
     // ---- global config (option B: the app edits the file, then reloads) -----
