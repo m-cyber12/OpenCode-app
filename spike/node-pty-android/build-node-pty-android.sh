@@ -82,14 +82,18 @@ log "node $NODE_VERSION headers: sha256 ok"
 # 4. Bionic has no separate libutil at every API level; forkpty/openpty must come from a
 #    library the NDK ships for API $API. Remove -lutil only when the NDK has no libutil.
 PKG="$WORK/package"
+# libc++ is linked statically: a shared libc++_shared.so would be a NEEDED entry the app
+# would have to ship next to a dlopen()ed addon (run 43488323901 showed the NEEDED entry).
+STATIC_CXX="'-nostdlib++', '-Wl,-Bstatic', '-lc++_static', '-lc++abi', '-lunwind', '-Wl,-Bdynamic'"
 UTIL_LINK="removed (NDK API $API has no libutil.so)"
 if [ -f "$LIBDIR/libutil.so" ]; then
   UTIL_LINK="kept (libutil.so present)"
+  sed -i "s/'-lutil'/'-lutil', $STATIC_CXX/" "$PKG/binding.gyp"
 else
-  sed -i "/'-lutil'/d" "$PKG/binding.gyp"
-  grep -q "'-lutil'" "$PKG/binding.gyp" && fail "could not remove -lutil from binding.gyp"
+  sed -i "s/'-lutil'/$STATIC_CXX/" "$PKG/binding.gyp"
 fi
-log "libutil: $UTIL_LINK"
+grep -q "c++_static" "$PKG/binding.gyp" || fail "could not add the static libc++ link flags to binding.gyp"
+log "libutil: $UTIL_LINK; libc++: static"
 
 # Bionic declares forkpty/openpty in <pty.h> from API 23. This is only a record of what
 # the NDK API $API stubs export; the authoritative check is the undefined-symbol check
