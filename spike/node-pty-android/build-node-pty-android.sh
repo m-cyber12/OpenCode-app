@@ -159,7 +159,15 @@ while read -r sym; do
   grep -qx "$base" "$defined" || missing="$missing $base"
 done < <("$NM" -D --undefined-only "$SO" | awk '{print $NF}')
 if [ -n "$missing" ]; then
-  # Diagnostic only: which static archive members reference the missing symbols.
+  # Diagnostic only: which objects and static archives reference the missing symbols.
+  echo "::notice title=node-pty-android::archives found: $(find "$PREBUILT" \( -name 'libc++_static.a' -o -name 'libc++abi.a' -o -name 'libunwind.a' \) 2>/dev/null | tr '\n' ' ')"
+  for o in $(find "$PKG/build" -name '*.o' 2>/dev/null); do
+    for m in $missing; do
+      if "$NM" -A --undefined-only "$o" 2>/dev/null | grep -q " U $m\$"; then
+        echo "::notice title=node-pty-android::object $(basename "$o") references $m"
+      fi
+    done
+  done
   for a in $(find "$PREBUILT" -name 'libc++_static.a' -o -name 'libc++abi.a' -o -name 'libunwind.a' 2>/dev/null); do
     for m in $missing; do
       if "$NM" -A --undefined-only "$a" 2>/dev/null | grep -q " U $m\$"; then
