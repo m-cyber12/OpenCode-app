@@ -150,7 +150,7 @@ log "LOAD alignment: 16 KiB or more"
 defined="$WORK/defined-system.txt"
 : > "$defined"
 for n in $needed; do
-  "$NM" -D --defined-only "$LIBDIR/$n" | awk '{print $NF}' >> "$defined"
+  "$NM" -D --defined-only "$LIBDIR/$n" | awk '{print $NF}' | sed 's/@.*//' >> "$defined"
 done
 missing=""
 while read -r sym; do
