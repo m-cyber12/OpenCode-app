@@ -24,6 +24,9 @@ enum class ServerEngine(
         /** Asset name of the v2 bundle zip (opencode.mjs, assets/, launcher-v2.mjs). */
         const val V2_ASSET = "node26-v2.zip"
 
+        /** OpenCode version the v2 bundle is built from (spike/opencode-v2 sets OPENCODE_VERSION). */
+        const val V2_VERSION = "2.2.5"
+
         /** Pure selection rule, kept separate for JVM tests. */
         fun select(hasNode26Binary: Boolean, hasV2Asset: Boolean): ServerEngine =
             if (hasNode26Binary && hasV2Asset) V2 else V1

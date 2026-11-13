@@ -38,6 +38,8 @@ object LoopbackAudit {
         val mdnsSockets: List<Socket>,
         val ok: Boolean,
         val detail: String,
+        /** False when none of the four kernel tables could be read (app uid without /proc/net access). */
+        val tablesReadable: Boolean = true,
     )
 
     const val MDNS_PORT = 5353
@@ -98,19 +100,24 @@ object LoopbackAudit {
         }
     }
 
-    /** Read the real tables. Missing files (locked-down kernel) yield empty lists. */
-    private fun readTable(path: String, table: String): List<Socket> = try {
+    /** Read one real table; null when the file cannot be read (locked-down kernel). */
+    private fun readTable(path: String, table: String): List<Socket>? = try {
         parseTcpLines(File(path).readLines().drop(1), table)
     } catch (_: Throwable) {
-        emptyList()
+        null
     }
 
     fun audit(port: Int, uid: Int = -1, includeAllUids: Boolean = true): Result {
-        val tcp = readTable("/proc/net/tcp", "tcp")
-        val tcp6 = readTable("/proc/net/tcp6", "tcp6")
-        val udp = readTable("/proc/net/udp", "udp")
-        val udp6 = readTable("/proc/net/udp6", "udp6")
-        val all = tcp + tcp6 + udp + udp6
+        val tables = listOf(
+            readTable("/proc/net/tcp", "tcp"),
+            readTable("/proc/net/tcp6", "tcp6"),
+            readTable("/proc/net/udp", "udp"),
+            readTable("/proc/net/udp6", "udp6"),
+        )
+        // An unreadable table is not the same as an empty one: with no readable table
+        // the audit has seen nothing, so it must not report "no listeners".
+        val tablesReadable = tables.any { it != null }
+        val all = tables.filterNotNull().flatten()
         val ours = if (uid >= 0 && !includeAllUids) all.filter { it.uid == uid } else all
         val listeners = ours.filter { it.state == TCP_LISTEN && it.localPort == port }
         // mDNS would be a UDP socket bound to 5353 (224.0.0.251 multicast) owned
@@ -120,13 +127,18 @@ object LoopbackAudit {
         val loopbackOnly = listeners.isNotEmpty() && listeners.all { it.loopback }
         val detail = buildString {
             append("port=$port listeners=${listeners.size} loopback_only=$loopbackOnly ")
-            append("mdns_sockets=${mdns.size} ")
+            append("tables_readable=$tablesReadable mdns_sockets=${mdns.size} ")
             append("binds=[${listeners.joinToString(",") { "${it.table}:${it.localAddress}:${it.localPort}:uid${it.uid}" }}]")
             if (mdns.isNotEmpty()) {
                 append(" mdns=[${mdns.joinToString(",") { "${it.table}:${it.localAddress}:${it.localPort}:uid${it.uid}" }}]")
             }
         }
-        return Result(port, listeners, mdns, ok = listeners.isNotEmpty() && loopbackOnly && mdns.isEmpty(), detail = detail)
+        return Result(
+            port, listeners, mdns,
+            ok = listeners.isNotEmpty() && loopbackOnly && mdns.isEmpty(),
+            detail = detail,
+            tablesReadable = tablesReadable,
+        )
     }
 
     /** Raw table rows for the given port, for the evidence file. */

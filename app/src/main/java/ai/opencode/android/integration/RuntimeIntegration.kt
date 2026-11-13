@@ -82,6 +82,7 @@ class RuntimeIntegration(
         val tableVerdict = when {
             audit.isFailure -> "UNREADABLE"
             audit.getOrNull()?.ok == true -> "LOOPBACK_ONLY"
+            audit.getOrNull()?.tablesReadable == false -> "UNREADABLE(no /proc/net access)"
             audit.getOrNull()?.listeners?.isEmpty() == true -> "NO_ROWS(seen)"
             else -> "VIOLATION"
         }
