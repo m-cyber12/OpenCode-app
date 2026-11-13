@@ -84,7 +84,7 @@ log "node $NODE_VERSION headers: sha256 ok"
 PKG="$WORK/package"
 # libc++ is linked statically: a shared libc++_shared.so would be a NEEDED entry the app
 # would have to ship next to a dlopen()ed addon (run 43488323901 showed the NEEDED entry).
-STATIC_CXX="'-nostdlib++', '-Wl,-Bstatic', '-lc++_static', '-lc++abi', '-lunwind', '-Wl,-Bdynamic'"
+STATIC_CXX="'-Wl,--trace-symbol=memfd_create', '-nostdlib++', '-Wl,-Bstatic', '-lc++_static', '-lc++abi', '-lunwind', '-Wl,-Bdynamic'"
 UTIL_LINK="removed (NDK API $API has no libutil.so)"
 if [ -f "$LIBDIR/libutil.so" ]; then
   UTIL_LINK="kept (libutil.so present)"
@@ -159,7 +159,10 @@ while read -r sym; do
   grep -qx "$base" "$defined" || missing="$missing $base"
 done < <("$NM" -D --undefined-only "$SO" | awk '{print $NF}')
 if [ -n "$missing" ]; then
-  # Diagnostic only: which objects and static archives reference the missing symbols.
+  # Diagnostic only: the linker's trace of the missing symbol, then which objects and archives reference it.
+  grep -h 'memfd_create' "$WORK/gyp-build.log" 2>/dev/null | head -n 5 | cut -c1-240 | while read -r l; do
+    echo "::notice title=node-pty-android::ld trace: $l"
+  done
   echo "::notice title=node-pty-android::archives found: $(find "$PREBUILT" \( -name 'libc++_static.a' -o -name 'libc++abi.a' -o -name 'libunwind.a' \) 2>/dev/null | tr '\n' ' ')"
   for o in $(find "$PKG/build" -name '*.o' 2>/dev/null); do
     for m in $missing; do
