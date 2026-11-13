@@ -1,27 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="ai.opencode.android.client.v2.V2TranslatorTest" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-11-13T07:09:18" hostname="runnervm7aw5e" time="0.014">
+<testsuite name="ai.opencode.android.client.v2.V2TranslatorTest" tests="25" skipped="0" failures="0" errors="0" timestamp="2026-11-13T09:39:30" hostname="runnervm7aw5e" time="0.01">
   <properties/>
-  <testcase name="reasoning_uses_its_own_part_type_and_id_space" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.001"/>
-  <testcase name="failure_without_details_still_has_a_readable_message" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
-  <testcase name="failure_becomes_session_error_with_message_and_idle" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.001"/>
+  <testcase name="reasoning_uses_its_own_part_type_and_id_space" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
+  <testcase name="failure_without_details_still_has_a_readable_message" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.001"/>
+  <testcase name="failure_becomes_session_error_with_message_and_idle" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
   <testcase name="execution_started_marks_the_session_busy" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
   <testcase name="events_without_a_session_are_dropped" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
-  <testcase name="a_failed_tool_call_carries_its_error_message" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.001"/>
-  <testcase name="text_stream_is_started_then_deltas_then_ended_with_one_stable_part_id" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.001"/>
+  <testcase name="a_failed_tool_call_carries_its_error_message" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
+  <testcase name="completed_compaction_is_a_summary_message" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.001"/>
+  <testcase name="text_stream_is_started_then_deltas_then_ended_with_one_stable_part_id" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
   <testcase name="a_tool_call_is_one_part_from_start_to_success" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.001"/>
   <testcase name="deltas_without_text_are_dropped" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
-  <testcase name="shell_ended_settles_the_same_part_with_its_output" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.004"/>
+  <testcase name="shell_ended_settles_the_same_part_with_its_output" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.003"/>
   <testcase name="envelope_created_time_reaches_the_assistant_message" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.001"/>
+  <testcase name="running_and_failed_compactions_map_to_nothing" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
   <testcase name="permission_reply_becomes_a_v1_replied_frame" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
-  <testcase name="permission_ask_becomes_a_v1_permission_frame" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
+  <testcase name="permission_ask_becomes_a_v1_permission_frame" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.001"/>
   <testcase name="shell_started_opens_a_running_shell_part_under_its_own_message" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
-  <testcase name="interrupted_is_treated_like_succeeded_for_the_screen" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.001"/>
+  <testcase name="interrupted_is_treated_like_succeeded_for_the_screen" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
   <testcase name="step_started_creates_the_assistant_message" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
-  <testcase name="unknown_events_are_ignored_for_now" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
+  <testcase name="unknown_events_are_ignored_for_now" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.001"/>
   <testcase name="envelope_is_unwrapped_and_malformed_input_is_dropped" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
-  <testcase name="shell_history_item_matches_the_live_part" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.001"/>
+  <testcase name="shell_history_item_matches_the_live_part" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
   <testcase name="form_created_becomes_a_question_frame_and_reply_or_cancel_settle_it" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
-  <testcase name="shell_exit_code_and_timeout_are_errors" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.001"/>
+  <testcase name="shell_exit_code_and_timeout_are_errors" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
   <testcase name="a_reloaded_tool_item_matches_the_streamed_part_id" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
   <testcase name="execution_succeeded_goes_idle_and_emits_session_idle" classname="ai.opencode.android.client.v2.V2TranslatorTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
