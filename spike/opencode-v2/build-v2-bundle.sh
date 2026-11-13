@@ -37,6 +37,17 @@ rm -rf "$V2_WORK"
 git clone --depth 1 --branch "$V2_TAG" "$V2_REPO" "$V2_WORK"
 echo "v2 source: $(git -C "$V2_WORK" rev-parse --short HEAD) ($V2_TAG)"
 
+# Phase 2 invariants on v2 (migration plan, items 4-6). Each script exits non-zero when an
+# anchor is missing; with pipefail and the ERR trap, that stops the build. Then the host
+# tests run against the patched tree's scanner (Node 22+ strips the TypeScript types).
+python3 "$HERE/../../phase4/payload/v2-patches/apply-permission-guard.py" "$V2_WORK" 2>&1 | tee -a "$LOG"
+python3 "$HERE/../../phase4/payload/v2-patches/apply-noexec-shell.py" "$V2_WORK" 2>&1 | tee -a "$LOG"
+SCAN_COPY=/tmp/v2-shell-scan.ts
+sed '/^export \* as ShellScan from/d' "$V2_WORK/packages/core/src/shell/scan.ts" > "$SCAN_COPY"
+V2_SHELL_SCAN="$SCAN_COPY" node --test --experimental-strip-types \
+  "$HERE/../../phase4/payload/v2-patches/test/permission-guard.test.ts" \
+  "$HERE/../../phase4/payload/v2-patches/test/noexec-shell.test.ts" 2>&1 | tee -a "$LOG"
+
 cd "$V2_WORK"
 # Frozen install on this x64 runner would skip the linux-arm64 native packages (the
 # platform fields in bun.lock). build-node.ts runs `bun install --os=* --cpu=*` itself

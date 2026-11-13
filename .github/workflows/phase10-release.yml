@@ -222,6 +222,13 @@ jobs:
         with:
           bun-version: "1.4.4"
 
+      - name: "Node 26 v2 TEST ONLY: set up Node 22 (runs the v2 patch host tests)"
+        if: always() && github.event.inputs.gradle_only != 'true'
+        continue-on-error: true
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: "Node 26 v2 TEST ONLY: build the OpenCode v2.2.5 Node bundle (linux-arm64 assets)"
         if: always() && github.event.inputs.gradle_only != 'true'
         continue-on-error: true

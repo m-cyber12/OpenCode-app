@@ -108,3 +108,11 @@ These exist in v1 today. Each one needs a v2 equivalent and a test.
   - Not changed in this sweep: instrumented tests (`OpenCodeClientGatesTest`, `ProviderSelectionGatesTest`, `WorkspaceIsolationGatesTest`) still assert v1 routes. They compile in CI and run only in the v1 gate set; they are updated with the switch-over. `HealthCheckerTest` and `ServerEngineTest` test the V1 engine on purpose until switch-over.
   - Known and accepted: an `mcp` config write re-serializes the whole `mcp` value, so comments inside `mcp` are lost (comments elsewhere in the file are kept); a reload failure after a successful write reports an error although the file changed.
 - 2026-11-13 CI for the sweep fix `f39b1361`: run `43416912571` failed on the expected v1 gates only (`P9_PROVSEL_REBUILT`, `P9_PROVSEL_TURN`, `P10_WS_W4_WORKSPACE_VISIBLE`). JVM 605/0. Skip list unchanged from the previous evidence run. Device gate pass. Bot evidence commits `adcaff01`, `a8a2b1b8`.
+- 2026-11-13 Phase 5 started (owner: "yes start it"). Phase 5 removes v1, and v1 is the only place the security invariants live today, so Phase 2 comes first. Phase 2 is now in code (not yet proven on a device):
+  - Item 4 (permission guard): `phase4/payload/v2-patches/permission-guard.ts`. Ported to v2 names (`shell`, `resources`). Saved "always" approvals are ignored for config-file requests, and an "always" there saves nothing.
+  - Item 5 (no-exec shell): `phase4/payload/v2-patches/noexec-shell.ts`. Uses the v2 scanner (v2 has no bash grammar). It runs after the permission check, as in v1.
+  - Item 6 (config writes prompt): covered by item 4 (`shell` with a config token).
+  - Both apply scripts check each anchor once and refuse a patched tree. Checked on 2026-11-13 against the real v2.2.5 `permission.ts` and `shell.ts`.
+  - Host tests: 20 pass (Node 22, real scanner). Strict typecheck clean.
+  - Wired into `spike/opencode-v2/build-v2-bundle.sh` (test-only bundle for now; the step is still `continue-on-error`, and the release gate must make it hard before Phase 5 removes v1).
+  - Still open before v1 can go: the owner's device check of each invariant in Diagnostics (plan Phase 2 gate); the seccomp and exec shims (plan items 8-9: drop only after a device run shows no SIGSYS); the release pipeline must ship Node 26 plus the v2 zip; then the v1 removal and size re-measure.
