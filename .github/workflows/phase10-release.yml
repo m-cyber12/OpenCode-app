@@ -58,11 +58,9 @@ on:
       - "docs/progress/phase10-evidence/**"
       - "docs/progress/phase9-evidence/**"
       - "docs/progress/phase8-evidence/**"
-      # Phase 3 native spikes (CI-only, test-only). Not used by this pipeline; their own
-      # workflows run on these paths. spike/node26 and spike/opencode-v2 are NOT listed:
-      # this pipeline builds the Node 26 test APK from them.
-      - "spike/node-pty-android/**"
-      - "spike/parcel-watcher-android/**"
+      # The two Phase 3 spike WORKFLOW files only. The spike build scripts (spike/node-pty-android,
+      # spike/parcel-watcher-android) are NOT listed: this pipeline builds the terminal and watcher
+      # test inputs from them. Same for spike/node26 and spike/opencode-v2.
       - ".github/workflows/node-pty-android-spike.yml"
       - ".github/workflows/parcel-watcher-android-spike.yml"
   workflow_dispatch:
@@ -236,11 +234,45 @@ jobs:
         with:
           node-version: "22"
 
+      # ---- Native test-only inputs for the v2 bundle: the Bionic node-pty package and the
+      # Bionic @parcel/watcher binding (the two Phase 3 spikes). Each step is continue-on-error:
+      # if one fails, the bundle keeps its stub for that native and the test launcher says so.
+      - name: "Node 26 v2 TEST ONLY: pinned NDK 28.2.13676358 (install only if missing)"
+        if: always() && github.event.inputs.gradle_only != 'true'
+        continue-on-error: true
+        shell: bash
+        run: |
+          if [ -x "$ANDROID_HOME/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang++" ]; then
+            echo "pinned NDK present"; exit 0
+          fi
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -maxdepth 3 -name sdkmanager -type f 2>/dev/null | head -1)"
+          [ -x "$SDKMANAGER" ] || { echo "::error title=v2-native::sdkmanager not found"; exit 1; }
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" --install "ndk;28.2.13676358" > "$RUNNER_TEMP/ndk-install.log" 2>&1 || { tail -n 40 "$RUNNER_TEMP/ndk-install.log"; exit 1; }
+
+      - name: "Node 26 v2 TEST ONLY: node-pty for Android arm64 (spike/node-pty-android)"
+        if: always() && github.event.inputs.gradle_only != 'true'
+        continue-on-error: true
+        env:
+          NODE_PTY_OUT: /tmp/node-pty-android-out
+        run: bash spike/node-pty-android/build-node-pty-android.sh
+        shell: bash
+
+      - name: "Node 26 v2 TEST ONLY: @parcel/watcher for Android arm64 (spike/parcel-watcher-android)"
+        if: always() && github.event.inputs.gradle_only != 'true'
+        continue-on-error: true
+        env:
+          PARCEL_OUT: /tmp/parcel-watcher-android-out
+        run: bash spike/parcel-watcher-android/build-parcel-watcher-android.sh
+        shell: bash
+
       - name: "Node 26 v2 TEST ONLY: build the OpenCode v2.2.5 Node bundle (linux-arm64 assets)"
         if: always() && github.event.inputs.gradle_only != 'true'
         continue-on-error: true
         env:
           V2_OUT: /tmp/v2-out
+          NODE_PTY_TGZ: /tmp/node-pty-android-out/node-pty-linux-arm64-android.tgz
+          PARCEL_WATCHER_NODE: /tmp/parcel-watcher-android-out/watcher.node
         run: bash spike/opencode-v2/build-v2-bundle.sh
         shell: bash
 

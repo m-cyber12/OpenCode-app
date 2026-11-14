@@ -46,7 +46,8 @@ SCAN_COPY=/tmp/v2-shell-scan.ts
 sed '/^export \* as ShellScan from/d' "$V2_WORK/packages/core/src/shell/scan.ts" > "$SCAN_COPY"
 V2_SHELL_SCAN="$SCAN_COPY" node --test --experimental-strip-types \
   "$HERE/../../phase4/payload/v2-patches/test/permission-guard.test.ts" \
-  "$HERE/../../phase4/payload/v2-patches/test/noexec-shell.test.ts" 2>&1 | tee -a "$LOG"
+  "$HERE/../../phase4/payload/v2-patches/test/noexec-shell.test.ts" \
+  "$HERE/test-stub/stub-model.test.mjs" 2>&1 | tee -a "$LOG"
 
 cd "$V2_WORK"
 # Frozen install on this x64 runner would skip the linux-arm64 native packages (the
@@ -65,17 +66,43 @@ OPENCODE_VERSION=2.2.5 OPENCODE_CHANNEL=latest OPENCODE_TARGET=linux-arm64 bun r
 [ -f dist-node/opencode.mjs ] || fatal "dist-node/opencode.mjs was not produced"
 [ -d dist-node/assets ] || fatal "dist-node/assets was not produced"
 
-# TEST ONLY: the node-pty loader has no Android build; stub it so the server can start.
-NODE_PTY_UTILS="dist-node/assets/@lydell/node-pty-linux-arm64/lib/utils.js"
-[ -f "$NODE_PTY_UTILS" ] || fatal "node-pty loader not found in the assets: $NODE_PTY_UTILS"
-python3 "$HERE/stub-node-pty.py" "$NODE_PTY_UTILS" 2>&1 | tee -a "$LOG"
+mkdir -p dist-node/assets/test-native
+# TEST ONLY, terminal. With NODE_PTY_TGZ (the Bionic package from spike/node-pty-android), the
+# real addon replaces the glibc prebuild, and the test launcher points OPENCODE_NODE_PTY_PATH at
+# it (marker file pty-real). Without it, the old stub stays: the server starts, terminals throw.
+NODE_PTY_PKG="dist-node/assets/@lydell/node-pty-linux-arm64"
+if [ -n "${NODE_PTY_TGZ:-}" ] && [ -f "$NODE_PTY_TGZ" ]; then
+  rm -rf "$NODE_PTY_PKG"
+  tar -xzf "$NODE_PTY_TGZ" -C dist-node/assets/@lydell 2>&1 | tee -a "$LOG"
+  [ -f "$NODE_PTY_PKG/prebuilds/linux-arm64/pty.node" ] || fatal "Bionic pty.node missing after extracting $NODE_PTY_TGZ"
+  [ -f "$NODE_PTY_PKG/lib/index.js" ] || fatal "node-pty lib/index.js missing after extracting $NODE_PTY_TGZ"
+  touch dist-node/assets/test-native/pty-real
+  echo "node-pty: real Bionic addon from $NODE_PTY_TGZ" | tee -a "$LOG"
+else
+  # TEST ONLY: the node-pty loader has no Android build; stub it so the server can start.
+  NODE_PTY_UTILS="$NODE_PTY_PKG/lib/utils.js"
+  [ -f "$NODE_PTY_UTILS" ] || fatal "node-pty loader not found in the assets: $NODE_PTY_UTILS"
+  python3 "$HERE/stub-node-pty.py" "$NODE_PTY_UTILS" 2>&1 | tee -a "$LOG"
+fi
+
+# TEST ONLY, file watching. With PARCEL_WATCHER_NODE (watcher.node from spike/parcel-watcher-android),
+# the test launcher points OPENCODE_PARCEL_WATCHER_PATH at it. Without it, watching stays off.
+if [ -n "${PARCEL_WATCHER_NODE:-}" ] && [ -f "$PARCEL_WATCHER_NODE" ]; then
+  cp "$PARCEL_WATCHER_NODE" dist-node/assets/test-native/watcher.node
+  echo "parcel watcher: real Bionic binding from $PARCEL_WATCHER_NODE" | tee -a "$LOG"
+fi
 
 rm -rf "$V2_OUT"
 mkdir -p "$V2_OUT/stage"
 cp dist-node/opencode.mjs "$V2_OUT/stage/"
 cp -r dist-node/assets "$V2_OUT/stage/"
 # The launcher ships with the bundle so the two always match (migration phase 1).
-cp "$HERE/../../phase4/payload/v2/launcher-v2.mjs" "$V2_OUT/stage/"
+# TEST ONLY: the staged launcher is the release launcher plus test-launcher-block.mjs (native
+# paths, config provider, scripted model stub). The release launcher file is not changed.
+python3 "$HERE/test-launcher-insert.py" "$HERE/../../phase4/payload/v2/launcher-v2.mjs" \
+  "$HERE/test-launcher-block.mjs" "$V2_OUT/stage/launcher-v2.mjs" 2>&1 | tee -a "$LOG"
+mkdir -p "$V2_OUT/stage/test-stub"
+cp "$HERE/test-stub/stub-model.mjs" "$V2_OUT/stage/test-stub/"
 ( cd "$V2_OUT/stage" && zip -q -r -6 "$V2_OUT/node26-v2.zip" . )
 rm -rf "$V2_OUT/stage"
 
