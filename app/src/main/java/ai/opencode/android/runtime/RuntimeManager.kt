@@ -454,7 +454,8 @@ class RuntimeManager private constructor(private val appContext: Context) {
         }
     }
 
-    fun diagnostics(): Diagnostics = Diagnostics.collect(appContext, paths, logger, _state.value)
+    fun diagnostics(): Diagnostics =
+        Diagnostics.collect(appContext, paths, logger, _state.value, liveServerVersion = integration.lastReport?.serverVersion)
 
     companion object {
         @Volatile private var instance: RuntimeManager? = null

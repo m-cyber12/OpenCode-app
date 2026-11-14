@@ -21,7 +21,17 @@ data class Diagnostics(
     val state: RuntimeState?,
 ) {
     companion object {
-        fun collect(context: Context, paths: RuntimePaths, logger: RuntimeLogger, state: RuntimeState?): Diagnostics {
+        /**
+         * [liveServerVersion] is the `version` the running server reported from `GET /api/info`
+         * (the last integration run), or null when no run has happened this session.
+         */
+        fun collect(
+            context: Context,
+            paths: RuntimePaths,
+            logger: RuntimeLogger,
+            state: RuntimeState?,
+            liveServerVersion: String? = null,
+        ): Diagnostics {
             val gate = AbiGate.evaluate()
             val device = (gate as? AbiGate.Result.Ok)?.device ?: (gate as? AbiGate.Result.Unsupported)?.device
 
@@ -50,6 +60,9 @@ data class Diagnostics(
             sb.appendLine("payload_version=${RuntimeVersion.PAYLOAD_VERSION}")
             if (v2) {
                 sb.appendLine("opencode=${ServerEngine.V2_VERSION} runtime=node26 (libnode26.so; v2 bundle)")
+                // The build constant above is what the APK was packed with. The live value is what the
+                // running server reported, so a mismatch shows up here instead of being hidden.
+                sb.appendLine("opencode_live_version=${liveServerVersion?.ifEmpty { "(empty)" } ?: "(not probed this session)"}")
                 sb.appendLine("git=${RuntimeVersion.GIT_VERSION} ripgrep=${RuntimeVersion.RIPGREP_VERSION}")
             } else {
                 sb.appendLine("opencode=${RuntimeVersion.OPENCODE_VERSION} commit=${RuntimeVersion.OPENCODE_COMMIT}")
