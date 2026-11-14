@@ -40,6 +40,8 @@ Reading the results:
 - CLI OK, app 429: something on the app side differs. The next step is a test build that logs outgoing request headers (no secrets). Needs owner approval.
 - Both 429: the quota is shared at this network or identity. Wait for the reset (community reports say 00:00 UTC; see opencode issue #58900), or use another route.
 
+Result (owner, 2026-11-14 13:01:30 UTC): the CLI also returns `Error: Free usage limit reached...` with exit 1. This is the "both 429" case. Changing the phone's date does not affect the server-side quota; restore automatic date and time. The earlier CLI success is not evidence about the app. Upstream issue #58900 reports `Retry-After` to 00:00 UTC, but #58789 reports blocks that continue after the reset. Account-level checks go to help@anoma.ly per the upstream bot's reply on #58900. Long sessions may also count more (#58751).
+
 ## Options that need no paid key
 
 - Wait for the free quota reset, then retry once.
