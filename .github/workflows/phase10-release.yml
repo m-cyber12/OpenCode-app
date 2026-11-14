@@ -58,6 +58,13 @@ on:
       - "docs/progress/phase10-evidence/**"
       - "docs/progress/phase9-evidence/**"
       - "docs/progress/phase8-evidence/**"
+      # Phase 3 native spikes (CI-only, test-only). Not used by this pipeline; their own
+      # workflows run on these paths. spike/node26 and spike/opencode-v2 are NOT listed:
+      # this pipeline builds the Node 26 test APK from them.
+      - "spike/node-pty-android/**"
+      - "spike/parcel-watcher-android/**"
+      - ".github/workflows/node-pty-android-spike.yml"
+      - ".github/workflows/parcel-watcher-android-spike.yml"
   workflow_dispatch:
     inputs:
       reason:
