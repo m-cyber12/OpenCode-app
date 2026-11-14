@@ -55,3 +55,11 @@ Result (owner, 2026-11-14 13:01:30 UTC): the CLI also returns `Error: Free usage
 - `core/src/session/to-session-error.ts` and `ai/src/provider-error.ts` (v2.2.5): FreeUsageLimitError mapping.
 - `cli/vite.node.config.ts` (v2.2.5): `OPENCODE_ARTIFACT=cli-node`; the app overrides the name with `OPENCODE_CLIENT=cli`.
 - GitHub issue anomalyco/opencode#58900 (429, reset to 00:00 UTC; community report, unverified).
+
+## Result 2 (owner screenshot, phone 8:12 local, about 13:12 UTC if US time)
+
+- The OpenCode TUI answered `ok` with `MiniMax M3.1 Flash Free` (4.6 s). The status bar shows a VPN icon.
+- The bundled v2.2.5 model list has `minimax-m3.1-flash-free` (name "MiniMax M3.1 Flash Free", marked deprecated in the snapshot, but served now).
+- `big-pickle` (the app's default free model, first in `PREFERRED_FREE`) failed on the CLI at 13:01 UTC. This suggests a per-model quota, not only per-network.
+- The app is not failing at HTTP. Its error is Zen's own `FreeUsageLimitError` body. Transport failures map to `provider.transport` (`core/src/session/to-session-error.ts`), so the app's outbound path reaches Zen.
+- Next test: select `minimax-m3.1-flash-free` in the app and send "Reply with exactly: OK". Record the result, and whether the VPN was on.
