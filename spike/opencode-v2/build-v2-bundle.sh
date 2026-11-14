@@ -76,6 +76,20 @@ if [ -n "${NODE_PTY_TGZ:-}" ] && [ -f "$NODE_PTY_TGZ" ]; then
   tar -xzf "$NODE_PTY_TGZ" -C dist-node/assets/@lydell 2>&1 | tee -a "$LOG"
   [ -f "$NODE_PTY_PKG/prebuilds/linux-arm64/pty.node" ] || fatal "Bionic pty.node missing after extracting $NODE_PTY_TGZ"
   [ -f "$NODE_PTY_PKG/lib/index.js" ] || fatal "node-pty lib/index.js missing after extracting $NODE_PTY_TGZ"
+  # The loader (lib/utils.js) checks build/Release, build/Debug and prebuilds/<platform>-<arch>.
+  # On the phone process.platform is "android" (the device error names prebuilds/android-arm64),
+  # so the addon must sit there. The package ships it under prebuilds/linux-arm64, which the
+  # loader never checks: that was the device crash of 2026-11-14 (server exits, pty.node not found).
+  mkdir -p "$NODE_PTY_PKG/prebuilds/android-arm64"
+  cp "$NODE_PTY_PKG/prebuilds/linux-arm64/pty.node" "$NODE_PTY_PKG/prebuilds/android-arm64/pty.node"
+  rm -f "$NODE_PTY_PKG/prebuilds/linux-arm64/pty.node"
+  [ -f "$NODE_PTY_PKG/prebuilds/android-arm64/pty.node" ] || fatal "pty.node not at prebuilds/android-arm64 (the loader's path)"
+  python3 -c 'import sys
+d = open(sys.argv[1], "rb").read(20)
+assert d[:4] == b"\x7fELF", "not an ELF file"
+assert int.from_bytes(d[18:20], "little") == 183, "e_machine is not AArch64"' "$NODE_PTY_PKG/prebuilds/android-arm64/pty.node" 2>&1 | tee -a "$LOG" \
+    || fatal "pty.node at prebuilds/android-arm64 is not an AArch64 ELF"
+  echo "node-pty: pty.node placed at prebuilds/android-arm64 (AArch64 ELF checked)" | tee -a "$LOG"
   touch dist-node/assets/test-native/pty-real
   echo "node-pty: real Bionic addon from $NODE_PTY_TGZ" | tee -a "$LOG"
 else
