@@ -63,3 +63,11 @@ Result (owner, 2026-11-14 13:01:30 UTC): the CLI also returns `Error: Free usage
 - `big-pickle` (the app's default free model, first in `PREFERRED_FREE`) failed on the CLI at 13:01 UTC. This suggests a per-model quota, not only per-network.
 - The app is not failing at HTTP. Its error is Zen's own `FreeUsageLimitError` body. Transport failures map to `provider.transport` (`core/src/session/to-session-error.ts`), so the app's outbound path reaches Zen.
 - Next test: select `minimax-m3.1-flash-free` in the app and send "Reply with exactly: OK". Record the result, and whether the VPN was on.
+
+## Result 3 (owner screenshots, app, MiniMax selected, 8:20 local)
+
+- The app's model is `opencode/minimax-m3...` and the reply is `provider.free-limit ... (status 429)`, a few seconds after send.
+- The first screenshot shows an earlier completed reply in the same session (a "Cost $NaN · 4.68 seconds" line). If that reply was answered by Zen, the app reached Zen earlier. Owner to confirm.
+- The `FreeUsageLimitError` text is produced only from an HTTP 429 response body (`ai/src/provider-error.ts`, `core/src/session/to-session-error.ts`). A fast reply is consistent with a gateway quota check, which rejects before inference.
+- Upstream issue #57540 (user reports, not official docs): the free bucket is per IP or per API key on a daily cycle, shared across free models, and each request counts. This would explain CLI and app failing together at different times.
+- Proof still needed: CLI log lines around 13:12–13:25 UTC (`/root/.local/share/opencode/log/opencode.log`), and an app-side request log (not available yet).
