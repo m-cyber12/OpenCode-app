@@ -12,7 +12,10 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
-import { rewriteNoexec, type Probe, type Scan } from "../noexec-shell.ts"
+import { rewriteNoexec, shellWord, type Probe, type Scan } from "../noexec-shell.ts"
+
+// The node program the rewrite uses by default: the running binary, quoted when needed.
+const NODE = shellWord(process.execPath)
 
 // A probe that treats every existing file as non-executable, like a noexec mount.
 // A missing file counts as executable, as in the real probe (ENOENT is not EACCES).
@@ -68,7 +71,7 @@ test("a scanner that throws leaves the command unchanged", () => {
 
 withScanner("a non-executable .mjs runs through node", () => {
   const out = rewriteNoexec(`./run.mjs --a`, dir, scan!, noexecProbe)
-  assert.equal(out, "node ./run.mjs --a")
+  assert.equal(out, `${NODE} ./run.mjs --a`)
 })
 
 withScanner("a non-executable shell script runs through sh by its extension", () => {
@@ -76,7 +79,7 @@ withScanner("a non-executable shell script runs through sh by its extension", ()
 })
 
 withScanner("a file with a node shebang runs through node", () => {
-  assert.equal(rewriteNoexec("./bin-tool", dir, scan!, noexecProbe), "node ./bin-tool")
+  assert.equal(rewriteNoexec("./bin-tool", dir, scan!, noexecProbe), `${NODE} ./bin-tool`)
 })
 
 withScanner("an executable program is left byte-for-byte unchanged", () => {
@@ -85,13 +88,13 @@ withScanner("an executable program is left byte-for-byte unchanged", () => {
 })
 
 withScanner("a leading VAR=value does not hide the program", () => {
-  assert.equal(rewriteNoexec("FOO=1 ./run.mjs", dir, scan!, noexecProbe), "FOO=1 node ./run.mjs")
+  assert.equal(rewriteNoexec("FOO=1 ./run.mjs", dir, scan!, noexecProbe), `FOO=1 ${NODE} ./run.mjs`)
 })
 
 withScanner("every command in a pipeline and a list is rewritten", () => {
   assert.equal(
     rewriteNoexec("./t.sh | ./run.mjs; ./t.sh", dir, scan!, noexecProbe),
-    "sh ./t.sh | node ./run.mjs; sh ./t.sh",
+    `sh ./t.sh | ${NODE} ./run.mjs; sh ./t.sh`,
   )
 })
 
@@ -99,7 +102,7 @@ withScanner("a relative path after cd is skipped, an absolute one is rewritten",
   assert.equal(rewriteNoexec("cd sub && ./run.mjs", dir, scan!, noexecProbe), "cd sub && ./run.mjs")
   assert.equal(
     rewriteNoexec(`cd /tmp && ${path.join(dir, "run.mjs")}`, dir, scan!, noexecProbe),
-    `cd /tmp && node ${path.join(dir, "run.mjs")}`,
+    `cd /tmp && ${NODE} ${path.join(dir, "run.mjs")}`,
   )
 })
 
@@ -113,4 +116,30 @@ withScanner("a quoted program name is not rewritten", () => {
 
 withScanner("a missing file is not rewritten (the shell reports it)", () => {
   assert.equal(rewriteNoexec("./missing.mjs", dir, scan!, noexecProbe), "./missing.mjs")
+})
+
+// ---- the node program -------------------------------------------------------------
+
+test("shellWord leaves a plain path alone and quotes a path with shell-special characters", () => {
+  assert.equal(shellWord("/usr/bin/node"), "/usr/bin/node")
+  // Android app paths contain `~` and `=`. Both are safe in a word that starts with `/`, so the
+  // device's libnode26.so path is left plain.
+  const device = "/data/app/~~fk6TmrlQJJ7vZ4ZSBfY5RA==/app-UqmIb1KXlRnWo3YNvuBXbQ==/lib/arm64/libnode26.so"
+  assert.equal(shellWord(device), device)
+  assert.equal(shellWord("/tmp/it's"), "'/tmp/it'\\''s'")
+  assert.equal(shellWord("/tmp/a b"), "'/tmp/a b'")
+})
+
+test("the node program is the one passed in, so the device binary can be used", () => {
+  const dirPath = fs.mkdtempSync(path.join(os.tmpdir(), "noexec-node-"))
+  const file = path.join(dirPath, "run.mjs")
+  fs.writeFileSync(file, "console.log('hi')\n", { mode: 0o644 })
+  const notExecutable: Probe = { executable: (f) => f !== file, head: () => undefined }
+  // A scanner that reports one command, so the rewrite itself runs (no real scanner needed).
+  const oneCommand: Scan = () => ({ kind: "scanned", commands: [{ resource: "./run.mjs", rawWords: ["./run.mjs"] }] })
+  assert.equal(
+    rewriteNoexec("./run.mjs", dirPath, oneCommand, notExecutable, "'/x/libnode26.so'"),
+    "'/x/libnode26.so' ./run.mjs",
+  )
+  fs.rmSync(dirPath, { recursive: true, force: true })
 })

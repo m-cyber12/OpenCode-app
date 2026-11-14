@@ -84,12 +84,27 @@ export type Scan = (command: string) => ScanResult
 const PLAIN_NAME = /^[A-Za-z0-9_./~+@%:,-]+$/
 const CWD = new Set(["cd", "pushd", "popd"])
 
+// The program that runs a file whose interpreter is node. On the device the server's own binary
+// (process.execPath, libnode26.so) is used: no `node` is on the shell's PATH (the v2 bin/ folder
+// has no node link), so a bare `node` would exit 127. The path can hold characters the shell
+// treats specially (`=` and `~` appear in Android app paths), so it is quoted when needed.
+export function shellWord(text: string): string {
+  if (/^[A-Za-z0-9_./~+@%:,=-]+$/.test(text)) return text
+  return "'" + text.replace(/'/g, "'\\''") + "'"
+}
+
 // Escape a literal for use in a RegExp.
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
-export function rewriteNoexec(command: string, cwd: string, scan: Scan, probe: Probe = defaultProbe): string {
+export function rewriteNoexec(
+  command: string,
+  cwd: string,
+  scan: Scan,
+  probe: Probe = defaultProbe,
+  nodeProgram: string = shellWord(process.execPath),
+): string {
   if (process.platform === "win32") return command
   if (!command.includes("/")) return command
 
@@ -130,7 +145,8 @@ export function rewriteNoexec(command: string, cwd: string, scan: Scan, probe: P
     if (probe.executable(file)) continue
     const interpreter = interpreterFor(file, probe.head(file))
     if (!interpreter) continue
-    edits.push({ start: name.start, end: name.end, text: `${interpreter} ${text}` })
+    const program = interpreter === "node" ? nodeProgram : interpreter
+    edits.push({ start: name.start, end: name.end, text: `${program} ${text}` })
   }
   if (edits.length === 0) return command
 
