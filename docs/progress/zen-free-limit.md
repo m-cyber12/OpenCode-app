@@ -78,3 +78,10 @@ Result (owner, 2026-11-14 13:01:30 UTC): the CLI also returns `Error: Free usage
 - Decision: not built. The proxy's purpose is to make Zen treat the app as the official client to get past a free-tier quota, which is working around the provider's access control.
 - The diagnosis does not match the evidence: the Bun CLI itself returned `FreeUsageLimitError` at 13:01 UTC (exit 1). The error is the quota path, not a client rejection.
 - Honest test, after the quota resets: same prompt, Bun CLI and a Node-based client, same minute. If only Node gets 429 with the quota message, report it upstream with the timestamps.
+
+## Result 5 (owner, 2026-11-15 12:14 UTC)
+
+- Ubuntu proot Bun CLI: `opencode run -m opencode/minimax-m3.1-flash-free "Reply with exactly: OK"` returned `OK`, exit 0. The quota that blocked the CLI at 13:01 UTC on 11-14 has lifted for the CLI.
+- App: failed (owner report, exact text and send time not yet given).
+- Proot `node -v` is v26.4.0, but `/root/.opencode/bin/opencode` is an ELF binary (Bun-compiled), so it is not a Node-based client. The Node comparison needs a Node-run opencode (Termux, if it runs the npm JS bundle).
+- Next: one app message to MiniMax with the send time; Termux runtime check; one Termux run in the same minute as the app message.
