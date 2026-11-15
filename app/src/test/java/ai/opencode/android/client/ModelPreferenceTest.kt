@@ -124,12 +124,13 @@ class ModelPreferenceTest {
     }
 
     @Test
-    fun aRememberedModelWithNoProviderLeftAtAllStillFallsBackToTheHeuristic() {
+    fun aRememberedModelWithNoProviderLeftAtAllGivesNoHintWhileZenIsHidden() {
+        // Zen is "coming soon" (ZenPolicy), so the only connected provider is never picked.
         val hint = DefaultModelHint.resolve(
             persisted = OpenCodeApi.ModelRef("9router", "my-model"),
             p = snap(connected = listOf("opencode")),
         )
-        assertEquals(OpenCodeApi.ModelRef("opencode", "big-pickle"), hint)
+        assertNull(hint)
     }
 
     @Test

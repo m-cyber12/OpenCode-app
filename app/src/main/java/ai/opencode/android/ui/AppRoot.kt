@@ -799,7 +799,8 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         val port = object : ai.opencode.android.task.BackgroundTask.Port {
             override fun createSession(title: String): String = api.createSession(title).id
             override fun prompt(sessionID: String, text: String) {
-                api.promptAsync(sessionID, text)
+                // Same model as chat: a null model is refused (ZenPolicy), so the port must pass one.
+                api.promptAsync(sessionID, text, repository.state.value.model)
             }
             override fun busy(sessionID: String): Boolean = api.sessionStatus()[sessionID]?.busy == true
             override fun abort(sessionID: String) {
