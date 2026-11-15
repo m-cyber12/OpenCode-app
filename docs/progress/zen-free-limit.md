@@ -71,3 +71,10 @@ Result (owner, 2026-11-14 13:01:30 UTC): the CLI also returns `Error: Free usage
 - The `FreeUsageLimitError` text is produced only from an HTTP 429 response body (`ai/src/provider-error.ts`, `core/src/session/to-session-error.ts`). A fast reply is consistent with a gateway quota check, which rejects before inference.
 - Upstream issue #57540 (user reports, not official docs): the free bucket is per IP or per API key on a daily cycle, shared across free models, and each request counts. This would explain CLI and app failing together at different times.
 - Proof still needed: CLI log lines around 13:12–13:25 UTC (`/root/.local/share/opencode/log/opencode.log`), and an app-side request log (not available yet).
+
+## Result 4 (owner writeup: "TLS fingerprint" diagnosis and Bun TLS proxy proposal)
+
+- Proposal: route Zen requests from the v2 engine through a loopback proxy running under Bun, so Zen sees Bun's TLS fingerprint.
+- Decision: not built. The proxy's purpose is to make Zen treat the app as the official client to get past a free-tier quota, which is working around the provider's access control.
+- The diagnosis does not match the evidence: the Bun CLI itself returned `FreeUsageLimitError` at 13:01 UTC (exit 1). The error is the quota path, not a client rejection.
+- Honest test, after the quota resets: same prompt, Bun CLI and a Node-based client, same minute. If only Node gets 429 with the quota message, report it upstream with the timestamps.
