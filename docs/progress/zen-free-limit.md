@@ -85,3 +85,9 @@ Result (owner, 2026-11-14 13:01:30 UTC): the CLI also returns `Error: Free usage
 - App: failed (owner report, exact text and send time not yet given).
 - Proot `node -v` is v26.4.0, but `/root/.opencode/bin/opencode` is an ELF binary (Bun-compiled), so it is not a Node-based client. The Node comparison needs a Node-run opencode (Termux, if it runs the npm JS bundle).
 - Next: one app message to MiniMax with the send time; Termux runtime check; one Termux run in the same minute as the app message.
+
+## Decision 6 (owner: port the v2 engine to Bun so the app matches the official CLI stack)
+
+- Not done. The aim is still to get past Zen's free-tier gate by matching the official client's stack, the same aim as the rejected proxy.
+- Also conflicts with the owner-approved migration plan (remove Bun from the APK; agent on Node 26 + v2).
+- Pending: the app result in the same minute as a working Bun CLI run, and the Termux runtime check.
