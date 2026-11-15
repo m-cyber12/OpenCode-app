@@ -1211,6 +1211,7 @@ class OpenCodeRepository(
      */
     private fun seedFreeStars(snap: OpenCodeApi.ProviderSnapshot) {
         val zen = snap.entries.firstOrNull { it.id == OpenCodeApi.ZEN_PROVIDER_ID } ?: return
+        if (ZenPolicy.hidden(zen.id)) return
         runCatching {
             modelPreference?.seedStarredOnce(zen.models.map { OpenCodeApi.ModelRef(zen.id, it.id) })
         }

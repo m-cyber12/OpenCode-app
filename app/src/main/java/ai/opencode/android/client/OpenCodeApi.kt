@@ -241,9 +241,17 @@ class OpenCodeApi(
         variant: String? = null,
         attachments: List<Attachment> = emptyList(),
     ): Int {
+        // ZenPolicy: no turn may reach Zen while it is "coming soon". Without a model
+        // the server would fall back to its own default, which can be a Zen model, so
+        // a missing model is refused too. The error is shown by the caller.
+        if (model == null || ZenPolicy.hidden(model.providerID)) {
+            throw IllegalStateException(
+                "No model is available. Connect a provider in Settings. Free Zen models are coming soon.",
+            )
+        }
         // v2 keeps model, agent and variant on the session, not on each prompt, so
         // they are set first (only when they change for this session).
-        if (model != null) syncModel(sessionID, model, variant)
+        syncModel(sessionID, model, variant)
         if (agent != null) syncAgent(sessionID, agent)
         val body = org.json.JSONObject().put("text", text)
         if (attachments.isNotEmpty()) {

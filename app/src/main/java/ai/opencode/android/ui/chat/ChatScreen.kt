@@ -16,6 +16,7 @@ import ai.opencode.android.client.TodoItem
 import ai.opencode.android.client.TodoParser
 import ai.opencode.android.client.ToolKind
 import ai.opencode.android.client.ToolKinds
+import ai.opencode.android.client.ZenPolicy
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
 import ai.opencode.android.ui.theme.goldAccentBrush
@@ -272,12 +273,17 @@ fun ChatScreen(
         // "Free Models" group - free needs no starring to be reachable. The
         // variants lookup answers for ANY listed model from the same catalog
         // snapshot the repository already holds.
+        // ZenPolicy: while Zen is "coming soon" the quick switch lists no Zen model.
         val freeQuick = remember(state.providers) {
-            state.providers?.entries
-                ?.firstOrNull { it.id == OpenCodeApi.ZEN_PROVIDER_ID }
-                ?.models
-                ?.map { m -> QuickModel(OpenCodeApi.ModelRef(OpenCodeApi.ZEN_PROVIDER_ID, m.id), m.name, m.variants) }
-                ?: emptyList()
+            if (ZenPolicy.hidden(OpenCodeApi.ZEN_PROVIDER_ID)) {
+                emptyList<QuickModel>()
+            } else {
+                state.providers?.entries
+                    ?.firstOrNull { it.id == OpenCodeApi.ZEN_PROVIDER_ID }
+                    ?.models
+                    ?.map { m -> QuickModel(OpenCodeApi.ModelRef(OpenCodeApi.ZEN_PROVIDER_ID, m.id), m.name, m.variants) }
+                    ?: emptyList()
+            }
         }
         // v11 (owner, B.107): one pass over the catalog per snapshot, not a scan
         // per row per frame. Every provider except Zen, connected ones first.
@@ -315,7 +321,7 @@ fun ChatScreen(
             busy = state.busy,
             availability = availability,
             model = state.model,
-            starred = state.starredModels,
+            starred = state.starredModels.filterNot { ZenPolicy.hidden(it.providerID) },
             thinkingVariants = state.providers?.variantsOf(state.model) ?: emptyList(),
             thinkingVariant = state.thinkingVariant,
             agentMode = state.agentMode,

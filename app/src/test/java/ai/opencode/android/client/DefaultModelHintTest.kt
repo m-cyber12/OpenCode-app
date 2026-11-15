@@ -9,6 +9,10 @@ import org.junit.Test
  * the client must never default the composer to a provider the server does not
  * report as connected (Phase 8 shipped `subconscious/...` as the default and
  * every turn fell back to the bundled `opencode` provider).
+ *
+ * ZenPolicy (2026-11-15): while Zen is "coming soon" the bundled `opencode`
+ * provider is never a default either, so these tests expect no hint when Zen
+ * is the only connected provider.
  */
 class DefaultModelHintTest {
 
@@ -24,9 +28,8 @@ class DefaultModelHintTest {
     )
 
     @Test
-    fun firstCatalogEntryIsNeverChosenWhenNotConnected() {
-        val hint = DefaultModelHint.pick(snap(connected = listOf("opencode"), defaults = catalog))
-        assertEquals(OpenCodeApi.ModelRef("opencode", "big-pickle"), hint)
+    fun zenIsNeverChosenWhileItIsComingSoon() {
+        assertNull(DefaultModelHint.pick(snap(connected = listOf("opencode"), defaults = catalog)))
     }
 
     @Test
@@ -44,8 +47,7 @@ class DefaultModelHintTest {
     @Test
     fun aPreferredProviderTheServerDoesNotReportConnectedIsNotForced() {
         // The server's own check decides "connected"; we do not override it.
-        val hint = DefaultModelHint.pick(snap(connected = listOf("opencode"), defaults = catalog), prefer = "google")
-        assertEquals(OpenCodeApi.ModelRef("opencode", "big-pickle"), hint)
+        assertNull(DefaultModelHint.pick(snap(connected = listOf("opencode"), defaults = catalog), prefer = "google"))
     }
 
     @Test
@@ -55,7 +57,19 @@ class DefaultModelHintTest {
 
     @Test
     fun aConnectedProviderWithoutADefaultModelIsSkipped() {
-        val hint = DefaultModelHint.pick(snap(connected = listOf("weird", "opencode"), defaults = catalog))
-        assertEquals(OpenCodeApi.ModelRef("opencode", "big-pickle"), hint)
+        assertNull(DefaultModelHint.pick(snap(connected = listOf("weird", "opencode"), defaults = catalog)))
+    }
+
+    @Test
+    fun aSavedZenChoiceIsIgnoredAndTheConnectedProviderWins() {
+        val persisted = OpenCodeApi.ModelRef("opencode", "big-pickle")
+        val hint = DefaultModelHint.resolve(persisted, snap(connected = listOf("opencode", "openrouter"), defaults = catalog))
+        assertEquals(OpenCodeApi.ModelRef("openrouter", "openai/gpt-4o-mini"), hint)
+    }
+
+    @Test
+    fun aSavedZenChoiceWithNoOtherProviderGivesNoHint() {
+        val persisted = OpenCodeApi.ModelRef("opencode", "big-pickle")
+        assertNull(DefaultModelHint.resolve(persisted, snap(connected = listOf("opencode"), defaults = catalog)))
     }
 }

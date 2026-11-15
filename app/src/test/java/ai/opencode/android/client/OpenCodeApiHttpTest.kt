@@ -148,7 +148,7 @@ class OpenCodeApiHttpTest {
         val status = api().promptAsync(
             "ses_1",
             "hello",
-            OpenCodeApi.ModelRef("opencode", "big-pickle"),
+            OpenCodeApi.ModelRef("openrouter", "gpt-4o-mini"),
             agent = "plan",
             variant = "high",
         )
@@ -158,8 +158,8 @@ class OpenCodeApiHttpTest {
             seen.map { it.path },
         )
         val model = JSONObject(seen.elementAt(0).body).getJSONObject("model")
-        assertEquals("big-pickle", model.getString("id"))
-        assertEquals("opencode", model.getString("providerID"))
+        assertEquals("gpt-4o-mini", model.getString("id"))
+        assertEquals("openrouter", model.getString("providerID"))
         assertEquals("high", model.getString("variant"))
         assertEquals("plan", JSONObject(seen.elementAt(1).body).getString("agent"))
         assertEquals("hello", JSONObject(seen.elementAt(2).body).getString("text"))
@@ -170,8 +170,8 @@ class OpenCodeApiHttpTest {
         responseStatus = 204
         responseBody = ""
         val api = api()
-        api.promptAsync("ses_1", "one", OpenCodeApi.ModelRef("opencode", "big-pickle"))
-        api.promptAsync("ses_1", "two", OpenCodeApi.ModelRef("opencode", "big-pickle"))
+        api.promptAsync("ses_1", "one", OpenCodeApi.ModelRef("openrouter", "gpt-4o-mini"))
+        api.promptAsync("ses_1", "two", OpenCodeApi.ModelRef("openrouter", "gpt-4o-mini"))
         assertEquals(
             listOf("/api/session/ses_1/model", "/api/session/ses_1/prompt", "/api/session/ses_1/prompt"),
             seen.map { it.path },
@@ -179,15 +179,37 @@ class OpenCodeApiHttpTest {
     }
 
     @Test
+    fun zenAndMissingModelsAreRefusedBeforeAnyRequest() {
+        responseStatus = 204
+        responseBody = ""
+        val zenRefused = try {
+            api().promptAsync("ses_1", "hi", OpenCodeApi.ModelRef("opencode", "big-pickle"))
+            false
+        } catch (e: IllegalStateException) {
+            true
+        }
+        val noModelRefused = try {
+            api().promptAsync("ses_1", "hi")
+            false
+        } catch (e: IllegalStateException) {
+            true
+        }
+        assertTrue(zenRefused)
+        assertTrue(noModelRefused)
+        assertTrue(seen.isEmpty())
+    }
+
+    @Test
     fun promptOmitsFilesWhenNoneAndMapsAttachmentsToUri() {
         responseStatus = 204
         responseBody = ""
-        api().promptAsync("ses_1", "plain")
+        api().promptAsync("ses_1", "plain", OpenCodeApi.ModelRef("openrouter", "gpt-4o-mini"))
         assertTrue(!JSONObject(lastExchange!!.body).has("files"))
 
         api().promptAsync(
             "ses_1",
             "with file",
+            model = OpenCodeApi.ModelRef("openrouter", "gpt-4o-mini"),
             attachments = listOf(OpenCodeApi.Attachment("notes.txt", "text/plain", "file:///x/notes.txt", 3)),
         )
         val files = JSONObject(lastExchange!!.body).getJSONArray("files")

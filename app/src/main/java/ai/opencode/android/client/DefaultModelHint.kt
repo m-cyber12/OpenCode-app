@@ -21,7 +21,10 @@ object DefaultModelHint {
     const val BUNDLED = "opencode"
 
     fun pick(p: OpenCodeApi.ProviderSnapshot, prefer: String? = null): OpenCodeApi.ModelRef? {
-        val connected = p.connected.filter { it in p.defaultModel && p.defaultModel[it]!!.isNotEmpty() }
+        // ZenPolicy: while Zen is "coming soon" it is never a default, so a turn never lands on it.
+        val connected = p.connected.filter {
+            it in p.defaultModel && p.defaultModel[it]!!.isNotEmpty() && !ZenPolicy.hidden(it)
+        }
         val pick = when {
             prefer != null && prefer in connected -> prefer
             connected.any { it != BUNDLED } -> connected.first { it != BUNDLED }
@@ -54,7 +57,7 @@ object DefaultModelHint {
         p: OpenCodeApi.ProviderSnapshot,
         prefer: String? = null,
     ): OpenCodeApi.ModelRef? {
-        if (persisted != null && knownTo(p, persisted)) return persisted
+        if (persisted != null && !ZenPolicy.hidden(persisted.providerID) && knownTo(p, persisted)) return persisted
         return pick(p, prefer)
     }
 

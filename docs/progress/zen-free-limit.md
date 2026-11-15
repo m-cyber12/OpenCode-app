@@ -91,3 +91,11 @@ Result (owner, 2026-11-14 13:01:30 UTC): the CLI also returns `Error: Free usage
 - Not done. The aim is still to get past Zen's free-tier gate by matching the official client's stack, the same aim as the rejected proxy.
 - Also conflicts with the owner-approved migration plan (remove Bun from the APK; agent on Node 26 + v2).
 - Pending: the app result in the same minute as a working Bun CLI run, and the Termux runtime check.
+
+## Decision 7 (owner, 2026-11-15): Zen "coming soon" in the app
+
+- `ZenPolicy.COMING_SOON = true` (`app/.../client/ZenPolicy.kt`). Zen models are removed from the chat quick switch, the Models card and the default-model hint. Starred Zen models are filtered out.
+- Zen stays in Settings → Providers with a gray "Coming soon" tag, one sentence on why, and no connect button.
+- `OpenCodeApi.promptAsync` refuses a Zen model or a missing model before any request, so no turn reaches the quota gate by accident. The error appears in the chat.
+- Set `COMING_SOON = false` to bring Zen back everywhere.
+- Not device-tested. Unit tests updated (`DefaultModelHintTest`, `ModelPreferenceTest`, `OpenCodeApiHttpTest` new refusal test); not compiled here, CI is the compile check.

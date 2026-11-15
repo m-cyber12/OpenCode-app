@@ -20,6 +20,7 @@ import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
 import ai.opencode.android.client.ModelRefCodec
 import ai.opencode.android.client.ProviderCatalog
+import ai.opencode.android.client.ZenPolicy
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -574,12 +575,17 @@ private fun ProvidersCatalogSection(
             )
         }
         for (provider in ordered) {
-            ProviderRow(
-                provider = provider,
-                connected = providers.connected.contains(provider.id),
-                free = provider.id == OpenCodeApi.ZEN_PROVIDER_ID,
-                onConnect = { connectTarget = provider },
-            )
+            // ZenPolicy: Zen stays listed, but as "coming soon" with no connect button.
+            if (ZenPolicy.hidden(provider.id)) {
+                ComingSoonProviderRow(provider = provider)
+            } else {
+                ProviderRow(
+                    provider = provider,
+                    connected = providers.connected.contains(provider.id),
+                    free = provider.id == OpenCodeApi.ZEN_PROVIDER_ID,
+                    onConnect = { connectTarget = provider },
+                )
+            }
         }
         Spacer(Modifier.height(10.dp))
         AddProviderTile(expanded = addOpen, onClick = onToggleAdd)
@@ -724,7 +730,12 @@ private fun ModelsSection(
         fun matches(name: String, id: String) =
             q.isEmpty() || name.lowercase().contains(q) || id.lowercase().contains(q)
         val starredKeys = remember(starred) { starred.map { ModelRefCodec.encode(it) }.toSet() }
-        val free = providers.entries.firstOrNull { it.id == OpenCodeApi.ZEN_PROVIDER_ID }
+        // ZenPolicy: while Zen is "coming soon" its models are not listed here at all.
+        val free = if (ZenPolicy.hidden(OpenCodeApi.ZEN_PROVIDER_ID)) {
+            null
+        } else {
+            providers.entries.firstOrNull { it.id == OpenCodeApi.ZEN_PROVIDER_ID }
+        }
         val freeModels = free?.models?.filter { matches(it.name, it.id) } ?: emptyList()
         val groups = remember(providers, q) {
             providers.entries
@@ -981,6 +992,55 @@ private fun ProviderKeyDialog(
             }
         },
     )
+}
+
+/**
+ * ZenPolicy (owner, 2026-11-15): the Zen provider while its models are "coming
+ * soon". Its name, a gray tag and one sentence saying why - no connect button,
+ * no model count, because nothing from it can be used in this release.
+ */
+@Composable
+private fun ComingSoonProviderRow(provider: OpenCodeApi.ProviderEntry) {
+    val chat = ChatTheme.chat
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        color = chat.toolContainer,
+        shape = MaterialTheme.shapes.small,
+        border = BorderStroke(1.dp, chat.toolBorder),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .semantics {
+                    testTag = "provider_${provider.id}"
+                    contentDescription = provider.name
+                },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = provider.name,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = stringResource(R.string.provider_zen_coming_soon_reason),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = chat.muted,
+                    modifier = Modifier.semantics { testTag = "provider_coming_soon_reason" },
+                )
+            }
+            Spacer(Modifier.width(6.dp))
+            StatusPill(
+                text = stringResource(R.string.provider_coming_soon_tag),
+                color = chat.muted,
+                modifier = Modifier.semantics { testTag = "provider_coming_soon_tag" },
+            )
+        }
+    }
 }
 
 @Composable
@@ -2644,7 +2704,7 @@ fun ProvidersScreen(
                 ModelSection(
                     providers = state.providers,
                     model = state.model,
-                    starred = state.starredModels,
+                    starred = state.starredModels.filterNot { ZenPolicy.hidden(it.providerID) },
                     storedProviderIds = storedProviderIds,
                     hardwareBacked = hardwareBacked,
                 )
@@ -2675,7 +2735,7 @@ fun ProvidersScreen(
                 ModelsSection(
                     providers = state.providers,
                     model = state.model,
-                    starred = state.starredModels,
+                    starred = state.starredModels.filterNot { ZenPolicy.hidden(it.providerID) },
                     onSetModel = onSetModel,
                     onToggleStar = onToggleStar,
                     onSetThinking = onSetThinking,

@@ -103,7 +103,8 @@ class ModelPreferenceTest {
             persisted = OpenCodeApi.ModelRef("gone", "x/y"),
             p = snap(connected = listOf("opencode")),
         )
-        assertEquals(OpenCodeApi.ModelRef("opencode", "big-pickle"), hint)
+        // ZenPolicy: Zen is the only connected provider and is "coming soon", so no hint.
+        assertNull(hint)
     }
 
     @Test
