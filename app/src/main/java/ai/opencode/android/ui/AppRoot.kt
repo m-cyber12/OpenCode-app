@@ -1616,8 +1616,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         }
     }
     // "Is a model actually configured" - derived only from server + Keystore facts.
+    // Zen is hidden while it is "coming soon" (ZenPolicy), so it cannot make the
+    // app say "Connected": the only provider the agent reports may be Zen.
     val providerSetup = ProviderSetupClassifier.classify(
-        connected = uiState.providers?.connected ?: emptyList(),
+        connected = ai.opencode.android.client.ZenPolicy.usable(uiState.providers?.connected ?: emptyList()),
         storedIds = storedIdList,
         providersKnown = uiState.providers != null,
     )

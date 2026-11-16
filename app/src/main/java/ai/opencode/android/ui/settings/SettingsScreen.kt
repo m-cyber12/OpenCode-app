@@ -479,7 +479,11 @@ private fun ModelSection(
             return@SectionCard
         }
         Text(
-            text = stringResource(R.string.settings_model_providers, providers.entries.size),
+            // ZenPolicy: a hidden (coming soon) provider is not a provider the user can use.
+            text = stringResource(
+                R.string.settings_model_providers,
+                providers.entries.count { !ZenPolicy.hidden(it.id) },
+            ),
             style = MaterialTheme.typography.labelSmall,
             color = chat.muted,
         )
@@ -2697,7 +2701,7 @@ fun ProvidersScreen(
             item(key = "provider") {
                 ProviderSection(
                     providerSetup = providerSetup,
-                    connectedCount = state.providers?.connected?.size ?: 0,
+                    connectedCount = ZenPolicy.usable(state.providers?.connected ?: emptyList()).size,
                 )
             }
             item(key = "model") {

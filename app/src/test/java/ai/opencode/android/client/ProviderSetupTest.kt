@@ -24,6 +24,20 @@ class ProviderSetupTest {
     }
 
     @Test
+    fun aConnectedZenAloneIsNotAUsableProvider() {
+        // Zen is "coming soon": the agent may report it connected (keyless), but it
+        // must not make the app say Connected. With nothing else, the state is "none".
+        val usable = ZenPolicy.usable(listOf(OpenCodeApi.ZEN_PROVIDER_ID))
+        assertEquals(emptyList<String>(), usable)
+        assertEquals(
+            ProviderSetup.NO_PROVIDER_CONFIGURED,
+            ProviderSetupClassifier.classify(connected = usable, storedIds = emptyList(), providersKnown = true),
+        )
+        // A real provider next to Zen still counts, and Zen is dropped from it.
+        assertEquals(listOf("anthropic"), ZenPolicy.usable(listOf(OpenCodeApi.ZEN_PROVIDER_ID, "anthropic")))
+    }
+
+    @Test
     fun aStoredKeyWithoutConnectionIsConfiguredNotConnected() {
         assertEquals(
             ProviderSetup.PROVIDER_CONFIGURED,

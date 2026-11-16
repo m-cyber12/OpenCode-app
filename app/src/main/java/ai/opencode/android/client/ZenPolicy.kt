@@ -19,4 +19,11 @@ object ZenPolicy {
     /** True when [providerID] is the Zen provider and its models must not be offered or used. */
     fun hidden(providerID: String?): Boolean =
         COMING_SOON && providerID == OpenCodeApi.ZEN_PROVIDER_ID
+
+    /**
+     * The providers the user can actually use: [providerIDs] without the hidden ones.
+     * Use this for every count and every "connected" decision, so a connected Zen
+     * never reads as a working provider while it is coming soon.
+     */
+    fun usable(providerIDs: List<String>): List<String> = providerIDs.filterNot { hidden(it) }
 }
