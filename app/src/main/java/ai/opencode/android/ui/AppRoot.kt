@@ -830,8 +830,20 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 ai.opencode.android.task.BackgroundTaskHub.setQueued(null)
                 continue
             }
+            val queuedName = file.name.removeSuffix(".json")
+            // Cancelled while still waiting: write the result so it is never picked up. The spec file is kept.
+            if (ai.opencode.android.task.BackgroundTaskHub.consumeCancelled(queuedName)) {
+                withContext(Dispatchers.IO) {
+                    runCatching {
+                        ai.opencode.android.task.BackgroundTask.resultFile(dir, queuedName)
+                            .writeText(ai.opencode.android.task.BackgroundTask.cancelledBeforeStart(queuedName))
+                    }
+                }
+                ai.opencode.android.task.BackgroundTaskHub.setQueued(null)
+                continue
+            }
             if (!summary.ready) {
-                ai.opencode.android.task.BackgroundTaskHub.setQueued(file.name.removeSuffix(".json"))
+                ai.opencode.android.task.BackgroundTaskHub.setQueued(queuedName)
                 continue
             }
             ai.opencode.android.task.BackgroundTaskHub.setQueued(null)

@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ai.opencode.android.R
+import ai.opencode.android.task.BackgroundTask
 import ai.opencode.android.task.BackgroundTaskHub
 import ai.opencode.android.task.BackgroundTaskNotice
 
@@ -44,6 +45,9 @@ fun BackgroundTaskBar() {
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.weight(1f),
                 )
+                TextButton(onClick = { BackgroundTaskHub.cancelQueued() }) {
+                    Text(stringResource(BackgroundTaskNotice.commandLabelRes(BackgroundTask.Command.CANCEL)))
+                }
             }
         } else {
             BackgroundTaskRow(task)

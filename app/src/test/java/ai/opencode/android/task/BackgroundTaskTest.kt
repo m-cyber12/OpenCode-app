@@ -329,4 +329,28 @@ class BackgroundTaskTest {
         BackgroundTaskHub.dismiss()
         assertNull(BackgroundTaskHub.current.value)
     }
+
+    @Test
+    fun cancelWhileQueuedIsConsumedOnlyOnceAndOnlyForThatTask() {
+        BackgroundTaskHub.setQueued("nightly-1")
+        BackgroundTaskHub.cancelQueued()
+        // The bar lets go of the queued label at once.
+        assertNull(BackgroundTaskHub.queued.value)
+        // A different name does not consume it, and the watch loop sees it exactly once.
+        assertFalse(BackgroundTaskHub.consumeCancelled("other-task"))
+        assertTrue(BackgroundTaskHub.consumeCancelled("nightly-1"))
+        assertFalse(BackgroundTaskHub.consumeCancelled("nightly-1"))
+        // The result the agent reads says so, in the same TASK <name> form as every other report.
+        assertEquals(
+            "TASK nightly-1 CANCELLED: cancelled by the user before it started\n",
+            BackgroundTask.cancelledBeforeStart("nightly-1"),
+        )
+    }
+
+    @Test
+    fun cancelWithNothingQueuedDoesNothing() {
+        BackgroundTaskHub.setQueued(null)
+        BackgroundTaskHub.cancelQueued()
+        assertFalse(BackgroundTaskHub.consumeCancelled("anything"))
+    }
 }

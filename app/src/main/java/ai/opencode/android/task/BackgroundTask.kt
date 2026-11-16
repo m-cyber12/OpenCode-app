@@ -314,6 +314,10 @@ object BackgroundTask {
 
     fun invalidReport(name: String, reason: String): String = "TASK $name INVALID: $reason\n"
 
+    /** A queued task the user cancelled before the agent ever started it. */
+    fun cancelledBeforeStart(name: String): String =
+        "TASK $name CANCELLED: cancelled by the user before it started\n"
+
     /** The first spec with no result file yet, by name. */
     fun pending(projectDir: File): File? =
         File(projectDir, DIR).listFiles { f -> f.isFile && f.name.endsWith(".json") }

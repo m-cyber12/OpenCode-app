@@ -24,6 +24,9 @@ object BackgroundTaskHub {
     private val queuedFlow = MutableStateFlow<String?>(null)
     val queued: StateFlow<String?> = queuedFlow.asStateFlow()
 
+    /** A queued task the user asked to cancel. The watch loop turns it into a cancelled result. */
+    private val cancelRequested = MutableStateFlow<String?>(null)
+
     /** The current task's name and status, for the notification. Null when there is no task. */
     @OptIn(ExperimentalCoroutinesApi::class)
     private val notice: Flow<Pair<String, BackgroundTask.Status>?> =
@@ -40,10 +43,25 @@ object BackgroundTaskHub {
         queuedFlow.value = name
     }
 
+    /** Cancel for a task that is still waiting for the agent. Nothing else is queued meanwhile. */
+    fun cancelQueued() {
+        val name = queuedFlow.value ?: return
+        cancelRequested.value = name
+        queuedFlow.value = null
+    }
+
+    /** True once, for the queued task [name] the user cancelled. */
+    fun consumeCancelled(name: String): Boolean {
+        if (cancelRequested.value != name) return false
+        cancelRequested.value = null
+        return true
+    }
+
     /** Starts the bar for [name]. The previous finished task, if any, is replaced. */
     fun begin(name: String): BackgroundTask.Control {
         val control = BackgroundTask.Control()
         queuedFlow.value = null
+        cancelRequested.value = null
         currentFlow.value = Current(name, control)
         return control
     }
