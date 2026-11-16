@@ -24,7 +24,6 @@ class RuntimeVersionTest {
         payloadVersion = RuntimeVersion.PAYLOAD_VERSION,
         opencodeCommit = RuntimeVersion.OPENCODE_COMMIT,
         opencodeVersion = RuntimeVersion.OPENCODE_VERSION,
-        bunVersion = "1.3.14",
         gitVersion = RuntimeVersion.GIT_VERSION,
         rgVersion = RuntimeVersion.RIPGREP_VERSION,
         payloadSha256 = "deadbeef",

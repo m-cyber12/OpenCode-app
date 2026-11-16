@@ -49,7 +49,7 @@ android {
         // versionName = "<pinned OpenCode version>-phase10". Phase 5's P5-01 gate accepts
         // *phase5*..*phase10* (phase5/scripts/20-integration-gates.sh); check-lock.py
         // asserts the prefix equals versions.lock's opencode version.
-        versionName = "1.18.23-phase10"   // tracks the pinned OpenCode version (versions.lock)
+        versionName = "2.2.5-phase10"   // tracks the pinned OpenCode version (versions.lock)
         ndk {
             abiFilters += listOf("arm64-v8a")   // arm64 only (owner decision 2026-11-16: x86_64 dropped)
         }

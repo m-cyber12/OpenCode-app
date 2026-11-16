@@ -11,7 +11,6 @@ class ManifestTest {
       "payloadVersion": 9,
       "opencodeCommit": "05ea5073be967c779d326929b2de6228dda4159d",
       "opencodeVersion": "1.18.23",
-      "bunVersion": "1.3.14",
       "gitVersion": "v2.48.1",
       "rgVersion": "15.1.0",
       "payloadSha256": "abc",
@@ -27,7 +26,6 @@ class ManifestTest {
         val m = RuntimeManifest.fromJson(json)
         assertEquals(9, m.payloadVersion)
         assertEquals("1.18.23", m.opencodeVersion)
-        assertEquals("1.3.14", m.bunVersion)
         assertEquals(2, m.entries.size)
         val node = m.entries.first { it.path.endsWith("node.js") }
         assertEquals(12345L, node.size)

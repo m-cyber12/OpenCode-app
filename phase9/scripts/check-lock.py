@@ -29,7 +29,6 @@ def kk(pat):
 want = {
   "opencodeCommit": lk(r"^  commit: ([0-9a-f]{40})"),
   "opencodeVersion": lk(r"^  version: ([0-9.]+)"),
-  "bunVersion": lk(r"^  bun_android_arm64: ([0-9.]+)"),
   "gitVersion": lk(r"^    version: (v[0-9.]+)"),
   "rgVersion": lk(r"^    version: (15\.[0-9.]+)"),
   "payloadVersion": int(lk(r"^  payload_version: ([0-9]+)") or 0),
@@ -37,7 +36,6 @@ want = {
 have_kt = {
   "opencodeCommit": kk(r'OPENCODE_COMMIT = "([0-9a-f]+)"'),
   "opencodeVersion": kk(r'OPENCODE_VERSION = "([0-9.]+)"'),
-  "bunVersion": kk(r'BUN_VERSION = "([0-9.]+)"'),
   "gitVersion": kk(r'GIT_VERSION = "(v[0-9.]+)"'),
   "rgVersion": kk(r'RIPGREP_VERSION = "([0-9.]+)"'),
   "payloadVersion": int(kk(r'PAYLOAD_VERSION = ([0-9]+)') or 0),

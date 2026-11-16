@@ -27,7 +27,6 @@ data class RuntimeManifest(
     val payloadVersion: Int,
     val opencodeCommit: String,
     val opencodeVersion: String,
-    val bunVersion: String,
     val gitVersion: String,
     val rgVersion: String,
     val payloadSha256: String,
@@ -37,7 +36,6 @@ data class RuntimeManifest(
         put("payloadVersion", payloadVersion)
         put("opencodeCommit", opencodeCommit)
         put("opencodeVersion", opencodeVersion)
-        put("bunVersion", bunVersion)
         put("gitVersion", gitVersion)
         put("rgVersion", rgVersion)
         put("payloadSha256", payloadSha256)
@@ -60,7 +58,6 @@ data class RuntimeManifest(
                 payloadVersion = o.getInt("payloadVersion"),
                 opencodeCommit = o.getString("opencodeCommit"),
                 opencodeVersion = o.getString("opencodeVersion"),
-                bunVersion = o.getString("bunVersion"),
                 gitVersion = o.getString("gitVersion"),
                 rgVersion = o.getString("rgVersion"),
                 payloadSha256 = o.optString("payloadSha256", ""),
