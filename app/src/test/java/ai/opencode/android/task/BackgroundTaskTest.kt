@@ -1,6 +1,15 @@
 package ai.opencode.android.task
 
+import ai.opencode.android.task.BackgroundTask.Command
+import ai.opencode.android.task.BackgroundTask.Outcome
+import ai.opencode.android.task.BackgroundTask.Status
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -22,15 +31,23 @@ class BackgroundTaskTest {
         val failCreate: Boolean = false,
         val onPrompt: () -> Unit = {},
     ) : BackgroundTask.Port {
-        var aborted = false
-        var prompts = 0
+        @Volatile var aborts = 0
+        val aborted: Boolean
+            get() = aborts > 0
+        @Volatile var prompts = 0
+        @Volatile var sessions = 0
+        val texts = java.util.concurrent.CopyOnWriteArrayList<String>()
+        var blocked: String? = null
+        override fun blocker(): String? = blocked
         override fun createSession(title: String): String {
             if (failCreate) throw IllegalStateException("server down")
+            sessions++
             return "ses_1"
         }
 
         override fun prompt(sessionID: String, text: String) {
             prompts++
+            texts.add(text)
             onPrompt()
         }
 
@@ -45,7 +62,7 @@ class BackgroundTaskTest {
         }
 
         override fun abort(sessionID: String) {
-            aborted = true
+            aborts++
         }
 
         override fun lastReply(sessionID: String): String = "Wrote the report."
@@ -182,5 +199,134 @@ class BackgroundTaskTest {
         assertFalse(BackgroundTask.doneFileReady(dir, spec()))
         File(dir, "reports/debt.md").writeText("# Debt\n")
         assertTrue(BackgroundTask.doneFileReady(dir, spec()))
+    }
+
+    /** Polls until [cond] holds, failing the test after five seconds. */
+    private suspend fun waitUntil(cond: () -> Boolean) {
+        withTimeout(5_000) {
+            while (!cond()) {
+                delay(2)
+            }
+        }
+    }
+
+    @Test
+    fun aBlockedModelFailsBeforeAnySessionExists() = runBlocking {
+        val port = FakePort()
+        port.blocked = "No model is selected."
+        val f = BackgroundTask.run(spec(), port, doneExists = { false }, pollMs = 1)
+        assertEquals(Outcome.FAILED, f.outcome)
+        assertEquals(0, port.sessions)
+        assertEquals(0, port.prompts)
+        assertEquals("", f.sessionID)
+        assertTrue(f.error!!.contains("No model is selected"))
+    }
+
+    @Test
+    fun pauseAbortsTheTurnKeepsTheSessionAndResumeContinuesIt() = runBlocking {
+        val port = FakePort(neverIdle = true)
+        val control = BackgroundTask.Control()
+        val run = async(Dispatchers.Default) {
+            BackgroundTask.run(
+                spec(), port, doneExists = { false }, control = control,
+                limitMs = 60_000, pollMs = 1, graceMs = 50,
+            )
+        }
+        waitUntil { control.status.value == Status.RUNNING }
+        assertTrue(control.pause())
+        waitUntil { control.status.value == Status.PAUSED }
+        assertTrue(port.aborted)
+        assertTrue(control.resume())
+        waitUntil { port.prompts == 2 }
+        assertEquals(BackgroundTask.RESUME_PROMPT, port.texts[1])
+        assertEquals(1, port.sessions)
+        assertTrue(control.cancel())
+        val f = run.await()
+        assertEquals(Outcome.CANCELLED, f.outcome)
+        assertEquals("ses_1", f.sessionID)
+        assertEquals(Status.CANCELLED, control.status.value)
+    }
+
+    @Test
+    fun pausedTimeDoesNotCountTowardTheTimeLimit() = runBlocking {
+        val port = FakePort(neverIdle = true)
+        val control = BackgroundTask.Control()
+        val run = async(Dispatchers.Default) {
+            BackgroundTask.run(
+                spec(), port, doneExists = { false }, control = control,
+                limitMs = 400, pollMs = 1, graceMs = 50,
+            )
+        }
+        waitUntil { control.status.value == Status.RUNNING }
+        assertTrue(control.pause())
+        waitUntil { control.status.value == Status.PAUSED }
+        // Longer than the whole limit, spent paused: it must not end the task.
+        delay(700)
+        assertTrue(control.resume())
+        delay(100)
+        assertFalse(run.isCompleted)
+        assertEquals(Status.RUNNING, control.status.value)
+        assertTrue(control.cancel())
+        assertEquals(Outcome.CANCELLED, run.await().outcome)
+    }
+
+    @Test
+    fun cancelBeforeStartCreatesNothing() = runBlocking {
+        val port = FakePort()
+        val control = BackgroundTask.Control()
+        assertTrue(control.cancel())
+        val f = BackgroundTask.run(spec(), port, doneExists = { false }, control = control, pollMs = 1)
+        assertEquals(Outcome.CANCELLED, f.outcome)
+        assertEquals(0, port.sessions)
+        assertEquals(Status.CANCELLED, control.status.value)
+    }
+
+    @Test
+    fun controlAcceptsOnlyTheTapsThatFitTheState() {
+        val queued = BackgroundTask.Control()
+        assertFalse(queued.pause())
+        assertFalse(queued.resume())
+        assertTrue(queued.cancel())
+
+        val finished = BackgroundTask.Control()
+        finished.setStatus(Status.DONE)
+        assertFalse(finished.cancel())
+        assertFalse(finished.pause())
+    }
+
+    @Test
+    fun statusesOfferTheTapsThatFitThemAndSayWhetherTheyAreActive() {
+        assertEquals(listOf(Command.PAUSE, Command.CANCEL), Status.RUNNING.commands())
+        assertEquals(listOf(Command.RESUME, Command.CANCEL), Status.PAUSED.commands())
+        assertEquals(listOf(Command.CANCEL), Status.QUEUED.commands())
+        for (done in listOf(Status.DONE, Status.INCOMPLETE, Status.TIMED_OUT, Status.FAILED, Status.CANCELLED)) {
+            assertEquals(listOf(Command.DISMISS), done.commands())
+            assertFalse(done.active)
+        }
+        assertTrue(Status.QUEUED.active && Status.RUNNING.active && Status.PAUSED.active)
+    }
+
+    @Test
+    fun everyOutcomeHasTheStatusTheUserSees() {
+        assertEquals(Status.DONE, Outcome.DONE.status)
+        assertEquals(Status.INCOMPLETE, Outcome.INCOMPLETE.status)
+        assertEquals(Status.TIMED_OUT, Outcome.TIMEOUT.status)
+        assertEquals(Status.FAILED, Outcome.FAILED.status)
+        assertEquals(Status.CANCELLED, Outcome.CANCELLED.status)
+        assertEquals(Outcome.CANCELLED, BackgroundTask.decide(doneExists = false, timedOut = false, error = null, cancelled = true))
+        // A saved file still wins over a cancel, and an error still wins over everything.
+        assertEquals(Outcome.DONE, BackgroundTask.decide(doneExists = true, timedOut = false, error = null, cancelled = true))
+        assertEquals(Outcome.FAILED, BackgroundTask.decide(doneExists = true, timedOut = false, error = "x", cancelled = true))
+    }
+
+    @Test
+    fun theHubKeepsAnActiveTaskOnTheBarAndClearsAFinishedOne() {
+        val control = BackgroundTaskHub.begin("debt-1")
+        assertEquals("debt-1", BackgroundTaskHub.current.value?.name)
+        BackgroundTaskHub.dismiss()
+        assertNotNull(BackgroundTaskHub.current.value)
+        control.setStatus(Status.DONE)
+        BackgroundTaskHub.dismiss()
+        assertNull(BackgroundTaskHub.current.value)
     }
 }

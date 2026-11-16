@@ -1,16 +1,25 @@
 package ai.opencode.android.task
 
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONObject
 import java.io.File
+import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Background engineering (agent.md section 12), first slice.
+ * Background engineering (agent.md section 12).
  *
  * A task is a spec file `.tasks/<name>.json`: a prompt, a time limit, and one
  * completion condition, a project file that must exist when the task ends. The
  * app runs the prompt in its own session, watches it until the turn ends or the
  * time limit passes (then it aborts the turn), and writes `.tasks/<name>.result.txt`.
+ *
+ * The user can pause, resume and cancel a running task (the bar in the app and
+ * the notification). Pause aborts the turn and keeps the session; resume sends a
+ * continuation prompt into that same session. Paused time does not count toward
+ * the time limit.
  *
  * Limits: time only. Upstream does not expose a token or cost budget, so there is
  * none here. Tools run through the same permission gate as any turn. A task that
@@ -28,6 +37,11 @@ object BackgroundTask {
 
     /** Consecutive failed status reads before the task is failed. */
     const val MAX_POLL_ERRORS = 3
+
+    /** Sent into the same session when a paused task resumes. */
+    const val RESUME_PROMPT =
+        "Continue the background task from where you stopped. Its instructions and completion file still apply."
+
     private val NAME = Regex("[A-Za-z0-9_-]{1,40}")
 
     data class Spec(val name: String, val prompt: String, val minutes: Int, val doneFile: String)
@@ -37,7 +51,36 @@ object BackgroundTask {
         data class Invalid(val reason: String) : Parsed()
     }
 
-    enum class Outcome { DONE, INCOMPLETE, TIMEOUT, FAILED }
+    /** What the user sees on the bar and the notification. */
+    enum class Status(val active: Boolean) {
+        QUEUED(true),
+        RUNNING(true),
+        PAUSED(true),
+        DONE(false),
+        INCOMPLETE(false),
+        TIMED_OUT(false),
+        FAILED(false),
+        CANCELLED(false);
+
+        /** The taps offered in this state. Finished tasks offer only Dismiss. */
+        fun commands(): List<Command> = when (this) {
+            QUEUED -> listOf(Command.CANCEL)
+            RUNNING -> listOf(Command.PAUSE, Command.CANCEL)
+            PAUSED -> listOf(Command.RESUME, Command.CANCEL)
+            else -> listOf(Command.DISMISS)
+        }
+    }
+
+    enum class Command { PAUSE, RESUME, CANCEL, DISMISS }
+
+    /** The verdict written to the result file. Each one maps to the status shown to the user. */
+    enum class Outcome(val status: Status) {
+        DONE(Status.DONE),
+        INCOMPLETE(Status.INCOMPLETE),
+        TIMEOUT(Status.TIMED_OUT),
+        FAILED(Status.FAILED),
+        CANCELLED(Status.CANCELLED),
+    }
 
     /** What one run produced. [error] is set only for FAILED. */
     data class Finished(
@@ -49,7 +92,44 @@ object BackgroundTask {
         val error: String?,
     )
 
-    /** The four session calls the runner needs. The app wraps its API client in this. */
+    /**
+     * The live handle on one run. The status is observable; the taps set a wish
+     * that the runner reads between steps, so a tap never interrupts a server call.
+     */
+    class Control {
+        enum class Wish { RUN, PAUSE, CANCEL }
+
+        private val wishRef = AtomicReference(Wish.RUN)
+        private val statusFlow = MutableStateFlow(Status.QUEUED)
+        val status: StateFlow<Status> = statusFlow.asStateFlow()
+
+        internal fun wish(): Wish = wishRef.get()
+
+        internal fun setStatus(next: Status) {
+            statusFlow.value = next
+        }
+
+        /** Only a running task can pause. Returns false when the tap does not apply. */
+        fun pause(): Boolean = accept(from = Status.RUNNING, wish = Wish.PAUSE)
+
+        /** Only a paused task can resume. */
+        fun resume(): Boolean = accept(from = Status.PAUSED, wish = Wish.RUN)
+
+        /** Any active task can be cancelled. */
+        fun cancel(): Boolean {
+            if (!statusFlow.value.active) return false
+            wishRef.set(Wish.CANCEL)
+            return true
+        }
+
+        private fun accept(from: Status, wish: Wish): Boolean {
+            if (statusFlow.value != from) return false
+            wishRef.set(wish)
+            return true
+        }
+    }
+
+    /** The session calls the runner needs. The app wraps its API client in this. */
     interface Port {
         fun createSession(title: String): String
         fun prompt(sessionID: String, text: String)
@@ -58,6 +138,13 @@ object BackgroundTask {
         fun busy(sessionID: String): Boolean
         fun abort(sessionID: String)
         fun lastReply(sessionID: String): String
+
+        /**
+         * Why the task cannot start yet (for example, no model is selected), or null
+         * when it can. It is checked before any session is created, so a refused task
+         * leaves nothing behind.
+         */
+        fun blocker(): String? = null
     }
 
     /** `<name>.json` spec, named by its file name. Anything unclear is rejected with a reason. */
@@ -91,12 +178,13 @@ object BackgroundTask {
             path.split('/').none { it == ".." || it.isEmpty() }
 
     /**
-     * The outcome. The completion file decides DONE, even after a timeout: the
-     * work was saved. An error beats everything else.
+     * The outcome. The completion file decides DONE, even after a timeout or a
+     * cancel: the work was saved. An error beats everything else.
      */
-    fun decide(doneExists: Boolean, timedOut: Boolean, error: String?): Outcome = when {
+    fun decide(doneExists: Boolean, timedOut: Boolean, error: String?, cancelled: Boolean = false): Outcome = when {
         error != null -> Outcome.FAILED
         doneExists -> Outcome.DONE
+        cancelled -> Outcome.CANCELLED
         timedOut -> Outcome.TIMEOUT
         else -> Outcome.INCOMPLETE
     }
@@ -104,51 +192,90 @@ object BackgroundTask {
     /**
      * Run the spec to an outcome. Blocking calls go through [port], so call this
      * off the main thread. [doneExists] checks the completion file; it is read
-     * only after the session is idle, so a file written mid-turn is judged
-     * with the whole turn.
+     * only after the run ends, so a file written mid-turn is judged with the whole turn.
+     *
+     * The time limit counts active time only: the clock stops while paused.
      */
     suspend fun run(
         spec: Spec,
         port: Port,
         doneExists: () -> Boolean,
+        control: Control = Control(),
         limitMs: Long = spec.minutes * 60_000L,
         pollMs: Long = 5_000L,
         graceMs: Long = START_GRACE_MS,
     ): Finished {
         val started = System.currentTimeMillis()
-        fun finish(sid: String, timedOut: Boolean, error: String?): Finished {
-            val reply = runCatching { port.lastReply(sid) }.getOrDefault("")
+        fun finish(sid: String, timedOut: Boolean, cancelled: Boolean, error: String?): Finished {
+            val reply = if (sid.isEmpty()) "" else runCatching { port.lastReply(sid) }.getOrDefault("")
             val exists = runCatching { doneExists() }.getOrDefault(false)
-            return Finished(
-                outcome = decide(exists, timedOut, error),
-                sessionID = sid,
-                ms = System.currentTimeMillis() - started,
-                doneExists = exists,
-                lastReply = reply,
-                error = error,
-            )
+            val outcome = decide(exists, timedOut, error, cancelled)
+            control.setStatus(outcome.status)
+            return Finished(outcome, sid, System.currentTimeMillis() - started, exists, reply, error)
         }
+
+        // Cancelled before it started: nothing was created, so nothing is left behind.
+        if (control.wish() == Control.Wish.CANCEL) {
+            control.setStatus(Status.CANCELLED)
+            return Finished(Outcome.CANCELLED, "", 0, false, "", null)
+        }
+        val blocked = runCatching { port.blocker() }
+            .getOrElse { "could not check the model: ${it.message}" }
+        if (blocked != null) return finish("", timedOut = false, cancelled = false, error = blocked)
 
         val sid = try {
             port.createSession("Background: ${spec.name}")
         } catch (e: Exception) {
-            return Finished(Outcome.FAILED, "", 0, false, "", "could not create a session: ${e.message}")
+            return finish("", timedOut = false, cancelled = false, error = "could not create a session: ${e.message}")
         }
+        control.setStatus(Status.RUNNING)
         try {
             port.prompt(sid, spec.prompt)
         } catch (e: Exception) {
-            return finish(sid, timedOut = false, error = "could not send the prompt: ${e.message}")
+            return finish(sid, timedOut = false, cancelled = false, error = "could not send the prompt: ${e.message}")
         }
 
+        var active = 0L
+        var segmentStart = System.currentTimeMillis()
         var sawBusy = false
         var pollErrors = 0
         var timedOut = false
-        while (true) {
-            val elapsed = System.currentTimeMillis() - started
+        var cancelled = false
+        loop@ while (true) {
+            when (control.wish()) {
+                Control.Wish.CANCEL -> {
+                    cancelled = true
+                    runCatching { port.abort(sid) }
+                    break@loop
+                }
+                Control.Wish.PAUSE -> {
+                    // Stop the turn, keep the session, and stop the clock. No status is read while paused.
+                    runCatching { port.abort(sid) }
+                    active += System.currentTimeMillis() - segmentStart
+                    control.setStatus(Status.PAUSED)
+                    while (control.wish() == Control.Wish.PAUSE) delay(pollMs)
+                    if (control.wish() == Control.Wish.CANCEL) {
+                        cancelled = true
+                        break@loop
+                    }
+                    try {
+                        port.prompt(sid, RESUME_PROMPT)
+                    } catch (e: Exception) {
+                        return finish(sid, timedOut = false, cancelled = false, error = "could not resume: ${e.message}")
+                    }
+                    control.setStatus(Status.RUNNING)
+                    segmentStart = System.currentTimeMillis()
+                    sawBusy = false
+                    pollErrors = 0
+                    continue@loop
+                }
+                Control.Wish.RUN -> Unit
+            }
+            val elapsed = active + (System.currentTimeMillis() - segmentStart)
             if (elapsed >= limitMs) {
                 timedOut = true
                 runCatching { port.abort(sid) }
-                break
+                break@loop
             }
             val busy: Boolean? = try {
                 port.busy(sid).also { pollErrors = 0 }
@@ -156,20 +283,20 @@ object BackgroundTask {
                 pollErrors++
                 if (pollErrors >= MAX_POLL_ERRORS) {
                     runCatching { port.abort(sid) }
-                    return finish(sid, timedOut = false, error = "status unreadable: ${e.message}")
+                    return finish(sid, timedOut = false, cancelled = false, error = "status unreadable: ${e.message}")
                 }
                 null
             }
             if (busy != null) {
                 if (busy) {
                     sawBusy = true
-                } else if (sawBusy || elapsed >= graceMs) {
-                    break
+                } else if (sawBusy || System.currentTimeMillis() - segmentStart >= graceMs) {
+                    break@loop
                 }
             }
             delay(pollMs)
         }
-        return finish(sid, timedOut, error = null)
+        return finish(sid, timedOut, cancelled, error = null)
     }
 
     /** The text written to `.tasks/<name>.result.txt`. The first line is the verdict. */

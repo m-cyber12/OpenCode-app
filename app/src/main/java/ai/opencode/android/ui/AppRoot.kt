@@ -52,10 +52,12 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -802,6 +804,15 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 // Same model as chat: a null model is refused (ZenPolicy), so the port must pass one.
                 api.promptAsync(sessionID, text, repository.state.value.model)
             }
+            // Checked before any session exists: no model means no session, and a clear reason on the result.
+            override fun blocker(): String? {
+                val model = repository.state.value.model
+                return if (model == null || ai.opencode.android.client.ZenPolicy.hidden(model.providerID)) {
+                    "No model is selected. Pick a model in the chat, then run the task again."
+                } else {
+                    null
+                }
+            }
             override fun busy(sessionID: String): Boolean = api.sessionStatus()[sessionID]?.busy == true
             override fun abort(sessionID: String) {
                 api.abortSession(sessionID)
@@ -814,8 +825,16 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         }
         while (true) {
             kotlinx.coroutines.delay(3000)
-            if (!summary.ready) continue
-            val file = withContext(Dispatchers.IO) { ai.opencode.android.task.BackgroundTask.pending(dir) } ?: continue
+            val file = withContext(Dispatchers.IO) { ai.opencode.android.task.BackgroundTask.pending(dir) }
+            if (file == null) {
+                ai.opencode.android.task.BackgroundTaskHub.setQueued(null)
+                continue
+            }
+            if (!summary.ready) {
+                ai.opencode.android.task.BackgroundTaskHub.setQueued(file.name.removeSuffix(".json"))
+                continue
+            }
+            ai.opencode.android.task.BackgroundTaskHub.setQueued(null)
             val name = file.name.removeSuffix(".json")
             val report = withContext(Dispatchers.IO) {
                 runCatching {
@@ -824,20 +843,31 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                             ai.opencode.android.task.BackgroundTask.invalidReport(name, parsed.reason)
                         is ai.opencode.android.task.BackgroundTask.Parsed.Ok -> {
                             val spec = parsed.spec
+                            val control = ai.opencode.android.task.BackgroundTaskHub.begin(spec.name)
                             val finished = ai.opencode.android.task.BackgroundTask.run(
                                 spec,
                                 port,
                                 doneExists = { ai.opencode.android.task.BackgroundTask.doneFileReady(dir, spec) },
+                                control = control,
                             )
                             ai.opencode.android.task.BackgroundTask.report(spec, finished)
                         }
                     }
-                }.getOrElse { "TASK $name FAILED: ${it.message}\n" }
+                }.getOrElse {
+                    ai.opencode.android.task.BackgroundTaskHub.failCurrent()
+                    "TASK $name FAILED: ${it.message}\n"
+                }
             }
             withContext(Dispatchers.IO) {
                 runCatching { ai.opencode.android.task.BackgroundTask.resultFile(dir, name).writeText(report) }
             }
         }
+    }
+
+    // Background-task notification follows the current task (post, update, clear). It lives as long as the UI.
+    val taskContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
+    LaunchedEffect(Unit) {
+        ai.opencode.android.task.BackgroundTaskHub.publishNotices(taskContext)
     }
 
     // v9.9 (owner): the app WATCHES the loopback - a connect-probe of ~15
@@ -1639,7 +1669,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         ) {
             // Edge-to-edge: the Surface paints under the system bars; the content
             // pads by the safe-drawing insets (status bar, gesture bar, IME).
-            Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+            Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+            // Background task status and taps (pause, resume, cancel, dismiss). Empty when no task.
+            ai.opencode.android.ui.task.BackgroundTaskBar()
+            Box(Modifier.weight(1f).fillMaxWidth()) {
             // v9.34 (owner: the auto-jump to the live preview "has no
             // animation, it's not a smooth transition"). EVERY route change
             // now crossfades - one finite 240ms tween, so the UI gates'
@@ -2342,6 +2375,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         }
                     },
                 )
+            }
             }
             }
             }
