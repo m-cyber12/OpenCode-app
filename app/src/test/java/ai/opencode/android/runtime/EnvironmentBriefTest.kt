@@ -227,7 +227,7 @@ class EnvironmentBriefTest {
         assertTrue(text.contains("setsid"))
         assertTrue(text.contains("EXISTS"))
         assertTrue(text.contains("/page.html"))
-        assertTrue(text.contains("status:404"))
+        assertTrue(text.contains("404 instead of crashing"))
         assertTrue(text.contains("readdirSync"))
         assertTrue("server must be checked before the hand-off", text.contains("nc -w 2 127.0.0.1"))
         assertTrue(text.contains(".preview/console.log"))
