@@ -5,7 +5,7 @@
  * cannot be kernel-executed through their #! line. bin/npm and bin/npx point
  * at this PIE in nativeLibraryDir instead. It turns the invocation into:
  *
- *   <nativeLibraryDir>/libnode.so
+ *   <nativeLibraryDir>/libnode26.so
  *     <filesDir>/usr/lib/node_modules/npm/bin/{npm,npx}-cli.js ...
  *
  * The JavaScript remains ordinary verified payload data; both executables are
@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     char node[PATH_MAX];
     char cli[PATH_MAX];
     const char *tool = strcmp(base_name(argv[0]), "npx") == 0 ? "npx" : "npm";
-    if (snprintf(node, sizeof(node), "%slibnode.so", self) >= (int)sizeof(node) ||
+    if (snprintf(node, sizeof(node), "%slibnode26.so", self) >= (int)sizeof(node) ||
         snprintf(cli, sizeof(cli), "%s/usr/lib/node_modules/npm/bin/%s-cli.js", files, tool) >= (int)sizeof(cli)) {
         fputs("npm: sealed path is too long\n", stderr);
         return 126;

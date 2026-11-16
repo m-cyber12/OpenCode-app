@@ -85,7 +85,7 @@ APK_REPORT="$EV/p10-release-apk-report.txt"
 APK_ARGS=(--expect-package "$APPID" --expect-version-name "$VNAME" --expect-version-code "$VCODE"
           --expect-not-debuggable --expect-icon --expect-payload
           --expect-min-sdk 29 --expect-target-sdk 36
-          --expect-native-abi arm64-v8a --expect-native-abi x86_64
+          --expect-native-abi arm64-v8a
           --expect-permission android.permission.INTERNET
           --expect-permission android.permission.FOREGROUND_SERVICE
           --expect-permission android.permission.FOREGROUND_SERVICE_SPECIAL_USE
@@ -210,7 +210,7 @@ else
       --expect-package "$APPID" --expect-version-name "$VNAME" --expect-version-code "$VCODE" \
       --expect-signed --expect-not-debuggable --expect-icon --expect-payload \
       --expect-min-sdk 29 --expect-target-sdk 36 \
-      --expect-native-abi arm64-v8a --expect-native-abi x86_64 \
+      --expect-native-abi arm64-v8a \
       --json "$EV/p10-testonly-release-universal.json" > "$UNIVERSAL_REPORT" 2>&1; then
     UNIVERSAL_BYTES=$(stat -c%s "$TEST_UNIVERSAL")
     if [ "$UNIVERSAL_BYTES" -le $((SIZE_CAP_MB * 1024 * 1024)) ]; then
@@ -229,7 +229,8 @@ else
   ARM_REPORT="$EV/p10-testonly-release-arm64-report.txt"
   ARM_OK=1
   cp "$APK" "$ARM_WORK" || ARM_OK=0
-  [ "$ARM_OK" = 1 ] && zip -q -d "$ARM_WORK" 'lib/x86_64/*' >> "$LOG" 2>&1 || ARM_OK=0
+  # The release is arm64-only (x86_64 retired 2026-11-16): strip lib/x86_64 only if it is there.
+  if [ "$ARM_OK" = 1 ] && unzip -Z1 "$ARM_WORK" | grep -q '^lib/x86_64/'; then zip -q -d "$ARM_WORK" 'lib/x86_64/*' >> "$LOG" 2>&1 || ARM_OK=0; fi
   [ "$ARM_OK" = 1 ] && "$ZIPALIGN" -P 16 -f 4 "$ARM_WORK" "$ARM_ALIGNED" >> "$LOG" 2>&1 || ARM_OK=0
   [ "$ARM_OK" = 1 ] && sign_testonly "$ARM_ALIGNED" "$TEST_ARM64" >> "$LOG" 2>&1 || ARM_OK=0
   ARM_SIG="$EV/p10-testonly-release-arm64-signature.txt"

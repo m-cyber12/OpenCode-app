@@ -64,6 +64,12 @@ export PATH="$SDK/platform-tools:$SDK/emulator:$SDK/cmdline-tools/latest/bin:$PA
 FINAL="$EV/GATES_SUMMARY.txt"
 : > "$FINAL"
 note_gate() { echo "$*" | tee -a "$FINAL" | tee -a "$MAINLOG" >/dev/null; }
+# x86_64 device gates are RETIRED as release gates (owner delegated the decision to the
+# agent on 2026-11-16; docs/progress/v2-full-migration-plan.md, "Decision (x86_64 emulator
+# gates)"). The release workflow sets P10_X86_DEVICE_RETIRED=1. Each device-only stage is
+# skipped with a named SKIP line, never silently, and no other stage is affected.
+X86_RETIRED="${P10_X86_DEVICE_RETIRED:-0}"
+retired_skip() { note_gate "$1 SKIP: x86_64 device gate retired as a release gate (P10_X86_DEVICE_RETIRED=1; see the v2 migration plan)"; }
 
 collect_evidence() {
   cp "$MAINLOG" "$EV/00-run-phase10.log" 2>/dev/null || true
@@ -149,11 +155,13 @@ cp "$OUT/static-checks.log" "$EV/p10-static-checks.log" 2>/dev/null || true
 note_gate "P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, published identity, store package, compileSdk/targetSdk 36) + apk inspector self-test"
 
 step "1a/9 exact Android 16 SDK + API 36 emulator image"
+if [ "$X86_RETIRED" = 1 ]; then retired_skip P10_API36_SDK; else
 run_c 2400 "bash '$DIR/scripts/50-ensure-api36-sdk.sh'" \
   || record_fatal "Android 16 SDK/API 36 system image install failed"
 cp "$OUT/50-ensure-api36-sdk.log" "$EV/p10-api36-sdk.log" 2>/dev/null || true
 note_gate "P10_API36_SDK PASS: compile platform and google_apis x86_64 image are exactly android-36"
 
+fi
 step "1b/9 the real-device driver, run against a fake phone (self-test)"
 # 90-real-device-signed.sh is the one script meant to be run by a human on hardware
 # CI cannot reach, and its failure mode used to be an evening of plugging a phone in
@@ -245,6 +253,7 @@ note_gate "P10-PAYLOAD PASS: $MFV"
 cp "$ROOT/phase4/out/engine/assets/runtime-manifest.json" "$REL/" 2>/dev/null || true
 
 step "4/9 fresh emulator at a phone-sized screen (1080x1920 @ 420dpi)"
+if [ "$X86_RETIRED" = 1 ]; then retired_skip P10-DEVICE; else
 if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm 2>/dev/null || true; echo "KVM: $(ls -la /dev/kvm 2>&1)"; else echo "KVM_MISSING"; fi
 # Exact, never "highest installed": a cached API 34 image or a future API 37
 # image cannot satisfy this slice. Stage 1a installed and checked this path.
@@ -285,9 +294,11 @@ DEVICE_ABI="$(sed -n 's/^abi=//p' "$EV/device-facts.txt" | head -1)"
   || record_fatal "AVD booted ABI ${DEVICE_ABI:-unknown}; expected x86_64"
 note_gate "P10-DEVICE PASS: fresh exact API 36 AVD on $(sed -n 's/^android_release=//p' "$EV/device-facts.txt" | head -1) ($(sed -n 's/^screen=//p' "$EV/device-facts.txt" | head -1))"
 
+fi
 step "5/9 debug APKs + Phase 6 UI gates (F1-F4, U1-U8) - did the polish break anything?"
 run_c 3000 "'$ROOT/gradlew' -p '$ROOT' :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon --stacktrace" \
   || record_fatal "debug APK build failed"
+if [ "$X86_RETIRED" = 1 ]; then retired_skip P6-UI; else
 P6RC=0
 run_c 5400 "bash '$ROOT/phase6/scripts/20-ui-gates.sh'" || P6RC=1
 echo "phase6 UI gates rc=$P6RC" | tee -a "$MAINLOG"
@@ -299,7 +310,9 @@ else
   note_gate "P6-UI FAIL: the Phase 6 driver produced no summary (rc=$P6RC)"
 fi
 
+fi
 step "5b/9 workspace location + visibility (Phase 10 continuation: files must not be a black box)"
+if [ "$X86_RETIRED" = 1 ]; then retired_skip P10_WS_W4; else
 # Phase 7's isolation class (W1-W3) re-run against the NEW project root, plus the
 # new W4 gate (root is outside /data/data) and the host-side check that a non-root
 # `adb shell` can actually list and read what the OpenCode server wrote there. The
@@ -325,7 +338,9 @@ grep -ahE '^(P7_W[0-9]_[A-Z_]+|P10D_VISIBILITY_[A-Z_]+) (PASS|FAIL|SKIP)' "$OUT/
   | sed -e 's/^P7_/P10_WS_/' -e 's/^P10D_VISIBILITY_/P10_WS_VISIBILITY_/' | cut -c1-400 >> "$EV/p10-workspace-lines.txt"
 [ "${WSRC:-0}" = 0 ] || note_gate "P10-WORKSPACE note: driver rc=$WSRC (the verdict lines above are the record)"
 
+fi
 step "6/9 release-shaped SMOKE build (release applicationId + packaging, debug-key signed)"
+if [ "$X86_RETIRED" = 1 ]; then retired_skip P10-SMOKE; else
 SMOKERC=0
 if [ "${P10_SKIP_SMOKE:-0}" = "1" ]; then
   note_gate "P10-SMOKE SKIP: P10_SKIP_SMOKE=1 (iteration knob; a verdict run must not set it)"
@@ -333,7 +348,9 @@ else
   run_c 3600 "bash '$DIR/scripts/50-smoke-gates.sh'" || SMOKERC=1
 fi
 
+fi
 step "7/9 store screenshots from the real app on a phone-sized screen"
+if [ "$X86_RETIRED" = 1 ]; then retired_skip P10-SHOTS; else
 if [ "${P10_SKIP_SHOTS:-0}" = "1" ]; then
   note_gate "P10-SHOTS SKIP: P10_SKIP_SHOTS=1 (iteration knob)"
 else
@@ -352,10 +369,12 @@ else
   fi
 fi
 
+fi
 step "8/9 release APK + AAB (CI produces them UNSIGNED) + byte-level inspection"
 run_c 3000 "bash '$DIR/scripts/40-release-verify.sh'" || note_gate "P10-RELEASE FAIL: see the log"
 
 step "9/9 Phase 9 gates on the same device (provider selection, plugin seed, version, lock)"
+if [ "$X86_RETIRED" = 1 ]; then retired_skip P9-GATES; else
 if [ "${P10_SKIP_P9GATES:-0}" = "1" ]; then
   note_gate "P9-GATES SKIP: P10_SKIP_P9GATES=1 (iteration knob)"
 else
@@ -383,6 +402,7 @@ else
   [ "$P9RC" = 0 ] || note_gate "P9-GATES note: driver rc=$P9RC (verdicts above are the record)"
 fi
 
+fi
 step "summary"
 # Every Phase 10 verdict, by name, into the one file that decides the job: the
 # smoke stage and the release stage each keep their own lines file (they run in

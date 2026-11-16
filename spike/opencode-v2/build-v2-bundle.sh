@@ -13,6 +13,9 @@ V2_REPO="${V2_REPO:-https://github.com/anomalyco/opencode}"
 V2_TAG="${V2_TAG:-v2.2.5}"
 V2_WORK="${V2_WORK:-/tmp/v2-src}"
 V2_OUT="${V2_OUT:-/tmp/v2-out}"
+# V2_RELEASE=1 (switch-over 2026-11-16): the release bundle. Real launcher (no stub, no config write),
+# real terminal and watcher addons REQUIRED (NODE_PTY_TGZ, PARCEL_WATCHER_NODE), no test-native folder.
+V2_RELEASE="${V2_RELEASE:-0}"
 
 LOG="${V2_LOG:-/tmp/v2-build.log}"
 : > "$LOG"
@@ -93,6 +96,7 @@ assert int.from_bytes(d[18:20], "little") == 183, "e_machine is not AArch64"' "$
   touch dist-node/assets/test-native/pty-real
   echo "node-pty: real Bionic addon from $NODE_PTY_TGZ" | tee -a "$LOG"
 else
+  [ "$V2_RELEASE" = "1" ] && fatal "release bundle needs NODE_PTY_TGZ (the Bionic node-pty package)"
   # TEST ONLY: the node-pty loader has no Android build; stub it so the server can start.
   NODE_PTY_UTILS="$NODE_PTY_PKG/lib/utils.js"
   [ -f "$NODE_PTY_UTILS" ] || fatal "node-pty loader not found in the assets: $NODE_PTY_UTILS"
@@ -101,7 +105,12 @@ fi
 
 # TEST ONLY, file watching. With PARCEL_WATCHER_NODE (watcher.node from spike/parcel-watcher-android),
 # the test launcher points OPENCODE_PARCEL_WATCHER_PATH at it. Without it, watching stays off.
-if [ -n "${PARCEL_WATCHER_NODE:-}" ] && [ -f "$PARCEL_WATCHER_NODE" ]; then
+if [ "$V2_RELEASE" = "1" ]; then
+  [ -n "${PARCEL_WATCHER_NODE:-}" ] && [ -f "$PARCEL_WATCHER_NODE" ] || fatal "release bundle needs PARCEL_WATCHER_NODE (the Bionic watcher binding)"
+  mkdir -p dist-node/assets/native
+  cp "$PARCEL_WATCHER_NODE" dist-node/assets/native/watcher.node
+  echo "parcel watcher: release binding from $PARCEL_WATCHER_NODE" | tee -a "$LOG"
+elif [ -n "${PARCEL_WATCHER_NODE:-}" ] && [ -f "$PARCEL_WATCHER_NODE" ]; then
   cp "$PARCEL_WATCHER_NODE" dist-node/assets/test-native/watcher.node
   echo "parcel watcher: real Bionic binding from $PARCEL_WATCHER_NODE" | tee -a "$LOG"
 fi
@@ -113,11 +122,26 @@ cp -r dist-node/assets "$V2_OUT/stage/"
 # The launcher ships with the bundle so the two always match (migration phase 1).
 # TEST ONLY: the staged launcher is the release launcher plus test-launcher-block.mjs (native
 # paths, config provider, scripted model stub). The release launcher file is not changed.
+if [ "$V2_RELEASE" = "1" ]; then
+  # RELEASE: the release launcher with the native-path block in front (no stub, no config write).
+  { cat "$HERE/release-natives-block.mjs"; echo; cat "$HERE/../../phase4/payload/v2/launcher-v2.mjs"; } \
+    > "$V2_OUT/stage/launcher-v2.mjs"
+  node --check "$V2_OUT/stage/launcher-v2.mjs" 2>&1 | tee -a "$LOG" || fatal "release launcher does not parse"
+  # Release must not carry the test stub or the test-native folder.
+  [ ! -e "$V2_OUT/stage/assets/test-native" ] || rm -rf "$V2_OUT/stage/assets/test-native"
+else
 python3 "$HERE/test-launcher-insert.py" "$HERE/../../phase4/payload/v2/launcher-v2.mjs" \
   "$HERE/test-launcher-block.mjs" "$V2_OUT/stage/launcher-v2.mjs" 2>&1 | tee -a "$LOG"
 mkdir -p "$V2_OUT/stage/test-stub"
 cp "$HERE/test-stub/stub-model.mjs" "$V2_OUT/stage/test-stub/"
+fi
 ( cd "$V2_OUT/stage" && zip -q -r -6 "$V2_OUT/node26-v2.zip" . )
+if [ "$V2_RELEASE" = "1" ]; then
+  unzip -l "$V2_OUT/node26-v2.zip" | grep -q 'assets/native/watcher.node' || fatal "release zip has no watcher.node"
+  unzip -l "$V2_OUT/node26-v2.zip" | grep -q 'node-pty-linux-arm64/prebuilds/android-arm64/pty.node' || fatal "release zip has no pty.node"
+  unzip -l "$V2_OUT/node26-v2.zip" | grep -q 'test-stub' && fatal "release zip contains the test stub"
+  echo "release bundle: natives present, no test stub" | tee -a "$LOG"
+fi
 rm -rf "$V2_OUT/stage"
 
 echo "bundle: $(du -h "$V2_OUT/node26-v2.zip" | cut -f1) $V2_OUT/node26-v2.zip"

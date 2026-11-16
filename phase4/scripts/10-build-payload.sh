@@ -2,13 +2,14 @@
 # 10-build-payload.sh — assemble the embedded runtime payload for the APK.
 #
 # Runs on a networked build host (CI ubuntu-latest). Outputs:
-#   phase4/out/engine/jniLibs/<abi>/libbun.so  (Bun-for-Android, bionic)
+#   phase4/out/engine/jniLibs/<abi>/libnode26.so  (Node 26.4.0, Android/Bionic; switch-over)
 #   phase4/out/engine/jniLibs/<abi>/libgit.so  (Git v2.48.1, Android/Bionic executable)
 #   phase4/out/engine/jniLibs/<abi>/librg.so   (ripgrep 15.1.0, Android/Bionic executable)
-#   phase4/out/engine/jniLibs/<abi>/libnode.so (Node 24, Android/Bionic executable)
+#   phase4/out/engine/jniLibs/<abi>/libnpmcli.so (npm entry, execs libnode26.so)
 #   phase4/out/engine/jniLibs/<abi>/libwget.so (sealed curl-backed wget launcher)
 #   phase4/out/engine/jniLibs/<abi>/libssh*.so (OpenSSH 10 client suite)
-#   phase4/out/engine/assets/runtime-payload.tar.gz  (server bundle, node_modules, launcher)
+#   phase4/out/engine/assets/node26-v2.zip  (v2 server bundle; from V2_ZIP)
+#   phase4/out/engine/assets/runtime-payload.tar.gz  (sealed tool data: usr/ only)
 #   phase4/out/engine/assets/runtime-manifest.json   (versions + sha256 of every payload file)
 #
 # The .so names are the Android trick for shipping extra executables: the
@@ -25,19 +26,20 @@
 #   * OpenCode bundle: bun build of upstream packages/opencode/src/node.ts
 #     at the PINNED commit (fail loudly if the commit can't be checked out)
 #
-# Usage:  bash phase4/scripts/10-build-payload.sh [x86_64|arm64 ...]
-# Default ABIs: arm64-v8a x86_64.
+# Usage:  NODE26_BIN=<node26 bin/node> V2_ZIP=<node26-v2.zip> bash phase4/scripts/10-build-payload.sh [arm64-v8a]
+#   NODE26_BIN comes from spike/node26/build-node26-android.sh; V2_ZIP from spike/opencode-v2/build-v2-bundle.sh (release mode).
+# Default ABI: arm64-v8a only (owner decision 2026-11-16: x86_64 dropped).
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ENGINE="$DIR/out/engine"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-if [ "$#" -gt 0 ]; then ABIS=("$@"); else ABIS=(arm64-v8a x86_64); fi
+if [ "$#" -gt 0 ]; then ABIS=("$@"); else ABIS=(arm64-v8a); fi
 for abi in "${ABIS[@]}"; do
   case "$abi" in
-    arm64-v8a|x86_64) ;;
-    *) echo "FATAL: unsupported build ABI '$abi' (expected arm64-v8a or x86_64)" >&2; exit 2 ;;
+    arm64-v8a) ;;
+    *) echo "FATAL: unsupported build ABI '$abi' (expected arm64-v8a)" >&2; exit 2 ;;
   esac
 done
 # Never let a partial or previous invocation silently supply an ABI artifact
@@ -60,8 +62,8 @@ JQ_PIN="1.7.1"
 PYTHON_PIN="3.13.1"
 # Node 24 is the active LTS line and satisfies upstream OpenCode's node:sqlite
 # floor (>=22.5). npm is the version bundled in this exact Node release.
-NODE_PIN="24.22.1"
-NPM_PIN="11.19.1"
+NODE_PIN="26.4.0"
+NPM_PIN="11.17.0"   # bundled by Node 26.4.0 (deps/npm)
 # Android fixes from the exact Termux nodejs-lts recipe current for NODE_PIN.
 # Upstream calls Android unsupported; pinning these patches is what turns its
 # best-effort android-configure into a reproducible CLI build.
@@ -74,9 +76,11 @@ OPENSSH_PIN="10.6p1"
 OPENSSH_TAG="V_10_6_P1"
 OPENSSL_PIN="3.6.5"
 ONIGURUMA_PIN="6.9.10"
-BUN_PIN="1.3.14"
+# Switch-over (owner 2026-11-16): Bun is removed from the APK and the runtime.
+# The v2 bundle build (CI only) still uses Bun 1.4.4 inside spike/opencode-v2.
+V2_COMMIT="9bbb8ce18c80f099e0e448775f59d965ead40a21"   # tag v2.2.5
 RG_PIN="15.1.0"
-PAYLOAD_VERSION=9   # 9 = launcher takes the server password on stdin (not in env) + config guard (permission-guard.ts); 8 = noexec shell patch (bash tool runs non-exec paths via their interpreter); 7 = Phase 9: bare OPENCODE_VERSION + pre-seeded @opencode-ai/plugin tree (plugin-seed/); 6 = bare version only; 5 = Phase 5 launcher/Keystore layout
+PAYLOAD_VERSION=10  # 10 = switch-over: Node 26 + v2 bundle + usr/ tool data only; was 9 = launcher takes the server password on stdin (not in env) + config guard (permission-guard.ts); 8 = noexec shell patch (bash tool runs non-exec paths via their interpreter); 7 = Phase 9: bare OPENCODE_VERSION + pre-seeded @opencode-ai/plugin tree (plugin-seed/); 6 = bare version only; 5 = Phase 5 launcher/Keystore layout
 STATUS="$ENGINE/build.status"
 : > "$STATUS"
 note() { echo "$*" | tee -a "$STATUS"; }
@@ -88,33 +92,6 @@ note() { echo "$*" | tee -a "$STATUS"; }
 SEAL_PY="$DIR/scripts/12-seal-payload.py"
 python3 "$SEAL_PY" --self-test | tee -a "$STATUS" || { note "FATAL: 12-seal-payload.py self-test failed"; exit 1; }
 
-export PATH="$HOME/.bun/bin:$PATH"
-
-note "=== [1/6] bun host (for building the bundle) ==="
-if ! command -v bun >/dev/null 2>&1; then
-  curl -fsSL --retry 3 --max-time 180 -o "$WORK/bun-host.tgz" \
-    "https://registry.npmjs.org/@oven/bun-linux-x64/-/bun-linux-x64-${BUN_PIN}.tgz"
-  mkdir -p "$HOME/.bun/bin" "$WORK/bh" && tar xzf "$WORK/bun-host.tgz" -C "$WORK/bh"
-  mv "$WORK/bh/package/bin/bun" "$HOME/.bun/bin/bun" && chmod +x "$HOME/.bun/bin/bun"
-fi
-bun --version | tee -a "$STATUS"
-
-note "=== [2/6] Bun-for-Android (bionic) per ABI ==="
-fetch_bun_android() {  # $1=npm-arch  $2=dest-so
-  local arch="$1" dest="$2"
-  curl -fsSL --retry 3 --max-time 240 -o "$WORK/bun-$arch.tgz" \
-    "https://registry.npmjs.org/@oven/bun-linux-${arch}-android/-/bun-linux-${arch}-android-${BUN_PIN}.tgz"
-  mkdir -p "$WORK/bun-$arch" && tar xzf "$WORK/bun-$arch.tgz" -C "$WORK/bun-$arch"
-  cp "$WORK/bun-$arch/package/bin/bun" "$dest"
-  chmod 755 "$dest"
-  note "bun $arch -> $dest ($(stat -c%s "$dest") bytes)"
-}
-for abi in "${ABIS[@]}"; do
-  case "$abi" in
-    x86_64)   fetch_bun_android "x64" "$ENGINE/jniLibs/x86_64/libbun.so" ;;
-    arm64-v8a) fetch_bun_android "aarch64" "$ENGINE/jniLibs/arm64-v8a/libbun.so" ;;
-  esac
-done
 
 note "=== [2b/6] seccomp compatibility shim per ABI (NDK clang) ==="
 # Android's per-app seccomp filter kills newer syscalls with SIGSYS instead of
@@ -637,142 +614,12 @@ for abi in "${ABIS[@]}"; do
   esac
 done
 
-note "=== [5/6] OpenCode server bundle @ $PINNED_COMMIT (pinned, fail-loud) ==="
-rm -rf "$WORK/opencode"
-timeout 300 git clone -q --depth 1 --branch dev https://github.com/anomalyco/opencode "$WORK/opencode"
-if ! ( cd "$WORK/opencode" && git fetch -q --depth 1 origin "$PINNED_COMMIT" && git checkout -q FETCH_HEAD ); then
-  note "FATAL: pinned commit $PINNED_COMMIT not found upstream (report as blocker)"; exit 1
-fi
-GOT_COMMIT="$(cd "$WORK/opencode" && git rev-parse HEAD)"
-note "upstream commit: $GOT_COMMIT"
-[ "$GOT_COMMIT" = "$PINNED_COMMIT" ] || { note "FATAL: checked out $GOT_COMMIT != pin $PINNED_COMMIT"; exit 1; }
-# Owner 2026-10-31: shims must work in every folder. Route non-executable
-# path-like commands (noexec shared storage) through their interpreter. Fails
-# the build loudly if upstream moved the anchors. See payload/patches/.
-python3 "$DIR/payload/patches/apply-noexec-shell.py" "$WORK/opencode" \
-  || { note "FATAL: noexec shell patch did not apply"; exit 1; }
-# Config guard (payload/patches/permission-guard.ts): a session "allow for session"
-# must not cover writes to opencode.json / .mcp.json / .opencode, or shell and
-# external-directory requests that name them (they always prompt). Fails loudly.
-python3 "$DIR/payload/patches/apply-permission-guard.py" "$WORK/opencode" \
-  || { note "FATAL: permission guard patch did not apply"; exit 1; }
-curl -fsSL --max-time 90 -o "$WORK/models-dev.json" "https://models.dev/api.json" \
-  || echo '{}' > "$WORK/models-dev.json"
-if ! ( cd "$WORK/opencode" && timeout 600 bun install >/tmp/p4-bun-install.log 2>&1 ); then
-  note "bun install failed; dropping web-only package deps (Phase 3 recipe) and retrying"
-  python3 - "$WORK/opencode" <<'EOF'
-import json, os, sys
-root = sys.argv[1]
-WEB_ONLY = [
- "packages/app/package.json","packages/console/app/package.json",
- "packages/console/support/package.json","packages/stats/app/package.json",
- "packages/enterprise/package.json","packages/storybook/package.json",
- "packages/session-ui/package.json","packages/docs/package.json",
-]
-for rel in WEB_ONLY:
-    p = os.path.join(root, rel)
-    if not os.path.exists(p): continue
-    d = json.load(open(p))
-    for sec in ("dependencies","optionalDependencies","devDependencies","peerDependencies"):
-        d.pop(sec, None)
-    json.dump(d, open(p,"w"), indent=2); open(p,"a").write("\n")
-d = json.load(open(os.path.join(root,"package.json")))
-for k,v in list(d.get("catalog",{}).items()):
-    if isinstance(v,str) and "://" in v: del d["catalog"][k]
-json.dump(d, open(os.path.join(root,"package.json"),"w"), indent=2)
-open(os.path.join(root,"package.json"),"a").write("\n")
-EOF
-  rm -f "$WORK/opencode/bun.lock"
-  ( cd "$WORK/opencode" && timeout 600 bun install --ignore-scripts >>/tmp/p4-bun-install.log 2>&1 ) \
-    || { note "FATAL: bun install retry failed"; tail -5 /tmp/p4-bun-install.log | tee -a "$STATUS"; exit 1; }
-fi
-( cd "$WORK/opencode/packages/opencode" && MODELS_DEV_API_JSON="$WORK/models-dev.json" timeout 300 bun -e '
-const generated = { modelsData: await Bun.file(process.env.MODELS_DEV_API_JSON || "/dev/null").text() };
-await Bun.build({
-  target: "bun",
-  entrypoints: ["./src/node.ts"],
-  outdir: "./dist/p4",
-  format: "esm",
-  // Do not ship a production source map. The previous linked map was the
-  // single largest data-payload file: 54,934,336 bytes versus 34,386,968 for
-  // the executable JS bundle itself. It is developer-only diagnostic input;
-  // neither Bun nor OpenCode needs it to run, and all runtime/device gates
-  // exercise this exact no-map bundle before release.
-  sourcemap: "none",
-  external: ["jsonc-parser", "@lydell/node-pty", "bun-pty"],
-  define: {
-    OPENCODE_MODELS_DEV: generated.modelsData,
-    // PHASE 9 FIX (carried bug): the runtime reports InstallationVersion verbatim
-    // and upstream config.ts installs `@opencode-ai/plugin@<InstallationVersion>`
-    // into every config dir whenever the channel is not "local". npm publishes
-    // 1.18.23 but no "1.18.23-android", so every plugin install failed
-    // (NpmInstallFailedError, Phase 8 §11). The version string must be the bare
-    // upstream semver; the Android provenance lives in OPENCODE_CHANNEL (which
-    // upstream only uses for isPreview()/user-agent - it is not part of the
-    // npm spec) and in the runtime manifest.
-    OPENCODE_VERSION: `"1.18.23"`,
-    OPENCODE_CHANNEL: `"android"`,
-  },
-  files: { "opencode-web-ui.gen.ts": "" },
-});
-console.log("bundle build complete");
-' ) | tee -a "$STATUS"
-
-note "=== [6/6] stage payload, compute manifest ==="
+note "=== [6/6] stage tool data (usr/) ==="
+# The v2 server is not staged here: it is node26-v2.zip (copied below). Everything
+# this step stages lives under usr/ (Python stdlib, npm data, shell/coreutils data).
 STAGE="$WORK/payload"
-mkdir -p "$STAGE/opencode/dist/node" "$STAGE/node_modules/jsonc-parser" \
-         "$STAGE/node_modules/@lydell/node-pty" "$STAGE/node_modules/bun-pty"
-cp "$WORK/opencode/packages/opencode/dist/p4/node.js" "$STAGE/opencode/dist/node/node.js"
-cp "$WORK/opencode/packages/opencode/dist/p4/"*.wasm "$STAGE/opencode/dist/node/" 2>/dev/null || true
-cp "$WORK/opencode/packages/opencode/dist/p4/"*.map "$STAGE/opencode/dist/node/" 2>/dev/null || true
-# jsonc-parser (externalized dep) + PTY stubs (documented degradation: bash tool
-# needs no PTY — Phase 3 verified tool/bash.ts uses stdio pipes).
-curl -fsSL --retry 3 --max-time 120 -o "$WORK/jc.tgz" \
-  "https://registry.npmjs.org/jsonc-parser/-/jsonc-parser-3.3.1.tgz"
-mkdir -p "$WORK/jc" && tar xzf "$WORK/jc.tgz" -C "$WORK/jc" --strip-components=1
-cp -r "$WORK/jc/." "$STAGE/node_modules/jsonc-parser/"
-cat > "$STAGE/node_modules/@lydell/node-pty/package.json" <<'EOF'
-{ "name": "@lydell/node-pty", "version": "0.0.0-stub", "main": "index.js", "type": "commonjs" }
-EOF
-cat > "$STAGE/node_modules/@lydell/node-pty/index.js" <<'EOF'
-// Stub: node-pty has no Android build. Interactive terminal degrades at use-time.
-// The bash tool spawns the shell with stdio pipes (no PTY) — Phase 3 verified.
-module.exports = { spawn() { throw new Error("node-pty unavailable on Android (stub)"); } };
-EOF
-cat > "$STAGE/node_modules/bun-pty/package.json" <<'EOF'
-{ "name": "bun-pty", "version": "0.0.0-stub", "main": "index.js", "type": "commonjs" }
-EOF
-cat > "$STAGE/node_modules/bun-pty/index.js" <<'EOF'
-module.exports = { spawn() { throw new Error("bun-pty unavailable on Android (stub)"); } };
-EOF
-cp "$DIR/payload/launcher.js" "$STAGE/launcher.js"
-
-# Phase 9: pre-seed @opencode-ai/plugin@<pinned> for the global config dir.
-# Upstream (config.ts) forks `npm install @opencode-ai/plugin@<OPENCODE_VERSION>`
-# into every config dir on instance load unless node_modules already exists and
-# package-lock.json covers the package (core/src/npm.ts Npm.install). With the
-# bare version define the install now runs on-device - and Arborist trips a
-# syscall Android's app seccomp filter kills (SIGSYS, exit 159; Phase 9 CI run
-# 35132822991 saw 113 crash/restart cycles). Shipping the installed tree means
-# the on-device npm path is never entered for the default plugin set, and the
-# plugin API works offline. The extractor promotes plugin-seed/ into
-# xdg/config/opencode/ (never overwriting a user's opencode.json).
-note "=== plugin seed: @opencode-ai/plugin@${OPENCODE_VERSION_BARE:-1.18.23} ==="
-SEED="$WORK/plugin-seed"
-rm -rf "$SEED" && mkdir -p "$SEED"
-( cd "$SEED" \
-  && printf '{ "name": "opencode-android-config", "private": true, "version": "0.0.0" }\n' > package.json \
-  && npm install --ignore-scripts --no-audit --no-fund --no-bin-links --save-exact \
-       "@opencode-ai/plugin@${OPENCODE_VERSION_BARE:-1.18.23}" >> "$STATUS" 2>&1 \
-  && find node_modules \( -name '*.d.ts' -o -name '*.d.mts' -o -name '*.d.cts' -o -name '*.map' \
-        -o -name '*.md' -o -name 'LICENSE*' -o -name '*.ts' -o -name '*.mts' -o -name '*.cts' \) -type f -delete \
-  && rm -rf node_modules/.bin node_modules/@msgpackr-extract \
-  && find node_modules -type l -delete \
-  && find node_modules -type d -empty -delete )
-[ -f "$SEED/node_modules/@opencode-ai/plugin/package.json" ] || { note "plugin seed FAILED"; exit 1; }
-mkdir -p "$STAGE/plugin-seed"
-cp -r "$SEED/node_modules" "$SEED/package.json" "$SEED/package-lock.json" "$STAGE/plugin-seed/"
-note "plugin seed: $(find "$STAGE/plugin-seed" -type f | wc -l) files, $(du -sk "$STAGE/plugin-seed" | cut -f1) KB, plugin $(python3 -c 'import json;print(json.load(open("'"$STAGE"'/plugin-seed/node_modules/@opencode-ai/plugin/package.json"))["version"])')"
+mkdir -p "$STAGE"
+GOT_COMMIT="$V2_COMMIT"
 
 # Pack the data payload only after EVERY producer has populated STAGE. This is
 # a function, rather than work done here, because Python's stdlib is added much
@@ -786,7 +633,7 @@ pack_runtime_payload() {
   # prefix field, while GNU long-name extension records are deliberately
   # skipped. npm adds paths over 100 bytes; those entries were absent after
   # extraction on board 40285201790 even though the manifest had the full name.
-  ( cd "$STAGE" && find . -type f | sed 's|^\./||' | sort \
+  ( cd "$STAGE" && find usr -type f | sed 's|^\./||' | sort \
       | tar --format=ustar --owner=0 --group=0 --numeric-owner --no-recursion -T - -cf - \
       | gzip -9n > "$payload_tgz" )
   payload_sha="$(sha256sum "$payload_tgz" | cut -d' ' -f1)"
@@ -797,17 +644,16 @@ pack_runtime_payload() {
 import hashlib, json, os, sys
 stage, out, payload_sha, commit = sys.argv[1:5]
 files = {}
-for dirpath, _, names in os.walk(stage):
+for dirpath, _, names in os.walk(os.path.join(stage, "usr")):
     for n in names:
         p = os.path.join(dirpath, n)
         rel = os.path.relpath(p, stage)
         data = open(p, "rb").read()
         files[rel] = {"sha256": hashlib.sha256(data).hexdigest(), "size": len(data)}
 manifest = {
-    "payloadVersion": int(os.environ.get("PAYLOAD_VERSION", "9")),
+    "payloadVersion": int(os.environ.get("PAYLOAD_VERSION", "10")),
     "opencodeCommit": commit,
-    "opencodeVersion": "1.18.23",
-    "bunVersion": "1.3.14",
+    "opencodeVersion": "2.2.5",
     "gitVersion": "v2.48.1",
     "rgVersion": "15.1.0",
     "payloadSha256": payload_sha,
@@ -1447,12 +1293,30 @@ build_python_stdlib || exit 1
 
 # Node is the last large budget decision. Build it after Python is proven so a
 # V8 failure cannot erase the smaller, already-working language runtime.
-for abi in "${ABIS[@]}"; do
-  case "$abi" in
-    x86_64)    build_node "$abi" "x86_64-linux-android" "x64" "x64" ;;
-    arm64-v8a) build_node "$abi" "aarch64-linux-android" "arm64" "arm64" ;;
-  esac
-done
+# Node 26 (switch-over, owner 2026-11-16: Node 24 removed). The binary is the
+# spike/node26 build, handed over in NODE26_BIN (CI restores it from cache).
+# npm/npx are data run through libnpmcli.so, which execs libnode26.so.
+stage_node26() {
+  local out="$ENGINE/jniLibs/arm64-v8a" cc="$NDK_BIN/aarch64-linux-android29-clang"
+  [ -n "${NODE26_BIN:-}" ] && [ -f "$NODE26_BIN" ] \
+    || { note "FATAL: NODE26_BIN is not set to a Node 26 Android binary (see spike/node26/build-node26-android.sh)"; return 1; }
+  mkdir -p "$out"
+  cp "$NODE26_BIN" "$out/libnode26.so"
+  chmod 755 "$out/libnode26.so"
+  note "node26: $(stat -c%s "$out/libnode26.so") bytes from $NODE26_BIN"
+  if "$NDK_BIN/llvm-readelf" -d "$out/libnode26.so" | grep -q 'libc++_shared.so'; then
+    local cxx="${NODE26_LIBCXX:-$(dirname "$NODE26_BIN")/libc++_shared.so}"
+    [ -f "$cxx" ] || { note "FATAL: libnode26.so needs libc++_shared.so and $cxx is missing"; return 1; }
+    cp "$cxx" "$out/libc++_shared.so"; chmod 755 "$out/libc++_shared.so"
+  fi
+  [ -x "$cc" ] || { note "FATAL: NDK clang missing: $cc"; return 1; }
+  "$cc" -O2 -fPIE -pie -Wl,-z,max-page-size=16384 \
+    -o "$out/libnpmcli.so" "$NATIVE_SRC/npm-shim.c" || { note "FATAL: npm shim build failed"; return 1; }
+  "$NDK_BIN/llvm-strip" "$out/libnpmcli.so"
+  chmod 755 "$out/libnpmcli.so"
+  note "npm shim: $(stat -c%s "$out/libnpmcli.so") bytes (execs libnode26.so)"
+}
+stage_node26 || exit 1
 build_node_npm_data || exit 1
 
 # OpenSSH is the last core-tier tool. Its client suite is source-built after
@@ -1466,6 +1330,11 @@ done
 
 # This MUST be after every data producer: Python's zip and npm's JS tree live
 # in usr/. Packing earlier silently omits them even though STAGE looks complete.
+# The v2 server bundle (release mode of spike/opencode-v2/build-v2-bundle.sh).
+[ -n "${V2_ZIP:-}" ] && [ -f "$V2_ZIP" ] \
+  || { note "FATAL: V2_ZIP is not set to node26-v2.zip (release mode bundle)"; exit 1; }
+cp "$V2_ZIP" "$ENGINE/assets/node26-v2.zip"
+note "node26-v2.zip: $(stat -c%s "$ENGINE/assets/node26-v2.zip") bytes"
 pack_runtime_payload || exit 1
 # Do not trust STAGE alone: the bug on two consecutive boards was exactly that
 # the file existed there but the already-built APK payload did not contain it.
@@ -1489,7 +1358,7 @@ EOF
 READELF="$NDK_BIN/llvm-readelf"
 [ -x "$READELF" ] || READELF="$(command -v llvm-readelf readelf | head -1)"
 for abi in "${ABIS[@]}"; do
-  for so in libmksh.so libtoybox.so libjq.so libpython3.so libnode.so libnpmcli.so libwget.so \
+  for so in libmksh.so libtoybox.so libjq.so libpython3.so libnode26.so libnpmcli.so libwget.so \
             libcrypto.so libsshclient.so libscp.so libsftp.so libsshadd.so \
             libsshagent.so libsshkeygen.so libsshkeyscan.so; do
     "$READELF" -h "$ENGINE/jniLibs/$abi/$so" 2>&1 | tee -a "$STATUS" | grep -q 'DYN' \
@@ -1499,13 +1368,13 @@ done
 
 # The sealed exec records: the runtime's five tools, then the shell, then every
 # command toybox built. One line each, "<prefix path> <TAB> <library>".
-printf 'bin/bun\tlibbun.so\nbin/git\tlibgit.so\nbin/rg\tlibrg.so\n' \
+printf 'bin/git\tlibgit.so\nbin/rg\tlibrg.so\n' \
   > "$SEALED_EXEC_RECORDS"
 printf 'bin/curl\tlibcurl.so\nbin/wget\tlibwget.so\nbin/jq\tlibjq.so\n' >> "$SEALED_EXEC_RECORDS"
 # `python` and `python3` are both expected by scripts in the wild; one binary,
 # two names, exactly as upstream installs it.
 printf 'bin/python3\tlibpython3.so\nbin/python\tlibpython3.so\n' >> "$SEALED_EXEC_RECORDS"
-printf 'bin/node\tlibnode.so\nbin/npm\tlibnpmcli.so\nbin/npx\tlibnpmcli.so\n' >> "$SEALED_EXEC_RECORDS"
+printf 'bin/node\tlibnode26.so\nbin/npm\tlibnpmcli.so\nbin/npx\tlibnpmcli.so\n' >> "$SEALED_EXEC_RECORDS"
 printf 'bin/ssh\tlibsshclient.so\nbin/scp\tlibscp.so\nbin/sftp\tlibsftp.so\n' >> "$SEALED_EXEC_RECORDS"
 printf 'bin/ssh-add\tlibsshadd.so\nbin/ssh-agent\tlibsshagent.so\n' >> "$SEALED_EXEC_RECORDS"
 printf 'bin/ssh-keygen\tlibsshkeygen.so\nbin/ssh-keyscan\tlibsshkeyscan.so\n' >> "$SEALED_EXEC_RECORDS"
