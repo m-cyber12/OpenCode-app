@@ -16,7 +16,6 @@
 # package manager extracts them to nativeLibraryDir (exec-allowed under W^X).
 #
 # Recipes reused from the Phase 3 gate suite (do NOT re-solve):
-#   * bun-for-Android: official @oven/bun-*-android npm tarballs (bionic ELF)
 #   * Git: build the Makefile directly with NO_PERL=YesPlease using the Android
 #     NDK/Bionic toolchain. A Bionic-linked executable is intentional: Android's
 #     zygote seccomp policy is designed for Bionic and kills static-musl children
@@ -36,6 +35,10 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 if [ "$#" -gt 0 ]; then ABIS=("$@"); else ABIS=(arm64-v8a); fi
+# Owner decision (2026-11-16): arm64-v8a is the only ABI. Anything else stops here.
+for _abi in "${ABIS[@]}"; do
+  [ "$_abi" = "arm64-v8a" ] || { echo "FATAL: unsupported ABI '$_abi' (arm64-v8a only)"; exit 1; }
+done
 for abi in "${ABIS[@]}"; do
   case "$abi" in
     arm64-v8a) ;;
@@ -45,7 +48,7 @@ done
 # Never let a partial or previous invocation silently supply an ABI artifact
 # that this invocation did not build.
 rm -rf "$ENGINE"
-mkdir -p "$ENGINE/jniLibs/arm64-v8a" "$ENGINE/jniLibs/x86_64" "$ENGINE/assets"
+mkdir -p "$ENGINE/jniLibs/arm64-v8a" "$ENGINE/assets"
 
 
 PINNED_COMMIT="05ea5073be967c779d326929b2de6228dda4159d"
@@ -96,7 +99,7 @@ python3 "$SEAL_PY" --self-test | tee -a "$STATUS" || { note "FATAL: 12-seal-payl
 note "=== [2b/6] seccomp compatibility shim per ABI (NDK clang) ==="
 # Android's per-app seccomp filter kills newer syscalls with SIGSYS instead of
 # ENOSYS (observed x86_64 epoll_pwait2=441). The shim installs a SIGSYS
-# handler mapping them to ENOSYS so Bun's fallbacks engage. Built from
+# handler mapping them to ENOSYS so the runtime's own fallbacks engage. Built from
 # phase4/payload/native/seccomp-shim.c into jniLibs as libseccompshim.so; the
 # launcher dlopens it (OPENCODE_SECCOMP_SHIM -> nativeLibraryDir).
 NATIVE_SRC="$DIR/payload/native"
@@ -131,10 +134,12 @@ if [ -z "$NDK_BIN" ] || [ ! -x "$NDK_BIN/clang" ]; then
 fi
 note "NDK clang dir: $NDK_BIN"
 # Build both native helpers per ABI:
-#   libseccompshim.so  shared lib; LD_PRELOADed into bun; its constructor
-#                      installs the SIGSYS->ENOSYS handler before bun init.
-#   libexecshim.so     PIE executable (the actual server entrypoint) that sets
-#                      LD_PRELOAD and execv()s libbun.so. Shipped/exec'd from
+#   libseccompshim.so  shared lib; its constructor installs the SIGSYS->ENOSYS
+#                      handler when preloaded, before the runtime initializes.
+#   libexecshim.so     PIE executable from the v1 launch path (sets LD_PRELOAD and
+#                      execv()s the old Bun binary). The v2 app launches libnode26.so
+#                      directly and never runs it; it is still packaged, so removing
+#                      it needs a device check first. Shipped/exec'd from
 #                      nativeLibraryDir (W^X allows execution there).
 build_native() {  # $1=abi  $2=target-triple
   local abi="$1" triple="$2" outdir="$ENGINE/jniLibs/$abi"
@@ -189,7 +194,6 @@ build_native() {  # $1=abi  $2=target-triple
 }
 for abi in "${ABIS[@]}"; do
   case "$abi" in
-    x86_64)    build_native "x86_64" "x86_64-linux-android" ;;
     arm64-v8a) build_native "arm64-v8a" "aarch64-linux-android" ;;
   esac
 done
@@ -555,7 +559,6 @@ build_git_android() {  # $1=abi $2=target triple $3=lib dir
 
 for abi in "${ABIS[@]}"; do
   case "$abi" in
-    x86_64)    build_git_android "x86_64" "x86_64-linux-android" "$ENGINE/jniLibs/x86_64" ;;
     arm64-v8a) build_git_android "arm64-v8a" "aarch64-linux-android" "$ENGINE/jniLibs/arm64-v8a" ;;
   esac
 done
@@ -590,7 +593,7 @@ build_rg_android() {  # $1=abi $2=rust target $3=ndk triple
     cp "target/$target/release/rg" "$outdir/librg.so"
   ) || { note "FATAL: Android ripgrep build failed for $abi"; return 1; }
   # Cargo's release profile still left the full Rust/DWARF symbol payload in
-  # both shipped binaries (~35 MiB arm64, ~36 MiB x86_64). Those symbols are
+  # the shipped binary (~35 MiB arm64). Those symbols are
   # never read by Android or rg and `file` proved the old APK said
   # "with debug_info, not stripped". Every other large source-built runtime is
   # stripped already. Strip rg with the pinned NDK tool too, then fail rather
@@ -609,7 +612,6 @@ build_rg_android() {  # $1=abi $2=rust target $3=ndk triple
 
 for abi in "${ABIS[@]}"; do
   case "$abi" in
-    x86_64)    build_rg_android "x86_64" "x86_64-linux-android" "x86_64-linux-android" ;;
     arm64-v8a) build_rg_android "arm64-v8a" "aarch64-linux-android" "aarch64-linux-android" ;;
   esac
 done
@@ -674,7 +676,7 @@ EOF
 # ---------------------------------------------------------------------------
 note "=== [6.5/6] sealed userland core: a shell and the coreutils (v9.42 slice C2) ==="
 # Why these two, and why they are the cheapest honest answer to "full tools".
-# The agent has no shell and no coreutils today: the runtime is bun, git and
+# The agent has no shell and no coreutils today: the runtime is Node, git and
 # ripgrep, and the environment brief tells the model so. toybox is AOSP's own
 # toolbox - maintained FOR bionic, every command in one ELF that dispatches on
 # argv[0], so ~190 tools cost one binary and one symlink each - and mksh was
@@ -798,7 +800,6 @@ build_jq() {  # $1=abi $2=triple
 
 for abi in "${ABIS[@]}"; do
   case "$abi" in
-    x86_64)    build_mksh "$abi" "x86_64-linux-android";  build_toybox "$abi" "x86_64-linux-android" ;;
     arm64-v8a) build_mksh "$abi" "aarch64-linux-android"; build_toybox "$abi" "aarch64-linux-android" ;;
   esac
 done
@@ -937,212 +938,11 @@ build_python_stdlib() {
 }
 
 # ---------------------------------------------------------------------------
-# Node 24: a REAL Android/Bionic executable, not the 4 KiB-aligned libnode from
-# nodejs-mobile (which cannot run on 16 KiB-page devices and has no main()).
-# Upstream labels Android unsupported, so use the pinned Termux Android fixes
-# current for this exact Node release. Dependencies stay bundled. ICU is FULL
-# (--with-intl=full-icu, from the ICU sources and data bundled in the Node
-# tarball): RegExp \p{L} and Intl need it, and the owner accepted the larger
-# APK for that (owner, 2026-10-28). Inspector, snapshots and code cache stay
-# omitted: this is the user's CLI tool, not the OpenCode server (Bun remains
-# the server in additive step 1).
-#
-# A source build remains the authoritative recipe, and a full-icu V8 build is
-# slower than the no-Intl one that the previous -v1 cache came from, so one job
-# cannot build both ABIs. The cache is therefore bootstrapped one ABI per
-# CI run: P4_NODE_CAPTURE_STOP=1 (set by phase10/scripts/00-run-phase10.sh)
-# builds the first missing ABI, captures it as sub-2 MiB chunks under
-# docs/progress/phase10-evidence (the always post-step commits that directory,
-# even when a runner is cancelled), and stops with NODE_CACHE_BOOTSTRAP_CAPTURED.
-# Once both ABIs are captured, later runs restore them and build the full APK.
-# Set P4_REBUILD_NODE=1 to ignore the cache and reproduce from source.
-# ---------------------------------------------------------------------------
-# RULE (owner, 2026-10-30): do not change NODE_PIN, NDK_PIN, NODE_TERMUX_PATCH_PIN or the
-# -icufull-v2 tag without a planned bootstrap. A new key means no committed cache, so each
-# ABI is built from source (about 3 h, one ABI per run). phase10/scripts/30-static-checks.sh
-# prints a WARN line for each ABI that has no committed cache for the current key.
-NODE_CACHE_KEY="node-${NODE_PIN}-ndk${NDK_PIN}-termux-${NODE_TERMUX_PATCH_PIN:0:12}-icufull-v2"
-NODE_PREBUILT_ROOT="$DIR/prebuilt/$NODE_CACHE_KEY"
-NODE_BOOTSTRAP_ROOT="$DIR/../docs/progress/phase10-evidence/node-cache/$NODE_CACHE_KEY"
-
-restore_node_cache() {  # $1=abi
-  local abi="$1" outdir="$ENGINE/jniLibs/$abi" root="" archive="$WORK/node-cache-$abi.tgz"
-  for root in "$NODE_PREBUILT_ROOT/$abi" "$NODE_BOOTSTRAP_ROOT/$abi"; do
-    [ -f "$root/archive.sha256" ] || continue
-    compgen -G "$root/node-runtime.tgz.part-*" >/dev/null || continue
-    cat "$root"/node-runtime.tgz.part-* > "$archive"
-    [ "$(sha256sum "$archive" | cut -d' ' -f1)" = "$(cat "$root/archive.sha256")" ] \
-      || { note "FATAL: Node prebuilt archive checksum failed for $abi ($root)"; return 1; }
-    tar xzf "$archive" -C "$outdir"
-    [ -x "$outdir/libnode.so" ] && [ -x "$outdir/libnpmcli.so" ] \
-      || { note "FATAL: Node cache for $abi lacks executable outputs"; return 1; }
-    if "$NDK_BIN/llvm-readelf" -d "$outdir/libnode.so" | grep -q 'libc++_shared.so'; then
-      [ -f "$outdir/libc++_shared.so" ] \
-        || { note "FATAL: Node cache for $abi lacks libc++_shared.so"; return 1; }
-    fi
-    local machine=""
-    machine=$("$NDK_BIN/llvm-readelf" -h "$outdir/libnode.so" | sed -n 's/.*Machine:[[:space:]]*//p')
-    case "$abi:$machine" in
-      arm64-v8a:AArch64|x86_64:*X86-64*) ;;
-      *) note "FATAL: Node cache machine mismatch for $abi: $machine"; return 1 ;;
-    esac
-    note "node $abi: restored verified $NODE_CACHE_KEY ($(stat -c%s "$outdir/libnode.so") bytes)"
-    return 0
-  done
-  return 2
-}
-
-capture_node_cache() {  # $1=abi
-  local abi="$1" outdir="$ENGINE/jniLibs/$abi" root="$NODE_BOOTSTRAP_ROOT/$abi"
-  local archive="$WORK/node-runtime-$abi.tgz" files="libnode.so libnpmcli.so"
-  [ -f "$outdir/libc++_shared.so" ] && files="$files libc++_shared.so"
-  rm -rf "$root" && mkdir -p "$root"
-  ( cd "$outdir" && tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner \
-      -cf - $files | gzip -9n > "$archive" )
-  sha256sum "$archive" | cut -d' ' -f1 > "$root/archive.sha256"
-  split -b 1900k -d -a 3 "$archive" "$root/node-runtime.tgz.part-"
-  ( cd "$outdir" && sha256sum $files ) > "$root/files.sha256"
-  cat > "$root/README.txt" <<EOF
-Generated from the pinned source recipe in phase4/scripts/10-build-payload.sh.
-cache=$NODE_CACHE_KEY
-abi=$abi
-source_run_rebuild=P4_REBUILD_NODE=1
-EOF
-  note "node $abi cache bootstrap: $(du -sk "$root" | cut -f1) KB in $(find "$root" -name 'node-runtime.tgz.part-*' | wc -l) chunks"
-}
-
-build_node() {  # $1=abi $2=target triple $3=node dest cpu $4=gyp arch
-  local abi="$1" triple="$2" destcpu="$3" gyparch="$4"
-  local outdir="$ENGINE/jniLibs/$abi" src="$WORK/node-$abi"
-  local cc="$NDK_BIN/${triple}29-clang" cxx="$NDK_BIN/${triple}29-clang++"
-  local hostcc="$(command -v gcc cc | head -1)" hostcxx="$(command -v g++ c++ | head -1)"
-  local zprefix="$WORK/zlib-$abi-android" ninja=""
-  local ndkhome=""
-  ndkhome="$(cd "$NDK_BIN/../../../../.." && pwd)"
-  ninja="$(command -v ninja 2>/dev/null || true)"
-  if [ -z "$ninja" ]; then
-    ninja="$(find "$(dirname "$NDK_ROOT")" -type f -name ninja -perm -111 2>/dev/null | sort -r | head -1)"
-  fi
-  [ -x "$ninja" ] || { note "FATAL: Node needs Ninja (not found on PATH or under Android SDK)"; return 1; }
-  local patchdir="$WORK/termux-node-patches"
-  note "--- Node $NODE_PIN ($abi, Android/Bionic, full-icu, no inspector/snapshot) ---"
-  if [ "${P4_REBUILD_NODE:-0}" != "1" ]; then
-    if restore_node_cache "$abi"; then
-      return 0
-    else
-      local cache_rc=$?
-      [ "$cache_rc" = "2" ] \
-        || { note "FATAL: unusable Node cache for $abi"; return 1; }
-      note "node $abi: no prebuilt cache; reproducing from pinned source"
-    fi
-  else
-    note "node $abi: P4_REBUILD_NODE=1; reproducing from pinned source"
-  fi
-  [ -f "$zprefix/lib/libz.a" ] \
-    || { note "FATAL: Node needs the already-built zlib archive for $abi"; return 1; }
-  rm -rf "$src" && mkdir -p "$src"
-  tar xzf "$WORK/node.tgz" -C "$src" --strip-components=1
-
-  # Build/runtime fixes only; test patches do not belong in the shipped source.
-  local patches="avoid-ficlone-ioctl.patch common.gypi.patch \
-deps-uv-src-unix-core.c.patch deps-uv-src-unix-process.c.patch deps-uv-uv.gyp.patch \
-deps-uvwasi-src-uvwasi.c.patch deps-v8-src-flags-flag-definitions.h.patch \
-deps-v8-src-trap-handler-trap-handler.h.patch fix_multiple_definitions.patch \
-lib-child_process.js.patch lib-os.js.patch node.gyp.patch src-debug_utils.cc.patch \
-src-getaddrinfo.patch src-node_internals.h.patch src-node_report.cc.patch \
-tools-gyp-pylib-gyp-generator-ninja.py.patch tools-v8_gypfiles-toolchain.gypi.patch \
-tools-v8_gypfiles-v8.gyp.patch"
-  ( cd "$src"
-    for p in $patches; do
-      patch -p1 -s < "$patchdir/$p" \
-        || { echo "Node patch failed: $p" >&2; exit 1; }
-    done
-    # Termux's compile-time prefix is dynamic in this app (debug and release
-    # application ids differ). TMPDIR is always supplied by RuntimeEnv; these
-    # strings are only unreachable fallbacks/perf-output defaults. child_process
-    # is different: honour the sealed SHELL at runtime instead of baking a path.
-    grep -rl '@TERMUX_PREFIX@' deps lib src tools 2>/dev/null \
-      | xargs -r sed -i 's|@TERMUX_PREFIX@|/data/local/tmp/opencode|g'
-    sed -i "s@file = '/data/local/tmp/opencode/bin/sh';@file = process.env.SHELL || '/system/bin/sh';@" lib/child_process.js
-
-    export PATH="$NDK_BIN:$PATH"
-    export CC="$cc" CXX="$cxx" LINK="$cxx"
-    export CC_host="$hostcc" CXX_host="$hostcxx" LINK_host="$hostcxx"
-    export CFLAGS="-O2 -fPIE -D__TERMUX__"
-    export CXXFLAGS="-O2 -fPIE -D__TERMUX__"
-    export LDFLAGS="-pie -Wl,-z,max-page-size=16384"
-    export GYP_DEFINES="target_arch=$gyparch v8_target_arch=$gyparch android_target_arch=$gyparch host_os=linux OS=android android_ndk_path=$ndkhome"
-    /usr/bin/python3 configure.py \
-      --dest-cpu="$destcpu" --dest-os=android --cross-compiling \
-      --openssl-no-asm --with-intl=full-icu --without-inspector \
-      --without-node-snapshot --without-node-code-cache \
-      --shared-zlib --shared-zlib-includes="$zprefix/include" \
-      --shared-zlib-libpath="$zprefix/lib" \
-      --without-npm --without-corepack --ninja >/dev/null
-    # Cross-configure leaks external target dependency paths into HOST tools.
-    # node_js2c is an x86_64 runner executable; feeding its host linker the
-    # arm64 libz.a produced board 40214575682's "incompatible with elf64-x86-64".
-    # Remove only the target -I/-L from Ninja's obj.host rules. `-lz` remains,
-    # so the host resolves Ubuntu zlib while target rules retain our archive.
-    find out/Release/obj.host -name '*.ninja' -type f -exec \
-      sed -i -e "s|-I$zprefix/include||g" -e "s|-L$zprefix/lib||g" {} +
-    if find out/Release/obj.host -name '*.ninja' -type f -exec grep -lF "$zprefix" {} + | grep -q .; then
-      echo "target zlib path survived in a Node host Ninja rule" >&2
-      exit 1
-    fi
-    # ninja's output goes to a file the workflow copies into the evidence, so a
-    # build that is cancelled or fails leaves its last steps behind (run 40868426546
-    # was cancelled 2h40m into this step and left no trace of where it was).
-    timeout 10800 "$ninja" -C out/Release -j4 > "$ENGINE/node-ninja-$abi.log" 2>&1
-  ) || { tail -n 80 "$ENGINE/node-ninja-$abi.log" 2>/dev/null | tee -a "$STATUS"; note "FATAL: Node build failed for $abi"; return 1; }
-  note "node $abi: ninja finished at $(date -u +%FT%TZ)"
-
-  local built="$src/out/Release/node"
-  [ -f "$built" ] || { note "FATAL: Node output missing for $abi"; return 1; }
-  # ICU is the reason this cache exists (\p{L} in RegExp needs the Unicode
-  # property tables). Check the unstripped binary for the bundled ICU data
-  # symbol: a no-Intl build cannot pass this.
-  # The data symbol is icudt<major><endianness>_dat (configure.py sets endianness to
-  # sys.byteorder[0], so little-endian is icudt78l_dat). Run 40850982684 failed here
-  # with the old pattern 'icudt[0-9]*_dat', which cannot match the l. nm goes to a
-  # file, not into grep -q: with pipefail an early grep exit gives llvm-nm SIGPIPE.
-  "$NDK_BIN/llvm-nm" "$built" > "$WORK/nm-$abi.txt" 2>/dev/null || true
-  if ! grep -Eq 'icudt[0-9]+[lb]?_dat' "$WORK/nm-$abi.txt" \
-     && ! grep -aEq 'icudt[0-9]+[lb]' "$built"; then
-    note "FATAL: Node $abi has no bundled ICU data symbol (full-icu not built)"
-    return 1
-  fi
-  note "node $abi: bundled ICU data symbol present"
-  cp "$built" "$outdir/libnode.so"
-  "$NDK_BIN/llvm-strip" "$outdir/libnode.so"
-  chmod 755 "$outdir/libnode.so"
-
-  # npm/npx are JavaScript data and cannot be execve'd from app storage. Their
-  # sealed native entry point execs libnode.so with the verified CLI JS path.
-  "$cc" -O2 -fPIE -pie -Wl,-z,max-page-size=16384 \
-    -o "$outdir/libnpmcli.so" "$NATIVE_SRC/npm-shim.c"
-  "$NDK_BIN/llvm-strip" "$outdir/libnpmcli.so"
-  chmod 755 "$outdir/libnpmcli.so"
-
-  # Node normally needs the NDK C++ runtime. It is code, so it must live beside
-  # Node in nativeLibraryDir too; copying it as payload data would not load.
-  if "$NDK_BIN/llvm-readelf" -d "$outdir/libnode.so" | grep -q 'libc++_shared.so'; then
-    cp "$(dirname "$NDK_BIN")/sysroot/usr/lib/$triple/libc++_shared.so" "$outdir/libc++_shared.so"
-    chmod 755 "$outdir/libc++_shared.so"
-  fi
-
-  note "node $abi: $(stat -c%s "$outdir/libnode.so") bytes stripped; npm shim $(stat -c%s "$outdir/libnpmcli.so") bytes"
-  capture_node_cache "$abi" \
-    || { note "FATAL: could not capture reproducible Node cache for $abi"; return 1; }
-  rm -rf "$src"  # one V8 output tree at a time: runner disk is a real limit
-  # One ABI per CI job: a full-icu V8 build for both ABIs does not fit in one
-  # six-hour hosted-runner job. The bootstrap captures this ABI, then stops
-  # with a marker; the next run restores it and builds the other ABI.
-  if [ "${P4_NODE_CAPTURE_STOP:-0}" = "1" ]; then
-    note "NODE_CACHE_BOOTSTRAP_CAPTURED abi=$abi key=$NODE_CACHE_KEY"
-    exit 0
-  fi
-}
+# Node 26 is staged by stage_node26 (below) from the spike binary in NODE26_BIN.
+# The Node 24 source build, its ICU cache and its restore/capture helpers were
+# removed at the switch-over (owner decision 2026-11-16: Node 24 removed).
+# Owner rule (2026-10-30, still in force): NODE_PIN, NDK_PIN and
+# NODE_TERMUX_PATCH_PIN change only by an owner decision.
 
 # OpenSSH client suite. One shared libcrypto per ABI avoids statically repeating
 # ~6 MB of crypto in five client programs. It is still APK code: libcrypto.so is
@@ -1166,10 +966,6 @@ build_openssh_clients() {  # $1=abi $2=target triple $3=OpenSSL platform
 my %targets = (
     "android-opencode-arm64" => {
         inherit_from => [ "android-arm64" ],
-        shared_extension => ".so",
-    },
-    "android-opencode-x86_64" => {
-        inherit_from => [ "android-x86_64" ],
         shared_extension => ".so",
     },
 );
@@ -1274,7 +1070,6 @@ build_node_npm_data() {
 # shell and coreutils so a failure here cannot take the userland core with it.
 for abi in "${ABIS[@]}"; do
   case "$abi" in
-    x86_64)    build_oniguruma "$abi" "x86_64-linux-android";  build_jq "$abi" "x86_64-linux-android" ;;
     arm64-v8a) build_oniguruma "$abi" "aarch64-linux-android"; build_jq "$abi" "aarch64-linux-android" ;;
   esac
 done
@@ -1285,7 +1080,6 @@ done
 build_host_python || exit 1
 for abi in "${ABIS[@]}"; do
   case "$abi" in
-    x86_64)    build_python "$abi" "x86_64-linux-android" ;;
     arm64-v8a) build_python "$abi" "aarch64-linux-android" ;;
   esac
 done
@@ -1323,7 +1117,6 @@ build_node_npm_data || exit 1
 # Node cache restore, and uses the zlib prefixes already produced for Git.
 for abi in "${ABIS[@]}"; do
   case "$abi" in
-    x86_64)    build_openssh_clients "$abi" "x86_64-linux-android" "android-opencode-x86_64" ;;
     arm64-v8a) build_openssh_clients "$abi" "aarch64-linux-android" "android-opencode-arm64" ;;
   esac
 done
