@@ -4,22 +4,57 @@ What runs inside the APK, how it is built, how it is started and kept alive,
 and what to do when it does not. Every "verified" statement names the gate or
 evidence bundle; anything without one is labelled.
 
+## Current runtime: OpenCode v2 on Node 26 (since the switch-over, 2026-11-16)
+
+- The APK runs **OpenCode v2.2.5** on **Node.js 26.4.0**. Bun is not in the APK
+  and not on the device. Bun 1.4.4 is still used at CI build time only, to
+  bundle the v2 server.
+- Server: `libnode26.so launcher-v2.mjs opencode.mjs` from `nativeLibraryDir`,
+  listening on `127.0.0.1:4111` with Basic auth.
+- Payload version 10 (`PAYLOAD_VERSION` in `phase4/scripts/10-build-payload.sh`,
+  `RuntimeVersion.kt`).
+- ABI: arm64-v8a only (owner decision 2026-11-16). x86_64 and 32-bit devices are
+  refused by `AbiGate`.
+- Size: release APK 115.2 MiB against a 230 MiB cap.
+- Evidence: CI switch-over green in run `43836643551`. On a phone, v2.2.5 reached
+  HEALTHY on 2026-11-14 (commit `31a7cef5`, payload 9). **The payload 10 release
+  has not run on a phone yet** (owner device check pending).
+
+Sections marked **(v1, historical)** describe the Bun runtime that v1 used. They
+are kept as evidence and are not a description of the current app.
+
 ## Pinned components
 
 | Component | Version | Source / build | Verified on |
 |---|---|---|---|
-| OpenCode | commit `05ea5073be96` (v1.18.23, `anomalyco/opencode` `dev`) | `Bun.build` of `packages/opencode` -> `dist/node/node.js`, target `bun` (needed for upstream's `#db` -> `bun:sqlite` condition) | emulator API 34 x86_64; phone API 35 arm64 |
-| Bun | 1.3.14 | official `@oven/bun-linux-{x64,aarch64}-android` npm packages, bionic-linked, `PT_INTERP /system/bin/linker64` | same |
-| git | v2.48.1 | upstream source, Android NDK 28.2.13676358, `NO_PERL NO_CURL NO_OPENSSL NO_EXPAT`, bionic | same (init/add/commit/diff/log: P5 G-gates, P8-LARGE) |
-| ripgrep | 15.1.0 | upstream source, cargo, `x86_64/aarch64-linux-android`, pcre2 | same |
-| shell | `/system/bin/sh` (Android's mksh) | not bundled; OpenCode `shell` config points to it | same (bash tool via `/shell` endpoint, P5, P8-PERF `shellOk=1`) |
-| payload | v7 | `runtime-payload.tar.gz` + `runtime-manifest.json` (+ pre-seeded `@opencode-ai/plugin` tree) | v7 TESTED in CI run 2 (`P9_PLUGIN PASS`, zero exit-159); run 2 also showed v7 re-extracting on every launch because the verifier looked for the seed at its pre-promotion path - fixed (`installedLocation`), TESTED in run 3: extraction once per fresh install, `P8_CORRUPT PASS` |
+| OpenCode | v2.2.5, commit `9bbb8ce18c80` (`anomalyco/opencode` tag `v2.2.5`) | `spike/opencode-v2/build-v2-bundle.sh` (release mode) -> `node26-v2.zip`; Bun 1.4.4 at build time only | CI switch-over green (`43836643551`); phone HEALTHY 2026-11-14 (payload 9) |
+| Node.js | 26.4.0 (`libnode26.so`, Android/Bionic, full ICU) | `spike/node26/build-node26-android.sh`, NDK 28.2.13676358 | CI (node26 spike and payload 10); phone probe OK 2026-11-14 |
+| git | v2.48.1 | upstream source, Android NDK 28.2.13676358, `NO_PERL NO_CURL NO_OPENSSL NO_EXPAT`, bionic | P5 G-gates, P8-LARGE (v1 era; re-check on v2) |
+| ripgrep | 15.1.0 | upstream source, cargo, `x86_64/aarch64-linux-android`, pcre2 | same (v1 era; re-check on v2) |
+| shell | Android `/system/bin/sh`; sealed userland core (mksh, toybox) | payload build step 6.5 | v1 era; re-check on v2 |
+| payload | 10 | `runtime-payload.tar.gz` / `node26-v2.zip` + `runtime-manifest.json` | CI switch-over (`43836643551`) |
 
-`versions.lock` is the source of truth; `phase9/scripts/check-lock.py`
-asserts `RuntimeVersion.kt`, `app/build.gradle.kts` and the built manifest
-agree with it (static check + device gate `P9_LOCK`).
+`versions.lock` is the source of truth; `phase9/scripts/check-lock.py` checks
+`RuntimeVersion.kt`, `app/build.gradle.kts` and the built manifest against it.
 
-## Build (`phase4/scripts/10-build-payload.sh`)
+## Build (v2, Node 26)
+
+`phase4/scripts/10-build-payload.sh` runs on a Linux x86_64 CI host (node 26
+spike binary from `NODE26_BIN`, Android NDK 28.2.13676358, pinned). It:
+
+1. stages `libnode26.so` (built by `spike/node26/build-node26-android.sh`) and
+   the npm entry `libnpmcli.so`;
+2. builds the v2 server bundle with `V2_ZIP` set to the release-mode
+   `node26-v2.zip` from `spike/opencode-v2/build-v2-bundle.sh`;
+3. builds git, rg, and the shims with the NDK, and sealed tools (mksh, toybox)
+   for `usr/`;
+4. writes the manifest with per-file sha256 and renames executables to
+   `lib<name>.so` for arm64-v8a.
+
+The v2 path does not ship Bun. The `V2_ZIP` check fails the build if the input
+is not the release bundle.
+
+### History: v1 build (Bun, removed 2026-11-16)
 
 Linux x86_64 host (the GitHub runner image): node >= 22, cargo, Android NDK
 28.2.13676358 (pinned; r29 links the x86_64 child shim as `ET_EXEC`, which
@@ -42,9 +77,9 @@ now reports the bare `1.18.23` (`GET /global/health` `version` field; gate
 ## Startup sequence (supervisor)
 
 ```
-IDLE -> CHECKING_ABI (arm64-v8a | x86_64 else UNSUPPORTED_DEVICE)
-     -> EXTRACTING   (marker .extracted-v6 present and manifest sha256s verify? skip : extract)
-     -> STARTING     (exec shim -> LD_PRELOAD seccomp shim -> bun launcher.js -> OpenCode serve
+IDLE -> CHECKING_ABI (arm64-v8a else UNSUPPORTED_DEVICE)
+     -> EXTRACTING   (runtime/.extracted marker present and manifest sha256s verify? skip : extract)
+     -> STARTING     (libnode26.so launcher-v2.mjs opencode.mjs -> OpenCode serve
                       --hostname 127.0.0.1 --port 4111, Basic auth opencode:<per-install password>)
      -> HEALTHY      (GET /global/health 2xx + "healthy"; bounded wait)
 crash/exit  -> CRASHED_RESTARTING (backoff 1 s, 2 s, ... 30 s cap, jitter, max 8) -> STARTING | FATAL
@@ -74,6 +109,9 @@ world-readable; everything is under the app UID.
 
 ### Seccomp / W^X shims
 
+**(v1, historical)**: the exec shim launched Bun. The v2 launch path runs
+`libnode26.so` directly. Whether the seccomp preload still applies on Node 26 is not verified.
+
 Android's app seccomp policy kills processes that issue certain syscalls
 (SIGSYS); statically-linked desktop binaries die this way, which is why every
 executable here is bionic-linked and why an `LD_PRELOAD` shim intercepts the
@@ -84,6 +122,9 @@ informational, not fatal (Phase 8 note). Details and the evidence chain:
 `docs/progress/phase4-seccomp-state.md`.
 
 ## Runtime feature map on Android
+
+**(v1, historical)**: this table was measured on the v1 Bun runtime. Re-verify each row on v2 before relying on it.
+
 
 | Feature | Android | Note |
 |---|---|---|
@@ -106,8 +147,8 @@ informational, not fatal (Phase 8 note). Details and the evidence chain:
   product's own extraction does not use toybox (it uses the app's Kotlin tar
   reader), so this gap affects the test harness more than the product, but it
   is unverified either way.
-- armeabi-v7a / x86: refused at `AbiGate` with an on-screen message (no
-  64-bit-less Bun exists).
+- armeabi-v7a / x86 / x86_64: refused at `AbiGate` with an on-screen message.
+  The v2 payload ships arm64-v8a only (owner decision 2026-11-16).
 
 ## Footprint
 

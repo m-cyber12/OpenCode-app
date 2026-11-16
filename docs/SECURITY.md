@@ -24,6 +24,17 @@ files, and the loopback server that can run a shell in the app's sandbox.
 | Workspace boundaries | one OpenCode instance per workspace directory (`?directory=`); tools operate relative to it | P7-W2 |
 | Log hygiene | supervisor/crash logs redact env; the Phase 8 harness redacts provider error URLs (a Google error message embeds the key in the URL - see incident below) | Phase 8 §3.1.8 |
 
+## Runtime change at the switch-over (2026-11-16)
+
+- The server now runs on Node.js 26.4.0 (`libnode26.so`) with OpenCode v2.2.5.
+  Bun is no longer shipped in the APK or on the device, so Bun's native
+  libraries and binaries are no longer part of the app's attack surface.
+- Bun 1.4.4 still runs at CI build time to bundle the v2 server. It runs on the
+  build host, not on the phone.
+- The APK ships arm64-v8a only. Other ABIs are refused at start.
+- Not yet verified on a phone: the seccomp preload and the W^X launch path on
+  Node 26. The owner's device check is pending (see `docs/RUNTIME.md`).
+
 ## Known limits (permanent or unverified)
 
 - **Keystore master key is software-backed** on every tested device

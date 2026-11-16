@@ -60,7 +60,8 @@ opencode:
   # package-lock.json) so upstream's Npm.install short-circuits and never runs
   # Arborist for the default plugin package.
   channel: android
-  plugin_seed: "@opencode-ai/plugin@1.18.23 (+ deps: @opencode-ai/sdk, zod, effect, @ai-sdk/provider), installed on the build host with --ignore-scripts, types/maps stripped"
+  # v1 only: the v2 payload does not build a plugin seed (switch-over 2026-11-16).
+  plugin_seed: "v1 - @opencode-ai/plugin@1.18.23 (+ deps: @opencode-ai/sdk, zod, effect, @ai-sdk/provider), installed on the build host with --ignore-scripts, types/maps stripped"
   # NOTE (2026-08-28, Phase 2): the first spike run (evidence commit d161ccd) built the
   # bundle from `dev` HEAD 755ebdb94ee7 (v1.18.25, "sync release versions for v1.18.25"),
   # because the artifact script cloned dev without checking out the pinned commit.
@@ -69,8 +70,8 @@ opencode:
   # checkout $PINNED_COMMIT; re-run to re-produce evidence at the exact pin.
 
 runtime:
-  # PHASE 2 UPDATE (2026-08-27, spike evidence): the embedded Android host runtime
-  # is Bun-for-Android (official @oven/bun-linux-x64-android / -aarch64-android npm
+  # HISTORY (v1, 2026-08-27; superseded at the switch-over 2026-11-16): the embedded
+  # Android host runtime was Bun-for-Android (official @oven/bun-linux-x64-android / -aarch64-android npm
   # packages; bionic-linked, interp /system/bin/linker64), pinned to the same 1.3.14
   # as the repo's packageManager. Bun 1.3.14 does NOT implement node:sqlite, so the
   # server bundle is built with Bun.build target "bun" to resolve upstream's own
@@ -79,14 +80,13 @@ runtime:
   # Node-for-Android runtime becomes available; the spike chose the available,
   # pinned runtime. Evidence: docs/progress/phase2-*.
   # switch-over: bun_android_* removed (Bun is not in the APK; owner 2026-11-16)
-  host_bun_for_build: 1.3.14     # @oven/bun-linux-x64 (build host)
+  bun_build_time: 1.4.4          # CI build time only: bundles the v2 server (phase10-release.yml setup-bun; spike/opencode-v2). NOT in the APK (owner 2026-11-16)
   node: ">=26.4.0"               # v2 server runtime: Node 26 is the only runtime (switch-over 2026-11-16)
   node_android_cli: 26.4.0        # switch-over: Node 26 is the only runtime (libnode26.so); Node 24 removed (owner 2026-11-16)
-  npm_android_cli: 11.19.1        # bundled by the exact Node tag; JS data + sealed native launcher
-  node_termux_patch_commit: 2d6b9d566c2e933c50e675198a0d7847a96deb61
+  npm_android_cli: 11.17.0        # bundled by the exact Node tag (deps/npm); the payload build asserts it (NPM_PIN in 10-build-payload.sh); JS data + sealed native launcher
+  node_termux_patch_commit: 2d6b9d566c2e933c50e675198a0d7847a96deb61   # still used: OpenSSH client patches (termux packages/openssh)
   node_toolchain_types: 24.12.2
   # CLI-only runtime (NOT required for the Android server path)
-  bun: 1.3.14           # CI build-time only (v2 bundle step, phase10-release.yml); NOT in the APK (owner 2026-11-16)
   bun_types: 1.3.13
 
 native_components:
@@ -124,7 +124,7 @@ native_components:
     version: android-system           # Android's own /system/bin/sh (mksh, MIRBSD KSH R59) — real shell, TESTED
     note: "config shell: /system/bin/sh (Shell.preferred honors config 'shell')"
 
-bun_only_components:                  # NOT needed for the embedded server
+bun_only_components:                  # v1 only (Bun era); not in the v2 APK (switch-over 2026-11-16)
   - name: "@ff-labs/fff-bun"          # native file search; ripgrep fallback exists
     version: 0.9.4
   - name: bun-pty
@@ -202,8 +202,8 @@ android_host:
   application_id: io.github.mcyber12.opencode
   kotlin_namespace: ai.opencode.android
   min_sdk: 29            # W^X: exec only from nativeLibraryDir; ABI gate enforces 64-bit
-  target_sdk: 34
-  compile_sdk: 34
+  target_sdk: 36
+  compile_sdk: 36
   kotlin: 1.9.24
   agp: 8.5.2
   gradle: 8.9
@@ -214,13 +214,16 @@ android_host:
     - { name: libnode26.so, source: "Node 26.4.0 from source (spike/node26/build-node26-android.sh), Android/Bionic arm64", bionic: true }
     - { name: libgit.so,  source: "Git v2.48.1 from source (NO_PERL=YesPlease, Android NDK/Bionic, NO_CURL/OPENSSL/EXPAT)" }
     - { name: librg.so,   source: "ripgrep 15.1.0 from source (x86_64/aarch64 Android targets, Cargo + NDK/Bionic, pcre2 feature)" }
+    # The full list is in app/build.gradle.kts (verifyAndStagePayload). libexecshim.so is packaged,
+    # but the v2 launch path does not run it (see docs/RUNTIME.md).
   # compressed JS payload (assets/, extracted flat into filesDir with sha256 verification; runtime/ holds host metadata):
   payload_assets:
-    - runtime-payload.tar.gz   # opencode/dist/node/node.js bundle + *.wasm + node_modules + launcher.js
-    - runtime-manifest.json    # versions + per-file sha256/size + payload tarball sha256
+    - node26-v2.zip            # v2 server bundle (launcher-v2.mjs, opencode.mjs, wasm); release mode of spike/opencode-v2
+    - usr/ tool data           # Python stdlib zip, npm data, sealed tools; each checked against the manifest
+    - runtime-manifest.json    # versions + per-file sha256/size + payload sha256
   data_layout:
     files_dir: "/data/data/<pkg>/files"
-    runtime:   "files/runtime/opencode/dist/node/node.js (from assets, validated)"
+    runtime:   "files/runtime/v2/ (v2 bundle, validated; RuntimePaths.v2Root)"
     symlinks:  "files/bin/{node,git,rg} -> /data/app/.../lib64/lib{node26,git,rg}.so (Bun removed, switch-over 2026-11-16)"
     xdg:       "files/xdg/{data,config,state,cache,tmp} (HOME=files/home)"
     workspaces: "files/workspaces/<project>"

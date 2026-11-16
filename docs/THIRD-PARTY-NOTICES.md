@@ -13,8 +13,8 @@ the shipped artifact by `phase10/scripts/check-apk.py` and the device gate
 
 | Component | Version | Licence | How it is shipped | Pinned source |
 |---|---|---|---|---|
-| **OpenCode** (the agent, its tools, its server) | 1.18.23, commit `05ea5073be967c779d326929b2de6228dda4159d` | **MIT** | bundled JavaScript, unmodified apart from the Android adaptation documented in `docs/ARCHITECTURE.md` | <https://github.com/anomalyco/opencode> @ `05ea5073` |
-| **Bun** (the JavaScript runtime that executes it) | 1.3.14 | **MIT** | `arm64-v8a` and `x86_64` bionic-linked executables (from the official `@oven/bun-*-android` packages), packaged as `libbun.so` so Android will exec them | <https://github.com/oven-sh/bun> |
+| **OpenCode** (the agent, its tools, its server) | v2.2.5, commit `9bbb8ce18c80f099e0e448775f59d965ead40a21` | **MIT** | bundled JavaScript (v2 server bundle), unmodified apart from the Android adaptation documented in `docs/ARCHITECTURE.md` | <https://github.com/anomalyco/opencode/releases/tag/v2.2.5> |
+| **Node.js** (the JavaScript runtime that executes OpenCode) | 26.4.0 | **MIT** (plus the licences of Node's bundled dependencies, listed in its `LICENSE` file) | `arm64-v8a` bionic-linked executable built for Android, packaged as `libnode26.so` so Android will exec it | <https://github.com/nodejs/node/releases/tag/v26.4.0> |
 | **Git** (the agent's version-control tool) | v2.48.1 | **GPL-2.0-only** | statically built for Android from the official release tarball with the NDK toolchain, packaged as `libgit.so` | <https://github.com/git/git/releases/tag/v2.48.1> |
 | **ripgrep** (the agent's search tool) | 15.1.0 | **MIT** (or the Unlicense, at your option) | built for Android with Cargo + NDK, packaged as `librg.so` | <https://github.com/BurntSushi/ripgrep/releases/tag/15.1.0> |
 | **curl (libcurl)** (HTTP engine of git's `remote-https` helper and wget-compatible downloader) | 8.10.1 | **curl licence** (MIT-like) | static library linked into `libgitremotehttp.so` and the sealed curl CLI; wget is a native argument translator over that CLI | <https://github.com/curl/curl/releases/tag/curl-8_10_1> |
@@ -64,6 +64,7 @@ binary is launched.
 | Android NDK / SDK build-tools | Apache-2.0 / proprietary (SDK terms) | build |
 | Cargo / Rust toolchain | MIT / Apache-2.0 | builds ripgrep for Android |
 | Node/npm | MIT | installs the pre-seeded plugin tree at payload-build time |
+| Bun | MIT | bundles the v2 OpenCode server at CI build time (Bun 1.4.4); not shipped |
 
 ## Attribution in the app
 
