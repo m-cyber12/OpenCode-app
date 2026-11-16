@@ -6,7 +6,7 @@ import java.io.File
  * Launches and tracks the single OpenCode server process, and guarantees clean
  * teardown (no zombies, no duplicates).
  *
- * Launch: `libbun.so <filesDir>/runtime/launcher.js` directly from nativeLibraryDir
+ * Launch: `libnode26.so launcher-v2.mjs opencode.mjs` directly from nativeLibraryDir
  * (exec-allowed under W^X). stdout/stderr are streamed to the runtime log by
  * the supervisor thread (the process's stdio pipes are drained there so the
  * child never blocks on a full pipe).
@@ -28,7 +28,7 @@ class RuntimeProcess(
 
     /**
      * Resolve the server pid from /proc (android's java.lang.Process predates
-     * Java 9's pid(); the bun child cmdline contains the launcher path).
+     * Java 9's pid(); the server cmdline contains the launcher path).
      * Excludes our own process. -1 when no server is present.
      */
     fun findServerPid(): Int {
@@ -59,16 +59,11 @@ class RuntimeProcess(
     fun start(
         env: Map<String, String>,
         serverPassword: String,
-        engine: ServerEngine = ServerEngine.V1,
         hostname: String = RuntimeEnv.SERVER_BIND_HOSTNAME,
     ) {
-        // The live-server marker for /proc scans is the launcher of the engine being started.
-        activeMarker = paths.launcherPath(engine).absolutePath
-        val command: List<String> = if (engine == ServerEngine.V2) {
-            v2Command(env, hostname)
-        } else {
-            v1Command(env)
-        }
+        // The live-server marker for /proc scans is the v2 launcher.
+        activeMarker = paths.v2Launcher.absolutePath
+        val command: List<String> = v2Command(env, hostname)
         // Duplicate-process prevention: kill any live server for THIS payload
         // before starting (also covers a crashed app leaving the server behind).
         killStaleServer()
@@ -101,17 +96,17 @@ class RuntimeProcess(
             Thread.sleep(100)
         }
         if (sp > 0) paths.pidFile.writeText(sp.toString())
-        logger.host("server started: pid=$sp engine=$engine abi=${env["OPENCODE_RUNTIME_ABI"]} port=${RuntimeEnv.SERVER_PORT}")
+        logger.host("server started: pid=$sp engine=${ServerEngine.V2} abi=${env["OPENCODE_RUNTIME_ABI"]} port=${RuntimeEnv.SERVER_PORT}")
     }
 
     /** Environment for the child process; set by the command builders below. */
     private var commandEnv: Map<String, String> = emptyMap()
 
-    /** Launcher path used to find a live server in /proc (per engine). */
+    /** Launcher path used to find a live server in /proc. */
     @Volatile
-    private var activeMarker: String = paths.launcher.absolutePath
+    private var activeMarker: String = paths.v2Launcher.absolutePath
 
-    /** v2 engine: Node 26 runs the launcher, which runs the v2 bundle. No Bun shims. */
+    /** Node 26 runs the v2 launcher, which runs the v2 bundle. */
     private fun v2Command(env: Map<String, String>, hostname: String): List<String> {
         val node = paths.node26Binary()
         require(node.canExecute()) { "node26 binary not executable: $node" }
@@ -129,38 +124,6 @@ class RuntimeProcess(
             "--port",
             RuntimeEnv.SERVER_PORT.toString(),
         )
-    }
-
-    /** v1 engine: the exec shim (or bun directly) runs the Bun launcher. Removed at switch-over. */
-    private fun v1Command(env: Map<String, String>): List<String> {
-        val bun = paths.bunBinary()
-        require(bun.canExecute()) { "bun binary not executable: $bun" }
-        require(paths.launcher.isFile) { "launcher missing: ${paths.launcher}" }
-
-        // Launch through the PIE exec shim (nativeLibraryDir/libexecshim.so).
-        // It LD_PRELOADs libseccompshim.so (constructor installs the SIGSYS ->
-        // ENOSYS handler before bun's native init) and then execv()s bun. Direct
-        // exec of bun dies with SIGSYS during its own startup (syscall 21
-        // access / 441 epoll_pwait2), before any JS or bun:ffi hook can run.
-        // On arm64 Android 15 the wrapper deliberately skips its second BPF
-        // filter: the inherited app filter can kill PR_SET_SECCOMP itself, and
-        // newer arm64 devices may legitimately allow syscalls that the x86_64
-        // compatibility filter must force to ENOSYS. The inherited LD_PRELOAD
-        // handler is the arm64 compatibility path.
-        val exec = paths.execShimBinary()
-        if (!exec.canExecute()) {
-            // Fallback: direct bun (older payloads without the shim).
-            logger.host("exec shim missing ($exec); launching bun directly")
-        }
-        val entry = if (exec.canExecute()) exec.absolutePath else bun.absolutePath
-
-        val fullEnv = HashMap(env)
-        // Tell the shim what to exec and where the preload handler lives.
-        fullEnv["OPENCODE_BUN_EXEC"] = bun.absolutePath
-        fullEnv["OPENCODE_SECCOMP_SHIM"] =
-            java.io.File(paths.nativeLibraryDir, "libseccompshim.so").absolutePath
-        commandEnv = fullEnv
-        return listOf(entry, paths.launcher.absolutePath)
     }
 
     /** Diagnostics: whether the child we started is still running, or its exit code. */
@@ -259,7 +222,7 @@ class RuntimeProcess(
             try {
                 val cmd = File(proc, "cmdline").readBytes().toString(Charsets.UTF_8).replace('\u0000', ' ')
                 if (cmd.contains(marker)) {
-                    // Found a leftover server (or its bun) — SIGTERM then SIGKILL.
+                    // Found a leftover server — SIGTERM then SIGKILL.
                     runCatching { android.system.Os.kill(pid, android.system.OsConstants.SIGTERM) }
                     Thread.sleep(300)
                     runCatching { android.system.Os.kill(pid, android.system.OsConstants.SIGKILL) }

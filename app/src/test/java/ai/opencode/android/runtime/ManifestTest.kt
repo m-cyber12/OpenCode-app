@@ -51,8 +51,8 @@ class ManifestTest {
     @Test
     fun rejectsManifestVersionDriftFromLock() {
         val m = RuntimeManifest.fromJson(json)
-        val problem = RuntimeVersion.validateManifest(m.copy(bunVersion = "9.9.9"))
-        assertTrue(problem!!.contains("bunVersion"))
+        val problem = RuntimeVersion.validateManifest(m.copy(gitVersion = "v0.0.0"))
+        assertTrue(problem!!.contains("gitVersion"))
     }
 
     @Test

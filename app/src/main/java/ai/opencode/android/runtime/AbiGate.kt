@@ -5,17 +5,17 @@ import android.os.Build
 /**
  * ABI / device gating (phase scope item).
  *
- * The embedded runtime is native code: Bun-for-Android is bionic-linked and
- * shipped for `arm64-v8a` (the shipping target) and `x86_64` (emulator/CI
- * only). There is no 32-bit build (Bun/V8 dropped 32-bit), so devices whose
- * primary ABI is armeabi-v7a/x86 cannot run the agent. Rather than failing
+ * The embedded runtime is native code: Node 26 and the Bionic tools are shipped
+ * for `arm64-v8a` only (owner decision 2026-11-16: x86_64 dropped from the
+ * release). There is no 32-bit build, so devices whose primary ABI is
+ * armeabi-v7a/x86/x86_64 cannot run the agent. Rather than failing
  * opaquely (a exec format error at launch), the app reports a clear,
  * actionable unsupported state.
  */
 object AbiGate {
 
     /** ABIs the runtime payload ships for. */
-    val SUPPORTED_ABIS = setOf("arm64-v8a", "x86_64")
+    val SUPPORTED_ABIS = setOf("arm64-v8a")
 
     data class DeviceInfo(
         val primaryAbi: String,
@@ -66,7 +66,7 @@ object AbiGate {
             Result.Ok(abi, device)
         } else {
             Result.Unsupported(
-                "OpenCode runs on 64-bit devices (arm64-v8a; x86_64 for emulators). " +
+                "OpenCode runs on 64-bit Arm devices (arm64-v8a). " +
                     "This device's ABI (${device.primaryAbi}) is not supported.",
                 device,
             )

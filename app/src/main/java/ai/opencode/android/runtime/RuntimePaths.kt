@@ -170,8 +170,9 @@ class RuntimePaths private constructor(
     // NOT part of the payload tarball (it's host metadata).
     val runtimeDir: File = File(filesDir, "runtime")
     val extractionMarker: File = File(runtimeDir, ".extracted")
-    val launcher: File = File(filesDir, "launcher.js")
-    val nodeModulesDir: File = File(filesDir, "node_modules")
+    /** v1 leftovers (Bun launcher and its node_modules). Read only: deleted on start so an upgraded install is clean. */
+    val legacyLauncher: File = File(filesDir, "launcher.js")
+    val legacyNodeModules: File = File(filesDir, "node_modules")
 
     val xdgData: File = File(filesDir, "xdg/data")
     val xdgConfig: File = File(filesDir, "xdg/config")
@@ -208,7 +209,8 @@ class RuntimePaths private constructor(
     val loopbackAuditFile: File = File(logDir, "loopback-audit.txt")
     val pidFile: File = File(filesDir, "runtime.pid")
 
-    val bunLink: File = File(binDir, "bun")
+    /** v1 leftover (Bun symlink). Read only: deleted on start. */
+    val legacyBunLink: File = File(binDir, "bun")
     val gitLink: File = File(binDir, "git")
     val rgLink: File = File(binDir, "rg")
     // v9.28: git's smart-HTTP(S) helper. BOTH scheme names link at the same
@@ -225,12 +227,6 @@ class RuntimePaths private constructor(
     val v2Launcher: File = File(v2Root, "launcher-v2.mjs")
     val v2Marker: File = File(v2Root, ".complete")
 
-    /** The live-server marker for an engine: its launcher path, matched in /proc cmdlines. */
-    fun launcherPath(engine: ServerEngine): File =
-        if (engine == ServerEngine.V2) v2Launcher else launcher
-
-    /** The actual bun executable in nativeLibraryDir (installed by the package manager). */
-    fun bunBinary(): File = File(nativeLibraryDir, "libbun.so")
     /** Real Git executable built against the Android NDK/Bionic libc. */
     fun gitBinary(): File = File(nativeLibraryDir, "libgit.so")
 
@@ -240,13 +236,9 @@ class RuntimePaths private constructor(
     fun rgBinary(): File = File(nativeLibraryDir, "librg.so")
     /** Retained diagnostic compatibility wrapper; tool lookup does not use it. */
     fun childShimBinary(): File = File(nativeLibraryDir, "libchildshim.so")
-    /** PIE wrapper that installs the seccomp SIGSYS handler then execs bun. */
-    fun execShimBinary(): File = File(nativeLibraryDir, "libexecshim.so")
 
     // Flat layout (matches the proven Phase 3 gate): bundle and node_modules
     // are direct children of filesDir; runtimeDir holds only host metadata.
-    val serverBundle: File = File(filesDir, "opencode/dist/node/node.js")
-    val nodeModules: File = File(filesDir, "node_modules")
 
     // OpenCode creates these at startup. Pre-create them in the host because
     // the app-uid seccomp filter denies the access() probe Bun uses to check a

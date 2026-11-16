@@ -138,7 +138,7 @@ object RuntimeEnv {
         env["OPENCODE_RUNTIME_ABI"] = abi
         // Explicit absolute paths for the launcher glue.
         env["OPENCODE_FILES_DIR"] = paths.filesDir.absolutePath
-        env["OPENCODE_BUNDLE"] = paths.serverBundle.absolutePath
+        env["OPENCODE_BUNDLE"] = paths.v2Entry.absolutePath
         // Native seccomp compatibility shim (jniLib -> nativeLibraryDir). The
         // exec shim sets this path as LD_PRELOAD before Bun is exec'd, so the
         // constructor is active before native startup. launcher.js also tries

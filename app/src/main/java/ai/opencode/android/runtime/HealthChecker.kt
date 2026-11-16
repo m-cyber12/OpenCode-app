@@ -17,7 +17,7 @@ class HealthChecker(
         override fun toString(): String = "healthy=$healthy http=$code body=${body.take(200)}"
     }
 
-    fun probe(password: String, timeoutMs: Int = 4000, engine: ServerEngine = ServerEngine.V1): Health {
+    fun probe(password: String, timeoutMs: Int = 4000, engine: ServerEngine = ServerEngine.V2): Health {
         var conn: HttpURLConnection? = null
         return try {
             conn = (URL("http://127.0.0.1:$port${engine.healthPath}").openConnection() as HttpURLConnection).apply {
@@ -51,7 +51,7 @@ class HealthChecker(
         password: String,
         timeoutMs: Long = 45_000,
         intervalMs: Long = 1000,
-        engine: ServerEngine = ServerEngine.V1,
+        engine: ServerEngine = ServerEngine.V2,
     ): Health? {
         val deadline = System.currentTimeMillis() + timeoutMs
         var last: Health? = null

@@ -158,8 +158,8 @@ class RuntimeManager private constructor(private val appContext: Context) {
                 process.stop()
                 paths.runtimeDir.deleteRecursively()          // marker + host metadata
                 paths.extractionMarker.delete()
-                paths.launcher.delete()                       // flat payload entries
-                paths.nodeModulesDir.deleteRecursively()
+                paths.legacyLauncher.delete()                 // v1 flat payload entries
+                paths.legacyNodeModules.deleteRecursively()
                 File(paths.filesDir, "opencode").deleteRecursively()
                 File(paths.filesDir, "payload.staging").deleteRecursively()
                 File(paths.filesDir, "runtime.old").deleteRecursively()
@@ -216,18 +216,23 @@ class RuntimeManager private constructor(private val appContext: Context) {
             logger.host("environment brief: " + if (briefed) "installed (config.instructions)" else "skipped (user config left untouched)")
 
             // ---- 2. extraction + validation -------------------------------
-            // Engine choice (migration phase 1): V2 only when the APK carries both the
-            // Node 26 binary and the v2 bundle. Release keeps V1 until switch-over.
+            // The v2 server on Node 26 is the only engine (v1 removed at the switch-over).
+            // It needs libnode26.so in nativeLibraryDir and the node26-v2.zip asset.
             val hasV2Asset = runCatching { appContext.assets.list("")?.contains(ServerEngine.V2_ASSET) == true }
                 .getOrDefault(false)
-            val serverEngine = ServerEngine.select(
-                hasNode26Binary = paths.node26Binary().isFile,
-                hasV2Asset = hasV2Asset,
-            )
+            val serverEngine = ServerEngine.V2
+            if (!paths.node26Binary().isFile || !hasV2Asset) {
+                publish(
+                    RuntimeStatus.FATAL,
+                    "runtime payload missing: libnode26.so=${paths.node26Binary().isFile} ${ServerEngine.V2_ASSET}=$hasV2Asset",
+                )
+                running = false
+                return
+            }
             logger.host("server engine: $serverEngine")
 
             publish(RuntimeStatus.EXTRACTING, "validating embedded runtime")
-            val ext = if (serverEngine == ServerEngine.V2) extractor.ensureExtractedV2() else extractor.ensureExtracted()
+            val ext = extractor.ensureExtractedV2()
             if (ext is PayloadExtractor.Result.Failed) {
                 // Corruption we cannot recover from = the APK payload itself is
                 // unreadable; report clearly rather than looping.
@@ -235,14 +240,10 @@ class RuntimeManager private constructor(private val appContext: Context) {
                 running = false
                 return
             }
-            manifest = when (ext) {
-                is PayloadExtractor.Result.Extracted -> ext.manifest
-                is PayloadExtractor.Result.AlreadyValid -> ext.manifest
-                else -> null
-            }
+            manifest = null   // the v1 manifest is not part of the v2 payload
             logger.host(
-                "payload: opencode ${manifest?.opencodeVersion} @ ${manifest?.opencodeCommit?.take(7)} " +
-                    "bun ${manifest?.bunVersion} git ${manifest?.gitVersion} rg ${manifest?.rgVersion}",
+                "payload: opencode ${ServerEngine.V2_VERSION} (node26-v2.zip) " +
+                    "git ${RuntimeVersion.GIT_VERSION} rg ${RuntimeVersion.RIPGREP_VERSION}",
             )
 
             // ---- 3. bin symlinks (exec from nativeLibraryDir) ------------
@@ -286,7 +287,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
                 attempts++
                 publish(RuntimeStatus.STARTING, "starting OpenCode server (attempt $attempts)", attempts - 1)
                 try {
-                    process.start(env, password, engine = serverEngine, hostname = bindHost)
+                    process.start(env, password, hostname = bindHost)
                     // A stop or a newer start can race with the short launch
                     // window. Do not let an invalidated supervisor pump or
                     // health-check a process owned by a newer generation.
@@ -391,6 +392,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
      */
     private fun ensureBinSymlinks() {
         paths.binDir.mkdirs()
+        paths.legacyBunLink.delete()   // v1 leftover: bin/bun pointed at libbun.so, which is gone
         val sealed = HarnessSeal.apply(appContext, paths.filesDir, paths.nativeLibraryDir)
         if (sealed == null) {
             logger.host(
@@ -426,10 +428,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
         // static-musl releases. They must run directly: a child-side ptrace or
         // seccomp wrapper cannot override the zygote policy's SIGSYS action, and
         // wrapping them would only move the same failure one exec later.
-        // Bun remains the bionic executable too; exec-shim is used only for its
-        // startup compatibility path and is not part of tool lookup.
         val links = listOf(
-            Link(paths.bunLink, paths.bunBinary(), "bun"),
             Link(paths.gitLink, paths.gitBinary(), "git"),
             Link(paths.rgLink, paths.rgBinary(), "rg"),
             // v9.28: git finds its https transport by NAME (git-remote-https)

@@ -121,7 +121,7 @@ class RuntimeEnvTest {
 
         // The launcher glue paths must point at the flat, validated payload.
         assertEquals(p.filesDir.absolutePath, env["OPENCODE_FILES_DIR"])
-        assertEquals(p.serverBundle.absolutePath, env["OPENCODE_BUNDLE"])
+        assertEquals(p.v2Entry.absolutePath, env["OPENCODE_BUNDLE"])
         assertEquals(File(p.nativeLibraryDir, "libseccompshim.so").absolutePath, env["OPENCODE_SECCOMP_SHIM"])
     }
 

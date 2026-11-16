@@ -2,29 +2,22 @@ package ai.opencode.android.runtime
 
 import android.content.Context
 import java.io.File
-import java.io.InputStream
-import java.security.MessageDigest
-import java.util.zip.GZIPInputStream
 import java.util.zip.ZipInputStream
 
 /**
- * First-run extraction with validation and corruption recovery.
+ * First-run extraction of the v2 server bundle.
  *
- * The APK ships:
- *   - assets/runtime-manifest.json  (versions + per-file sha256/size)
- *   - assets/runtime-payload.tar.gz (server bundle, node_modules, launcher.js,
- *     and read-only tool data such as usr/lib/python3.13.zip)
+ * The APK ships `assets/node26-v2.zip` (opencode.mjs, assets/, launcher-v2.mjs). On
+ * every start the supervisor calls [ensureExtractedV2]:
+ *   1. if a complete extraction exists (marker `.complete`, entry files present),
+ *      do nothing;
+ *   2. otherwise wipe [RuntimePaths.v2Root], extract the zip, and refuse any entry
+ *      whose canonical path leaves the root (zip-slip);
+ *   3. mark the extraction complete only after every entry is written.
  *
- * On every start the supervisor calls [ensureExtracted]:
- *   1. read the manifest from assets (the APK is the trusted source),
- *   2. if a previous extraction matches (marker: payload version + all files
- *      present with correct sha256/size), do nothing,
- *   3. otherwise atomically re-extract into a staging dir, verify EVERY entry
- *      against the manifest, and only then swap it into place;
- *   4. any failure leaves the previous extraction untouched and is reported.
- *
- * This handles: first run, partial extraction (process killed mid-write),
- * corrupted/tampered files, and app upgrades that change the payload.
+ * An interrupted extraction has no marker, so the next start wipes and redoes it.
+ * The v1 extractor (`runtime-payload.tar.gz`, manifest checksums) was removed at the
+ * switch-over together with the Bun server it fed.
  */
 class PayloadExtractor(
     private val context: Context,
@@ -32,20 +25,12 @@ class PayloadExtractor(
     private val logger: RuntimeLogger,
 ) {
     sealed class Result {
-        data class AlreadyValid(val manifest: RuntimeManifest) : Result()
-        data class Extracted(val manifest: RuntimeManifest) : Result()
         data class Failed(val reason: String, val cause: Throwable? = null) : Result()
 
-        /** v2 engine: the bundle is in place. [fresh] is true when this call extracted it. */
+        /** The bundle is in place. [fresh] is true when this call extracted it. */
         data class V2Ready(val fresh: Boolean) : Result()
     }
 
-    /**
-     * v2 engine (migration phase 1): extract the node26-v2.zip asset into
-     * [RuntimePaths.v2Root]. Reuses the marker-file pattern of the v2 probe: a
-     * complete extraction has `.complete`, and an interrupted one is wiped and
-     * redone. Entry names are checked so nothing lands outside the root.
-     */
     fun ensureExtractedV2(): Result {
         if (paths.v2Marker.isFile && paths.v2Entry.isFile && paths.v2Launcher.isFile) {
             return Result.V2Ready(fresh = false)
@@ -80,304 +65,6 @@ class PayloadExtractor(
             Result.V2Ready(fresh = true)
         } catch (t: Throwable) {
             Result.Failed("v2 payload extraction failed: ${t.message}", t)
-        }
-    }
-
-    fun manifestFromAssets(): RuntimeManifest? = try {
-        context.assets.open(MANIFEST_ASSET).use {
-            RuntimeManifest.fromJson(it.readBytes().toString(Charsets.UTF_8))
-        }
-    } catch (t: Throwable) {
-        logger.host("manifest read failed: ${t.message}")
-        null
-    }
-
-    fun ensureExtracted(): Result {
-        val manifest = manifestFromAssets()
-            ?: return Result.Failed("runtime-manifest.json missing or unreadable inside the APK")
-
-        val versionProblem = RuntimeVersion.validateManifest(manifest)
-        if (versionProblem != null) {
-            logger.host("payload manifest incompatible with app/versions.lock: $versionProblem")
-            return Result.Failed("payload manifest version mismatch: $versionProblem")
-        }
-
-        val verify = verifyExtraction(
-            root = paths.filesDir,
-            marker = paths.extractionMarker,
-            serverBundle = paths.serverBundle,
-            launcher = paths.launcher,
-            manifest = manifest,
-        )
-        if (verify == null) {
-            logger.host("extraction valid (${manifest.entries.size} files, ${manifest.opencodeVersion} @ ${manifest.opencodeCommit.take(7)})")
-            return Result.AlreadyValid(manifest)
-        }
-        logger.host("extraction invalid ($verify) -> (re)extracting")
-        return extract(manifest)
-    }
-
-    /**
-     * Opens the payload tar stream. AGP/AAPT may repackage `runtime-payload.tar.gz`
-     * — observed in CI: the asset is stored as `runtime-payload.tar` already
-     * decompressed (zip re-compresses it). Handle both names and both
-     * encodings (gzip magic 0x1f 0x8b -> gunzip; else raw tar).
-     */
-    private fun openPayloadStream(): InputStream? {
-        val candidates = listOf(PAYLOAD_ASSET, "runtime-payload.tar")
-        for (name in candidates) {
-            val raw = try {
-                context.assets.open(name)
-            } catch (_: Throwable) {
-                continue
-            }
-            val buffered = raw.buffered()
-            return try {
-                buffered.mark(2)
-                val magic = ByteArray(2)
-                val read = buffered.read(magic)
-                buffered.reset()
-                if (read == 2 && magic[0] == 0x1f.toByte() && magic[1] == 0x8b.toByte()) {
-                    logger.host("payload asset '$name' is gzip; gunzipping")
-                    java.util.zip.GZIPInputStream(buffered, 1 shl 16)
-                } else {
-                    logger.host("payload asset '$name' is a raw tar (AAPT decompressed the .gz)")
-                    buffered
-                }
-            } catch (t: Throwable) {
-                raw.close()
-                return null
-            }
-        }
-        return null
-    }
-
-    private fun promotePluginSeed(seed: File) {
-        if (!seed.isDirectory) return
-        val dst = paths.xdgConfigOpencode
-        dst.mkdirs()
-        val nm = File(dst, "node_modules")
-        val nmNew = File(dst, "node_modules.seed")
-        val nmOld = File(dst, "node_modules.old")
-        nmNew.deleteRecursively(); nmOld.deleteRecursively()
-        val srcNm = File(seed, "node_modules")
-        if (srcNm.isDirectory) {
-            if (!srcNm.renameTo(nmNew)) { srcNm.copyRecursively(nmNew, overwrite = true) }
-            if (nm.exists()) nm.renameTo(nmOld)
-            if (!nmNew.renameTo(nm)) { nmNew.copyRecursively(nm, overwrite = true); nmNew.deleteRecursively() }
-            nmOld.deleteRecursively()
-        }
-        for (name in listOf("package.json", "package-lock.json")) {
-            val f = File(seed, name)
-            if (f.isFile) f.copyTo(File(dst, name), overwrite = true)
-        }
-        logger.host("plugin seed promoted into ${dst.name}/ (node_modules + lockfile)")
-    }
-
-    private fun extract(manifest: RuntimeManifest): Result {
-        val staging = File(paths.filesDir, "payload.staging")
-            // `usr` is the read-only data half of sealed tools. Its executable
-            // half stays in nativeLibraryDir; e.g. usr/lib/python3.13.zip is
-            // verified here while bin/python3 is a sealed APK-library symlink.
-            val oldRoots = listOf("opencode", "node_modules", "launcher.js", "usr")
-        try {
-            staging.deleteRecursively()
-            staging.mkdirs()
-
-            val payload = openPayloadStream()
-                ?: return Result.Failed("runtime-payload asset missing inside the APK (tried runtime-payload.tar.gz / .tar)")
-            payload.use { stream ->
-                unpackTar(stream, staging)
-            }
-
-            // Verify every extracted entry BEFORE promoting (flat, filesDir-relative).
-            for (e in manifest.entries) {
-                if (!RuntimeManifest.isSafeRelativePath(e.path)) throw SecurityException("unsafe manifest path: ${e.path}")
-                val f = File(staging, e.path)
-                if (!f.isFile) return Result.Failed("extraction incomplete: ${e.path} missing")
-                if (f.length() != e.size) return Result.Failed("extraction size mismatch on ${e.path}")
-                val sha = sha256(f)
-                if (!sha.equals(e.sha256, ignoreCase = true))
-                    return Result.Failed("extraction sha256 mismatch on ${e.path}")
-            }
-
-            // Promote: move each payload top-level entry into filesDir, keeping
-            // any old copy aside until success. Same parent -> rename is atomic.
-            paths.runtimeDir.mkdirs()
-            for (name in oldRoots) {
-                val src = File(staging, name)
-                val dst = File(paths.filesDir, name)
-                val bak = File(paths.filesDir, "$name.bak")
-                if (!src.exists()) continue
-                bak.deleteRecursively()
-                if (dst.exists()) dst.renameTo(bak)
-                if (!src.renameTo(dst)) {
-                    src.copyRecursively(dst, overwrite = true)
-                    src.deleteRecursively()
-                }
-                bak.deleteRecursively()
-            }
-            // Phase 9: the pre-installed @opencode-ai/plugin tree goes under the
-            // global config dir so upstream's Npm.install finds node_modules +
-            // a lockfile that already covers the package and never runs
-            // Arborist on-device (which SIGSYS-crashes under the app filter).
-            // Only the seed's own files are replaced; a user's opencode.json
-            // (or anything else in that dir) is left alone.
-            promotePluginSeed(File(staging, "plugin-seed"))
-            staging.deleteRecursively()
-
-            paths.extractionMarker.writeText(
-                org.json.JSONObject()
-                    .put("payloadVersion", manifest.payloadVersion)
-                    .put("opencodeCommit", manifest.opencodeCommit)
-                    .put("extractedAt", System.currentTimeMillis())
-                    .toString(),
-            )
-            logger.host("extraction complete: ${manifest.entries.size} files validated")
-            return Result.Extracted(manifest)
-        } catch (t: Throwable) {
-            staging.deleteRecursively()
-            logger.host("extraction FAILED: ${t.javaClass.simpleName}: ${t.message}")
-            logger.host(t.stackTraceToString().take(1500))
-            return Result.Failed("extraction failed: ${t.javaClass.simpleName}: ${t.message}", t)
-        }
-    }
-
-    companion object {
-        const val MANIFEST_ASSET = "runtime-manifest.json"
-        const val PAYLOAD_ASSET = "runtime-payload.tar.gz"
-
-        /**
-         * Pure validation (unit-testable): marker version + every manifest
-         * entry's existence/size/sha256. Entries are relative to [root] (the
-         * runtime dir); serverBundle/launcher are passed absolute for an
-         * early, human-readable message before the full checksum sweep.
-         */
-        fun verifyExtraction(
-            root: File,
-            marker: File,
-            serverBundle: File,
-            launcher: File,
-            manifest: RuntimeManifest,
-        ): String? {
-            if (!marker.exists()) return "no extraction marker (first run or wiped)"
-            val stamped = try {
-                val o = org.json.JSONObject(marker.readText())
-                o.optInt("payloadVersion", -1)
-            } catch (t: Throwable) {
-                return "marker unreadable: ${t.message}"
-            }
-            if (stamped != manifest.payloadVersion) return "marker payloadVersion=$stamped != ${manifest.payloadVersion}"
-            if (!serverBundle.isFile) return "server bundle missing: $serverBundle"
-            if (!launcher.isFile) return "launcher missing: $launcher"
-
-            for (e in manifest.entries) {
-                if (!RuntimeManifest.isSafeRelativePath(e.path)) return "unsafe manifest path: ${e.path}"
-                val f = installedLocation(root, e.path)
-                if (!f.isFile) return "missing ${e.path}"
-                if (f.length() != e.size) return "size mismatch on ${e.path}: ${f.length()} != ${e.size}"
-                val sha = sha256(f)
-                if (!sha.equals(e.sha256, ignoreCase = true)) return "sha256 mismatch on ${e.path}"
-            }
-            return null
-        }
-
-        /** Payload roots promoted somewhere other than filesDir/<same path>. */
-        const val PLUGIN_SEED_ROOT = "plugin-seed/"
-        const val PLUGIN_SEED_DEST = "xdg/config/opencode/"
-
-        /**
-         * Where a manifest entry lives AFTER promotion. Everything is flat under
-         * filesDir except the Phase 9 plugin seed, which is promoted into the
-         * OpenCode global config dir (so upstream's Npm.install finds it).
-         */
-        fun installedLocation(root: File, manifestPath: String): File =
-            if (manifestPath.startsWith(PLUGIN_SEED_ROOT))
-                File(root, PLUGIN_SEED_DEST + manifestPath.removePrefix(PLUGIN_SEED_ROOT))
-            else File(root, manifestPath)
-
-        fun sha256(f: File): String {
-            val md = MessageDigest.getInstance("SHA-256")
-            f.inputStream().use { input ->
-                val buf = ByteArray(64 * 1024)
-                while (true) {
-                    val n = input.read(buf)
-                    if (n < 0) break
-                    md.update(buf, 0, n)
-                }
-            }
-            return md.digest().joinToString("") { "%02x".format(it) }
-        }
-
-        /**
-         * Minimal POSIX ustar (and old-GNU) regular-file/dir reader. Entries
-         * are restricted to the staging root (no `..` escapes). Static/pure so
-         * it can be unit-tested on the JVM.
-         */
-        fun unpackTar(input: InputStream, destRoot: File) {
-            val header = ByteArray(512)
-            var zeroBlocks = 0
-            while (true) {
-                if (!readFully(input, header, 512)) break
-                if (header.all { it.toInt() == 0 }) {
-                    zeroBlocks++
-                    if (zeroBlocks >= 2) break
-                    continue
-                }
-                zeroBlocks = 0
-                val name = String(header, 0, 100, Charsets.US_ASCII).substringBefore('\u0000').trim()
-                val type = header[156].toInt().toChar()
-                val sizeStr = String(header, 124, 12, Charsets.US_ASCII).substringBefore('\u0000').trim()
-                val size = if (sizeStr.isEmpty()) 0L else sizeStr.toLong(8)
-                val prefix = String(header, 345, 155, Charsets.US_ASCII).substringBefore('\u0000').trim()
-                val fullName = if (prefix.isNotEmpty()) "$prefix/$name" else name
-                val target = File(destRoot, fullName).canonicalFile
-                val rootCanon = destRoot.canonicalFile
-                if (target != rootCanon && !target.path.startsWith(rootCanon.path + File.separator)) {
-                    throw SecurityException("tar entry escapes staging: $fullName")
-                }
-                when (type) {
-                    '0', '\u0000' -> { // regular file
-                        target.parentFile?.mkdirs()
-                        target.outputStream().use { out ->
-                            var left = size
-                            val buf = ByteArray(8192)
-                            while (left > 0) {
-                                val n = input.read(buf, 0, minOf(buf.size.toLong(), left).toInt())
-                                if (n < 0) throw IllegalStateException("truncated tar entry: $fullName")
-                                out.write(buf, 0, n)
-                                left -= n
-                            }
-                        }
-                        val pad = (512 - (size % 512)) % 512
-                        if (pad > 0) readFully(input, ByteArray(pad.toInt()), pad.toInt())
-                    }
-                    '5' -> target.mkdirs()   // directory
-                    'x', 'g' -> skipBytes(input, size)  // pax headers — skip
-                    else -> skipBytes(input, size)      // symlink/hardlink/etc.
-                }
-            }
-        }
-
-        private fun skipBytes(input: InputStream, size: Long) {
-            val pad = (512 - (size % 512)) % 512
-            var left = size + pad
-            val buf = ByteArray(8192)
-            while (left > 0) {
-                val n = input.read(buf, 0, minOf(buf.size.toLong(), left).toInt())
-                if (n < 0) break
-                left -= n
-            }
-        }
-
-        private fun readFully(input: InputStream, buf: ByteArray, n: Int): Boolean {
-            var read = 0
-            while (read < n) {
-                val r = input.read(buf, read, n - read)
-                if (r < 0) return false
-                read += r
-            }
-            return true
         }
     }
 }

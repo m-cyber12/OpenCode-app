@@ -28,9 +28,10 @@ class AbiGateTest {
     }
 
     @Test
-    fun x86_64IsSupportedForEmulator() {
+    fun x86_64IsNotSupportedSinceTheSwitchOver() {
+        // Owner decision 2026-11-16: the release ships arm64 only.
         val r = AbiGate.evaluateFor(device(listOf("x86_64")))
-        assertTrue(r is AbiGate.Result.Ok)
+        assertTrue(r is AbiGate.Result.Unsupported)
     }
 
     @Test
@@ -54,8 +55,8 @@ class AbiGateTest {
     }
 
     @Test
-    fun prefersArm64WhenBothAbisPresent() {
+    fun usesArm64WhenBothAbisPresent() {
         val r = AbiGate.evaluateFor(device(listOf("x86_64", "arm64-v8a")))
-        assertEquals("x86_64", (r as AbiGate.Result.Ok).abi) // primary first
+        assertEquals("arm64-v8a", (r as AbiGate.Result.Ok).abi) // x86_64 is not shipped
     }
 }

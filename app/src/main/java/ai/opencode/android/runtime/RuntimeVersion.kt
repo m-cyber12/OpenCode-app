@@ -15,9 +15,6 @@ object RuntimeVersion {
     const val OPENCODE_COMMIT = "05ea5073be967c779d326929b2de6228dda4159d"
     const val OPENCODE_VERSION = "1.18.23"
 
-    /** Bun-for-Android (bionic-linked official npm @oven/bun-*-android). */
-    const val BUN_VERSION = "1.3.14"
-
     /** Git built from source with the Android NDK/Bionic toolchain. */
     const val GIT_VERSION = "v2.48.1"
 
@@ -46,9 +43,6 @@ object RuntimeVersion {
             }
             if (manifest.opencodeVersion != OPENCODE_VERSION) {
                 add("opencodeVersion=${manifest.opencodeVersion} expected=$OPENCODE_VERSION")
-            }
-            if (manifest.bunVersion != BUN_VERSION) {
-                add("bunVersion=${manifest.bunVersion} expected=$BUN_VERSION")
             }
             if (manifest.gitVersion != GIT_VERSION) {
                 add("gitVersion=${manifest.gitVersion} expected=$GIT_VERSION")

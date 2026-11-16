@@ -24,7 +24,7 @@ class RuntimeVersionTest {
         payloadVersion = RuntimeVersion.PAYLOAD_VERSION,
         opencodeCommit = RuntimeVersion.OPENCODE_COMMIT,
         opencodeVersion = RuntimeVersion.OPENCODE_VERSION,
-        bunVersion = RuntimeVersion.BUN_VERSION,
+        bunVersion = "1.3.14",
         gitVersion = RuntimeVersion.GIT_VERSION,
         rgVersion = RuntimeVersion.RIPGREP_VERSION,
         payloadSha256 = "deadbeef",
@@ -64,14 +64,6 @@ class RuntimeVersionTest {
     }
 
     @Test
-    fun aWrongBunVersionIsRejected() {
-        val m = validManifest().copy(bunVersion = "0.1.0")
-        val reason = RuntimeVersion.validateManifest(m)
-        assertNotNull(reason)
-        assertTrue("reason must name the field: $reason", reason!!.contains("bunVersion"))
-    }
-
-    @Test
     fun aWrongGitVersionIsRejected() {
         val m = validManifest().copy(gitVersion = "v1.0.0")
         val reason = RuntimeVersion.validateManifest(m)
@@ -90,12 +82,10 @@ class RuntimeVersionTest {
     @Test
     fun everyMismatchIsReportedTogether() {
         val m = validManifest().copy(
-            bunVersion = "x",
             gitVersion = "y",
             rgVersion = "z",
         )
         val reason = RuntimeVersion.validateManifest(m)!!
-        assertTrue(reason.contains("bunVersion"))
         assertTrue(reason.contains("gitVersion"))
         assertTrue(reason.contains("rgVersion"))
         // The three matching fields must not be blamed.
@@ -111,7 +101,6 @@ class RuntimeVersionTest {
         assertEquals("05ea5073be967c779d326929b2de6228dda4159d", RuntimeVersion.OPENCODE_COMMIT)
         assertEquals(40, RuntimeVersion.OPENCODE_COMMIT.length)
         assertEquals("1.18.23", RuntimeVersion.OPENCODE_VERSION)
-        assertEquals("1.3.14", RuntimeVersion.BUN_VERSION)
         assertEquals("v2.48.1", RuntimeVersion.GIT_VERSION)
         assertEquals("15.1.0", RuntimeVersion.RIPGREP_VERSION)
         // The payload version is what the extraction marker stamps; Phase 5's

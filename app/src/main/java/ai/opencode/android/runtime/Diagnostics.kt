@@ -49,28 +49,15 @@ data class Diagnostics(
             sb.appendLine("app_package=${context.packageName}")
             sb.appendLine("app_version_code=${runCatching { context.packageManager.getPackageInfo(context.packageName, 0).longVersionCode }.getOrDefault(-1)}")
             sb.appendLine()
-            // Same rule as RuntimeManager: V2 only when the APK carries both the Node 26
-            // binary and the v2 bundle. The v1 constants below describe V1 only.
-            val hasV2Asset = runCatching { context.assets.list("")?.contains(ServerEngine.V2_ASSET) == true }
-                .getOrDefault(false)
-            val engine = ServerEngine.select(hasNode26Binary = paths.node26Binary().isFile, hasV2Asset = hasV2Asset)
-            val v2 = engine == ServerEngine.V2
+            // The v2 server on Node 26 is the only engine (v1 removed at the switch-over).
             sb.appendLine("## Runtime versions")
-            sb.appendLine("engine=$engine")
+            sb.appendLine("engine=${ServerEngine.V2}")
             sb.appendLine("payload_version=${RuntimeVersion.PAYLOAD_VERSION}")
-            if (v2) {
-                sb.appendLine("opencode=${ServerEngine.V2_VERSION} runtime=node26 (libnode26.so; v2 bundle)")
-                // The build constant above is what the APK was packed with. The live value is what the
-                // running server reported, so a mismatch shows up here instead of being hidden.
-                sb.appendLine("opencode_live_version=${liveServerVersion?.ifEmpty { "(empty)" } ?: "(not probed this session)"}")
-                sb.appendLine("git=${RuntimeVersion.GIT_VERSION} ripgrep=${RuntimeVersion.RIPGREP_VERSION}")
-            } else {
-                sb.appendLine("opencode=${RuntimeVersion.OPENCODE_VERSION} commit=${RuntimeVersion.OPENCODE_COMMIT}")
-                sb.appendLine("bun=${RuntimeVersion.BUN_VERSION} git=${RuntimeVersion.GIT_VERSION} ripgrep=${RuntimeVersion.RIPGREP_VERSION}")
-            }
-            state?.manifest?.takeIf { !v2 }?.let {
-                sb.appendLine("installed_manifest: opencode=${it.opencodeVersion} @ ${it.opencodeCommit.take(7)} bun=${it.bunVersion} git=${it.gitVersion} rg=${it.rgVersion} files=${it.entries.size}")
-            }
+            sb.appendLine("opencode=${ServerEngine.V2_VERSION} runtime=node26 (libnode26.so; v2 bundle)")
+            // The build constant above is what the APK was packed with. The live value is what the
+            // running server reported, so a mismatch shows up here instead of being hidden.
+            sb.appendLine("opencode_live_version=${liveServerVersion?.ifEmpty { "(empty)" } ?: "(not probed this session)"}")
+            sb.appendLine("git=${RuntimeVersion.GIT_VERSION} ripgrep=${RuntimeVersion.RIPGREP_VERSION}")
             sb.appendLine()
             sb.appendLine("## State")
             sb.appendLine("status=${state?.status} detail=${state?.detail}")
@@ -104,29 +91,16 @@ data class Diagnostics(
             sb.appendLine("## Layout")
             sb.appendLine("filesDir=${paths.filesDir}")
             sb.appendLine("nativeLibraryDir=${paths.nativeLibraryDir}")
-            val layout = if (v2) {
-                listOf(
-                    "node26(libnode26.so)" to paths.node26Binary(),
-                    "git(libgit.so)" to File(paths.nativeLibraryDir, "libgit.so"),
-                    "git-remote-https(libgitremotehttp.so)" to File(paths.nativeLibraryDir, "libgitremotehttp.so"),
-                    "rg(librg.so)" to File(paths.nativeLibraryDir, "librg.so"),
-                    "child-shim" to paths.childShimBinary(),
-                    "v2 server bundle" to paths.v2Entry, "v2 launcher" to paths.v2Launcher,
-                    "bin/git" to paths.gitLink, "bin/rg" to paths.rgLink,
-                    "v2 marker" to paths.v2Marker,
-                )
-            } else {
-                listOf(
-                    "bun" to paths.bunBinary(),
-                    "git(libgit.so)" to File(paths.nativeLibraryDir, "libgit.so"),
-                    "git-remote-https(libgitremotehttp.so)" to File(paths.nativeLibraryDir, "libgitremotehttp.so"),
-                    "rg(librg.so)" to File(paths.nativeLibraryDir, "librg.so"),
-                    "child-shim" to paths.childShimBinary(),
-                    "server bundle" to paths.serverBundle, "launcher" to paths.launcher,
-                    "bin/bun" to paths.bunLink, "bin/git" to paths.gitLink, "bin/rg" to paths.rgLink,
-                    "marker" to paths.extractionMarker,
-                )
-            }
+            val layout = listOf(
+                "node26(libnode26.so)" to paths.node26Binary(),
+                "git(libgit.so)" to File(paths.nativeLibraryDir, "libgit.so"),
+                "git-remote-https(libgitremotehttp.so)" to File(paths.nativeLibraryDir, "libgitremotehttp.so"),
+                "rg(librg.so)" to File(paths.nativeLibraryDir, "librg.so"),
+                "child-shim" to paths.childShimBinary(),
+                "v2 server bundle" to paths.v2Entry, "v2 launcher" to paths.v2Launcher,
+                "bin/git" to paths.gitLink, "bin/rg" to paths.rgLink,
+                "v2 marker" to paths.v2Marker,
+            )
             layout.forEach { (name, f) ->
                 sb.appendLine("  $name: exists=${f.exists()} exec=${runCatching { f.canExecute() }.getOrDefault(false)} size=${runCatching { f.length() }.getOrDefault(-1)} path=$f")
             }
@@ -148,14 +122,12 @@ data class Diagnostics(
             val serverLogDir = File(paths.xdgState, "opencode/log")
             val serverLog = serverLogDir.listFiles()?.filter { it.isFile }?.maxByOrNull { it.lastModified() }
             sb.appendLine("server_log_file=${serverLog?.absolutePath ?: "(none found under $serverLogDir)"}")
-            if (v2) {
-                // The v2 server's log location is not confirmed yet, so list what exists under the state folder.
-                sb.appendLine("v2 state files under ${paths.xdgState} (name size):")
-                paths.xdgState.walkTopDown().maxDepth(4).filter { it.isFile }.take(40).forEach {
-                    sb.appendLine("  ${it.relativeTo(paths.xdgState).path} ${it.length()}")
-                }
-                sb.appendLine("phase2_invariants=NOT_PROBED (the config guard and the no-exec rewrite run only inside a model tool call; no model is reachable without a paid key)")
+            // The v2 server's log location is not confirmed yet, so list what exists under the state folder.
+            sb.appendLine("v2 state files under ${paths.xdgState} (name size):")
+            paths.xdgState.walkTopDown().maxDepth(4).filter { it.isFile }.take(40).forEach {
+                sb.appendLine("  ${it.relativeTo(paths.xdgState).path} ${it.length()}")
             }
+            sb.appendLine("phase2_invariants=NOT_PROBED (the config guard and the no-exec rewrite run only inside a model tool call; no model is reachable without a paid key)")
             if (serverLog != null) {
                 val len = serverLog.length()
                 serverLog.inputStream().use { input ->

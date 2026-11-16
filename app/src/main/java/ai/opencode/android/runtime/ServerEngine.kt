@@ -1,14 +1,11 @@
 package ai.opencode.android.runtime
 
 /**
- * Which OpenCode server the runtime starts.
+ * The OpenCode server the runtime starts: the v2 server on Node 26
+ * (`libnode26.so` + `node26-v2.zip`).
  *
- * V1: the Bun-based v1 server (libbun.so + launcher.js + runtime-payload).
- * V2: the OpenCode v2 server on Node 26 (libnode26.so + node26-v2.zip).
- *
- * Transitional selection (migration phase 1): V2 is used only when the APK carries
- * both the Node 26 binary and the v2 bundle asset. The release build does not carry
- * them yet, so release keeps V1 until the switch-over commit removes V1.
+ * The v1 Bun server was removed at the switch-over (owner decision 2026-11-05 and
+ * 2026-11-16): there is one engine, so there is nothing to select.
  */
 enum class ServerEngine(
     /** Health route on loopback (Basic auth). */
@@ -16,7 +13,6 @@ enum class ServerEngine(
     /** Text the health body must contain to count as healthy. */
     val healthMarker: String,
 ) {
-    V1(healthPath = "/global/health", healthMarker = "\"healthy\""),
     V2(healthPath = "/api/info", healthMarker = "\"version\""),
     ;
 
@@ -26,9 +22,5 @@ enum class ServerEngine(
 
         /** OpenCode version the v2 bundle is built from (spike/opencode-v2 sets OPENCODE_VERSION). */
         const val V2_VERSION = "2.2.5"
-
-        /** Pure selection rule, kept separate for JVM tests. */
-        fun select(hasNode26Binary: Boolean, hasV2Asset: Boolean): ServerEngine =
-            if (hasNode26Binary && hasV2Asset) V2 else V1
     }
 }

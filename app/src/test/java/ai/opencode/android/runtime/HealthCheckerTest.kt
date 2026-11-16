@@ -117,9 +117,9 @@ class HealthCheckerTest {
             assertTrue("must be healthy: $h", h.healthy)
             assertEquals(200, h.code)
             assertTrue(h.body.contains("healthy"))
-            // The request shape the loopback server expects: GET /global/health
+            // The request shape the loopback server expects for the v2 server: GET /api/info
             // with the Basic auth header the server verifies.
-            assertEquals("GET /global/health HTTP/1.1", r.lastRequestLine)
+            assertEquals("GET /api/info HTTP/1.1", r.lastRequestLine)
             assertEquals(
                 "Basic " + Base64.getEncoder().encodeToString("${RuntimeEnv.SERVER_USER}:pw".toByteArray()),
                 r.lastAuthHeader,
