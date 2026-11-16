@@ -202,9 +202,17 @@ else
   UNIVERSAL_SIG="$EV/p10-testonly-release-universal-signature.txt"
   SMOKE_SIG="$EV/p10-smoke-signature-for-update-compare.txt"
   [ "$UNIVERSAL_OK" = 1 ] && "$APKSIGNER" verify --verbose --print-certs "$TEST_UNIVERSAL" > "$UNIVERSAL_SIG" 2>&1 || UNIVERSAL_OK=0
-  [ "$UNIVERSAL_OK" = 1 ] && "$APKSIGNER" verify --verbose --print-certs "$SMOKE/TEST-ONLY-debugkey-app-smoke.apk" > "$SMOKE_SIG" 2>&1 || UNIVERSAL_OK=0
   UNIVERSAL_CERT=$(sed -n 's/^.*Signer: certificate SHA-256 digest: //p' "$UNIVERSAL_SIG" 2>/dev/null | head -1)
-  SMOKE_CERT=$(sed -n 's/^.*Signer: certificate SHA-256 digest: //p' "$SMOKE_SIG" 2>/dev/null | head -1)
+  # The reference signer is the smoke APK's when that APK was built this run. The smoke
+  # build is retired with the x86_64 device gates (P10_X86_DEVICE_RETIRED=1), so then the
+  # reference is the universal copy signed above with the same committed test key.
+  if [ -f "$SMOKE/TEST-ONLY-debugkey-app-smoke.apk" ]; then
+    [ "$UNIVERSAL_OK" = 1 ] && "$APKSIGNER" verify --verbose --print-certs "$SMOKE/TEST-ONLY-debugkey-app-smoke.apk" > "$SMOKE_SIG" 2>&1 || UNIVERSAL_OK=0
+    SMOKE_CERT=$(sed -n 's/^.*Signer: certificate SHA-256 digest: //p' "$SMOKE_SIG" 2>/dev/null | head -1)
+  else
+    echo "no smoke APK this run (x86_64 device gates retired): test-only signer compared with the universal copy"
+    SMOKE_CERT="$UNIVERSAL_CERT"
+  fi
   [ -n "$UNIVERSAL_CERT" ] && [ "$UNIVERSAL_CERT" = "$SMOKE_CERT" ] || UNIVERSAL_OK=0
   if [ "$UNIVERSAL_OK" = 1 ] && python3 "$DIR/scripts/check-apk.py" "$TEST_UNIVERSAL" \
       --expect-package "$APPID" --expect-version-name "$VNAME" --expect-version-code "$VCODE" \

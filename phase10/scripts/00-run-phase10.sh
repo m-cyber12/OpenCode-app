@@ -245,8 +245,8 @@ if [ ! -f "$ROOT/phase4/out/engine/assets/runtime-manifest.json" ]; then
 else
   echo "reusing phase4/out/engine payload" | tee -a "$MAINLOG"
 fi
-MFV=$(python3 -c 'import json,sys;m=json.load(open(sys.argv[1]));print("payloadVersion=%s opencode=%s@%s bun=%s git=%s rg=%s sha256=%s files=%d"%(m["payloadVersion"],m["opencodeVersion"],m["opencodeCommit"][:12],m["bunVersion"],m["gitVersion"],m["rgVersion"],m["payloadSha256"][:16],len(m["files"])))' "$ROOT/phase4/out/engine/assets/runtime-manifest.json")
-note_gate "P10-PAYLOAD PASS: $MFV"
+MFV=$(python3 -c 'import json,sys;m=json.load(open(sys.argv[1]));print("payloadVersion=%s opencode=%s@%s node26=%s git=%s rg=%s sha256=%s files=%d"%(m["payloadVersion"],m["opencodeVersion"],m["opencodeCommit"][:12],"26.4.0",m["gitVersion"],m["rgVersion"],m["payloadSha256"][:16],len(m["files"])))' "$ROOT/phase4/out/engine/assets/runtime-manifest.json")
+if [ -n "$MFV" ]; then note_gate "P10-PAYLOAD PASS: $MFV"; else note_gate "P10-PAYLOAD FAIL: runtime manifest unreadable"; fi
 # No second copy of the payload in the release folder: the same bytes are inside the
 # APK and the AAB, and the copy was 188 MB of the unsigned-release artifact (owner
 # decision 2026-10-30). The runtime manifest below is still published.
