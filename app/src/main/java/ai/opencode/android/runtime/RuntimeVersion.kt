@@ -11,9 +11,9 @@ package ai.opencode.android.runtime
  * clean re-extraction.
  */
 object RuntimeVersion {
-    /** OpenCode upstream pin (anomalyco/opencode, branch dev). */
-    const val OPENCODE_COMMIT = "05ea5073be967c779d326929b2de6228dda4159d"
-    const val OPENCODE_VERSION = "1.18.23"
+    /** OpenCode upstream pin: the v2 release tag v2.2.5 (anomalyco/opencode). */
+    const val OPENCODE_COMMIT = "9bbb8ce18c80f099e0e448775f59d965ead40a21"
+    const val OPENCODE_VERSION = "2.2.5"
 
     /** Git built from source with the Android NDK/Bionic toolchain. */
     const val GIT_VERSION = "v2.48.1"
@@ -25,7 +25,7 @@ object RuntimeVersion {
      * Bumped whenever the payload layout/manifest changes. Stored in the
      * extraction marker; a mismatch forces re-extraction.
      */
-    const val PAYLOAD_VERSION = 9   // 9 = stdin server password + config guard; 8 = noexec shell patch; 7 = Phase 9: bare OPENCODE_VERSION + pre-seeded @opencode-ai/plugin (plugin-seed/)
+    const val PAYLOAD_VERSION = 10   // 10 = switch-over: v2 (Node 26) server, tool data only in the tar; 9 = stdin server password + config guard; 8 = noexec shell patch; 7 = Phase 9: bare OPENCODE_VERSION + pre-seeded @opencode-ai/plugin (plugin-seed/)
 
     /**
      * The manifest is generated from the same lockfile as this app. A payload

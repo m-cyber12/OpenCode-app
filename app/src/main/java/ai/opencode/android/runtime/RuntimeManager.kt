@@ -240,6 +240,13 @@ class RuntimeManager private constructor(private val appContext: Context) {
                 running = false
                 return
             }
+            // Sealed-tool data (usr/): read-only, from runtime-payload.tar.gz. Server-independent.
+            val tools = extractor.ensureToolData()
+            if (tools is PayloadExtractor.Result.Failed) {
+                publish(RuntimeStatus.FATAL, "tool data extraction failed: ${tools.reason}")
+                running = false
+                return
+            }
             manifest = null   // the v1 manifest is not part of the v2 payload
             logger.host(
                 "payload: opencode ${ServerEngine.V2_VERSION} (node26-v2.zip) " +

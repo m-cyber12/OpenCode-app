@@ -6,7 +6,7 @@ import java.util.Base64
 
 /**
  * Health is a verified HTTP response, not merely "process launched".
- * Polls /global/health on loopback with Basic auth (the same check the
+ * Polls /api/info (v2) on loopback with Basic auth (the same check the
  * Electron desktop sidecar uses against its forked server).
  */
 class HealthChecker(

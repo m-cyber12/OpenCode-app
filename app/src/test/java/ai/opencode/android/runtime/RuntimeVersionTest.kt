@@ -98,9 +98,9 @@ class RuntimeVersionTest {
         // The pins this app enforces - sanity-checked here so a copy/paste
         // regression in one of the six constants is caught by the unit suite,
         // not only by a device run that re-extracts forever.
-        assertEquals("05ea5073be967c779d326929b2de6228dda4159d", RuntimeVersion.OPENCODE_COMMIT)
+        assertEquals("9bbb8ce18c80f099e0e448775f59d965ead40a21", RuntimeVersion.OPENCODE_COMMIT)
         assertEquals(40, RuntimeVersion.OPENCODE_COMMIT.length)
-        assertEquals("1.18.23", RuntimeVersion.OPENCODE_VERSION)
+        assertEquals("2.2.5", RuntimeVersion.OPENCODE_VERSION)
         assertEquals("v2.48.1", RuntimeVersion.GIT_VERSION)
         assertEquals("15.1.0", RuntimeVersion.RIPGREP_VERSION)
         // The payload version is what the extraction marker stamps; Phase 5's

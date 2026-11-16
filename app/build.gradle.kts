@@ -51,7 +51,7 @@ android {
         // asserts the prefix equals versions.lock's opencode version.
         versionName = "1.18.23-phase10"   // tracks the pinned OpenCode version (versions.lock)
         ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")   // arm64 ships; x86_64 for CI/emulator
+            abiFilters += listOf("arm64-v8a")   // arm64 only (owner decision 2026-11-16: x86_64 dropped)
         }
         // On-device integration tests run inside the app's own process: they use
         // the SAME client classes (OpenCodeApi/OpenCodeEventStream/SecretStore)
@@ -355,7 +355,7 @@ val verifyAndStagePayload = tasks.register("verifyAndStagePayload") {
             throw GradleException(
                 "Embedded runtime payload missing: ${mf.path} not found.\n" +
                     "Run:  bash phase4/scripts/10-build-payload.sh   (needs network; see phase4/README.md)\n" +
-                    "It builds Bun-for-Android, Android/Bionic Git and ripgrep, and the pinned OpenCode bundle " +
+                    "It builds Node 26 for Android, Android/Bionic Git and ripgrep, and the pinned v2 OpenCode bundle " +
                     "into phase4/out/engine/."
             )
         }
@@ -374,12 +374,22 @@ val verifyAndStagePayload = tasks.register("verifyAndStagePayload") {
                     "Rebuild it:  bash phase4/scripts/10-build-payload.sh"
             )
         }
-        println("PAYLOAD_SOURCE runtime-payload.tar.gz=${payloadTgz.length()}B runtime-manifest.json=${mf.length()}B")
+        // The v2 server bundle (opencode.mjs, assets/, launcher-v2.mjs) is the only server code.
+        val v2Zip = File(srcAssets, "node26-v2.zip")
+        if (!v2Zip.isFile) {
+            throw GradleException(
+                "Embedded runtime payload incomplete: ${v2Zip.path} not found (the v2 server bundle). " +
+                    "Rebuild it:  bash phase4/scripts/10-build-payload.sh"
+            )
+        }
+        println("PAYLOAD_SOURCE runtime-payload.tar.gz=${payloadTgz.length()}B node26-v2.zip=${v2Zip.length()}B runtime-manifest.json=${mf.length()}B")
         // v9.28: + libgitremotehttp.so - git's smart-HTTP(S) helper (curl +
         // Mbed TLS, static). An ABI missing it must FAIL staging loudly: an
         // APK without the helper reverts GitHub transport to "aborted session".
-        val libs = listOf("libbun.so", "libgit.so", "librg.so", "libgitremotehttp.so", "libseccompshim.so", "libexecshim.so", "libchildshim.so")
-        val abis = listOf("arm64-v8a", "x86_64")
+        // Switch-over (owner 2026-11-16): Node 26 (libnode26.so) is the only server runtime;
+        // libbun.so and the x86_64 ABI are gone from the release set.
+        val libs = listOf("libnode26.so", "libgit.so", "librg.so", "libgitremotehttp.so", "libseccompshim.so", "libexecshim.so", "libchildshim.so")
+        val abis = listOf("arm64-v8a")
         var completeAbis = 0
         for (abi in abis) {
             val abiDir = File(srcJni, abi)

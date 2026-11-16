@@ -375,7 +375,7 @@ class HarnessSealedToolsGateTest {
             val paths = RuntimePaths.get(context)
             paths.ensureDirs()
             val baselineLog = File(paths.tmp, "v10-baseline.log").apply { delete() }
-            val baseline = PayloadExtractor(context, paths, RuntimeLogger(baselineLog)).ensureExtracted()
+            val baseline = PayloadExtractor(context, paths, RuntimeLogger(baselineLog)).ensureToolData()
             check(baseline !is PayloadExtractor.Result.Failed) { "baseline extraction failed: $baseline" }
             val baselineLinks = HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
             check(baselineLinks != null && baselineLinks.ok()) { "baseline links failed: ${baselineLinks?.summary()}" }
@@ -395,7 +395,7 @@ class HarnessSealedToolsGateTest {
             check(paths.extractionMarker.isFile) { "staging unexpectedly removed the extraction marker" }
 
             val upgradeLog = File(paths.tmp, "v10-upgrade.log").apply { delete() }
-            val upgraded = PayloadExtractor(context, paths, RuntimeLogger(upgradeLog)).ensureExtracted()
+            val upgraded = PayloadExtractor(context, paths, RuntimeLogger(upgradeLog)).ensureToolData()
             val refreshedBrief = EnvironmentBrief.install(paths.xdgConfigOpencode)
             val upgradedLinks = HarnessSeal.apply(context, context.filesDir, nativeLibraryDir)
             val markerVersionAfter = org.json.JSONObject(paths.extractionMarker.readText())
@@ -423,7 +423,7 @@ class HarnessSealedToolsGateTest {
             val missing = required.filterNot { run.output.contains(it) }
             val briefText = staleBrief.readText()
             val reextractReasonSeen = upgradeLog.readText().contains("missing usr/lib/python3.13.zip")
-            val ok = upgraded is PayloadExtractor.Result.Extracted && refreshedBrief &&
+            val ok = upgraded is PayloadExtractor.Result.ToolsReady && refreshedBrief &&
                 upgradedLinks != null && upgradedLinks.ok() &&
                 markerVersionBefore == markerVersionAfter && reextractReasonSeen &&
                 briefText.contains("Node.js 24") && briefText.contains("CPython") &&
