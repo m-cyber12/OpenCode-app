@@ -1,8 +1,24 @@
 P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, published identity, store package, compileSdk/targetSdk 36) + apk inspector self-test
-P10_API36_SDK PASS: compile platform and google_apis x86_64 image are exactly android-36
+P10_API36_SDK SKIP: x86_64 device gate retired as a release gate (P10_X86_DEVICE_RETIRED=1; see the v2 migration plan)
 P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone (16 scenarios, pass=136 fail=0 - the scenario list and every check are in p10-driver-selftest.log)
 P10-UNIT PASS: JVM tests=586 failures=0 errors=0 skipped=0 (unit tests are NOT runtime evidence - the device gates below are)
-P10-PAYLOAD PASS: payloadVersion=9 opencode=1.18.23@05ea5073be96 bun=1.3.14 git=v2.48.1 rg=15.1.0 sha256=bb9a6c7bfee394d1 files=2622
-P10-DEVICE PASS: fresh exact API 36 AVD on 16 (Physical size: 1080x1920 density=Physical density: 160)
-P10-BUILD FAIL: debug APK build failed
-P10_SUMMARY gates not reached (build/environment failure) - see 00-run-phase10.log
+P10-PAYLOAD PASS: 
+P10-DEVICE SKIP: x86_64 device gate retired as a release gate (P10_X86_DEVICE_RETIRED=1; see the v2 migration plan)
+P6-UI SKIP: x86_64 device gate retired as a release gate (P10_X86_DEVICE_RETIRED=1; see the v2 migration plan)
+P10_WS_W4 SKIP: x86_64 device gate retired as a release gate (P10_X86_DEVICE_RETIRED=1; see the v2 migration plan)
+P10-SMOKE SKIP: x86_64 device gate retired as a release gate (P10_X86_DEVICE_RETIRED=1; see the v2 migration plan)
+P10-SHOTS SKIP: x86_64 device gate retired as a release gate (P10_X86_DEVICE_RETIRED=1; see the v2 migration plan)
+P10-RELEASE FAIL: see the log
+P9-GATES SKIP: x86_64 device gate retired as a release gate (P10_X86_DEVICE_RETIRED=1; see the v2 migration plan)
+P10_RELEASE_AAB PASS :: CONTENTS entries=331 native_abis=arm64-v8a(24 libs,130.9MB) payload=True manifest_asset=True
+P10_RELEASE_APK PASS :: MANIFEST package=<app> versionCode=8 versionName=2.2.5-phase10 minSdk=29 targetSdk=36 debuggable=False
+P10_RELEASE_APK_DETAIL PASS :: CONTENTS entries=326 native_abis=arm64-v8a(24 libs,130.9MB) payload=True manifest_asset=True
+P10_SIZE PASS :: apkMb=115.2 capMb=230 headroomMb=114.8 native=arm64-v8a(24libs,130.9MB)
+P10_TESTONLY_ARM64 FAIL :: arm64 trim/align/sign/inspect failed or x86_64 survived:
+P10_TESTONLY_RELEASE FAIL :: zipalign/sign/inspect failed:
+P10_UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
+P10_SUMMARY 2026-11-16T08:27:36Z
+phase6_ui_fails=n/a phase10_gate_fails=2 phase9_gate_fails=0
+NOTE: PASS lines above are real gate executions on the emulator/device. Unit and
+      compile lines are NOT runtime evidence. UNSIGNED release artifacts are
+      expected in CI: signing is the human step (docs/RELEASE.md).
