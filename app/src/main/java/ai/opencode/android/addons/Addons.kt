@@ -17,7 +17,7 @@ import java.io.File
  *  - only the npm TARBALL is stored; extraction is the agent's one-liner
  *    (`tar -xzf`), because toybox tar is device-verified while a Java tar
  *    walker would be new untested surface;
- *  - W^X still holds: add-ons are DATA consumed by bun/next (wasm, JS),
+ *  - W^X still holds: add-ons are DATA consumed by the agent's JS tools (wasm, JS),
  *    never native executables - those can only ship inside the APK.
  *
  * This object is the pure, JVM-tested part: URL building, manifest parsing,

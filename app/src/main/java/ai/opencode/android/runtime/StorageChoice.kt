@@ -16,7 +16,7 @@ import java.io.File
  * Why this is not just a preference read:
  *
  *  * A Storage Access Framework tree is a `content://` URI. The embedded OpenCode
- *    runtime is a POSIX process (git, bun, ripgrep, the `bash` tool) and needs a
+ *    runtime is a POSIX process (git, ripgrep, the `bash` tool) and needs a
  *    real path, so a chosen folder is only usable as the live project root when it
  *    can be RESOLVED to a real path on the primary shared volume — and resolution
  *    is not the same thing as permission, so [isUsableRoot] writes a probe file
@@ -33,7 +33,7 @@ import java.io.File
  * `MANAGE_EXTERNAL_STORAGE` unnecessary? No - and the reason is structural, not a
  * missing feature. A SAF tree grant is access to a `content://` URI *for this app's
  * ContentResolver calls*. The workspace is not accessed that way: the embedded
- * runtime is a separate process (bun, git, ripgrep, the `bash` tool, the agent's own
+ * runtime is a separate process (git, ripgrep, the `bash` tool, the agent's own
  * file tools) and it opens the project directory as a POSIX path. Nothing the app
  * holds - a tree URI, a persisted grant, an `openFileDescriptor` on a child - is
  * visible to that process. So the operations that still require the broad grant are

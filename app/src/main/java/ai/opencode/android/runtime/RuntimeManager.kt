@@ -388,7 +388,7 @@ class RuntimeManager private constructor(private val appContext: Context) {
     }
 
     /**
-     * Create bin/bun, bin/git, bin/rg as symlinks into nativeLibraryDir.
+     * Create bin/git and bin/rg as symlinks into nativeLibraryDir.
      *
      * The layout now comes from the sealed manifest the payload build ships
      * (`sealed-exec-<abi>.txt`) and is applied by the vendored harness kernel:

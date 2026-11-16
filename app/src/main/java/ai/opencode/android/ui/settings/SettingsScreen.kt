@@ -2602,7 +2602,7 @@ private fun LinkButton(label: String, url: String, tag: String, onOpenUrl: (Stri
  * The licences of everything this APK actually contains.
  *
  * Every row is a real component in the shipped artifact, not a formality: the
- * OpenCode bundle, Bun, git and ripgrep are all inside the payload, and the
+ * OpenCode bundle, Node 26, git and ripgrep are all inside the payload, and the
  * AndroidX/Kotlin libraries are inside the APK. Git is the one GPL-2.0 component,
  * so its written offer is spelled out rather than glossed over
  * (docs/THIRD-PARTY-NOTICES.md carries the pinned sources).

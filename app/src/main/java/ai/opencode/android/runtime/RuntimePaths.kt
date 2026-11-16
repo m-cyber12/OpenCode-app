@@ -8,10 +8,10 @@ import java.io.File
  * app-private storage — nothing user-visible, nothing requiring manual setup.
  *
  *   filesDir/
- *     bin/                 symlinks bun/git/rg -> nativeLibraryDir (exec-allowed)
+ *     bin/                 symlinks git/rg -> nativeLibraryDir (exec-allowed)
  *     runtime/             extraction marker and host metadata
  *     runtime/.extracted   extraction marker (payload version + manifest sha)
- *     launcher.js          bun entrypoint that imports the server bundle
+ *     launcher.js          node entrypoint that imports the server bundle
  *     workspaces/          LEGACY project root (pre-Phase-10 installs); migrated
  *     log/runtime.log      supervisor lifecycle + stdout/stderr of the server
  *     log/crashes/         one file per unexpected server death
@@ -44,7 +44,7 @@ import java.io.File
  * A fourth possibility exists and is deliberately not used as the live root: a
  * folder chosen through the Storage Access Framework. SAF hands the app a
  * `content://` tree URI, and the embedded OpenCode runtime is a POSIX process
- * (git, bun, ripgrep, shell tools) that needs a real path — so a SAF tree can only
+ * (git, ripgrep, shell tools) that needs a real path — so a SAF tree can only
  * be used live when it can be RESOLVED to a real path on the primary volume,
  * which this app verifies by writing a probe file before accepting it
  * ([storageOverrideRoot]). Anything else (SD card, cloud provider) would need a
@@ -162,8 +162,8 @@ class RuntimePaths private constructor(
     val binDir: File = File(filesDir, "bin")
     // The payload is extracted FLAT into filesDir (matching the proven Phase 3
     // layout): filesDir/launcher.js, filesDir/node_modules/<jsonc-parser,
-    // node-pty, bun-pty>, filesDir/opencode/dist/node/node.js, and sealed-tool
-    // data under filesDir/usr/ (currently the Python stdlib zip). Bun resolves
+    // node-pty, ...>, filesDir/opencode/dist/node/node.js, and sealed-tool
+    // data under filesDir/usr/ (currently the Python stdlib zip). Node resolves
     // node_modules by walking up from the bundle dir; the bundle sits in
     // filesDir/opencode/dist/node/, so it finds filesDir/node_modules. The
     // extraction marker and staging still live in filesDir/runtime/ which is
@@ -241,8 +241,8 @@ class RuntimePaths private constructor(
     // are direct children of filesDir; runtimeDir holds only host metadata.
 
     // OpenCode creates these at startup. Pre-create them in the host because
-    // the app-uid seccomp filter denies the access() probe Bun uses to check a
-    // path (mapped to ENOSYS by the seccomp shim), which otherwise makes Bun
+    // the app-uid seccomp filter denies the access() probe the runtime uses to check a
+    // path (mapped to ENOSYS by the seccomp shim), which otherwise makes the runtime
     // decide an existing XDG dir is absent and then mkdir() it itself.
     val xdgDataOpencode: File = File(xdgData, "opencode")
     val xdgConfigOpencode: File = File(xdgConfig, "opencode")
@@ -254,7 +254,7 @@ class RuntimePaths private constructor(
         listOf(
             binDir, runtimeDir, xdgData, xdgConfig, xdgState, xdgCache, tmp, home,
             workspaces, logDir, crashDir, diagnosticsDir, secretsDir,
-            // OpenCode app-data subtree (pre-created so Bun never has to mkdir
+            // OpenCode app-data subtree (pre-created so the runtime never has to mkdir
             // under the app seccomp filter):
             xdgDataOpencode, xdgConfigOpencode, xdgStateOpencode, xdgCacheOpencode,
             xdgStateOpencodeLog,
@@ -276,7 +276,7 @@ class RuntimePaths private constructor(
          * The shared-storage volume root, or null when it is not mounted. Read
          * through the deprecated `getExternalStorageDirectory` on purpose: it is
          * still the only API that names the primary volume's real path, which is
-         * what a POSIX runtime needs (a `content://` URI is useless to git and bun).
+         * what a POSIX runtime needs (a `content://` URI is useless to git and the runtime).
          */
         private fun sharedStorageRoot(): File? = runCatching {
             if (android.os.Environment.getExternalStorageState() == android.os.Environment.MEDIA_MOUNTED) {

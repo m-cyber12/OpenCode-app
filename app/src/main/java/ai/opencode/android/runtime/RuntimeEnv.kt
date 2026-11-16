@@ -10,7 +10,7 @@ import java.io.File
  *     cache and temp never touch shared storage (and match what
  *     xdg-basedir resolves to inside OpenCode).
  *   - PATH starts with the bin/ dir holding the symlinks to nativeLibraryDir
- *     (bun/git/rg) so OpenCode's `which`-style lookups find the REAL bundled
+ *     (git/rg) so OpenCode's `which`-style lookups find the REAL bundled
  *     tools, not system stand-ins.
  *   - SHELL=/system/bin/sh (Android mksh) — the verified Phase 3 shell.
  *   - Server auth uses an app-generated random password (never shipped).
@@ -139,10 +139,9 @@ object RuntimeEnv {
         // Explicit absolute paths for the launcher glue.
         env["OPENCODE_FILES_DIR"] = paths.filesDir.absolutePath
         env["OPENCODE_BUNDLE"] = paths.v2Entry.absolutePath
-        // Native seccomp compatibility shim (jniLib -> nativeLibraryDir). The
-        // exec shim sets this path as LD_PRELOAD before Bun is exec'd, so the
-        // constructor is active before native startup. launcher.js also tries
-        // bun:ffi as a backstop where that Bun build provides it.
+        // Native seccomp compatibility shim (jniLib -> nativeLibraryDir). It is
+        // loaded before the server starts, so its constructor is active before
+        // native startup.
         env["OPENCODE_SECCOMP_SHIM"] = File(paths.nativeLibraryDir, "libseccompshim.so").absolutePath
         // v9.23 (owner): the GitHub connector. The Keystore-held token rides
         // ONLY here - as the env value `key` of the local server process, so
