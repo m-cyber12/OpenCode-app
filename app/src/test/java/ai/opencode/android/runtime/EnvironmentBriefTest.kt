@@ -208,8 +208,8 @@ class EnvironmentBriefTest {
         for (port in PortScanner.CANDIDATE_PORTS) {
             assertTrue("set must document watched port $port", text.contains(port.toString()))
         }
-        assertTrue(text.contains("bun"))
-        assertTrue(text.contains("Node.js 24"))
+        assertTrue(text.contains("Node.js 26"))
+        assertFalse("Bun is removed from the v2 runtime", text.contains("`bun`"))
         assertTrue(text.contains("npm 11"))
         assertTrue(text.contains("python3"))
         assertTrue(text.contains("curl"))
@@ -228,7 +228,7 @@ class EnvironmentBriefTest {
         assertTrue(text.contains("EXISTS"))
         assertTrue(text.contains("/page.html"))
         assertTrue(text.contains("status:404"))
-        assertTrue(text.contains("Bun.Glob"))
+        assertTrue(text.contains("readdirSync"))
         assertTrue("server must be checked before the hand-off", text.contains("nc -w 2 127.0.0.1"))
         assertTrue(text.contains(".preview/console.log"))
         assertTrue(text.contains("capture.json"))
@@ -270,7 +270,7 @@ class EnvironmentBriefTest {
         // These are agent-visible capabilities, not just APK payload files.
         // Keep the concise inventory in the always-injected brief so a model
         // cannot answer from an older topic recipe without first seeing it.
-        for (tool in listOf("Node.js 24", "npm 11", "python3", "curl", "wget", "jq", "OpenSSH")) {
+        for (tool in listOf("Node.js 26", "npm 11", "python3", "curl", "wget", "jq", "OpenSSH")) {
             assertTrue("main brief must name installed tool $tool", main.contains(tool))
         }
         assertTrue(Regex("Node/npm and Python\\s+are agent tools").containsMatchIn(main))
@@ -305,7 +305,7 @@ class EnvironmentBriefTest {
         assertTrue(webapp.contains("package.json"))
         assertTrue(webapp.contains("#!/usr/bin/env node"))
         assertTrue(webapp.contains("npm install --no-bin-links"))
-        assertTrue(webapp.contains("bun install"))
+        assertFalse("webapp recipes name no Bun", webapp.contains("bun install"))
         assertTrue(webapp.contains("install.log"))
         // Shared-storage install truth: link EACCES can be harmless and .bin
         // may be absent, so tools have an absolute-path Node fallback.
@@ -327,7 +327,7 @@ class EnvironmentBriefTest {
         assertTrue(webapp.contains("pkill"))
         // The always-injected brief names the real runtimes before the agent
         // opens any topic file; it must never resurrect the old Node denial.
-        assertTrue(EnvironmentBrief.briefText().contains("Node.js 24"))
+        assertTrue(EnvironmentBrief.briefText().contains("Node.js 26"))
         assertTrue(EnvironmentBrief.briefText().contains("CPython"))
         // And screenshots.md carries the capture-under-HMR truths.
         val shots = EnvironmentBrief.topicBriefs().getValue("screenshots.md")

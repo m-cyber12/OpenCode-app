@@ -25,12 +25,12 @@ import org.junit.runner.RunWith
  * prefix paths, and an audit re-derives from the filesystem that nothing under
  * `filesDir/bin` needs the data-directory exec exemption.
  *
- * The links are the same five the app has always created (bun, git, rg and
+ * The links are the same five the app has always created (node, git, rg and
  * git's two http helpers). What is new is that they now come from build output
  * through the kernel instead of from a hard-coded table, so a packaging mistake
  * shows up here rather than as a tool that is silently missing.
  *
- * No server, no model, no network. The server keeps running on Bun throughout.
+ * No server, no model, no network. The server keeps running on Node 26 throughout.
  */
 @RunWith(AndroidJUnit4::class)
 class HarnessSealedRuntimeGateTest {
@@ -158,7 +158,7 @@ class HarnessSealedRuntimeGateTest {
     private companion object {
         /** The tools the payload must seal, or the runtime is incomplete. */
         val REQUIRED_TOOLS = listOf(
-            "bin/bun", "bin/git", "bin/rg", "bin/git-remote-http", "bin/git-remote-https",
+            "bin/node", "bin/git", "bin/rg", "bin/git-remote-http", "bin/git-remote-https",
         )
 
         /** Two of them are actually run: each must print its own name. */

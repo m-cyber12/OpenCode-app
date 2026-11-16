@@ -491,7 +491,6 @@ class LiveChatUiGatesTest {
         val agentToolProbe =
             "printf '$marker\\n'; " +
                 "sha256sum </dev/null >/dev/null && printf 'SHELL_COREUTILS_AGENT_OK\\n'; " +
-                "bun --version >/dev/null && printf 'BUN_AGENT_OK\\n'; " +
                 "git --version >/dev/null && printf 'GIT_AGENT_OK\\n'; " +
                 "rg --version >/dev/null && printf 'RG_AGENT_OK\\n'; " +
                 "curl --version >/dev/null && printf 'CURL_AGENT_OK\\n'; " +
@@ -590,17 +589,17 @@ class LiveChatUiGatesTest {
         val outputShown = waitFor(30_000) { exists(outputTag) }
         val serverOutputHasMarker = part.output.contains(marker)
         val agentMarkers = listOf(
-            "SHELL_COREUTILS_AGENT_OK", "BUN_AGENT_OK", "GIT_AGENT_OK", "RG_AGENT_OK",
+            "SHELL_COREUTILS_AGENT_OK", "GIT_AGENT_OK", "RG_AGENT_OK",
             "CURL_AGENT_OK", "WGET_AGENT_OK", "JQ_AGENT_OK", "OPENSSH_AGENT_OK",
         )
         val missingServerTools = agentMarkers.filterNot { part.output.contains(it) }
-        val serverOutputHasNode = part.output.contains("NODE_AGENT_OK v24.")
+        val serverOutputHasNode = part.output.contains("NODE_AGENT_OK v26.")
         val serverOutputHasNpm = part.output.contains("NPM_AGENT_OK 11.")
         val serverOutputHasPython = part.output.contains("PYTHON_AGENT_OK 3.13.")
         val visible = allText()
         val uiOutputHasMarker = visible.contains(marker)
         val missingUiTools = agentMarkers.filterNot { visible.contains(it) }
-        val uiOutputHasNode = visible.contains("NODE_AGENT_OK v24.")
+        val uiOutputHasNode = visible.contains("NODE_AGENT_OK v26.")
         val uiOutputHasNpm = visible.contains("NPM_AGENT_OK 11.")
         val uiOutputHasPython = visible.contains("PYTHON_AGENT_OK 3.13.")
         val expandedShot = shot("32-live-tool-card-expanded.png")

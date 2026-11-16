@@ -120,10 +120,10 @@ them, never probe. Briefs are OVERWRITTEN at every app start: never
 edit them - put suggestions in BRIEF-SUGGESTIONS.md at the project root.
 
 ## Tools
-Installed and on PATH: `bun`, Node.js 24 (`node`), npm 11 (`npm`/`npx`),
+Installed and on PATH: Node.js 26 (`node`), npm 11 (`npm`/`npx`),
 CPython (`python3`/`python`), `git`, `rg`, `curl`, `wget`, `jq`, OpenSSH
 clients, and OUR prefix's `sh` + ~190 coreutils - prefer ours; Android's
-/system/bin varies by phone. Bun remains the app server; Node/npm and Python
+/system/bin varies by phone. Bun is not installed. Node/npm and Python
 are agent tools. npm installs on shared storage may require `--no-bin-links`.
 
 ## Quirks (device-verified)
@@ -196,7 +196,7 @@ what cannot have changed; read each topic brief at most once.
   REPORT lines, report.json, latest.jpg and the per-round image budget.
   Read before taking or reading any screenshot.
 - $briefsDir/webapp.md - running a real/cloned framework project (Next,
-  Vite, ...): npm/Bun installs, dev servers, readiness, missing-env crashes.
+  Vite, ...): npm installs, dev servers, readiness, missing-env crashes.
   Read BEFORE the first command in any project that has a package.json.
 - $briefsDir/acceptance.md - multi-step build: acceptance sheet.
 - $briefsDir/background.md - unattended tasks.
@@ -253,9 +253,9 @@ Layout rules (pane == browser):
 - Full-height/centered layouts: plain `vh` + `html,body{height:100%;margin:0}`.
   NEVER use dvh/svh/lvh - they can collapse the layout on this engine.
 
-Static server recipe (bun, 8080, serves cwd; "/" falls back to the first
+Static server recipe (node, 8080, serves cwd; UNVERIFIED on v2 - check the first use; "/" falls back to the first
 *.html; 404 instead of crashing on misses):
-  setsid bun -e 'Bun.serve({port:8080,hostname:"127.0.0.1",async fetch(r){let p=decodeURIComponent(new URL(r.url).pathname);if(p==="/"){const h=[...new Bun.Glob("*.html").scanSync(".")];p="/"+(h.includes("index.html")?"index.html":(h[0]??"index.html"))}const f=Bun.file("."+p);return await f.exists()?new Response(f):new Response("Not found: "+p,{status:404})}})' </dev/null >serve.log 2>&1 &
+  setsid node -e 'const http=require("http"),fs=require("fs"),path=require("path");const types={".html":"text/html",".js":"text/javascript",".mjs":"text/javascript",".css":"text/css",".json":"application/json",".svg":"image/svg+xml",".png":"image/png",".jpg":"image/jpeg"};http.createServer((q,s)=>{let p=decodeURIComponent(new URL(q.url,"http://x").pathname);if(p==="/"){const h=fs.readdirSync(".").filter(n=>n.endsWith(".html"));p="/"+(fs.existsSync("index.html")?"index.html":(h[0]||"index.html"))}const f=path.join(".",p);fs.readFile(f,(e,d)=>{if(e){s.statusCode=404;s.end("Not found: "+p);return}s.setHeader("content-type",types[path.extname(f)]||"application/octet-stream");s.end(d)})}).listen(8080,"127.0.0.1")' </dev/null >serve.log 2>&1 &
 """.trimIndent() + "\n"
 
         val screenshots = """
@@ -344,23 +344,21 @@ placeholder status pages.
 
 1. Read package.json FIRST - `scripts` and `engines`. Never guess the
    toolchain.
-2. Use the lockfile/package metadata: npm and Bun are BOTH installed.
+2. Use the lockfile/package metadata: npm is installed (Bun is not).
    Install once, in the background, then WAIT (big trees: ~10 min,
    hundreds of MB), for example:
    `mkdir -p "${'$'}TMPDIR" 2>/dev/null; setsid npm install --no-bin-links </dev/null >install.log 2>&1 &`
-   `bun install` is also available for Bun projects. Poll `du -sh
+   Poll `du -sh
    node_modules` and `tail -3 install.log`. On shared storage, symlink
    creation can end with `Failed to link <pkg>: EACCES` lines - packages
    extracted successfully but `node_modules/.bin` may be absent. Do not
    reinstall just for those link errors.
-3. Starting tools: real Node 24 is on PATH, so `#!/usr/bin/env node`
+3. Starting tools: real Node 26 is on PATH, so `#!/usr/bin/env node`
    works; npm 11 is on PATH too. Try the declared package script first.
    If shared storage lacks `.bin`, invoke the tool's JS entry by ABSOLUTE
    path with `node` (relative script paths can die with
    `CouldntReadCurrentDirectory`):
    `setsid node /abs/project/node_modules/next/dist/bin/next dev -p 8080 -H 127.0.0.1 </dev/null >dev.log 2>&1 &`
-   The same absolute-path command with `bun` is the device-verified
-   fallback for Bun-compatible projects.
 4. Native addons (`.node` prebuilds) cannot dlopen inside the app. When
    a dep crashes on one, stub THAT module's JS entry inside node_modules
    (no-op or passthrough) - never touch project source; stubs die with
@@ -377,11 +375,10 @@ placeholder status pages.
 5. Readiness lives in the log, not in your patience: poll `tail -5
    dev.log` for the ready/port line, then warm the REAL route - first
    compile per route is slow (can be 60-90 s cold, seconds warm):
-   `bun -e 'const r=await fetch("http://127.0.0.1:8080/en");console.log(r.status)'`
+   `node -e 'fetch("http://127.0.0.1:8080/en").then(r=>console.log(r.status))'`
    TLS to fonts.gstatic.com (next/font) can flake mid-compile with
    `unknown certificate verification error` + retries; it recovers BY
-   ITSELF - wait or re-request, and do not chase TLS env flags (Bun
-   ignores them).
+   ITSELF - wait or re-request, and do not chase TLS env flags.
 6. Hand off with the ROUTE, not a file: `.preview/serve.json`
    {"port": 8080, "path": "/en"} - when "port" is set, "path" is a URL
    route on YOUR server (locale prefix and all); trust the port the log
@@ -399,7 +396,7 @@ placeholder status pages.
    command timeout - the harness KILLS YOUR WHOLE PROCESS TREE when a
    command times out, so servers start with setsid in their OWN short
    command and you poll in separate commands:
-   `setsid bun -e 'const r=await fetch("http://127.0.0.1:8080/",{signal:AbortSignal.timeout(420000)});console.log(r.status,(await r.text()).length)' </dev/null >warm.log 2>&1 &`
+   `setsid node -e 'fetch("http://127.0.0.1:8080/",{signal:AbortSignal.timeout(420000)}).then(async r=>console.log(r.status,(await r.text()).length))' </dev/null >warm.log 2>&1 &`
    First page-graph compile can be minutes; first render after compile
    can be minutes more; steady state is seconds.
 10. Slow vs stuck, in cheap text (never screenshots): sample
@@ -414,7 +411,7 @@ placeholder status pages.
 11. A Next compile stall is almost always next/font/google: dev.log shows
    `unknown certificate verification error` + `Retrying 1/3...` then
    silence - node:https hangs in the font loader (its socket timeout
-   never arms) while Bun's global fetch is reliable. Fix once per
+   never arms) so use the global fetch below instead. Fix once per
    install: rewrite
    `node_modules/next/dist/compiled/@next/font/dist/google/fetch-resource.js`
    to use global `fetch(url, {signal: AbortSignal.timeout(8000)})`,
@@ -461,9 +458,9 @@ PATH order is OUR prefix first, then Android's /system/bin:
      another. Use it only for something ours genuinely lacks (getprop,
      cmd, am, ...).
 
-`bun` remains the SERVER runtime and is also available for scripting:
-`bun -e '...'`, `bun run script.ts`, `Bun.serve`, fetch, JSON, bundling.
-`node` is real Node 24 LTS and `npm`/`npx` are the bundled npm 11 package
+`node` (Node.js 26) is the SERVER runtime and the scripting runtime:
+`node -e '...'`, `node script.mjs`, global fetch, JSON, `node:` built-ins.
+`node` is real Node.js 26 LTS and `npm`/`npx` are the bundled npm 11 package
 manager; they are sealed APK executables, while installed package data stays
 under the project. `git` speaks https (certs come from the device's own CA
 store) and SSH. OpenSSH provides `ssh`, `scp`, `sftp`, `ssh-keygen`, `ssh-agent`,
@@ -523,7 +520,7 @@ a package.json.
   yourself, the same config is what it writes.
 - A secret never goes into a file the user may commit. Put a placeholder in
   `environment`, and tell the user which value to fill in and where.
-- `npx` and `bunx` both work. `node` is Node 24 and `npm` is npm 11.
+- `npx` works. `node` is Node.js 26 and `npm` is npm 11.
 - Remote `http` and `sse` servers are NOT supported by this runtime. That is an
   upstream restriction. If the user asks for one, say so; do not fake it.
 - Check a server in Settings > MCP servers. Each row shows upstream's own status word
@@ -533,7 +530,7 @@ a package.json.
   appear, ask the user to restart the agent from Settings > Runtime.
 - Known Node limit: some installers crash with `Invalid regular expression` on Unicode
   property escapes such as `\p{L}`. If a Node command fails that way, run the package's
-  JavaScript entry point with `bun` instead (`bun node_modules/<pkg>/<entry>.js`), and
+  JavaScript entry point directly with `node` (Bun is not installed), and
   say so in your reply.
 - Install MCP packages under your home folder (see "Commands on any path" below), not in
   the project folder and never in the app's own runtime.
@@ -562,7 +559,7 @@ a package.json.
 # Making videos from code (MP4) - read before you make any video, GIF or animation
 
 The app has NO native ffmpeg. Video works through a WebAssembly build of ffmpeg
-(the npm package `@ffmpeg/core`, version 0.12.10), run by Node.js 24 that the app
+(the npm package `@ffmpeg/core`, version 0.12.10), run by the Node.js that the app
 bundles. This route was tested on a Linux host with Node 22 (round trip: 30 frames
 encoded to H.264 MP4 and decoded back, 30 of 30 frames). It is NOT yet proven on the
 phone: if a step fails there, quote the error and say so; do not guess.

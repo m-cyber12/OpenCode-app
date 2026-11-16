@@ -192,10 +192,11 @@ class LiveToolCallGatesTest {
         // openrouter turns (stage D) while model turns in the instrumented
         // windows failed with APIError status=0 - this line shows what THIS
         // server itself reaches, in the same window as g01/g02.
-        val probeFile = File(context.filesDir, "tmp/p8netprobe-ui.js")
+        val probeFile = File(context.filesDir, "tmp/p8netprobe-ui.mjs")
         probeFile.parentFile?.mkdirs()
         probeFile.writeText(
             """
+            import { readFile } from "node:fs/promises"
             const FILES_DIR = ${"\""}${context.filesDir.absolutePath}${"\""}
             for (const [n, u] of [["openrouter", "https://openrouter.ai/api/v1/models"],
                                  ["gemini", "https://generativelanguage.googleapis.com/"],
@@ -223,9 +224,9 @@ class LiveToolCallGatesTest {
               const mf = FILES_DIR + "/harness/model"
               const pf = FILES_DIR + "/harness/provider"
               let key = "", model = "", prov = "openrouter"
-              try { key = (await Bun.file(kf).text()).trim() } catch {}
-              try { model = (await Bun.file(mf).text()).trim() } catch {}
-              try { prov = ((await Bun.file(pf).text()).trim()) || "openrouter" } catch {}
+              try { key = (await readFile(kf, "utf8")).trim() } catch {}
+              try { model = (await readFile(mf, "utf8")).trim() } catch {}
+              try { prov = ((await readFile(pf, "utf8")).trim()) || "openrouter" } catch {}
               if (key && prov === "google") {
                 const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?key=" + encodeURIComponent(key),
                                       { signal: AbortSignal.timeout(20000) })
@@ -255,7 +256,7 @@ class LiveToolCallGatesTest {
             }
             """.trimIndent(),
         )
-        val bun = File(context.filesDir, "bin/bun").absolutePath
+        val node = File(context.filesDir, "bin/node").absolutePath
         // Round 9: this gate ran before the instrumented-process server was up
         // (createSession threw -> "no session"). The runtime needs a few
         // seconds after MainActivity starts; retry until it is ready.
@@ -271,7 +272,7 @@ class LiveToolCallGatesTest {
         }.getOrNull()?.id
         val out = if (sid != null) {
             runCatching {
-                api.shellOutput(sid, "$bun ${probeFile.absolutePath} 2>&1; rm -f ${probeFile.absolutePath}", "build")
+                api.shellOutput(sid, "$node ${probeFile.absolutePath} 2>&1; rm -f ${probeFile.absolutePath}", "build")
             }.getOrElse { "shell call failed: ${it.message}" }
         } else {
             "no session"
@@ -504,7 +505,6 @@ class LiveToolCallGatesTest {
         val agentToolProbe =
             "printf '$marker\\n'; " +
                 "sha256sum </dev/null >/dev/null && printf 'SHELL_COREUTILS_AGENT_OK\\n'; " +
-                "bun --version >/dev/null && printf 'BUN_AGENT_OK\\n'; " +
                 "git --version >/dev/null && printf 'GIT_AGENT_OK\\n'; " +
                 "rg --version >/dev/null && printf 'RG_AGENT_OK\\n'; " +
                 "curl --version >/dev/null && printf 'CURL_AGENT_OK\\n'; " +
@@ -601,17 +601,17 @@ class LiveToolCallGatesTest {
         val outputShown = waitFor(30_000) { exists(outputTag) }
         val serverOutputHasMarker = done.output.contains(marker)
         val agentMarkers = listOf(
-            "SHELL_COREUTILS_AGENT_OK", "BUN_AGENT_OK", "GIT_AGENT_OK", "RG_AGENT_OK",
+            "SHELL_COREUTILS_AGENT_OK", "GIT_AGENT_OK", "RG_AGENT_OK",
             "CURL_AGENT_OK", "WGET_AGENT_OK", "JQ_AGENT_OK", "OPENSSH_AGENT_OK",
         )
         val missingServerTools = agentMarkers.filterNot { done.output.contains(it) }
-        val serverOutputHasNode = done.output.contains("NODE_AGENT_OK v24.")
+        val serverOutputHasNode = done.output.contains("NODE_AGENT_OK v26.")
         val serverOutputHasNpm = done.output.contains("NPM_AGENT_OK 11.")
         val serverOutputHasPython = done.output.contains("PYTHON_AGENT_OK 3.13.")
         val visible = allText()
         val uiOutputHasMarker = visible.contains(marker)
         val missingUiTools = agentMarkers.filterNot { visible.contains(it) }
-        val uiOutputHasNode = visible.contains("NODE_AGENT_OK v24.")
+        val uiOutputHasNode = visible.contains("NODE_AGENT_OK v26.")
         val uiOutputHasNpm = visible.contains("NPM_AGENT_OK 11.")
         val uiOutputHasPython = visible.contains("PYTHON_AGENT_OK 3.13.")
         shot("42-p8-tool-card-expanded.png")

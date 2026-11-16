@@ -404,7 +404,6 @@ class HarnessSealedToolsGateTest {
             val env = RuntimeEnv.build(paths, HarnessSeal.abi())
             val script =
                 "sha256sum </dev/null >/dev/null && echo SHELL_COREUTILS_AGENT_OK; " +
-                    "bun --version >/dev/null && echo BUN_AGENT_OK; " +
                     "git --version >/dev/null && echo GIT_AGENT_OK; " +
                     "rg --version >/dev/null && echo RG_AGENT_OK; " +
                     "curl --version >/dev/null && echo CURL_AGENT_OK; " +
@@ -416,9 +415,9 @@ class HarnessSealedToolsGateTest {
                     "python3 -c \"import sys; print('PYTHON_AGENT_OK', sys.version.split()[0])\""
             val run = shellIn(env, script)
             val required = listOf(
-                "SHELL_COREUTILS_AGENT_OK", "BUN_AGENT_OK", "GIT_AGENT_OK", "RG_AGENT_OK",
+                "SHELL_COREUTILS_AGENT_OK", "GIT_AGENT_OK", "RG_AGENT_OK",
                 "CURL_AGENT_OK", "WGET_AGENT_OK", "JQ_AGENT_OK", "OPENSSH_AGENT_OK",
-                "NODE_AGENT_OK v24.", "NPM_AGENT_OK 11.", "PYTHON_AGENT_OK 3.13.",
+                "NODE_AGENT_OK v26.", "NPM_AGENT_OK 11.", "PYTHON_AGENT_OK 3.13.",
             )
             val missing = required.filterNot { run.output.contains(it) }
             val briefText = staleBrief.readText()
@@ -426,7 +425,7 @@ class HarnessSealedToolsGateTest {
             val ok = upgraded is PayloadExtractor.Result.ToolsReady && refreshedBrief &&
                 upgradedLinks != null && upgradedLinks.ok() &&
                 markerVersionBefore == markerVersionAfter && reextractReasonSeen &&
-                briefText.contains("Node.js 24") && briefText.contains("CPython") &&
+                briefText.contains("Node.js 26") && briefText.contains("CPython") &&
                 !briefText.contains("NO node", ignoreCase = true) &&
                 run.ran && run.exitCode == 0 && missing.isEmpty()
             val compact = run.output.trim().replace("\n", " <NL> ").take(1000)
