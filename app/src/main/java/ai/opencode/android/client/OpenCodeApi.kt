@@ -477,7 +477,12 @@ class OpenCodeApi(
         val models = org.json.JSONObject(request("GET", "/api/model").body).optJSONArray("data")
             ?: org.json.JSONArray()
         val defaultModel = org.json.JSONObject(request("GET", "/api/model/default").body).optJSONObject("data")
-        val obj = V2Mapping.providerDocument(providers, models, defaultModel)
+        // The connectable catalog. If this call fails only the extra rows are missing;
+        // the active providers above still load.
+        val integrations = runCatching {
+            org.json.JSONObject(request("GET", "/api/integration").body).optJSONArray("data")
+        }.getOrNull() ?: org.json.JSONArray()
+        val obj = V2Mapping.providerDocument(providers, models, defaultModel, integrations)
         val all = obj.optJSONArray("all") ?: org.json.JSONArray()
         val ids = ArrayList<String>(all.length())
         for (i in 0 until all.length()) {

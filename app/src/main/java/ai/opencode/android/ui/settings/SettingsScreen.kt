@@ -482,7 +482,7 @@ private fun ModelSection(
             // ZenPolicy: a hidden (coming soon) provider is not a provider the user can use.
             text = stringResource(
                 R.string.settings_model_providers,
-                providers.entries.count { !ZenPolicy.hidden(it.id) },
+                ZenPolicy.usable(providers.connected).size,
             ),
             style = MaterialTheme.typography.labelSmall,
             color = chat.muted,

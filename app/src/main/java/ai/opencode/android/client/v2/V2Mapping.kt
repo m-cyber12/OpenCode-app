@@ -49,7 +49,12 @@ object V2Mapping {
      * "connected" when it has at least one such model. `default` maps a provider id
      * to the default model id, as v1 did.
      */
-    fun providerDocument(providers: JSONArray, models: JSONArray, defaultModel: JSONObject?): JSONObject {
+    fun providerDocument(
+        providers: JSONArray,
+        models: JSONArray,
+        defaultModel: JSONObject?,
+        integrations: JSONArray = JSONArray(),
+    ): JSONObject {
         val names = LinkedHashMap<String, String>()
         val disabled = HashSet<String>()
         for (i in 0 until providers.length()) {
@@ -93,6 +98,23 @@ object V2Mapping {
                     .put("models", record),
             )
             connected.put(pid)
+        }
+
+        // The connectable catalog (GET /api/integration): every provider the user can add a
+        // key for, listed with no models until it is connected. v2 /api/provider lists only
+        // active providers, so without this the Providers card would be empty.
+        val listed = HashSet<String>()
+        for (i in 0 until all.length()) all.optJSONObject(i)?.optString("id")?.let { listed.add(it) }
+        for (i in 0 until integrations.length()) {
+            val g = integrations.optJSONObject(i) ?: continue
+            val id = g.optString("id")
+            if (id.isEmpty() || !listed.add(id)) continue
+            all.put(
+                JSONObject()
+                    .put("id", id)
+                    .put("name", g.optString("name").ifEmpty { id })
+                    .put("models", JSONObject()),
+            )
         }
 
         val defaults = JSONObject()
