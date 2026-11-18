@@ -1,5 +1,5 @@
-[2026-11-18T12:23:42Z] expected identity: applicationId=<app> versionName=2.2.5-phase10 versionCode=8
-[2026-11-18T12:23:42Z] === gradle :app:assembleRelease :app:bundleRelease ===
+[2026-11-18T17:57:48Z] expected identity: applicationId=<app> versionName=2.2.5-phase10 versionCode=8
+[2026-11-18T17:57:48Z] === gradle :app:assembleRelease :app:bundleRelease ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
@@ -27,16 +27,16 @@ to this project's gradle.properties.
 
 > Task :app:verifyAndStagePayload
 PAYLOAD STAGING: -PskipPayload=null SKIP_PAYLOAD=null
-PAYLOAD_SOURCE runtime-payload.tar.gz=6727385B node26-v2.zip=40857212B runtime-manifest.json=290642B
+PAYLOAD_SOURCE runtime-payload.tar.gz=6727706B node26-v2.zip=40857212B runtime-manifest.json=290642B
 Runtime payload OK: 1 complete ABI(s); staged assets + jniLibs to /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/assets / /home/runner/work/OpenCode-app/OpenCode-app/app/build/generated/engine/jniLibs
-STAGED_ASSETS n=5 node26-v2.zip(40857212B), runtime-manifest.json(290642B), runtime-payload.tar.gz(6727385B), sealed-exec-arm64-v8a.txt(5116B), sealed-report.json(152B)
+STAGED_ASSETS n=5 node26-v2.zip(40857212B), runtime-manifest.json(290642B), runtime-payload.tar.gz(6727706B), sealed-exec-arm64-v8a.txt(5116B), sealed-report.json(152B)
 STAGED_JNILIBS n=24 arm64-v8a/libc++_shared.so, arm64-v8a/libchildshim.so, arm64-v8a/libcrypto.so, arm64-v8a/libcurl.so, arm64-v8a/libexecshim.so, arm64-v8a/libgit.so, arm64-v8a/libgitremotehttp.so, arm64-v8a/libjq.so, arm64-v8a/libmksh.so, arm64-v8a/libnode26.so, arm64-v8a/libnpmcli.so, arm64-v8a/libocexecprobe.so, arm64-v8a/libpython3.so, arm64-v8a/librg.so, arm64-v8a/libscp.so, arm64-v8a/libseccompshim.so, arm64-v
 
 > Task :app:preBuild
 > Task :app:preReleaseBuild
 > Task :app:generateReleaseBuildConfig
-> Task :app:generateReleaseResValues FROM-CACHE
 > Task :app:checkReleaseAarMetadata
+> Task :app:generateReleaseResValues FROM-CACHE
 > Task :app:mapReleaseSourceSetPaths
 > Task :app:generateReleaseResources
 > Task :app:packageReleaseResources
@@ -52,35 +52,34 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 > Task :app:processReleaseManifest
 > Task :app:javaPreCompileRelease FROM-CACHE
 > Task :app:extractProguardFiles
-> Task :app:mergeReleaseJniLibFolders
 > Task :app:processReleaseManifestForPackage
+> Task :app:mergeReleaseJniLibFolders
 > Task :app:mergeReleaseResources
-> Task :app:desugarReleaseFileDependencies
-> Task :app:mergeReleaseStartupProfile
 > Task :app:mergeReleaseNativeLibs
 > Task :app:checkReleaseDuplicateClasses
-> Task :app:mergeReleaseArtProfile
-> Task :app:processReleaseResources
-> Task :app:stripReleaseDebugSymbols
-> Task :app:mergeExtDexRelease
+> Task :app:desugarReleaseFileDependencies
+> Task :app:mergeReleaseStartupProfile
 
 > Task :app:stripReleaseDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libc++_shared.so, libchildshim.so, libcrypto.so, libcurl.so, libexecshim.so, libgit.so, libgitremotehttp.so, libjq.so, libmksh.so, libnode26.so, libnpmcli.so, libocexecprobe.so, libpython3.so, librg.so, libscp.so, libseccompshim.so, libsftp.so, libsshadd.so, libsshagent.so, libsshclient.so, libsshkeygen.so, libsshkeyscan.so, libtoybox.so, libwget.so.
 
-> Task :app:mergeReleaseShaders
+> Task :app:processReleaseResources
 > Task :app:extractReleaseNativeSymbolTables
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:mergeReleaseShaders
 > Task :app:compileReleaseShaders NO-SOURCE
 > Task :app:generateReleaseAssets
+> Task :app:mergeReleaseArtProfile
 > Task :app:mergeReleaseAssets
 > Task :app:extractReleaseVersionControlInfo
+> Task :app:mergeExtDexRelease
 > Task :app:compressReleaseAssets
 > Task :app:collectReleaseDependencies
-> Task :app:optimizeReleaseResources
 > Task :app:sdkReleaseDependencyData
 > Task :app:writeReleaseAppMetadata
 > Task :app:writeReleaseSigningConfigVersions
 > Task :app:processApplicationManifestReleaseForBundle
+> Task :app:optimizeReleaseResources
 > Task :app:configureReleaseDependencies
 > Task :app:parseReleaseIntegrityConfig
 > Task :app:bundleReleaseResources
@@ -116,10 +115,11 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:554:9 Variable 'addonsLabel' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:926:5 Parameter 'runtime' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:953:62 Unnecessary safe call on a non-null receiver of type Transcript.TurnError?
-w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:2235:60 'Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ChatScreen.kt:2240:60 'Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:166:52 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:210:60 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/LivePreviewConsole.kt:368:52 'ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack
+w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/chat/ModelQuickSwitch.kt:173:5 Parameter 'providerGroups' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:198:5 Parameter 'onBack' is never used
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:314:17 Name shadowed: chat
 w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/opencode/android/ui/files/FilesScreen.kt:357:64 'KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight
@@ -146,27 +146,27 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 > Task :app:packageReleaseBundle
 > Task :app:packageRelease
 > Task :app:createReleaseApkListingFileRedirect
-> Task :app:lintVitalAnalyzeRelease
 > Task :app:signReleaseBundle
 > Task :app:produceReleaseBundleIdeListingFile
 > Task :app:createReleaseBundleListingFileRedirect
 > Task :app:bundleRelease
+> Task :app:lintVitalAnalyzeRelease
 > Task :app:lintVitalReportRelease
 > Task :app:lintVitalRelease
 > Task :app:assembleRelease
 
-BUILD SUCCESSFUL in 3m 9s
+BUILD SUCCESSFUL in 2m 16s
 60 actionable tasks: 56 executed, 4 from cache
-[2026-11-18T12:26:51Z] apk=app-release-unsigned.apk (120925320 bytes)
-[2026-11-18T12:26:51Z] aab=app-release.aab (106701624 bytes)
-[2026-11-18T12:26:51Z] RELEASE_APK PASS :: MANIFEST package=<app> versionCode=8 versionName=2.2.5-phase10 minSdk=29 targetSdk=36 debuggable=False
-[2026-11-18T12:26:51Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=327 native_abis=arm64-v8a(24 libs,130.9MB) payload=True manifest_asset=True
-[2026-11-18T12:26:51Z] SIZE PASS :: apkMb=115.3 capMb=230 headroomMb=114.7 native=arm64-v8a(24libs,130.9MB)
-[2026-11-18T12:26:51Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
-[2026-11-18T12:26:53Z] TESTONLY_RELEASE PASS :: installable non-debuggable universal APK bytes=120933200 MiB=115.3 signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
-[2026-11-18T12:26:54Z] TESTONLY_ARM64 PASS :: installable arm64-only APK bytes=120933200 MiB=115.3 x86_64=absent signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
-[2026-11-18T12:26:54Z] RELEASE_AAB PASS :: CONTENTS entries=332 native_abis=arm64-v8a(24 libs,130.9MB) payload=True manifest_asset=True
-[2026-11-18T12:26:55Z] sha256:
-338770877f8541069c766c90861d1e9629d40532d63786803dc6a66d6c047888  ./app-release-unsigned.apk
-a53cd8c3414ded13a8ea1c23f984af2d0710ee29186bdf7b3876cb44dd4b3ff0  ./app-release.aab
-[2026-11-18T12:26:55Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/release/HOW-TO-SIGN-ON-PHONE.txt + sha256.txt (phone-signing rules + this build's exact bytes)
+[2026-11-18T18:00:05Z] apk=app-release-unsigned.apk (120922664 bytes)
+[2026-11-18T18:00:05Z] aab=app-release.aab (106701945 bytes)
+[2026-11-18T18:00:05Z] RELEASE_APK PASS :: MANIFEST package=<app> versionCode=8 versionName=2.2.5-phase10 minSdk=29 targetSdk=36 debuggable=False
+[2026-11-18T18:00:05Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=327 native_abis=arm64-v8a(24 libs,130.9MB) payload=True manifest_asset=True
+[2026-11-18T18:00:05Z] SIZE PASS :: apkMb=115.3 capMb=230 headroomMb=114.7 native=arm64-v8a(24libs,130.9MB)
+[2026-11-18T18:00:05Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
+[2026-11-18T18:00:06Z] TESTONLY_RELEASE PASS :: installable non-debuggable universal APK bytes=120929104 MiB=115.3 signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
+[2026-11-18T18:00:07Z] TESTONLY_ARM64 PASS :: installable arm64-only APK bytes=120929104 MiB=115.3 x86_64=absent signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
+[2026-11-18T18:00:07Z] RELEASE_AAB PASS :: CONTENTS entries=332 native_abis=arm64-v8a(24 libs,130.9MB) payload=True manifest_asset=True
+[2026-11-18T18:00:07Z] sha256:
+a408c575d46c89443b807e328d7dc4f35ae1d8f7eda1a2ced4c1f288fdddb423  ./app-release-unsigned.apk
+ce80d76ff2f18b69ad84e0e82f9a9904ca4ced532177954ba69537d8433bc758  ./app-release.aab
+[2026-11-18T18:00:07Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/release/HOW-TO-SIGN-ON-PHONE.txt + sha256.txt (phone-signing rules + this build's exact bytes)
