@@ -188,25 +188,24 @@ overflowX=0 with no errors means move on. Verify once - never re-probe
 what cannot have changed; read each topic brief at most once.
 
 ## Topic briefs - the summary tells you which file; go straight there
-- $briefsDir/preview.md - full hand-off/reload rules, the watched port
+- $briefsDir/preview.md - hand-off/reload rules, the watched port
   list, rendering engine + layout rules (viewport meta, vh not dvh), the
   no-dependency static-server recipe. Read before the FIRST preview
   hand-off, or when the pane looks wrong.
 - $briefsDir/screenshots.md - the capture loop: capture.json, CAPTURE +
   REPORT lines, report.json, latest.jpg and the per-round image budget.
-  Read before taking or reading any screenshot.
+  Read before any screenshot.
 - $briefsDir/webapp.md - running a real/cloned framework project (Next,
   Vite, ...): npm installs, dev servers, readiness, missing-env crashes.
   Read BEFORE the first command in any project that has a package.json.
 - $briefsDir/acceptance.md - multi-step build: acceptance sheet.
 - $briefsDir/background.md - unattended tasks.
-- $briefsDir/tools.md - PATH order, exact installed tools, Android limits.
+- $briefsDir/tools.md - PATH order, installed tools, Android limits.
   Read before shelling out.
 - $briefsDir/extensions.md - MCP servers and skills: where they live, how to
   register one. Read before adding either.
-- $briefsDir/video.md - make any MP4 video from code (tested recipe).
-- $briefsDir/todo.md - what "todo" means: your `todowrite` checklist versus a
-  todo list in a user's project. Read when the user says todo.
+- $briefsDir/video.md - MP4 videos from code.
+- $briefsDir/todo.md - the word "todo": your checklist or a user's list.
 """.trimIndent() + "\n"
     }
 
