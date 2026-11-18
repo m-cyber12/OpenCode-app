@@ -462,7 +462,8 @@ fun formatBytes(bytes: Long): String = when {
 
 /** Pure cost formatting: upstream reports cost in USD as a double. */
 fun formatCost(cost: Double): String =
-    if (cost <= 0.0) "" else String.format(Locale.US, "\$%.4f", cost)
+    // NaN fails `<= 0.0`, so it used to print as "$NaN". Only a real positive number is shown.
+    if (!cost.isFinite() || cost <= 0.0) "" else String.format(Locale.US, "\$%.4f", cost)
 
 /** Collapse whitespace in server text so a one-line label stays one line. */
 fun oneLine(text: String): String = text.replace('\n', ' ').replace('\r', ' ').trim()

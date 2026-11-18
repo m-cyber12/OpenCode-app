@@ -211,7 +211,7 @@ class Transcript {
                 agent = info?.optString("agent") ?: "",
                 tokensInput = info?.optJSONObject("tokens")?.optLong("input") ?: 0L,
                 tokensOutput = info?.optJSONObject("tokens")?.optLong("output") ?: 0L,
-                cost = info?.optDouble("cost") ?: 0.0,
+                cost = info?.optDouble("cost", 0.0) ?: 0.0,
                 createdMs = info?.optJSONObject("time")?.optLong("created") ?: 0L,
                 completedMs = info?.optJSONObject("time")?.optLong("completed") ?: 0L,
                 summary = info?.optBoolean("summary") == true,

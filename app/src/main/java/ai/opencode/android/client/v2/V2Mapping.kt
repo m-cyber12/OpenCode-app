@@ -164,6 +164,18 @@ object V2Mapping {
             }
             info.put("agent", o.optString("agent"))
             errorOf(o.optJSONObject("error"))?.let { info.put("error", it) }
+            // Usage: upstream's `cost` (USD) and `tokens` are optional on an assistant
+            // message. Carried over only when present, so the footer never shows a
+            // made-up zero or NaN. v1 kept input and output; reasoning and cache are not shown.
+            if (o.has("cost")) info.put("cost", o.optDouble("cost", 0.0))
+            o.optJSONObject("tokens")?.let { t ->
+                info.put(
+                    "tokens",
+                    JSONObject()
+                        .put("input", t.optLong("input", 0L))
+                        .put("output", t.optLong("output", 0L)),
+                )
+            }
             val content = o.optJSONArray("content") ?: JSONArray()
             for (i in 0 until content.length()) {
                 val c = content.optJSONObject(i) ?: continue

@@ -14,6 +14,7 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import ai.opencode.android.R
+import ai.opencode.android.client.AgentActivity
 import ai.opencode.android.task.BackgroundTask
 import ai.opencode.android.task.BackgroundTaskHub
 import ai.opencode.android.task.BackgroundTaskNotice
@@ -42,7 +43,9 @@ import kotlinx.coroutines.launch
  *
  * The notification shows the app icon and the agent's state, with the taps that
  * state allows (see [RuntimeNoticeState]): Ready and Error offer Exit; Working
- * offers Pause and Exit; Paused offers Resume and Exit. Exit stops the runtime.
+ * (a background task or a chat turn running) offers Pause and Exit; Paused offers
+ * Resume and Exit. Pause stops the running task, or else the chat turn; the session
+ * is kept. Exit stops the runtime.
  *
  * Lifecycle: START_NOT_STICKY + explicit start. The app (and the on-device
  * gate flow) starts the service when the runtime is wanted; a user/CI stop
@@ -69,6 +72,16 @@ class RuntimeService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startInForeground()
+        if (intent?.action == ACTION_PAUSE) {
+            // A tap, not a start: the runtime keeps running and only the work stops.
+            pauseRunningWork()
+            if (noticeJob == null) {
+                // A tap that reached a fresh process: nothing is running here, so do not keep the notice up.
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+            }
+            return START_NOT_STICKY
+        }
         if (intent?.action == ACTION_STOP) {
             explicitStopRequested = true
             noticeJob?.cancel()
@@ -107,10 +120,12 @@ class RuntimeService : Service() {
         if (noticeJob != null) return
         val s = CoroutineScope(SupervisorJob() + Dispatchers.Default).also { scope = it }
         noticeJob = s.launch {
-            combine(manager.state, taskStatus()) { runtime, task -> runtime.status to task }
+            combine(manager.state, taskStatus(), AgentActivity.busy) { runtime, task, busy ->
+                Triple(runtime.status, task, busy)
+            }
                 .distinctUntilChanged()
-                .collect { (runtime, task) ->
-                    if (!explicitStopRequested) postNotice(runtime, task)
+                .collect { (runtime, task, busy) ->
+                    if (!explicitStopRequested) postNotice(runtime, task, busy)
                 }
         }
     }
@@ -125,10 +140,20 @@ class RuntimeService : Service() {
             }
         }
 
+    /** Pause: the running background task if there is one, otherwise the running chat turn. */
+    private fun pauseRunningWork() {
+        if (BackgroundTaskHub.current.value?.control?.status?.value == BackgroundTask.Status.RUNNING) {
+            BackgroundTaskHub.perform(BackgroundTask.Command.PAUSE)
+        } else {
+            AgentActivity.pauseTurns()
+        }
+    }
+
     private fun startInForeground() {
         val notification = buildNotice(
             manager.state.value.status,
             BackgroundTaskHub.current.value?.control?.status?.value,
+            AgentActivity.busy.value,
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(NOTIF_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
@@ -137,12 +162,12 @@ class RuntimeService : Service() {
         }
     }
 
-    private fun postNotice(runtime: RuntimeStatus, task: BackgroundTask.Status?) {
-        getSystemService(NotificationManager::class.java).notify(NOTIF_ID, buildNotice(runtime, task))
+    private fun postNotice(runtime: RuntimeStatus, task: BackgroundTask.Status?, chatBusy: Boolean) {
+        getSystemService(NotificationManager::class.java).notify(NOTIF_ID, buildNotice(runtime, task, chatBusy))
     }
 
-    private fun buildNotice(runtime: RuntimeStatus, task: BackgroundTask.Status?): Notification {
-        val kind = RuntimeNoticeState.kindOf(runtime, task)
+    private fun buildNotice(runtime: RuntimeStatus, task: BackgroundTask.Status?, chatBusy: Boolean): Notification {
+        val kind = RuntimeNoticeState.kindOf(runtime, task, chatBusy)
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_opencode)
             .setLargeIcon(appIcon)
@@ -172,7 +197,7 @@ class RuntimeService : Service() {
         RuntimeNoticeState.Tap.EXIT -> R.string.notification_action_exit
     }
 
-    /** Exit is a service action; Pause and Resume go to the background-task receiver. */
+    /** Exit and Pause are service actions; Resume goes to the background-task receiver. */
     private fun pendingFor(tap: RuntimeNoticeState.Tap): PendingIntent {
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         return when (tap) {
@@ -182,11 +207,10 @@ class RuntimeService : Service() {
                 Intent(this, RuntimeService::class.java).setAction(ACTION_STOP),
                 flags,
             )
-            RuntimeNoticeState.Tap.PAUSE -> PendingIntent.getBroadcast(
+            RuntimeNoticeState.Tap.PAUSE -> PendingIntent.getService(
                 this,
                 tap.ordinal,
-                Intent(this, BackgroundTaskReceiver::class.java)
-                    .setAction(BackgroundTaskNotice.actionOf(BackgroundTask.Command.PAUSE)),
+                Intent(this, RuntimeService::class.java).setAction(ACTION_PAUSE),
                 flags,
             )
             RuntimeNoticeState.Tap.RESUME -> PendingIntent.getBroadcast(
@@ -226,6 +250,7 @@ class RuntimeService : Service() {
         const val CHANNEL_ID = "opencode-runtime"
         const val NOTIF_ID = 4204
         const val ACTION_STOP = "ai.opencode.android.STOP_RUNTIME"
+        const val ACTION_PAUSE = "ai.opencode.android.PAUSE_WORK"
 
         fun start(context: Context) {
             val intent = Intent(context, RuntimeService::class.java)

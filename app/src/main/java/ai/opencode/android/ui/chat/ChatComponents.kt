@@ -17,7 +17,6 @@ import ai.opencode.android.ui.common.UndoGlyph
 import ai.opencode.android.ui.common.formatBytes
 import ai.opencode.android.ui.common.formatCost
 import ai.opencode.android.ui.common.oneLine
-import ai.opencode.android.ui.common.relativeTimeLabel
 import ai.opencode.android.ui.markdown.CodeBlock
 import ai.opencode.android.ui.markdown.MarkdownText
 import ai.opencode.android.ui.theme.ChatTheme
@@ -279,11 +278,14 @@ fun MessageRow(
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 Spacer(Modifier.weight(1f))
+                // The exact time, as on the user's own message. A relative "just now"
+                // was computed once and went stale while the chat stayed open.
+                val stamp = exactTimeLabel(if (message.completedMs > 0L) message.completedMs else message.createdMs)
                 if (streaming) {
                     StreamingDots()
-                } else if (message.completedMs > 0L) {
+                } else if (stamp.isNotEmpty()) {
                     Text(
-                        text = relativeTimeLabel(message.completedMs, now),
+                        text = stamp,
                         style = MaterialTheme.typography.labelSmall,
                         color = chat.muted,
                     )

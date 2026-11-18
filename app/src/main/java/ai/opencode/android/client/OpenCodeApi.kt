@@ -752,7 +752,7 @@ class OpenCodeApi(
                 slug = o.optString("slug"),
                 projectID = o.optString("projectID"),
                 createdMs = o.optJSONObject("time")?.optLong("created") ?: 0L,
-                cost = o.optDouble("cost"),
+                cost = o.optDouble("cost", 0.0),
             )
         }
     }

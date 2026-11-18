@@ -10,8 +10,8 @@ import org.junit.Test
 /** The runtime notification table: which status shows, and which taps it offers. */
 class RuntimeNoticeStateTest {
 
-    private fun kind(runtime: RuntimeStatus, task: BackgroundTask.Status? = null) =
-        RuntimeNoticeState.kindOf(runtime, task)
+    private fun kind(runtime: RuntimeStatus, task: BackgroundTask.Status? = null, chatBusy: Boolean = false) =
+        RuntimeNoticeState.kindOf(runtime, task, chatBusy)
 
     @Test
     fun aHealthyAgentWithNothingRunningIsReadyWithExitOnly() {
@@ -47,6 +47,24 @@ class RuntimeNoticeStateTest {
         assertEquals(Kind.STARTING, kind(RuntimeStatus.STARTING))
         assertEquals(Kind.STARTING, kind(RuntimeStatus.STOPPED))
         assertEquals(listOf(Tap.EXIT), RuntimeNoticeState.tapsOf(Kind.STARTING))
+    }
+
+    @Test
+    fun aChatTurnRunningIsWorkingWithPauseAndExitEvenWithoutATask() {
+        assertEquals(Kind.WORKING, kind(RuntimeStatus.HEALTHY, null, chatBusy = true))
+        assertEquals(Kind.WORKING, kind(RuntimeStatus.HEALTHY, BackgroundTask.Status.QUEUED, chatBusy = true))
+        assertEquals(listOf(Tap.PAUSE, Tap.EXIT), RuntimeNoticeState.tapsOf(Kind.WORKING))
+    }
+
+    @Test
+    fun aPausedTaskOutranksABusyChatAndAnIdleChatIsReady() {
+        assertEquals(Kind.PAUSED, kind(RuntimeStatus.HEALTHY, BackgroundTask.Status.PAUSED, chatBusy = true))
+        assertEquals(Kind.READY, kind(RuntimeStatus.HEALTHY, null, chatBusy = false))
+    }
+
+    @Test
+    fun anErrorOutranksABusyChat() {
+        assertEquals(Kind.ERROR, kind(RuntimeStatus.FATAL, null, chatBusy = true))
     }
 
     @Test

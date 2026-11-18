@@ -251,6 +251,7 @@ class OpenCodeRepository(
     }
 
     fun stopStream() {
+        AgentActivity.release(this)
         stream.stop()
         _state.value = _state.value.copy(streaming = false, streamStatus = "stopped")
     }
@@ -1362,6 +1363,21 @@ class OpenCodeRepository(
 
     private fun setBusy(b: Boolean) {
         _state.value = _state.value.copy(busy = b)
+        AgentActivity.report(this, b) { pauseAgentTurns() }
+    }
+
+    /**
+     * Stops every running chat turn (POST /session/:id/abort on each busy session).
+     * The sessions are kept, so the user can send again. Used by the notification's Pause.
+     */
+    fun pauseAgentTurns() {
+        val sessions = _state.value.transcript.busySessions()
+        if (sessions.isEmpty()) return
+        scope.launch {
+            for (sid in sessions) {
+                runCatching { api.abortSession(sid) }.onFailure { fail("abort", it) }
+            }
+        }
     }
 
     private fun fail(what: String, t: Throwable) {
