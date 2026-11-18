@@ -1362,8 +1362,15 @@ class OpenCodeRepository(
     }
 
     private fun setBusy(b: Boolean) {
-        _state.value = _state.value.copy(busy = b)
-        AgentActivity.report(this, b) { pauseAgentTurns() }
+        // Same rule as publishTranscript: the server's own busy status counts, so a
+        // turn the stream already reports as running is never cleared here.
+        _state.update { st -> st.copy(busy = b || st.sessionStatus[st.selectedSession]?.busy == true) }
+        reportBusy()
+    }
+
+    /** The notification follows the same busy flag the chat shows. */
+    private fun reportBusy() {
+        AgentActivity.report(this, _state.value.busy) { pauseAgentTurns() }
     }
 
     /**
@@ -1371,7 +1378,8 @@ class OpenCodeRepository(
      * The sessions are kept, so the user can send again. Used by the notification's Pause.
      */
     fun pauseAgentTurns() {
-        val sessions = _state.value.transcript.busySessions()
+        val st = _state.value
+        val sessions = (st.transcript.busySessions() + st.sessionStatus.filterValues { it.busy }.keys).distinct()
         if (sessions.isEmpty()) return
         scope.launch {
             for (sid in sessions) {
@@ -1478,6 +1486,7 @@ class OpenCodeRepository(
                 streamStatus = status,
             )
         }
+        reportBusy()
         maybeFailoverKey(snap, prev)
         maybeAutoCompact(snap)
     }

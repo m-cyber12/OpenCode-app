@@ -10,6 +10,7 @@ import ai.opencode.android.client.ToolMetaParser
 import ai.opencode.android.client.TodoParser
 import ai.opencode.android.client.Transcript
 import ai.opencode.android.ui.common.DetailDisclosure
+import ai.opencode.android.ui.common.availabilityHeadline
 import ai.opencode.android.ui.common.StatusPill
 import ai.opencode.android.ui.common.CopyGlyph
 import ai.opencode.android.ui.common.ThumbDownGlyph
@@ -275,8 +276,8 @@ fun MessageRow(
                     color = chat.muted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
                 )
+                // The only flexible item: the time and the dots sit at the right edge.
                 Spacer(Modifier.weight(1f))
                 // The exact time, as on the user's own message. A relative "just now"
                 // was computed once and went stale while the chat stayed open.
@@ -1001,18 +1002,20 @@ fun TurnErrorCard(error: Transcript.TurnError, modifier: Modifier = Modifier) {
         border = BorderStroke(1.dp, chat.toolBorder),
         shape = MaterialTheme.shapes.medium,
     ) {
-        Row(
-            Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(Modifier.size(7.dp).clip(CircleShape).background(chat.attention))
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = raw,
-                style = MaterialTheme.typography.bodySmall,
-                color = chat.attention,
-                modifier = Modifier.weight(1f),
-            )
+        // A column: DetailDisclosure fills the width, so inside a Row it squeezed the
+        // headline to a sliver. The headline says what kind of failure it is; the raw
+        // server text sits behind Details.
+        Column(Modifier.padding(horizontal = 10.dp, vertical = 7.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(7.dp).clip(CircleShape).background(chat.attention))
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = availabilityHeadline(error.kind),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = chat.attention,
+                    modifier = Modifier.weight(1f),
+                )
+            }
             DetailDisclosure(raw)
         }
     }
