@@ -1,5 +1,10 @@
 package ai.opencode.android
 
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import ai.opencode.android.runtime.AppExit
+import kotlinx.coroutines.launch
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -49,6 +54,14 @@ class MainActivity : ComponentActivity() {
         // insets, so the status bar sits on the app's own dark gold surface
         // instead of a grey system strip.
         enableEdgeToEdge()
+        // Exit (notification) stops the agent and closes this screen. A fresh launch
+        // starts with nothing pending; a request made while the screen is up closes it.
+        AppExit.reset()
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                AppExit.requested.collect { if (it) finishAndRemoveTask() }
+            }
+        }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED
         ) {

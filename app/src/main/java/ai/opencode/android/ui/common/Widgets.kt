@@ -326,59 +326,15 @@ fun AvailabilityBanner(
     onDismiss: (() -> Unit)? = null,
 ) {
     if (availability == AgentAvailability.READY) return
-    val chat = ChatTheme.chat
-    val providerSide = availability == AgentAvailability.PROVIDER_UNREACHABLE ||
-        availability == AgentAvailability.PROVIDER_AUTH ||
-        availability == AgentAvailability.PROVIDER_OTHER ||
-        availability == AgentAvailability.ABORTED
-    val container = if (providerSide) chat.attentionContainer else MaterialTheme.colorScheme.errorContainer
-    val onContainer = if (providerSide) chat.onAttentionContainer else MaterialTheme.colorScheme.onErrorContainer
-    val accent = if (providerSide) chat.attention else MaterialTheme.colorScheme.error
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = container,
-        shape = MaterialTheme.shapes.medium,
-    ) {
-        Row(Modifier.height(IntrinsicSize.Min)) {
-            // The accent bar is the only colour-only signal, so it is never the
-            // only one: the headline says what kind of problem this is in words.
-            Surface(color = accent, modifier = Modifier.width(4.dp).fillMaxHeight()) {}
-            Column(
-                Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp, end = 6.dp, top = 10.dp, bottom = 8.dp)
-                    // Tagged so the degraded-state gate can assert on the banner that
-                    // is actually on screen rather than on a string in a resource file.
-                    .semantics { testTag = "availability_banner" },
-            ) {
-                Text(
-                    text = availabilityHeadline(availability),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = onContainer,
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = availabilityBody(availability),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = onContainer,
-                )
-                if (extra.isNotEmpty()) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(text = extra, style = MonoSmall, color = onContainer)
-                }
-                if (rawDetail.isNotBlank()) DetailDisclosure(rawDetail)
-            }
-            if (onDismiss != null) {
-                IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.Top)) {
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = stringResource(R.string.action_dismiss),
-                        tint = onContainer,
-                    )
-                }
-            }
-        }
-    }
+    // One error surface for every degraded state: see ErrorCard.
+    ErrorCard(
+        kind = availability,
+        modifier = modifier,
+        rawDetail = rawDetail,
+        extra = extra,
+        tag = "availability_banner",
+        onDismiss = onDismiss,
+    )
 }
 
 // ---- formatting ------------------------------------------------------------
@@ -397,6 +353,14 @@ fun availabilityHeadline(a: AgentAvailability): String = stringResource(
         AgentAvailability.PROVIDER_AUTH -> R.string.availability_provider_auth
         AgentAvailability.PROVIDER_OTHER -> R.string.availability_provider_other
         AgentAvailability.ABORTED -> R.string.availability_aborted
+        AgentAvailability.RUNTIME_STOPPED -> R.string.availability_runtime_stopped
+        AgentAvailability.PROVIDER_NOT_SET_UP -> R.string.availability_provider_not_set_up
+        AgentAvailability.CONTENT_FILTERED -> R.string.availability_content_filtered
+        AgentAvailability.CONTEXT_TOO_LONG -> R.string.availability_context_too_long
+        AgentAvailability.OUTPUT_TOO_LONG -> R.string.availability_output_too_long
+        AgentAvailability.TOOL_FAILED -> R.string.availability_tool_failed
+        AgentAvailability.PERMISSION_REJECTED -> R.string.availability_permission_rejected
+        AgentAvailability.COMPACTION_FAILED -> R.string.availability_compaction_failed
         AgentAvailability.UNKNOWN -> R.string.availability_unknown
     },
 )
@@ -414,6 +378,14 @@ fun availabilityBody(a: AgentAvailability): String = stringResource(
         AgentAvailability.PROVIDER_AUTH -> R.string.availability_provider_auth_body
         AgentAvailability.PROVIDER_OTHER -> R.string.availability_provider_other_body
         AgentAvailability.ABORTED -> R.string.availability_aborted_body
+        AgentAvailability.RUNTIME_STOPPED -> R.string.availability_runtime_stopped_body
+        AgentAvailability.PROVIDER_NOT_SET_UP -> R.string.availability_provider_not_set_up_body
+        AgentAvailability.CONTENT_FILTERED -> R.string.availability_content_filtered_body
+        AgentAvailability.CONTEXT_TOO_LONG -> R.string.availability_context_too_long_body
+        AgentAvailability.OUTPUT_TOO_LONG -> R.string.availability_output_too_long_body
+        AgentAvailability.TOOL_FAILED -> R.string.availability_tool_failed_body
+        AgentAvailability.PERMISSION_REJECTED -> R.string.availability_permission_rejected_body
+        AgentAvailability.COMPACTION_FAILED -> R.string.availability_compaction_failed_body
         AgentAvailability.UNKNOWN -> R.string.availability_unknown_body
     },
 )

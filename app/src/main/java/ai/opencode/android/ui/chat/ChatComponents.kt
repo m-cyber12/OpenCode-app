@@ -10,6 +10,7 @@ import ai.opencode.android.client.ToolMetaParser
 import ai.opencode.android.client.TodoParser
 import ai.opencode.android.client.Transcript
 import ai.opencode.android.ui.common.DetailDisclosure
+import ai.opencode.android.ui.common.ErrorCard
 import ai.opencode.android.ui.common.availabilityHeadline
 import ai.opencode.android.ui.common.StatusPill
 import ai.opencode.android.ui.common.CopyGlyph
@@ -983,7 +984,6 @@ private fun Chevron(up: Boolean) {
  */
 @Composable
 fun TurnErrorCard(error: Transcript.TurnError, modifier: Modifier = Modifier) {
-    val chat = ChatTheme.chat
     // v9.34 (owner): an abort is always something this side asked for (Stop,
     // undo, a new prompt) - it was never a failure worth a card. v9.38: the
     // only signal for an aborted turn is the tiny "Stopped" word under the
@@ -996,29 +996,14 @@ fun TurnErrorCard(error: Transcript.TurnError, modifier: Modifier = Modifier) {
         if (error.statusCode != 0) append(" (status ${error.statusCode})")
         if (error.retryable) append(" [retryable]")
     }
-    Surface(
-        modifier = modifier.fillMaxWidth().semantics { testTag = TAG_TURN_ERROR },
-        color = Color.Transparent,
-        border = BorderStroke(1.dp, chat.toolBorder),
-        shape = MaterialTheme.shapes.medium,
-    ) {
-        // A column: DetailDisclosure fills the width, so inside a Row it squeezed the
-        // headline to a sliver. The headline says what kind of failure it is; the raw
-        // server text sits behind Details.
-        Column(Modifier.padding(horizontal = 10.dp, vertical = 7.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(7.dp).clip(CircleShape).background(chat.attention))
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = availabilityHeadline(error.kind),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = chat.attention,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            DetailDisclosure(raw)
-        }
-    }
+    // The shared error card: headline and advice from the classified kind, the
+    // agent's own text behind Details. Nothing here decides the words itself.
+    ErrorCard(
+        kind = error.kind,
+        modifier = modifier,
+        rawDetail = raw,
+        tag = TAG_TURN_ERROR,
+    )
 }
 
 // ---- blocking asks ---------------------------------------------------------

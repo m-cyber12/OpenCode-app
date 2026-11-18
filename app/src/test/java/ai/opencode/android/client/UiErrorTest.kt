@@ -71,15 +71,32 @@ class UiErrorTest {
     }
 
     @Test
-    fun modelSideLimitsAreProviderFailures() {
-        for (name in listOf(
-            UiError.NAME_CONTEXT_OVERFLOW,
-            UiError.NAME_CONTENT_FILTER,
-            UiError.NAME_OUTPUT_LENGTH,
-            UiError.NAME_STRUCTURED_OUTPUT,
-        )) {
-            assertEquals(name, AgentAvailability.PROVIDER_OTHER, UiError.classifyTurnError(name, "x"))
-        }
+    fun modelSideLimitsGetTheirOwnKind() {
+        assertEquals(AgentAvailability.CONTEXT_TOO_LONG, UiError.classifyTurnError(UiError.NAME_CONTEXT_OVERFLOW, "x"))
+        assertEquals(AgentAvailability.CONTENT_FILTERED, UiError.classifyTurnError(UiError.NAME_CONTENT_FILTER, "x"))
+        assertEquals(AgentAvailability.OUTPUT_TOO_LONG, UiError.classifyTurnError(UiError.NAME_OUTPUT_LENGTH, "x"))
+        assertEquals(AgentAvailability.PROVIDER_OTHER, UiError.classifyTurnError(UiError.NAME_STRUCTURED_OUTPUT, "x"))
+    }
+
+    @Test
+    fun upstreamV2ErrorTypesAreClassifiedByWhatTheyAre() {
+        // A stop is recorded as `aborted`: it must never read as a model failure.
+        assertEquals(AgentAvailability.ABORTED, UiError.classifyTurnError("aborted", "Step interrupted"))
+        assertEquals(AgentAvailability.ABORTED, UiError.classifyTurnError("interrupted", ""))
+        assertEquals(AgentAvailability.PROVIDER_AUTH, UiError.classifyTurnError("provider.auth", "no key"))
+        assertEquals(AgentAvailability.PROVIDER_NOT_SET_UP, UiError.classifyTurnError("provider.no-route", "x"))
+        assertEquals(AgentAvailability.CONTENT_FILTERED, UiError.classifyTurnError("provider.content-filter", "x"))
+        assertEquals(AgentAvailability.TOOL_FAILED, UiError.classifyTurnError("tool.execution", "exit 1"))
+        assertEquals(AgentAvailability.PERMISSION_REJECTED, UiError.classifyTurnError("permission.rejected", "no"))
+        assertEquals(AgentAvailability.COMPACTION_FAILED, UiError.classifyTurnError("compaction.unavailable", "x"))
+        // The server's own catch-all is not blamed on the model.
+        assertEquals(AgentAvailability.UNKNOWN, UiError.classifyTurnError("unknown", "something odd"))
+        assertEquals(AgentAvailability.PROVIDER_UNREACHABLE, UiError.classifyTurnError("provider.error", "fetch failed"))
+    }
+
+    @Test
+    fun aStoppedAbortIsNotKeyLimitOrError() {
+        assertFalse(UiError.isKeyLimitError("aborted", "rate limit reached"))
     }
 
     @Test
@@ -134,7 +151,8 @@ class UiErrorTest {
         assertEquals(AgentAvailability.RUNTIME_STARTING, UiError.classifyRuntimeStatus("STARTING"))
         assertEquals(AgentAvailability.RUNTIME_UNAVAILABLE, UiError.classifyRuntimeStatus("CRASHED_RESTARTING"))
         assertEquals(AgentAvailability.RUNTIME_UNAVAILABLE, UiError.classifyRuntimeStatus("FATAL"))
-        assertEquals(AgentAvailability.RUNTIME_UNAVAILABLE, UiError.classifyRuntimeStatus("STOPPED"))
+        // Stopped on purpose is neutral; an unexpected stop is still unavailable.
+        assertEquals(AgentAvailability.RUNTIME_STOPPED, UiError.classifyRuntimeStatus("STOPPED"))
         assertEquals(AgentAvailability.RUNTIME_UNAVAILABLE, UiError.classifyRuntimeStatus("UNSUPPORTED_DEVICE"))
         assertEquals(AgentAvailability.RUNTIME_UNAVAILABLE, UiError.classifyRuntimeStatus(""))
     }

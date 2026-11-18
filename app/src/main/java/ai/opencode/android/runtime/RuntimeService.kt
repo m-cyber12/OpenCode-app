@@ -82,7 +82,7 @@ class RuntimeService : Service() {
             }
             return START_NOT_STICKY
         }
-        if (intent?.action == ACTION_STOP) {
+        if (intent?.action == ACTION_STOP || intent?.action == ACTION_EXIT) {
             explicitStopRequested = true
             noticeJob?.cancel()
             noticeJob = null
@@ -93,6 +93,7 @@ class RuntimeService : Service() {
                 stopForeground(true)
             }
             manager.stop()
+            if (intent?.action == ACTION_EXIT) AppExit.request()
             stopSelf()
             return START_NOT_STICKY
         }
@@ -204,7 +205,7 @@ class RuntimeService : Service() {
             RuntimeNoticeState.Tap.EXIT -> PendingIntent.getService(
                 this,
                 tap.ordinal,
-                Intent(this, RuntimeService::class.java).setAction(ACTION_STOP),
+                Intent(this, RuntimeService::class.java).setAction(ACTION_EXIT),
                 flags,
             )
             RuntimeNoticeState.Tap.PAUSE -> PendingIntent.getService(
@@ -250,6 +251,8 @@ class RuntimeService : Service() {
         const val CHANNEL_ID = "opencode-runtime"
         const val NOTIF_ID = 4204
         const val ACTION_STOP = "ai.opencode.android.STOP_RUNTIME"
+        /** Notification Exit: stop the agent and close the app's screen. */
+        const val ACTION_EXIT = "ai.opencode.android.EXIT_APP"
         const val ACTION_PAUSE = "ai.opencode.android.PAUSE_WORK"
 
         fun start(context: Context) {

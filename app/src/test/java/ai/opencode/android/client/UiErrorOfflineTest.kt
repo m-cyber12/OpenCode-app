@@ -1,6 +1,7 @@
 package ai.opencode.android.client
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 /**
@@ -136,7 +137,7 @@ class UiErrorOfflineTest {
         // auth nor network is supported by the text: the honest bucket.
         assertEquals(
             AgentAvailability.PROVIDER_OTHER,
-            turn(UiError.NAME_UNKNOWN, "the model returned nothing"),
+            turn("provider.error", "the model returned nothing"),
         )
     }
 
@@ -158,10 +159,9 @@ class UiErrorOfflineTest {
             UiError.NAME_OUTPUT_LENGTH,
             UiError.NAME_STRUCTURED_OUTPUT,
         )) {
-            assertEquals(
-                "$name must be provider-other even with network-looking text",
-                AgentAvailability.PROVIDER_OTHER,
-                turn(name, "timed out"),
+            assertFalse(
+                "$name must not read as a network problem",
+                turn(name, "timed out") == AgentAvailability.PROVIDER_UNREACHABLE,
             )
         }
     }
@@ -197,9 +197,11 @@ class UiErrorOfflineTest {
         for (starting in listOf("EXTRACTING", "STARTING", "STOPPED_IDLE")) {
             assertEquals(AgentAvailability.RUNTIME_STARTING, UiError.classifyRuntimeStatus(starting))
         }
-        for (down in listOf("CRASHED_RESTARTING", "FATAL", "UNSUPPORTED_DEVICE", "STOPPED")) {
+        for (down in listOf("CRASHED_RESTARTING", "FATAL", "UNSUPPORTED_DEVICE")) {
             assertEquals(AgentAvailability.RUNTIME_UNAVAILABLE, UiError.classifyRuntimeStatus(down))
         }
+        // A stop the user asked for is neutral, not an error.
+        assertEquals(AgentAvailability.RUNTIME_STOPPED, UiError.classifyRuntimeStatus("STOPPED"))
     }
 
     // ---- the UI's single state: precedence --------------------------------------

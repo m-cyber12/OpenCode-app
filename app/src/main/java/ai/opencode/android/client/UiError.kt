@@ -46,6 +46,30 @@ enum class AgentAvailability {
     /** The turn was stopped - by the user, or by upstream's abort path. */
     ABORTED,
 
+    /** The user stopped the agent on purpose (Exit). Neutral, not a failure. */
+    RUNTIME_STOPPED,
+
+    /** The model has no connected provider behind it (upstream `provider.no-route`). */
+    PROVIDER_NOT_SET_UP,
+
+    /** The provider's content filter refused the reply (upstream `ContentFilterError`). */
+    CONTENT_FILTERED,
+
+    /** The conversation is larger than the model's context window (`ContextOverflowError`). */
+    CONTEXT_TOO_LONG,
+
+    /** The reply hit the model's output limit (`MessageOutputLengthError`). */
+    OUTPUT_TOO_LONG,
+
+    /** A tool the agent ran failed (upstream `tool.execution`). The agent is still running. */
+    TOOL_FAILED,
+
+    /** A step needed a permission the user did not give (upstream `permission.rejected`). */
+    PERMISSION_REJECTED,
+
+    /** Shortening the conversation failed (upstream `compaction.*`). */
+    COMPACTION_FAILED,
+
     /** Something failed that none of the above explains. The raw text is always shown too. */
     UNKNOWN,
 }
@@ -69,6 +93,12 @@ object UiError {
     const val NAME_OUTPUT_LENGTH = "MessageOutputLengthError"
     const val NAME_STRUCTURED_OUTPUT = "StructuredOutputError"
     const val NAME_UNKNOWN = "UnknownError"
+
+    /**
+     * Upstream v2 error `type` values (packages/core/src/session/to-session-error.ts and
+     * the runner at the pinned v2.2.5 commit). A stop is recorded as `aborted`.
+     */
+    private val ABORT_NAMES = setOf(NAME_ABORTED, "aborted", "interrupted")
 
     private val NETWORK_HINTS = listOf(
         "fetch failed", "enotfound", "econnrefused", "econnreset", "etimedout", "ehostunreach",
@@ -98,8 +128,14 @@ object UiError {
     ): AgentAvailability {
         val lower = message.lowercase()
         return when (name) {
-            NAME_PROVIDER_AUTH -> AgentAvailability.PROVIDER_AUTH
-            NAME_ABORTED -> AgentAvailability.ABORTED
+            NAME_PROVIDER_AUTH, "provider.auth" -> AgentAvailability.PROVIDER_AUTH
+            in ABORT_NAMES -> AgentAvailability.ABORTED
+            "provider.no-route" -> AgentAvailability.PROVIDER_NOT_SET_UP
+            "provider.content-filter", NAME_CONTENT_FILTER -> AgentAvailability.CONTENT_FILTERED
+            "provider.unsupported-operation" -> AgentAvailability.PROVIDER_OTHER
+            "tool.execution" -> AgentAvailability.TOOL_FAILED
+            "permission.rejected" -> AgentAvailability.PERMISSION_REJECTED
+            "compaction.unavailable", "compaction.interrupted" -> AgentAvailability.COMPACTION_FAILED
             NAME_API -> when {
                 statusCode == 401 || statusCode == 403 -> AgentAvailability.PROVIDER_AUTH
                 statusCode == 408 || statusCode == 429 || statusCode in 500..599 -> AgentAvailability.PROVIDER_UNREACHABLE
@@ -107,9 +143,12 @@ object UiError {
                 statusCode in 400..499 -> AgentAvailability.PROVIDER_OTHER
                 else -> hints(lower)
             }
-            NAME_CONTEXT_OVERFLOW, NAME_CONTENT_FILTER, NAME_OUTPUT_LENGTH, NAME_STRUCTURED_OUTPUT ->
-                AgentAvailability.PROVIDER_OTHER
-            NAME_UNKNOWN -> hints(lower)
+            NAME_CONTEXT_OVERFLOW -> AgentAvailability.CONTEXT_TOO_LONG
+            NAME_OUTPUT_LENGTH -> AgentAvailability.OUTPUT_TOO_LONG
+            NAME_STRUCTURED_OUTPUT -> AgentAvailability.PROVIDER_OTHER
+            // "unknown" is the server's own catch-all: the failure is not known to be the
+            // provider's, so an unexplained one is shown as unknown, not blamed on the model.
+            "unknown", NAME_UNKNOWN -> hints(lower, fallback = AgentAvailability.UNKNOWN)
             // No name at all: a shape this client does not recognise. Keep whatever
             // the message text supports (an auth or network reading is actionable),
             // but never invent a provider-side cause there is no evidence for.
@@ -133,7 +172,7 @@ object UiError {
      * through the ring for nothing.
      */
     fun isKeyLimitError(name: String, message: String, statusCode: Int = 0): Boolean {
-        if (name == NAME_ABORTED) return false
+        if (name in ABORT_NAMES) return false
         if (statusCode == 429) return true
         val lower = message.lowercase()
         return LIMIT_HINTS.any { lower.contains(it) }
@@ -179,6 +218,8 @@ object UiError {
     fun classifyRuntimeStatus(statusName: String): AgentAvailability = when (statusName) {
         "HEALTHY" -> AgentAvailability.READY
         "EXTRACTING", "STARTING", "STOPPED_IDLE" -> AgentAvailability.RUNTIME_STARTING
+        // Stopped on purpose (Exit) is not a failure. Anything else unexpected is.
+        "STOPPED" -> AgentAvailability.RUNTIME_STOPPED
         else -> AgentAvailability.RUNTIME_UNAVAILABLE
     }
 

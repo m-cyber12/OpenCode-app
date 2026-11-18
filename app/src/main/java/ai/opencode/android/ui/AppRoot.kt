@@ -1051,8 +1051,29 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                 )
             }
         }
+        // v11 (owner): the agent wrote a page (index.html) but did not hand off with
+        // serve.json, so the console stayed dark. A new or changed index.html now lights
+        // the console with the app's own static server - the same as a hand-off. It still
+        // never opens the page by itself, and it never takes over a project whose
+        // serve.json declares its own running server (a dev server's index.html is source).
+        val indexFile = File(dir, "index.html")
+        var lastIndexStamp = withContext(Dispatchers.IO) { if (indexFile.exists()) indexFile.lastModified() else 0L }
         while (true) {
             kotlinx.coroutines.delay(1500)
+            val indexStamp = withContext(Dispatchers.IO) { if (indexFile.exists()) indexFile.lastModified() else 0L }
+            if (indexStamp > lastIndexStamp) {
+                lastIndexStamp = indexStamp
+                val markerStamp = withContext(Dispatchers.IO) { if (marker.exists()) marker.lastModified() else 0L }
+                val declaredPort = withContext(Dispatchers.IO) {
+                    runCatching { org.json.JSONObject(marker.readText()).optInt("port", 0) }.getOrDefault(0)
+                }
+                // The agent's own serve.json hand-off for this same write wins.
+                if (markerStamp < indexStamp && declaredPort !in 1..65535) {
+                    previewTargetFor(dir, 0, "/")?.let { (u, port) ->
+                        setPreviewTarget(u, port, dir, indexStamp, R.string.sandbox_console_updated)
+                    }
+                }
+            }
             val stamp = withContext(Dispatchers.IO) { if (marker.exists()) marker.lastModified() else 0L }
             if (stamp > handled) {
                 handled = stamp
