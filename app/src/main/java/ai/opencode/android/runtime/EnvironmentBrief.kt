@@ -126,13 +126,6 @@ clients, and OUR prefix's `sh` + ~190 coreutils - prefer ours; Android's
 /system/bin varies by phone. Bun is not installed. Node/npm and Python
 are agent tools. npm installs on shared storage may require `--no-bin-links`.
 
-## Todo - what the word means here
-- For YOUR steps: keep a checklist with the `todowrite` tool while you work on a
-  multi-step task. The app's todo bar, above the message box, shows that list.
-- When the user asks for a todo list in a project or a page: build a real task
-  list - add a task, mark it done, delete it - and keep the tasks in the browser's
-  localStorage so they survive a reload. It is the user's app feature, not your checklist.
-
 ## Quirks (device-verified)
 - stderr `[seccomp] preload handler installed (rc=0)` is harmless noise.
 - Only 127.0.0.1 is reachable; no LAN address exists.
@@ -212,6 +205,8 @@ what cannot have changed; read each topic brief at most once.
 - $briefsDir/extensions.md - MCP servers and skills: where they live, how to
   register one. Read before adding either.
 - $briefsDir/video.md - make any MP4 video from code (tested recipe).
+- $briefsDir/todo.md - what "todo" means: your `todowrite` checklist versus a
+  todo list in a user's project. Read when the user says todo.
 """.trimIndent() + "\n"
     }
 
@@ -708,6 +703,26 @@ shape and counts. Quote real output as evidence, never a guess.
 Keep the sheet small: one criterion per behaviour the user asked for.
 """.trimIndent() + "\n"
 
+        val todo = """
+# Todo - what the word means here
+
+Two different things answer to "todo". Tell them apart before you start.
+
+## Your own checklist
+For YOUR steps on a multi-step task, keep a checklist with the `todowrite` tool and
+update it as each step starts and finishes. The app's todo bar, above the message
+box, shows that list to the user. It is your working memory, not the user's product.
+
+## A todo list the user asked for
+When the user asks for a todo list in a project or a page, build a real task list:
+add a task, mark it done, delete it. Keep the tasks in the browser's localStorage so
+they survive a reload, and show the list on the page itself. It is the user's app
+feature, so it does not go into your own checklist.
+
+Put the todo list on the page the user will open. Do not bury it in a second file
+that nothing links to.
+""".trimIndent() + "\n"
+
         return linkedMapOf(
             "preview.md" to preview,
             "screenshots.md" to screenshots,
@@ -717,6 +732,7 @@ Keep the sheet small: one criterion per behaviour the user asked for.
             "tools.md" to tools,
             "extensions.md" to extensions,
             "video.md" to video,
+            "todo.md" to todo,
         )
     }
 }
