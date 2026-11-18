@@ -183,6 +183,10 @@ class RuntimeManager private constructor(private val appContext: Context) {
         // A newer start/stop/reset invalidates this loop.
         if (gen != generation) return
         try {
+            // The agent's todo tool is opt-in upstream; the server reads the global config
+            // at its start, so this runs before any server is spawned (see GlobalConfigDefaults).
+            runCatching { GlobalConfigDefaults.ensureTodoTool(paths.xdgConfigOpencode) }
+                .onFailure { logger.host("global config: todo tool not enabled: ${it.message}") }
             // ---- 1. ABI / device gate -------------------------------------
             val gate = AbiGate.evaluate()
             if (gate is AbiGate.Result.Unsupported) {

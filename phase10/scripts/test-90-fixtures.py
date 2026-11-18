@@ -284,7 +284,7 @@ def build(root):
     screens_chat_menu = screen("chat-menu", [
         text_node("Starred models", "[40,400][1040,460]"),
         node("model_pick_0", text="gpt-4o-mini", bounds="[40,480][1040,560]"),
-        node("model_quick_switch_settings", text="Choose models in Settings", bounds="[40,580][1040,660]"),
+        node("model_quick_switch_settings", text="Manage models", bounds="[40,580][1040,660]"),
     ])
 
     # ---- the v4 first-run workspace step (item 4) ------------------------------

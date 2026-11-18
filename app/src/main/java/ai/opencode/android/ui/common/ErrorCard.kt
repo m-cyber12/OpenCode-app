@@ -2,9 +2,11 @@ package ai.opencode.android.ui.common
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,7 +24,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -95,7 +96,7 @@ fun ErrorCard(
         // headline and the badge say what happened).
         border = BorderStroke(1.5.dp, accent),
     ) {
-        Column(Modifier.padding(start = 14.dp, end = 6.dp, top = 12.dp, bottom = 10.dp)) {
+        Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 12.dp)) {
             Row(verticalAlignment = Alignment.Top) {
                 Box(
                     modifier = Modifier
@@ -188,16 +189,13 @@ private fun RawDetail(text: String, tint: Color) {
     var copied by remember(text) { mutableStateOf(false) }
     val clipboard = LocalClipboardManager.current
     Column(Modifier.fillMaxWidth()) {
-        TextButton(
+        // Plain text actions, not TextButton: a TextButton centres its label in a minimum
+        // width, which pushed "Copy" away from the box edge.
+        ErrorTextAction(
+            label = stringResource(if (open) R.string.action_hide_details else R.string.action_details),
+            color = tint,
             onClick = { open = !open },
-            contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
-        ) {
-            Text(
-                text = stringResource(if (open) R.string.action_hide_details else R.string.action_details),
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = tint,
-            )
-        }
+        )
         if (open) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -221,20 +219,30 @@ private fun RawDetail(text: String, tint: Color) {
                         )
                     }
                     Spacer(Modifier.height(4.dp))
-                    TextButton(
+                    ErrorTextAction(
+                        label = stringResource(if (copied) R.string.error_copied else R.string.error_copy),
+                        color = MaterialTheme.colorScheme.onSurface,
                         onClick = {
                             clipboard.setText(AnnotatedString(text))
                             copied = true
                         },
-                        contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
-                    ) {
-                        Text(
-                            text = stringResource(if (copied) R.string.error_copied else R.string.error_copy),
-                            style = MaterialTheme.typography.labelLarge,
-                        )
-                    }
+                    )
                 }
             }
         }
     }
+}
+
+/** A text-only action with a real touch target and no centred minimum width. */
+@Composable
+private fun ErrorTextAction(label: String, color: Color, onClick: () -> Unit) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+        color = color,
+        modifier = Modifier
+            .heightIn(min = 40.dp)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(vertical = 10.dp),
+    )
 }

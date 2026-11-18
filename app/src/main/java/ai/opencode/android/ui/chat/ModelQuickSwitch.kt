@@ -81,14 +81,12 @@ import kotlinx.coroutines.launch
  *  1. the CURRENT model, and its THINKING LEVEL as a row of chips right under it
  *     ("Model default" first, then the levels the server reports);
  *  2. "Free Models" (Zen), collapsible, expanded by default;
- *  3. every CONNECTED provider, pinned directly under Zen, each a fold header,
- *     folded by default so the starred shortlist stays on screen;
- *  4. the starred shortlist - the only place a star is shown in this menu is the
- *     Settings Models card, not here;
- *  5. one "choose models in Settings" entry.
+ *  3. the STARRED models - the only models this menu lists. Every other model of
+ *     every provider stays out of the menu (owner, 2026-11-18: "just started
+ *     models, no provider models"). Stars are set in Settings' Models card;
+ *  4. one "Manage models" entry, which opens Settings.
  *
- * Providers that are not connected are NOT listed here any more: they are added in
- * Settings. There are no per-model triangles and no inline level lists.
+ * There are no provider groups, no per-model triangles and no inline level lists.
  *
  * Pure: every list is a value and every choice is a callback, which is what
  * lets the Phase 6 gates render it with fabricated state.
@@ -257,7 +255,6 @@ fun ModelQuickSwitch(
                 modelsLoading = modelsLoading,
                 starred = starred,
                 freeModels = freeModels,
-                providerGroups = providerGroups,
                 onPick = { p, m ->
                     close()
                     onPick(p, m)
@@ -289,16 +286,12 @@ private fun QuickModelList(
     modelsLoading: Boolean,
     starred: List<OpenCodeApi.ModelRef>,
     freeModels: List<QuickModel>,
-    providerGroups: List<QuickProvider>,
     onPick: (String, String) -> Unit,
     onPickVariant: (String) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val chat = ChatTheme.chat
     var freeOpen by remember { mutableStateOf(true) } // expanded by default (owner)
-    // Every connected provider group folds by default (a tap opens it). Keyed by provider id.
-    val groupOpen = remember { mutableStateMapOf<String, Boolean>() }
-    fun isOpen(group: QuickProvider): Boolean = groupOpen[group.id] ?: false
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().semantics { testTag = "model_quick_list" },
@@ -358,17 +351,6 @@ private fun QuickModelList(
                     )
                 }
             }
-        }
-
-        // ---- connected providers, pinned directly under Zen ---------------
-        for (group in providerGroups.filter { it.connected }) {
-            quickProviderGroup(
-                group = group,
-                open = isOpen(group),
-                onToggle = { groupOpen[group.id] = !isOpen(group) },
-                current = current,
-                onPick = onPick,
-            )
         }
 
         // ---- the starred shortlist ---------------------------------------
@@ -478,42 +460,6 @@ private fun ThinkingLevelRow(
                             contentDescription = label
                             this.selected = selected
                         },
-                )
-            }
-        }
-    }
-}
-
-/**
- * One provider group below Zen: a fold header, and - only while it is open - its
- * models. Tags are `conn_<provider>_pick_<i>`, outside the `model_pick_` family the
- * starred list owns.
- */
-@OptIn(ExperimentalFoundationApi::class)
-private fun LazyListScope.quickProviderGroup(
-    group: QuickProvider,
-    open: Boolean,
-    onToggle: () -> Unit,
-    current: OpenCodeApi.ModelRef?,
-    onPick: (String, String) -> Unit,
-) {
-    val prefix = "conn_" + group.id
-    item(key = "head_$prefix") {
-        QuickGroupHeader(
-            title = group.name,
-            expanded = open,
-            tag = "model_group_${group.id}",
-            onToggle = onToggle,
-        )
-    }
-    if (open) {
-        itemsIndexed(group.models, key = { i, _ -> "${prefix}_$i" }) { index, qm ->
-            Box(Modifier.fillMaxWidth().animateItemPlacement()) {
-                ModelLineRow(
-                    model = qm,
-                    onPick = { onPick(qm.ref.providerID, qm.ref.modelID) },
-                    rowTag = "${prefix}_pick_$index",
-                    current = current,
                 )
             }
         }

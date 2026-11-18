@@ -126,6 +126,13 @@ clients, and OUR prefix's `sh` + ~190 coreutils - prefer ours; Android's
 /system/bin varies by phone. Bun is not installed. Node/npm and Python
 are agent tools. npm installs on shared storage may require `--no-bin-links`.
 
+## Todo - what the word means here
+- For YOUR steps: keep a checklist with the `todowrite` tool while you work on a
+  multi-step task. The app's todo bar, above the message box, shows that list.
+- When the user asks for a todo list in a project or a page: build a real task
+  list - add a task, mark it done, delete it - and keep the tasks in the browser's
+  localStorage so they survive a reload. It is the user's app feature, not your checklist.
+
 ## Quirks (device-verified)
 - stderr `[seccomp] preload handler installed (rc=0)` is harmless noise.
 - Only 127.0.0.1 is reachable; no LAN address exists.

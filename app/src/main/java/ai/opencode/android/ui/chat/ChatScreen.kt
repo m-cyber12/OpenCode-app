@@ -975,7 +975,12 @@ private fun StatusArea(
     if (availability == AgentAvailability.SERVER_UNREACHABLE || availability == AgentAvailability.PROVIDER_UNREACHABLE) {
         return
     }
-    if (availability != AgentAvailability.READY && availability != AgentAvailability.ABORTED) {
+    // v11 (owner, 2026-11-18): "renders two errors". When the degraded state IS the turn's
+    // own failure, its card above already says it (headline, advice, raw text), so the
+    // banner stays out. The banner still shows for runtime or server states that differ.
+    val turnCardShowsIt = turnError != null && !turnError.isBlank &&
+        turnError.kind != AgentAvailability.ABORTED && availability == turnError.kind
+    if (availability != AgentAvailability.READY && availability != AgentAvailability.ABORTED && !turnCardShowsIt) {
         if (!turnErrorShownByRow || state.error.isNotBlank()) {
             // Deliberately no `extra`: the supervisor's own detail line carries the
             // loopback bind address once the runtime is healthy ("healthy on

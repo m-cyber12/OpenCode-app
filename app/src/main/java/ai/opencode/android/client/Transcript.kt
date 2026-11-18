@@ -382,8 +382,16 @@ class Transcript {
         val prev = existing?.parts?.firstOrNull { it.id == p.id }
         // v2 sends a tool's name only with the start of the call; later frames for the
         // same call keep the name and call id that the earlier frame set.
-        val fresh = if (prev != null && p.tool.isEmpty()) {
-            p.copy(tool = prev.tool, callID = p.callID.ifEmpty { prev.callID })
+        // v11 (owner, 2026-11-18): a running tool sends progress frames without its input
+        // (the command) or title, so the card showed the command only after the turn ended
+        // and the history reloaded. A frame keeps what the earlier frame of the same call set.
+        val fresh = if (prev != null) {
+            p.copy(
+                tool = p.tool.ifEmpty { prev.tool },
+                callID = p.callID.ifEmpty { prev.callID },
+                input = p.input.ifEmpty { prev.input },
+                title = p.title.ifEmpty { prev.title },
+            )
         } else {
             p
         }
