@@ -543,6 +543,12 @@ private fun ChatHeader(
 ) {
     val chat = ChatTheme.chat
     val newLabel = stringResource(R.string.chat_new_conversation)
+    // The catalog's display name for the current model (the capsule shows only this).
+    val currentName = remember(model, freeModels, providerGroups) {
+        model?.let { ref ->
+            (freeModels + providerGroups.flatMap { it.models }).firstOrNull { it.ref == ref }?.label
+        }.orEmpty()
+    }
     val settingsLabel = stringResource(R.string.chat_open_settings)
     val providersLabel = stringResource(R.string.chat_open_providers)
     val addonsLabel = stringResource(R.string.chat_open_addons)
@@ -589,6 +595,7 @@ private fun ChatHeader(
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             ModelQuickSwitch(
                 current = model,
+                currentName = currentName,
                 starred = starred,
                 onPick = onPickModel,
                 onOpenSettings = onOpenProviders,

@@ -173,11 +173,15 @@ fun ModelQuickSwitch(
     modelsLoading: Boolean = false,
     /** v11: every provider except Zen - connected ones first, then the rest. */
     providerGroups: List<QuickProvider> = emptyList(),
+    /** The current model's display name from the catalog. Empty = use the id's last segment. */
+    currentName: String = "",
 ) {
     var open by remember { mutableStateOf(false) }
     val chat = ChatTheme.chat
+    // The capsule shows the model's own name only: never the provider, and never the
+    // "provider/model" id (the id can itself contain slashes, e.g. "minimaxai/...").
     val currentText = when {
-        current != null -> ModelRefCodec.encode(current)
+        current != null -> currentName.ifEmpty { current.modelID.substringAfterLast('/') }
         modelsLoading -> stringResource(R.string.chat_model_loading)
         else -> stringResource(R.string.chat_model_none)
     }
