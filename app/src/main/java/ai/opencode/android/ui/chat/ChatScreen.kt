@@ -13,9 +13,7 @@ import ai.opencode.android.ui.common.ProjectTabs
 import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.client.OpenCodeApi
 import ai.opencode.android.client.TodoItem
-import ai.opencode.android.client.TodoParser
-import ai.opencode.android.client.ToolKind
-import ai.opencode.android.client.ToolKinds
+import ai.opencode.android.client.TodoBoard
 import ai.opencode.android.client.ZenPolicy
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
@@ -387,6 +385,7 @@ fun ChatScreen(
         val pendingQuestion = state.pendingQuestions.firstOrNull()
         TranscriptPane(
             messages = messages,
+            orphanError = orphanTurnError(state),
             // v9.35 (owner): the typed subtitle belongs ONLY to the first chat
             // of a freshly created project - later chats go straight to tips.
             firstChatOfProject = emptyChatSubtitle ?: (state.sessions.size <= 1),
@@ -920,6 +919,23 @@ private fun StartingRow(modifier: Modifier = Modifier) {
  * fixed order of seriousness: a local problem outranks a provider problem, which
  * outranks "working".
  */
+/** True when an assistant row of the current turn already carries the turn's failure (MessageRow draws it). */
+private fun rowCarriesTurnError(messages: List<Transcript.Message>): Boolean {
+    val turnStart = messages.indexOfLast { it.role == "user" }
+    val inTurn = if (turnStart >= 0) messages.subList(turnStart + 1, messages.size) else messages
+    return inTurn.any { m -> m.error?.let { !it.isBlank } == true }
+}
+
+/**
+ * The turn's failure, when no row of the turn carries it (for example the provider refused
+ * before any reply existed). Aborts never get a card: a Stop is not a failure.
+ */
+private fun orphanTurnError(state: OpenCodeRepository.UiState): Transcript.TurnError? {
+    val error = state.turnError ?: return null
+    if (error.isBlank || error.kind == AgentAvailability.ABORTED) return null
+    return if (rowCarriesTurnError(state.messages)) null else error
+}
+
 @Composable
 private fun StatusArea(
     state: OpenCodeRepository.UiState,
@@ -946,18 +962,11 @@ private fun StatusArea(
     // (its headline is the human context - runtime down, server silent,
     // starting up) but never restates the turn's text.
     val turnError = state.turnError
-    val turnErrorShownByRow = turnError?.let { te ->
-        val msgs = state.messages
-        val turnStart = msgs.indexOfLast { it.role == "user" }
-        val inTurn = if (turnStart >= 0) msgs.subList(turnStart + 1, msgs.size) else msgs
-        inTurn.any { m -> m.error?.name == te.name && m.error?.message == te.message }
-    } == true
-    if (turnError != null && !turnErrorShownByRow) {
-        TurnErrorCard(
-            error = turnError,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-        )
-    }
+    // v11 (owner, 2026-11-19): the failure belongs where it happened - under the user's
+    // message, in the reply's place - and nowhere else. It is no longer drawn at the top
+    // of the page. TranscriptPane places it (see orphanTurnError); here it only decides
+    // whether the availability banner would say the same thing twice.
+    val turnErrorShownByRow = rowCarriesTurnError(state.messages)
     // v9.38 (owner): "that yellow Stop indicator is unnecessary and
     // misleading - just show the word Stopped under the token count". A user
     // stopping a turn is not a degraded agent: no banner, no card - the tiny
@@ -1025,12 +1034,11 @@ private fun StatusArea(
               val msgs = state.messages
               val turnStart = msgs.indexOfLast { it.role == "user" }
               val turn = if (turnStart >= 0) msgs.subList(turnStart + 1, msgs.size) else emptyList()
-              turn.asReversed().asSequence()
-                  .flatMap { m -> m.parts.asReversed().asSequence() }
-                  .filter { p -> ToolKinds.of(p.tool) == ToolKind.TODO && p.input.isNotBlank() }
-                  .map { p -> TodoParser.parse(p.input, p.metadata) }
-                  .firstOrNull { it.isNotEmpty() }
-                  ?: emptyList()
+              // v11 (owner, 2026-11-19: "nothing gets checked off"): the newest call
+              // that applied, not the newest call. See TodoBoard.latestApplied.
+              TodoBoard.latestApplied(
+                  turn.asReversed().asSequence().flatMap { m -> m.parts.asReversed().asSequence() },
+              )
           }
         }
         BusyBar(todos)
@@ -1387,6 +1395,8 @@ private fun TranscriptPane(
     onUndo: (() -> Unit)?,
     /** v9.32 (owner): the pending question renders as the transcript's tail. */
     question: Transcript.Question? = null,
+    /** The turn's failure when no message row carries it: drawn after the user's message. */
+    orphanError: Transcript.TurnError? = null,
     onQuestionSubmit: (String, List<List<String>>) -> Unit = { _, _ -> },
     onQuestionSkip: (String) -> Unit = {},
     modifier: Modifier = Modifier,
@@ -1458,7 +1468,7 @@ private fun TranscriptPane(
 
     LaunchedEffect(streamKey, count) {
         // The question card is one extra trailing item beyond the messages.
-        val lastIndex = count - 1 + (if (question != null) 1 else 0)
+        val lastIndex = count - 1 + (if (question != null) 1 else 0) + (if (orphanError != null) 1 else 0)
         if (count > 0 && pinned) listState.scrollToItem(lastIndex, tailOffsetPx)
     }
 
@@ -1592,6 +1602,16 @@ private fun TranscriptPane(
                         groupElapsedMs = elapsedMs,
                         modifier = Modifier.widthIn(max = 760.dp),
                     )
+                }
+            }
+            orphanError?.let { err ->
+                item(key = "turn_error_card") {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                        TurnErrorCard(
+                            error = err,
+                            modifier = Modifier.widthIn(max = 760.dp).padding(horizontal = 12.dp, vertical = 8.dp),
+                        )
+                    }
                 }
             }
             // v9.32 (owner): the pending question is the transcript's tail -

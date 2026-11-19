@@ -171,10 +171,52 @@ object TodoParser {
             val item = todos.optJSONObject(i) ?: continue
             val content = item.optString("content").trim()
             if (content.isEmpty()) continue
-            out.add(TodoItem(content = content, status = item.optString("status").trim().lowercase()))
+            out.add(TodoItem(content = content, status = TodoBoard.normalize(item.optString("status"))))
         }
         return out
     }
+}
+
+/**
+ * Which todo list the working bar shows, and what each status means.
+ *
+ * Upstream's `todowrite` takes a strict enum (`pending | in_progress | completed |
+ * cancelled`). A model that writes "in progress", "done" or "Completed" either fails
+ * that schema (the call is then an error and must not replace the list) or sends a
+ * spelling the bar would not count. [normalize] reads the common spellings the same
+ * way, and [latestApplied] takes the newest call that actually applied: a failed call
+ * is skipped, and a call still streaming (partial JSON parses to nothing) is skipped.
+ */
+object TodoBoard {
+
+    private val DONE = setOf("done", "complete", "completed", "finished", "closed")
+    private val ACTIVE = setOf("in_progress", "inprogress", "doing", "active", "working", "current", "started")
+    private val CANCELLED = setOf("cancelled", "canceled", "skipped", "dropped", "abandoned")
+
+    /** One of `pending | in_progress | completed | cancelled`; anything unknown counts as pending. */
+    fun normalize(raw: String): String {
+        val s = raw.trim().lowercase().replace(Regex("[\\s-]+"), "_")
+        return when {
+            s in DONE -> "completed"
+            s in ACTIVE -> "in_progress"
+            s in CANCELLED -> "cancelled"
+            else -> "pending"
+        }
+    }
+
+    /**
+     * The first list that parses non-empty, walking [partsNewestFirst]. Only `todowrite`
+     * parts count; a part whose call failed is skipped, so the bar keeps the last list
+     * that really applied instead of showing a rejected one.
+     */
+    fun latestApplied(partsNewestFirst: Sequence<Transcript.Part>): List<TodoItem> =
+        partsNewestFirst
+            .filter { ToolKinds.of(it.tool) == ToolKind.TODO }
+            .filterNot { it.status == "error" || it.status == "failed" }
+            .filter { it.input.isNotBlank() || it.metadata.isNotBlank() }
+            .map { TodoParser.parse(it.input, it.metadata) }
+            .firstOrNull { it.isNotEmpty() }
+            ?: emptyList()
 }
 
 /**
