@@ -224,15 +224,29 @@ object UiError {
     }
 
     /**
-     * v9.42 (owner): sending NEVER waits on the machine. "Make message
-     * submission behave normally, as if the app were fully initialized" - the
-     * user sends, the message appears in the chat, and it goes to the model
-     * only once the agent is actually up; until then AppRoot's queue holds it.
-     * A dead server, a booting one, a refused key - all the same rule: the
-     * composer is open and the queue drains when the state does. There is no
-     * state this app answers with "Sending is unavailable".
+     * 2026-11-20 (owner): no prompt is sendable into a chat in the error state. Sends are
+     * blocked only while a server-side error is shown (see [isServerError]). Starting still
+     * takes sends: they wait in AppRoot's queue until the agent is up. Provider and turn
+     * failures keep the composer open.
      */
-    fun canSend(a: AgentAvailability): Boolean = true
+    fun canSend(a: AgentAvailability): Boolean = !isServerError(a)
+
+    /**
+     * 2026-11-20 (owner): "Error" is for server-side problems only - the local agent or its
+     * server is down, refused us, or was stopped. A provider or turn failure (a model with no
+     * provider, a refused reply, a tool that failed) is not this state: it stays on the
+     * turn's own card and the composer stays open, so the user can switch model and retry.
+     * Starting is not here either - a send made during boot waits in the queue.
+     */
+    fun isServerError(a: AgentAvailability): Boolean = when (a) {
+        AgentAvailability.RUNTIME_UNAVAILABLE,
+        AgentAvailability.SERVER_UNREACHABLE,
+        AgentAvailability.SERVER_AUTH,
+        AgentAvailability.REQUEST_REJECTED,
+        AgentAvailability.RUNTIME_STOPPED,
+        -> true
+        else -> false
+    }
 
 
     /**

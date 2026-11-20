@@ -519,6 +519,8 @@ private fun ModelSection(
 @Composable
 private fun ProvidersCatalogSection(
     providers: OpenCodeApi.ProviderSnapshot?,
+    /** 2026-11-20 (owner): providers whose key is being checked - shown as "Connecting". */
+    connecting: Set<String> = emptySet(),
     onConnectProvider: (String, String) -> Unit,
     onRevokeKey: (String) -> Unit,
     providerKeys: (String) -> List<ProviderKeyring.Entry>,
@@ -587,6 +589,7 @@ private fun ProvidersCatalogSection(
                 ProviderRow(
                     provider = provider,
                     connected = providers.connected.contains(provider.id),
+                    connecting = provider.id in connecting,
                     free = provider.id == OpenCodeApi.ZEN_PROVIDER_ID,
                     onConnect = { connectTarget = provider },
                 )
@@ -1052,6 +1055,8 @@ private fun ComingSoonProviderRow(provider: OpenCodeApi.ProviderEntry) {
 private fun ProviderRow(
     provider: OpenCodeApi.ProviderEntry,
     connected: Boolean,
+    /** 2026-11-20 (owner): the key is being checked after Save - yellow "Connecting". */
+    connecting: Boolean = false,
     /** v9.41 (owner item 23): Zen's rows carry a "Free" pill. */
     free: Boolean = false,
     onConnect: (OpenCodeApi.ProviderEntry) -> Unit = {},
@@ -1097,9 +1102,17 @@ private fun ProviderRow(
                     // what it means for the user.
                     StatusPill(
                         text = stringResource(
-                            if (connected) R.string.settings_provider_ready else R.string.settings_provider_not_ready,
+                            when {
+                                connecting -> R.string.settings_provider_connecting
+                                connected -> R.string.settings_provider_ready
+                                else -> R.string.settings_provider_not_ready
+                            },
                         ),
-                        color = if (connected) chat.success else MaterialTheme.colorScheme.error,
+                        color = when {
+                            connecting -> chat.attention
+                            connected -> chat.success
+                            else -> MaterialTheme.colorScheme.error
+                        },
                     )
                 }
                 if (free) {
@@ -2719,6 +2732,7 @@ fun ProvidersScreen(
             item(key = "providers_catalog") {
                 ProvidersCatalogSection(
                     providers = state.providers,
+                    connecting = state.connectingProviders,
                     onConnectProvider = onConnectProvider,
                     onRevokeKey = onRevokeKey,
                     providerKeys = providerKeys,

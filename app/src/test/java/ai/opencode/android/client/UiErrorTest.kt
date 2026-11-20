@@ -158,24 +158,36 @@ class UiErrorTest {
     }
 
     @Test
-    fun sendingIsNeverBlockedByAnything() {
-        // v9.42 (owner): "make message submission behave normally, as if the
-        // app were fully initialized". The user can always send; while the
-        // agent is not up the app QUEUES the prompt (the message shows in the
-        // chat, nothing goes to the model until init finishes), and every
-        // degraded state drains through the same queue when it recovers.
-        // There is no longer a locked composer at all.
+    fun sendingIsBlockedOnlyByServerErrors() {
+        // 2026-11-20 (owner): no prompt into a chat in the error state. Starting stays
+        // queueable; provider and turn failures leave the composer open.
         assertTrue(UiError.canSend(AgentAvailability.RUNTIME_STARTING))
-        assertTrue(UiError.canSend(AgentAvailability.RUNTIME_UNAVAILABLE))
-        assertTrue(UiError.canSend(AgentAvailability.SERVER_UNREACHABLE))
-        assertTrue(UiError.canSend(AgentAvailability.SERVER_AUTH))
-        // The app is fine in all of these: the composer must stay usable.
+        assertFalse(UiError.canSend(AgentAvailability.RUNTIME_UNAVAILABLE))
+        assertFalse(UiError.canSend(AgentAvailability.SERVER_UNREACHABLE))
+        assertFalse(UiError.canSend(AgentAvailability.SERVER_AUTH))
         assertTrue(UiError.canSend(AgentAvailability.PROVIDER_UNREACHABLE))
         assertTrue(UiError.canSend(AgentAvailability.PROVIDER_AUTH))
         assertTrue(UiError.canSend(AgentAvailability.PROVIDER_OTHER))
         assertTrue(UiError.canSend(AgentAvailability.ABORTED))
-        assertTrue(UiError.canSend(AgentAvailability.REQUEST_REJECTED))
+        assertFalse(UiError.canSend(AgentAvailability.REQUEST_REJECTED))
         assertTrue(UiError.canSend(AgentAvailability.READY))
+    }
+
+    @Test
+    fun errorStatusIsServerSideOnly() {
+        // 2026-11-20 (owner): "Error" is for server-side issues only.
+        assertTrue(UiError.isServerError(AgentAvailability.SERVER_AUTH))
+        assertTrue(UiError.isServerError(AgentAvailability.RUNTIME_UNAVAILABLE))
+        for (turn in listOf(
+            AgentAvailability.PROVIDER_NOT_SET_UP,
+            AgentAvailability.PROVIDER_OTHER,
+            AgentAvailability.TOOL_FAILED,
+            AgentAvailability.PERMISSION_REJECTED,
+            AgentAvailability.CONTENT_FILTERED,
+            AgentAvailability.UNKNOWN,
+        )) {
+            assertFalse("$turn is not a server error", UiError.isServerError(turn))
+        }
     }
 
     @Test

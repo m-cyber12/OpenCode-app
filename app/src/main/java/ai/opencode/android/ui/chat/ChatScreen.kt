@@ -314,7 +314,7 @@ fun ChatScreen(
         fun variantsOf(pid: String, mid: String): List<String> = variantIndex["$pid/$mid"] ?: emptyList()
         ChatHeader(
             onOpenMenu = { drawerOpen = true },
-            busy = state.busy,
+            busy = state.busy && !turnFailed(state.turnError),
             availability = availability,
             model = state.model,
             starred = state.starredModels.filterNot { ZenPolicy.hidden(it.providerID) },
@@ -386,7 +386,7 @@ fun ChatScreen(
             // v9.35 (owner): the typed subtitle belongs ONLY to the first chat
             // of a freshly created project - later chats go straight to tips.
             firstChatOfProject = emptyChatSubtitle ?: (state.sessions.size <= 1),
-            busy = state.busy,
+            busy = state.busy && !turnFailed(state.turnError),
             now = now,
             listState = listState,
             onRetry = if (state.canRetryTurn) onRetry else null,
@@ -437,7 +437,7 @@ fun ChatScreen(
             onAttach = onAttach,
             onAttachCamera = onAttachCamera,
             onAttachPictures = onAttachPictures,
-            busy = state.busy,
+            busy = state.busy && !turnFailed(state.turnError),
             canSend = UiError.canSend(availability),
             canRedo = state.canRedo,
             onRedo = onRedo,
@@ -775,9 +775,19 @@ private fun StatusOrb(
             text = stringResource(R.string.chat_status_model_unreachable)
             color = MaterialTheme.colorScheme.error
         }
-        else -> {
+        // 2026-11-20 (owner): Error is for server-side issues only. A provider or turn failure
+        // is shown on that turn's card; the agent itself is still ready for the next prompt.
+        availability == AgentAvailability.RUNTIME_STOPPED -> {
+            text = stringResource(R.string.chat_status_stopped)
+            color = chat.muted
+        }
+        UiError.isServerError(availability) -> {
             text = stringResource(R.string.chat_status_error)
             color = MaterialTheme.colorScheme.error
+        }
+        else -> {
+            text = stringResource(R.string.chat_status_ready)
+            color = chat.success
         }
     }
     var pulse by remember { mutableStateOf(0) }
@@ -921,6 +931,15 @@ private fun rowCarriesTurnError(messages: List<Transcript.Message>): Boolean {
 }
 
 /**
+ * 2026-11-20 (owner): a failed turn is not working. The server can keep the session busy after
+ * the reply has errored, and the dots, the Working bar, the orb and the Stop button then sat under
+ * the error. A tool failure is not final - the agent keeps going - so it does not count here.
+ */
+private fun turnFailed(error: Transcript.TurnError?): Boolean =
+    error != null && !error.isBlank && error.kind != AgentAvailability.ABORTED &&
+        error.kind != AgentAvailability.TOOL_FAILED
+
+/**
  * The turn's failure, when no row of the turn carries it (for example the provider refused
  * before any reply existed). Aborts never get a card: a Stop is not a failure.
  */
@@ -1014,7 +1033,7 @@ private fun StatusArea(
         RetryBanner(retry)
         return
     }
-    if (state.busy) {
+    if (state.busy && !turnFailed(state.turnError)) {
         // v9.31 (owner): the working bar names the task actually running.
         // Source of truth: the CURRENT turn's latest `todowrite` call -
         // messages after the last user prompt, newest tool part first -

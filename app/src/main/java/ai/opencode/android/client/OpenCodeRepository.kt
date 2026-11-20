@@ -93,6 +93,11 @@ class OpenCodeRepository(
         /** Upstream's `MCP.Status` per server name - the `error` text is kept. */
         val mcp: Map<String, OpenCodeApi.McpEntry> = emptyMap(),
         val providers: OpenCodeApi.ProviderSnapshot? = null,
+        /**
+         * 2026-11-20 (owner): providers whose key is being checked after Save. The row shows
+         * "Connecting" (yellow) between Not Ready and Ready while this holds the id.
+         */
+        val connectingProviders: Set<String> = emptySet(),
         val model: OpenCodeApi.ModelRef? = null,
     /**
      * Phase 10 continuation v4, item 3: the models the user starred in Settings,
@@ -919,6 +924,7 @@ class OpenCodeRepository(
      */
     fun provisionProvider(providerID: String, apiKey: String, store: ai.opencode.android.security.SecretStore) {
         scope.launch {
+            _state.value = _state.value.copy(connectingProviders = _state.value.connectingProviders + providerID)
             try {
                 // v6.1: saving a key no longer destroys the previous one - the ring
                 // keeps them all and mirrors the ACTIVE key at the legacy secret
@@ -946,6 +952,8 @@ class OpenCodeRepository(
                 )
             } catch (t: Throwable) {
                 fail("provision provider", t)
+            } finally {
+                _state.value = _state.value.copy(connectingProviders = _state.value.connectingProviders - providerID)
             }
         }
     }

@@ -240,26 +240,30 @@ class UiErrorOfflineTest {
     }
 
     @Test
-    fun noStateDisablesSendingAnymore() {
-        // v9.42 (owner): the locked composer is GONE. Every state - dead
-        // runtime, unanswered server, refused key - accepts the send; the app
-        // queues it, shows it in the chat, and fires it when the agent is
-        // up. Offline behavior IS this: the queue simply waits for the
-        // recovery, and nothing about the moment needs a refusal.
-        for (any in listOf(
-            AgentAvailability.RUNTIME_STARTING,
+    fun sendIsBlockedOnlyInTheServerErrorState() {
+        // 2026-11-20 (owner): no prompt is sendable into a chat in the error state.
+        // Server-side failures block the composer; a provider or turn failure does not,
+        // so the user can switch model and retry. Starting still queues the send.
+        for (blocked in listOf(
             AgentAvailability.RUNTIME_UNAVAILABLE,
             AgentAvailability.SERVER_UNREACHABLE,
             AgentAvailability.SERVER_AUTH,
-            AgentAvailability.READY,
             AgentAvailability.REQUEST_REJECTED,
+            AgentAvailability.RUNTIME_STOPPED,
+        )) {
+            org.junit.Assert.assertFalse("$blocked must block sending", UiError.canSend(blocked))
+        }
+        for (open in listOf(
+            AgentAvailability.RUNTIME_STARTING,
+            AgentAvailability.READY,
             AgentAvailability.PROVIDER_UNREACHABLE,
             AgentAvailability.PROVIDER_AUTH,
+            AgentAvailability.PROVIDER_NOT_SET_UP,
             AgentAvailability.PROVIDER_OTHER,
             AgentAvailability.ABORTED,
             AgentAvailability.UNKNOWN,
         )) {
-            org.junit.Assert.assertTrue("$any must keep sending enabled", UiError.canSend(any))
+            org.junit.Assert.assertTrue("$open must keep sending enabled", UiError.canSend(open))
         }
     }
 }
