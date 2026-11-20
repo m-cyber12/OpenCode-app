@@ -1,6 +1,9 @@
 package ai.opencode.android.ui.settings
 
 import ai.opencode.android.BuildConfig
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 import ai.opencode.android.R
 import ai.opencode.android.client.AgentAvailability
 import ai.opencode.android.client.OpenCodeApi
@@ -1796,7 +1799,16 @@ private fun readPickedSkill(context: android.content.Context, uri: android.net.U
     val text = runCatching {
         context.contentResolver.openInputStream(uri)?.use { input ->
             // One byte past the cap: the importer sees an oversize file as oversize, not cut short.
-            String(input.readNBytes(ai.opencode.android.runtime.SkillCatalog.UPLOAD_MAX_BYTES + 1), Charsets.UTF_8)
+            // A plain read loop, not InputStream.readNBytes (API 33+ on Android).
+            val limit = ai.opencode.android.runtime.SkillCatalog.UPLOAD_MAX_BYTES + 1
+            val out = java.io.ByteArrayOutputStream()
+            val chunk = ByteArray(8192)
+            while (out.size() < limit) {
+                val n = input.read(chunk, 0, minOf(chunk.size, limit - out.size()))
+                if (n < 0) break
+                out.write(chunk, 0, n)
+            }
+            String(out.toByteArray(), Charsets.UTF_8)
         }
     }.getOrNull() ?: return null
     return name to text
