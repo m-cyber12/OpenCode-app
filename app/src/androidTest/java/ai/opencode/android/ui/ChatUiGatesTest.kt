@@ -190,6 +190,8 @@ class ChatUiGatesTest {
     private var workspaceUse = 0
     private val workspacePath = mutableStateOf(WORKSPACE_FIXTURE_PATH)
     private val onboardingMessage = mutableStateOf("")
+    private val onboardingChoice = mutableStateOf("")
+    private var workspaceGrants = 0
     private var starToggles = 0
     private var openChangesTaps = 0
     private var openTerminalTaps = 0
@@ -581,8 +583,13 @@ class ChatUiGatesTest {
             folderPath = workspacePath.value,
             visibleToFileManagers = storageVisible.value,
             message = onboardingMessage.value,
+            choice = onboardingChoice.value,
+            folderChosen = false,
+            runtime = welcomeRuntime.value,
+            onChoose = { onboardingChoice.value = it },
+            onGrantStorage = { workspaceGrants++ },
             onPickFolder = { workspacePicks++ },
-            onUseFolder = { workspaceUse++ },
+            onNext = { workspaceUse++ },
         )
     }
 
@@ -802,6 +809,9 @@ class ChatUiGatesTest {
     private fun exists(tag: String) = rule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
 
     private fun countTag(tag: String) = rule.onAllNodesWithTag(tag).fetchSemanticsNodes().size
+    // A tagged control that is present and not disabled (Compose marks disabled nodes).
+    private fun enabled(tag: String) = rule.onAllNodesWithTag(tag).fetchSemanticsNodes()
+        .firstOrNull()?.let { !it.config.contains(androidx.compose.ui.semantics.SemanticsProperties.Disabled) } ?: false
 
     /**
      * Compose 1.6 stores TestTag as a list (a node can carry several); read it as
@@ -2565,14 +2575,23 @@ class ChatUiGatesTest {
         val pathShown = onScreenText().contains(WORKSPACE_FIXTURE_PATH)
         val pickerShown = exists("onboarding_workspace_pick")
         val oneAction = exists("onboarding_workspace_use")
+        // 2026-11-20 (owner, item 6): two option cards, Next disabled until one is chosen
+        val twoCards = exists("onboarding_option_selected") && exists("onboarding_option_default")
+        val nextLockedAtStart = !enabled("onboarding_workspace_use")
         // the controls the brief removed must not exist on this screen either
         val noCopyPath = !exists("files_copy_path") && !exists("files_publish")
         val noDefaultPair = !exists("files_storage_choose") && !exists("files_storage_default")
         shot("26-workspace-onboarding.png")
 
+        rule.onAllNodesWithTag("onboarding_workspace_grant")[0].performClick()
+        rule.waitForIdle()
+        val grantWired = workspaceGrants == 1
         rule.onAllNodesWithTag("onboarding_workspace_pick")[0].performClick()
         rule.waitForIdle()
         val pickWired = workspacePicks == 1
+        rule.onNodeWithTag("onboarding_option_default").performClick()
+        rule.waitForIdle()
+        val nextUnlocked = enabled("onboarding_workspace_use")
         rule.onAllNodesWithTag("onboarding_workspace_use")[0].performClick()
         rule.waitForIdle()
         val useWired = workspaceUse == 1
@@ -2591,7 +2610,8 @@ class ChatUiGatesTest {
         rule.waitForIdle()
         val hiddenExplained = exists("onboarding_workspace_hidden")
         val stillTwoControls = countTag("onboarding_workspace_pick") == 1 &&
-            countTag("onboarding_workspace_use") == 1
+            countTag("onboarding_workspace_use") == 1 &&
+            countTag("onboarding_workspace_grant") == 1
         storageVisible.value = true
 
         // Settings carries the switch: the picker, the repair for a lost grant, the
@@ -2624,11 +2644,13 @@ class ChatUiGatesTest {
 
         gate(
             "U12",
-            screenShown && pathShown && pickerShown && oneAction && noCopyPath && noDefaultPair &&
-                pickWired && useWired && messageShown && hiddenExplained && stillTwoControls &&
+            screenShown && pathShown && pickerShown && oneAction && twoCards && nextLockedAtStart &&
+                noCopyPath && noDefaultPair && grantWired && pickWired && nextUnlocked && useWired &&
+                messageShown && hiddenExplained && stillTwoControls &&
                 settingsHasFolder && settingsPicker && settingsGrant && settingsMove && switchNote,
             "onboarding=$screenShown/$pathShown/$pickerShown/$oneAction " +
-                "v4Removed=$noCopyPath/$noDefaultPair wired=$pickWired/$useWired " +
+                "twoCards=$twoCards nextLocked=$nextLockedAtStart v4Removed=$noCopyPath/$noDefaultPair " +
+                "wired=$grantWired/$pickWired/$nextUnlocked/$useWired " +
                 "message=$messageShown hidden=$hiddenExplained controls=$stillTwoControls " +
                 "settings=$settingsHasFolder/$settingsPicker/$settingsGrant/$settingsMove note=$switchNote",
         )

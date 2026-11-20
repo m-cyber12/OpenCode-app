@@ -31,10 +31,14 @@ import ai.opencode.android.ui.common.ProjectTab
 import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.ui.common.ThemeChoice
 import ai.opencode.android.ui.common.toSummary
+import ai.opencode.android.ui.onboarding.ProviderOnboardingScreen
+import ai.opencode.android.ui.onboarding.WorkspaceChoice
 import ai.opencode.android.ui.onboarding.WorkspaceOnboardingScreen
 import ai.opencode.android.ui.projects.KnownWorkspace
 import ai.opencode.android.ui.projects.ProjectSession
 import ai.opencode.android.ui.projects.ProjectsScreen
+import ai.opencode.android.ui.settings.KeysSection
+import ai.opencode.android.ui.settings.ProvidersCatalogSection
 import ai.opencode.android.ui.settings.ProvidersScreen
 import ai.opencode.android.ui.settings.SettingsScreen
 import ai.opencode.android.ui.terminal.TerminalScreen
@@ -125,6 +129,9 @@ private const val ROUTE_TERMINAL = "terminal"
  * write to yet).
  */
 private const val ROUTE_WORKSPACE = "workspace"
+
+// 2026-11-20 (owner, item 6): the second onboarding screen - connect a provider, then Start.
+private const val ROUTE_ONBOARDING_PROVIDER = "onboarding_provider"
 
 @Composable
 fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
@@ -335,6 +342,11 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     var workspaceConfirmed by remember { mutableStateOf(StorageChoice.workspaceConfirmed(context)) }
     var onboardingMessage by rememberSaveable { mutableStateOf("") }
     var pendingOnboarding by rememberSaveable { mutableStateOf(false) }
+    // 2026-11-20 (owner, item 6): the first onboarding screen's choice, and the two follow-ups it starts.
+    var workspaceChoice by rememberSaveable { mutableStateOf("") }
+    // A storage grant started from the first screen returns to the folder picker at Documents.
+    var pendingDocumentsPicker by rememberSaveable { mutableStateOf(false) }
+    var openDocumentsPicker by rememberSaveable { mutableStateOf(false) }
     var grantLaunched by rememberSaveable { mutableStateOf(false) }
 
     // ---- Phase 10 continuation: the project's files, in the app ---------------
@@ -1109,6 +1121,12 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val allFilesAccessLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) {
+        if (pendingDocumentsPicker) {
+            // 2026-11-20 (owner, item 6): back from the grant screen - open the folder picker at Documents.
+            pendingDocumentsPicker = false
+            openDocumentsPicker = true
+            return@rememberLauncherForActivityResult
+        }
         val pendingTree = pendingChosenTree
         pendingChosenTree = null
         if (pendingTree != null && StorageChoice.hasAllFilesAccess()) {
@@ -1149,7 +1167,18 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         }
     }
 
-    fun confirmWorkspace() {
+    // Opens the folder picker at the shared Documents folder (the owner's "navigate to Documents").
+    // Falls back to the picker's own start when the document URI cannot be built.
+    LaunchedEffect(openDocumentsPicker) {
+        if (openDocumentsPicker) {
+            openDocumentsPicker = false
+            chosenFolderPicker.launch(documentsStartUri())
+        }
+    }
+
+    // [nextRoute]: where a confirmed workspace goes. The first run sends it to the provider
+    // step; every other caller still lands on Projects.
+    fun confirmWorkspace(nextRoute: String = ROUTE_PROJECTS) {
         scope.launch {
             val root = withContext(Dispatchers.IO) { RuntimePaths.get(context).workspaces }
             val usable = withContext(Dispatchers.IO) { StorageChoice.isUsableRoot(root) }
@@ -1183,8 +1212,58 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             // project is there, expanded, with the first chat already on the
             // server (tapping its session enters the conversation).
             expandedProject = created.name
-            route = ROUTE_PROJECTS
+            route = nextRoute
             repository.newSession(null)
+        }
+    }
+
+    // 2026-11-20 (owner, item 6): Next on the first screen. Default Workspace moves the workspace
+    // to the app root first; Selected Folder needs a folder that was actually chosen.
+    fun onboardingNext() {
+        scope.launch {
+            if (workspaceChoice == WorkspaceChoice.DEFAULT) {
+                val appRoot = withContext(Dispatchers.IO) {
+                    val paths = RuntimePaths.get(context)
+                    paths.externalWorkspaces ?: paths.internalWorkspaces
+                }
+                val result = withContext(Dispatchers.IO) {
+                    runCatching { storageController.switchTo(appRoot) }.getOrElse { t ->
+                        StorageController.ChangeResult(
+                            ok = false,
+                            messageKey = StorageController.MessageKey.FOLDER_UNUSABLE,
+                            detail = t.message ?: t.javaClass.simpleName,
+                        )
+                    }
+                }
+                if (!result.ok) {
+                    onboardingMessage = storageMessageOf(context, result)
+                    return@launch
+                }
+                val before = storage
+                withContext(Dispatchers.IO) {
+                    RuntimePaths.refresh()
+                    ProjectStore.refresh()
+                    StorageController.refresh()
+                    AppContainer.refresh()
+                }
+                storage = withContext(Dispatchers.IO) { StorageController.get(context).snapshot() }
+                storageMessage = storageMessageOf(context, result)
+                if (storage.rootPath != before.rootPath || storage.mode != before.mode) {
+                    // Same as every root change: the Activity restarts so the runtime uses the
+                    // new root. The route and the choice are saved; the effect above finishes
+                    // the confirm (and lands on the provider step) after the restart.
+                    pendingOnboarding = true
+                    (context as? Activity)?.recreate()
+                } else {
+                    confirmWorkspace(ROUTE_ONBOARDING_PROVIDER)
+                }
+            } else if (workspaceChoice == WorkspaceChoice.SELECTED) {
+                if (!storage.hasChosenFolder) {
+                    onboardingMessage = context.getString(R.string.onboarding_selected_needs_folder)
+                    return@launch
+                }
+                confirmWorkspace(ROUTE_ONBOARDING_PROVIDER)
+            }
         }
     }
 
@@ -1592,7 +1671,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // the app comes back (the storage change recreates the Activity, so the pending
     // flag has to be saveable for this to survive).
     LaunchedEffect(route, storage.rootPath, pendingOnboarding) {
-        if (route == ROUTE_WORKSPACE && pendingOnboarding) confirmWorkspace()
+        if (route == ROUTE_WORKSPACE && pendingOnboarding) confirmWorkspace(ROUTE_ONBOARDING_PROVIDER)
     }
 
     val appVersion = remember(context) {
@@ -1672,6 +1751,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val turnAvailability = uiState.turnError?.kind ?: AgentAvailability.READY
     val availability = UiError.combine(summary.availability, serverAvailability, turnAvailability)
 
+    BackHandler(enabled = route == ROUTE_ONBOARDING_PROVIDER) { route = ROUTE_WORKSPACE }
     BackHandler(enabled = route == ROUTE_SESSIONS || route == ROUTE_SETTINGS || route == ROUTE_PROVIDERS || route == ROUTE_PROJECTS || route == ROUTE_FILES || route == ROUTE_CHANGES || route == ROUTE_TERMINAL) {
         route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT
     }
@@ -1723,11 +1803,55 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     folderPath = storage.rootPath,
                     visibleToFileManagers = storage.visibleToFileManagers,
                     // A refused folder pick is reported by the storage controller, and
-                    // it must be visible on the screen that is asking - a refusal the
-                    // user never sees reads as "the app ignored my choice".
+                    // it must be visible on the screen that is asking.
                     message = onboardingMessage.ifEmpty { storageMessage },
+                    choice = workspaceChoice,
+                    folderChosen = storage.hasChosenFolder,
+                    runtime = summary,
+                    onChoose = { choice ->
+                        workspaceChoice = choice
+                        onboardingMessage = ""
+                    },
+                    onGrantStorage = {
+                        val intent = StorageChoice.allFilesAccessIntent(context)
+                        if (intent != null && !StorageChoice.hasAllFilesAccess()) {
+                            pendingDocumentsPicker = true
+                            allFilesAccessLauncher.launch(intent)
+                        } else {
+                            openDocumentsPicker = true
+                        }
+                    },
                     onPickFolder = { chosenFolderPicker.launch(null) },
-                    onUseFolder = { confirmWorkspace() },
+                    onNext = { onboardingNext() },
+                )
+
+                ROUTE_ONBOARDING_PROVIDER -> ProviderOnboardingScreen(
+                    runtime = summary,
+                    catalog = { addOpen, onToggleAdd ->
+                        ProvidersCatalogSection(
+                            providers = uiState.providers,
+                            onConnectProvider = { providerId, key -> repository.provisionProvider(providerId, key, secrets) },
+                            onRevokeKey = { providerId -> repository.revokeProvider(providerId, secrets) },
+                            providerKeys = { providerId ->
+                                runCatching { container.keyring().entries(providerId) }.getOrDefault(emptyList())
+                            },
+                            onUseKey = { providerId, slot -> repository.activateProviderKey(providerId, slot) },
+                            onDeleteKey = { providerId, slot -> repository.removeProviderKey(providerId, slot) },
+                            connecting = uiState.connectingProviders,
+                            addOpen = addOpen,
+                            onToggleAdd = onToggleAdd,
+                            initiallyExpanded = true,
+                        )
+                    },
+                    addForm = {
+                        KeysSection(
+                            onAddCustomProvider = { id, name, baseUrl, models, key ->
+                                repository.addCustomProvider(id, name, baseUrl, CustomProviderConfig.parseModels(models), key, secrets)
+                            },
+                        )
+                    },
+                    onStart = { route = ROUTE_PROJECTS },
+                    onLater = { route = ROUTE_PROJECTS },
                 )
 
                 ROUTE_PROJECTS -> ProjectsScreen(
@@ -2455,6 +2579,11 @@ private fun storageMessageOf(context: Context, result: StorageController.ChangeR
  * Both the automatic advance and the Welcome screen's own button call this, because
  * two spellings of one rule is how a screen gets skipped.
  */
+/** The shared Documents folder as a folder-picker start point, or null when it cannot be built. */
+private fun documentsStartUri(): android.net.Uri? = runCatching {
+    android.provider.DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", "primary:Documents")
+}.getOrNull()
+
 private fun firstRunDestination(projectName: String, workspaceConfirmed: Boolean): String = when {
     projectName.isNotEmpty() -> ROUTE_CHAT
     !workspaceConfirmed -> ROUTE_WORKSPACE

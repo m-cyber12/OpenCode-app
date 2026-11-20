@@ -524,7 +524,7 @@ private fun ModelSection(
  * do NOT live here any more - the Models card is their home.
  */
 @Composable
-private fun ProvidersCatalogSection(
+internal fun ProvidersCatalogSection(
     providers: OpenCodeApi.ProviderSnapshot?,
     /** 2026-11-20 (owner): providers whose key is being checked - shown as "Connecting". */
     connecting: Set<String> = emptySet(),
@@ -536,6 +536,8 @@ private fun ProvidersCatalogSection(
     /** v9.42 (owner): the Add tile lives in this card, and it is open. */
     addOpen: Boolean = false,
     onToggleAdd: () -> Unit = {},
+    /** 2026-11-20 (owner, item 6): the onboarding screen shows this list already open. */
+    initiallyExpanded: Boolean = false,
 ) {
     val chat = ChatTheme.chat
     var query by rememberSaveable { mutableStateOf("") }
@@ -544,7 +546,7 @@ private fun ProvidersCatalogSection(
     SectionCard(
         title = stringResource(R.string.settings_section_providers),
         collapsible = true,
-        initiallyExpanded = false,
+        initiallyExpanded = initiallyExpanded,
         headerTag = "providers_section_header",
     ) {
         if (providers == null) {
@@ -1321,7 +1323,7 @@ private fun ModelList(
 // v4 item 3: the name+key form is gone. Keys come in exactly one way - the
 // catalog row's connect chip (or its one-step Manage action when connected) -
 // and everything left in this section is the manual custom-provider block.
-private fun KeysSection(
+internal fun KeysSection(
     onAddCustomProvider: (String, String, String, String, String) -> Unit = { _, _, _, _, _ -> },
 ) {
     val chat = ChatTheme.chat

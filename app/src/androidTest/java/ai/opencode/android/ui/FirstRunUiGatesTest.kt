@@ -263,7 +263,13 @@ class FirstRunUiGatesTest {
             val removedControls = !exists("files_copy_path") && !exists("files_publish") &&
                 !exists("files_storage_choose") && !exists("files_storage_default")
             val stepShot = shot("02b-first-run-workspace.png")
+            // 2026-11-20 (owner, item 6): one option must be chosen before Next. The
+            // Default Workspace card needs no system picker, so the gate takes it.
+            rule.onNodeWithTag("onboarding_option_default").performClick()
             rule.onNodeWithTag("onboarding_workspace_use").performClick()
+            // The second screen: Start opens Projects.
+            waitFor(60_000) { exists("onboarding_provider") }
+            rule.onNodeWithTag("onboarding_provider_start").performClick()
             // v6: post-setup landing is the projects page itself. v9.41 (owner
             // item 11) moved the workspace path box out of this page (it is in
             // Settings > Workspace now), so the gate reads the landing proof
