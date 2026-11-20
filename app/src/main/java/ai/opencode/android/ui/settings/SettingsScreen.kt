@@ -26,6 +26,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -1409,6 +1410,15 @@ private fun KeysSection(
  * the prefill), the token Keystore-held on the device, and the agent reading
  * it only as the environment value `key`.
  */
+/**
+ * 2026-11-20 (owner): the Connectors section holds one SUBSECTION per connector, each with its
+ * own title, description, config fields and options. GitHub is the first. A future connector is
+ * another [ConnectorSubsection] call in this section - nothing else changes.
+ *
+ * `connectors/` in the repo (React Native/Expo) is a design reference only: its connector
+ * shape (id, name, url, remote or local mode), its transports and its OAuth redirect are the
+ * model for a later connector. It cannot run in this app.
+ */
 @Composable
 private fun ConnectorsSection(
     githubConnected: Boolean,
@@ -1418,7 +1428,6 @@ private fun ConnectorsSection(
     /** v9.42 (owner): opened by a navigation that asked for this section. */
     expanded: Boolean = false,
 ) {
-    val chat = ChatTheme.chat
     var token by remember { mutableStateOf("") }
     var rejected by remember { mutableStateOf(false) }
     // v9.41 (owner item 2): the connectors accordion no longer opens itself -
@@ -1434,74 +1443,110 @@ private fun ConnectorsSection(
         collapsible = true,
         initiallyExpanded = expanded,
     ) {
-        if (!githubConnected) {
+        ConnectorSubsection(
+            title = stringResource(R.string.connector_github_title),
+            description = stringResource(R.string.github_connector_explain),
+            testTag = "connector_github",
+        ) {
+            if (!githubConnected) {
+                val tokenUrl = stringResource(R.string.github_token_url)
+                OutlinedButton(
+                    onClick = { onOpenUrl(tokenUrl) },
+                    modifier = Modifier.fillMaxWidth().semantics { testTag = "github_create_token" },
+                ) {
+                    Text(stringResource(R.string.github_create_token))
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+            if (githubConnected && !replacing) {
+                Text(
+                    text = stringResource(R.string.github_connected),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.semantics { testTag = "github_connected_line" },
+                )
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(
+                        onClick = { replacing = true },
+                        modifier = Modifier.height(40.dp).semantics { testTag = "github_token_replace" },
+                    ) {
+                        Text(stringResource(R.string.github_token_replace))
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    TextButton(
+                        onClick = onRemoveGithubToken,
+                        modifier = Modifier.height(40.dp).semantics { testTag = "github_token_remove" },
+                    ) {
+                        Text(stringResource(R.string.github_token_remove))
+                    }
+                }
+            } else {
+                OutlinedTextField(
+                    value = token,
+                    onValueChange = { token = it; rejected = false },
+                    label = { Text(stringResource(R.string.github_token_hint)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    isError = rejected,
+                    supportingText = if (rejected) {
+                        { Text(stringResource(R.string.github_token_invalid)) }
+                    } else {
+                        null
+                    },
+                    modifier = Modifier.fillMaxWidth().semantics { testTag = "github_token_field" },
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = {
+                        val ok = onSaveGithubToken(token)
+                        rejected = !ok
+                        if (ok) {
+                            token = ""
+                            replacing = false
+                        }
+                    },
+                    enabled = token.isNotBlank(),
+                    modifier = Modifier.height(46.dp).fillMaxWidth().semantics { testTag = "github_token_save" },
+                ) {
+                    Text(stringResource(R.string.github_token_save))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * One connector inside the Connectors section: its title, what it does, and its own config
+ * and options (the content slot). The card is a quiet tool-coloured box, so the subsections
+ * read as a list of accounts, not as nested accordions.
+ */
+@Composable
+private fun ConnectorSubsection(
+    title: String,
+    description: String,
+    testTag: String,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val chat = ChatTheme.chat
+    Surface(
+        color = chat.toolContainer,
+        shape = MaterialTheme.shapes.small,
+        border = BorderStroke(1.dp, chat.toolBorder),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).semantics { this.testTag = testTag },
+    ) {
+        Column(Modifier.padding(12.dp)) {
             Text(
-                text = stringResource(R.string.github_connector_explain),
+                text = title,
+                style = MaterialTheme.typography.labelLarge,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = description,
                 style = MaterialTheme.typography.bodySmall,
                 color = chat.muted,
             )
             Spacer(Modifier.height(8.dp))
-            val tokenUrl = stringResource(R.string.github_token_url)
-            OutlinedButton(
-                onClick = { onOpenUrl(tokenUrl) },
-                modifier = Modifier.fillMaxWidth().semantics { testTag = "github_create_token" },
-            ) {
-                Text(stringResource(R.string.github_create_token))
-            }
-            Spacer(Modifier.height(8.dp))
-        }
-        if (githubConnected && !replacing) {
-            Text(
-                text = stringResource(R.string.github_connected),
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.semantics { testTag = "github_connected_line" },
-            )
-            Spacer(Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(
-                    onClick = { replacing = true },
-                    modifier = Modifier.height(40.dp).semantics { testTag = "github_token_replace" },
-                ) {
-                    Text(stringResource(R.string.github_token_replace))
-                }
-                Spacer(Modifier.width(6.dp))
-                TextButton(
-                    onClick = onRemoveGithubToken,
-                    modifier = Modifier.height(40.dp).semantics { testTag = "github_token_remove" },
-                ) {
-                    Text(stringResource(R.string.github_token_remove))
-                }
-            }
-        } else if (!githubConnected || replacing) {
-            OutlinedTextField(
-                value = token,
-                onValueChange = { token = it; rejected = false },
-                label = { Text(stringResource(R.string.github_token_hint)) },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                isError = rejected,
-                supportingText = if (rejected) {
-                    { Text(stringResource(R.string.github_token_invalid)) }
-                } else {
-                    null
-                },
-                modifier = Modifier.fillMaxWidth().semantics { testTag = "github_token_field" },
-            )
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = {
-                    val ok = onSaveGithubToken(token)
-                    rejected = !ok
-                    if (ok) {
-                        token = ""
-                        replacing = false
-                    }
-                },
-                enabled = token.isNotBlank(),
-                modifier = Modifier.height(46.dp).fillMaxWidth().semantics { testTag = "github_token_save" },
-            ) {
-                Text(stringResource(R.string.github_token_save))
-            }
+            content()
         }
     }
 }
