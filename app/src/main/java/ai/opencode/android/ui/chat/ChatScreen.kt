@@ -985,10 +985,19 @@ private fun StatusArea(
         return
     }
     // v11 (owner, 2026-11-18): "renders two errors". When the degraded state IS the turn's
-    // own failure, its card above already says it (headline, advice, raw text), so the
-    // banner stays out. The banner still shows for runtime or server states that differ.
+    // own failure, its card already says it (headline, advice, raw text), so the banner
+    // stays out. 2026-11-19 (owner): "good, just remove that one" - the banner repeated the
+    // turn card whenever the two kinds differed (the banner's provider-other headline beside
+    // the card's no-provider text). So a turn-level failure now hides the banner whatever its
+    // kind, as long as the card is drawn under the user's prompt (orphanTurnError or a row).
+    // Runtime and server states keep the banner: they are about the agent, not this turn.
+    val runtimeLevel = availability == AgentAvailability.RUNTIME_UNAVAILABLE ||
+        availability == AgentAvailability.SERVER_AUTH ||
+        availability == AgentAvailability.SERVER_UNREACHABLE ||
+        availability == AgentAvailability.RUNTIME_STOPPED
+    val hasPrompt = state.messages.any { it.role == "user" }
     val turnCardShowsIt = turnError != null && !turnError.isBlank &&
-        turnError.kind != AgentAvailability.ABORTED && availability == turnError.kind
+        turnError.kind != AgentAvailability.ABORTED && !runtimeLevel && hasPrompt
     if (availability != AgentAvailability.READY && availability != AgentAvailability.ABORTED && !turnCardShowsIt) {
         if (!turnErrorShownByRow || state.error.isNotBlank()) {
             // Deliberately no `extra`: the supervisor's own detail line carries the
@@ -1395,7 +1404,7 @@ private fun TranscriptPane(
     onUndo: (() -> Unit)?,
     /** v9.32 (owner): the pending question renders as the transcript's tail. */
     question: Transcript.Question? = null,
-    /** The turn's failure when no message row carries it: drawn after the user's message. */
+    /** The turn's failure when no message row carries it: drawn right under the user's prompt that caused it. */
     orphanError: Transcript.TurnError? = null,
     onQuestionSubmit: (String, List<List<String>>) -> Unit = { _, _ -> },
     onQuestionSkip: (String) -> Unit = {},
@@ -1468,7 +1477,7 @@ private fun TranscriptPane(
 
     LaunchedEffect(streamKey, count) {
         // The question card is one extra trailing item beyond the messages.
-        val lastIndex = count - 1 + (if (question != null) 1 else 0) + (if (orphanError != null) 1 else 0)
+        val lastIndex = count - 1 + (if (question != null) 1 else 0)
         if (count > 0 && pinned) listState.scrollToItem(lastIndex, tailOffsetPx)
     }
 
@@ -1575,6 +1584,12 @@ private fun TranscriptPane(
                 // v9.1: the conversation lives in a centred column with a
                 // comfortable maximum width - unchanged on phones, intentional
                 // on wide screens.
+                // The failure of the turn that this prompt started, when no reply row carries
+                // it: drawn directly under that prompt, where the reply would have been. It stays
+                // there as later messages arrive; it is not moved to the end of the list.
+                val failureUnderPrompt = orphanError != null && message.role == "user" &&
+                    index == messages.indexOfLast { it.role == "user" }
+                Column(Modifier.fillMaxWidth()) {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                     MessageRow(
                         message = message,
@@ -1603,15 +1618,14 @@ private fun TranscriptPane(
                         modifier = Modifier.widthIn(max = 760.dp),
                     )
                 }
-            }
-            orphanError?.let { err ->
-                item(key = "turn_error_card") {
+                orphanError?.takeIf { failureUnderPrompt }?.let { err ->
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                         TurnErrorCard(
                             error = err,
                             modifier = Modifier.widthIn(max = 760.dp).padding(horizontal = 12.dp, vertical = 8.dp),
                         )
                     }
+                }
                 }
             }
             // v9.32 (owner): the pending question is the transcript's tail -
