@@ -134,6 +134,9 @@ are agent tools. npm installs on shared storage may require `--no-bin-links`.
 - Plain `cmd &` and `nohup` can die with your shell; background with:
   `setsid sh serve.sh </dev/null >serve.log 2>&1 &`
 
+## Checklist
+Multi-step work: `todowrite` the FULL list. Mark a step `in_progress` as you start it, `completed` as soon as it ends, and resend the whole list each time. Unchanged statuses show the user no progress.
+
 ## Live preview, in one line
 Nothing auto-opens, ever. Hand off by writing `.preview/serve.json`
 ({"port": 8080, "path": "/page.html"} - the path must name a file that
@@ -205,7 +208,7 @@ what cannot have changed; read each topic brief at most once.
 - $briefsDir/extensions.md - MCP servers and skills: where they live, how to
   register one. Read before adding either.
 - $briefsDir/video.md - MP4 videos from code.
-- $briefsDir/todo.md - the word "todo": your checklist or a user's list.
+- $briefsDir/todo.md - the user's todo-list feature, and the checklist in detail.
 """.trimIndent() + "\n"
     }
 

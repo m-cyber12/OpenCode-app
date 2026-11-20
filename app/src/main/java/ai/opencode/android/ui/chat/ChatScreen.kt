@@ -1550,6 +1550,10 @@ private fun TranscriptPane(
                 val prev = if (index > 0) messages[index - 1] else null
                 val next = if (index < messages.size - 1) messages[index + 1] else null
                 val assistant = message.role != "user"
+                // 2026-11-20 (owner): a failed turn shows only its error card - no "Agent" header,
+                // no time, no footer timing, no like/dislike. A Stop is not a failure and keeps its
+                // "Stopped" note, so ABORTED does not count here.
+                val failedTurn = assistant && message.error?.let { !it.isBlank && it.kind != AgentAvailability.ABORTED } == true
                 val headerShown = !assistant || prev == null || prev.role == "user" ||
                     prev.providerID != message.providerID || prev.modelID != message.modelID
                 val footerShown = !assistant || next == null || next.role == "user" ||
@@ -1606,11 +1610,11 @@ private fun TranscriptPane(
                         // not the busy flag - the busy signal can lag around a
                         // turn's edges, and the buttons must never precede the
                         // finished response.
-                        showActions = assistant && footerShown &&
+                        showActions = assistant && footerShown && !failedTurn &&
                             (next == null || next.role == "user") &&
                             message.completed && !(busy && isLast),
-                        showHeader = headerShown,
-                        showFooter = footerShown,
+                        showHeader = headerShown && !failedTurn,
+                        showFooter = footerShown && !failedTurn,
                         groupTokensIn = tokensIn,
                         groupTokensOut = tokensOut,
                         groupCost = cost,

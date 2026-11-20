@@ -172,9 +172,16 @@ class EnvironmentBriefTest {
         // where it cannot be skipped (and duplicated into the project's
         // AGENTS.md by GithubWorkspaceNotes, which this budget exists so the
         // brief section can stay short).
-        assertTrue("main brief grew to $words words - split or trim it", words < 830)
+        // 2026-11-20 (owner, 6:51 device run): the todo list stayed "0/10" because the rule
+        // to mark steps in_progress and completed sat only in briefs/todo.md, which the model
+        // never opened. That rule is now a short section here, so every session reads it.
+        // -> 880 (measured 865). Owner-driven content, as with the earlier raises.
+        assertTrue("main brief grew to $words words - split or trim it", words < 880)
         // The core product loop and cost discipline stay in the always-read part.
         assertTrue(main.contains("serve.json"))
+        // The checklist rule must ride in the always-read part (see the budget note above).
+        assertTrue(main.contains("`todowrite` the FULL list"))
+        assertTrue(main.contains("`in_progress`") && main.contains("`completed`"))
         assertTrue(main.contains("EXISTS"))
         assertTrue(main.contains("/page.html"))
         assertTrue(main.contains("do NOT start your own server"))
