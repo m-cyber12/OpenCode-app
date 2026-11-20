@@ -93,7 +93,7 @@ object EmptyChatCopy {
         "Delete dead code. The repository remembers it so you do not have to.",
         "One todo list per task: watch the panel tick while the agent works.",
         "Rubber-duck the agent: explaining the bug often reveals the fix.",
-        "Add-ons download once and every project reuses them.",
+        "Each project keeps its own chats - switch projects without losing work.",
         "Prefer boring technology; excitement belongs in the product.",
         "Undo and redo work on whole turns - rewind a conversation like code.",
         "Say the goal, not the steps - the agent is better at steps than you think.",

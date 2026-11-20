@@ -63,6 +63,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -446,6 +447,7 @@ private fun ThinkingLevelRow(
                     style = MaterialTheme.typography.labelLarge,
                     color = if (selected) primary else MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
                         .background(if (selected) primary.copy(alpha = 0.14f) else chat.toolContainer)

@@ -301,7 +301,8 @@ private fun RuntimeSection(
     onRestart: () -> Unit,
 ) {
     val chat = ChatTheme.chat
-    SectionCard(title = stringResource(R.string.settings_section_runtime), collapsible = true) {
+    // 2026-11-20 (owner): the first Settings accordion starts collapsed.
+    SectionCard(title = stringResource(R.string.settings_section_runtime), collapsible = true, initiallyExpanded = false) {
         KeyValueRow(
             label = stringResource(R.string.settings_runtime_status),
             value = availabilityHeadline(runtime.availability),

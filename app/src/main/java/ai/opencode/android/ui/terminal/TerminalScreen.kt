@@ -58,12 +58,6 @@ fun TerminalScreen(
     onBack: (() -> Unit)?,
     onSelectTab: (ProjectTab) -> Unit,
     modifier: Modifier = Modifier,
-    /**
-     * The runtime's own log tail (the same lines the Settings diagnostics view
-     * shows) - the owner's brief for this page is "agent commands and logs".
-     * Collapsed by default: the commands are the page, the log is the appendix.
-     */
-    runtimeLog: List<String> = emptyList(),
 ) {
     Column(modifier.fillMaxSize().semantics { testTag = "terminal_screen" }) {
         AppTopBar(
@@ -71,9 +65,6 @@ fun TerminalScreen(
             subtitle = projectName,
             onBack = null,
         )
-        if (runtimeLog.isNotEmpty()) {
-            RuntimeLogSection(runtimeLog)
-        }
         if (commands.isEmpty()) {
             EmptyState(
                 title = stringResource(R.string.terminal_empty_title),
@@ -105,52 +96,6 @@ fun TerminalScreen(
         }
         // v8: the surfaces live in a bottom bar now - same tags as the v7 strip.
         ProjectTabs(current = ProjectTab.TERMINAL, onSelect = onSelectTab)
-    }
-}
-
-/**
- * The runtime log tail, one tap away. The last lines lead (that is where a crash
- * or a restart shows), and the box is height-capped so the console below stays
- * the page's main surface.
- */
-@Composable
-private fun RuntimeLogSection(lines: List<String>) {
-    var open by rememberSaveable { mutableStateOf(false) }
-    val toggleLabel = stringResource(
-        if (open) R.string.terminal_log_hide else R.string.terminal_log_show,
-    )
-    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
-        TextButton(
-            onClick = { open = !open },
-            modifier = Modifier.semantics {
-                testTag = "terminal_log_toggle"
-                contentDescription = toggleLabel
-            },
-        ) {
-            Text(
-                text = stringResource(R.string.terminal_log_title),
-                style = MaterialTheme.typography.labelLarge,
-            )
-        }
-        if (open) {
-            Surface(
-                color = ChatTheme.code.blockBackground,
-                shape = MaterialTheme.shapes.medium,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = lines.takeLast(120).joinToString("\n"),
-                    style = MonoSmall,
-                    color = ChatTheme.chat.muted,
-                    modifier = Modifier
-                        .heightIn(max = 220.dp)
-                        .verticalScroll(rememberScrollState())
-                        .padding(10.dp)
-                        .semantics { testTag = "terminal_log" },
-                )
-            }
-        }
     }
 }
 

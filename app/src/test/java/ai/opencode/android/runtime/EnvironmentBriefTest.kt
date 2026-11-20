@@ -410,19 +410,14 @@ class EnvironmentBriefTest {
     }
 
     @Test
-    fun v924WebappBriefTeachesTheAddonStoreAndTheCheapPreviewPaths() {
-        // v9.24 (owner): the app pre-downloads the wasm SWC compiler into
-        // <workspace>/.addons; the brief must (a) point agents at it BEFORE
-        // they re-download hundreds of MB mid-chat, and (b) make them OFFER
-        // the cheap paths (add-on, GitHub Pages) before compiling anything.
+    fun v924WebappBriefTeachesTheCheapPreviewPaths() {
+        // 2026-11-20 (owner): the Add-on store (the pre-downloaded Next wasm compiler) is
+        // removed, so the brief no longer points at <workspace>/.addons. The GitHub Pages
+        // path stays, gated on the connector being present.
         val webapp = EnvironmentBrief.topicBriefs().getValue("webapp.md")
-        assertTrue(webapp.contains("../.addons"))
-        // The filename contract must match Addons.tarballName exactly.
-        assertTrue(webapp.contains("next-swc-wasm-<version>.tgz"))
-        assertTrue(webapp.contains("node_modules/@next/swc-wasm-nodejs"))
+        assertTrue(!webapp.contains("../.addons"))
         assertTrue(webapp.contains("GitHub Pages"))
-        // The GitHub option is gated on the connector being present.
-        assertTrue(webapp.contains("Without GitHub, offer only option 1"))
+        assertTrue(webapp.contains("Without GitHub, say that the framework's own dev server"))
         // v9.26: app-cloned repos - the agent must know it is ALREADY on the
         // project's ONE branch (opencode/<project>) with a token-free origin
         // (so it pushes the URL form, never writes the token into .git/config,

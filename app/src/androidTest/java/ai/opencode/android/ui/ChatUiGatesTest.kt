@@ -782,7 +782,6 @@ class ChatUiGatesTest {
             commands = terminalCommands.value,
             onBack = { terminalBacks++ },
             onSelectTab = { tabSelections.add(it) },
-            runtimeLog = listOf("runtime line one", "runtime line two"),
         )
     }
 
@@ -2732,11 +2731,6 @@ class ChatUiGatesTest {
         val runningShown = countText(context.getString(R.string.terminal_running)) > 0
         val failedShown = countText(context.getString(R.string.terminal_failed)) > 0
 
-        // The runtime log is one tap away and absent until asked for.
-        val logHidden = countText("runtime line two") == 0
-        rule.onNodeWithTag("terminal_log_toggle").performClick()
-        rule.waitForIdle()
-        val logShown = countText("runtime line two") > 0
         shot("29-terminal-console.png")
 
         // Tab wiring from the terminal back to the chat.
@@ -2750,9 +2744,9 @@ class ChatUiGatesTest {
         gate(
             "U14",
             screenShown && rows == 3 && commandShown && outputShown && exitShown &&
-                runningShown && failedShown && logHidden && logShown && tabBack && emptyShown,
+                runningShown && failedShown && tabBack && emptyShown,
             "screen=$screenShown rows=$rows command=$commandShown output=$outputShown exit=$exitShown " +
-                "running=$runningShown failed=$failedShown log=hidden:$logHidden,shown:$logShown " +
+                "running=$runningShown failed=$failedShown " +
                 "tabBack=$tabBack empty=$emptyShown",
         )
     }

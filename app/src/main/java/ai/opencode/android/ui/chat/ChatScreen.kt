@@ -171,8 +171,6 @@ fun ChatScreen(
     onOpenSettings: () -> Unit,
     /** v9.1: providers manage themselves on their own surface; defaulted so the gates' call sites stay valid. */
     onOpenProviders: () -> Unit = onOpenSettings,
-    /** v9.24: the Add-ons surface (app-downloaded artifacts agents reuse). */
-    onOpenAddons: () -> Unit = {},
     onOpenFiles: () -> Unit = {},
     /** v7 redesign: the Changes and Terminal tabs under the project header. */
     onOpenChanges: () -> Unit = {},
@@ -330,7 +328,6 @@ fun ChatScreen(
             onNewSession = onNewSession,
             onOpenSettings = onOpenSettings,
             onOpenProviders = onOpenProviders,
-            onOpenAddons = onOpenAddons,
             modelsLoading = state.providers == null,
             freeModels = freeQuick,
             providerGroups = providerGroups,
@@ -475,7 +472,6 @@ fun ChatScreen(
         ready = runtime.ready,
         onOpenProjects = { drawerOpen = false; onOpenProjects() },
         onNewSession = { drawerOpen = false; onNewSession() },
-        onOpenAddons = { drawerOpen = false; onOpenAddons() },
         onOpenProviders = { drawerOpen = false; onOpenProviders() },
         onOpenSettings = { drawerOpen = false; onOpenSettings() },
         onSelect = { id -> drawerOpen = false; onSelectSession(id) },
@@ -536,7 +532,6 @@ private fun ChatHeader(
     onNewSession: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenProviders: () -> Unit,
-    onOpenAddons: () -> Unit,
     /** v9.42 (owner): the catalog has not arrived yet - the capsule says so. */
     modelsLoading: Boolean = false,
 ) {
@@ -550,7 +545,6 @@ private fun ChatHeader(
     }
     val settingsLabel = stringResource(R.string.chat_open_settings)
     val providersLabel = stringResource(R.string.chat_open_providers)
-    val addonsLabel = stringResource(R.string.chat_open_addons)
     val menuLabel = stringResource(R.string.chat_open_menu)
     Row(
         modifier = Modifier
@@ -1713,7 +1707,6 @@ private fun ChatConversationDrawer(
     ready: Boolean,
     onOpenProjects: () -> Unit,
     onNewSession: () -> Unit,
-    onOpenAddons: () -> Unit,
     onOpenProviders: () -> Unit,
     onOpenSettings: () -> Unit,
     onSelect: (String) -> Unit,
@@ -1858,12 +1851,6 @@ private fun ChatConversationDrawer(
                         label = stringResource(R.string.chat_open_providers),
                         icon = Icons.Filled.Lock,
                         onClick = onOpenProviders,
-                    )
-                    DrawerAction(
-                        tag = "open_addons",
-                        label = stringResource(R.string.chat_open_addons),
-                        icon = Icons.Filled.Build,
-                        onClick = onOpenAddons,
                     )
                     DrawerAction(
                         tag = "open_settings",

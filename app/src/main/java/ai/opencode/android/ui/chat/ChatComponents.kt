@@ -97,6 +97,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -1169,12 +1170,16 @@ fun QuestionAsk(
                             text = item.header,
                             style = MaterialTheme.typography.labelMedium,
                             color = chat.onAttentionContainer,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                     Text(
                         text = questionDisplayText(item.question),
                         style = MaterialTheme.typography.bodyMedium,
                         color = chat.onAttentionContainer,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     Text(
                         text = stringResource(
@@ -1182,6 +1187,8 @@ fun QuestionAsk(
                         ),
                         style = MaterialTheme.typography.labelSmall,
                         color = chat.onAttentionContainer,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(6.dp))
                     for (option in item.options) {
