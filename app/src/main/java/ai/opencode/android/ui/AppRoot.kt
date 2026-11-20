@@ -2039,6 +2039,22 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                             is ai.opencode.android.runtime.SkillCatalog.Created.Exists -> "exists"
                         }
                     },
+                    onImportSkill = { fileName, text ->
+                        // 2026-11-20 (owner): an uploaded skill file. Same rules as the form:
+                        // null on success, else the reason key the card shows.
+                        val globalDir = RuntimePaths.get(context).xdgConfigOpencode
+                        when (val made = ai.opencode.android.runtime.SkillCatalog.importFile(globalDir, fileName, text)) {
+                            is ai.opencode.android.runtime.SkillCatalog.Created.Ok -> {
+                                skills = ai.opencode.android.runtime.SkillCatalog.scan(projectDir, globalDir)
+                                null
+                            }
+                            is ai.opencode.android.runtime.SkillCatalog.Created.Invalid -> when (made.reason) {
+                                "type", "size", "header", "name", "description" -> made.reason
+                                else -> "folder"
+                            }
+                            is ai.opencode.android.runtime.SkillCatalog.Created.Exists -> "exists"
+                        }
+                    },
                     onBashPolicy = { policy -> repository.setPermissionPolicy("bash", policy) },
                     permissionPolicy = uiState.permissionPolicy,
                     permissionPending = uiState.pendingPermissionKeys,

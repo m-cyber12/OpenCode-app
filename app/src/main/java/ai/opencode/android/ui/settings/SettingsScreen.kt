@@ -142,6 +142,8 @@ fun SettingsScreen(
     skills: List<ai.opencode.android.runtime.SkillCatalog.Skill> = emptyList(),
     /** Returns null when saved, or a short reason key: name, description, exists, folder. */
     onCreateSkill: (String, String, String) -> String? = { _, _, _ -> null },
+    /** 2026-11-20 (owner): an uploaded skill file - (file name, text) -> reason key or null. */
+    onImportSkill: (String, String) -> String? = { _, _ -> null },
     onBashPolicy: (String) -> Unit,
     permissionPolicy: Map<String, String> = emptyMap(),
     /** 2026-11-20 (owner): keys whose permission change is still being applied. */
@@ -262,6 +264,7 @@ fun SettingsScreen(
                     "skills" -> SkillsSection(
                         skills = skills,
                         onCreate = onCreateSkill,
+                        onImport = onImportSkill,
                         // v11: a navigation that asked for Skills gets it open.
                         expanded = focusSection == "skills",
                     )
@@ -1737,19 +1740,53 @@ private fun McpSection(
  * skill is, the list the agent can use (with the file each one comes from), and a
  * form that writes a new GLOBAL skill. An existing skill is never overwritten.
  */
+/** Reads a picked skill document: (display name, text), or null when it cannot be read or is too big. */
+private fun readPickedSkill(context: android.content.Context, uri: android.net.Uri): Pair<String, String>? {
+    val name = runCatching {
+        context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
+            ?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+    }.getOrNull() ?: uri.lastPathSegment?.substringAfterLast('/') ?: "skill.md"
+    val text = runCatching {
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            // One byte past the cap: the importer sees an oversize file as oversize, not cut short.
+            String(input.readNBytes(ai.opencode.android.runtime.SkillCatalog.UPLOAD_MAX_BYTES + 1), Charsets.UTF_8)
+        }
+    }.getOrNull() ?: return null
+    return name to text
+}
+
 @Composable
 private fun SkillsSection(
     skills: List<ai.opencode.android.runtime.SkillCatalog.Skill>,
     onCreate: (String, String, String) -> String?,
+    onImport: (String, String) -> String?,
     expanded: Boolean,
 ) {
     val chat = ChatTheme.chat
+    val context = LocalContext.current
+    // 2026-11-20 (owner): upload a skill file from the device. The picker returns a document;
+    // the text is read here (capped) and handed to the same save path as the form.
     var adding by rememberSaveable { mutableStateOf(false) }
     var name by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
     var instructions by rememberSaveable { mutableStateOf("") }
     var errorKey by rememberSaveable { mutableStateOf("") }
     var saved by rememberSaveable { mutableStateOf(false) }
+
+    var uploadError by rememberSaveable { mutableStateOf("") }
+    val uploadPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val picked = readPickedSkill(context, uri)
+        if (picked == null) {
+            uploadError = "read"
+            saved = false
+            return@rememberLauncherForActivityResult
+        }
+        val reason = onImport(picked.first, picked.second)
+        uploadError = reason.orEmpty()
+        saved = reason == null
+        adding = false
+    }
     SectionCard(
         title = stringResource(R.string.settings_section_skills),
         body = stringResource(R.string.settings_skills_body),
@@ -1822,11 +1859,41 @@ private fun SkillsSection(
                     adding = !adding
                     errorKey = ""
                     saved = false
+                    uploadError = ""
                 },
                 modifier = Modifier.height(44.dp).semantics { testTag = "skills_add_toggle" },
             ) {
                 Text(stringResource(R.string.settings_skills_new))
             }
+            TextButton(
+                onClick = {
+                    uploadError = ""
+                    saved = false
+                    uploadPicker.launch(arrayOf("text/markdown", "text/plain", "application/octet-stream"))
+                },
+                modifier = Modifier.height(44.dp).semantics { testTag = "skills_upload" },
+            ) {
+                Text(stringResource(R.string.settings_skills_upload))
+            }
+        }
+        if (uploadError.isNotEmpty()) {
+            Text(
+                text = stringResource(
+                    when (uploadError) {
+                        "type" -> R.string.settings_skills_error_type
+                        "size" -> R.string.settings_skills_error_size
+                        "header" -> R.string.settings_skills_error_header
+                        "name" -> R.string.settings_skills_error_name
+                        "description" -> R.string.settings_skills_error_description
+                        "exists" -> R.string.settings_skills_error_exists
+                        "read" -> R.string.settings_skills_upload_read
+                        else -> R.string.settings_skills_error_folder
+                    },
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.semantics { testTag = "skills_upload_error" },
+            )
         }
         if (adding) {
             OutlinedTextField(

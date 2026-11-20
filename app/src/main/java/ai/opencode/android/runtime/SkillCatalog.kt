@@ -120,6 +120,34 @@ object SkillCatalog {
     fun sanitizeName(raw: String): String =
         raw.trim().lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-').take(48)
 
+    /** A skill file the user uploads is capped: a skill is instructions, not a dataset. */
+    const val UPLOAD_MAX_BYTES = 256 * 1024
+
+    /**
+     * 2026-11-20 (owner): skills can be uploaded as a file. The file must be a `.md` or `.txt`
+     * document whose leading `---` header carries a `description` (and optionally a `name`; the
+     * file name is the fallback). The text is kept exactly as uploaded. It is written to
+     * `<global>/skills/<name>/SKILL.md`, and an existing skill is never replaced.
+     */
+    fun importFile(globalConfigDir: File, fileName: String, text: String): Created {
+        val lower = fileName.lowercase()
+        if (!(lower.endsWith(".md") || lower.endsWith(".txt"))) return Created.Invalid("type")
+        if (text.toByteArray(Charsets.UTF_8).size > UPLOAD_MAX_BYTES) return Created.Invalid("size")
+        val header = frontmatter(text)
+        if (header.isEmpty()) return Created.Invalid("header")
+        val description = header["description"].orEmpty().replace('\n', ' ').replace('\r', ' ').trim()
+        if (description.isEmpty()) return Created.Invalid("description")
+        val rawName = header["name"]?.takeIf { it.isNotBlank() } ?: fileName.substringBeforeLast('.')
+        val name = sanitizeName(rawName)
+        if (name.isEmpty()) return Created.Invalid("name")
+        val dir = File(File(globalConfigDir, "skills"), name)
+        val file = File(dir, "SKILL.md")
+        if (file.exists()) return Created.Exists(name)
+        if (!dir.isDirectory && !dir.mkdirs()) return Created.Invalid("folder")
+        file.writeText(if (text.endsWith("\n")) text else text + "\n")
+        return Created.Ok(file)
+    }
+
     /**
      * Write a new GLOBAL skill (`<global>/skills/<name>/SKILL.md`). Refuses an
      * empty name or description, and never overwrites an existing skill: the

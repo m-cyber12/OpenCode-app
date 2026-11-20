@@ -108,4 +108,44 @@ class SkillCatalogTest {
         assertEquals("a-b-c", SkillCatalog.sanitizeName("  A/B  c "))
         assertEquals("", SkillCatalog.sanitizeName("***"))
     }
+
+    @Test
+    fun importKeepsTheUploadedTextAndItsHeaderName() {
+        val config = tmp.newFolder("global-import")
+        val text = "---\nname: changelog\ndescription: \"Use when writing a changelog\"\n---\n\nWrite one line.\n"
+        val made = SkillCatalog.importFile(config, "anything.md", text)
+        assertTrue(made is SkillCatalog.Created.Ok)
+        val file = (made as SkillCatalog.Created.Ok).file
+        assertEquals(File(config, "skills/changelog/SKILL.md").absolutePath, file.absolutePath)
+        assertEquals(text, file.readText())
+        assertEquals("Use when writing a changelog", SkillCatalog.parse(file, "global").description)
+    }
+
+    @Test
+    fun importFallsBackToTheFileNameForTheName() {
+        val config = tmp.newFolder("global-import-name")
+        val made = SkillCatalog.importFile(config, "Release Notes.md", "---\ndescription: write notes\n---\nbody")
+        assertTrue(made is SkillCatalog.Created.Ok)
+        assertEquals("release-notes", SkillCatalog.parse((made as SkillCatalog.Created.Ok).file, "global").name)
+    }
+
+    @Test
+    fun importRefusesWrongTypeMissingHeaderAndOversize() {
+        val config = tmp.newFolder("global-import-bad")
+        val ok = "---\nname: x\ndescription: y\n---\n"
+        assertEquals("type", (SkillCatalog.importFile(config, "skill.pdf", ok) as SkillCatalog.Created.Invalid).reason)
+        assertEquals("header", (SkillCatalog.importFile(config, "plain.md", "no header here") as SkillCatalog.Created.Invalid).reason)
+        assertEquals("description", (SkillCatalog.importFile(config, "nodesc.md", "---\nname: z\n---\n") as SkillCatalog.Created.Invalid).reason)
+        val big = "---\nname: big\ndescription: big\n---\n" + "a".repeat(SkillCatalog.UPLOAD_MAX_BYTES)
+        assertEquals("size", (SkillCatalog.importFile(config, "big.md", big) as SkillCatalog.Created.Invalid).reason)
+    }
+
+    @Test
+    fun importNeverOverwritesAnExistingSkill() {
+        val config = tmp.newFolder("global-import-exists")
+        SkillCatalog.importFile(config, "docs.md", "---\nname: docs\ndescription: first\n---\n")
+        val again = SkillCatalog.importFile(config, "docs.md", "---\nname: docs\ndescription: second\n---\n")
+        assertEquals("docs", (again as SkillCatalog.Created.Exists).name)
+        assertEquals("first", SkillCatalog.parse(File(config, "skills/docs/SKILL.md"), "global").description)
+    }
 }
