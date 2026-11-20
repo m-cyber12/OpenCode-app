@@ -98,6 +98,11 @@ class OpenCodeRepository(
          * "Connecting" (yellow) between Not Ready and Ready while this holds the id.
          */
         val connectingProviders: Set<String> = emptySet(),
+        /**
+         * 2026-11-20 (owner): true once the session list has come back from the server. Until
+         * then the chat menu shows a loading row, so an empty list never looks like deleted chats.
+         */
+        val sessionsLoaded: Boolean = false,
         val model: OpenCodeApi.ModelRef? = null,
     /**
      * Phase 10 continuation v4, item 3: the models the user starred in Settings,
@@ -125,6 +130,8 @@ class OpenCodeRepository(
          * upstream's own "ask" default and is not invented here.
          */
         val permissionPolicy: Map<String, String> = emptyMap(),
+        /** 2026-11-20 (owner): permission keys whose change is still being applied (dispose + re-read). */
+        val pendingPermissionKeys: Set<String> = emptySet(),
         /**
          * Which of upstream's two built-in agents the next prompt runs as:
          * [AGENT_BUILD] (the default) or [AGENT_PLAN]. Sent verbatim as
@@ -440,8 +447,11 @@ class OpenCodeRepository(
                 launch(start = CoroutineStart.UNDISPATCHED) {
                     runCatching { api.listSessions() }.onSuccess { list ->
                         val sel = _state.value.selectedSession
-                        val keep = if (sel.isNotEmpty() && list.any { it.id == sel }) sel else (list.firstOrNull()?.id ?: "")
-                        _state.update { st -> st.copy(sessions = list, selectedSession = keep) }
+                        // 2026-11-20 (owner): a cold start opens a BLANK chat, not the most recent
+                        // one. Only a chat already selected in this process is kept. The first
+                        // prompt creates the session, and it then shows in the list.
+                        val keep = if (sel.isNotEmpty() && list.any { it.id == sel }) sel else ""
+                        _state.update { st -> st.copy(sessions = list, selectedSession = keep, sessionsLoaded = true) }
                         // v9.42 (owner): the conversation shows FIRST from the
                         // disk cache (cold open) and is then confirmed by the
                         // server - an empty chat screen is no longer the first
@@ -504,6 +514,7 @@ class OpenCodeRepository(
                 val sel = _state.value.selectedSession
                 _state.value = _state.value.copy(
                     sessions = list,
+                    sessionsLoaded = true,
                     selectedSession = if (sel.isNotEmpty() && list.any { it.id == sel }) sel else _state.value.selectedSession,
                 )
             }.onFailure { fail("sessions", it) }
@@ -1238,25 +1249,31 @@ class OpenCodeRepository(
      */
     fun setPermissionPolicy(key: String, action: String) {
         scope.launch {
-            val patch = JSONObject().put("permission", JSONObject().put(key, action))
-            runCatching { api.patchGlobalConfig(patch) }
-                .onSuccess {
-                    // v8 fix round (owner's issue 4): a loaded instance keeps the
-                    // config it booted with, so a patched policy only governed
-                    // the NEXT project the server loaded - the running one kept
-                    // acting on the old rules and the table looked decorative.
-                    // Disposing the loaded instances (the same remedy Phase 9
-                    // proved for stale credentials) makes the new policy real
-                    // from the next turn onward.
-                    runCatching { api.dispose() }
-                    runCatching { api.globalConfig() }.onSuccess { cfg ->
-                        _state.value = _state.value.copy(
-                            permissionPolicy = parsePermissionPolicy(cfg),
-                            notice = "permission $key -> $action",
-                        )
+            // 2026-11-20 (owner): a toggle takes seconds - the row shows it is being applied.
+            _state.update { st -> st.copy(pendingPermissionKeys = st.pendingPermissionKeys + key) }
+            try {
+                val patch = JSONObject().put("permission", JSONObject().put(key, action))
+                runCatching { api.patchGlobalConfig(patch) }
+                    .onSuccess {
+                        // v8 fix round (owner's issue 4): a loaded instance keeps the
+                        // config it booted with, so a patched policy only governed
+                        // the NEXT project the server loaded - the running one kept
+                        // acting on the old rules and the table looked decorative.
+                        // Disposing the loaded instances (the same remedy Phase 9
+                        // proved for stale credentials) makes the new policy real
+                        // from the next turn onward.
+                        runCatching { api.dispose() }
+                        runCatching { api.globalConfig() }.onSuccess { cfg ->
+                            _state.value = _state.value.copy(
+                                permissionPolicy = parsePermissionPolicy(cfg),
+                                notice = "permission $key -> $action",
+                            )
+                        }
                     }
-                }
-                .onFailure { fail("permission policy", it) }
+                    .onFailure { fail("permission policy", it) }
+            } finally {
+                _state.update { st -> st.copy(pendingPermissionKeys = st.pendingPermissionKeys - key) }
+            }
         }
     }
 

@@ -144,6 +144,8 @@ fun SettingsScreen(
     onCreateSkill: (String, String, String) -> String? = { _, _, _ -> null },
     onBashPolicy: (String) -> Unit,
     permissionPolicy: Map<String, String> = emptyMap(),
+    /** 2026-11-20 (owner): keys whose permission change is still being applied. */
+    permissionPending: Set<String> = emptySet(),
     onPermissionPolicy: (String, String) -> Unit = { _, _ -> },
     memory: MemoryState = MemoryState(),
     onSaveMemory: (String, String) -> Unit = { _, _ -> },
@@ -265,6 +267,7 @@ fun SettingsScreen(
                     )
                     "permissions" -> PermissionsSection(
                         policy = permissionPolicy,
+                        pending = permissionPending,
                         onPolicy = onPermissionPolicy,
                         onBashPolicy = onBashPolicy,
                     )
@@ -2190,6 +2193,7 @@ private fun WorkspaceSection(
 @Composable
 private fun PermissionsSection(
     policy: Map<String, String>,
+    pending: Set<String> = emptySet(),
     onPolicy: (String, String) -> Unit,
     onBashPolicy: (String) -> Unit,
 ) {
@@ -2210,6 +2214,7 @@ private fun PermissionsSection(
             PermissionToolRow(
                 label = stringResource(res),
                 current = policy[key] ?: "ask",
+                pending = key in pending,
                 onPolicy = onPolicy,
                 onBashPolicy = onBashPolicy,
                 key = key,
@@ -2241,6 +2246,8 @@ private fun permissionValueLabel(value: String): String = stringResource(
 private fun PermissionToolRow(
     label: String,
     current: String,
+    /** 2026-11-20 (owner): the change is being applied - spinner, and the buttons lock. */
+    pending: Boolean = false,
     onPolicy: (String, String) -> Unit,
     onBashPolicy: (String) -> Unit,
     key: String,
@@ -2259,6 +2266,19 @@ private fun PermissionToolRow(
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.weight(1f),
                 )
+                if (pending) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(14.dp).semantics { testTag = "policy_${key}_pending" },
+                        strokeWidth = 2.dp,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.settings_permission_applying),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = chat.muted,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                }
                 StatusPill(text = stringResource(R.string.settings_permission_current, permissionValueLabel(current)), color = chat.muted)
             }
             Spacer(Modifier.height(6.dp))
@@ -2266,6 +2286,7 @@ private fun PermissionToolRow(
                 PolicyButton(
                     label = stringResource(R.string.settings_permission_value_ask),
                     selected = current == "ask",
+                    enabled = !pending,
                     onClick = {
                         if (key == "bash") onBashPolicy("ask") else onPolicy(key, "ask")
                     },
@@ -2275,6 +2296,7 @@ private fun PermissionToolRow(
                 PolicyButton(
                     label = stringResource(R.string.settings_permission_value_allow),
                     selected = current == "allow",
+                    enabled = !pending,
                     onClick = {
                         if (key == "bash") onBashPolicy("allow") else onPolicy(key, "allow")
                     },
@@ -2284,6 +2306,7 @@ private fun PermissionToolRow(
                 PolicyButton(
                     label = stringResource(R.string.settings_permission_value_deny),
                     selected = current == "deny",
+                    enabled = !pending,
                     onClick = {
                         if (key == "bash") onBashPolicy("deny") else onPolicy(key, "deny")
                     },
@@ -2302,9 +2325,11 @@ private fun PolicyButton(
     onClick: () -> Unit,
     tag: String,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     OutlinedButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier.height(44.dp).semantics { testTag = tag },
     ) {
         Text(

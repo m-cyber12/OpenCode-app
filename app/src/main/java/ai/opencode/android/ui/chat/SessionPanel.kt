@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -81,6 +83,8 @@ fun SessionPanel(
     onRename: (String, String) -> Unit,
     modifier: Modifier = Modifier,
     now: Long = System.currentTimeMillis(),
+    /** 2026-11-20 (owner): the list has not come back yet - a spinner, not an empty state. */
+    loading: Boolean = false,
 ) {
     val newLabel = stringResource(R.string.sessions_new)
     Column(modifier = modifier.fillMaxSize().semantics { testTag = "sessions_screen" }) {
@@ -103,7 +107,20 @@ fun SessionPanel(
             color = ChatTheme.chat.muted,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
         )
-        if (sessions.isEmpty()) {
+        if (loading && sessions.isEmpty()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp).semantics { testTag = "sessions_loading" },
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = stringResource(R.string.drawer_sessions_loading),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = ChatTheme.chat.muted,
+                )
+            }
+        } else if (sessions.isEmpty()) {
             EmptyState(
                 title = stringResource(R.string.sessions_empty_title),
                 body = stringResource(R.string.sessions_empty_body),

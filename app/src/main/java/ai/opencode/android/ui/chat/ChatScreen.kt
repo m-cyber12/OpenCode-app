@@ -470,6 +470,7 @@ fun ChatScreen(
         transcript = state.transcript,
         now = now,
         ready = runtime.ready,
+        sessionsLoaded = state.sessionsLoaded,
         onOpenProjects = { drawerOpen = false; onOpenProjects() },
         onNewSession = { drawerOpen = false; onNewSession() },
         onOpenProviders = { drawerOpen = false; onOpenProviders() },
@@ -1724,6 +1725,8 @@ private fun ChatConversationDrawer(
     transcript: Transcript.Snapshot,
     now: Long,
     ready: Boolean,
+    /** 2026-11-20 (owner): false until the server's session list has come back. */
+    sessionsLoaded: Boolean = true,
     onOpenProjects: () -> Unit,
     onNewSession: () -> Unit,
     onOpenProviders: () -> Unit,
@@ -1830,13 +1833,23 @@ private fun ChatConversationDrawer(
                         color = chat.muted,
                         modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
                     )
-                    if (!ready) {
-                        Text(
-                            text = stringResource(R.string.drawer_sessions_starting),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = chat.muted,
+                    if (!ready || !sessionsLoaded) {
+                        // 2026-11-20 (owner): while the agent starts the chats are not gone - show
+                        // a spinner and say what is happening, never an empty list.
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(8.dp).semantics { testTag = "drawer_sessions_pending" },
-                        )
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                text = stringResource(
+                                    if (!ready) R.string.drawer_sessions_starting else R.string.drawer_sessions_loading,
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = chat.muted,
+                            )
+                        }
                     } else if (sessions.isEmpty()) {
                         Text(
                             text = stringResource(R.string.sessions_empty_title),

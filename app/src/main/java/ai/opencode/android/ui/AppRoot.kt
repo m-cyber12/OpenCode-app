@@ -1897,6 +1897,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
 
                 ROUTE_SESSIONS -> SessionPanel(
                     sessions = uiState.sessions,
+                    loading = !uiState.sessionsLoaded,
                     selectedSession = uiState.selectedSession,
                     transcript = uiState.transcript,
                     onBack = { route = ROUTE_CHAT },
@@ -2040,6 +2041,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     },
                     onBashPolicy = { policy -> repository.setPermissionPolicy("bash", policy) },
                     permissionPolicy = uiState.permissionPolicy,
+                    permissionPending = uiState.pendingPermissionKeys,
                     onPermissionPolicy = { key, action -> repository.setPermissionPolicy(key, action) },
                     memory = memory,
                     onSaveMemory = { scopeName, text ->
