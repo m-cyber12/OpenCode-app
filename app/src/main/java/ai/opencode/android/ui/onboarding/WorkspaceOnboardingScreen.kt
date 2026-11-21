@@ -1,12 +1,10 @@
 package ai.opencode.android.ui.onboarding
 
 import ai.opencode.android.R
-import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.ui.common.StatusPill
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoSmall
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -26,6 +24,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -33,23 +32,23 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.unit.dp
 
-/** The two workspace options on the first onboarding screen. `""` means none is chosen yet. */
+/** The two workspace options on the workspace screen. `""` means none is chosen yet. */
 object WorkspaceChoice {
     const val SELECTED = "selected"
     const val DEFAULT = "default"
 }
 
 /**
- * 2026-11-20 (owner, item 6): the first onboarding screen. It replaces the old single-folder
- * "first-time setup" page with two cards, and one of them must be chosen before Next.
+ * The workspace screen of the first run. Two option cards; one must be chosen before Next.
  *
- *  * Selected Folder (recommended): a folder on the phone, with two actions - grant storage
- *    permission (on return the folder picker opens at Documents) and choose a folder.
- *  * Default Workspace: the app root. It is explained with its limits, and nothing is asked.
+ *  * Selected Folder (recommended): one large button, "Choose Your Workspace". It grants
+ *    storage permission when it is missing (on return, the folder picker opens at
+ *    Documents). Once a folder is picked, an "opencode" folder is created inside it and that
+ *    folder is the workspace.
+ *  * Default Workspace: the app root, explained with its limits. Nothing is asked.
  *
- * The screen is a pure function of the facts it is handed. It never creates anything; Next
- * is the caller's decision. The background setup status is shown here too, so the user sees
- * what is being configured while they choose.
+ * 2026-11-20 (owner): Next is at the top, with the other onboarding actions. The setup
+ * progress is not shown here; setup runs invisibly in the background.
  */
 @Composable
 fun WorkspaceOnboardingScreen(
@@ -61,12 +60,11 @@ fun WorkspaceOnboardingScreen(
     message: String,
     /** [WorkspaceChoice] value, or "" when nothing is chosen yet. */
     choice: String,
-    /** A folder was chosen with the system picker (the Selected Folder option is real). */
+    /** A folder was picked with the system picker (the Selected Folder option is real). */
     folderChosen: Boolean,
-    runtime: RuntimeSummary,
     onChoose: (String) -> Unit,
-    onGrantStorage: () -> Unit,
-    onPickFolder: () -> Unit,
+    /** Choose Your Workspace: grant storage if needed, then open the folder picker. */
+    onChooseWorkspace: () -> Unit,
     onNext: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -90,6 +88,29 @@ fun WorkspaceOnboardingScreen(
         )
         Spacer(Modifier.height(16.dp))
 
+        // Navigation first: Next is at the top, and it stays disabled until a choice is made.
+        Button(
+            onClick = onNext,
+            enabled = choice.isNotEmpty(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+                .semantics { testTag = "onboarding_workspace_use" },
+        ) {
+            Text(stringResource(R.string.onboarding_next))
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = if (choice.isEmpty()) {
+                stringResource(R.string.onboarding_pick_first)
+            } else {
+                stringResource(R.string.onboarding_workspace_later)
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = chat.muted,
+        )
+        Spacer(Modifier.height(16.dp))
+
         WorkspaceOptionCard(
             tag = "onboarding_option_selected",
             selected = choice == WorkspaceChoice.SELECTED,
@@ -98,33 +119,17 @@ fun WorkspaceOnboardingScreen(
             body = stringResource(R.string.onboarding_option_selected_body),
             onSelect = { onChoose(WorkspaceChoice.SELECTED) },
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(
-                    onClick = onGrantStorage,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                        .semantics { testTag = "onboarding_workspace_grant" },
-                ) {
-                    Text(stringResource(R.string.onboarding_grant_storage), maxLines = 1)
-                }
-                OutlinedButton(
-                    onClick = onPickFolder,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                        .semantics { testTag = "onboarding_workspace_pick" },
-                ) {
-                    Text(stringResource(R.string.onboarding_workspace_pick), maxLines = 1)
-                }
-            }
-            if (folderChosen) {
-                Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = onChooseWorkspace,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .semantics { testTag = "onboarding_workspace_grant" },
+            ) {
                 Text(
-                    text = folderPath,
-                    style = MonoSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.semantics { testTag = "onboarding_selected_folder" },
+                    text = stringResource(R.string.onboarding_choose_workspace),
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
                 )
             }
         }
@@ -160,31 +165,15 @@ fun WorkspaceOnboardingScreen(
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.semantics { testTag = "onboarding_workspace_path" },
         )
-
-        Spacer(Modifier.height(16.dp))
-        OnboardingSetupStatus(runtime = runtime)
-
-        Spacer(Modifier.height(16.dp))
-        Button(
-            onClick = onNext,
-            enabled = choice.isNotEmpty(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .semantics { testTag = "onboarding_workspace_use" },
-        ) {
-            Text(stringResource(R.string.onboarding_next))
+        if (folderChosen) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.onboarding_selected_folder_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.muted,
+                modifier = Modifier.semantics { testTag = "onboarding_selected_folder" },
+            )
         }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = if (choice.isEmpty()) {
-                stringResource(R.string.onboarding_pick_first)
-            } else {
-                stringResource(R.string.onboarding_workspace_later)
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = chat.muted,
-        )
         if (message.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
             Text(
@@ -199,7 +188,7 @@ fun WorkspaceOnboardingScreen(
 
 /**
  * One option card: a radio row (tapping the title or the radio selects it), an optional
- * Recommended tag, the body text, and the option's own content (its buttons or its notes).
+ * Recommended tag, the body text, and the option's own content (its button or its notes).
  */
 @Composable
 private fun WorkspaceOptionCard(
@@ -224,7 +213,7 @@ private fun WorkspaceOptionCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 RadioButton(selected = selected, onClick = null)
                 Spacer(Modifier.width(8.dp))
@@ -243,7 +232,7 @@ private fun WorkspaceOptionCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = chat.muted,
             )
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             content()
         }
     }

@@ -437,7 +437,10 @@ fun ChatScreen(
             onAttach = onAttach,
             onAttachCamera = onAttachCamera,
             onAttachPictures = onAttachPictures,
-            busy = state.busy && !turnFailed(state.turnError),
+            // 2026-11-20 (owner, bug): Send becomes Stop whenever the server reports the agent
+            // working. A failure of an earlier turn must not hide it (the turn-error guard only
+            // covers the working indicators above).
+            busy = state.busy,
             canSend = UiError.canSend(availability),
             canRedo = state.canRedo,
             onRedo = onRedo,
@@ -2254,8 +2257,10 @@ private fun Composer(
                                 .height(44.dp)
                                 .semantics { testTag = TAG_COMPOSER_STOP },
                         ) {
+                            // 2026-11-21 (owner): the working control is Pause. It stops the turn
+                            // as before (the server keeps the session, and the user can send again).
                             Text(
-                                text = stringResource(R.string.chat_stop),
+                                text = stringResource(R.string.task_action_pause),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.primary,
                             )

@@ -136,6 +136,19 @@ internal fun forbiddenConnectionTokens(): List<String> = listOf(
 )
 
 /** Which forbidden tokens a screen actually showed (empty = clean). */
+/**
+ * Setup progress wording. None of it may show on the first-run screens (2026-11-21, owner):
+ * setup runs invisibly, so a user never reads a stage, a restart count or a preparing line.
+ */
+internal val setupProgressWords: List<String> = listOf(
+    "Setting up",
+    "Starting the agent",
+    "Preparing the agent",
+    "Agent setup",
+    "Stage:",
+    "Restarted",
+)
+
 internal fun leakedTokens(text: String): List<String> =
     forbiddenConnectionTokens().filter { text.contains(it, ignoreCase = true) }
 

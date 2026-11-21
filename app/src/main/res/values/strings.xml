@@ -44,26 +44,6 @@
     <!-- ============================================================ welcome -->
     <string name="welcome_title">OpenCode</string>
     <string name="welcome_tagline">A coding agent that runs on this device.</string>
-    <string name="welcome_body">The agent, its shell and its files all live inside this app. There is no account to create, no terminal to open and no server to point at.</string>
-    <string name="welcome_stage_extracting_title">Setting up</string>
-    <string name="welcome_stage_extracting_body">Unpacking the agent. This happens once and usually takes under a minute.</string>
-    <string name="welcome_stage_starting_title">Starting the agent</string>
-    <string name="welcome_stage_starting_body">Almost there. The agent is coming up and will be ready to talk in a few seconds.</string>
-    <string name="welcome_stage_healthy_title">Ready</string>
-    <string name="welcome_stage_healthy_body">The agent is running. Pick a project to start a conversation.</string>
-    <string name="welcome_stage_crashed_title">The agent restarted</string>
-    <string name="welcome_stage_crashed_body">It stopped unexpectedly and is being started again. If this keeps happening, open Settings and share the diagnostics.</string>
-    <string name="welcome_stage_stopped_title">The agent is stopped</string>
-    <string name="welcome_stage_stopped_body">It will start again when you continue.</string>
-    <string name="welcome_stage_fatal_title">The agent could not start</string>
-    <string name="welcome_stage_fatal_body">Open Settings and share the diagnostics so this can be looked at. Nothing you typed was lost.</string>
-    <string name="welcome_stage_unsupported_title">This device is not supported</string>
-    <string name="welcome_stage_unsupported_body">The agent needs a 64-bit ARM or x86_64 processor and Android 10 or newer. The detail below is what the runtime check reported.</string>
-    <string name="welcome_runtime_line">OpenCode %1$s</string>
-    <string name="welcome_restarts">Restarted %1$d times so far</string>
-    <string name="welcome_action_continue">Continue</string>
-    <string name="welcome_action_settings">Settings and diagnostics</string>
-    <string name="welcome_progress">Preparing the agent</string>
 
     <!-- ============================================================ projects -->
         <string name="projects_workspace_label">Workspace</string>
@@ -551,15 +531,13 @@
     <string name="onboarding_workspace_title">Where your files will live</string>
     <string name="onboarding_workspace_body">Choose where your projects are stored. Pick one option to continue.</string>
     <string name="onboarding_workspace_folder">Workspace folder</string>
-    <string name="onboarding_workspace_pick">Choose a Folder</string>
     <string name="onboarding_workspace_use">Next</string>
     <string name="onboarding_workspace_later">You can change the folder later in Settings.</string>
     <string name="onboarding_option_selected_title">Selected Folder</string>
     <string name="onboarding_option_recommended">Recommended</string>
-    <string name="onboarding_option_selected_body">Pick one folder on this phone. Each project is a subfolder of it, and file managers can open it. Needs storage permission.</string>
+    <string name="onboarding_option_selected_body">Pick one folder on this phone. An opencode folder is created inside it, and each project is a subfolder of that. File managers can open it. Needs storage permission.</string>
     <string name="onboarding_option_default_title">Default Workspace</string>
     <string name="onboarding_option_default_body">Uses the app root: the app\u2019s own folder on this phone. Limits: file managers usually cannot open it, and uninstalling OpenCode deletes these projects.</string>
-    <string name="onboarding_grant_storage">Grant Storage Permission</string>
     <string name="onboarding_pick_first">Choose one option to continue.</string>
     <string name="onboarding_selected_needs_folder">Choose a folder first, then Next.</string>
     <string name="onboarding_next">Next</string>
@@ -567,14 +545,18 @@
     <string name="onboarding_provider_body">The agent needs a model provider to answer. Add a key for one provider now, or do it later in Settings.</string>
     <string name="onboarding_later">I\u2019ll do this later</string>
     <string name="onboarding_start">Start</string>
-    <string name="onboarding_setup_title">Agent setup</string>
-    <string name="onboarding_setup_what">Setting up in the background: the agent server, your workspace and the provider keys.</string>
-    <string name="onboarding_stage_unpacking">Stage: unpacking the agent files</string>
-    <string name="onboarding_stage_starting">Stage: starting the agent server</string>
-    <string name="onboarding_stage_ready">Stage: agent server is running</string>
-    <string name="onboarding_stage_stopped">Stage: agent is stopped</string>
-    <string name="onboarding_stage_failed">Stage: setup needs attention. Open Settings, Runtime for details.</string>
-    <string name="onboarding_stage_waiting">Stage: waiting to start</string>
+
+    <string name="welcome_runtime_line">OpenCode %1$s</string>
+    <string name="welcome_card1_title">Talk to an agent</string>
+    <string name="welcome_card1_body">Describe what you want in plain language. The agent reads and writes the files of your project, and runs commands for you.</string>
+    <string name="welcome_card2_title">Your files, on this phone</string>
+    <string name="welcome_card2_body">Projects live in a workspace folder you choose, so you can open the same files in a file manager.</string>
+    <string name="welcome_card3_title">Bring your own model</string>
+    <string name="welcome_card3_body">Connect a model provider in the next steps. Each provider\u2019s key is saved on this device.</string>
+    <string name="welcome_card4_title">You stay in control</string>
+    <string name="welcome_card4_body">The agent asks before it runs commands or changes files, unless you allow it. You can stop a reply at any time.</string>
+    <string name="onboarding_choose_workspace">Choose Your Workspace</string>
+    <string name="onboarding_selected_folder_note">Projects will be created in the opencode folder inside the folder you chose.</string>
 
     <string name="onboarding_workspace_hidden">The system does not let a file manager open this folder on this Android version. A PC still can.</string>
     <string name="onboarding_workspace_needs_access">Android needs All files access before the agent can write in %1$s. The system setting is opening now; come back and use this folder.</string>

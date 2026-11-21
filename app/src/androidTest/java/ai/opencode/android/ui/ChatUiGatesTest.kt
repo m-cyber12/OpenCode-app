@@ -163,7 +163,6 @@ class ChatUiGatesTest {
     private var shares = 0
     private var copies = 0
     private var welcomeContinue = 0
-    private var welcomeSettings = 0
     private val openedDirs = mutableListOf<String>()
     private val openedFiles = mutableListOf<String>()
     private val savedCopies = mutableListOf<String>()
@@ -561,7 +560,7 @@ class ChatUiGatesTest {
         ProjectsScreen(
             projects = projectList.toList(),
             activeName = projectActive.value,
-            runtimeLine = context.getString(R.string.welcome_stage_healthy_title),
+            runtimeLine = context.getString(R.string.welcome_runtime_line, "gates"),
             onCreate = { createdProjects.add(it) },
             onOpen = { openedProjectList.add(it) },
             onBack = { panelBack++ },
@@ -571,9 +570,7 @@ class ChatUiGatesTest {
     @Composable
     private fun WelcomeSurface() {
         WelcomeScreen(
-            runtime = welcomeRuntime.value,
             onContinue = { welcomeContinue++ },
-            onOpenSettings = { welcomeSettings++ },
         )
     }
 
@@ -585,10 +582,8 @@ class ChatUiGatesTest {
             message = onboardingMessage.value,
             choice = onboardingChoice.value,
             folderChosen = false,
-            runtime = welcomeRuntime.value,
             onChoose = { onboardingChoice.value = it },
-            onGrantStorage = { workspaceGrants++ },
-            onPickFolder = { workspacePicks++ },
+            onChooseWorkspace = { workspaceGrants++ },
             onNext = { workspaceUse++ },
         )
     }
@@ -1418,41 +1413,21 @@ class ChatUiGatesTest {
         // the conversation surface must never show a host, a port or a URL.
         val leaks = (leakedTokens(aText) + leakedTokens(bText) + leakedTokens(cText) + leakedTokens(dText)).distinct()
 
-        // The welcome screen is the other surface a first-run user reads, and a
-        // working emulator only ever walks through three of its states. Render all
-        // of them here - each with the real bind address in the supervisor's detail -
-        // and require that every state says something different, in words, with no
-        // connection detail in it.
-        val stageTitles = listOf(
-            "EXTRACTING" to R.string.welcome_stage_extracting_title,
-            "STARTING" to R.string.welcome_stage_starting_title,
-            "HEALTHY" to R.string.welcome_stage_healthy_title,
-            "CRASHED_RESTARTING" to R.string.welcome_stage_crashed_title,
-            "STOPPED" to R.string.welcome_stage_stopped_title,
-            "FATAL" to R.string.welcome_stage_fatal_title,
-            "UNSUPPORTED_DEVICE" to R.string.welcome_stage_unsupported_title,
-        )
-        val welcomeShown = mutableListOf<String>()
-        val welcomeLeaks = mutableListOf<String>()
-        for ((status, titleRes) in stageTitles) {
-            renderWelcome(
-                runtimeSummary(
-                    status,
-                    ready = status == "HEALTHY",
-                    detail = healthyDetailFixture(),
-                    restarts = if (status == "CRASHED_RESTARTING") 2 else 0,
-                ),
-            )
-            val text = onScreenText()
-            if (text.contains(context.getString(titleRes), ignoreCase = true)) welcomeShown += status
-            welcomeLeaks += leakedTokens(text).map { "$status:$it" }
-        }
+        // 2026-11-21 (owner): the welcome screen is the first-run landing page - a short
+        // introduction in cards, and Next. Setup is invisible, so no progress or stage
+        // wording may show on it, and no connection detail may leak.
+        renderWelcome(healthy)
+        val introShown = exists("welcome_screen") && exists("welcome_card_1") &&
+            exists("welcome_card_4") && exists("welcome_continue")
+        val introText = onScreenText()
+        val setupShown = setupProgressWords.filter { introText.contains(it, ignoreCase = true) }
+        val welcomeLeaks = leakedTokens(introText)
         shot("19b-welcome-states.png")
 
         val ok = aHeadline && aBody && bHeadline && cHeadline && cRawKept && dHeadline && distinct &&
             aSend && bSend && cSend && dSend && dLoadingRow && dNoErrorBanner && queuedShown &&
             leaks.isEmpty() &&
-            welcomeShown.size == stageTitles.size && welcomeLeaks.isEmpty()
+            introShown && setupShown.isEmpty() && welcomeLeaks.isEmpty()
         gate(
             "U4",
             ok,
@@ -1461,7 +1436,7 @@ class ChatUiGatesTest {
                 "startingLooksLikeLoading=$dLoadingRow/noBanner=$dNoErrorBanner queued=$queuedShown " +
                 "providerAuth=$cHeadline(rawKept=$cRawKept,send=$cSend) starting=$dHeadline(send=$dSend) " +
                 "headlinesDistinct=$distinct chatLeaks=$leaks " +
-                "welcomeStatesShown=${welcomeShown.size}/${stageTitles.size} welcomeLeaks=$welcomeLeaks",
+                "welcomeIntro=$introShown setupShown=$setupShown welcomeLeaks=$welcomeLeaks",
         )
     }
 
@@ -2573,7 +2548,8 @@ class ChatUiGatesTest {
 
         val screenShown = exists("onboarding_workspace")
         val pathShown = onScreenText().contains(WORKSPACE_FIXTURE_PATH)
-        val pickerShown = exists("onboarding_workspace_pick")
+        // 2026-11-21 (owner): "Choose Folder" is gone; the one workspace control is the grant card's button
+        val pickerGone = !exists("onboarding_workspace_pick")
         val oneAction = exists("onboarding_workspace_use")
         // 2026-11-20 (owner, item 6): two option cards, Next disabled until one is chosen
         val twoCards = exists("onboarding_option_selected") && exists("onboarding_option_default")
@@ -2586,9 +2562,6 @@ class ChatUiGatesTest {
         rule.onAllNodesWithTag("onboarding_workspace_grant")[0].performClick()
         rule.waitForIdle()
         val grantWired = workspaceGrants == 1
-        rule.onAllNodesWithTag("onboarding_workspace_pick")[0].performClick()
-        rule.waitForIdle()
-        val pickWired = workspacePicks == 1
         rule.onNodeWithTag("onboarding_option_default").performClick()
         rule.waitForIdle()
         val nextUnlocked = enabled("onboarding_workspace_use")
@@ -2609,8 +2582,7 @@ class ChatUiGatesTest {
         storageVisible.value = false
         rule.waitForIdle()
         val hiddenExplained = exists("onboarding_workspace_hidden")
-        val stillTwoControls = countTag("onboarding_workspace_pick") == 1 &&
-            countTag("onboarding_workspace_use") == 1 &&
+        val stillTwoControls = countTag("onboarding_workspace_use") == 1 &&
             countTag("onboarding_workspace_grant") == 1
         storageVisible.value = true
 
@@ -2644,13 +2616,13 @@ class ChatUiGatesTest {
 
         gate(
             "U12",
-            screenShown && pathShown && pickerShown && oneAction && twoCards && nextLockedAtStart &&
-                noCopyPath && noDefaultPair && grantWired && pickWired && nextUnlocked && useWired &&
+            screenShown && pathShown && pickerGone && oneAction && twoCards && nextLockedAtStart &&
+                noCopyPath && noDefaultPair && grantWired && nextUnlocked && useWired &&
                 messageShown && hiddenExplained && stillTwoControls &&
                 settingsHasFolder && settingsPicker && settingsGrant && settingsMove && switchNote,
-            "onboarding=$screenShown/$pathShown/$pickerShown/$oneAction " +
+            "onboarding=$screenShown/$pathShown/$pickerGone/$oneAction " +
                 "twoCards=$twoCards nextLocked=$nextLockedAtStart v4Removed=$noCopyPath/$noDefaultPair " +
-                "wired=$grantWired/$pickWired/$nextUnlocked/$useWired " +
+                "wired=$grantWired/$nextUnlocked/$useWired " +
                 "message=$messageShown hidden=$hiddenExplained controls=$stillTwoControls " +
                 "settings=$settingsHasFolder/$settingsPicker/$settingsGrant/$settingsMove note=$switchNote",
         )

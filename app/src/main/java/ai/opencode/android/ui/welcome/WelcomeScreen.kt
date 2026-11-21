@@ -1,86 +1,61 @@
 package ai.opencode.android.ui.welcome
 
 import ai.opencode.android.R
-import ai.opencode.android.client.AgentAvailability
-import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.ui.theme.ChatTheme
 import ai.opencode.android.ui.theme.MonoBody
-import ai.opencode.android.ui.theme.MonoSmall
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 /**
- * The first thing a fresh install sees.
+ * The first screen of a fresh install: a short introduction in a few cards, and Next.
  *
- * What it must do, and what it must never do:
- *   * it explains the product in one screen and shows the runtime coming up by
- *     itself - the extraction and start happen in the background service the
- *     activity already launched, so this screen only reports;
- *   * it never mentions a terminal, a shell, a URL, a host, a port, Termux, SSH or
- *     a PC. The supervisor's own detail string (which does carry the loopback bind
- *     address) is therefore NOT rendered here; it lives in Settings, next to the
- *     diagnostics, where a user who is troubleshooting has asked to see it. The
- *     Phase 6 first-run gate asserts the absence of that vocabulary on screen.
+ * 2026-11-20 (owner): the setup progress and its messages are gone from onboarding. Setup
+ * still runs in the background, invisibly; this screen never waits for it and never reports
+ * it. Next sits at the top, like the other onboarding actions, and is always available.
+ *
+ * The copy must not name a terminal, a shell, a URL, a host, a port or a PC tool: the
+ * first-run gate checks the first screens for that vocabulary.
  */
 @Composable
 fun WelcomeScreen(
-    runtime: RuntimeSummary,
     onContinue: () -> Unit,
-    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val chat = ChatTheme.chat
-    val ready = runtime.ready
-    val stage = welcomeStage(runtime.status)
-    val progressLabel = stringResource(R.string.welcome_progress)
-
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 24.dp)
             .semantics { testTag = "welcome_screen" },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(44.dp))
-        // v7 redesign: the brand mark - a mono "</>" on a rounded gold tile,
-        // centred like the reference's setup screen. Decorative (the title below
-        // is the accessible name), so its semantics are cleared.
+        // The brand mark: a mono "</>" on a rounded gold tile. Decorative - the title is the name.
         Box(
             modifier = Modifier
-                .size(64.dp)
+                .size(56.dp)
                 .background(
                     color = MaterialTheme.colorScheme.primaryContainer,
                     shape = MaterialTheme.shapes.medium,
@@ -95,7 +70,7 @@ fun WelcomeScreen(
                 color = MaterialTheme.colorScheme.primary,
             )
         }
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(14.dp))
         Text(
             text = stringResource(R.string.welcome_title),
             style = MaterialTheme.typography.headlineSmall,
@@ -106,165 +81,53 @@ fun WelcomeScreen(
             text = stringResource(R.string.welcome_tagline),
             style = MaterialTheme.typography.titleMedium,
             color = chat.muted,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 28.dp),
         )
-        Spacer(Modifier.height(14.dp))
-        Text(
-            text = stringResource(R.string.welcome_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 28.dp),
-        )
-        Spacer(Modifier.height(36.dp))
-
-        // v11 (owner, B.107): the loading card is ONE centred column - the
-        // indicator above the words, never beside them. The side-by-side row
-        // squeezed the copy against the circle on narrow screens ("messy").
-        Surface(
-            color = MaterialTheme.colorScheme.surface,
-            shape = MaterialTheme.shapes.large,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .semantics { testTag = "welcome_stage" },
-        ) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                StageIndicator(ready = ready, label = progressLabel)
-                Spacer(Modifier.height(14.dp))
-                Text(
-                    text = stage.first,
-                    style = MaterialTheme.typography.titleSmall,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = stage.second,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = chat.muted,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                if (runtime.restartCount > 0) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(R.string.welcome_restarts, runtime.restartCount),
-                        style = MonoSmall,
-                        color = chat.attention,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(20.dp))
         Button(
             onClick = onContinue,
-            enabled = ready,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp)
                 .height(52.dp)
                 .semantics { testTag = "welcome_continue" },
         ) {
-            Text(stringResource(R.string.welcome_action_continue), style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.onboarding_next), style = MaterialTheme.typography.labelLarge)
         }
-        Spacer(Modifier.height(6.dp))
-        TextButton(
-            onClick = onOpenSettings,
-            modifier = Modifier
-                .height(48.dp)
-                .semantics { testTag = "welcome_settings" },
-        ) {
-            Text(stringResource(R.string.welcome_action_settings), style = MaterialTheme.typography.labelMedium)
-        }
+        Spacer(Modifier.height(20.dp))
+
+        IntroCard(index = 1, title = stringResource(R.string.welcome_card1_title), body = stringResource(R.string.welcome_card1_body))
+        Spacer(Modifier.height(10.dp))
+        IntroCard(index = 2, title = stringResource(R.string.welcome_card2_title), body = stringResource(R.string.welcome_card2_body))
+        Spacer(Modifier.height(10.dp))
+        IntroCard(index = 3, title = stringResource(R.string.welcome_card3_title), body = stringResource(R.string.welcome_card3_body))
+        Spacer(Modifier.height(10.dp))
+        IntroCard(index = 4, title = stringResource(R.string.welcome_card4_title), body = stringResource(R.string.welcome_card4_body))
         Spacer(Modifier.height(24.dp))
-        if (runtime.opencodeVersion.isNotEmpty()) {
+    }
+}
+
+/** One introduction card: a short title and one or two plain sentences. */
+@Composable
+private fun IntroCard(index: Int, title: String, body: String) {
+    val chat = ChatTheme.chat
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { testTag = "welcome_card_$index" },
+    ) {
+        Column(Modifier.padding(horizontal = 18.dp, vertical = 16.dp)) {
             Text(
-                text = stringResource(R.string.welcome_runtime_line, runtime.opencodeVersion),
-                style = MonoSmall,
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = body,
+                style = MaterialTheme.typography.bodyMedium,
                 color = chat.muted,
             )
         }
-        Spacer(Modifier.height(24.dp))
     }
-}
-
-/** Progress while the runtime comes up, a tick once it is answering. */
-@Composable
-private fun StageIndicator(ready: Boolean, label: String) {
-    val chat = ChatTheme.chat
-    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(40.dp)) {
-        if (ready) {
-            Surface(color = chat.success, shape = CircleShape, modifier = Modifier.size(32.dp)) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Filled.Check,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(18.dp).clearAndSetSemantics { },
-                    )
-                }
-            }
-        } else {
-            CircularProgressIndicator(
-                modifier = Modifier
-                    .size(32.dp)
-                    .semantics {
-                        testTag = "welcome_progress"
-                        contentDescription = label
-                    },
-                strokeWidth = 3.dp,
-                color = chat.success,
-            )
-        }
-    }
-}
-
-/** The supervisor's status name onto the copy a first-run user should read. */
-@Composable
-private fun welcomeStage(status: String): Pair<String, String> {
-    val title: String
-    val body: String
-    when (status) {
-        "EXTRACTING" -> {
-            title = stringResource(R.string.welcome_stage_extracting_title)
-            body = stringResource(R.string.welcome_stage_extracting_body)
-        }
-        "HEALTHY" -> {
-            title = stringResource(R.string.welcome_stage_healthy_title)
-            body = stringResource(R.string.welcome_stage_healthy_body)
-        }
-        "CRASHED_RESTARTING" -> {
-            title = stringResource(R.string.welcome_stage_crashed_title)
-            body = stringResource(R.string.welcome_stage_crashed_body)
-        }
-        "STOPPED" -> {
-            title = stringResource(R.string.welcome_stage_stopped_title)
-            body = stringResource(R.string.welcome_stage_stopped_body)
-        }
-        "FATAL" -> {
-            title = stringResource(R.string.welcome_stage_fatal_title)
-            body = stringResource(R.string.welcome_stage_fatal_body)
-        }
-        "UNSUPPORTED_DEVICE" -> {
-            title = stringResource(R.string.welcome_stage_unsupported_title)
-            body = stringResource(R.string.welcome_stage_unsupported_body)
-        }
-        else -> {
-            // "" (nothing reported yet) and STARTING both read as "coming up":
-            // the honest thing to say before the first health check is that work
-            // is in progress, not that something is wrong.
-            title = stringResource(R.string.welcome_stage_starting_title)
-            body = stringResource(R.string.welcome_stage_starting_body)
-        }
-    }
-    return title to body
 }

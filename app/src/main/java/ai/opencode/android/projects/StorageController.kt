@@ -131,7 +131,17 @@ class StorageController(private val context: Context) {
         // old root back over the user's choice. Pick a folder, tap the system's
         // "Use this folder", nothing changes. switchTo pins the root itself, so
         // the resolved directory goes in directly.
-        return switchTo(dir)
+        // 2026-11-20 (owner): the workspace is an "opencode" folder INSIDE the folder the user
+        // picked, so the user's own files are not mixed with the projects. It is created here,
+        // and it must be writable, or the pick is refused with the reason.
+        val workspace = File(dir, WORKSPACE_FOLDER)
+        if (!workspace.isDirectory && !workspace.mkdirs()) {
+            return ChangeResult(ok = false, messageKey = MessageKey.FOLDER_UNUSABLE, detail = "cannot create ${workspace.name} here")
+        }
+        if (!StorageChoice.isUsableRoot(workspace)) {
+            return ChangeResult(ok = false, messageKey = MessageKey.FOLDER_UNUSABLE, detail = "cannot write in ${workspace.name}")
+        }
+        return switchTo(workspace)
     }
 
     /** Forget the chosen folder: back to the default (shared storage when allowed). */
@@ -285,6 +295,9 @@ class StorageController(private val context: Context) {
             .filter { it.isDirectory && (it.listFiles { f -> f.isDirectory }?.isNotEmpty() == true) }
 
     companion object {
+        /** The folder created inside a folder the user picked; it is the workspace. */
+        const val WORKSPACE_FOLDER = "opencode"
+
         /** Cached per context, like the other singletons the UI reaches for once. */
         @Volatile private var instance: StorageController? = null
 

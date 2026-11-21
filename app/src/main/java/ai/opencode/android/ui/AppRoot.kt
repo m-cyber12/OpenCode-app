@@ -1213,7 +1213,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             // server (tapping its session enters the conversation).
             expandedProject = created.name
             route = nextRoute
-            repository.newSession(null)
+            // 2026-11-21: the intro's Next does not wait for the runtime, so the first chat is
+            // created only when the server is up. A failure here would show as an error on the
+            // next screen; Projects creates a session on demand anyway.
+            if (summary.ready) repository.newSession(null)
         }
     }
 
@@ -1658,15 +1661,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // project goes through it immediately (the chat shows the gold "starting"
     // state itself); a genuinely fresh install still waits on the workspace
     // step, which is a user decision, not a boot phase.
-    LaunchedEffect(summary.ready, projectName, route) {
-        if (route == ROUTE_WELCOME) {
-            val setupDone = ai.opencode.android.runtime.StorageChoice.workspaceConfirmed(context) &&
-                projectName.isNotEmpty()
-            if (summary.ready || setupDone) {
-                route = firstRunDestination(projectName, workspaceConfirmed)
-            }
-        }
-    }
+    // 2026-11-21 (owner): the intro is the landing page of a first run and waits for Next.
+    // It no longer advances by itself when the runtime is ready - setup is invisible, and a
+    // screen that moved on by itself skipped the introduction.
     // A confirm that was interrupted by the system grant screen finishes itself when
     // the app comes back (the storage change recreates the Activity, so the pending
     // flag has to be saveable for this to survive).
@@ -1790,13 +1787,8 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
             ) { screen ->
             when (screen) {
                 ROUTE_WELCOME -> WelcomeScreen(
-                    runtime = summary,
-                    // Same decision as the automatic advance below: on a first run the
-                    // next screen is the workspace step (one folder, one action), not an
-                    // empty project list. Two spellings of one rule is how a screen gets
-                    // skipped, so this is the rule.
+                    // A first run goes to the workspace step; the rule is firstRunDestination.
                     onContinue = { route = firstRunDestination(projectName, workspaceConfirmed) },
-                    onOpenSettings = { route = ROUTE_SETTINGS },
                 )
 
                 ROUTE_WORKSPACE -> WorkspaceOnboardingScreen(
@@ -1807,12 +1799,15 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     message = onboardingMessage.ifEmpty { storageMessage },
                     choice = workspaceChoice,
                     folderChosen = storage.hasChosenFolder,
-                    runtime = summary,
                     onChoose = { choice ->
                         workspaceChoice = choice
                         onboardingMessage = ""
                     },
-                    onGrantStorage = {
+                    // Choose Your Workspace: the card is the Selected Folder option, so the
+                    // choice follows the button. Storage permission first when it is missing.
+                    onChooseWorkspace = {
+                        workspaceChoice = WorkspaceChoice.SELECTED
+                        onboardingMessage = ""
                         val intent = StorageChoice.allFilesAccessIntent(context)
                         if (intent != null && !StorageChoice.hasAllFilesAccess()) {
                             pendingDocumentsPicker = true
@@ -1821,12 +1816,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                             openDocumentsPicker = true
                         }
                     },
-                    onPickFolder = { chosenFolderPicker.launch(null) },
                     onNext = { onboardingNext() },
                 )
 
                 ROUTE_ONBOARDING_PROVIDER -> ProviderOnboardingScreen(
-                    runtime = summary,
                     catalog = { addOpen, onToggleAdd ->
                         ProvidersCatalogSection(
                             providers = uiState.providers,

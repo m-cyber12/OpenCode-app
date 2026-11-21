@@ -198,6 +198,10 @@ class Transcript {
             for (raw in m.parts) parts.add(partOf(sessionID, m.id, raw))
             val info = m.info
             val error = info?.optJSONObject("error")?.let { turnErrorOf(it) }
+            // 2026-11-20 (owner, bug): a failure belongs to the turn that produced it. A user
+            // message starts a new turn, so an error from an earlier turn is no longer the
+            // session's current failure - before this, every later prompt re-showed it.
+            if (m.role == "user") lastError = null
             if (error != null && !error.isBlank) lastError = error
             messages[m.id] = Message(
                 id = m.id,
@@ -289,14 +293,16 @@ class Transcript {
     }
 
     private fun onSessionError(props: JSONObject) {
-        val err = props.optJSONObject("error") ?: return
-        val te = turnErrorOf(err)
-        if (te.isBlank) return
         val sid = props.optString("sessionID")
+        // 2026-11-21 (owner): a failed turn is over. The server sends no idle frame after an
+        // error, so without this the session stayed busy and the composer kept Pause for good.
         if (sid.isNotEmpty()) {
             touch(sid)
-            errors[sid] = te
+            setBusy(sid, false)
+            retries.remove(sid)
         }
+        val te = props.optJSONObject("error")?.let { turnErrorOf(it) }
+        if (te != null && !te.isBlank && sid.isNotEmpty()) errors[sid] = te
         dirty = true
     }
 
@@ -425,6 +431,10 @@ class Transcript {
         val existing = messages[mid]
         val error = info.optJSONObject("error")?.let { turnErrorOf(it) }?.takeIf { !it.isBlank }
         if (error != null) errors[sid] = error
+        // 2026-11-20 (owner, bug): a new user message is a new turn. The failure of the previous
+        // turn stops being the session's current error here, not only when the server reports
+        // busy again - some turns never send that status, and the error stuck to every prompt.
+        if (existing == null && info.optString("role") == "user") errors.remove(sid)
         val time = info.optJSONObject("time")
         val tokens = info.optJSONObject("tokens")
         messages[mid] = Message(

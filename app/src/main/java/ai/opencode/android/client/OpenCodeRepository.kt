@@ -240,6 +240,10 @@ class OpenCodeRepository(
             if (EventFrame.isSessionIdle(ev.type) || ev.type == "session.error") stopTodoPoll()
             if (EventFrame.isSessionIdle(ev.type)) {
                 refreshMessages("turn ended", force = true)
+            } else if (ev.type == "session.error") {
+                // 2026-11-21: the failed turn is over; fetch its history once, so the error
+                // sits on its own message and not on the next prompt.
+                refreshMessages("turn failed", force = true)
             } else if (EventFrame.isSessionStatus(ev.type) &&
                 !hasRows(_state.value.selectedSession)
             ) {
@@ -1447,7 +1451,8 @@ class OpenCodeRepository(
         if (sid.isEmpty()) return
         val st = _state.value
         when {
-            EventFrame.isSessionIdle(type) -> {
+            // 2026-11-21: an error ends the turn as an idle does (no idle frame follows it).
+            EventFrame.isSessionIdle(type) || type == "session.error" -> {
                 if (st.sessionStatus.containsKey(sid)) {
                     _state.value = st.copy(sessionStatus = st.sessionStatus - sid)
                 }

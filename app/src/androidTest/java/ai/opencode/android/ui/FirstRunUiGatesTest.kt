@@ -48,16 +48,6 @@ class FirstRunUiGatesTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val shotDir = File(context.filesDir, "screenshots")
 
-    private val stageTitles = listOf(
-        "extracting" to R.string.welcome_stage_extracting_title,
-        "starting" to R.string.welcome_stage_starting_title,
-        "healthy" to R.string.welcome_stage_healthy_title,
-        "crashed" to R.string.welcome_stage_crashed_title,
-        "stopped" to R.string.welcome_stage_stopped_title,
-        "fatal" to R.string.welcome_stage_fatal_title,
-        "unsupported" to R.string.welcome_stage_unsupported_title,
-    )
-
     // ---- thin wrappers over the rule (see UiGateSupport for the pure parts) ---
 
     private fun nodes() = rule.onAllNodes(anyNodeMatcher()).fetchSemanticsNodes()
@@ -106,7 +96,7 @@ class FirstRunUiGatesTest {
     @Test
     fun f1_firstRunCopyNeverSurfacesAHostPortTerminalOrSsh() {
         val lines = LinkedHashSet<String>()
-        val stagesSeen = LinkedHashSet<String>()
+        val setupSeen = LinkedHashSet<String>()
         val leaks = LinkedHashSet<String>()
         var sawWelcome = false
         var sawProjects = false
@@ -136,8 +126,9 @@ class FirstRunUiGatesTest {
             leaks += leakedTokens(text)
             if (exists("welcome_screen")) {
                 sawWelcome = true
-                for ((name, res) in stageTitles) {
-                    if (text.contains(context.getString(res), ignoreCase = true)) stagesSeen += name
+                // 2026-11-21 (owner): setup is invisible - no progress wording on the intro.
+                for (w in setupProgressWords) {
+                    if (text.contains(w, ignoreCase = true)) setupSeen += w
                 }
                 if (welcomeShot < 0) welcomeShot = shot("01-first-run-welcome.png")
             }
@@ -169,20 +160,21 @@ class FirstRunUiGatesTest {
         val welcomeCopy = listOf(
             R.string.welcome_title,
             R.string.welcome_tagline,
-            R.string.welcome_body,
-            R.string.welcome_action_continue,
+            R.string.welcome_card1_title,
+            R.string.welcome_card4_title,
+            R.string.onboarding_next,
         ).map { context.getString(it) }
         val copyShown = welcomeCopy.filter { all.contains(it, ignoreCase = true) }
         val (status, restarts, detail) = supervisor()
 
         val advancedToAScreen = sawProjects || sawChat || sawWorkspaceStep
-        val ok = appeared && sawWelcome && advancedToAScreen && stagesSeen.isNotEmpty() &&
+        val ok = appeared && sawWelcome && advancedToAScreen && setupSeen.isEmpty() &&
             copyShown.size == welcomeCopy.size && leaks.isEmpty() && welcomeShot > 8_000
         gate(
             "F1",
             ok,
             "firstScreen=${if (sawWelcome) "welcome" else "not-welcome"} workspaceStep=$sawWorkspaceStep " +
-                "stages=$stagesSeen " +
+                "setupShown=$setupSeen " +
                 "welcomeCopy=${copyShown.size}/${welcomeCopy.size} sampledLines=${lines.size} " +
                 "leakedTokens=$leaks continueBecameEnabled=$continueEnabled " +
                 "advancedToProjects=$sawProjects advancedToChat=$sawChat " +
@@ -194,13 +186,13 @@ class FirstRunUiGatesTest {
     // ---- F2: the runtime brings itself up ----------------------------------
 
     @Test
-    fun f2_theRuntimeInitialisesItselfAndTheAppMovesForward() {
+    fun f2_theRuntimeInitialisesItselfWhileTheIntroWaitsForNext() {
         val start = System.currentTimeMillis()
         var status = ""
         var restarts = -1
         var sawWelcome = false
-        var sawReadyStage = false
         var continueEnabled = false
+        val setupSeen = LinkedHashSet<String>()
 
         val up = waitFor(900_000) {
             val s = supervisor()
@@ -208,31 +200,39 @@ class FirstRunUiGatesTest {
             restarts = s.second
             if (exists("welcome_screen")) {
                 sawWelcome = true
-                if (allText().contains(context.getString(R.string.welcome_stage_healthy_title), ignoreCase = true)) {
-                    sawReadyStage = true
+                val text = allText()
+                for (w in setupProgressWords) {
+                    if (text.contains(w, ignoreCase = true)) setupSeen += w
                 }
                 if (enabled("welcome_continue")) continueEnabled = true
             }
-            status == RuntimeStatus.HEALTHY.name || exists("projects_screen") || exists("chat_screen")
+            status == RuntimeStatus.HEALTHY.name
         }
         val elapsedS = (System.currentTimeMillis() - start) / 1000
-        val advanced = waitFor(120_000) {
-            exists("projects_screen") || exists("chat_screen") || exists("onboarding_workspace")
-        }
         val readyShot = shot("02-first-run-ready.png")
-        val text = allText()
-        val leaks = leakedTokens(text)
+        val leaks = leakedTokens(allText())
+
+        // 2026-11-21 (owner): the intro does not move by itself. Next takes the user on.
+        var tapped = false
+        if (exists("welcome_continue") && enabled("welcome_continue")) {
+            rule.onNodeWithTag("welcome_continue").performClick()
+            tapped = true
+        }
+        val advanced = waitFor(120_000) {
+            exists("onboarding_workspace") || exists("projects_screen") || exists("chat_screen")
+        }
 
         // Nothing in this test touched the runtime: no start() call, no adb, no
         // port. If it came up, the app did it.
-        val ok = up && status == RuntimeStatus.HEALTHY.name && advanced && restarts in 0..2 &&
-            leaks.isEmpty() && readyShot > 8_000
+        val ok = up && status == RuntimeStatus.HEALTHY.name && restarts in 0..2 &&
+            sawWelcome && continueEnabled && tapped && advanced &&
+            setupSeen.isEmpty() && leaks.isEmpty() && readyShot > 8_000
         gate(
             "F2",
             ok,
             "status=$status restarts=$restarts waitedSeconds=$elapsedS sawWelcome=$sawWelcome " +
-                "readyStageShown=$sawReadyStage continueEnabled=$continueEnabled " +
-                "advancedWithoutATap=$advanced(projects=${exists("projects_screen")}," +
+                "continueEnabled=$continueEnabled setupShown=$setupSeen " +
+                "advancedAfterNext=$advanced(tapped=$tapped,projects=${exists("projects_screen")}," +
                 "chat=${exists("chat_screen")},workspace=${exists("onboarding_workspace")}) " +
                 "leakedTokens=$leaks screenshot=$readyShot",
         )
@@ -243,12 +243,18 @@ class FirstRunUiGatesTest {
     @Test
     fun f3_createAProjectAndLandInAConversation() {
         val reached = waitFor(600_000) {
-            exists("projects_screen") || exists("chat_screen") || exists("onboarding_workspace")
+            exists("welcome_screen") || exists("projects_screen") ||
+                exists("chat_screen") || exists("onboarding_workspace")
         }
         if (!reached) {
             val (status, restarts, _) = supervisor()
-            gate("F3", false, "the app never left the welcome screen (supervisor=$status restarts=$restarts)")
+            gate("F3", false, "the app never showed a first-run screen (supervisor=$status restarts=$restarts)")
             return
+        }
+        // Run on its own, F3 starts on the intro: Next takes it to the workspace step.
+        if (exists("welcome_screen") && enabled("welcome_continue")) {
+            rule.onNodeWithTag("welcome_continue").performClick()
+            waitFor(120_000) { exists("onboarding_workspace") || exists("projects_screen") || exists("chat_screen") }
         }
 
         // ---- v4 item 4: the first-run workspace step ---------------------------
@@ -258,7 +264,8 @@ class FirstRunUiGatesTest {
         if (exists("onboarding_workspace")) {
             val folderShown = exists("onboarding_workspace_path") &&
                 allText().contains("/")
-            val pickerShown = exists("onboarding_workspace_pick")
+            // 2026-11-21 (owner): "Choose Folder" is gone from the first card.
+            val pickerGone = !exists("onboarding_workspace_pick")
             val oneAction = exists("onboarding_workspace_use")
             val removedControls = !exists("files_copy_path") && !exists("files_publish") &&
                 !exists("files_storage_choose") && !exists("files_storage_default")
@@ -299,10 +306,10 @@ class FirstRunUiGatesTest {
             val leaks = leakedTokens(allText())
             gate(
                 "F3",
-                folderShown && pickerShown && oneAction && removedControls &&
+                folderShown && pickerGone && oneAction && removedControls &&
                     landedOnProjects && workspaceShown && firstExpanded && landedInChat &&
                     canType && leaks.isEmpty() && stepShot > 8_000 && afterStep > 8_000,
-                "workspaceStep=true folder=$folderShown picker=$pickerShown action=$oneAction " +
+                "workspaceStep=true folder=$folderShown pickerGone=$pickerGone action=$oneAction " +
                     "v4Removed=$removedControls landedOnProjects=$landedOnProjects " +
                     "workspaceShown=$workspaceShown firstExpanded=$firstExpanded " +
                     "landedInChat=$landedInChat composerEnabled=$canType " +
