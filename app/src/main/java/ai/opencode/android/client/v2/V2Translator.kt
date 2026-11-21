@@ -45,8 +45,11 @@ object V2Translator {
             "session.text.ended" -> partEnded(sid, data, "text")
             "session.reasoning.ended" -> partEnded(sid, data, "reasoning")
             "session.idle" -> listOf(Frame("session.idle", JSONObject().put("sessionID", sid)))
-            "session.tool.input.started" -> toolFrame(sid, data, "pending", tool = data.optString("name"), created = created)
-            "session.tool.input.ended" -> toolFrame(sid, data, "pending", input = toolInput(data.optString("text")))
+            // Owner (2026-11-21): a call is "Doing" from its first event. The model is writing the
+            // arguments during input.started..input.ended, so that is work in progress, not a queue.
+            "session.tool.input.started" -> toolFrame(sid, data, "running", tool = data.optString("name"), created = created)
+            "session.tool.input.delta" -> toolInputDelta(sid, data)
+            "session.tool.input.ended" -> toolFrame(sid, data, "running", input = toolInput(data.optString("text")))
             "session.tool.called" -> toolFrame(sid, data, "running", tool = data.optString("name"), input = data.optJSONObject("input"))
             "session.tool.progress" -> toolFrame(sid, data, "running", metadata = data.optJSONObject("metadata"))
             "session.tool.success" -> toolFrame(
@@ -133,6 +136,28 @@ object V2Translator {
     /** The tool input as an object when it is JSON, otherwise the raw text. */
     fun toolInput(text: String): Any =
         runCatching { JSONObject(text) }.getOrNull() ?: text
+
+    /**
+     * `session.tool.input.delta`: one fragment of a call's arguments while the model is still
+     * writing them. Upstream sends these live only, so nothing else carries them: the transcript
+     * appends the fragment to the part's raw input, and the card reads the partial content from it.
+     */
+    private fun toolInputDelta(sid: String, data: JSONObject): List<Frame> {
+        val mid = data.optString("assistantMessageID")
+        val callID = data.optString("id")
+        val delta = data.optString("delta")
+        if (mid.isEmpty() || callID.isEmpty() || delta.isEmpty()) return emptyList()
+        return listOf(
+            Frame(
+                "tool.input.delta",
+                JSONObject()
+                    .put("sessionID", sid)
+                    .put("messageID", mid)
+                    .put("callID", callID)
+                    .put("delta", delta),
+            ),
+        )
+    }
 
     private fun toolFrame(
         sid: String,

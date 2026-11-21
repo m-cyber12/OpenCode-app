@@ -6,6 +6,7 @@ import ai.opencode.android.client.OpenCodeApi
 import ai.opencode.android.client.ToolKind
 import ai.opencode.android.client.ToolKinds
 import ai.opencode.android.client.ToolMeta
+import ai.opencode.android.client.ToolInputPreview
 import ai.opencode.android.client.ToolMetaParser
 import ai.opencode.android.client.TodoParser
 import ai.opencode.android.client.Transcript
@@ -686,6 +687,8 @@ fun ToolCard(
     // hang `waitForIdle()` in the UI gates. The output stays a bordered mono box,
     // so the agent's own words and a command's raw output are never the same
     // surface.
+    val inFlight = part.status == "pending" || part.status == "running"
+    val liveFile = inFlight && part.tool in LIVE_FILE_TOOLS && !meta.hasDiff
     val todos = if (ToolKinds.of(part.tool) == ToolKind.TODO) {
         remember(part.input, part.metadata) { TodoParser.parse(part.input, part.metadata) }
     } else {
@@ -792,7 +795,13 @@ fun ToolCard(
             if (expanded) {
                 HorizontalDivider(thickness = 1.dp, color = chat.toolBorder)
                 Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 14.dp)) {
-                    if (part.input.isNotBlank()) {
+                    if (liveFile) {
+                        // Owner (2026-11-21): a write or edit shows what it is writing as it
+                        // arrives, not the raw JSON of its arguments. Once the server reports
+                        // a diff for the call, that diff below is the authoritative one.
+                        LiveFileContent(tool = part.tool, input = part.input)
+                        Spacer(Modifier.height(10.dp))
+                    } else if (part.input.isNotBlank()) {
                         SectionLabel(stringResource(R.string.chat_tool_section_input))
                         ScrollableMono(part.input)
                         Spacer(Modifier.height(10.dp))
@@ -851,6 +860,82 @@ fun ToolCard(
                         ScrollableMono(part.error, color = MaterialTheme.colorScheme.error)
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WaitingForContent() {
+    Text(
+        text = stringResource(R.string.chat_tool_live_waiting),
+        style = MaterialTheme.typography.bodySmall,
+        color = ChatTheme.chat.muted,
+    )
+}
+
+/** The tools whose arguments carry the content or the change being written, as it streams. */
+private val LIVE_FILE_TOOLS = setOf("write", "edit", "patch", "apply_patch")
+
+/**
+ * A write, edit or patch that is still running: its content, or its change, read from the
+ * arguments that have arrived so far. Nothing is guessed - a field the model has not written
+ * yet is not shown.
+ */
+@Composable
+private fun LiveFileContent(tool: String, input: String) {
+    val chat = ChatTheme.chat
+    when (tool) {
+        "write" -> {
+            val path = ToolInputPreview.path(input)
+            val content = ToolInputPreview.writeContent(input)
+            SectionLabel(stringResource(R.string.chat_tool_section_content))
+            if (path.isNotEmpty()) {
+                Text(text = path, style = MonoSmall, color = chat.muted)
+                Spacer(Modifier.height(4.dp))
+            }
+            if (content.isEmpty()) {
+                WaitingForContent()
+            } else {
+                Text(
+                    text = stringResource(R.string.chat_tool_live_lines, ToolInputPreview.lineCount(content)),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = chat.muted,
+                )
+                Spacer(Modifier.height(6.dp))
+                CodeBlock(language = languageOfPath(path), source = content)
+            }
+        }
+        "patch", "apply_patch" -> {
+            val patch = ToolInputPreview.patchText(input)
+            SectionLabel(stringResource(R.string.chat_tool_section_diff))
+            if (patch.isEmpty()) WaitingForContent() else CodeBlock(language = "diff", source = patch)
+        }
+        else -> {
+            // edit: the old text leaves, the new text arrives. The diff is rebuilt on every
+            // fragment, so the card shows the change as the model writes it.
+            val path = ToolInputPreview.path(input)
+            val oldText = ToolInputPreview.editOld(input)
+            val newText = ToolInputPreview.editNew(input)
+            SectionLabel(stringResource(R.string.chat_tool_section_diff))
+            if (path.isNotEmpty()) {
+                Text(text = path, style = MonoSmall, color = chat.muted)
+                Spacer(Modifier.height(4.dp))
+            }
+            if (oldText.isEmpty() && newText.isEmpty()) {
+                WaitingForContent()
+            } else {
+                Text(
+                    text = stringResource(
+                        R.string.chat_tool_diff_summary,
+                        ToolInputPreview.lineCount(newText),
+                        ToolInputPreview.lineCount(oldText),
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = chat.muted,
+                )
+                Spacer(Modifier.height(6.dp))
+                CodeBlock(language = "diff", source = ToolInputPreview.editDiff(oldText, newText))
             }
         }
     }

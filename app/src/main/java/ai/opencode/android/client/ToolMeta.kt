@@ -236,6 +236,8 @@ object ToolKinds {
         "edit" to ToolKind.FILE_EDIT,
         "multiedit" to ToolKind.FILE_EDIT,
         "apply_patch" to ToolKind.FILE_EDIT,
+        // Upstream v2 names the patch tool `patch` (packages/core/src/tool/plugin/patch.ts).
+        "patch" to ToolKind.FILE_EDIT,
         "glob" to ToolKind.SEARCH,
         "grep" to ToolKind.SEARCH,
         "list" to ToolKind.SEARCH,

@@ -162,7 +162,8 @@ class V2TranslatorTest {
         val p0 = start[0].props.getJSONObject("part")
         assertEquals(V2Translator.toolPartID(mid, id), p0.getString("id"))
         assertEquals("shell", p0.getString("tool"))
-        assertEquals("pending", p0.getJSONObject("state").getString("status"))
+        // Doing from the first event: the model is writing the arguments, not waiting in a queue.
+        assertEquals("running", p0.getJSONObject("state").getString("status"))
         assertEquals(100L, p0.getJSONObject("state").getJSONObject("time").getLong("start"))
 
         val called = V2Translator.translate(
@@ -324,5 +325,24 @@ class V2TranslatorTest {
     fun running_and_failed_compactions_map_to_nothing() {
         assertEquals(null, V2Mapping.message(compaction("running"), sid))
         assertEquals(null, V2Mapping.message(compaction("failed"), sid))
+    }
+
+    @Test
+    fun an_input_delta_becomes_a_live_fragment_for_its_call() {
+        val f = V2Translator.translate(
+            "session.tool.input.delta",
+            data("""{"sessionID":"$sid","assistantMessageID":"$mid","id":"call_9","delta":"{\"path\":"}"""),
+        )
+        assertEquals(listOf("tool.input.delta"), f.map { it.type })
+        assertEquals(sid, f[0].props.getString("sessionID"))
+        assertEquals(mid, f[0].props.getString("messageID"))
+        assertEquals("call_9", f[0].props.getString("callID"))
+        assertEquals("{\"path\":", f[0].props.getString("delta"))
+    }
+
+    @Test
+    fun an_empty_or_unaddressed_input_delta_emits_nothing() {
+        assertTrue(V2Translator.translate("session.tool.input.delta", data("""{"sessionID":"$sid","assistantMessageID":"$mid","id":"c","delta":""}""")).isEmpty())
+        assertTrue(V2Translator.translate("session.tool.input.delta", data("""{"sessionID":"$sid","id":"c","delta":"x"}""")).isEmpty())
     }
 }

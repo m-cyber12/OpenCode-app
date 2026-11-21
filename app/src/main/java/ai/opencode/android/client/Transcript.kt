@@ -1,5 +1,6 @@
 package ai.opencode.android.client
 
+import ai.opencode.android.client.v2.V2Translator
 import org.json.JSONObject
 
 /**
@@ -237,6 +238,7 @@ class Transcript {
         when {
             type == "message.part.updated" -> onPartUpdated(props)
             type == "message.part.delta" -> onPartDelta(props)
+            type == "tool.input.delta" -> onToolInputDelta(props)
             type == "message.part.removed" -> onPartRemoved(props)
             type == "message.updated" -> onMessageUpdated(props)
             type == "session.updated" -> onSessionUpdated(props)
@@ -346,6 +348,31 @@ class Transcript {
         if (idx < 0) return
         val parts = ArrayList(existing.parts)
         parts[idx] = parts[idx].copy(text = parts[idx].text + delta)
+        messages[mid] = existing.copy(parts = parts)
+        touch(sid)
+        dirty = true
+    }
+
+    /**
+     * A fragment of a tool call's arguments, streamed while the model writes them (owner,
+     * 2026-11-21: Write and Edit cards must show what is being written as it arrives). The
+     * fragment extends the part's raw input; `input.ended` later replaces it with the full call.
+     */
+    private fun onToolInputDelta(props: JSONObject) {
+        val sid = props.optString("sessionID")
+        val mid = props.optString("messageID")
+        val callID = props.optString("callID")
+        val delta = props.optString("delta")
+        if (sid.isEmpty() || mid.isEmpty() || callID.isEmpty() || delta.isEmpty()) return
+        val existing = messages[mid] ?: return
+        val partID = V2Translator.toolPartID(mid, callID)
+        val idx = existing.parts.indexOfFirst { it.id == partID }
+        if (idx < 0) return
+        val parts = ArrayList(existing.parts)
+        val part = parts[idx]
+        // Scrubbed as a whole each time: a redacted name that is split across two fragments is
+        // caught once its last fragment arrives.
+        parts[idx] = part.copy(input = AccountRedaction.scrub(part.input + delta))
         messages[mid] = existing.copy(parts = parts)
         touch(sid)
         dirty = true
