@@ -45,6 +45,7 @@ echo "v2 source: $(git -C "$V2_WORK" rev-parse --short HEAD) ($V2_TAG)"
 # tests run against the patched tree's scanner (Node 22+ strips the TypeScript types).
 python3 "$HERE/../../phase4/payload/v2-patches/apply-permission-guard.py" "$V2_WORK" 2>&1 | tee -a "$LOG"
 python3 "$HERE/../../phase4/payload/v2-patches/apply-noexec-shell.py" "$V2_WORK" 2>&1 | tee -a "$LOG"
+python3 "$HERE/../../phase4/payload/v2-patches/apply-tool-input-delta.py" "$V2_WORK" 2>&1 | tee -a "$LOG"
 SCAN_COPY=/tmp/v2-shell-scan.ts
 sed '/^export \* as ShellScan from/d' "$V2_WORK/packages/core/src/shell/scan.ts" > "$SCAN_COPY"
 V2_SHELL_SCAN="$SCAN_COPY" node --test --experimental-strip-types \
