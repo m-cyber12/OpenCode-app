@@ -274,9 +274,14 @@ class FirstRunUiGatesTest {
             // Default Workspace card needs no system picker, so the gate takes it.
             rule.onNodeWithTag("onboarding_option_default").performClick()
             rule.onNodeWithTag("onboarding_workspace_use").performClick()
-            // The second screen: Start opens Projects.
+            // 2026-11-21 (owner): the permission page comes next. Next keeps the defaults.
+            waitFor(60_000) { exists("onboarding_permission") }
+            rule.onNodeWithTag("onboarding_permission_next").performClick()
+            // The provider step: a fresh install has no saved key, so Start is locked and
+            // "I'll do this later" is the way on (it opens Projects too).
             waitFor(60_000) { exists("onboarding_provider") }
-            rule.onNodeWithTag("onboarding_provider_start").performClick()
+            val startLocked = !enabled("onboarding_provider_start")
+            rule.onNodeWithTag("onboarding_provider_later").performClick()
             // v6: post-setup landing is the projects page itself. v9.41 (owner
             // item 11) moved the workspace path box out of this page (it is in
             // Settings > Workspace now), so the gate reads the landing proof
@@ -306,10 +311,10 @@ class FirstRunUiGatesTest {
             val leaks = leakedTokens(allText())
             gate(
                 "F3",
-                folderShown && pickerGone && oneAction && removedControls &&
+                folderShown && pickerGone && oneAction && removedControls && startLocked &&
                     landedOnProjects && workspaceShown && firstExpanded && landedInChat &&
                     canType && leaks.isEmpty() && stepShot > 8_000 && afterStep > 8_000,
-                "workspaceStep=true folder=$folderShown pickerGone=$pickerGone action=$oneAction " +
+                "workspaceStep=true folder=$folderShown pickerGone=$pickerGone action=$oneAction startLocked=$startLocked " +
                     "v4Removed=$removedControls landedOnProjects=$landedOnProjects " +
                     "workspaceShown=$workspaceShown firstExpanded=$firstExpanded " +
                     "landedInChat=$landedInChat composerEnabled=$canType " +

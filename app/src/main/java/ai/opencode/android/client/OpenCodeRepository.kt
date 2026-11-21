@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
@@ -445,7 +447,7 @@ class OpenCodeRepository(
                 launch {
                     runCatching { api.globalConfig() }.onSuccess { cfg ->
                         val effective = enforceAskDefaults(cfg)
-                        _state.update { st -> st.copy(permissionPolicy = parsePermissionPolicy(effective)) }
+                        _state.update { st -> st.copy(permissionPolicy = parsePermissionPolicy(effective) + pendingPermission) }
                     }.onFailure { errors.add("config: ${it.message}") }
                 }
                 launch(start = CoroutineStart.UNDISPATCHED) {
@@ -1247,36 +1249,68 @@ class OpenCodeRepository(
     }
 
     /**
-     * Set one permission key's policy (`permission.<key> = ask|allow|deny`)
-     * through OpenCode's own config patch, then re-read the config so the
-     * settings table reflects what the server actually stored.
+     * Permission choices the server has not confirmed yet, by key. A config re-read keeps
+     * them, so a read that lands mid-write cannot undo a tap.
+     */
+    private val pendingPermission = java.util.concurrent.ConcurrentHashMap<String, String>()
+
+    /** Permission writes run one at a time, in the order they were tapped. */
+    private val permissionWrites = Mutex()
+
+    /**
+     * Set one permission key's policy (`permission.<key> = ask|allow|deny`).
+     *
+     * 2026-11-21 (owner): the tapped value shows at once and nothing waits for the server.
+     * The write runs in the background. If the server does not take it, the table goes back
+     * to what the config stores, and the error says so.
      */
     fun setPermissionPolicy(key: String, action: String) {
+        pendingPermission[key] = action
+        _state.update { st ->
+            st.copy(
+                permissionPolicy = st.permissionPolicy + (key to action),
+                // 2026-11-20 (owner): a toggle takes seconds - Settings shows it is being applied.
+                pendingPermissionKeys = st.pendingPermissionKeys + key,
+            )
+        }
         scope.launch {
-            // 2026-11-20 (owner): a toggle takes seconds - the row shows it is being applied.
-            _state.update { st -> st.copy(pendingPermissionKeys = st.pendingPermissionKeys + key) }
-            try {
-                val patch = JSONObject().put("permission", JSONObject().put(key, action))
-                runCatching { api.patchGlobalConfig(patch) }
-                    .onSuccess {
-                        // v8 fix round (owner's issue 4): a loaded instance keeps the
-                        // config it booted with, so a patched policy only governed
-                        // the NEXT project the server loaded - the running one kept
-                        // acting on the old rules and the table looked decorative.
-                        // Disposing the loaded instances (the same remedy Phase 9
-                        // proved for stale credentials) makes the new policy real
-                        // from the next turn onward.
-                        runCatching { api.dispose() }
-                        runCatching { api.globalConfig() }.onSuccess { cfg ->
-                            _state.value = _state.value.copy(
-                                permissionPolicy = parsePermissionPolicy(cfg),
-                                notice = "permission $key -> $action",
-                            )
+            permissionWrites.withLock {
+                val wanted = pendingPermission[key] ?: return@withLock
+                try {
+                    val patch = JSONObject().put("permission", JSONObject().put(key, wanted))
+                    runCatching { api.patchGlobalConfig(patch) }
+                        .onSuccess {
+                            pendingPermission.remove(key, wanted)
+                            // v8 fix round (owner's issue 4): a loaded instance keeps the
+                            // config it booted with, so a patched policy only governed
+                            // the NEXT project the server loaded - the running one kept
+                            // acting on the old rules and the table looked decorative.
+                            // Disposing the loaded instances (the same remedy Phase 9
+                            // proved for stale credentials) makes the new policy real
+                            // from the next turn onward.
+                            runCatching { api.dispose() }
+                            refreshPermissionPolicy(notice = "permission $key -> $wanted")
                         }
-                    }
-                    .onFailure { fail("permission policy", it) }
-            } finally {
-                _state.update { st -> st.copy(pendingPermissionKeys = st.pendingPermissionKeys - key) }
+                        .onFailure {
+                            pendingPermission.remove(key, wanted)
+                            refreshPermissionPolicy(notice = "")
+                            fail("permission policy", it)
+                        }
+                } finally {
+                    _state.update { st -> st.copy(pendingPermissionKeys = st.pendingPermissionKeys - key) }
+                }
+            }
+        }
+    }
+
+    /** Re-read the stored policy, keeping any choice that is still being written. */
+    private fun refreshPermissionPolicy(notice: String) {
+        runCatching { api.globalConfig() }.onSuccess { cfg ->
+            _state.update { st ->
+                st.copy(
+                    permissionPolicy = parsePermissionPolicy(cfg) + pendingPermission,
+                    notice = if (notice.isEmpty()) st.notice else notice,
+                )
             }
         }
     }

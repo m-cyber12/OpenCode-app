@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 fun ProviderOnboardingScreen(
+    /** A key is saved, so Start may open Projects. Without one, only "I'll do this later" works. */
+    canStart: Boolean,
     /** The providers list. The lambda gets the add-form state and the toggle for it. */
     catalog: @Composable (addOpen: Boolean, onToggleAdd: () -> Unit) -> Unit,
     /** The custom-provider form, shown under the list while it is open. */
@@ -65,12 +67,22 @@ fun ProviderOnboardingScreen(
         Spacer(Modifier.height(16.dp))
         Button(
             onClick = onStart,
+            enabled = canStart,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp)
                 .semantics { testTag = "onboarding_provider_start" },
         ) {
             Text(stringResource(R.string.onboarding_start))
+        }
+        if (!canStart) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = stringResource(R.string.onboarding_start_needs_key),
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.muted,
+                modifier = Modifier.semantics { testTag = "onboarding_start_needs_key" },
+            )
         }
         Spacer(Modifier.height(8.dp))
         OutlinedButton(

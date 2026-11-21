@@ -31,6 +31,7 @@ import ai.opencode.android.ui.common.ProjectTab
 import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.ui.common.ThemeChoice
 import ai.opencode.android.ui.common.toSummary
+import ai.opencode.android.ui.onboarding.PermissionOnboardingScreen
 import ai.opencode.android.ui.onboarding.ProviderOnboardingScreen
 import ai.opencode.android.ui.onboarding.WorkspaceChoice
 import ai.opencode.android.ui.onboarding.WorkspaceOnboardingScreen
@@ -131,6 +132,7 @@ private const val ROUTE_TERMINAL = "terminal"
 private const val ROUTE_WORKSPACE = "workspace"
 
 // 2026-11-20 (owner, item 6): the second onboarding screen - connect a provider, then Start.
+private const val ROUTE_ONBOARDING_PERMISSION = "onboarding_permission"
 private const val ROUTE_ONBOARDING_PROVIDER = "onboarding_provider"
 
 @Composable
@@ -1258,14 +1260,14 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     pendingOnboarding = true
                     (context as? Activity)?.recreate()
                 } else {
-                    confirmWorkspace(ROUTE_ONBOARDING_PROVIDER)
+                    confirmWorkspace(ROUTE_ONBOARDING_PERMISSION)
                 }
             } else if (workspaceChoice == WorkspaceChoice.SELECTED) {
                 if (!storage.hasChosenFolder) {
                     onboardingMessage = context.getString(R.string.onboarding_selected_needs_folder)
                     return@launch
                 }
-                confirmWorkspace(ROUTE_ONBOARDING_PROVIDER)
+                confirmWorkspace(ROUTE_ONBOARDING_PERMISSION)
             }
         }
     }
@@ -1668,7 +1670,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // the app comes back (the storage change recreates the Activity, so the pending
     // flag has to be saveable for this to survive).
     LaunchedEffect(route, storage.rootPath, pendingOnboarding) {
-        if (route == ROUTE_WORKSPACE && pendingOnboarding) confirmWorkspace(ROUTE_ONBOARDING_PROVIDER)
+        if (route == ROUTE_WORKSPACE && pendingOnboarding) confirmWorkspace(ROUTE_ONBOARDING_PERMISSION)
     }
 
     val appVersion = remember(context) {
@@ -1681,6 +1683,13 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     var storedIds by remember { mutableStateOf("") }
     var storedIdList by remember { mutableStateOf(emptyList<String>()) }
     var hardwareBacked by remember { mutableStateOf("") }
+    // 2026-11-21 (owner): Start on the provider step follows the keys saved there. A save
+    // sets and then clears the connecting state and updates the provider list, so this reads again then.
+    LaunchedEffect(route, uiState.connectingProviders, uiState.providers) {
+        if (route == ROUTE_ONBOARDING_PROVIDER) {
+            storedIdList = withContext(Dispatchers.IO) { container.storedProviderIds() }
+        }
+    }
     LaunchedEffect(route) {
         // v9.1: the Providers surface shows the same Keystore facts Settings used to.
         if (route == ROUTE_SETTINGS || route == ROUTE_PROVIDERS) {
@@ -1819,7 +1828,18 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onNext = { onboardingNext() },
                 )
 
+                ROUTE_ONBOARDING_PERMISSION -> PermissionOnboardingScreen(
+                    // 2026-11-21 (owner): the five permissions sit on this page. A tap shows at once;
+                    // the server write runs in the background and Next does not wait for it.
+                    policy = uiState.permissionPolicy,
+                    onPolicy = { key, action -> repository.setPermissionPolicy(key, action) },
+                    onBashPolicy = { policy -> repository.setPermissionPolicy("bash", policy) },
+                    onNext = { route = ROUTE_ONBOARDING_PROVIDER },
+                )
+
                 ROUTE_ONBOARDING_PROVIDER -> ProviderOnboardingScreen(
+                    // 2026-11-21 (owner): Start needs a saved key. Without one, only "I'll do this later" works.
+                    canStart = storedIdList.isNotEmpty(),
                     catalog = { addOpen, onToggleAdd ->
                         ProvidersCatalogSection(
                             providers = uiState.providers,

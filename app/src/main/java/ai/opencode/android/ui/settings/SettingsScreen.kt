@@ -2154,7 +2154,7 @@ private fun ProviderSection(providerSetup: ProviderSetup, connectedCount: Int) {
 // ---- permissions -----------------------------------------------------------
 
 /** The permission kinds this screen edits; anything else is left to "ask". */
-private val PERMISSION_KEYS = listOf("bash", "edit", "read", "webfetch", "external_directory")
+internal val PERMISSION_KEYS = listOf("bash", "edit", "read", "webfetch", "external_directory")
 
 // ---- workspace (v4 items 1 and 4) ------------------------------------------
 
@@ -2350,7 +2350,7 @@ private fun PermissionsSection(
 }
 
 @Composable
-private fun permissionLabelRes(key: String): Int? = when (key) {
+internal fun permissionLabelRes(key: String): Int? = when (key) {
     "bash" -> R.string.settings_permission_bash
     "edit" -> R.string.settings_permission_edit
     "read" -> R.string.settings_permission_read
@@ -2368,8 +2368,9 @@ private fun permissionValueLabel(value: String): String = stringResource(
     },
 )
 
+/** One permission row; shared by Settings and the onboarding permission page. */
 @Composable
-private fun PermissionToolRow(
+internal fun PermissionToolRow(
     label: String,
     current: String,
     /** 2026-11-20 (owner): the change is being applied - spinner, and the buttons lock. */
