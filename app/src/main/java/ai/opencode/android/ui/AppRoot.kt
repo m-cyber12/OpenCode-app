@@ -1861,6 +1861,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                             onAddCustomProvider = { id, name, baseUrl, models, key ->
                                 repository.addCustomProvider(id, name, baseUrl, CustomProviderConfig.parseModels(models), key, secrets)
                             },
+                            customProviderStatus = uiState.customProviderStatus,
                         )
                     },
                     onStart = { route = ROUTE_PROJECTS },
@@ -2325,6 +2326,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         onAddCustomProvider = { id, name, baseUrl, models, key ->
                         repository.addCustomProvider(id, name, baseUrl, CustomProviderConfig.parseModels(models), key, secrets)
                         },
+                        customProviderStatus = uiState.customProviderStatus,
                         onRevokeKey = { providerId -> repository.revokeProvider(providerId, secrets) },
                         providerSetup = providerSetup,
                         onBack = { route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT },

@@ -5,6 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ai.opencode.android.client.v2.JsoncEdit
 
 /**
  * Phase 10 continuation v4, item 2: "search the catalog, tap a provider, type only
@@ -116,5 +117,44 @@ class ProviderCatalogTest {
     fun aBlankDisplayNameFallsBackToTheIdRatherThanAnEmptyLabel() {
         val patch = CustomProviderConfig.patchFor("9router", "   ", "http://h/v1", listOf("m"))!!
         assertEquals("9router", patch.getJSONObject("provider").getJSONObject("9router").getString("name"))
+    }
+
+    /**
+     * 2026-11-21 (owner): "I fill every field and tap Add and nothing happens". The config writer
+     * had no `provider` case, so every add threw 501 and the message went to a screen that does not
+     * show it. These pin the document the writer now produces, and the reason for each refusal.
+     */
+    @Test
+    fun theProviderBlockIsWrittenIntoTheConfigAndKeepsOtherProviders() {
+        val text = "{\n  // my note\n  \"provider\": {\n    \"other\": { \"npm\": \"x\" }\n  }\n}\n"
+        val patch = CustomProviderConfig.patchFor("9router", "9router", "http://h:20128/v1", listOf("my-model"))!!
+        val merged = CustomProviderConfig.mergeProviders(
+            org.json.JSONObject(JsoncEdit.stripComments(text)).optJSONObject("provider"),
+            patch.getJSONObject("provider"),
+        )
+        val written = JsoncEdit.withKey(text, "provider", merged.toString(2))
+        val back = JsoncEdit.parseObject(written).getJSONObject("provider")
+        assertTrue("the existing provider survives", back.has("other"))
+        assertEquals("http://h:20128/v1", back.getJSONObject("9router").getJSONObject("options").getString("baseURL"))
+        assertTrue(back.getJSONObject("9router").getJSONObject("models").has("my-model"))
+        assertTrue("the user's comment survives", written.contains("// my note"))
+    }
+
+    @Test
+    fun aSecondAddReplacesOnlyItsOwnId() {
+        val existing = org.json.JSONObject().put("9router", org.json.JSONObject().put("name", "old"))
+        val added = org.json.JSONObject().put("local", org.json.JSONObject().put("name", "local"))
+        val merged = CustomProviderConfig.mergeProviders(existing, added)
+        assertEquals("old", merged.getJSONObject("9router").getString("name"))
+        assertEquals("local", merged.getJSONObject("local").getString("name"))
+    }
+
+    @Test
+    fun eachRefusalNamesTheFieldThatIsWrong() {
+        assertTrue(CustomProviderConfig.problemWith("Bad Id", "http://h/v1", listOf("m"))!!.contains("provider id"))
+        assertTrue(CustomProviderConfig.problemWith("ok", "192.168.1.10:20128", listOf("m"))!!.contains("base URL"))
+        assertTrue(CustomProviderConfig.problemWith("ok", "httpfoo", listOf("m"))!!.contains("base URL"))
+        assertTrue(CustomProviderConfig.problemWith("ok", "http://h/v1", emptyList())!!.contains("model"))
+        assertNull(CustomProviderConfig.problemWith("9router", "https://h/v1", listOf("m")))
     }
 }

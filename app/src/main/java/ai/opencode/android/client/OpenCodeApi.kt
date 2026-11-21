@@ -625,6 +625,13 @@ class OpenCodeApi(
                     )
                     JsoncEdit.withKey(text, "permissions", rules.toString(2))
                 }
+                // 2026-11-21 (owner): "add provider" always sends this key. Before this branch
+                // it hit the else below, so every custom provider failed with status 501.
+                "provider" -> JsoncEdit.withKey(
+                    text,
+                    "provider",
+                    CustomProviderConfig.mergeProviders(current.optJSONObject("provider"), patch.getJSONObject(key)).toString(2),
+                )
                 else -> throw ApiException(501, "", "config key \"$key\" is not written by the app yet")
             }
         }

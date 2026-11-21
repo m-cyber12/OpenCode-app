@@ -100,6 +100,35 @@ object CustomProviderConfig {
             .distinct()
 
     /**
+     * Why [patchFor] would refuse these inputs, in words the user can act on.
+     * Null when the inputs can produce a provider. The API key is checked by the caller.
+     *
+     * 2026-11-21 (owner): the form used to refuse without saying which field, so the
+     * tap looked like it did nothing. The message names the field.
+     */
+    fun problemWith(providerID: String, baseUrl: String, models: List<String>): String? {
+        if (!isUsableId(providerID)) {
+            return "the provider id must use lowercase letters, digits, dot, underscore or dash, for example \"9router\""
+        }
+        val url = baseUrl.trim()
+        if (!(url.startsWith("http://") || url.startsWith("https://"))) {
+            return "the base URL must start with http:// or https://"
+        }
+        if (models.isEmpty()) return "list at least one model id"
+        return null
+    }
+
+    /**
+     * The `provider` object after an add: every id already there is kept, and the ids in
+     * [added] are set. Adding one provider must never drop another one's config.
+     */
+    fun mergeProviders(existing: JSONObject?, added: JSONObject): JSONObject {
+        val out = JSONObject(existing?.toString() ?: "{}")
+        for (id in added.keys()) out.put(id, added.get(id))
+        return out
+    }
+
+    /**
      * The `PATCH /global/config` body that registers the provider.
      *
      * Returns null when the input cannot produce a usable provider (bad id, no
@@ -115,9 +144,7 @@ object CustomProviderConfig {
     ): JSONObject? {
         val id = providerID.trim()
         val url = baseUrl.trim()
-        if (!isUsableId(id)) return null
-        if (url.isEmpty() || !url.startsWith("http")) return null
-        if (models.isEmpty()) return null
+        if (problemWith(providerID, baseUrl, models) != null) return null
         val modelsJson = JSONObject()
         for (m in models) {
             modelsJson.put(m, JSONObject().put("name", m))

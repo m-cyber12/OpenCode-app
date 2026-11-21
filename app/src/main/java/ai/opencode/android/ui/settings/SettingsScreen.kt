@@ -1328,6 +1328,8 @@ private fun ModelList(
 // and everything left in this section is the manual custom-provider block.
 internal fun KeysSection(
     onAddCustomProvider: (String, String, String, String, String) -> Unit = { _, _, _, _, _ -> },
+    /** What the last add said (refused, in progress, added, failed). Empty when nothing was tried. */
+    customProviderStatus: String = "",
 ) {
     val chat = ChatTheme.chat
     var customId by rememberSaveable { mutableStateOf("") }
@@ -1403,6 +1405,16 @@ internal fun KeysSection(
             modifier = Modifier.height(46.dp).fillMaxWidth().semantics { testTag = "custom_provider_save" },
         ) {
             Text(stringResource(R.string.settings_custom_save))
+        }
+        // 2026-11-21 (owner): a tap that did nothing visible. The result now prints here.
+        if (customProviderStatus.isNotEmpty()) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = customProviderStatus,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (customProviderStatus.startsWith("Not added")) MaterialTheme.colorScheme.error else chat.muted,
+                modifier = Modifier.semantics { testTag = "custom_provider_status" },
+            )
         }
     }
 }
@@ -2844,6 +2856,7 @@ fun ProvidersScreen(
     onUseKey: (String, String) -> Unit = { _, _ -> },
     onDeleteKey: (String, String) -> Unit = { _, _ -> },
     onAddCustomProvider: (String, String, String, String, String) -> Unit = { _, _, _, _, _ -> },
+    customProviderStatus: String = "",
     providerSetup: ProviderSetup = ProviderSetup.UNKNOWN,
     /** v9.41 (owner item 22): pick a model AND its thinking level at once. */
     onSetThinking: (String, String, String) -> Unit = { providerID, modelID, _ -> onSetModel(providerID, modelID) },
@@ -2899,7 +2912,7 @@ fun ProvidersScreen(
             // tile that asked for it, inside the same scroll.
             if (addOpen) {
                 item(key = "keys") {
-                    KeysSection(onAddCustomProvider = onAddCustomProvider)
+                    KeysSection(onAddCustomProvider = onAddCustomProvider, customProviderStatus = customProviderStatus)
                 }
             }
             item(key = "models_catalog") {

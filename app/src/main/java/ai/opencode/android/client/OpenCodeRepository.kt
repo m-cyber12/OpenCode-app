@@ -120,6 +120,8 @@ class OpenCodeRepository(
         /** True once GET /global/health answered (the local agent is reachable). */
         val serverReachable: Boolean = false,
         val notice: String = "",
+        /** Result of the custom-provider form, shown under the form (empty when nothing was tried). */
+        val customProviderStatus: String = "",
         /** Files staged for the next prompt, as upstream `FilePartInput`s. */
         val attachments: List<OpenCodeApi.Attachment> = emptyList(),
         /** Composer text. Owned by the client; the server has no draft concept. */
@@ -1076,17 +1078,24 @@ class OpenCodeRepository(
         apiKey: String,
         store: ai.opencode.android.security.SecretStore,
     ) {
+        val id = providerID.trim()
+        // 2026-11-21 (owner): every outcome now says something on the form. Before, a refused
+        // or failed add only wrote state.error, which the onboarding and Settings screens do not show.
+        val problem = CustomProviderConfig.problemWith(id, baseUrl, models)
+            ?: if (apiKey.isBlank()) "paste the API key" else null
+        if (problem != null) {
+            _state.value = _state.value.copy(
+                error = "custom provider needs a lowercase id (a-z, 0-9, . _ -), an http(s) base URL and at least one model id",
+                errorKind = AgentAvailability.UNKNOWN,
+                customProviderStatus = "Not added: $problem.",
+            )
+            return
+        }
+        _state.value = _state.value.copy(customProviderStatus = "Adding $id...")
         scope.launch {
             try {
-                val patch = CustomProviderConfig.patchFor(providerID, displayName, baseUrl, models)
-                if (patch == null) {
-                    _state.value = _state.value.copy(
-                        error = "custom provider needs a lowercase id (a-z, 0-9, . _ -), an http(s) base URL and at least one model id",
-                        errorKind = AgentAvailability.UNKNOWN,
-                    )
-                    return@launch
-                }
-                val id = providerID.trim()
+                val patch = CustomProviderConfig.patchFor(id, displayName, baseUrl, models)
+                    ?: error("the provider settings were refused")
                 api.patchGlobalConfig(patch)
                 store.put(ai.opencode.android.security.SecretNames.providerSecretName(id), apiKey)
                 api.setProviderAuth(id, apiKey)
@@ -1097,14 +1106,22 @@ class OpenCodeRepository(
                 else if (firstModel != null) OpenCodeApi.ModelRef(id, firstModel)
                 else defaultModelHint(p, prefer = id) ?: cur
                 if (next != null) runCatching { modelPreference?.rememberModel(next) }
+                val listed = p.allIds.contains(id)
                 _state.value = _state.value.copy(
                     providers = p,
                     model = next,
                     notice = "custom provider $id stored (config + Keystore); " +
-                        "the agent reports it in the catalog: " + p.allIds.contains(id),
+                        "the agent reports it in the catalog: " + listed,
                     error = "",
+                    customProviderStatus = if (listed) {
+                        "Added $id with ${models.size} model${if (models.size == 1) "" else "s"}. It is in the provider list."
+                    } else {
+                        "Saved $id, but the agent does not list it yet. Check the base URL, then tap Add again."
+                    },
                 )
             } catch (t: Throwable) {
+                val reason = AccountRedaction.scrub(t.message ?: t.javaClass.simpleName).take(200)
+                _state.value = _state.value.copy(customProviderStatus = "Not added: $reason")
                 fail("custom provider", t)
             }
         }
