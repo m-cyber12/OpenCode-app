@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 import ai.opencode.android.R
 import ai.opencode.android.client.AgentAvailability
+import ai.opencode.android.client.CustomProviderConfig
 import ai.opencode.android.client.OpenCodeApi
 import ai.opencode.android.client.OpenCodeRepository
 import ai.opencode.android.client.ProviderSetup
@@ -1330,6 +1331,10 @@ internal fun KeysSection(
     onAddCustomProvider: (String, String, String, String, String) -> Unit = { _, _, _, _, _ -> },
     /** What the last add said (refused, in progress, added, failed). Empty when nothing was tried. */
     customProviderStatus: String = "",
+    /** The saved provider being edited, or null for a new one. Fills the form when it changes. */
+    editing: CustomProviderConfig.Saved? = null,
+    /** Called when the form opens, so an old result is not shown again. */
+    onFormOpened: () -> Unit = {},
 ) {
     val chat = ChatTheme.chat
     var customId by rememberSaveable { mutableStateOf("") }
@@ -1337,6 +1342,15 @@ internal fun KeysSection(
     var customBaseUrl by rememberSaveable { mutableStateOf("") }
     var customModels by rememberSaveable { mutableStateOf("") }
     var customKey by rememberSaveable { mutableStateOf("") }
+    // Opening the form (new or edit) fills it from [editing] and clears the last result.
+    LaunchedEffect(editing) {
+        onFormOpened()
+        customId = editing?.id.orEmpty()
+        customName = editing?.name.orEmpty()
+        customBaseUrl = editing?.baseUrl.orEmpty()
+        customModels = editing?.models?.joinToString(", ").orEmpty()
+        customKey = ""
+    }
     SectionCard(
         title = stringResource(R.string.settings_section_keys),
         body = stringResource(R.string.settings_keys_body),
@@ -1352,6 +1366,7 @@ internal fun KeysSection(
             onValueChange = { customId = it },
             label = { Text(stringResource(R.string.settings_custom_id)) },
             singleLine = true,
+            readOnly = editing != null,
             modifier = Modifier.fillMaxWidth().semantics { testTag = "custom_provider_id" },
         )
         Spacer(Modifier.height(8.dp))
@@ -1400,11 +1415,12 @@ internal fun KeysSection(
                 )
                 customKey = ""
             },
+            // Editing keeps the stored key when the key field is left blank.
             enabled = customId.isNotBlank() && customBaseUrl.isNotBlank() &&
-                customModels.isNotBlank() && customKey.isNotBlank(),
+                customModels.isNotBlank() && (customKey.isNotBlank() || editing != null),
             modifier = Modifier.height(46.dp).fillMaxWidth().semantics { testTag = "custom_provider_save" },
         ) {
-            Text(stringResource(R.string.settings_custom_save))
+            Text(stringResource(if (editing != null) R.string.settings_custom_save_edit else R.string.settings_custom_save))
         }
         // 2026-11-21 (owner): a tap that did nothing visible. The result now prints here.
         if (customProviderStatus.isNotEmpty()) {
@@ -1415,6 +1431,81 @@ internal fun KeysSection(
                 color = if (customProviderStatus.startsWith("Not added")) MaterialTheme.colorScheme.error else chat.muted,
                 modifier = Modifier.semantics { testTag = "custom_provider_status" },
             )
+        }
+    }
+}
+
+/** One custom provider the user added, with Edit and Remove. Remove asks first (it deletes the key too). */
+@Composable
+internal fun CustomProviderRow(
+    saved: CustomProviderConfig.Saved,
+    onEdit: (CustomProviderConfig.Saved) -> Unit,
+    onRemove: (String) -> Unit,
+) {
+    val chat = ChatTheme.chat
+    var confirmRemove by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).semantics { testTag = "custom_provider_row_${saved.id}" },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(text = saved.name, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = stringResource(R.string.settings_custom_row_detail, saved.id, saved.baseUrl, saved.models.size),
+                style = MaterialTheme.typography.bodySmall,
+                color = chat.muted,
+            )
+        }
+        TextButton(
+            onClick = { onEdit(saved) },
+            modifier = Modifier.semantics { testTag = "custom_provider_edit_${saved.id}" },
+        ) {
+            Text(stringResource(R.string.settings_custom_edit))
+        }
+        TextButton(
+            onClick = { confirmRemove = true },
+            modifier = Modifier.semantics { testTag = "custom_provider_remove_${saved.id}" },
+        ) {
+            Text(stringResource(R.string.settings_custom_remove), color = MaterialTheme.colorScheme.error)
+        }
+    }
+    if (confirmRemove) {
+        AlertDialog(
+            onDismissRequest = { confirmRemove = false },
+            title = { Text(stringResource(R.string.settings_custom_remove_title, saved.name)) },
+            text = { Text(stringResource(R.string.settings_custom_remove_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmRemove = false
+                    onRemove(saved.id)
+                }) {
+                    Text(stringResource(R.string.settings_custom_remove), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmRemove = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        )
+    }
+}
+
+/** The custom providers in a plain column (the onboarding screen). Settings uses items() in its LazyColumn. */
+@Composable
+internal fun CustomProvidersList(
+    providers: List<CustomProviderConfig.Saved>,
+    onEdit: (CustomProviderConfig.Saved) -> Unit,
+    onRemove: (String) -> Unit,
+) {
+    if (providers.isEmpty()) return
+    Column(Modifier.fillMaxWidth().semantics { testTag = "custom_provider_list" }) {
+        Text(
+            text = stringResource(R.string.settings_custom_list_title),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        for (saved in providers) {
+            CustomProviderRow(saved = saved, onEdit = onEdit, onRemove = onRemove)
         }
     }
 }
@@ -2857,6 +2948,9 @@ fun ProvidersScreen(
     onDeleteKey: (String, String) -> Unit = { _, _ -> },
     onAddCustomProvider: (String, String, String, String, String) -> Unit = { _, _, _, _, _ -> },
     customProviderStatus: String = "",
+    customProviders: List<CustomProviderConfig.Saved> = emptyList(),
+    onRemoveCustomProvider: (String) -> Unit = {},
+    onClearCustomStatus: () -> Unit = {},
     providerSetup: ProviderSetup = ProviderSetup.UNKNOWN,
     /** v9.41 (owner item 22): pick a model AND its thinking level at once. */
     onSetThinking: (String, String, String) -> Unit = { providerID, modelID, _ -> onSetModel(providerID, modelID) },
@@ -2866,6 +2960,7 @@ fun ProvidersScreen(
     // the Providers card ("Add Your Own..."), and the form opens right below
     // it, so the thing you tap and the thing that appears are neighbours.
     var addOpen by rememberSaveable { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<CustomProviderConfig.Saved?>(null) }
     Column(modifier = modifier.fillMaxSize().semantics { testTag = "providers_screen" }) {
         AppTopBar(
             title = stringResource(R.string.providers_title),
@@ -2905,14 +3000,43 @@ fun ProvidersScreen(
                     onDeleteKey = onDeleteKey,
                     // v9.42 (owner): the Add affordance lives IN this card.
                     addOpen = addOpen,
-                    onToggleAdd = { addOpen = !addOpen },
+                    onToggleAdd = { addOpen = !addOpen; editing = null },
                 )
             }
             // v9.42 (owner): the custom-provider form opens directly under the
             // tile that asked for it, inside the same scroll.
+            if (customProviders.isNotEmpty()) {
+                item(key = "custom_title") {
+                    Text(
+                        text = stringResource(R.string.settings_custom_list_title),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                }
+                items(customProviders, key = { it.id }) { saved ->
+                    CustomProviderRow(
+                        saved = saved,
+                        onEdit = { picked ->
+                            editing = picked
+                            addOpen = true
+                        },
+                        onRemove = { id ->
+                            if (editing?.id == id) {
+                                editing = null
+                                addOpen = false
+                            }
+                            onRemoveCustomProvider(id)
+                        },
+                    )
+                }
+            }
             if (addOpen) {
                 item(key = "keys") {
-                    KeysSection(onAddCustomProvider = onAddCustomProvider, customProviderStatus = customProviderStatus)
+                    KeysSection(
+                        onAddCustomProvider = onAddCustomProvider,
+                        customProviderStatus = customProviderStatus,
+                        editing = editing,
+                        onFormOpened = onClearCustomStatus,
+                    )
                 }
             }
             item(key = "models_catalog") {

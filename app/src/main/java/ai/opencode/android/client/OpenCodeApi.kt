@@ -573,8 +573,15 @@ class OpenCodeApi(
      * lists connections without their secret values; `GET /api/credential` would return every secret.
      */
     private fun keyCredentialIDs(providerID: String): List<String> {
-        val data = org.json.JSONObject(request("GET", "/api/integration/${pathSegment(providerID)}").body)
-            .optJSONObject("data") ?: return emptyList()
+        // 2026-11-21 (owner): a provider the app has just added is not an integration yet, so the
+        // server answers 404 here. That means no stored credentials, not a failure.
+        val body = try {
+            request("GET", "/api/integration/${pathSegment(providerID)}").body
+        } catch (e: ApiException) {
+            if (e.status == 404) return emptyList()
+            throw e
+        }
+        val data = org.json.JSONObject(body).optJSONObject("data") ?: return emptyList()
         val connections = data.optJSONArray("connections") ?: return emptyList()
         return (0 until connections.length()).mapNotNull { i ->
             connections.optJSONObject(i)?.takeIf { it.optString("type") == "credential" && it.optString("method") == "key" }
@@ -582,7 +589,42 @@ class OpenCodeApi(
         }
     }
 
+    /**
+     * True once the server has loaded the integration for [providerID]. A config-defined provider
+     * becomes an integration only after the config reload, so a key sent before that gets 404.
+     */
+    fun integrationLoaded(providerID: String): Boolean = try {
+        request("GET", "/api/integration/${pathSegment(providerID)}")
+        true
+    } catch (e: ApiException) {
+        if (e.status == 404) false else throw e
+    }
+
     // ---- config (OpenCode's normal configuration mechanism) ---------------
+
+    /** The custom providers in the global config file (see [CustomProviderConfig.savedFrom]). */
+    fun customProviders(): List<CustomProviderConfig.Saved> {
+        val file = configFile() ?: return emptyList()
+        if (!file.isFile) return emptyList()
+        return CustomProviderConfig.savedFrom(file.readText())
+    }
+
+    /**
+     * Removes the `provider.<id>` block from the global config and reloads the server.
+     * 2026-11-21 (owner): the user can remove a provider they added. The credentials are removed
+     * first by the repository, because the integration must still exist to find them.
+     */
+    fun removeProviderConfig(providerID: String) {
+        synchronized(CONFIG_WRITE_LOCK) {
+            val file = configFile() ?: throw ApiException(-1, "", "the global config folder is not known to the app")
+            if (!file.isFile) return
+            val text = CustomProviderConfig.withoutProvider(file.readText(), providerID)
+            if (text == file.readText()) return
+            JsoncEdit.parseObject(text)
+            writeAtomically(file, if (text.endsWith("\n")) text else "$text\n")
+        }
+        dispose()
+    }
 
     /** GET /global/config — the raw global opencode.json(c) document. */
     fun globalConfig(): org.json.JSONObject {

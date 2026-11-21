@@ -1,5 +1,6 @@
 package ai.opencode.android.client
 
+import ai.opencode.android.client.v2.JsoncEdit
 import org.json.JSONObject
 
 /**
@@ -126,6 +127,33 @@ object CustomProviderConfig {
         val out = JSONObject(existing?.toString() ?: "{}")
         for (id in added.keys()) out.put(id, added.get(id))
         return out
+    }
+
+    /** A custom provider as the config file holds it, read back so the user can edit or remove it. */
+    data class Saved(val id: String, val name: String, val baseUrl: String, val models: List<String>)
+
+    /**
+     * The custom providers in a config document: the `provider` entries written with the
+     * OpenAI-compatible SDK. A hand-written entry of the same shape is listed too, which is
+     * the point: the user can manage what they added, whichever way they added it.
+     */
+    fun savedFrom(text: String): List<Saved> {
+        val providers = JsoncEdit.parseObject(text).optJSONObject("provider") ?: return emptyList()
+        return providers.keys().asSequence().mapNotNull { id ->
+            val entry = providers.optJSONObject(id) ?: return@mapNotNull null
+            if (entry.optString("npm") != NPM) return@mapNotNull null
+            val baseUrl = entry.optJSONObject("options")?.optString("baseURL").orEmpty()
+            val models = entry.optJSONObject("models")?.keys()?.asSequence()?.toList().orEmpty()
+            Saved(id, entry.optString("name").ifEmpty { id }, baseUrl, models)
+        }.toList()
+    }
+
+    /** [text] with the `provider.<id>` entry removed. Other providers and comments are kept. */
+    fun withoutProvider(text: String, providerID: String): String {
+        val providers = JsoncEdit.parseObject(text).optJSONObject("provider") ?: return text
+        if (!providers.has(providerID)) return text
+        providers.remove(providerID)
+        return JsoncEdit.withKey(text, "provider", providers.toString(2))
     }
 
     /**

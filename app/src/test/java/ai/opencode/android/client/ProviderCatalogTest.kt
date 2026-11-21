@@ -157,4 +157,45 @@ class ProviderCatalogTest {
         assertTrue(CustomProviderConfig.problemWith("ok", "http://h/v1", emptyList())!!.contains("model"))
         assertNull(CustomProviderConfig.problemWith("9router", "https://h/v1", listOf("m")))
     }
+
+
+    /** The custom providers are read back from the config, so Edit and Remove work on what the file holds. */
+    @Test
+    fun savedCustomProvidersAreReadBackFromTheConfigAndOthersAreIgnored() {
+        val text = """
+            {
+              // the user's note
+              "provider": {
+                "9router": {
+                  "npm": "@ai-sdk/openai-compatible",
+                  "name": "9router",
+                  "options": { "baseURL": "http://h:20128/v1" },
+                  "models": { "my-model": { "name": "my-model" } }
+                },
+                "openrouter": { "npm": "@openrouter/ai-sdk-provider" }
+              }
+            }
+        """.trimIndent()
+        val saved = CustomProviderConfig.savedFrom(text)
+        assertEquals(1, saved.size)
+        assertEquals("9router", saved[0].id)
+        assertEquals("http://h:20128/v1", saved[0].baseUrl)
+        assertEquals(listOf("my-model"), saved[0].models)
+    }
+
+    @Test
+    fun removingOneProviderKeepsTheOthersAndTheComments() {
+        val text = "{\n  // keep me\n  \"provider\": {\n    \"9router\": { \"npm\": \"${CustomProviderConfig.NPM}\" },\n    \"local\": { \"npm\": \"${CustomProviderConfig.NPM}\" }\n  }\n}\n"
+        val after = CustomProviderConfig.withoutProvider(text, "9router")
+        val providers = JsoncEdit.parseObject(after).getJSONObject("provider")
+        assertFalse("removed", providers.has("9router"))
+        assertTrue("other kept", providers.has("local"))
+        assertTrue("comment kept", after.contains("// keep me"))
+    }
+
+    @Test
+    fun removingAnUnknownIdChangesNothing() {
+        val text = "{\n  \"provider\": { \"local\": { \"npm\": \"x\" } }\n}\n"
+        assertEquals(text, CustomProviderConfig.withoutProvider(text, "missing"))
+    }
 }

@@ -122,6 +122,8 @@ class OpenCodeRepository(
         val notice: String = "",
         /** Result of the custom-provider form, shown under the form (empty when nothing was tried). */
         val customProviderStatus: String = "",
+        /** The custom providers in the config file (the ones the user added), for edit and remove. */
+        val customProviders: List<CustomProviderConfig.Saved> = emptyList(),
         /** Files staged for the next prompt, as upstream `FilePartInput`s. */
         val attachments: List<OpenCodeApi.Attachment> = emptyList(),
         /** Composer text. Owned by the client; the server has no draft concept. */
@@ -1079,16 +1081,15 @@ class OpenCodeRepository(
         store: ai.opencode.android.security.SecretStore,
     ) {
         val id = providerID.trim()
-        // 2026-11-21 (owner): every outcome now says something on the form. Before, a refused
-        // or failed add only wrote state.error, which the onboarding and Settings screens do not show.
+        val secretName = ai.opencode.android.security.SecretNames.providerSecretName(id)
+        // A blank key on Edit keeps the key already stored for this id (the form never shows it).
+        val keepKey = apiKey.isBlank() && runCatching { store.get(secretName) }.getOrNull() != null
         val problem = CustomProviderConfig.problemWith(id, baseUrl, models)
-            ?: if (apiKey.isBlank()) "paste the API key" else null
+            ?: if (apiKey.isBlank() && !keepKey) "paste the API key" else null
+        // 2026-11-21 (owner): the result is shown on the form only. It used to go to state.error,
+        // which stayed on the chat screen and came back every time.
         if (problem != null) {
-            _state.value = _state.value.copy(
-                error = "custom provider needs a lowercase id (a-z, 0-9, . _ -), an http(s) base URL and at least one model id",
-                errorKind = AgentAvailability.UNKNOWN,
-                customProviderStatus = "Not added: $problem.",
-            )
+            _state.value = _state.value.copy(customProviderStatus = "Not added: $problem.")
             return
         }
         _state.value = _state.value.copy(customProviderStatus = "Adding $id...")
@@ -1097,8 +1098,27 @@ class OpenCodeRepository(
                 val patch = CustomProviderConfig.patchFor(id, displayName, baseUrl, models)
                     ?: error("the provider settings were refused")
                 api.patchGlobalConfig(patch)
-                store.put(ai.opencode.android.security.SecretNames.providerSecretName(id), apiKey)
-                api.setProviderAuth(id, apiKey)
+                // The server makes the provider an integration only after the reload that
+                // patchGlobalConfig started. Wait for it, or the key call gets 404.
+                var loaded = false
+                for (attempt in 0 until 20) {
+                    if (api.integrationLoaded(id)) {
+                        loaded = true
+                        break
+                    }
+                    delay(500)
+                }
+                if (!loaded) {
+                    refreshCustomProviders()
+                    _state.value = _state.value.copy(
+                        customProviderStatus = "Saved $id, but the agent has not loaded it yet. Tap Add again in a moment.",
+                    )
+                    return@launch
+                }
+                if (!keepKey) {
+                    store.put(secretName, apiKey)
+                    api.setProviderAuth(id, apiKey)
+                }
                 val p = applyCredentialChange(id)
                 val firstModel = models.firstOrNull()
                 val cur = _state.value.model
@@ -1119,10 +1139,55 @@ class OpenCodeRepository(
                         "Saved $id, but the agent does not list it yet. Check the base URL, then tap Add again."
                     },
                 )
+                refreshCustomProviders()
             } catch (t: Throwable) {
                 val reason = AccountRedaction.scrub(t.message ?: t.javaClass.simpleName).take(200)
                 _state.value = _state.value.copy(customProviderStatus = "Not added: $reason")
-                fail("custom provider", t)
+                noteCallFailure(t)
+            }
+        }
+    }
+
+    /** Re-reads the custom providers from the config file into [UiState.customProviders]. */
+    fun refreshCustomProviders() {
+        scope.launch {
+            val list = runCatching { api.customProviders() }.getOrDefault(emptyList())
+            _state.value = _state.value.copy(customProviders = list)
+        }
+    }
+
+    /** Clears the form's last result. Called when the form opens, so an old result does not come back. */
+    fun clearCustomProviderStatus() {
+        if (_state.value.customProviderStatus.isNotEmpty()) {
+            _state.value = _state.value.copy(customProviderStatus = "")
+        }
+    }
+
+    /**
+     * Removes a custom provider: its credentials first (they are found through the integration,
+     * which the config removal would make disappear), then the config block, the Keystore copy,
+     * and a refresh of the provider list. Asked for by the user (owner, 2026-11-21).
+     */
+    fun removeCustomProvider(providerID: String, store: ai.opencode.android.security.SecretStore) {
+        val id = providerID.trim()
+        _state.value = _state.value.copy(customProviderStatus = "Removing $id...")
+        scope.launch {
+            try {
+                api.deleteProviderAuth(id)
+                api.removeProviderConfig(id)
+                store.delete(ai.opencode.android.security.SecretNames.providerSecretName(id))
+                val p = applyCredentialChange(id)
+                val current = _state.value.model
+                val next = if (current?.providerID == id) defaultModelHint(p) else current
+                _state.value = _state.value.copy(
+                    providers = p,
+                    model = next,
+                    customProviderStatus = "Removed $id.",
+                )
+                refreshCustomProviders()
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(customProviderStatus = "Not removed: ${AccountRedaction.scrub(t.message ?: "").take(200)}")
+                noteCallFailure(t)
             }
         }
     }

@@ -14,7 +14,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import ai.opencode.android.client.CustomProviderConfig
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -39,13 +41,16 @@ fun ProviderOnboardingScreen(
     canStart: Boolean,
     /** The providers list. The lambda gets the add-form state and the toggle for it. */
     catalog: @Composable (addOpen: Boolean, onToggleAdd: () -> Unit) -> Unit,
-    /** The custom-provider form, shown under the list while it is open. */
-    addForm: @Composable () -> Unit,
+    /** The saved custom providers, each with Edit (which opens the form filled in) and Remove. */
+    customList: @Composable (onEdit: (CustomProviderConfig.Saved) -> Unit) -> Unit = { _ -> },
+    /** The custom-provider form, shown under the list while it is open. [editing] is the provider being edited, if any. */
+    addForm: @Composable (editing: CustomProviderConfig.Saved?) -> Unit,
     onStart: () -> Unit,
     onLater: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var addOpen by rememberSaveable { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<CustomProviderConfig.Saved?>(null) }
     val chat = ChatTheme.chat
     Column(
         modifier = modifier
@@ -95,10 +100,17 @@ fun ProviderOnboardingScreen(
             Text(stringResource(R.string.onboarding_later))
         }
         Spacer(Modifier.height(16.dp))
-        catalog(addOpen) { addOpen = !addOpen }
+        catalog(addOpen) {
+            addOpen = !addOpen
+            editing = null
+        }
+        customList { saved ->
+            editing = saved
+            addOpen = true
+        }
         if (addOpen) {
             Spacer(Modifier.height(8.dp))
-            addForm()
+            addForm(editing)
         }
     }
 }

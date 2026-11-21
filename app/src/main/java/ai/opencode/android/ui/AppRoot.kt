@@ -38,6 +38,7 @@ import ai.opencode.android.ui.onboarding.WorkspaceOnboardingScreen
 import ai.opencode.android.ui.projects.KnownWorkspace
 import ai.opencode.android.ui.projects.ProjectSession
 import ai.opencode.android.ui.projects.ProjectsScreen
+import ai.opencode.android.ui.settings.CustomProvidersList
 import ai.opencode.android.ui.settings.KeysSection
 import ai.opencode.android.ui.settings.ProvidersCatalogSection
 import ai.opencode.android.ui.settings.ProvidersScreen
@@ -249,6 +250,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     }
     val credentialReady = remember(runtimeState.status) { container.serverPasswordAvailable() }
     val repository = remember(workspaceDir, credentialReady) { container.repositoryFor(workspaceDir) }
+    // 2026-11-21 (owner): the custom providers are read from the config when their screen opens.
+    LaunchedEffect(route) {
+        if (route == ROUTE_PROVIDERS || route == ROUTE_ONBOARDING_PROVIDER) repository.refreshCustomProviders()
+    }
     val stateFlow = remember(repository) { repository.state }
     val uiState by stateFlow.collectAsState()
 
@@ -1856,12 +1861,21 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                             initiallyExpanded = true,
                         )
                     },
-                    addForm = {
+                    customList = { onEdit ->
+                        CustomProvidersList(
+                            providers = uiState.customProviders,
+                            onEdit = onEdit,
+                            onRemove = { id -> repository.removeCustomProvider(id, secrets) },
+                        )
+                    },
+                    addForm = { editing ->
                         KeysSection(
                             onAddCustomProvider = { id, name, baseUrl, models, key ->
                                 repository.addCustomProvider(id, name, baseUrl, CustomProviderConfig.parseModels(models), key, secrets)
                             },
                             customProviderStatus = uiState.customProviderStatus,
+                            editing = editing,
+                            onFormOpened = { repository.clearCustomProviderStatus() },
                         )
                     },
                     onStart = { route = ROUTE_PROJECTS },
@@ -2327,6 +2341,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         repository.addCustomProvider(id, name, baseUrl, CustomProviderConfig.parseModels(models), key, secrets)
                         },
                         customProviderStatus = uiState.customProviderStatus,
+                        customProviders = uiState.customProviders,
+                        onRemoveCustomProvider = { id -> repository.removeCustomProvider(id, secrets) },
+                        onClearCustomStatus = { repository.clearCustomProviderStatus() },
                         onRevokeKey = { providerId -> repository.revokeProvider(providerId, secrets) },
                         providerSetup = providerSetup,
                         onBack = { route = if (projectName.isEmpty()) ROUTE_WELCOME else ROUTE_CHAT },

@@ -442,6 +442,8 @@ fun ChatScreen(
             // covers the working indicators above).
             busy = state.busy,
             canSend = UiError.canSend(availability),
+            // 2026-11-21 (owner): no model selected (a fresh install) means no send.
+            hasModel = state.model != null,
             canRedo = state.canRedo,
             onRedo = onRedo,
         )
@@ -2096,6 +2098,7 @@ private fun Composer(
     onAttachPictures: () -> Unit = {},
     busy: Boolean,
     canSend: Boolean,
+    hasModel: Boolean = true,
     canRedo: Boolean,
     onRedo: () -> Unit,
 ) {
@@ -2106,6 +2109,7 @@ private fun Composer(
     // container is the restyle, not the contract.
     val chat = ChatTheme.chat
     val blockedHint = stringResource(R.string.availability_composer_blocked)
+    val needsModelHint = stringResource(R.string.chat_composer_needs_model)
     val sendLabel = stringResource(R.string.chat_send)
     val attachLabel = stringResource(R.string.chat_attach)
     // v9.1: the composer is the primary element at the bottom - a floating
@@ -2118,9 +2122,9 @@ private fun Composer(
                 .fillMaxWidth()
                 .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 10.dp),
         ) {
-            if (!canSend) {
+            if (!canSend || !hasModel) {
                 Text(
-                    text = blockedHint,
+                    text = if (!canSend) blockedHint else needsModelHint,
                     style = MaterialTheme.typography.labelSmall,
                     color = chat.muted,
                     modifier = Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 4.dp),
@@ -2266,7 +2270,7 @@ private fun Composer(
                             )
                         }
                     } else {
-                        val sendEnabled = canSend && draft.isNotBlank()
+                        val sendEnabled = canSend && hasModel && draft.isNotBlank()
                         val sendInteraction = remember { MutableInteractionSource() }
                         val sendPressed by sendInteraction.collectIsPressedAsState()
                         val sendScale by animateFloatAsState(
