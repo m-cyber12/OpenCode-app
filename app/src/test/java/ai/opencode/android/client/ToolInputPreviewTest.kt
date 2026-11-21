@@ -29,9 +29,9 @@ class ToolInputPreviewTest {
     @Test
     fun an_escape_split_by_the_stream_is_not_decoded_until_complete() {
         // A lone backslash at the end of the stream is not decoded yet.
-        assertEquals("a", ToolInputPreview.writeContent("""{"content":"a\"""))
+        assertEquals("a", ToolInputPreview.writeContent("{\"content\":\"a\\"))
         // An escaped quote that has arrived is decoded: the string is still open.
-        assertEquals("a\"", ToolInputPreview.writeContent("""{"content":"a\""""))
+        assertEquals("a\"", ToolInputPreview.writeContent("{\"content\":\"a\\\""))
         assertEquals("a", ToolInputPreview.writeContent("""{"content":"a\u00"""))
         assertEquals("é", ToolInputPreview.writeContent("""{"content":"\u00e9"""))
     }
