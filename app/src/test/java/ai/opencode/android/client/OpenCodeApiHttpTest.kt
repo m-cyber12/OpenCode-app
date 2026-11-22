@@ -397,6 +397,17 @@ class OpenCodeApiHttpTest {
         assertEquals("{\"key\":\"sk-new\"}", seen.elementAt(1).body)
     }
 
+    /** The key method's answers (Cloudflare's account id) are sent with the key, as the server's `answer`. */
+    @Test
+    fun setProviderAuthSendsTheFormAnswersWithTheKey() {
+        responseBody = "{}"
+        api().setProviderAuth("cloudflare-workers-ai", "tok", mapOf("accountId" to "acc123"))
+        val connect = seen.first { it.path.endsWith("/connect/key") }
+        val body = org.json.JSONObject(connect.body)
+        assertEquals("tok", body.getString("key"))
+        assertEquals("acc123", body.getJSONObject("answer").getString("accountId"))
+    }
+
     /** Removing a provider removes each of its key credentials and reports that something was removed. */
     @Test
     fun deleteProviderAuthRemovesEveryKeyCredential() {

@@ -2,6 +2,7 @@ package ai.opencode.android.client
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -72,16 +73,6 @@ class ProviderCatalogTest {
     // ---- the manual path ----------------------------------------------------
 
     @Test
-    fun aProviderIdMustBeASlugBecauseItBecomesAConfigKey() {
-        assertTrue(CustomProviderConfig.isUsableId("9router"))
-        assertTrue(CustomProviderConfig.isUsableId("my-endpoint.local"))
-        assertFalse("uppercase would not be the id the user typed", CustomProviderConfig.isUsableId("NineRouter"))
-        assertFalse(CustomProviderConfig.isUsableId(""))
-        assertFalse(CustomProviderConfig.isUsableId("has space"))
-        assertFalse(CustomProviderConfig.isUsableId("-leading-dash"))
-    }
-
-    @Test
     fun modelIdsAreSplitDedupedAndKeptInOrder() {
         assertEquals(
             listOf("a", "b", "c"),
@@ -106,11 +97,10 @@ class ProviderCatalogTest {
     }
 
     @Test
-    fun impossibleInputProducesNoDocumentInsteadOfABrokenOne() {
-        assertNull("bad id", CustomProviderConfig.patchFor("Bad Id", "x", "http://h/v1", listOf("m")))
-        assertNull("no url", CustomProviderConfig.patchFor("ok", "x", "", listOf("m")))
-        assertNull("not a url", CustomProviderConfig.patchFor("ok", "x", "192.168.1.10:20128", listOf("m")))
-        assertNull("no models", CustomProviderConfig.patchFor("ok", "x", "http://h/v1", emptyList()))
+    fun onlyABlankIdIsRefusedHereEverythingElseGoesToTheServer() {
+        assertNull("no id", CustomProviderConfig.patchFor("  ", "x", "", emptyList()))
+        assertNotNull("bad id is sent, the server judges it", CustomProviderConfig.patchFor("Bad Id", "x", "192.168.1.10:20128", listOf("m")))
+        assertNotNull("no models is sent too", CustomProviderConfig.patchFor("ok", "x", "", emptyList()))
     }
 
     @Test
@@ -148,16 +138,6 @@ class ProviderCatalogTest {
         assertEquals("old", merged.getJSONObject("9router").getString("name"))
         assertEquals("local", merged.getJSONObject("local").getString("name"))
     }
-
-    @Test
-    fun eachRefusalNamesTheFieldThatIsWrong() {
-        assertTrue(CustomProviderConfig.problemWith("Bad Id", "http://h/v1", listOf("m"))!!.contains("provider id"))
-        assertTrue(CustomProviderConfig.problemWith("ok", "192.168.1.10:20128", listOf("m"))!!.contains("base URL"))
-        assertTrue(CustomProviderConfig.problemWith("ok", "httpfoo", listOf("m"))!!.contains("base URL"))
-        assertTrue(CustomProviderConfig.problemWith("ok", "http://h/v1", emptyList())!!.contains("model"))
-        assertNull(CustomProviderConfig.problemWith("9router", "https://h/v1", listOf("m")))
-    }
-
 
     /** The custom providers are read back from the config, so Edit and Remove work on what the file holds. */
     @Test

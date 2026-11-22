@@ -943,19 +943,24 @@ class OpenCodeRepository(
      * OpenCode's own auth store over `PUT /auth/:providerID` (upstream
      * mechanism). The key is never written to a plaintext app file by us.
      */
-    fun provisionProvider(providerID: String, apiKey: String, store: ai.opencode.android.security.SecretStore) {
+    fun provisionProvider(
+        providerID: String,
+        apiKey: String,
+        store: ai.opencode.android.security.SecretStore,
+        answers: Map<String, String> = emptyMap(),
+    ) {
         scope.launch {
             _state.value = _state.value.copy(connectingProviders = _state.value.connectingProviders + providerID)
             try {
-                // v6.1: saving a key no longer destroys the previous one - the ring
-                // keeps them all and mirrors the ACTIVE key at the legacy secret
-                // name (which is also what gets pushed upstream, below).
+                // 2026-11-22 (owner): no checks here. The server takes the key and the answers and
+                // says what is wrong; a key the server accepts is then kept on the device.
+                api.setProviderAuth(providerID, apiKey, answers)
                 if (keyring != null) {
+                    // v6.1: saving a key no longer destroys the previous one - the ring keeps them all.
                     keyring.add(providerID, apiKey)
                 } else {
                     store.put(ai.opencode.android.security.SecretNames.providerSecretName(providerID), apiKey)
                 }
-                api.setProviderAuth(providerID, apiKey)
                 val p = applyCredentialChange(providerID)
                 // The user just connected this provider: make it the model the
                 // composer sends unless they already pinned one on it. Without
@@ -970,9 +975,10 @@ class OpenCodeRepository(
                         "OpenCode reports connected=" + p.connected.contains(providerID) +
                         (if (next != null && next != cur) "; model -> ${next.providerID}/${next.modelID}" else ""),
                     error = "",
+                    errorKind = AgentAvailability.READY,
                 )
             } catch (t: Throwable) {
-                fail("provision provider", t)
+                providerFailed("connect $providerID", t)
             } finally {
                 _state.value = _state.value.copy(connectingProviders = _state.value.connectingProviders - providerID)
             }
@@ -1082,42 +1088,36 @@ class OpenCodeRepository(
     ) {
         val id = providerID.trim()
         val secretName = ai.opencode.android.security.SecretNames.providerSecretName(id)
-        // A blank key on Edit keeps the key already stored for this id (the form never shows it).
-        val keepKey = apiKey.isBlank() && runCatching { store.get(secretName) }.getOrNull() != null
-        val problem = CustomProviderConfig.problemWith(id, baseUrl, models)
-            ?: if (apiKey.isBlank() && !keepKey) "paste the API key" else null
-        // 2026-11-21 (owner): the result is shown on the form only. It used to go to state.error,
-        // which stayed on the chat screen and came back every time.
-        if (problem != null) {
-            _state.value = _state.value.copy(customProviderStatus = "Not added: $problem.")
+        // 2026-11-22 (owner): no checks on what the user typed. The one refusal is a blank id,
+        // because an empty key in the agent's config could stop the agent from loading. Everything
+        // else goes to the server, and any problem it reports shows in the chat.
+        if (CustomProviderConfig.patchFor(id, displayName, baseUrl, models) == null) {
+            _state.value = _state.value.copy(
+                customProviderStatus = "",
+                error = "Add provider: the provider id is empty.",
+                errorKind = AgentAvailability.UNKNOWN,
+            )
             return
         }
+        // A blank key on Edit keeps the key already stored for this id (the form never shows it).
+        val keepKey = apiKey.isBlank() && runCatching { store.get(secretName) }.getOrNull() != null
         _state.value = _state.value.copy(customProviderStatus = "Adding $id...")
         scope.launch {
             try {
                 val patch = CustomProviderConfig.patchFor(id, displayName, baseUrl, models)
-                    ?: error("the provider settings were refused")
+                    ?: error("the provider id is empty")
                 api.patchGlobalConfig(patch)
                 // The server makes the provider an integration only after the reload that
-                // patchGlobalConfig started. Wait for it, or the key call gets 404.
-                var loaded = false
-                for (attempt in 0 until 20) {
-                    if (api.integrationLoaded(id)) {
-                        loaded = true
-                        break
-                    }
+                // patchGlobalConfig started. Wait for it (up to 10 s), then send the key whatever the
+                // result: if the server still does not know the provider, it says so in the chat.
+                var waited = 0
+                while (waited < 20 && !api.integrationLoaded(id)) {
                     delay(500)
-                }
-                if (!loaded) {
-                    refreshCustomProviders()
-                    _state.value = _state.value.copy(
-                        customProviderStatus = "Saved $id, but the agent has not loaded it yet. Tap Add again in a moment.",
-                    )
-                    return@launch
+                    waited++
                 }
                 if (!keepKey) {
-                    store.put(secretName, apiKey)
                     api.setProviderAuth(id, apiKey)
+                    store.put(secretName, apiKey)
                 }
                 val p = applyCredentialChange(id)
                 val firstModel = models.firstOrNull()
@@ -1133,19 +1133,37 @@ class OpenCodeRepository(
                     notice = "custom provider $id stored (config + Keystore); " +
                         "the agent reports it in the catalog: " + listed,
                     error = "",
+                    errorKind = AgentAvailability.READY,
                     customProviderStatus = if (listed) {
                         "Added $id with ${models.size} model${if (models.size == 1) "" else "s"}. It is in the provider list."
                     } else {
-                        "Saved $id, but the agent does not list it yet. Check the base URL, then tap Add again."
+                        "Saved $id. The agent does not list it yet; a problem, if any, is in the chat."
                     },
                 )
                 refreshCustomProviders()
             } catch (t: Throwable) {
-                val reason = AccountRedaction.scrub(t.message ?: t.javaClass.simpleName).take(200)
-                _state.value = _state.value.copy(customProviderStatus = "Not added: $reason")
-                noteCallFailure(t)
+                _state.value = _state.value.copy(customProviderStatus = "")
+                providerFailed("add provider $id", t)
             }
         }
+    }
+
+    /**
+     * A problem with a provider (a key or config the server refused, an unknown provider). It
+     * goes to the chat banner with the server's own words. It is not a server outage, so it
+     * does not set the "agent refused" headline. A call that never reached the agent is still
+     * reported as unreachable.
+     */
+    private fun providerFailed(what: String, t: Throwable) {
+        val status = (t as? OpenCodeApi.ApiException)?.status ?: -1
+        if (status == -1) {
+            fail(what, t)
+            return
+        }
+        _state.value = _state.value.copy(
+            error = AccountRedaction.scrub("$what failed: ${t.message}").take(500),
+            errorKind = AgentAvailability.UNKNOWN,
+        )
     }
 
     /** Re-reads the custom providers from the config file into [UiState.customProviders]. */
@@ -1186,8 +1204,8 @@ class OpenCodeRepository(
                 )
                 refreshCustomProviders()
             } catch (t: Throwable) {
-                _state.value = _state.value.copy(customProviderStatus = "Not removed: ${AccountRedaction.scrub(t.message ?: "").take(200)}")
-                noteCallFailure(t)
+                _state.value = _state.value.copy(customProviderStatus = "")
+                providerFailed("remove provider $id", t)
             }
         }
     }

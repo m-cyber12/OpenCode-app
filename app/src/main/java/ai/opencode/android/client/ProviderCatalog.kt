@@ -84,40 +84,12 @@ object CustomProviderConfig {
     /** The SDK upstream uses for any OpenAI-compatible endpoint. */
     const val NPM = "@ai-sdk/openai-compatible"
 
-    /**
-     * Provider ids become config keys and appear in every prompt payload, so they
-     * are restricted to what a slug can safely be. Rejecting is better than
-     * silently rewriting: the user typed the id their endpoint is known by.
-     */
-    private val ID_PATTERN = Regex("^[a-z0-9][a-z0-9._-]{0,63}$")
-
-    fun isUsableId(id: String): Boolean = ID_PATTERN.matches(id.trim())
-
     /** Split a free-text model list ("a, b c\nd") into ids, order preserved. */
     fun parseModels(raw: String): List<String> =
         raw.split(',', '\n', '\r', ' ', '\t')
             .map { it.trim() }
             .filter { it.isNotEmpty() }
             .distinct()
-
-    /**
-     * Why [patchFor] would refuse these inputs, in words the user can act on.
-     * Null when the inputs can produce a provider. The API key is checked by the caller.
-     *
-     * 2026-11-21 (owner): the form used to refuse without saying which field, so the
-     * tap looked like it did nothing. The message names the field.
-     */
-    fun problemWith(providerID: String, baseUrl: String, models: List<String>): String? {
-        if (!isUsableId(providerID)) {
-            return "the provider id must use lowercase letters, digits, dot, underscore or dash, for example \"9router\""
-        }
-        val url = baseUrl.trim()
-        if (!(url.startsWith("http://") || url.startsWith("https://"))) {
-            return "the base URL must start with http:// or https://"
-        }
-        if (models.isEmpty()) return "list at least one model id"
-        return null
-    }
 
     /**
      * The `provider` object after an add: every id already there is kept, and the ids in
@@ -157,12 +129,11 @@ object CustomProviderConfig {
     }
 
     /**
-     * The `PATCH /global/config` body that registers the provider.
+     * The `PATCH /global/config` body that registers the provider, or null when there is no id.
      *
-     * Returns null when the input cannot produce a usable provider (bad id, no
-     * models, blank base URL) - the caller shows the reason instead of writing a
-     * config entry that would make the agent fail later, far away from the field
-     * that caused it.
+     * 2026-11-22 (owner): no checks on what the user typed. The server judges the id, URL and
+     * models, and any problem shows in the chat. The one refusal is a blank id: an empty key in
+     * the agent's config could stop the agent from loading.
      */
     fun patchFor(
         providerID: String,
@@ -172,7 +143,7 @@ object CustomProviderConfig {
     ): JSONObject? {
         val id = providerID.trim()
         val url = baseUrl.trim()
-        if (problemWith(providerID, baseUrl, models) != null) return null
+        if (id.isEmpty()) return null
         val modelsJson = JSONObject()
         for (m in models) {
             modelsJson.put(m, JSONObject().put("name", m))

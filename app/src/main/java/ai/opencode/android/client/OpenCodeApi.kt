@@ -535,6 +535,7 @@ class OpenCodeApi(
                     name = pr.optString("name").ifEmpty { pid },
                     models = models,
                     source = pr.optString("source"),
+                    keyFields = keyFieldsOf(pr.optJSONArray("keyFields")),
                 ),
             )
         }
@@ -546,16 +547,45 @@ class OpenCodeApi(
      * On v2 the provider is an integration (`Provider.ID` is the integration ID). `connect/key` runs
      * the provider's key method, stores the key and makes it the active one. The older key
      * credentials of the same integration are then removed, so the server keeps one key, as v1 did.
-     * [metadata] is a v1 field and is not sent (v2 takes form answers instead).
+     * [answers] are the key method's own form answers (v2 `answer`), e.g. Cloudflare's account id.
      */
-    fun setProviderAuth(providerID: String, apiKey: String, metadata: org.json.JSONObject? = null) {
+    fun setProviderAuth(providerID: String, apiKey: String, answers: Map<String, String> = emptyMap()) {
         val before = keyCredentialIDs(providerID)
+        val body = org.json.JSONObject().put("key", apiKey)
+        // 2026-11-22 (owner): the form answers (Cloudflare's account id) ride along with the key.
+        if (answers.isNotEmpty()) {
+            val answer = org.json.JSONObject()
+            for ((k, v) in answers) answer.put(k, v)
+            body.put("answer", answer)
+        }
         request(
             "POST",
             "/api/integration/${pathSegment(providerID)}/connect/key",
-            org.json.JSONObject().put("key", apiKey).toString(),
+            body.toString(),
         )
         for (id in before) request("DELETE", "/api/credential/${pathSegment(id)}")
+    }
+
+    private fun keyFieldsOf(arr: org.json.JSONArray?): List<KeyField> {
+        if (arr == null) return emptyList()
+        val out = ArrayList<KeyField>()
+        for (i in 0 until arr.length()) {
+            val f = arr.optJSONObject(i) ?: continue
+            // Text-like fields only: the app shows a text box for each. Booleans, multi-choice and
+            // external fields are not asked here.
+            val type = f.optString("type")
+            if (type != "string" && type != "number" && type != "integer") continue
+            val key = f.optString("key").takeIf { it.isNotEmpty() } ?: continue
+            out.add(
+                KeyField(
+                    key = key,
+                    title = f.optString("title"),
+                    placeholder = f.optString("placeholder"),
+                    required = f.optBoolean("required", false),
+                ),
+            )
+        }
+        return out
     }
 
     /**
@@ -925,7 +955,19 @@ class OpenCodeApi(
      * a bare catalog entry reports "custom". That is the observable that tells
      * a stale instance (credential written, table not rebuilt) from a live one.
      */
-    data class ProviderEntry(val id: String, val name: String, val models: List<ModelEntry>, val source: String = "")
+    /**
+     * A question the key method asks besides the key (Cloudflare Workers AI: the account id).
+     * Only text-like fields are kept; the server still judges what is missing.
+     */
+    data class KeyField(val key: String, val title: String, val placeholder: String, val required: Boolean)
+
+    data class ProviderEntry(
+        val id: String,
+        val name: String,
+        val models: List<ModelEntry>,
+        val source: String = "",
+        val keyFields: List<KeyField> = emptyList(),
+    )
 
     data class ProviderSnapshot(
         val allIds: List<String>,

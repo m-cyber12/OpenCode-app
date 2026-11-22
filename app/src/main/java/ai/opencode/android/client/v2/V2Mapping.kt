@@ -57,6 +57,21 @@ object V2Mapping {
     ): JSONObject {
         val names = LinkedHashMap<String, String>()
         val disabled = HashSet<String>()
+        // 2026-11-22 (owner): a key method can ask for more than the key (Cloudflare Workers AI
+        // needs the account id). Its form fields travel with the provider so the key dialog can ask.
+        val keyForms = HashMap<String, JSONArray>()
+        for (i in 0 until integrations.length()) {
+            val g = integrations.optJSONObject(i) ?: continue
+            val gid = g.optString("id")
+            val methods = g.optJSONArray("methods") ?: continue
+            for (j in 0 until methods.length()) {
+                val m = methods.optJSONObject(j) ?: continue
+                if (m.optString("type") == "key") {
+                    m.optJSONArray("form")?.let { if (gid.isNotEmpty()) keyForms[gid] = it }
+                    break
+                }
+            }
+        }
         for (i in 0 until providers.length()) {
             val p = providers.optJSONObject(i) ?: continue
             val id = p.optString("id")
@@ -95,7 +110,8 @@ object V2Mapping {
                 JSONObject()
                     .put("id", pid)
                     .put("name", names[pid] ?: pid)
-                    .put("models", record),
+                    .put("models", record)
+                    .put("keyFields", keyForms[pid] ?: JSONArray()),
             )
             connected.put(pid)
         }
@@ -113,7 +129,8 @@ object V2Mapping {
                 JSONObject()
                     .put("id", id)
                     .put("name", g.optString("name").ifEmpty { id })
-                    .put("models", JSONObject()),
+                    .put("models", JSONObject())
+                    .put("keyFields", keyForms[id] ?: JSONArray()),
             )
         }
 

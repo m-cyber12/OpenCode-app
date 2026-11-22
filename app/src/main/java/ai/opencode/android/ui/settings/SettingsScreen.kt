@@ -532,7 +532,7 @@ internal fun ProvidersCatalogSection(
     providers: OpenCodeApi.ProviderSnapshot?,
     /** 2026-11-20 (owner): providers whose key is being checked - shown as "Connecting". */
     connecting: Set<String> = emptySet(),
-    onConnectProvider: (String, String) -> Unit,
+    onConnectProvider: (String, String, Map<String, String>) -> Unit,
     onRevokeKey: (String) -> Unit,
     providerKeys: (String) -> List<ProviderKeyring.Entry>,
     onUseKey: (String, String) -> Unit,
@@ -619,8 +619,8 @@ internal fun ProvidersCatalogSection(
             connected = providers?.connected?.contains(target.id) == true,
             keys = providerKeys(target.id),
             onDismiss = { connectTarget = null },
-            onSave = { key ->
-                onConnectProvider(target.id, key)
+            onSave = { key, answers ->
+                onConnectProvider(target.id, key, answers)
                 connectTarget = null
             },
             onRevoke = {
@@ -872,13 +872,15 @@ private fun ProviderKeyDialog(
     provider: OpenCodeApi.ProviderEntry,
     connected: Boolean,
     onDismiss: () -> Unit,
-    onSave: (String) -> Unit,
+    onSave: (String, Map<String, String>) -> Unit,
     onRevoke: () -> Unit,
     keys: List<ProviderKeyring.Entry> = emptyList(),
     onUseKey: (String) -> Unit = {},
     onDeleteKey: (String) -> Unit = {},
 ) {
     var key by rememberSaveable(provider.id) { mutableStateOf("") }
+    // 2026-11-22 (owner): the key method's own questions (Cloudflare Workers AI: the account id).
+    val answers = remember(provider.id) { mutableStateMapOf<String, String>() }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -969,6 +971,17 @@ private fun ProviderKeyDialog(
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth().semantics { testTag = "provider_key_value" },
                 )
+                provider.keyFields.forEach { field ->
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = answers[field.key].orEmpty(),
+                        onValueChange = { answers[field.key] = it },
+                        label = { Text(field.title.ifEmpty { field.key }) },
+                        placeholder = { Text(field.placeholder) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().semantics { testTag = "provider_key_field_${field.key}" },
+                    )
+                }
                 if (connected) {
                     Spacer(Modifier.height(10.dp))
                     // The manual form's revoke, relocated onto the only place that ever
@@ -989,9 +1002,9 @@ private fun ProviderKeyDialog(
             }
         },
         confirmButton = {
+            // 2026-11-22 (owner): no check before saving. The server answers, and a problem shows in the chat.
             TextButton(
-                onClick = { onSave(key.trim()) },
-                enabled = key.isNotBlank(),
+                onClick = { onSave(key.trim(), answers.mapValues { it.value.trim() }.filterValues { it.isNotEmpty() }) },
                 modifier = Modifier.semantics { testTag = "provider_key_save" },
             ) {
                 Text(
@@ -1415,9 +1428,8 @@ internal fun KeysSection(
                 )
                 customKey = ""
             },
-            // Editing keeps the stored key when the key field is left blank.
-            enabled = customId.isNotBlank() && customBaseUrl.isNotBlank() &&
-                customModels.isNotBlank() && (customKey.isNotBlank() || editing != null),
+            // 2026-11-22 (owner): no check before adding. Editing keeps the stored key when the key
+            // field is blank; the server judges everything else and a problem shows in the chat.
             modifier = Modifier.height(46.dp).fillMaxWidth().semantics { testTag = "custom_provider_save" },
         ) {
             Text(stringResource(if (editing != null) R.string.settings_custom_save_edit else R.string.settings_custom_save))
@@ -2941,7 +2953,7 @@ fun ProvidersScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     onToggleStar: (String, String, Boolean) -> Unit = { _, _, _ -> },
-    onConnectProvider: (String, String) -> Unit = { _, _ -> },
+    onConnectProvider: (String, String, Map<String, String>) -> Unit = { _, _, _ -> },
     onRevokeKey: (String) -> Unit = {},
     providerKeys: (String) -> List<ProviderKeyring.Entry> = { emptyList() },
     onUseKey: (String, String) -> Unit = { _, _ -> },

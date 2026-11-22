@@ -1848,7 +1848,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     catalog = { addOpen, onToggleAdd ->
                         ProvidersCatalogSection(
                             providers = uiState.providers,
-                            onConnectProvider = { providerId, key -> repository.provisionProvider(providerId, key, secrets) },
+                            onConnectProvider = { providerId, key, answers -> repository.provisionProvider(providerId, key, secrets, answers) },
                             onRevokeKey = { providerId -> repository.revokeProvider(providerId, secrets) },
                             providerKeys = { providerId ->
                                 runCatching { container.keyring().entries(providerId) }.getOrDefault(emptyList())
@@ -2330,7 +2330,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                         onToggleStar = { providerId, modelId, starred ->
                         repository.setStarred(OpenCodeApi.ModelRef(providerId, modelId), starred)
                         },
-                        onConnectProvider = { providerId, key -> repository.provisionProvider(providerId, key, secrets) },
+                        onConnectProvider = { providerId, key, answers -> repository.provisionProvider(providerId, key, secrets, answers) },
                         // v6.1: the keyring (several saved keys per provider, one active).
                         providerKeys = { providerId ->
                         runCatching { container.keyring().entries(providerId) }.getOrDefault(emptyList())

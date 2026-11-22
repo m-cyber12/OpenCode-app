@@ -442,7 +442,8 @@ fun ChatScreen(
             // covers the working indicators above).
             busy = state.busy,
             canSend = UiError.canSend(availability),
-            // 2026-11-21 (owner): no model selected (a fresh install) means no send.
+            // 2026-11-21 (owner): no model selected (a fresh install) means no send. The button is
+            // disabled; no text is shown (owner, 2026-11-22).
             hasModel = state.model != null,
             canRedo = state.canRedo,
             onRedo = onRedo,
@@ -2109,7 +2110,6 @@ private fun Composer(
     // container is the restyle, not the contract.
     val chat = ChatTheme.chat
     val blockedHint = stringResource(R.string.availability_composer_blocked)
-    val needsModelHint = stringResource(R.string.chat_composer_needs_model)
     val sendLabel = stringResource(R.string.chat_send)
     val attachLabel = stringResource(R.string.chat_attach)
     // v9.1: the composer is the primary element at the bottom - a floating
@@ -2122,9 +2122,9 @@ private fun Composer(
                 .fillMaxWidth()
                 .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 10.dp),
         ) {
-            if (!canSend || !hasModel) {
+            if (!canSend) {
                 Text(
-                    text = if (!canSend) blockedHint else needsModelHint,
+                    text = blockedHint,
                     style = MaterialTheme.typography.labelSmall,
                     color = chat.muted,
                     modifier = Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 4.dp),

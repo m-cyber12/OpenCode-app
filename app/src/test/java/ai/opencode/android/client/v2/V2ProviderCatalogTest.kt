@@ -62,4 +62,29 @@ class V2ProviderCatalogTest {
         assertEquals(1, doc.getJSONArray("all").length())
         assertEquals(1, doc.getJSONArray("connected").length())
     }
+
+    /**
+     * 2026-11-22 (owner): Cloudflare Workers AI is "Not Ready" because its key method also asks for
+     * the account id. The key method's form has to reach the provider, or the dialog never asks.
+     */
+    @Test
+    fun aKeyMethodsFormFieldsReachTheProviderEntry() {
+        val providers = arr()
+        val models = arr()
+        val integrations = arr(
+            """{"id":"cloudflare-workers-ai","name":"Cloudflare Workers AI","methods":[
+                {"type":"env","names":["CLOUDFLARE_API_KEY"]},
+                {"type":"key","label":"API key","form":[
+                  {"type":"string","key":"accountId","title":"Enter your Cloudflare Account ID","placeholder":"e.g. 1234","required":true},
+                  {"type":"boolean","key":"x","title":"not shown"}
+                ]}]}""",
+        )
+        val all = V2Mapping.providerDocument(providers, models, null, integrations).getJSONArray("all")
+        val entry = all.getJSONObject(0)
+        assertEquals("cloudflare-workers-ai", entry.getString("id"))
+        val fields = entry.getJSONArray("keyFields")
+        assertEquals(1, fields.length())
+        assertEquals("accountId", fields.getJSONObject(0).getString("key"))
+        assertTrue(fields.getJSONObject(0).getBoolean("required"))
+    }
 }
