@@ -63,6 +63,13 @@ class Transcript {
          * skips those when refilling the composer, so the flag is mirrored.
          */
         val synthetic: Boolean = false,
+        /**
+         * Diagnostic (2026-11-22): how many `tool.input.delta` fragments and characters the app
+         * received for this tool call while its arguments streamed. Shown on the card, so the
+         * owner can see whether the live stream reaches the phone at all.
+         */
+        val streamFragments: Int = 0,
+        val streamChars: Int = 0,
     )
 
     /** Upstream's `AssistantError`, kept as the server reported it. */
@@ -372,7 +379,11 @@ class Transcript {
         val part = parts[idx]
         // Scrubbed as a whole each time: a redacted name that is split across two fragments is
         // caught once its last fragment arrives.
-        parts[idx] = part.copy(input = AccountRedaction.scrub(part.input + delta))
+        parts[idx] = part.copy(
+            input = AccountRedaction.scrub(part.input + delta),
+            streamFragments = part.streamFragments + 1,
+            streamChars = part.streamChars + delta.length,
+        )
         messages[mid] = existing.copy(parts = parts)
         touch(sid)
         dirty = true
@@ -424,6 +435,9 @@ class Transcript {
                 callID = p.callID.ifEmpty { prev.callID },
                 input = p.input.ifEmpty { prev.input },
                 title = p.title.ifEmpty { prev.title },
+                // The stream counters are not in the frame: keep what the deltas counted.
+                streamFragments = maxOf(p.streamFragments, prev.streamFragments),
+                streamChars = maxOf(p.streamChars, prev.streamChars),
             )
         } else {
             p

@@ -823,7 +823,7 @@ fun ToolCard(
                         .verticalScroll(liveScroll)
                         .semantics { testTag = "${TAG_TOOL_LIVE}_body_${part.id}" },
                 ) {
-                    LiveFileContent(tool = part.tool, input = part.input)
+                    LiveFileContent(tool = part.tool, input = part.input, fragments = part.streamFragments, chars = part.streamChars)
                 }
             }
 
@@ -834,7 +834,7 @@ fun ToolCard(
                         // Owner (2026-11-21): a write or edit shows what it is writing as it
                         // arrives, not the raw JSON of its arguments. Once the server reports
                         // a diff for the call, that diff below is the authoritative one.
-                        LiveFileContent(tool = part.tool, input = part.input)
+                        LiveFileContent(tool = part.tool, input = part.input, fragments = part.streamFragments, chars = part.streamChars)
                         Spacer(Modifier.height(10.dp))
                     } else if (part.input.isNotBlank()) {
                         SectionLabel(stringResource(R.string.chat_tool_section_input))
@@ -918,8 +918,15 @@ private val LIVE_FILE_TOOLS = setOf("write", "edit", "patch", "apply_patch")
  * yet is not shown.
  */
 @Composable
-private fun LiveFileContent(tool: String, input: String) {
+private fun LiveFileContent(tool: String, input: String, fragments: Int = 0, chars: Int = 0) {
     val chat = ChatTheme.chat
+    // Diagnostic (2026-11-22): what the stream has delivered for this call so far.
+    Text(
+        text = stringResource(R.string.chat_tool_stream_check, fragments, chars),
+        style = MonoSmall,
+        color = chat.muted,
+    )
+    Spacer(Modifier.height(4.dp))
     when (tool) {
         "write" -> {
             val path = ToolInputPreview.path(input)
