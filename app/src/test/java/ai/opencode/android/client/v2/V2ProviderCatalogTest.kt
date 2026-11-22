@@ -82,8 +82,9 @@ class V2ProviderCatalogTest {
         val all = V2Mapping.providerDocument(providers, models, null, integrations).getJSONArray("all")
         val entry = all.getJSONObject(0)
         assertEquals("cloudflare-workers-ai", entry.getString("id"))
+        // The raw form passes through; the text-only filter is applied where the app parses it.
         val fields = entry.getJSONArray("keyFields")
-        assertEquals(1, fields.length())
+        assertEquals(2, fields.length())
         assertEquals("accountId", fields.getJSONObject(0).getString("key"))
         assertTrue(fields.getJSONObject(0).getBoolean("required"))
     }
