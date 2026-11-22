@@ -1,0 +1,170 @@
+# SIGNED RELEASE PACKAGE (manual, owner-approved). Owner request 2026-11-22.
+#
+# This is the ONLY workflow that may receive signing material. The unsigned pipeline
+# (phase10-release.yml) keeps its guard and still never sees a key.
+#
+# What it does:
+#   1. Refuses to start unless the four signing secrets are configured in the `release`
+#      environment (see docs/RELEASE.md section 8 "Signed release workflow").
+#   2. Runs the JVM unit tests, then builds the embedded runtime payload (same toolchain
+#      and caches as phase10-release.yml).
+#   3. Builds, signs (Gradle, from the environment), verifies and packages the release with
+#      phase10/scripts/build-signed-package.sh.
+#   4. Uploads ONE artifact: opencode-android-signed-<label>.zip, containing the signed APK,
+#      the signed AAB, RELEASE-NOTES.txt, VERIFY.txt and SHA256SUMS.txt.
+#
+# Who can run it: anyone with write access can dispatch it, but the `release` environment
+# should be set to REQUIRE REVIEWER APPROVAL, so the signing secrets are only released after
+# the owner approves the run. The keystore is decoded to the runner's temp dir, is deleted at
+# the end of the job, and is never uploaded.
+name: release-signed
+
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: "Release label, e.g. v0.1.0-beta.1 (used in the zip name)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-signed-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  signed-package:
+    name: Build, sign and package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 540
+    environment: release
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      RELEASE_KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_B64 }}
+      RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+      RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+      RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+      RELEASE_CERT_SHA256: ${{ vars.RELEASE_CERT_SHA256 }}
+      RELEASE_LABEL: ${{ github.event.inputs.label }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Check the release label and the signing secrets are configured"
+        shell: bash
+        run: |
+          case "$RELEASE_LABEL" in
+            ""|*[!A-Za-z0-9._-]*) echo "::error title=label::label must be letters, digits, dot, dash or underscore"; exit 1 ;;
+          esac
+          missing=""
+          for v in RELEASE_KEYSTORE_B64 RELEASE_KEYSTORE_PASSWORD RELEASE_KEY_ALIAS RELEASE_KEY_PASSWORD; do
+            if [ -z "$(printenv "$v" || true)" ]; then missing="$missing $v"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error title=signing secrets::missing in the 'release' environment:$missing - see docs/RELEASE.md section 8"
+            exit 1
+          fi
+          echo "signing secrets present; label=$RELEASE_LABEL"
+
+      - name: "Decode the upload keystore to a private temp file (never uploaded)"
+        shell: bash
+        run: |
+          KS="$RUNNER_TEMP/upload-keystore.p12"
+          umask 077
+          printf '%s' "$RELEASE_KEYSTORE_B64" | base64 -d > "$KS"
+          test -s "$KS" || { echo "::error::decoded keystore is empty"; exit 1; }
+          echo "RELEASE_KEYSTORE_FILE=$KS" >> "$GITHUB_ENV"
+          echo "keystore decoded ($(stat -c%s "$KS") bytes)"
+
+      - name: Fix /dev/kvm permissions
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm || true; fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: "Set up Bun 1.4.4 (the v2 repo pin)"
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+
+      - name: "Set up Node 22 (runs the v2 patch host tests)"
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: "Gradle: JVM unit tests before anything is signed"
+        run: SKIP_PAYLOAD=1 ./gradlew :app:testDebugUnitTest -PskipPayload --no-daemon --stacktrace
+
+      - name: "Node 26: restore the Android Node 26 build from cache (key = spike/node26 files)"
+        id: node26cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/node26-out/node26-arm64
+          key: node26-arm64-${{ hashFiles('spike/node26/**') }}
+
+      - name: "Node 26: build Node 26.4.0 for Android arm64 (about 2-3 h, cache miss only)"
+        if: steps.node26cache.outputs.cache-hit != 'true'
+        env:
+          NODE26_OUT: /tmp/node26-out
+        run: bash spike/node26/build-node26-android.sh
+
+      - name: "NDK 28.2.13676358 (install only if missing)"
+        shell: bash
+        run: |
+          if [ -x "$ANDROID_HOME/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang++" ]; then
+            echo "pinned NDK present"; exit 0
+          fi
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -maxdepth 3 -name sdkmanager -type f 2>/dev/null | head -1)"
+          [ -x "$SDKMANAGER" ] || { echo "::error::sdkmanager not found"; exit 1; }
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" --install "ndk;28.2.13676358" > "$RUNNER_TEMP/ndk-install.log" 2>&1 || { tail -n 40 "$RUNNER_TEMP/ndk-install.log"; exit 1; }
+
+      - name: "node-pty for Android arm64 (spike/node-pty-android)"
+        env:
+          NODE_PTY_OUT: /tmp/node-pty-android-out
+        run: bash spike/node-pty-android/build-node-pty-android.sh
+
+      - name: "@parcel/watcher for Android arm64 (spike/parcel-watcher-android)"
+        env:
+          PARCEL_OUT: /tmp/parcel-watcher-android-out
+        run: bash spike/parcel-watcher-android/build-parcel-watcher-android.sh
+
+      - name: "OpenCode v2 bundle, release mode (spike/opencode-v2, V2_RELEASE=1)"
+        env:
+          V2_OUT: /tmp/v2-out
+          V2_RELEASE: "1"
+          NODE_PTY_TGZ: /tmp/node-pty-android-out/node-pty-linux-arm64-android.tgz
+          PARCEL_WATCHER_NODE: /tmp/parcel-watcher-android-out/watcher.node
+        run: bash spike/opencode-v2/build-v2-bundle.sh
+
+      - name: "Embedded runtime payload (phase4/scripts/10-build-payload.sh)"
+        env:
+          NODE26_BIN: /tmp/node26-out/node26-arm64/bin/node
+          NODE26_LIBCXX: /tmp/node26-out/node26-arm64/bin/libc++_shared.so
+          V2_ZIP: /tmp/v2-out/node26-v2.zip
+        run: bash phase4/scripts/10-build-payload.sh
+
+      - name: "Build, sign, verify and package (phase10/scripts/build-signed-package.sh)"
+        run: bash phase10/scripts/build-signed-package.sh --label "$RELEASE_LABEL" --out "$RUNNER_TEMP/signed-out"
+
+      - name: "Remove the decoded keystore"
+        if: always()
+        shell: bash
+        run: |
+          if [ -n "${RUNNER_TEMP:-}" ]; then rm -f "$RUNNER_TEMP/upload-keystore.p12"; fi
+          echo "keystore removed"
+
+      - name: "Upload the signed release zip"
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencode-android-signed-${{ github.event.inputs.label }}
+          path: ${{ runner.temp }}/signed-out/*.zip
+          retention-days: 30
+          if-no-files-found: error
