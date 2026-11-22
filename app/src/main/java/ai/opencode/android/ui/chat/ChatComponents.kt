@@ -132,6 +132,7 @@ const val TAG_MESSAGE = "message"
 const val TAG_TOOL_CARD = "tool_card"
 const val TAG_TOOL_HEADER = "tool_header"
 const val TAG_TOOL_OUTPUT = "tool_output"
+const val TAG_TOOL_LIVE = "tool_live"
 const val TAG_PERMISSION_ASK = "permission_ask"
 const val TAG_PERMISSION_ONCE = "permission_once"
 const val TAG_PERMISSION_ALWAYS = "permission_always"
@@ -688,7 +689,14 @@ fun ToolCard(
     // so the agent's own words and a command's raw output are never the same
     // surface.
     val inFlight = part.status == "pending" || part.status == "running"
-    val liveFile = inFlight && part.tool in LIVE_FILE_TOOLS && !meta.hasDiff
+    // Live text stays available while the card is collapsed AND while its diff is open (owner
+    // 2026-11-22): a diff in the metadata no longer hides it. It ends when the call finishes.
+    val liveFile = inFlight && part.tool in LIVE_FILE_TOOLS
+    // 2026-11-22 (owner): while a write or edit runs, the user chooses whether to watch the text
+    // or code arrive - in the collapsed card too, not only after expanding it. On by default.
+    var showLive by rememberSaveable(part.id) { mutableStateOf(true) }
+    val liveScroll = rememberScrollState()
+    LaunchedEffect(part.input.length) { liveScroll.scrollTo(liveScroll.maxValue) }
     val todos = if (ToolKinds.of(part.tool) == ToolKind.TODO) {
         remember(part.input, part.metadata) { TodoParser.parse(part.input, part.metadata) }
     } else {
@@ -751,6 +759,21 @@ fun ToolCard(
                     }
                 }
                 Spacer(Modifier.width(10.dp))
+                if (liveFile) {
+                    val liveLabel = stringResource(
+                        if (showLive) R.string.chat_tool_live_hide else R.string.chat_tool_live_show,
+                    )
+                    TextButton(
+                        onClick = { showLive = !showLive },
+                        modifier = Modifier.height(34.dp).semantics {
+                            testTag = "${TAG_TOOL_LIVE}_${part.id}"
+                            contentDescription = liveLabel
+                        },
+                    ) {
+                        Text(text = liveLabel, style = MaterialTheme.typography.labelSmall)
+                    }
+                    Spacer(Modifier.width(4.dp))
+                }
                 StatusPill(text = statusLabel, color = statusColor)
                 Spacer(Modifier.width(6.dp))
                 Chevron(up = expanded)
@@ -792,10 +815,22 @@ fun ToolCard(
                 }
             }
 
+            if (liveFile && showLive && !expanded) {
+                Column(
+                    Modifier
+                        .padding(start = 14.dp, end = 14.dp, bottom = 12.dp)
+                        .heightIn(max = 220.dp)
+                        .verticalScroll(liveScroll)
+                        .semantics { testTag = "${TAG_TOOL_LIVE}_body_${part.id}" },
+                ) {
+                    LiveFileContent(tool = part.tool, input = part.input)
+                }
+            }
+
             if (expanded) {
                 HorizontalDivider(thickness = 1.dp, color = chat.toolBorder)
                 Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 14.dp)) {
-                    if (liveFile) {
+                    if (liveFile && showLive) {
                         // Owner (2026-11-21): a write or edit shows what it is writing as it
                         // arrives, not the raw JSON of its arguments. Once the server reports
                         // a diff for the call, that diff below is the authoritative one.

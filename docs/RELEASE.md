@@ -233,18 +233,93 @@ re-run the device gates for that exact build
 (`phase10/scripts/40-release-verify.sh` plus `50-smoke-gates.sh`) before
 uploading: a locally rebuilt artifact has not been through Phase 10's gates.
 
-## 8. What CI may never do
+## 8. What CI may and may not do
 
-* Hold, receive, decode or print the release keystore or its passwords.
-* Sign a release artifact with the real upload key.
-* Print anything that could reconstruct a secret (the Gradle block logs only the
-  keystore file name and its SHA-256).
+There are two release workflows, and they follow different rules.
 
-`phase10/scripts/check-release-invariants.py` enforces the first rule mechanically:
-it fails the build if `phase10/workflow/phase10-release.yml` (or the installed
-copy) mentions `P9_KEYSTORE_B64`, `RELEASE_KEYSTORE_PASSWORD`,
-`RELEASE_KEYSTORE_FILE` or any `P10_KEYSTORE*` name. The Phase 9 workflow's
-optional signing secrets are retired for Phase 10 and must not be restored.
+**`phase10-release.yml` (the test pipeline) never signs.** It has no keystore step and
+no signing secret. Its artifacts are UNSIGNED or TEST-ONLY. This rule still holds:
+
+* It must not hold, receive, decode or print the release keystore or its passwords.
+* `phase10/scripts/check-release-invariants.py` fails the build if this workflow
+  mentions `P9_KEYSTORE_B64`, `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEYSTORE_FILE` or
+  any `P10_KEYSTORE*` name.
+
+**`release-signed.yml` (the signed release, owner decision 2026-11-22) signs.** This is
+the one deliberate exception. It exists so the owner can get a signed zip from the
+Actions tab without a second machine. It is bounded by these rules:
+
+* **Manual only.** It runs on `workflow_dispatch`. It has no push or pull-request trigger.
+* **Protected environment.** Its job uses `environment: release`. Configure that
+  environment in GitHub with **Required reviewers** set to the owner, so the signing
+  secrets are released only after approval. Without that setting the exception has no
+  protection, so do not skip it.
+* **Secrets live only in the `release` environment**, not at repository level (see
+  "Signed release workflow: set the secrets" below).
+* **The keystore is decoded to the runner's temp directory**, its passwords are masked,
+  it is deleted at the end of the job (`if: always()`), and it is never uploaded.
+* **The signed artifacts are verified before packaging.** `build-signed-package.sh`
+  checks the APK with `apksigner` (v2 required), the AAB with `jarsigner`, requires both
+  to be signed by the same key, runs `check-apk.py`, and writes the signing certificate
+  SHA-256 into the release notes. If `RELEASE_CERT_SHA256` is set, a different key fails
+  the build.
+* **The invariant check** (`check-release-invariants.py`) verifies that `release-signed.yml`
+  is manual-only, uses the `release` environment, and references only the four signing
+  secrets listed below.
+
+### Signed release workflow: set the secrets (owner, once)
+
+In GitHub: **Settings → Environments → New environment → `release`**.
+
+1. **Required reviewers:** add yourself.
+2. **Environment secrets** (not repository secrets):
+
+   | Secret | What it is |
+   |---|---|
+   | `RELEASE_KEYSTORE_B64` | the upload keystore file, base64-encoded (one line, no line breaks) |
+   | `RELEASE_KEYSTORE_PASSWORD` | the keystore password |
+   | `RELEASE_KEY_ALIAS` | the key alias inside the keystore |
+   | `RELEASE_KEY_PASSWORD` | the key password |
+
+3. **Environment variable (not secret):** `RELEASE_CERT_SHA256`, the SHA-256 of the
+   upload certificate, as printed by `keytool -list -v`. Setting it makes every build
+   refuse a key that is not yours.
+
+Create the base64 value on your own machine, from the keystore you made in section 2.
+Do not paste it into chat, an issue, a commit or a file in the repository:
+
+```bash
+base64 -w0 ~/keys/upload-keystore.p12 > /tmp/keystore.b64   # Linux
+# macOS: base64 -i ~/keys/upload-keystore.p12 | tr -d '\n' > /tmp/keystore.b64
+gh secret set RELEASE_KEYSTORE_B64 --env release < /tmp/keystore.b64
+rm /tmp/keystore.b64
+gh secret set RELEASE_KEYSTORE_PASSWORD --env release   # type it when prompted
+gh secret set RELEASE_KEY_ALIAS --env release
+gh secret set RELEASE_KEY_PASSWORD --env release
+gh variable set RELEASE_CERT_SHA256 --env release --body "AB:CD:..."
+```
+
+Store a copy of the keystore and its passwords in a password manager. If the upload key
+is lost, Play App Signing can reset it, but a sideloaded APK cannot change its key, and
+an update signed by a different key will not install over the old one.
+
+### Running it
+
+Actions → **release-signed** → **Run workflow** → enter the label (for example
+`v0.1.0-beta.1`) → approve the environment prompt. The result is one artifact,
+`opencode-android-signed-<label>`, containing `opencode-android-<label>-signed.zip`.
+
+### What the zip contains
+
+* `opencode-android-<label>-arm64-v8a.apk`: the signed sideload APK.
+* `opencode-android-<label>.aab`: the signed Play App Bundle. Upload this to Play.
+* `RELEASE-NOTES.txt`: version, commit, native ABI, runtime versions, signing key SHA-256.
+* `VERIFY.txt`: the `apksigner`, `jarsigner` and `check-apk.py` output.
+* `SHA256SUMS.txt`: checksums for every file above.
+
+The APK ships only the `arm64-v8a` ABI. The runtime payload contains arm64 binaries
+only (x86_64 was retired 2026-11-16), so a separate "universal" APK would be the same
+bytes. The AAB is the multi-device form: Play builds the per-device splits from it.
 
 ## 9. The debug-key smoke build (never upload it)
 

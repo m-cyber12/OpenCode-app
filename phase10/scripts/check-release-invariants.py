@@ -18,7 +18,9 @@ mechanical rather than aspirational:
      length limits, privacy policy present and asserting the properties this
      architecture actually has, icon 512x512, feature graphic 1024x500, and at
      least two screenshots of a real screen size.
-  4. CI STILL CANNOT SIGN. The Phase 10 workflow references no keystore secret.
+  4. THE UNSIGNED PIPELINE NEVER SIGNS. phase10-release.yml references no keystore secret.
+  5. ONE SIGNED WORKFLOW, STRICTLY BOUNDED. release-signed.yml (owner decision 2026-11-22) is
+     manual-only, runs in the `release` environment and reads only the approved signing names.
 
 Usage: check-release-invariants.py <repo-root> [--require-store-assets]
 Exit 0 = all invariants hold. Findings are printed as FAIL lines.
@@ -347,6 +349,32 @@ def main():
             if "secrets." in line:
                 fail("%s injects %s from secrets - CI must never receive signing material"
                      % (wf, m.group(1)))
+
+    # ------------------------------------------- 5. the signed release workflow
+    # owner decision 2026-11-22: ONE workflow may sign, under strict conditions (docs/RELEASE.md s8).
+    signed_wf = os.path.join(root, ".github/workflows/release-signed.yml")
+    signed = read(signed_wf)
+    if signed is None:
+        fail("missing .github/workflows/release-signed.yml (the signed release workflow)")
+    else:
+        if not re.search(r"^on:\n  workflow_dispatch:", signed, re.M):
+            fail("release-signed.yml must be manual-only (workflow_dispatch)")
+        for trig in ("push:", "pull_request:", "pull_request_target:", "schedule:", "workflow_run:", "release:"):
+            if re.search(r"^  %s" % re.escape(trig), signed, re.M):
+                fail("release-signed.yml has an automatic trigger (%s); signing must stay manual" % trig)
+        if not re.search(r"^\s+environment:\s*release\s*$", signed, re.M):
+            fail("release-signed.yml must run in the `release` environment (required-reviewer gate)")
+        allowed = {"RELEASE_KEYSTORE_B64", "RELEASE_KEYSTORE_PASSWORD", "RELEASE_KEY_ALIAS",
+                   "RELEASE_KEY_PASSWORD", "RELEASE_CERT_SHA256", "GITHUB_TOKEN"}
+        for m in re.finditer(r"secrets\.([A-Za-z0-9_]+)", signed):
+            if m.group(1) not in allowed:
+                fail("release-signed.yml reads secrets.%s, which is not an approved signing name" % m.group(1))
+        if re.search(r"echo\s+.*\$\{\{\s*secrets\.", signed) or re.search(r"echo\s+.*\$RELEASE_KEYSTORE_PASSWORD", signed):
+            fail("release-signed.yml echoes a signing secret")
+        if re.search(r"upload-artifact", signed) and re.search(r"upload-artifact[\s\S]{0,400}keystore\.p12", signed):
+            fail("release-signed.yml would upload the keystore")
+        if "contents: read" not in signed:
+            fail("release-signed.yml must declare permissions: contents: read")
 
     for n in notes:
         print("NOTE %s" % n)
