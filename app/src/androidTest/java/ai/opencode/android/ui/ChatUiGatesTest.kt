@@ -685,7 +685,7 @@ class ChatUiGatesTest {
                 starToggles++
                 starLastToggle = Triple(providerId, modelId, checked)
             },
-            onConnectProvider = { _, _ -> connectCalls++ },
+            onConnectProvider = { _, _, _ -> connectCalls++ },
             onAddCustomProvider = { _, _, _, _, _ -> customProviderCalls++ },
             onBack = { settingsBack++ },
         )
