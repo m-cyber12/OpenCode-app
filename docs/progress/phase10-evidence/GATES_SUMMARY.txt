@@ -2,7 +2,7 @@ P10-STATIC PASS: phase9 checks unchanged + release invariants (no key material, 
 P10_API36_SDK SKIP: x86_64 device gate retired as a release gate (P10_X86_DEVICE_RETIRED=1; see the v2 migration plan)
 P10_DRIVER_SELFTEST PASS: the real-device driver ran end to end against a fake phone (16 scenarios, pass=136 fail=0 - the scenario list and every check are in p10-driver-selftest.log)
 P10-UNIT PASS: JVM tests=665 failures=0 errors=0 skipped=0 (unit tests are NOT runtime evidence - the device gates below are)
-P10-PAYLOAD PASS: payloadVersion=10 opencode=2.2.5@9bbb8ce18c80 node26=26.4.0 git=v2.48.1 rg=15.1.0 sha256=8df4f6d65ba099de files=1558
+P10-PAYLOAD PASS: payloadVersion=10 opencode=2.2.5@9bbb8ce18c80 node26=26.4.0 git=v2.48.1 rg=15.1.0 sha256=a98b1383bdd79961 files=1558
 P10-DEVICE SKIP: x86_64 device gate retired as a release gate (P10_X86_DEVICE_RETIRED=1; see the v2 migration plan)
 P6-UI SKIP: x86_64 device gate retired as a release gate (P10_X86_DEVICE_RETIRED=1; see the v2 migration plan)
 P10_WS_W4 SKIP: x86_64 device gate retired as a release gate (P10_X86_DEVICE_RETIRED=1; see the v2 migration plan)
@@ -10,13 +10,13 @@ P10-SMOKE SKIP: x86_64 device gate retired as a release gate (P10_X86_DEVICE_RET
 P10-SHOTS SKIP: x86_64 device gate retired as a release gate (P10_X86_DEVICE_RETIRED=1; see the v2 migration plan)
 P9-GATES SKIP: x86_64 device gate retired as a release gate (P10_X86_DEVICE_RETIRED=1; see the v2 migration plan)
 P10_RELEASE_AAB PASS :: CONTENTS entries=332 native_abis=arm64-v8a(24 libs,130.9MB) payload=True manifest_asset=True
-P10_RELEASE_APK PASS :: MANIFEST package=io.github.mcyber12.opencode versionCode=8 versionName=2.2.5-phase10 minSdk=29 targetSdk=36 debuggable=False
+P10_RELEASE_APK PASS :: MANIFEST package=<app> versionCode=8 versionName=2.2.5-phase10 minSdk=29 targetSdk=36 debuggable=False
 P10_RELEASE_APK_DETAIL PASS :: CONTENTS entries=327 native_abis=arm64-v8a(24 libs,130.9MB) payload=True manifest_asset=True
 P10_SIZE PASS :: apkMb=115.4 capMb=230 headroomMb=114.6 native=arm64-v8a(24libs,130.9MB)
-P10_TESTONLY_ARM64 PASS :: installable arm64-only APK bytes=121002832 MiB=115.4 x86_64=absent signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
-P10_TESTONLY_RELEASE PASS :: installable non-debuggable universal APK bytes=121002832 MiB=115.4 signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
+P10_TESTONLY_ARM64 PASS :: installable arm64-only APK bytes=121011024 MiB=115.4 x86_64=absent signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
+P10_TESTONLY_RELEASE PASS :: installable non-debuggable universal APK bytes=121011024 MiB=115.4 signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
 P10_UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
-P10_SUMMARY 2026-11-22T04:45:52Z
+P10_SUMMARY 2026-11-22T08:02:20Z
 phase6_ui_fails=n/a phase10_gate_fails=0 phase9_gate_fails=0
 NOTE: PASS lines above are real gate executions on the emulator/device. Unit and
       compile lines are NOT runtime evidence. UNSIGNED release artifacts are
