@@ -3041,6 +3041,21 @@ fun ProvidersScreen(
                     )
                 }
             }
+            // 2026-11-22 (owner): a removal or key delete said nothing on this screen. Its result shows here.
+            if (!addOpen && customProviderStatus.isNotEmpty()) {
+                item(key = "providers_status") {
+                    Text(
+                        text = customProviderStatus,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (customProviderStatus.startsWith("Could not") || customProviderStatus.startsWith("Not added")) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            ChatTheme.chat.muted
+                        },
+                        modifier = Modifier.padding(vertical = 4.dp).semantics { testTag = "providers_status" },
+                    )
+                }
+            }
             if (addOpen) {
                 item(key = "keys") {
                     KeysSection(

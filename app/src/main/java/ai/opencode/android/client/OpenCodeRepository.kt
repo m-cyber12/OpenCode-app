@@ -213,6 +213,9 @@ class OpenCodeRepository(
     /** v9.40: last successful provider snapshot - seeds the next refresh instantly. */
     private var providersCache: OpenCodeApi.ProviderSnapshot? = null
 
+    /** Bumped after every key or provider change (see [applyCredentialChange]); guards stale reads in [refresh]. */
+    @Volatile private var credentialEpoch = 0L
+
     init {
         // v9.41 (owner item 7): a rebuilt repository (new project, restart) is
         // still the same app - the catalog on disk is its first frame.
@@ -427,7 +430,11 @@ class OpenCodeRepository(
                     }.onFailure { errors.add("mcp: ${it.message}") }
                 }
                 launch {
+                    val epoch = credentialEpoch
                     runCatching { api.providers() }.onSuccess { p ->
+                        // 2026-11-22 (owner): a key or provider changed while this read was in flight,
+                        // so the read may be stale (it would put back a removed key as "Ready").
+                        if (epoch != credentialEpoch) return@onSuccess
                         providersCache = p
                         // v9.41 (owner item 7): through to disk (cheap; a
                         // failure here never affects the live state).
@@ -986,21 +993,32 @@ class OpenCodeRepository(
     }
 
     fun revokeProvider(providerID: String, store: ai.opencode.android.security.SecretStore) {
+        setProviderStatus("Removing the key for $providerID...")
         scope.launch {
-            runCatching {
-                keyring?.removeAll(providerID)
-                store.delete(ai.opencode.android.security.SecretNames.providerSecretName(providerID))
-                api.deleteProviderAuth(providerID)
-                applyCredentialChange(providerID)
-            }.onSuccess { p ->
-                val cur = _state.value.model
-                val next = if (cur?.providerID == providerID) defaultModelHint(p) else cur
-                _state.value = _state.value.copy(
-                    providers = p,
-                    model = next,
-                    notice = "credential revoked for $providerID",
-                )
-            }.onFailure { fail("revoke provider", it) }
+            val problems = ArrayList<String>()
+            // The agent first: if it refuses, the device keys stay, so the user can try again.
+            runCatching { api.deleteProviderAuth(providerID) }.onFailure { problems.add("agent: ${it.message}") }
+            if (problems.isEmpty()) {
+                runCatching { keyring?.removeAll(providerID) }.onFailure { problems.add("device keys: ${it.message}") }
+                runCatching { store.delete(ai.opencode.android.security.SecretNames.providerSecretName(providerID)) }
+                    .onFailure { problems.add("device copy: ${it.message}") }
+            }
+            val p = runCatching { applyCredentialChange(providerID) }.getOrElse {
+                problems.add("provider list: ${it.message}")
+                null
+            }
+            val st = _state.value
+            val cur = st.model
+            _state.value = st.copy(
+                providers = p ?: st.providers,
+                model = if (p != null && cur?.providerID == providerID) defaultModelHint(p) else cur,
+                notice = if (problems.isEmpty()) "credential revoked for $providerID" else "revoke $providerID: ${problems.joinToString("; ")}",
+                customProviderStatus = if (problems.isEmpty()) {
+                    "Removed the key for $providerID."
+                } else {
+                    scrubbed("Could not remove the key for $providerID: ${problems.joinToString("; ")}")
+                },
+            )
         }
     }
 
@@ -1035,26 +1053,44 @@ class OpenCodeRepository(
      */
     fun removeProviderKey(providerID: String, slot: String) {
         scope.launch {
-            try {
-                val ring = keyring ?: return@launch
-                val r = ring.remove(providerID, slot)
-                if (!r.removed) return@launch
-                when {
-                    r.promotedKey != null -> {
-                        api.setProviderAuth(providerID, r.promotedKey)
-                        val p = applyCredentialChange(providerID)
-                        _state.value = _state.value.copy(providers = p, notice = "key deleted; $providerID now uses '${r.promoted?.label}'")
-                    }
-                    r.empty -> {
-                        api.deleteProviderAuth(providerID)
-                        val p = applyCredentialChange(providerID)
-                        _state.value = _state.value.copy(providers = p, notice = "last key deleted; $providerID is disconnected")
-                    }
-                    else -> _state.value = _state.value.copy(notice = "key deleted for $providerID")
-                }
-            } catch (t: Throwable) {
-                fail("remove key", t)
+            val ring = keyring
+            if (ring == null) {
+                setProviderStatus("Keys cannot be changed on this device.")
+                return@launch
             }
+            val r = runCatching { ring.remove(providerID, slot) }.getOrElse {
+                providerFailed("remove key", it)
+                return@launch
+            }
+            if (!r.removed) {
+                setProviderStatus("That key is no longer stored on this device.")
+                return@launch
+            }
+            // The device copy is already gone. Push the change to the agent, then re-read it either
+            // way, so the status shows what the agent is really running on.
+            val push = runCatching {
+                when {
+                    r.promotedKey != null -> api.setProviderAuth(providerID, r.promotedKey)
+                    r.empty -> api.deleteProviderAuth(providerID)
+                    else -> Unit
+                }
+            }
+            val message = push.fold(
+                onSuccess = {
+                    when {
+                        r.promotedKey != null -> "key deleted; $providerID now uses '${r.promoted?.label}'"
+                        r.empty -> "last key deleted; $providerID is disconnected"
+                        else -> "key deleted for $providerID"
+                    }
+                },
+                onFailure = { "key deleted on this device, but the agent was not updated for $providerID: ${it.message}" },
+            )
+            val p = runCatching { applyCredentialChange(providerID) }.getOrNull()
+            _state.value = _state.value.copy(
+                providers = p ?: _state.value.providers,
+                notice = message,
+                customProviderStatus = scrubbed(message),
+            )
         }
     }
 
@@ -1156,6 +1192,7 @@ class OpenCodeRepository(
      */
     private fun providerFailed(what: String, t: Throwable) {
         val status = (t as? OpenCodeApi.ApiException)?.status ?: -1
+        setProviderStatus("$what failed: ${t.message}")
         if (status == -1) {
             fail(what, t)
             return
@@ -1165,6 +1202,13 @@ class OpenCodeRepository(
             errorKind = AgentAvailability.UNKNOWN,
         )
     }
+
+    /** Shows a provider outcome on the Providers screen (the chat banner is not visible there). */
+    private fun setProviderStatus(text: String) {
+        _state.value = _state.value.copy(customProviderStatus = scrubbed(text))
+    }
+
+    private fun scrubbed(text: String): String = AccountRedaction.scrub(text).take(500)
 
     /** Re-reads the custom providers from the config file into [UiState.customProviders]. */
     fun refreshCustomProviders() {
@@ -1188,25 +1232,35 @@ class OpenCodeRepository(
      */
     fun removeCustomProvider(providerID: String, store: ai.opencode.android.security.SecretStore) {
         val id = providerID.trim()
-        _state.value = _state.value.copy(customProviderStatus = "Removing $id...")
+        setProviderStatus("Removing $id...")
         scope.launch {
-            try {
-                api.deleteProviderAuth(id)
-                api.removeProviderConfig(id)
-                store.delete(ai.opencode.android.security.SecretNames.providerSecretName(id))
-                val p = applyCredentialChange(id)
-                val current = _state.value.model
-                val next = if (current?.providerID == id) defaultModelHint(p) else current
-                _state.value = _state.value.copy(
-                    providers = p,
-                    model = next,
-                    customProviderStatus = "Removed $id.",
-                )
-                refreshCustomProviders()
-            } catch (t: Throwable) {
-                _state.value = _state.value.copy(customProviderStatus = "")
-                providerFailed("remove provider $id", t)
+            // Each step runs on its own: one failing must not leave the others undone, and the
+            // list is re-read in every case, so the screen shows what is really there.
+            val problems = ArrayList<String>()
+            runCatching { api.deleteProviderAuth(id) }.onFailure { problems.add("keys: ${it.message}") }
+            runCatching { api.removeProviderConfig(id) }.onFailure { problems.add("config: ${it.message}") }
+            runCatching { store.delete(ai.opencode.android.security.SecretNames.providerSecretName(id)) }
+                .onFailure { problems.add("device copy: ${it.message}") }
+            val list = runCatching { api.customProviders() }.getOrElse {
+                problems.add("config read: ${it.message}")
+                _state.value.customProviders
             }
+            val p = runCatching { applyCredentialChange(id) }.getOrElse {
+                problems.add("agent list: ${it.message}")
+                null
+            }
+            val st = _state.value
+            val current = st.model
+            _state.value = st.copy(
+                providers = p ?: st.providers,
+                model = if (p != null && current?.providerID == id) defaultModelHint(p) else current,
+                customProviders = list,
+                customProviderStatus = if (problems.isEmpty()) {
+                    "Removed $id."
+                } else {
+                    scrubbed("Could not fully remove $id: ${problems.joinToString("; ")}")
+                },
+            )
         }
     }
 
@@ -1239,6 +1293,8 @@ class OpenCodeRepository(
         runCatching { api.dispose() }.onFailure {
             _state.value = _state.value.copy(notice = "warning: instance reset after $providerID credential change failed: ${it.message}")
         }
+        // Reads started before this point may describe the old credentials; refresh() drops them.
+        credentialEpoch++
         return api.providers()
     }
 
