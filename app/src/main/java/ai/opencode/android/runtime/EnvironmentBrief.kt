@@ -157,7 +157,7 @@ workspace, this sandbox is temporary - a change that is not pushed is
 LOST. The checkout is on its
 `opencode/<project>` branch (token-free origin) and git speaks https.
 YOU push: git identity is already set - never ask for a name or email.
-Commit + push after EVERY logical change, from the first prompt on:
+From the first prompt on, commit + push after EVERY logical change:
 `git push origin HEAD` (credentials preset; `git remote get-url origin` names owner/repo). If that fails: `git push https://x-access-token:${'$'}key@github.com/<owner>/<repo>.git HEAD`.
 Stay there -
 no extra branches unless the user asks; never print or commit it;
