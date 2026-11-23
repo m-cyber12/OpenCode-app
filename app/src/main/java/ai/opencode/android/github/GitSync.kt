@@ -6,6 +6,7 @@ import org.eclipse.jgit.lib.BatchingProgressMonitor
 import org.eclipse.jgit.lib.Constants
 import org.eclipse.jgit.storage.file.FileBasedConfig
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
+import org.eclipse.jgit.util.FS
 
 /**
  * v9.27 - the app's own GitHub transport, on JGit (pure Java).
@@ -108,7 +109,7 @@ object GitSync {
      * whatever the device or CI happens to have set globally.
      */
     private fun localConfig(git: Git): FileBasedConfig =
-        FileBasedConfig(null, File(git.repository.directory, "config")).also { it.load() }
+        FileBasedConfig(File(git.repository.directory, "config"), FS.DETECTED).also { it.load() }
 
     /** A [BatchingProgressMonitor] that forwards "Task: 42%" lines to [onLine]. */
     private fun monitor(onLine: (String) -> Unit) = object : BatchingProgressMonitor() {
