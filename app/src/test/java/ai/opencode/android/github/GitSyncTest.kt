@@ -220,4 +220,29 @@ class GitSyncTest {
         assertEquals("username=x-access-token\npassword=tok123\n", run("get"))
         assertEquals("", run("store"))
     }
+
+    @Test
+    fun theProjectBranchIsPublishedAfterTheFirstCloneAndDefaultBranchIsNot() {
+        // 2026-11-23 (owner): push the project branch right after the first clone.
+        // The default branch must never be pushed by the app.
+        val origin = bareOrigin()
+        val project = tmp.newFolder("publish")
+        val branch = GitClone.projectBranch("publish")
+        GitSync.cloneAndBranch(
+            cloneUrl = origin.absolutePath,
+            targetDir = project,
+            branch = branch,
+            token = "unused-for-local-transport",
+        ) { }
+        val mainBefore = Git.open(origin).use { it.repository.resolve("refs/heads/main") }
+
+        GitSync.publishProjectBranch(project, "unused-for-local-transport") { }
+
+        Git.open(origin).use { remote ->
+            assertTrue(remote.repository.resolve("refs/heads/$branch") != null)
+            assertEquals(mainBefore, remote.repository.resolve("refs/heads/main"))
+        }
+        // Second run: origin/<branch> now exists, so nothing is pushed and nothing fails.
+        GitSync.publishProjectBranch(project, "unused-for-local-transport") { }
+    }
 }

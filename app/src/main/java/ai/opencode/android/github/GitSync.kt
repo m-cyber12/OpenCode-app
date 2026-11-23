@@ -5,6 +5,7 @@ import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.BatchingProgressMonitor
 import org.eclipse.jgit.lib.Constants
 import org.eclipse.jgit.storage.file.FileBasedConfig
+import org.eclipse.jgit.transport.RefSpec
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.eclipse.jgit.util.FS
 
@@ -273,6 +274,30 @@ object GitSync {
             .setProgressMonitor(monitor(onLine))
             .call()
             .use { }
+    }
+
+    /**
+     * 2026-11-23 (owner): the project branch goes to GitHub right after the first clone,
+     * so the models work on it and the refresh before each prompt has it to
+     * fast-forward from. Only the project branch is pushed - never the default branch.
+     * Skipped when origin already has the branch (a tracking ref exists after the
+     * fetch). A rejected push is not an exception; the next prompt tries again.
+     */
+    fun publishProjectBranch(dir: File?, token: String, onLine: (String) -> Unit) {
+        if (dir == null || !File(dir, ".git").isDirectory) return
+        runCatching {
+            Git.open(dir).use { git ->
+                val want = GitClone.projectBranch(dir.name)
+                if (git.repository.branch != want) return
+                if (git.repository.resolve("refs/remotes/origin/$want") != null) return
+                git.push()
+                    .setRemote("origin")
+                    .setRefSpecs(RefSpec("refs/heads/$want:refs/heads/$want"))
+                    .setCredentialsProvider(credentials(token))
+                    .setProgressMonitor(monitor(onLine))
+                    .call()
+            }
+        }
     }
 
     /**

@@ -85,6 +85,9 @@ class GithubCloneManager(
                     branch = branch,
                     token = token,
                 ) { line -> _state.value = _state.value.copy(progress = line) }
+                GitSync.publishProjectBranch(targetDir, token) { line ->
+                    _state.value = _state.value.copy(progress = line)
+                }
                 configureAgent(targetDir, token)
                 _state.value = _state.value.copy(phase = Phase.DONE, progress = branch)
                 onDone(branch)
@@ -146,6 +149,11 @@ class GithubCloneManager(
                         targetDir = dir,
                         token = token,
                     ) { line -> _state.value = _state.value.copy(progress = line) }
+                    GitSync.ensureProjectBranch(dir)
+                    // 2026-11-23 (owner): the project branch exists on GitHub right after the first clone.
+                    GitSync.publishProjectBranch(dir, token) { line ->
+                        _state.value = _state.value.copy(progress = line)
+                    }
                 } else if (File(dir, ".git").isDirectory) {
                     _state.value = _state.value.copy(progress = "refreshing")
                     GitSync.refreshFastForward(dir, token) { line ->
