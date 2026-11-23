@@ -129,6 +129,8 @@ fun MarkdownBlocks(
 
                 is MdBlock.Table -> TableBlock(block, style = style, color = color)
 
+                is MdBlock.Picture -> RemoteImage(url = block.url, alt = block.alt)
+
                 MdBlock.Rule -> HorizontalDivider(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
                     thickness = 1.dp,

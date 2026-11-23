@@ -186,4 +186,19 @@ class MarkdownTest {
         assertEquals("bash", Markdown.normaliseLanguage("bash"))
         assertEquals("", Markdown.normaliseLanguage(""))
     }
+
+    @Test
+    fun aHttpsPictureOnItsOwnLineBecomesAPictureBlock() {
+        val parsed = blocks("Here it is:\n\n![Logo](https://example.com/logo.png)\n\nDone.")
+        val image = parsed.filterIsInstance<MdBlock.Picture>().single()
+        assertEquals("https://example.com/logo.png", image.url)
+        assertEquals("Logo", image.alt)
+    }
+
+    @Test
+    fun aPlainHttpOrFileLinkIsNeverAPictureBlock() {
+        assertTrue(blocks("![x](http://example.com/a.png)").none { it is MdBlock.Picture })
+        assertTrue(blocks("![x](file:///sdcard/a.png)").none { it is MdBlock.Picture })
+        assertTrue(blocks("![x](https://example.com/a.png) and more text").none { it is MdBlock.Picture })
+    }
 }

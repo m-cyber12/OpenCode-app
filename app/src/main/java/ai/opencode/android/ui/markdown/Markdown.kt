@@ -40,6 +40,8 @@ sealed class MdBlock {
     data class Quote(val spans: List<MdSpan>) : MdBlock()
     data class Table(val header: List<List<MdSpan>>, val rows: List<List<List<MdSpan>>>) : MdBlock()
     object Rule : MdBlock()
+    /** A picture on its own line: `![alt](https://...)`. Only https images are ever shown. */
+    data class Picture(val url: String, val alt: String) : MdBlock()
 }
 
 sealed class MdSpan {
@@ -74,6 +76,7 @@ object Markdown {
     private val FENCE = Regex("^(`{3,}|~{3,})[ \\t]*(.*)$")
     private val TABLE_SEP = Regex("^\\s*\\|?\\s*:?-{2,}:?\\s*(\\|\\s*:?-{2,}:?\\s*)*\\|?\\s*$")
     private val TABLE_BREAK = Regex("<br\\s*/?>", RegexOption.IGNORE_CASE)
+    private val IMAGE_LINE = Regex("^!\\[([^\\]]{0,200})\\]\\((https://[^\\s)]{1,2000})\\)$")
 
     /** ChatML-style control markers a raw-completion provider can leak. */
     private val LEAKED_TOKEN = Regex("<\\|[a-zA-Z_][a-zA-Z0-9_]{0,31}\\|>")
@@ -124,6 +127,12 @@ object Markdown {
 
                 RULE.matches(trimmed) -> {
                     out.add(MdBlock.Rule)
+                    i += 1
+                }
+
+                IMAGE_LINE.matches(trimmed) -> {
+                    val m = IMAGE_LINE.matchEntire(trimmed)!!
+                    out.add(MdBlock.Picture(url = m.groupValues[2], alt = m.groupValues[1].trim()))
                     i += 1
                 }
 
@@ -191,6 +200,7 @@ object Markdown {
         return t.isEmpty() ||
             FENCE.matches(t) ||
             RULE.matches(t) ||
+            IMAGE_LINE.matches(t) ||
             HEADING.matches(t) ||
             t.startsWith(">") ||
             UL_ITEM.matches(lines[index]) ||
