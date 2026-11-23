@@ -142,7 +142,7 @@ effective date above changes with it. History:
 
 ## Who is responsible
 
-The app is published by its individual developer (the `m-cyber12` GitHub account),
+The app is published by its individual developer,
 who does not operate any server that receives data from this app. The embedded
 agent is the open-source OpenCode project (`anomalyco/opencode`, MIT licensed);
 this app is an independent client of it, not affiliated with or endorsed by that

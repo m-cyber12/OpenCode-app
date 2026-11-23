@@ -476,4 +476,18 @@ class EnvironmentBriefTest {
         assertTrue(topic.contains("One task runs at a time"))
         assertTrue(topic.contains("No token or cost budget exists here"))
     }
+
+    @Test
+    fun chatFormatTopicTeachesTablesAndWebPicturesWithTheirLimits() {
+        // 2026-11-23 (owner): the models must know how to draw tables and web pictures,
+        // and the limits that keep those pictures safe (https only, no invented URLs).
+        val topic = EnvironmentBrief.topicBriefs()["chat-format.md"]
+        assertTrue("chat-format.md must exist", topic != null)
+        val text = topic!!
+        assertTrue(text.contains("|---|"))
+        assertTrue(text.contains("![") && text.contains("](https://"))
+        assertTrue(text.contains("Only `https` links"))
+        assertTrue(text.contains("Never invent a URL"))
+        assertTrue(text.contains("Do not put a picture inside a sentence"))
+    }
 }

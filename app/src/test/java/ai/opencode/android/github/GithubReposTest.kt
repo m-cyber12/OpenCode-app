@@ -34,13 +34,13 @@ class GithubReposTest {
     fun parseReadsNameFullNameBranchAndVisibility() {
         val repos = GithubRepos.parseRepos(
             """[
-              {"name":"CreatorsHub","full_name":"m-cyber12/CreatorsHub","default_branch":"main","private":false},
-              {"name":"secret","full_name":"m-cyber12/secret","private":true}
+              {"name":"CreatorsHub","full_name":"example-owner/CreatorsHub","default_branch":"main","private":false},
+              {"name":"secret","full_name":"example-owner/secret","private":true}
             ]""",
         )
         assertEquals(2, repos.size)
         assertEquals("CreatorsHub", repos[0].name)
-        assertEquals("m-cyber12/CreatorsHub", repos[0].fullName)
+        assertEquals("example-owner/CreatorsHub", repos[0].fullName)
         assertEquals("main", repos[0].defaultBranch)
         assertFalse(repos[0].private)
         assertTrue(repos[1].private)
@@ -51,17 +51,17 @@ class GithubReposTest {
     @Test
     fun cloneUrlIsTheTokenFreeWebForm() {
         assertEquals(
-            "https://web.example/m-cyber12/CreatorsHub.git",
-            GithubRepos.cloneUrl("https://web.example/", "m-cyber12/CreatorsHub"),
+            "https://web.example/example-owner/CreatorsHub.git",
+            GithubRepos.cloneUrl("https://web.example/", "example-owner/CreatorsHub"),
         )
     }
 
     /** Owner (2026-11-23): the agent asked for a GitHub ID and email. The app now knows both. */
     @Test
     fun viewerFromGithubUserCarriesTheNoReplyEmail() {
-        val v = GithubRepos.parseViewer("""{"login":"m-cyber12","id":12345,"name":"Owner"}""")
-        assertEquals("m-cyber12", v?.login)
-        assertEquals("12345+m-cyber12@users.noreply.github.com", v?.noReplyEmail)
+        val v = GithubRepos.parseViewer("""{"login":"example-owner","id":12345,"name":"Owner"}""")
+        assertEquals("example-owner", v?.login)
+        assertEquals("12345+example-owner@users.noreply.github.com", v?.noReplyEmail)
     }
 
     @Test
@@ -74,8 +74,8 @@ class GithubReposTest {
     @Test
     fun emptyRepoReadmeGoesThroughTheContentsApi() {
         assertEquals(
-            "https://api.example/repos/m-cyber12/rub/contents/README.md",
-            GithubRepos.readmeUrl("https://api.example/", "m-cyber12/rub"),
+            "https://api.example/repos/example-owner/rub/contents/README.md",
+            GithubRepos.readmeUrl("https://api.example/", "example-owner/rub"),
         )
         val body = org.json.JSONObject(GithubRepos.emptyReadmeBody())
         assertEquals("", body.getString("content"))

@@ -160,7 +160,6 @@ class ChatUiGatesTest {
     private val openedProjectList = mutableListOf<String>()
     private var settingsBack = 0
     private var restarts = 0
-    private var shares = 0
     private var copies = 0
     private var welcomeContinue = 0
     private val openedDirs = mutableListOf<String>()
@@ -661,7 +660,6 @@ class ChatUiGatesTest {
             onDisconnectMcp = { },
             onRefreshMcp = { },
             onBashPolicy = { },
-            onShareDiagnostics = { shares++ },
             onCopyDiagnostics = { copies++ },
             onRefreshDiagnostics = { },
             onRestartRuntime = { restarts++ },

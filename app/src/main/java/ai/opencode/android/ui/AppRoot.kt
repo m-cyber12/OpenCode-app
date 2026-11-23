@@ -140,7 +140,7 @@ private const val ROUTE_ONBOARDING_PROVIDER = "onboarding_provider"
 private data class QueuedPrompt(val text: String, val seq: Long)
 
 @Composable
-fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
+fun AppRoot(onOpenUrl: (String) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -2263,10 +2263,6 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                                 )
                             }
                         }
-                    },
-                    onShareDiagnostics = {
-                        loadDiagnostics()
-                        onShareDiagnostics()
                     },
                     onCopyDiagnostics = { copyToClipboard(context, diagnosticsLines.joinToString("\n")) },
                     onRefreshDiagnostics = { loadDiagnostics() },

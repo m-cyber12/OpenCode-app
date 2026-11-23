@@ -84,7 +84,6 @@ class MainActivity : ComponentActivity() {
             // reads, which the U7 semantics audit still checks property by property.
             Box(Modifier.semantics { testTagsAsResourceId = true }) {
                 AppRoot(
-                    onShareDiagnostics = { shareDiagnostics() },
                     onOpenUrl = { url -> openUrl(url) },
                 )
             }
@@ -95,29 +94,6 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         RuntimeService.start(this)
-    }
-
-    /**
-     * Share the diagnostics bundle. Collected on a worker thread, written into the
-     * app's own files dir and handed over through the FileProvider - the same bundle
-     * the Settings screen shows, and it never contains a credential.
-     */
-    private fun shareDiagnostics() {
-        val mgr = RuntimeManager.get(this)
-        Thread {
-            val diag = mgr.diagnostics()
-            val file = ai.opencode.android.runtime.Diagnostics.writeToFile(
-                ai.opencode.android.runtime.RuntimePaths.get(this), diag.text,
-            )
-            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
-            val send = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_SUBJECT, "OpenCode Android diagnostics")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            startActivity(Intent.createChooser(send, "Share OpenCode diagnostics"))
-        }.start()
     }
 
     /**

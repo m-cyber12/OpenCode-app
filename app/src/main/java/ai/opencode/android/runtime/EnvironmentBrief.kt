@@ -207,6 +207,7 @@ what cannot have changed; read each topic brief at most once.
 - $briefsDir/extensions.md - MCP servers and skills: where they live, how to
   register one. Read before adding either.
 - $briefsDir/video.md - MP4 videos from code.
+- $briefsDir/chat-format.md - tables and pictures: read first.
 - $briefsDir/todo.md - the user's todo-list feature, and the checklist in detail.
 """.trimIndent() + "\n"
     }
@@ -713,7 +714,46 @@ Put the todo list on the page the user will open. Do not bury it in a second fil
 that nothing links to.
 """.trimIndent() + "\n"
 
+        // 2026-11-23 (owner): the chat draws tables and web pictures. The syntax and
+        // the limits live here, so the always-read main brief only points at them.
+        val chatFormat = """
+# Tables and pictures in your reply - read before you write either
+
+The chat draws standard Markdown, with two structures beyond text and lists.
+
+## Tables
+Use a pipe table when you compare two or more things side by side:
+
+| Option | Cost | Best for |
+|---|---|---|
+| Free plan | 0 | Trying it out |
+| Pro plan | 20 per month | Daily work |
+
+Rules: one header row, then the `|---|` separator row, then the rows. Keep each
+cell to a few words. Do not put a line break inside a cell. Keep a table to about
+8 rows. Use a table only for a real comparison; a list is better for steps.
+
+## Pictures from the web
+Put a picture on its own line, with a short description in the brackets:
+
+![Diagram of the request flow](https://example.com/images/flow.png)
+
+- Only `https` links. The phone downloads the picture itself, in the background.
+  Plain `http` links and links to the phone or the local network are refused.
+- Link to the image file itself (.png, .jpg, .webp, .gif). A link to a web page
+  shows nothing.
+- Use only links you know are real and stable: a link the user gave you, or a
+  link on an official site you are sure of. Never invent a URL. If a link is
+  wrong, the chat shows only the description.
+- A picture cannot show a file from the project folder. For that, link the file
+  by name, or build a page that shows it.
+- The description is what a screen reader says, and what shows when the picture
+  cannot load. Make it one short, plain sentence.
+- Do not put a picture inside a sentence or a list item. Give it its own line.
+""".trimIndent() + "\n"
+
         return linkedMapOf(
+            "chat-format.md" to chatFormat,
             "preview.md" to preview,
             "screenshots.md" to screenshots,
             "webapp.md" to webapp,

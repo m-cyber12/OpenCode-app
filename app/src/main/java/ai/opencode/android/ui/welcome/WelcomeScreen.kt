@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -85,6 +86,8 @@ fun WelcomeScreen(
             color = chat.muted,
         )
         Spacer(Modifier.height(20.dp))
+        BetaCard()
+        Spacer(Modifier.height(16.dp))
         Button(
             onClick = onContinue,
             modifier = Modifier
@@ -106,6 +109,38 @@ fun WelcomeScreen(
         Spacer(Modifier.height(24.dp))
     }
 }
+
+/**
+ * 2026-11-23 (owner): a red card on the first page - this build is beta, do not use it
+ * for important projects. White on red, so it reads at a glance; it is never dismissed.
+ */
+@Composable
+private fun BetaCard() {
+    Surface(
+        color = BetaRed,
+        contentColor = Color.White,
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { testTag = "welcome_beta_card" },
+    ) {
+        Column(Modifier.padding(horizontal = 18.dp, vertical = 16.dp)) {
+            Text(
+                text = stringResource(R.string.welcome_beta_title),
+                style = MaterialTheme.typography.titleSmall,
+                color = Color.White,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = stringResource(R.string.welcome_beta_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White,
+            )
+        }
+    }
+}
+
+private val BetaRed = Color(0xFFC62828)
 
 /** One introduction card: a short title and one or two plain sentences. */
 @Composable

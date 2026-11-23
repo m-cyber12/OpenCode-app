@@ -1206,7 +1206,7 @@ if wait_for "app-window" "$NEEDLE_WELCOME|OpenCode" "$(tmo 300)"; then
       rd FIRST_RUN 1 "the app never reached any usable surface (workspace step, projects, or chat) (see DIAGNOSIS.txt and the screenshots at each step).$(dump_caveat)"
     fi
   else
-    rd FIRST_RUN 1 "no welcome/projects surface became usable (see DIAGNOSIS.txt; the app also offers Settings -> Share diagnostics).$(dump_caveat)"
+    rd FIRST_RUN 1 "no welcome/projects surface became usable (see DIAGNOSIS.txt; the app also offers Settings -> Diagnostics -> Copy).$(dump_caveat)"
   fi
 else
   rd FIRST_RUN 1 "no app surface could be read from the screen: $(foreground) $(screen_state).$(dump_caveat) - see DIAGNOSIS.txt and 01-launch.png"

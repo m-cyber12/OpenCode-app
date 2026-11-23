@@ -103,6 +103,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
+import android.widget.Toast
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * The pieces a conversation is made of: turns, tool calls, blocking asks.
@@ -170,6 +178,36 @@ const val REPLY_REJECT = "reject"
  * One message: a user turn (right, in a bubble) or an assistant turn (full width,
  * so prose and tool cards read as a document rather than as chat bubbles).
  */
+/** How long a prompt must be held before its text is copied (owner, 2026-11-23). */
+internal const val PROMPT_HOLD_MS = 2000L
+
+/**
+ * Returns true only when the finger stays down, within touch slop, for the whole
+ * [PROMPT_HOLD_MS]. A lift or a drag before that is a normal gesture, so nothing is
+ * copied and the bubble keeps scrolling and selecting as before. The gesture never
+ * consumes events, so the text stays selectable.
+ */
+private suspend fun AwaitPointerEventScope.holdForCopy(): Boolean {
+    val down = awaitFirstDown()
+    val start = down.position
+    val slop = viewConfiguration.touchSlop
+    val timedOut = withTimeoutOrNull(PROMPT_HOLD_MS) {
+        var stillHeld = true
+        while (stillHeld) {
+            val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
+            stillHeld = change != null && change.pressed && (change.position - start).getDistance() <= slop
+        }
+        false
+    } == null
+    if (timedOut) {
+        // Full hold: wait for the finger to lift so the next gesture starts clean.
+        do {
+            val event = awaitPointerEvent()
+        } while (event.changes.any { it.pressed })
+    }
+    return timedOut
+}
+
 @Composable
 fun MessageRow(
     message: Transcript.Message,
@@ -204,6 +242,11 @@ fun MessageRow(
         // and a message that was never typed at all renders nothing.
         val text = message.parts.filter { it.type == "text" && !it.synthetic }.joinToString("\n") { it.text }
         val files = message.parts.filter { it.type == "file" }
+        // 2026-11-23 (owner): hold a prompt for two seconds to copy its text.
+        val promptCopied = stringResource(R.string.chat_prompt_copied)
+        val promptClipboard = LocalClipboardManager.current
+        val promptHaptic = LocalHapticFeedback.current
+        val promptContext = LocalContext.current
         if (text.isBlank() && files.isEmpty()) return
         Column(
             modifier = modifier.fillMaxWidth().semantics { testTag = tag },
@@ -218,7 +261,19 @@ fun MessageRow(
                     // v9.1: visually lightweight - the border carries the edge,
                     // not a heavy shadow.
                     shadowElevation = 1.dp,
-                    modifier = Modifier.widthIn(max = 340.dp),
+                    modifier = Modifier
+                        .widthIn(max = 340.dp)
+                        .pointerInput(text) {
+                            awaitEachGesture {
+                                if (holdForCopy()) {
+                                    if (text.isNotBlank()) {
+                                        promptClipboard.setText(AnnotatedString(text))
+                                        promptHaptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        Toast.makeText(promptContext, promptCopied, Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        },
                 ) {
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 11.dp)) {
                         if (text.isNotBlank()) MarkdownText(source = text, color = chat.onUserBubble)

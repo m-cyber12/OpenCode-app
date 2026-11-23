@@ -158,7 +158,6 @@ fun SettingsScreen(
     memory: MemoryState = MemoryState(),
     onSaveMemory: (String, String) -> Unit = { _, _ -> },
     onRemoveMemory: (String) -> Unit = {},
-    onShareDiagnostics: () -> Unit,
     onCopyDiagnostics: () -> Unit,
     onOpenUrl: (String) -> Unit = {},
     onRefreshDiagnostics: () -> Unit,
@@ -246,7 +245,6 @@ fun SettingsScreen(
                     "diagnostics" -> DiagnosticsSection(
                         lines = diagnosticsLines,
                         loading = diagnosticsLoading,
-                        onShare = onShareDiagnostics,
                         onCopy = onCopyDiagnostics,
                         onRefresh = onRefreshDiagnostics,
                     )
@@ -382,7 +380,6 @@ private fun RuntimeSection(
 private fun DiagnosticsSection(
     lines: List<String>,
     loading: Boolean,
-    onShare: () -> Unit,
     onCopy: () -> Unit,
     onRefresh: () -> Unit,
 ) {
@@ -405,12 +402,6 @@ private fun DiagnosticsSection(
                 modifier = Modifier.heightIn(min = 46.dp).semantics { testTag = "diagnostics_copy" },
             ) {
                 Text(stringResource(R.string.settings_diagnostics_copy), textAlign = TextAlign.Center)
-            }
-            TextButton(
-                onClick = onShare,
-                modifier = Modifier.heightIn(min = 46.dp).semantics { testTag = "diagnostics_share" },
-            ) {
-                Text(stringResource(R.string.settings_diagnostics_share), textAlign = TextAlign.Center)
             }
         }
         if (loading) {

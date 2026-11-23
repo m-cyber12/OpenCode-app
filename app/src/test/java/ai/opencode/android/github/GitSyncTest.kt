@@ -181,13 +181,13 @@ class GitSyncTest {
         val origin = bareOrigin()
         val project = tmp.newFolder("agent")
         GitSync.cloneAndBranch(origin.absolutePath, project, GitClone.projectBranch("agent"), "unused") { }
-        val viewer = ai.opencode.android.github.GithubRepos.Viewer("m-cyber12", 12345L)
+        val viewer = ai.opencode.android.github.GithubRepos.Viewer("example-owner", 12345L)
         assertTrue(GitSync.identityMissing(project))
         GitSync.configureAgent(project, webBase, viewer)
         Git.open(project).use { git ->
             val c = git.repository.config
-            assertEquals("m-cyber12", c.getString("user", null, "name"))
-            assertEquals("12345+m-cyber12@users.noreply.github.com", c.getString("user", null, "email"))
+            assertEquals("example-owner", c.getString("user", null, "name"))
+            assertEquals("12345+example-owner@users.noreply.github.com", c.getString("user", null, "email"))
             val helper = c.getString("credential", webBase, "helper")
             assertTrue(helper.startsWith("!sh "))
             val script = File(helper.removePrefix("!sh ")).readText()
@@ -200,7 +200,7 @@ class GitSyncTest {
         // An identity the owner already set is never overwritten.
         GitSync.configureAgent(project, webBase, ai.opencode.android.github.GithubRepos.Viewer("other", 1L))
         Git.open(project).use { git ->
-            assertEquals("m-cyber12", git.repository.config.getString("user", null, "name"))
+            assertEquals("example-owner", git.repository.config.getString("user", null, "name"))
         }
     }
 
