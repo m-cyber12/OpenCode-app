@@ -4,7 +4,7 @@
 Compares versions.lock (the single source of truth for pins) against
   - app/src/main/java/ai/opencode/android/runtime/RuntimeVersion.kt (what the
     app asserts at extraction time),
-  - app/build.gradle.kts versionName (must start with the pinned OpenCode version),
+  - app/build.gradle.kts versionName (must equal versions.lock app.versionName),
   - phase4/out/engine/assets/runtime-manifest.json (what the payload build
     actually produced) when it exists; --require-manifest makes its absence a
     failure (the device gate), otherwise it is only reported.
@@ -57,6 +57,9 @@ elif require_mf:
     bad.append("runtime-manifest.json missing (payload not built)")
 m = re.search(r'^\s*versionName = "([^"]+)"', G, re.M)
 vn = m.group(1) if m else ""
-if not vn.startswith(want["opencodeVersion"] + "-"): bad.append(f"versionName={vn} does not start with {want['opencodeVersion']}-")
+# The app's version is its own (versions.lock app.versionName), not the OpenCode pin.
+app_vn = lk(r"^  versionName: (\S+)")
+if not app_vn: bad.append("versions.lock has no app versionName")
+if vn != app_vn: bad.append(f"build.gradle.kts versionName={vn} != versions.lock app.versionName={app_vn}")
 print(("OK" if not bad else "BAD") + f" lock={want} versionName={vn} manifestSha={sha[:16] or 'n/a'} " + "; ".join(bad))
 sys.exit(1 if bad else 0)
