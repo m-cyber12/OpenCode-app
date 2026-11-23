@@ -108,6 +108,14 @@ class MarkdownTest {
     }
 
     @Test
+    fun tableCellBrTagsBecomeLineBreaks() {
+        // 2026-11-23 (owner): ChatGPT-style cells put several lines in one cell with <br>.
+        val parsed = blocks("| k | v |\n| --- | --- |\n| one<br>two | x<BR/>y |")
+        val table = parsed.filterIsInstance<MdBlock.Table>().single()
+        assertEquals(listOf("one\ntwo", "x\ny"), table.rows[0].map { text(it) })
+    }
+
+    @Test
     fun boldItalicStrikeAndInlineCode() {
         val spans = firstParagraph("a **bold** b *it* c ~~gone~~ d `code` e").spans
         assertTrue(spans.any { it is MdSpan.Plain && it.text == "bold" && it.bold })

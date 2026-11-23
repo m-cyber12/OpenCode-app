@@ -46,6 +46,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -331,12 +332,12 @@ private fun SessionRow(
                             onRename(draft)
                             editing = false
                         },
-                        modifier = Modifier.height(44.dp),
+                        modifier = Modifier.heightIn(min = 44.dp),
                     ) {
-                        Text(stringResource(R.string.sessions_rename_save))
+                        Text(stringResource(R.string.sessions_rename_save), textAlign = TextAlign.Center)
                     }
-                    TextButton(onClick = { editing = false }, modifier = Modifier.height(44.dp)) {
-                        Text(stringResource(R.string.action_cancel))
+                    TextButton(onClick = { editing = false }, modifier = Modifier.heightIn(min = 44.dp)) {
+                        Text(stringResource(R.string.action_cancel), textAlign = TextAlign.Center)
                     }
                 }
             }

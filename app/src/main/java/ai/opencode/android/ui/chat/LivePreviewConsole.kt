@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -306,12 +307,12 @@ fun ChatPreviewOverlay(
             },
             confirmButton = {
                 TextButton(onClick = { pending.decision.complete(true) }) {
-                    Text(stringResource(R.string.preview_act_gate_allow))
+                    Text(stringResource(R.string.preview_act_gate_allow), textAlign = TextAlign.Center)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pending.decision.complete(false) }) {
-                    Text(stringResource(R.string.preview_act_gate_deny))
+                    Text(stringResource(R.string.preview_act_gate_deny), textAlign = TextAlign.Center)
                 }
             },
         )
@@ -414,7 +415,7 @@ fun ChatPreviewOverlay(
                     onClick = onBrowser,
                     modifier = Modifier.semantics { testTag = "sandbox_open_browser" },
                 ) {
-                    Text(stringResource(R.string.sandbox_open_browser))
+                    Text(stringResource(R.string.sandbox_open_browser), textAlign = TextAlign.Center)
                 }
             }
             Surface(

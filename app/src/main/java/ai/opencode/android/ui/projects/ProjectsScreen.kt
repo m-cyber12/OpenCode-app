@@ -55,6 +55,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -324,12 +325,12 @@ fun ProjectsScreen(
                     },
                     modifier = Modifier.semantics { testTag = "project_delete_confirm" },
                 ) {
-                    Text(stringResource(R.string.projects_delete_confirm), color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.projects_delete_confirm), color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { deleteTarget = null }) {
-                    Text(stringResource(R.string.action_cancel))
+                    Text(stringResource(R.string.action_cancel), textAlign = TextAlign.Center)
                 }
             },
         )
@@ -356,10 +357,10 @@ fun ProjectsScreen(
                     },
                     enabled = sessionRenameText.isNotBlank(),
                     modifier = Modifier.semantics { testTag = "session_rename_save" },
-                ) { Text(stringResource(R.string.projects_rename_save)) }
+                ) { Text(stringResource(R.string.projects_rename_save), textAlign = TextAlign.Center) }
             },
             dismissButton = {
-                TextButton(onClick = { sessionRenameTarget = null }) { Text(stringResource(R.string.action_cancel)) }
+                TextButton(onClick = { sessionRenameTarget = null }) { Text(stringResource(R.string.action_cancel), textAlign = TextAlign.Center) }
             },
         )
     }
@@ -377,11 +378,11 @@ fun ProjectsScreen(
                     },
                     modifier = Modifier.semantics { testTag = "session_delete_confirm" },
                 ) {
-                    Text(stringResource(R.string.projects_session_delete_confirm), color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.projects_session_delete_confirm), color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { sessionDeleteTarget = null }) { Text(stringResource(R.string.action_cancel)) }
+                TextButton(onClick = { sessionDeleteTarget = null }) { Text(stringResource(R.string.action_cancel), textAlign = TextAlign.Center) }
             },
         )
     }
@@ -472,11 +473,11 @@ private fun RenameDialog(
                 enabled = name.isNotBlank(),
                 modifier = Modifier.semantics { testTag = "project_rename_save" },
             ) {
-                Text(stringResource(R.string.projects_rename_save))
+                Text(stringResource(R.string.projects_rename_save), textAlign = TextAlign.Center)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel), textAlign = TextAlign.Center) }
         },
     )
 }
@@ -574,9 +575,9 @@ private fun CreateProjectCard(
                 // double-submission. Plain mode is unchanged.
                 enabled = !githubBusy && (!githubMode || pickedRepo != null),
                 shape = RoundedCornerShape(50),
-                modifier = Modifier.fillMaxWidth().height(50.dp).semantics { testTag = "project_create" },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp).semantics { testTag = "project_create" },
             ) {
-                Text(stringResource(R.string.projects_create), style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.projects_create), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
             }
             // -------- GitHub, UNDER the create button (owner's v9.26 layout):
             // before first setup a Connect key (goes to Settings > Connectors);
@@ -620,7 +621,7 @@ private fun CreateProjectCard(
                         onClick = onConnectGithub,
                         modifier = Modifier.heightIn(min = 40.dp).semantics { testTag = "github_connect" },
                     ) {
-                        Text(stringResource(R.string.projects_github_connect))
+                        Text(stringResource(R.string.projects_github_connect), textAlign = TextAlign.Center)
                     }
                 }
             }
@@ -645,8 +646,7 @@ private fun CreateProjectCard(
                                 },
                             ),
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                            overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
                     }
                     DropdownMenu(
                         expanded = pickOpen,
@@ -868,13 +868,13 @@ private fun NewSessionButton(
         onClick = onNewSession,
         modifier = Modifier
             .padding(start = 20.dp)
-            .height(40.dp)
+            .heightIn(min = 40.dp)
             .semantics {
                 testTag = "projects_new_session_${projectName}"
                 contentDescription = newSessionLabel
             },
     ) {
-        Text(newSessionLabel)
+        Text(newSessionLabel, textAlign = TextAlign.Center)
     }
 }
 
@@ -921,19 +921,18 @@ private fun SessionRow(
         }
         TextButton(
             onClick = onRename,
-            modifier = Modifier.height(36.dp).semantics { testTag = "session_rename_${session.id}" },
+            modifier = Modifier.heightIn(min = 36.dp).semantics { testTag = "session_rename_${session.id}" },
         ) {
-            Text(stringResource(R.string.projects_session_rename), style = MaterialTheme.typography.labelSmall)
+            Text(stringResource(R.string.projects_session_rename), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
         }
         TextButton(
             onClick = onDelete,
-            modifier = Modifier.height(36.dp).semantics { testTag = "session_delete_${session.id}" },
+            modifier = Modifier.heightIn(min = 36.dp).semantics { testTag = "session_delete_${session.id}" },
         ) {
             Text(
                 stringResource(R.string.projects_session_delete),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.error,
-            )
+                color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
         }
     }
 }

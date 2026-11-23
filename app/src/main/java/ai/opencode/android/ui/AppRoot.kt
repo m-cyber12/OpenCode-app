@@ -136,6 +136,9 @@ private const val ROUTE_WORKSPACE = "workspace"
 private const val ROUTE_ONBOARDING_PERMISSION = "onboarding_permission"
 private const val ROUTE_ONBOARDING_PROVIDER = "onboarding_provider"
 
+/** A prompt waiting for the agent to boot, with its repository sequence number. */
+private data class QueuedPrompt(val text: String, val seq: Long)
+
 @Composable
 fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     val context = LocalContext.current
@@ -1461,7 +1464,9 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // QUEUED - never dropped, never fired at a dead port - and goes out by
     // itself the moment the server is up. (The owner's exact requirement: the
     // user can type and send; anything that needs the agent waits.)
-    var pendingSend by remember { mutableStateOf<String?>(null) }
+    // The queue holds the prompt together with its repository sequence number (see
+    // OpenCodeRepository.beginPrompt). Pause clears it along with the waiting text.
+    var pendingSend by remember { mutableStateOf<QueuedPrompt?>(null) }
     // v9.41 (owner item 3): the GitHub clone/refresh that runs right before a
     // prompt rides this flag so the chat can say what it is waiting on.
     var repoSyncing by remember { mutableStateOf(false) }
@@ -1505,7 +1510,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // half). Failures never block the send - the prompt proceeds against what
     // IS on disk - but a failure now says so in one small line instead of
     // dying silently inside runCatching.
-    suspend fun promptGateAndSend(text: String) {
+    suspend fun promptGateAndSend(text: String, seq: Long) {
         // The environment brief is the app's text: restore and re-lock it before
         // every prompt, so nothing the agent changed in the last turn survives.
         withContext(Dispatchers.IO) { runCatching { runtime.relockBrief() } }
@@ -1529,7 +1534,8 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
         } else {
             githubClone.ensureProjectBranch(projectDir)
         }
-        repository.sendPrompt(text)
+        // Pause during the gate took the text back: sendPrompt sees that and sends nothing.
+        repository.sendPrompt(text, seq)
     }
     // v9.42 (owner bug 1): the queue drains through EXACTLY the same pre-prompt
     // gate as a live send. v9.41 ran the gate on the tap but drained with only
@@ -1537,10 +1543,10 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
     // booting never materialized its GitHub project ("clone does not
     // happen"). One gate function, both doors.
     LaunchedEffect(summary.ready, pendingSend) {
-        val t = pendingSend ?: return@LaunchedEffect
+        val q = pendingSend ?: return@LaunchedEffect
         if (!summary.ready) return@LaunchedEffect
         pendingSend = null
-        promptGateAndSend(t)
+        promptGateAndSend(q.text, q.seq)
     }
     // v8 fix round (owner's issue 1): the workspace root is a key on purpose.
     // A switch that does not recreate the Activity used to leave this effect
@@ -2397,24 +2403,34 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     onSend = { text ->
                         markEmptyChatSeen()
                         scope.launch {
-                            // v9.41 (owner item 6): one queued send at a time -
+                            // v9.41 (owner item 6): one unaccepted send at a time -
                             // a second tap while one waits must not double-send
-                            // the first when the boot completes.
-                            if (pendingSend != null) return@launch
+                            // the first. The text moves into the chat as waiting
+                            // right here (2026-11-23, owner: Pause takes it back).
+                            if (repository.state.value.awaitingAccept) return@launch
+                            val seq = repository.beginPrompt(text)
                             // v9.41 (owner item 6) + v9.42 (owner): the agent
                             // is not up? The message goes to the queue (and
                             // shows in the chat as waiting) - the gate below
                             // runs at DRAIN time, so a queued first prompt of
                             // a GitHub project clones just like a live one.
                             if (!summary.ready) {
-                                pendingSend = text
+                                pendingSend = QueuedPrompt(text, seq)
                                 return@launch
                             }
-                            promptGateAndSend(text)
+                            // If the gate fails, the text goes back into the composer.
+                            runCatching { promptGateAndSend(text, seq) }
+                                .onFailure { repository.cancelUnacceptedPrompt() }
                         }
                     },
                     onDraftChange = { text -> repository.setDraft(text) },
-                    onStop = { repository.abort() },
+                    // 2026-11-23 (owner): Pause before the server has the prompt takes it back
+                    // into the composer (nothing reaches the model). Once the server has it,
+                    // Pause stops the turn as before.
+                    onStop = {
+                        if (!repository.cancelUnacceptedPrompt()) repository.abort()
+                        pendingSend = null
+                    },
                     onRetry = { repository.retryLastTurn() },
                     onUndo = { repository.undoLastTurn() },
                     onRedo = { repository.redoLastTurn() },
@@ -2462,7 +2478,7 @@ fun AppRoot(onShareDiagnostics: () -> Unit, onOpenUrl: (String) -> Unit) {
                     // v9.42 (owner): the queued message rides the
                     // conversation itself - the user sees their own words the
                     // instant they send, whether or not the agent is up yet.
-                    pendingMessage = pendingSend,
+                    pendingMessage = uiState.unacceptedPrompt.takeIf { uiState.awaitingAccept },
                     // v9.41 (owner item 20): the "Say what should exist…" line
                     // belongs to the install's first launch; afterwards it
                     // returns only on one day in thirteen.

@@ -24,6 +24,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -94,10 +95,10 @@ fun WorkspaceOnboardingScreen(
             enabled = choice.isNotEmpty(),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp)
+                .heightIn(min = 52.dp)
                 .semantics { testTag = "onboarding_workspace_use" },
         ) {
-            Text(stringResource(R.string.onboarding_next))
+            Text(stringResource(R.string.onboarding_next), textAlign = TextAlign.Center)
         }
         Spacer(Modifier.height(6.dp))
         Text(
@@ -123,14 +124,13 @@ fun WorkspaceOnboardingScreen(
                 onClick = onChooseWorkspace,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp)
+                    .heightIn(min = 64.dp)
                     .semantics { testTag = "onboarding_workspace_grant" },
             ) {
                 Text(
                     text = stringResource(R.string.onboarding_choose_workspace),
                     style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                )
+                    maxLines = 1, textAlign = TextAlign.Center)
             }
         }
 

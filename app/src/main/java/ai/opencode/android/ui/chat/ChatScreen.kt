@@ -27,6 +27,8 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
@@ -411,10 +413,19 @@ fun ChatScreen(
         // under the conversation (always composed, never below an empty-state
         // spacer), becomes the real prompt when the runtime is ready, and says
         // so in one quiet line instead of pretending the send did not happen.
-        if (!pendingMessage.isNullOrBlank()) {
+        // 2026-11-23 (owner): Pause takes this row away and the text goes back into the
+        // composer - the row eases out (the last text stays while it leaves, so it does not
+        // blank before it collapses).
+        var shownPending by remember { mutableStateOf("") }
+        if (!pendingMessage.isNullOrBlank() && pendingMessage != shownPending) shownPending = pendingMessage
+        AnimatedVisibility(
+            visible = !pendingMessage.isNullOrBlank(),
+            enter = fadeIn(tween(220)) + expandVertically(tween(220)),
+            exit = fadeOut(tween(220)) + shrinkVertically(tween(220)),
+        ) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                 PendingSendRow(
-                    text = pendingMessage,
+                    text = shownPending,
                     modifier = Modifier
                         .widthIn(max = 760.dp)
                         .padding(horizontal = 16.dp, vertical = 4.dp),
@@ -440,7 +451,9 @@ fun ChatScreen(
             // 2026-11-20 (owner, bug): Send becomes Stop whenever the server reports the agent
             // working. A failure of an earlier turn must not hide it (the turn-error guard only
             // covers the working indicators above).
-            busy = state.busy,
+            // 2026-11-23 (owner): while a prompt is not yet with the server, the same control
+            // is Pause (it takes the prompt back into the composer).
+            busy = state.busy || state.awaitingAccept,
             canSend = UiError.canSend(availability),
             // 2026-11-21 (owner): no model selected (a fresh install) means no send. The button is
             // disabled; no text is shown (owner, 2026-11-22).
@@ -1690,7 +1703,7 @@ private fun TranscriptPane(
                         }
                     },
                     modifier = Modifier
-                        .height(40.dp)
+                        .heightIn(min = 40.dp)
                         .semantics {
                             testTag = "jump_to_latest"
                             contentDescription = jumpLabel
@@ -1698,8 +1711,7 @@ private fun TranscriptPane(
                 ) {
                     Text(
                         text = stringResource(R.string.chat_new_messages, unseen),
-                        style = MaterialTheme.typography.labelLarge,
-                    )
+                        style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
                 }
             }
         }
@@ -2258,7 +2270,7 @@ private fun Composer(
                             },
                             modifier = Modifier
                                 .padding(bottom = 6.dp)
-                                .height(44.dp)
+                                .heightIn(min = 44.dp)
                                 .semantics { testTag = TAG_COMPOSER_STOP },
                         ) {
                             // 2026-11-21 (owner): the working control is Pause. It stops the turn
@@ -2266,8 +2278,7 @@ private fun Composer(
                             Text(
                                 text = stringResource(R.string.task_action_pause),
                                 style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
+                                color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
                         }
                     } else {
                         val sendEnabled = canSend && hasModel && draft.isNotBlank()

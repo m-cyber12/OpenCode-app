@@ -72,6 +72,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
@@ -580,7 +581,7 @@ private fun FilesInfoSheet(
                                 onClick = onRequestAllFilesAccess,
                                 modifier = Modifier.semantics { testTag = "files_storage_grant" },
                             ) {
-                                Text(stringResource(R.string.files_storage_make_visible))
+                                Text(stringResource(R.string.files_storage_make_visible), textAlign = TextAlign.Center)
                             }
                         }
                         if (storagePendingMove > 0) {
@@ -588,7 +589,7 @@ private fun FilesInfoSheet(
                                 onClick = onMoveProjects,
                                 modifier = Modifier.semantics { testTag = "files_storage_move" },
                             ) {
-                                Text(stringResource(R.string.files_storage_move_action))
+                                Text(stringResource(R.string.files_storage_move_action), textAlign = TextAlign.Center)
                             }
                         }
                     }
@@ -911,14 +912,14 @@ private fun FileViewer(
                             contentDescription = toggleLabel
                         },
                     ) {
-                        Text(toggleLabel)
+                        Text(toggleLabel, textAlign = TextAlign.Center)
                     }
                 }
                 TextButton(
                     onClick = onSaveCopy,
                     modifier = Modifier.semantics { testTag = "files_save_copy" },
                 ) {
-                    Text(stringResource(R.string.files_save_copy))
+                    Text(stringResource(R.string.files_save_copy), textAlign = TextAlign.Center)
                 }
             }
             if (file.binary) {

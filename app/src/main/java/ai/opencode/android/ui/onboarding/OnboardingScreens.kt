@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -75,10 +76,10 @@ fun ProviderOnboardingScreen(
             enabled = canStart,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp)
+                .heightIn(min = 52.dp)
                 .semantics { testTag = "onboarding_provider_start" },
         ) {
-            Text(stringResource(R.string.onboarding_start))
+            Text(stringResource(R.string.onboarding_start), textAlign = TextAlign.Center)
         }
         if (!canStart) {
             Spacer(Modifier.height(6.dp))
@@ -94,10 +95,10 @@ fun ProviderOnboardingScreen(
             onClick = onLater,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
+                .heightIn(min = 48.dp)
                 .semantics { testTag = "onboarding_provider_later" },
         ) {
-            Text(stringResource(R.string.onboarding_later))
+            Text(stringResource(R.string.onboarding_later), textAlign = TextAlign.Center)
         }
         Spacer(Modifier.height(16.dp))
         catalog(addOpen) {

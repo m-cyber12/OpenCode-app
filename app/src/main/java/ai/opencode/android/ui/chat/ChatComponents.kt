@@ -1173,22 +1173,22 @@ fun PermissionAsk(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(
                     onClick = { onReply(prompt.id, REPLY_ONCE) },
-                    modifier = Modifier.height(48.dp).weight(1f).semantics { testTag = TAG_PERMISSION_ONCE },
+                    modifier = Modifier.heightIn(min = 48.dp).weight(1f).semantics { testTag = TAG_PERMISSION_ONCE },
                 ) {
-                    Text(stringResource(R.string.ask_permission_once), style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.ask_permission_once), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
                 }
                 OutlinedButton(
                     onClick = { onReply(prompt.id, REPLY_ALWAYS) },
-                    modifier = Modifier.height(48.dp).weight(1f).semantics { testTag = TAG_PERMISSION_ALWAYS },
+                    modifier = Modifier.heightIn(min = 48.dp).weight(1f).semantics { testTag = TAG_PERMISSION_ALWAYS },
                     border = BorderStroke(1.dp, chat.attention),
                 ) {
-                    Text(stringResource(R.string.ask_permission_always), style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.ask_permission_always), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
                 }
                 TextButton(
                     onClick = { onReply(prompt.id, REPLY_REJECT) },
-                    modifier = Modifier.height(48.dp).weight(1f).semantics { testTag = TAG_PERMISSION_REJECT },
+                    modifier = Modifier.heightIn(min = 48.dp).weight(1f).semantics { testTag = TAG_PERMISSION_REJECT },
                 ) {
-                    Text(stringResource(R.string.ask_permission_reject), style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.ask_permission_reject), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
                 }
             }
         }
@@ -1343,10 +1343,10 @@ fun QuestionAsk(
                 if (step > 0) {
                     OutlinedButton(
                         onClick = { step -= 1 },
-                        modifier = Modifier.height(48.dp).semantics { testTag = TAG_QUESTION_BACK },
+                        modifier = Modifier.heightIn(min = 48.dp).semantics { testTag = TAG_QUESTION_BACK },
                         border = BorderStroke(1.dp, chat.attention),
                     ) {
-                        Text(stringResource(R.string.ask_question_back), style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.ask_question_back), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
                     }
                 }
                 if (step < lastStep) {
@@ -1354,10 +1354,10 @@ fun QuestionAsk(
                     // navigation button on this card carries the gold outline.
                     OutlinedButton(
                         onClick = { step += 1 },
-                        modifier = Modifier.height(48.dp).weight(1f).semantics { testTag = TAG_QUESTION_NEXT },
+                        modifier = Modifier.heightIn(min = 48.dp).weight(1f).semantics { testTag = TAG_QUESTION_NEXT },
                         border = BorderStroke(1.dp, chat.attention),
                     ) {
-                        Text(stringResource(R.string.ask_question_next), style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.ask_question_next), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
                     }
                 } else {
                     // v9.34 (owner): "Send answer" was the one button missed in
@@ -1368,18 +1368,18 @@ fun QuestionAsk(
                     OutlinedButton(
                         onClick = { onSubmit(question.id, answers) },
                         enabled = canSubmit,
-                        modifier = Modifier.height(48.dp).weight(1f).semantics { testTag = TAG_QUESTION_SUBMIT },
+                        modifier = Modifier.heightIn(min = 48.dp).weight(1f).semantics { testTag = TAG_QUESTION_SUBMIT },
                         border = BorderStroke(1.dp, if (canSubmit) chat.attention else chat.muted),
                     ) {
-                        Text(stringResource(R.string.ask_question_submit), style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.ask_question_submit), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
                     }
                 }
                 OutlinedButton(
                     onClick = { onReject(question.id) },
-                    modifier = Modifier.height(48.dp).weight(1f).semantics { testTag = TAG_QUESTION_SKIP },
+                    modifier = Modifier.heightIn(min = 48.dp).weight(1f).semantics { testTag = TAG_QUESTION_SKIP },
                     border = BorderStroke(1.dp, chat.attention),
                 ) {
-                    Text(stringResource(R.string.ask_question_skip), style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.ask_question_skip), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
                 }
             }
         }

@@ -9,6 +9,7 @@ import ai.opencode.android.ui.theme.MonoFamily
 import ai.opencode.android.ui.theme.MonoSmall
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -23,12 +24,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -124,7 +127,7 @@ fun MarkdownBlocks(
                     )
                 }
 
-                is MdBlock.Table -> TableBlock(block, color = color)
+                is MdBlock.Table -> TableBlock(block, style = style, color = color)
 
                 MdBlock.Rule -> HorizontalDivider(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
@@ -211,8 +214,7 @@ fun CodeBlock(
                 TextButton(onClick = { clipboard.setText(AnnotatedString(source)) }) {
                     Text(
                         text = stringResource(R.string.action_copy_code),
-                        style = MaterialTheme.typography.labelMedium,
-                    )
+                        style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center)
                 }
             }
             Spacer(Modifier.height(2.dp))
@@ -244,36 +246,45 @@ private fun ListRow(item: MdBlock.ListItem, style: TextStyle, color: Color) {
     }
 }
 
+/**
+ * A markdown table, drawn the way a chat table should read: body-size text (the same
+ * size as the prose around it), real cell padding, cell text that WRAPS, and thin rules
+ * between rows and columns. Each column gets a width from its content; when the table
+ * is narrower than the bubble, the columns stretch to fill it, and only a table that is
+ * truly wider than the bubble scrolls sideways.
+ */
 @Composable
-private fun TableBlock(table: MdBlock.Table, color: Color) {
-    // v9.34 (owner: a model's comparison table rendered as a cramped block cut
-    // off at the right edge). The old renderer laid every row out as an
-    // independent Row, so nothing lined up into columns. Now the table is
-    // built COLUMN-MAJOR: one Column composable per table column inside a
-    // horizontally scrollable Row. Every cell is a single non-wrapping line
-    // (inside the scroller width is unbounded, so softWrap could never help
-    // anyway) - which makes all rows the same height, keeps each column
-    // exactly as wide as its widest cell, and lines the grid up like a real
-    // table. Wide tables pan sideways instead of truncating.
-    val bodyStyle = MaterialTheme.typography.bodySmall
+private fun TableBlock(table: MdBlock.Table, style: TextStyle, color: Color) {
     val columns = table.header.size
     if (columns == 0) return
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = MaterialTheme.shapes.small,
-    ) {
-        Row(Modifier.padding(10.dp).horizontalScroll(rememberScrollState())) {
-            for (col in 0 until columns) {
-                if (col > 0) Spacer(Modifier.width(16.dp))
-                Column {
-                    TableCell(cellAt(table.header, col), bodyStyle, color, bold = true)
-                    Spacer(Modifier.height(4.dp))
-                    HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                    Spacer(Modifier.height(4.dp))
-                    for (row in table.rows) {
-                        TableCell(cellAt(row, col), bodyStyle, color, bold = false)
-                        Spacer(Modifier.height(3.dp))
+    val header = (0 until columns).map { table.header.getOrElse(it) { emptyList() } }
+    val body = table.rows.map { row -> (0 until columns).map { row.getOrElse(it) { emptyList() } } }
+    val ideal = (0 until columns).map { c ->
+        val longest = (listOf(header[c]) + body.map { it[c] }).maxOf { Markdown.plainText(it).length }
+        (longest.coerceIn(4, 36) * 7.5f + 28f).dp.coerceIn(104.dp, 260.dp)
+    }
+    val headerStyle = style.copy(fontWeight = FontWeight.SemiBold)
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        // Column dividers take 1dp each; the cells share what is left.
+        val dividers = (columns - 1).coerceAtLeast(0)
+        val available = maxWidth - 1.dp * dividers
+        val sum = ideal.fold(0.dp) { acc, w -> acc + w }
+        val widths = if (sum < available) ideal.map { it * (available / sum) } else ideal
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = MaterialTheme.shapes.small,
+        ) {
+            Column(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+                TableRowCells(header, widths, headerStyle, color)
+                HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                body.forEachIndexed { i, row ->
+                    TableRowCells(row, widths, style, color)
+                    if (i < body.lastIndex) {
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                        )
                     }
                 }
             }
@@ -281,20 +292,22 @@ private fun TableBlock(table: MdBlock.Table, color: Color) {
     }
 }
 
-/** A ragged row (the model dropped a trailing pipe) still renders: missing cells are empty. */
-private fun cellAt(row: List<List<MdSpan>>, col: Int): String =
-    if (col < row.size) Markdown.plainText(row[col]) else ""
-
 @Composable
-private fun TableCell(text: String, style: TextStyle, color: Color, bold: Boolean) {
-    Text(
-        text = text,
-        style = style,
-        color = color,
-        fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal,
-        maxLines = 1,
-        softWrap = false,
-    )
+private fun TableRowCells(cells: List<List<MdSpan>>, widths: List<Dp>, style: TextStyle, color: Color) {
+    Row(Modifier.height(IntrinsicSize.Min)) {
+        cells.forEachIndexed { c, spans ->
+            if (c > 0) {
+                VerticalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+            }
+            // width() outside padding(): the cell is exactly its column wide, and its text wraps inside it.
+            ProseText(
+                spans,
+                style = style,
+                color = color,
+                modifier = Modifier.width(widths[c]).padding(horizontal = 12.dp, vertical = 10.dp),
+            )
+        }
+    }
 }
 
 // ---- pure helpers (no composition) -----------------------------------------

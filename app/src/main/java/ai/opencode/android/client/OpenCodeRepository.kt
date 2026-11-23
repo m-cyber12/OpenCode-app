@@ -128,6 +128,10 @@ class OpenCodeRepository(
         val attachments: List<OpenCodeApi.Attachment> = emptyList(),
         /** Composer text. Owned by the client; the server has no draft concept. */
         val draft: String = "",
+        /** True from the moment a prompt leaves the composer until the server accepts it (or it is taken back). */
+        val awaitingAccept: Boolean = false,
+        /** The text of that unaccepted prompt; the chat shows it as waiting. */
+        val unacceptedPrompt: String = "",
         /** Upstream's `GET /session/status` map (idle/busy/retry per session). */
         val sessionStatus: Map<String, OpenCodeApi.SessionStatusInfo> = emptyMap(),
         /**
@@ -635,11 +639,73 @@ class OpenCodeRepository(
      * none is selected, exactly like the TUI does. Attachments go in the same
      * `parts` array as upstream `FilePartInput`s; the server reads the file.
      */
-    fun sendPrompt(text: String) {
+    // ---- the prompt the server has not accepted yet (owner, 2026-11-23) -------------------
+    // The user's text leaves the composer and waits in the chat until the server accepts it.
+    // Pause in that window takes the text back into the composer and nothing reaches the
+    // model. Once the server has accepted the prompt, Pause stops the turn as before.
+    // [promptLock] makes "take it back" and "the request is going out" mutually exclusive.
+    private val promptLock = Any()
+    private var promptSeq = 0L
+    private var cancelledSeq = -1L
+    private var sendingSeq = -1L
+
+    /** Moves [text] out of the composer into the chat as waiting. Returns the prompt's sequence number. */
+    fun beginPrompt(text: String): Long {
+        val seq = synchronized(promptLock) { ++promptSeq }
+        _state.update { st -> st.copy(awaitingAccept = true, unacceptedPrompt = text.trim(), draft = "") }
+        return seq
+    }
+
+    /**
+     * Pause before the server has the prompt: it is dropped and its text goes back into the
+     * composer. Returns false when there is nothing to take back (the server already has it,
+     * or the request is on its way), and the caller stops the turn instead.
+     */
+    fun cancelUnacceptedPrompt(): Boolean {
+        if (!_state.value.awaitingAccept) return false
+        val seq = synchronized(promptLock) {
+            if (sendingSeq == promptSeq) return false
+            cancelledSeq = promptSeq
+            promptSeq
+        }
+        releaseUnaccepted(seq, restoreText = true)
+        return true
+    }
+
+    /** Ends the waiting state of prompt [seq]; [restoreText] puts its text back into the composer. */
+    private fun releaseUnaccepted(seq: Long, restoreText: Boolean) {
+        val current = synchronized(promptLock) { seq == promptSeq }
+        if (!current) return
+        _state.update { cur ->
+            val back = if (restoreText) cur.unacceptedPrompt else ""
+            val draft = when {
+                back.isBlank() -> cur.draft
+                cur.draft.isBlank() -> back
+                else -> back + "\n" + cur.draft
+            }
+            cur.copy(awaitingAccept = false, unacceptedPrompt = "", draft = draft)
+        }
+    }
+
+    /** Sends prompt [seq] (from [beginPrompt]). A Pause taken before the request goes out wins. */
+    fun sendPrompt(text: String, seq: Long) {
         val trimmed = text.trim()
         val files = _state.value.attachments
-        if (trimmed.isEmpty() && files.isEmpty()) return
+        if (trimmed.isEmpty() && files.isEmpty()) {
+            releaseUnaccepted(seq, restoreText = false)
+            return
+        }
         scope.launch {
+            // A Pause taken before this point wins: nothing is created, nothing is sent.
+            val go = synchronized(promptLock) {
+                if (cancelledSeq == seq) {
+                    false
+                } else {
+                    sendingSeq = seq
+                    true
+                }
+            }
+            if (!go) return@launch
             setBusy(true)
             try {
                 var sid = _state.value.selectedSession
@@ -664,13 +730,16 @@ class OpenCodeRepository(
                     attachments = files,
                 )
                 rememberUsedModel(used)
-                _state.value = _state.value.copy(
-                    draft = "",
-                    attachments = emptyList(),
-                    error = "",
-                    errorKind = AgentAvailability.READY,
-                    notice = "",
-                )
+                _state.update { st ->
+                    st.copy(
+                        attachments = emptyList(),
+                        error = "",
+                        errorKind = AgentAvailability.READY,
+                        notice = "",
+                        awaitingAccept = false,
+                        unacceptedPrompt = "",
+                    )
+                }
                 publishTranscript("prompt accepted")
                 if (hadRevert) refreshSessionList(sid)
                 // The user's own turn is on the server now; take it from there rather
@@ -681,6 +750,8 @@ class OpenCodeRepository(
                 refreshMessages("transcript after prompt", force = true)
                 startTodoPoll(sid)
             } catch (t: Throwable) {
+                // The server never got it: the text goes back into the composer, nothing is lost.
+                releaseUnaccepted(seq, restoreText = true)
                 fail("prompt_async", t)
             } finally {
                 // The stream owns `busy` from here on; only clear the optimistic

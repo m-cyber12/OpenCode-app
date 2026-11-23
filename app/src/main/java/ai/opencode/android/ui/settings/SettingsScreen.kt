@@ -3,6 +3,7 @@ package ai.opencode.android.ui.settings
 import ai.opencode.android.BuildConfig
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalContext
 import ai.opencode.android.R
 import ai.opencode.android.client.AgentAvailability
@@ -368,9 +369,9 @@ private fun RuntimeSection(
         Spacer(Modifier.height(6.dp))
         OutlinedButton(
             onClick = onRestart,
-            modifier = Modifier.height(46.dp).semantics { testTag = "runtime_restart" },
+            modifier = Modifier.heightIn(min = 46.dp).semantics { testTag = "runtime_restart" },
         ) {
-            Text(stringResource(R.string.settings_runtime_restart))
+            Text(stringResource(R.string.settings_runtime_restart), textAlign = TextAlign.Center)
         }
     }
 }
@@ -395,21 +396,21 @@ private fun DiagnosticsSection(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TextButton(
                 onClick = onRefresh,
-                modifier = Modifier.height(46.dp).semantics { testTag = "diagnostics_refresh" },
+                modifier = Modifier.heightIn(min = 46.dp).semantics { testTag = "diagnostics_refresh" },
             ) {
-                Text(stringResource(R.string.action_retry))
+                Text(stringResource(R.string.action_retry), textAlign = TextAlign.Center)
             }
             TextButton(
                 onClick = onCopy,
-                modifier = Modifier.height(46.dp).semantics { testTag = "diagnostics_copy" },
+                modifier = Modifier.heightIn(min = 46.dp).semantics { testTag = "diagnostics_copy" },
             ) {
-                Text(stringResource(R.string.settings_diagnostics_copy))
+                Text(stringResource(R.string.settings_diagnostics_copy), textAlign = TextAlign.Center)
             }
             TextButton(
                 onClick = onShare,
-                modifier = Modifier.height(46.dp).semantics { testTag = "diagnostics_share" },
+                modifier = Modifier.heightIn(min = 46.dp).semantics { testTag = "diagnostics_share" },
             ) {
-                Text(stringResource(R.string.settings_diagnostics_share))
+                Text(stringResource(R.string.settings_diagnostics_share), textAlign = TextAlign.Center)
             }
         }
         if (loading) {
@@ -936,23 +937,23 @@ private fun ProviderKeyDialog(
                                 val useDesc = stringResource(R.string.settings_keys_use_desc, entry.label, provider.name)
                                 TextButton(
                                     onClick = { onUseKey(entry.slot) },
-                                    modifier = Modifier.height(36.dp).semantics {
+                                    modifier = Modifier.heightIn(min = 36.dp).semantics {
                                         testTag = "provider_key_use_${entry.slot}"
                                         contentDescription = useDesc
                                     },
                                 ) {
-                                    Text(stringResource(R.string.settings_keys_use))
+                                    Text(stringResource(R.string.settings_keys_use), textAlign = TextAlign.Center)
                                 }
                             }
                             val deleteDesc = stringResource(R.string.settings_keys_delete_desc, entry.label, provider.name)
                             TextButton(
                                 onClick = { onDeleteKey(entry.slot) },
-                                modifier = Modifier.height(36.dp).semantics {
+                                modifier = Modifier.heightIn(min = 36.dp).semantics {
                                     testTag = "provider_key_delete_${entry.slot}"
                                     contentDescription = deleteDesc
                                 },
                             ) {
-                                Text(stringResource(R.string.settings_keys_delete_one))
+                                Text(stringResource(R.string.settings_keys_delete_one), textAlign = TextAlign.Center)
                             }
                         }
                     }
@@ -991,12 +992,12 @@ private fun ProviderKeyDialog(
                     val revokeDesc = stringResource(R.string.settings_provider_revoke_desc, provider.name)
                     TextButton(
                         onClick = onRevoke,
-                        modifier = Modifier.height(36.dp).semantics {
+                        modifier = Modifier.heightIn(min = 36.dp).semantics {
                             testTag = "provider_key_revoke"
                             contentDescription = revokeDesc
                         },
                     ) {
-                        Text(stringResource(R.string.settings_keys_revoke))
+                        Text(stringResource(R.string.settings_keys_revoke), textAlign = TextAlign.Center)
                     }
                 }
             }
@@ -1013,8 +1014,7 @@ private fun ProviderKeyDialog(
                     // longer happens).
                     stringResource(
                         if (connected) R.string.settings_provider_key_add else R.string.settings_keys_save,
-                    ),
-                )
+                    ), textAlign = TextAlign.Center)
             }
         },
         dismissButton = {
@@ -1022,7 +1022,7 @@ private fun ProviderKeyDialog(
                 onClick = onDismiss,
                 modifier = Modifier.semantics { testTag = "provider_key_cancel" },
             ) {
-                Text(stringResource(R.string.settings_provider_connect_cancel))
+                Text(stringResource(R.string.settings_provider_connect_cancel), textAlign = TextAlign.Center)
             }
         },
     )
@@ -1154,12 +1154,12 @@ private fun ProviderRow(
                     val connectLabel = stringResource(R.string.settings_provider_connect, provider.name)
                     TextButton(
                         onClick = { onConnect(provider) },
-                        modifier = Modifier.height(36.dp).semantics {
+                        modifier = Modifier.heightIn(min = 36.dp).semantics {
                             testTag = "provider_connect_${provider.id}"
                             contentDescription = connectLabel
                         },
                     ) {
-                        Text(stringResource(R.string.settings_keys_save))
+                        Text(stringResource(R.string.settings_keys_save), textAlign = TextAlign.Center)
                     }
                 } else {
                     Spacer(Modifier.width(6.dp))
@@ -1168,12 +1168,12 @@ private fun ProviderRow(
                     val manageLabel = stringResource(R.string.settings_provider_manage_desc, provider.name)
                     TextButton(
                         onClick = { onConnect(provider) },
-                        modifier = Modifier.height(36.dp).semantics {
+                        modifier = Modifier.heightIn(min = 36.dp).semantics {
                             testTag = "provider_manage_key_${provider.id}"
                             contentDescription = manageLabel
                         },
                     ) {
-                        Text(stringResource(R.string.settings_provider_manage_short))
+                        Text(stringResource(R.string.settings_provider_manage_short), textAlign = TextAlign.Center)
                     }
                 }
             }
@@ -1430,9 +1430,9 @@ internal fun KeysSection(
             },
             // 2026-11-22 (owner): no check before adding. Editing keeps the stored key when the key
             // field is blank; the server judges everything else and a problem shows in the chat.
-            modifier = Modifier.height(46.dp).fillMaxWidth().semantics { testTag = "custom_provider_save" },
+            modifier = Modifier.heightIn(min = 46.dp).fillMaxWidth().semantics { testTag = "custom_provider_save" },
         ) {
-            Text(stringResource(if (editing != null) R.string.settings_custom_save_edit else R.string.settings_custom_save))
+            Text(stringResource(if (editing != null) R.string.settings_custom_save_edit else R.string.settings_custom_save), textAlign = TextAlign.Center)
         }
         // 2026-11-21 (owner): a tap that did nothing visible. The result now prints here.
         if (customProviderStatus.isNotEmpty()) {
@@ -1472,13 +1472,13 @@ internal fun CustomProviderRow(
             onClick = { onEdit(saved) },
             modifier = Modifier.semantics { testTag = "custom_provider_edit_${saved.id}" },
         ) {
-            Text(stringResource(R.string.settings_custom_edit))
+            Text(stringResource(R.string.settings_custom_edit), textAlign = TextAlign.Center)
         }
         TextButton(
             onClick = { confirmRemove = true },
             modifier = Modifier.semantics { testTag = "custom_provider_remove_${saved.id}" },
         ) {
-            Text(stringResource(R.string.settings_custom_remove), color = MaterialTheme.colorScheme.error)
+            Text(stringResource(R.string.settings_custom_remove), color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
         }
     }
     if (confirmRemove) {
@@ -1491,12 +1491,12 @@ internal fun CustomProviderRow(
                     confirmRemove = false
                     onRemove(saved.id)
                 }) {
-                    Text(stringResource(R.string.settings_custom_remove), color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.settings_custom_remove), color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { confirmRemove = false }) {
-                    Text(stringResource(R.string.action_cancel))
+                    Text(stringResource(R.string.action_cancel), textAlign = TextAlign.Center)
                 }
             },
         )
@@ -1574,7 +1574,7 @@ private fun ConnectorsSection(
                     onClick = { onOpenUrl(tokenUrl) },
                     modifier = Modifier.fillMaxWidth().semantics { testTag = "github_create_token" },
                 ) {
-                    Text(stringResource(R.string.github_create_token))
+                    Text(stringResource(R.string.github_create_token), textAlign = TextAlign.Center)
                 }
                 Spacer(Modifier.height(8.dp))
             }
@@ -1588,16 +1588,16 @@ private fun ConnectorsSection(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     TextButton(
                         onClick = { replacing = true },
-                        modifier = Modifier.height(40.dp).semantics { testTag = "github_token_replace" },
+                        modifier = Modifier.heightIn(min = 40.dp).semantics { testTag = "github_token_replace" },
                     ) {
-                        Text(stringResource(R.string.github_token_replace))
+                        Text(stringResource(R.string.github_token_replace), textAlign = TextAlign.Center)
                     }
                     Spacer(Modifier.width(6.dp))
                     TextButton(
                         onClick = onRemoveGithubToken,
-                        modifier = Modifier.height(40.dp).semantics { testTag = "github_token_remove" },
+                        modifier = Modifier.heightIn(min = 40.dp).semantics { testTag = "github_token_remove" },
                     ) {
-                        Text(stringResource(R.string.github_token_remove))
+                        Text(stringResource(R.string.github_token_remove), textAlign = TextAlign.Center)
                     }
                 }
             } else {
@@ -1626,9 +1626,9 @@ private fun ConnectorsSection(
                         }
                     },
                     enabled = token.isNotBlank(),
-                    modifier = Modifier.height(46.dp).fillMaxWidth().semantics { testTag = "github_token_save" },
+                    modifier = Modifier.heightIn(min = 46.dp).fillMaxWidth().semantics { testTag = "github_token_save" },
                 ) {
-                    Text(stringResource(R.string.github_token_save))
+                    Text(stringResource(R.string.github_token_save), textAlign = TextAlign.Center)
                 }
             }
         }
@@ -1740,15 +1740,15 @@ private fun McpSection(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TextButton(
                 onClick = onRefresh,
-                modifier = Modifier.height(44.dp).semantics { testTag = "mcp_refresh" },
+                modifier = Modifier.heightIn(min = 44.dp).semantics { testTag = "mcp_refresh" },
             ) {
-                Text(stringResource(R.string.settings_mcp_refresh))
+                Text(stringResource(R.string.settings_mcp_refresh), textAlign = TextAlign.Center)
             }
             TextButton(
                 onClick = { adding = !adding },
-                modifier = Modifier.height(44.dp).semantics { testTag = "mcp_add_toggle" },
+                modifier = Modifier.heightIn(min = 44.dp).semantics { testTag = "mcp_add_toggle" },
             ) {
-                Text(stringResource(R.string.settings_mcp_add))
+                Text(stringResource(R.string.settings_mcp_add), textAlign = TextAlign.Center)
             }
         }
         if (entries.isEmpty()) {
@@ -1804,24 +1804,24 @@ private fun McpSection(
                     }
                 },
                 enabled = pkg.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().height(46.dp).semantics { testTag = "mcp_add_package" },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 46.dp).semantics { testTag = "mcp_add_package" },
             ) {
-                Text(stringResource(R.string.settings_mcp_quick_add))
+                Text(stringResource(R.string.settings_mcp_quick_add), textAlign = TextAlign.Center)
             }
             TextButton(
                 onClick = { advanced = true },
-                modifier = Modifier.height(44.dp).semantics { testTag = "mcp_advanced_toggle" },
+                modifier = Modifier.heightIn(min = 44.dp).semantics { testTag = "mcp_advanced_toggle" },
             ) {
-                Text(stringResource(R.string.settings_mcp_advanced))
+                Text(stringResource(R.string.settings_mcp_advanced), textAlign = TextAlign.Center)
             }
         }
         if (adding && advanced) {
             Spacer(Modifier.height(8.dp))
             TextButton(
                 onClick = { advanced = false },
-                modifier = Modifier.height(44.dp).semantics { testTag = "mcp_package_toggle" },
+                modifier = Modifier.heightIn(min = 44.dp).semantics { testTag = "mcp_package_toggle" },
             ) {
-                Text(stringResource(R.string.settings_mcp_back_to_package))
+                Text(stringResource(R.string.settings_mcp_back_to_package), textAlign = TextAlign.Center)
             }
             OutlinedTextField(
                 value = name,
@@ -1892,9 +1892,9 @@ private fun McpSection(
                     }
                 },
                 enabled = name.isNotBlank() && config.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().height(46.dp).semantics { testTag = "mcp_add" },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 46.dp).semantics { testTag = "mcp_add" },
             ) {
-                Text(stringResource(R.string.settings_mcp_add))
+                Text(stringResource(R.string.settings_mcp_add), textAlign = TextAlign.Center)
             }
         }
     }
@@ -2035,9 +2035,9 @@ private fun SkillsSection(
                     saved = false
                     uploadError = ""
                 },
-                modifier = Modifier.height(44.dp).semantics { testTag = "skills_add_toggle" },
+                modifier = Modifier.heightIn(min = 44.dp).semantics { testTag = "skills_add_toggle" },
             ) {
-                Text(stringResource(R.string.settings_skills_new))
+                Text(stringResource(R.string.settings_skills_new), textAlign = TextAlign.Center)
             }
             TextButton(
                 onClick = {
@@ -2045,9 +2045,9 @@ private fun SkillsSection(
                     saved = false
                     uploadPicker.launch(arrayOf("text/markdown", "text/plain", "application/octet-stream"))
                 },
-                modifier = Modifier.height(44.dp).semantics { testTag = "skills_upload" },
+                modifier = Modifier.heightIn(min = 44.dp).semantics { testTag = "skills_upload" },
             ) {
-                Text(stringResource(R.string.settings_skills_upload))
+                Text(stringResource(R.string.settings_skills_upload), textAlign = TextAlign.Center)
             }
         }
         if (uploadError.isNotEmpty()) {
@@ -2130,9 +2130,9 @@ private fun SkillsSection(
                     }
                 },
                 enabled = name.isNotBlank() && description.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().height(46.dp).semantics { testTag = "skills_save" },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 46.dp).semantics { testTag = "skills_save" },
             ) {
-                Text(stringResource(R.string.settings_skills_save))
+                Text(stringResource(R.string.settings_skills_save), textAlign = TextAlign.Center)
             }
         }
         if (saved && !adding) {
@@ -2193,15 +2193,15 @@ private fun McpRow(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(
                     onClick = { onConnect(entry.name) },
-                    modifier = Modifier.height(42.dp).semantics { testTag = "mcp_connect_${entry.name}" },
+                    modifier = Modifier.heightIn(min = 42.dp).semantics { testTag = "mcp_connect_${entry.name}" },
                 ) {
-                    Text(stringResource(R.string.settings_mcp_connect))
+                    Text(stringResource(R.string.settings_mcp_connect), textAlign = TextAlign.Center)
                 }
                 TextButton(
                     onClick = { onDisconnect(entry.name) },
-                    modifier = Modifier.height(42.dp).semantics { testTag = "mcp_disconnect_${entry.name}" },
+                    modifier = Modifier.heightIn(min = 42.dp).semantics { testTag = "mcp_disconnect_${entry.name}" },
                 ) {
-                    Text(stringResource(R.string.settings_mcp_disconnect))
+                    Text(stringResource(R.string.settings_mcp_disconnect), textAlign = TextAlign.Center)
                 }
             }
         }
@@ -2325,16 +2325,16 @@ private fun WorkspaceSection(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(
                 onClick = onPick,
-                modifier = Modifier.height(46.dp).weight(1f).semantics { testTag = "settings_workspace_pick" },
+                modifier = Modifier.heightIn(min = 46.dp).weight(1f).semantics { testTag = "settings_workspace_pick" },
             ) {
-                Text(stringResource(R.string.settings_workspace_pick))
+                Text(stringResource(R.string.settings_workspace_pick), textAlign = TextAlign.Center)
             }
             if (canGrantAllFilesAccess) {
                 OutlinedButton(
                     onClick = onGrant,
-                    modifier = Modifier.height(46.dp).weight(1f).semantics { testTag = "settings_workspace_grant" },
+                    modifier = Modifier.heightIn(min = 46.dp).weight(1f).semantics { testTag = "settings_workspace_grant" },
                 ) {
-                    Text(stringResource(R.string.settings_workspace_grant))
+                    Text(stringResource(R.string.settings_workspace_grant), textAlign = TextAlign.Center)
                 }
             }
         }
@@ -2356,9 +2356,9 @@ private fun WorkspaceSection(
             )
             TextButton(
                 onClick = onMove,
-                modifier = Modifier.height(44.dp).semantics { testTag = "settings_workspace_move" },
+                modifier = Modifier.heightIn(min = 44.dp).semantics { testTag = "settings_workspace_move" },
             ) {
-                Text(stringResource(R.string.files_storage_move_action))
+                Text(stringResource(R.string.files_storage_move_action), textAlign = TextAlign.Center)
             }
         }
         Spacer(Modifier.height(6.dp))
@@ -2375,15 +2375,14 @@ private fun WorkspaceSection(
             OutlinedButton(
                 onClick = onImport,
                 enabled = !importing,
-                modifier = Modifier.height(46.dp).weight(1f).semantics {
+                modifier = Modifier.heightIn(min = 46.dp).weight(1f).semantics {
                     testTag = "settings_workspace_import"
                 },
             ) {
                 Text(
                     stringResource(if (importing) R.string.projects_importing else R.string.projects_import),
                     style = MaterialTheme.typography.labelLarge,
-                    maxLines = 1,
-                )
+                    maxLines = 1, textAlign = TextAlign.Center)
             }
         }
         // The folders this app has worked in before. One line each, tap to
@@ -2572,14 +2571,13 @@ private fun PolicyButton(
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.height(44.dp).semantics { testTag = tag },
+        modifier = modifier.heightIn(min = 44.dp).semantics { testTag = tag },
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
             maxLines = 1,
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-        )
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center)
     }
 }
 
@@ -2598,18 +2596,9 @@ private fun MemorySection(
         collapsible = true,
         initiallyExpanded = false,
     ) {
-        MemoryEditorCard(
-            title = stringResource(R.string.settings_memory_project),
-            hint = stringResource(R.string.settings_memory_project_hint),
-            content = memory.projectContent,
-            hasRules = memory.projectHasRules,
-            enabled = memory.projectName.isNotBlank(),
-            disabledNote = if (memory.projectName.isBlank()) stringResource(R.string.settings_memory_project_none) else "",
-            tagPrefix = "memory_project",
-            onSave = { onSave("project", it) },
-            onRemove = { onRemove("project") },
-        )
-        Spacer(Modifier.height(10.dp))
+        // 2026-11-23 (owner): the project AGENTS.md is not shown here at all. The file is
+        // still read by OpenCode and written by the app (GitHub block); only the Settings
+        // card is gone. The global card below stays.
         MemoryEditorCard(
             title = stringResource(R.string.settings_memory_global),
             hint = stringResource(R.string.settings_memory_global_hint),
@@ -2669,15 +2658,15 @@ private fun MemoryEditorCard(
                             onSave(draft)
                             editing = false
                         },
-                        modifier = Modifier.height(44.dp).semantics { testTag = "${tagPrefix}_save" },
+                        modifier = Modifier.heightIn(min = 44.dp).semantics { testTag = "${tagPrefix}_save" },
                     ) {
-                        Text(stringResource(R.string.settings_memory_save))
+                        Text(stringResource(R.string.settings_memory_save), textAlign = TextAlign.Center)
                     }
                     TextButton(
                         onClick = { editing = false },
-                        modifier = Modifier.height(44.dp).semantics { testTag = "${tagPrefix}_cancel" },
+                        modifier = Modifier.heightIn(min = 44.dp).semantics { testTag = "${tagPrefix}_cancel" },
                     ) {
-                        Text(stringResource(R.string.action_cancel))
+                        Text(stringResource(R.string.action_cancel), textAlign = TextAlign.Center)
                     }
                 }
             } else {
@@ -2693,16 +2682,16 @@ private fun MemoryEditorCard(
                             draft = content
                             editing = true
                         },
-                        modifier = Modifier.height(44.dp).semantics { testTag = "${tagPrefix}_edit" },
+                        modifier = Modifier.heightIn(min = 44.dp).semantics { testTag = "${tagPrefix}_edit" },
                     ) {
-                        Text(stringResource(R.string.settings_memory_edit))
+                        Text(stringResource(R.string.settings_memory_edit), textAlign = TextAlign.Center)
                     }
                     if (hasRules) {
                         TextButton(
                             onClick = onRemove,
-                            modifier = Modifier.height(44.dp).semantics { testTag = "${tagPrefix}_remove" },
+                            modifier = Modifier.heightIn(min = 44.dp).semantics { testTag = "${tagPrefix}_remove" },
                         ) {
-                            Text(stringResource(R.string.settings_memory_remove), color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.settings_memory_remove), color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                         }
                     }
                 }
@@ -2877,9 +2866,9 @@ private fun AboutSection(
 private fun LinkButton(label: String, url: String, tag: String, onOpenUrl: (String) -> Unit) {
     TextButton(
         onClick = { onOpenUrl(url) },
-        modifier = Modifier.height(46.dp).semantics { testTag = tag },
+        modifier = Modifier.heightIn(min = 46.dp).semantics { testTag = tag },
     ) {
-        Text(label)
+        Text(label, textAlign = TextAlign.Center)
     }
 }
 

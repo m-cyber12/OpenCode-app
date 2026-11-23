@@ -73,6 +73,7 @@ object Markdown {
     // (`ts {1,20}`, `bash title="x"`), so it is captured whole and normalised.
     private val FENCE = Regex("^(`{3,}|~{3,})[ \\t]*(.*)$")
     private val TABLE_SEP = Regex("^\\s*\\|?\\s*:?-{2,}:?\\s*(\\|\\s*:?-{2,}:?\\s*)*\\|?\\s*$")
+    private val TABLE_BREAK = Regex("<br\\s*/?>", RegexOption.IGNORE_CASE)
 
     /** ChatML-style control markers a raw-completion provider can leak. */
     private val LEAKED_TOKEN = Regex("<\\|[a-zA-Z_][a-zA-Z0-9_]{0,31}\\|>")
@@ -224,11 +225,15 @@ object Markdown {
                 j += 1
                 continue
             }
-            rows.add(splitRow(lines[j]).map { inline(it) })
+            rows.add(splitRow(lines[j]).map { cellSpans(it) })
             j += 1
         }
-        return MdBlock.Table(header = header.map { inline(it) }, rows = rows) to j
+        return MdBlock.Table(header = header.map { cellSpans(it) }, rows = rows) to j
     }
+
+    /** A table cell: `<br>` (ChatGPT-style multi-line cells) becomes a real line break. */
+    private fun cellSpans(cell: String): List<MdSpan> =
+        inline(cell.replace(TABLE_BREAK, "\n"))
 
     private fun splitRow(line: String): List<String> {
         var t = line.trim()

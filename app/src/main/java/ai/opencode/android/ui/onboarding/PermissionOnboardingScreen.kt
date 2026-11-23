@@ -17,6 +17,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -65,10 +66,10 @@ fun PermissionOnboardingScreen(
             onClick = onNext,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp)
+                .heightIn(min = 52.dp)
                 .semantics { testTag = "onboarding_permission_next" },
         ) {
-            Text(stringResource(R.string.onboarding_next))
+            Text(stringResource(R.string.onboarding_next), textAlign = TextAlign.Center)
         }
         Spacer(Modifier.height(6.dp))
         Text(

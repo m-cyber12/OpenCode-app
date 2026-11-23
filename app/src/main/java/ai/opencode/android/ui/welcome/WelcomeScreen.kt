@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -87,10 +88,10 @@ fun WelcomeScreen(
             onClick = onContinue,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp)
+                .heightIn(min = 52.dp)
                 .semantics { testTag = "welcome_continue" },
         ) {
-            Text(stringResource(R.string.onboarding_next), style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.onboarding_next), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
         }
         Spacer(Modifier.height(20.dp))
 

@@ -297,7 +297,7 @@ fun DetailDisclosure(text: String, modifier: Modifier = Modifier) {
     var open by rememberSaveable(text) { mutableStateOf(false) }
     Column(modifier.fillMaxWidth()) {
         TextButton(onClick = { open = !open }) {
-            Text(stringResource(if (open) R.string.action_hide_details else R.string.action_details))
+            Text(stringResource(if (open) R.string.action_hide_details else R.string.action_details), textAlign = TextAlign.Center)
         }
         if (open) {
             SelectionContainer(modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 8.dp)) {
