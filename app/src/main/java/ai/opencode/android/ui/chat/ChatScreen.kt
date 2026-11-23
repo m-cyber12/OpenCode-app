@@ -1397,7 +1397,6 @@ private fun PendingSendRow(
     text: String,
     modifier: Modifier = Modifier,
 ) {
-    val chat = ChatTheme.chat
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -1417,12 +1416,6 @@ private fun PendingSendRow(
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
             )
         }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = stringResource(R.string.chat_pending_send),
-            style = MaterialTheme.typography.labelSmall,
-            color = chat.muted,
-        )
     }
 }
 
