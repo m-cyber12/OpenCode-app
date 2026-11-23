@@ -77,12 +77,15 @@ class GithubCloneManager(
                 // v9.26 (owner): ONE branch per project, created here, worked
                 // on by every chat of the project.
                 val branch = GitClone.projectBranch(targetDir.name)
+                val cloneUrl = GithubRepos.cloneUrl(webBase, repo.fullName)
+                seedIfEmpty(repo.fullName, cloneUrl, token)
                 GitSync.cloneAndBranch(
-                    cloneUrl = GithubRepos.cloneUrl(webBase, repo.fullName),
+                    cloneUrl = cloneUrl,
                     targetDir = targetDir,
                     branch = branch,
                     token = token,
                 ) { line -> _state.value = _state.value.copy(progress = line) }
+                configureAgent(targetDir, token)
                 _state.value = _state.value.copy(phase = Phase.DONE, progress = branch)
                 onDone(branch)
             } catch (t: Throwable) {
@@ -136,8 +139,10 @@ class GithubCloneManager(
             withContext(Dispatchers.IO) {
                 if (!File(dir, ".git").isDirectory && meta != null) {
                     _state.value = _state.value.copy(progress = "cloning ${meta.repo.substringAfterLast('/')}")
+                    val cloneUrl = GithubRepos.cloneUrl(webBase, meta.repo)
+                    seedIfEmpty(meta.repo, cloneUrl, token)
                     GitSync.cloneOnly(
-                        cloneUrl = GithubRepos.cloneUrl(webBase, meta.repo),
+                        cloneUrl = cloneUrl,
                         targetDir = dir,
                         token = token,
                     ) { line -> _state.value = _state.value.copy(progress = line) }
@@ -148,6 +153,9 @@ class GithubCloneManager(
                     }
                 }
                 GitSync.ensureProjectBranch(dir)
+                // Every prompt, not just the clone: a project cloned before this rule existed
+                // gets its credential helper and identity on its next send.
+                configureAgent(dir, token)
             }
             _state.value = _state.value.copy(phase = Phase.DONE, progress = "")
         } catch (t: Throwable) {
@@ -161,6 +169,60 @@ class GithubCloneManager(
     fun dismissError() {
         if (_state.value.phase == Phase.ERROR || _state.value.phase == Phase.DONE) {
             _state.value = _state.value.copy(phase = Phase.IDLE, error = "")
+        }
+    }
+
+    /**
+     * An EMPTY GitHub repository has no branch to clone, so the app writes an empty README
+     * first (the contents API makes it the first commit on the default branch), then the
+     * normal clone runs. Only an empty remote is touched; a repository with history never is.
+     */
+    private fun seedIfEmpty(fullName: String, cloneUrl: String, token: String) {
+        if (!GitSync.isEmptyRemote(cloneUrl, token)) return
+        _state.value = _state.value.copy(progress = "empty repository: adding README")
+        send(
+            "PUT",
+            GithubRepos.readmeUrl(apiBase, fullName),
+            GithubRepos.headers(token),
+            GithubRepos.emptyReadmeBody(),
+        )
+    }
+
+    /**
+     * The checkout's credential helper, and - when no identity is set - the signed-in
+     * account as the commit author. The account lookup is a best effort: a failure leaves
+     * the identity for the next prompt, and the helper is written regardless.
+     */
+    private fun configureAgent(dir: File, token: String) {
+        val viewer = if (GitSync.identityMissing(dir)) {
+            runCatching { GithubRepos.parseViewer(fetch(GithubRepos.userUrl(apiBase), GithubRepos.headers(token))) }
+                .getOrNull()
+        } else {
+            null
+        }
+        GitSync.configureAgent(dir, webBase, viewer)
+    }
+
+    private fun send(method: String, url: String, headers: Map<String, String>, body: String): String {
+        val conn = (URL(url).openConnection() as HttpURLConnection).apply {
+            connectTimeout = 15_000
+            readTimeout = 30_000
+            requestMethod = method
+            doOutput = true
+            setRequestProperty("Content-Type", "application/json")
+            headers.forEach { (k, v) -> setRequestProperty(k, v) }
+        }
+        try {
+            conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            val code = conn.responseCode
+            if (code in 200..299) return conn.inputStream.bufferedReader().readText()
+            if (code == 401) error("GitHub rejected the connection token (HTTP 401). Reconnect GitHub in Settings.")
+            if (code == 403) {
+                error("GitHub refused to write the repository (HTTP 403). The token needs Contents: read and write.")
+            }
+            error("GitHub answered HTTP $code")
+        } finally {
+            conn.disconnect()
         }
     }
 

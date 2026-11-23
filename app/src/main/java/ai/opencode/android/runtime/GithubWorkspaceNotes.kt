@@ -38,9 +38,10 @@ A change that is not pushed does not, for practical purposes, exist.
   the work onto the project branch first - `git checkout -B opencode/<project>`
   carries your commits and uncommitted edits with it.
   NEVER push master or main; no other branches unless the user asks.
-- Push with the token URL the environment brief's GitHub section provides;
-  `git remote get-url origin` names the owner/repo. Never print the token,
-  never commit it into any file.
+- Push with `git push origin HEAD`; the checkout's credentials and git
+  identity are already configured. Never ask the user for a name or email.
+  If a push fails, use the token URL form from the environment brief's GitHub
+  section. Never print the token, never commit it into any file.
 - Anything else the user asks about this repo happens ON GitHub - the repo,
   not only the sandbox."""
 

@@ -102,4 +102,33 @@ class WorkLogDiffTest {
         assertEquals(0, change.additions)
         assertEquals("", change.patch)
     }
+
+    /**
+     * Owner (2026-11-23): the Diff page showed "unnamed file" for model edits. The name must
+     * come from the call's own arguments even while they are unfinished, and from the patch
+     * header when the arguments are missing entirely.
+     */
+    @Test
+    fun editNameIsReadFromUnfinishedArguments() {
+        val partial = """{"path":"src/app/Main.kt","oldString":"a"""
+        val change = WorkLog.changes(view(part("edit", partial).copy(title = "")))[0].changes.single()
+        assertEquals("src/app/Main.kt", change.file)
+    }
+
+    @Test
+    fun editNameFallsBackToThePatchHeader() {
+        val patch = "--- a/docs/notes.md\n+++ b/docs/notes.md\n@@ -1 +1 @@\n-x\n+y\n"
+        val meta = JSONObject().put("diff", patch).toString()
+        val change = WorkLog.changes(view(part("edit", "", metadata = meta).copy(title = "")))[0].changes.single()
+        assertEquals("docs/notes.md", change.file)
+    }
+
+    @Test
+    fun patchHeaderIgnoresDevNullAndTimestamps() {
+        assertEquals("", WorkLog.pathFromPatch("--- /dev/null\n+++ /dev/null\n"))
+        assertEquals(
+            "lib/x.kt",
+            WorkLog.pathFromPatch("--- a/lib/x.kt\t2026-11-23 10:00\n+++ b/lib/x.kt\t2026-11-23 10:01\n"),
+        )
+    }
 }

@@ -55,4 +55,30 @@ class GithubReposTest {
             GithubRepos.cloneUrl("https://web.example/", "m-cyber12/CreatorsHub"),
         )
     }
+
+    /** Owner (2026-11-23): the agent asked for a GitHub ID and email. The app now knows both. */
+    @Test
+    fun viewerFromGithubUserCarriesTheNoReplyEmail() {
+        val v = GithubRepos.parseViewer("""{"login":"m-cyber12","id":12345,"name":"Owner"}""")
+        assertEquals("m-cyber12", v?.login)
+        assertEquals("12345+m-cyber12@users.noreply.github.com", v?.noReplyEmail)
+    }
+
+    @Test
+    fun viewerIsNullWithoutALoginOrId() {
+        assertEquals(null, GithubRepos.parseViewer("""{"message":"Bad credentials"}"""))
+        assertEquals(null, GithubRepos.parseViewer("not json"))
+    }
+
+    /** An empty repository gets an empty README as its first commit, through the contents API. */
+    @Test
+    fun emptyRepoReadmeGoesThroughTheContentsApi() {
+        assertEquals(
+            "https://api.example/repos/m-cyber12/rub/contents/README.md",
+            GithubRepos.readmeUrl("https://api.example/", "m-cyber12/rub"),
+        )
+        val body = org.json.JSONObject(GithubRepos.emptyReadmeBody())
+        assertEquals("", body.getString("content"))
+        assertEquals("Initial commit", body.getString("message"))
+    }
 }

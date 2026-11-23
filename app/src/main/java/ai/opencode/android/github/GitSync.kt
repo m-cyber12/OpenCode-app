@@ -4,6 +4,7 @@ import java.io.File
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.BatchingProgressMonitor
 import org.eclipse.jgit.lib.Constants
+import org.eclipse.jgit.storage.file.FileBasedConfig
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 
 /**
@@ -29,6 +30,85 @@ object GitSync {
 
     private fun credentials(token: String) =
         UsernamePasswordCredentialsProvider(TOKEN_USER, token)
+
+    /** Name of the helper script, kept inside the checkout's own `.git` directory. */
+    internal const val CREDENTIAL_SCRIPT = "opencode-credential.sh"
+
+    /**
+     * The credential helper script. It answers `get` with the token that is already in the
+     * agent's environment as `key`, so the token is never written to disk and `origin` stays
+     * token-free. A script file (not an inline shell string) keeps the git config value free
+     * of quotes and `;`, which git would otherwise read as a comment. Before this, a plain
+     * `git push` in the agent's shell had no credentials and failed with "could not read
+     * Username" (owner, 2026-11-23).
+     */
+    internal val CREDENTIAL_SCRIPT_BODY: String =
+        "#!/bin/sh\n" +
+            "# Written by the OpenCode Android app. Answers git with the GitHub token from the environment.\n" +
+            "if [ \"\$1\" = get ]; then\n" +
+            "  printf 'username=%s\\n' " + TOKEN_USER + "\n" +
+            "  printf 'password=%s\\n' \"${'$'}key\"\n" +
+            "fi\n"
+
+    /**
+     * True when the remote has no branch at all - a freshly created GitHub repository with
+     * no commits. An unreachable remote throws, so an auth failure is not mistaken for "empty".
+     */
+    fun isEmptyRemote(cloneUrl: String, token: String): Boolean =
+        Git.lsRemoteRepository()
+            .setRemote(cloneUrl)
+            .setCredentialsProvider(credentials(token))
+            .setHeads(true)
+            .setTags(true)
+            .call()
+            .isEmpty()
+
+    /**
+     * Makes a GitHub checkout ready for the agent to commit and push, on the repository's
+     * own config so it survives restarts: the credential helper above, and - only when the
+     * git identity is not set yet - the account's name and GitHub no-reply email. The agent
+     * then commits as the owner without asking for an ID or email. A null [viewer] (the
+     * account lookup failed) sets the helper and leaves the identity for the next prompt.
+     */
+    fun configureAgent(dir: File?, webBase: String, viewer: ai.opencode.android.github.GithubRepos.Viewer?) {
+        if (dir == null || !File(dir, ".git").isDirectory) return
+        runCatching {
+            Git.open(dir).use { git ->
+                val config = localConfig(git)
+                val script = File(git.repository.directory, CREDENTIAL_SCRIPT)
+                script.writeText(CREDENTIAL_SCRIPT_BODY)
+                script.setExecutable(true, true)
+                // The helper is scoped to the GitHub web origin (from strings.xml), not to every host.
+                config.setString(
+                    "credential",
+                    webBase.trimEnd('/'),
+                    "helper",
+                    "!sh " + script.absolutePath,
+                )
+                if (viewer != null && config.getString("user", null, "name") == null) {
+                    config.setString("user", null, "name", viewer.login)
+                    config.setString("user", null, "email", viewer.noReplyEmail)
+                }
+                config.save()
+            }
+        }
+    }
+
+    /** True when the checkout has no git identity yet (see [configureAgent]). */
+    fun identityMissing(dir: File?): Boolean {
+        if (dir == null || !File(dir, ".git").isDirectory) return false
+        return runCatching {
+            Git.open(dir).use { localConfig(it).getString("user", null, "name") == null }
+        }.getOrDefault(false)
+    }
+
+    /**
+     * The checkout's OWN `.git/config` only. JGit's repository config also layers the
+     * machine's global git config underneath, which would make the identity check depend on
+     * whatever the device or CI happens to have set globally.
+     */
+    private fun localConfig(git: Git): FileBasedConfig =
+        FileBasedConfig(null, File(git.repository.directory, "config")).also { it.load() }
 
     /** A [BatchingProgressMonitor] that forwards "Task: 42%" lines to [onLine]. */
     private fun monitor(onLine: (String) -> Unit) = object : BatchingProgressMonitor() {

@@ -93,7 +93,7 @@ object WorkLog {
                     }
                     continue
                 }
-                val file = meta.diffFile.ifBlank { inputField(part.input, "filePath", "path") }
+                val file = meta.diffFile.ifBlank { changedPath(part.input, meta.diff) }
                 // v9.35 (owner): a brand-new file written by the `write` tool
                 // carried no server-side diff metadata, so the Diff page framed
                 // the file with "+0 -0" and nothing inside - a created file IS
@@ -175,6 +175,43 @@ object WorkLog {
             }
         }
         return out
+    }
+
+    /**
+     * The file a single-file write/edit changed. Four sources, first hit wins:
+     * the complete tool input (`filePath` or `path`); the same keys read from UNFINISHED
+     * JSON, which is what a call still being generated looks like; and the file header
+     * of the patch the server computed (`+++ b/<path>`, or `--- a/<path>` for a delete).
+     * Without this, a call whose input is still partial or was never stored showed
+     * "unnamed file" on the Diff page.
+     */
+    internal fun changedPath(input: String, patch: String): String {
+        val complete = inputField(input, "filePath", "path")
+        if (complete.isNotBlank()) return complete
+        val partial = ToolInputPreview.stringField(input, "filePath")
+            ?: ToolInputPreview.stringField(input, "path")
+        if (!partial.isNullOrBlank()) return partial
+        return pathFromPatch(patch)
+    }
+
+    /** The path named by a unified diff's `+++ b/…` (or `--- a/…`) header, or "". */
+    internal fun pathFromPatch(patch: String): String {
+        var fallback = ""
+        for (line in patch.lineSequence()) {
+            if (line.startsWith("+++ ")) {
+                val p = headerPath(line.removePrefix("+++ "))
+                if (p.isNotEmpty()) return p
+            } else if (line.startsWith("--- ") && fallback.isEmpty()) {
+                fallback = headerPath(line.removePrefix("--- "))
+            }
+        }
+        return fallback
+    }
+
+    private fun headerPath(raw: String): String {
+        val p = raw.trim().substringBefore('\t').trim()
+        if (p.isEmpty() || p == "/dev/null") return ""
+        return if (p.startsWith("a/") || p.startsWith("b/")) p.substring(2) else p
     }
 
     /** First non-blank of the named string fields in a tool-input JSON blob. */

@@ -21,6 +21,9 @@ class GitSyncTest {
     @get:Rule
     val tmp = TemporaryFolder()
 
+    /** Stands in for the web base the app reads from strings.xml. */
+    private val webBase = "https://web.example"
+
     /** A bare "GitHub" with one commit on `main`, plus its seed work repo. */
     private fun bareOrigin(): File {
         val bare = tmp.newFolder("origin.git")
@@ -153,5 +156,68 @@ class GitSyncTest {
         assertTrue(GitSync.isGithubProject(project))
         assertFalse(GitSync.isGithubProject(tmp.newFolder("plain")))
         assertFalse(GitSync.isGithubProject(null))
+    }
+
+    /** A bare repository with no commits: what GitHub serves for a brand-new empty repo. */
+    private fun emptyOrigin(): File {
+        val bare = tmp.newFolder("empty.git")
+        Git.init().setBare(true).setInitialBranch("main").setDirectory(bare).call().close()
+        return bare
+    }
+
+    @Test
+    fun anEmptyRemoteIsDetectedAndAnOrdinaryOneIsNot() {
+        assertTrue(GitSync.isEmptyRemote(emptyOrigin().absolutePath, "unused"))
+        assertFalse(GitSync.isEmptyRemote(bareOrigin().absolutePath, "unused"))
+    }
+
+    /**
+     * Owner (2026-11-23): plain `git push` failed with "could not read Username", and the
+     * agent asked for a GitHub ID and email. The checkout must carry a token-free credential
+     * helper and the account identity, written to the repository's own config.
+     */
+    @Test
+    fun configureAgentWritesTheHelperAndTheIdentityWithoutTheToken() {
+        val origin = bareOrigin()
+        val project = tmp.newFolder("agent")
+        GitSync.cloneAndBranch(origin.absolutePath, project, GitClone.projectBranch("agent"), "unused") { }
+        val viewer = ai.opencode.android.github.GithubRepos.Viewer("m-cyber12", 12345L)
+        assertTrue(GitSync.identityMissing(project))
+        GitSync.configureAgent(project, webBase, viewer)
+        Git.open(project).use { git ->
+            val c = git.repository.config
+            assertEquals("m-cyber12", c.getString("user", null, "name"))
+            assertEquals("12345+m-cyber12@users.noreply.github.com", c.getString("user", null, "email"))
+            val helper = c.getString("credential", webBase, "helper")
+            assertTrue(helper.startsWith("!sh "))
+            val script = File(helper.removePrefix("!sh ")).readText()
+            assertTrue(script.contains("\$key"))
+            assertFalse(script.contains("unused"))
+            assertFalse(helper.contains("unused"))
+            assertFalse(c.getString("remote", "origin", "url").contains("unused"))
+        }
+        assertFalse(GitSync.identityMissing(project))
+        // An identity the owner already set is never overwritten.
+        GitSync.configureAgent(project, webBase, ai.opencode.android.github.GithubRepos.Viewer("other", 1L))
+        Git.open(project).use { git ->
+            assertEquals("m-cyber12", git.repository.config.getString("user", null, "name"))
+        }
+    }
+
+    /** The helper answers git's `get` with the token from the environment, and nothing else. */
+    @Test
+    fun credentialScriptAnswersGetFromTheEnvironmentOnly() {
+        val script = File(tmp.newFolder("helper"), "opencode-credential.sh")
+        script.writeText(GitSync.CREDENTIAL_SCRIPT_BODY)
+        fun run(action: String): String {
+            val pb = ProcessBuilder("sh", script.absolutePath, action)
+            pb.environment()["key"] = "tok123"
+            val p = pb.start()
+            val out = p.inputStream.bufferedReader().readText()
+            p.waitFor()
+            return out
+        }
+        assertEquals("username=x-access-token\npassword=tok123\n", run("get"))
+        assertEquals("", run("store"))
     }
 }
