@@ -58,7 +58,7 @@ fun RemoteImage(url: String, alt: String, modifier: Modifier = Modifier) {
             is PictureState.Ready -> Image(
                 bitmap = s.bitmap.asImageBitmap(),
                 contentDescription = description,
-                contentScale = ContentScale.FitWidth,
+                contentScale = ContentScale.FillWidth,
                 modifier = Modifier.fillMaxWidth(),
             )
             PictureState.Loading -> Box(
