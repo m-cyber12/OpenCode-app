@@ -4,6 +4,10 @@ import ai.opencode.android.R
 import ai.opencode.android.web.WebImages
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,14 +33,29 @@ private sealed interface PictureState {
     object Failed : PictureState
 }
 
+/** Where and how big a website picture is drawn (2026-11-23, owner: "different sizes and locations"). */
+enum class PictureStyle {
+    /** Its own line, full width of the bubble. */
+    Full,
+    /** One tile of a grid of pictures; cropped to a fixed 4:3 frame. */
+    Tile,
+    /** A small logo at the start of a list item. */
+    Logo,
+}
+
 /**
- * A website picture in the chat (2026-11-23). No card and no spinner: the picture is
- * drawn inline, full width, with rounded corners. It loads in the background through
- * [WebImages]; while it loads nothing is shown, and if it cannot load the alt text is
- * shown as plain muted text.
+ * A website picture in the chat. No card and no spinner: the picture is drawn inline
+ * with rounded corners. It loads in the background through [WebImages]; while it loads
+ * a grid tile keeps its frame so the grid does not jump, and if it cannot load the alt
+ * text is shown as plain muted text.
  */
 @Composable
-fun RemoteImage(url: String, alt: String, modifier: Modifier = Modifier) {
+fun RemoteImage(
+    url: String,
+    alt: String,
+    modifier: Modifier = Modifier,
+    style: PictureStyle = PictureStyle.Full,
+) {
     val state by produceState<PictureState>(
         initialValue = WebImages.cached(url)?.let { PictureState.Ready(it) } ?: PictureState.Loading,
         key1 = url,
@@ -50,17 +69,31 @@ fun RemoteImage(url: String, alt: String, modifier: Modifier = Modifier) {
     when (val s = state) {
         is PictureState.Ready -> {
             val image = remember(s.bitmap) { s.bitmap.asImageBitmap() }
+            val shaped = when (style) {
+                PictureStyle.Full -> modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                PictureStyle.Tile -> modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(RoundedCornerShape(12.dp))
+                PictureStyle.Logo -> modifier.size(44.dp).clip(RoundedCornerShape(8.dp))
+            }
             Image(
                 bitmap = image,
                 contentDescription = description,
-                contentScale = ContentScale.FillWidth,
-                modifier = modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .semantics { testTag = "chat_image" },
+                contentScale = when (style) {
+                    PictureStyle.Full -> ContentScale.FillWidth
+                    PictureStyle.Tile -> ContentScale.Crop
+                    PictureStyle.Logo -> ContentScale.Fit
+                },
+                modifier = shaped.semantics { testTag = "chat_image" },
             )
         }
-        PictureState.Loading -> Unit
+        PictureState.Loading -> if (style == PictureStyle.Tile) {
+            Box(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .aspectRatio(4f / 3f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+            )
+        }
         PictureState.Failed -> Text(
             text = alt.ifBlank { description },
             style = MaterialTheme.typography.bodySmall,

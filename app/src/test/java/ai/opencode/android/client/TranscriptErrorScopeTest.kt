@@ -50,14 +50,16 @@ class TranscriptErrorScopeTest {
     }
 
     @Test
-    fun aFailedTurnIsNoLongerBusy() {
-        // The server sends no idle frame after an error: the error alone must end the turn,
-        // or Send stays replaced by Pause and the user is stuck.
+    fun anErrorMidReplyKeepsTheTurnRunningUntilTheServerSaysIdle() {
+        // 2026-11-23 (owner): a model error can arrive while the reply keeps streaming.
+        // The error is shown, but the turn stays busy; only an idle confirmation ends it.
         apply("session.status", """{"sessionID":"s1","status":{"type":"busy"}}""")
         assertEquals(true, view()?.busy)
         apply("session.error", """{"sessionID":"s1","error":{"name":"ProviderAuthError","message":"invalid api key"}}""")
-        assertEquals(false, view()?.busy)
+        assertEquals(true, view()?.busy)
         assertNotNull(view()?.error)
+        transcript.markIdle("s1")
+        assertEquals(false, view()?.busy)
     }
 
     @Test

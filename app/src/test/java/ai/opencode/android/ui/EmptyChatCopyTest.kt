@@ -47,7 +47,7 @@ class EmptyChatCopyTest {
 
     @Test
     fun planExitQuestionHidesThePlanFilePath() {
-        val raw = "Plan at data/user/0/io.github.mcyber12.opencode/files/xdg/data/opencode/plans/" +
+        val raw = "Plan at data/user/0/io.github.NoxiferaDev.opencode/files/xdg/data/opencode/plans/" +
             "1791712569939-quiet-star.md is complete. Would you like to switch to the " +
             "build agent and start implementing?"
         val shown = questionDisplayText(raw)

@@ -107,6 +107,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import android.widget.Toast
@@ -178,8 +179,8 @@ const val REPLY_REJECT = "reject"
  * One message: a user turn (right, in a bubble) or an assistant turn (full width,
  * so prose and tool cards read as a document rather than as chat bubbles).
  */
-/** How long a prompt must be held before its text is copied (owner, 2026-11-23). */
-internal const val PROMPT_HOLD_MS = 2000L
+/** How long a prompt must be held before its text is copied (owner, 2026-11-23: 1 second). */
+internal const val PROMPT_HOLD_MS = 1000L
 
 /**
  * Returns true only when the finger stays down, within touch slop, for the whole
@@ -188,13 +189,15 @@ internal const val PROMPT_HOLD_MS = 2000L
  * consumes events, so the text stays selectable.
  */
 private suspend fun AwaitPointerEventScope.holdForCopy(): Boolean {
-    val down = awaitFirstDown()
+    // Initial pass: the bubble sees the press before its text does, so a press on the
+    // selectable prose (which consumes presses) still counts. Nothing is consumed here.
+    val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
     val start = down.position
     val slop = viewConfiguration.touchSlop
     val timedOut = withTimeoutOrNull(PROMPT_HOLD_MS) {
         var stillHeld = true
         while (stillHeld) {
-            val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
+            val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id }
             stillHeld = change != null && change.pressed && (change.position - start).getDistance() <= slop
         }
         false
@@ -202,7 +205,7 @@ private suspend fun AwaitPointerEventScope.holdForCopy(): Boolean {
     if (timedOut) {
         // Full hold: wait for the finger to lift so the next gesture starts clean.
         do {
-            val event = awaitPointerEvent()
+            val event = awaitPointerEvent(PointerEventPass.Initial)
         } while (event.changes.any { it.pressed })
     }
     return timedOut

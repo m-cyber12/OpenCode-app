@@ -32,7 +32,7 @@ android {
         // (Play rejects a package-name change; it can only be a new listing with a
         // new key, losing installs and reviews). It is therefore deliberately
         // independent of the display name: the app is published as "OpenCode"
-        // under the developer's own `io.github.mcyber12` namespace, NOT under
+        // under the developer's own `io.github.NoxiferaDev` namespace, NOT under
         // ai.opencode.android. The old value used upstream's real domain
         // (opencode.ai -> ai.opencode.*), which reads as an official/first-party
         // package and is an impersonation risk in Play review — see docs/BRANDING.md
@@ -41,7 +41,7 @@ android {
         // The Kotlin `namespace` (R/BuildConfig package, 93 source files) stays
         // ai.opencode.android and is NOT user-visible; changing it would touch
         // every source file for zero packaging benefit.
-        applicationId = "io.github.mcyber12.opencode"
+        applicationId = "io.github.NoxiferaDev.opencode"
         minSdk = 29          // W^X: exec only from nativeLibraryDir; ABI gating enforces arm64/x64
         targetSdk = 36
         versionCode = 8      // Phase 10: signing + store prep. Payload/version pins unchanged

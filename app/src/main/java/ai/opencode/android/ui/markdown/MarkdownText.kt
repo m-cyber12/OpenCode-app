@@ -131,6 +131,8 @@ fun MarkdownBlocks(
 
                 is MdBlock.Picture -> RemoteImage(url = block.url, alt = block.alt)
 
+                is MdBlock.Gallery -> PictureGallery(block.pictures)
+
                 MdBlock.Rule -> HorizontalDivider(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
                     thickness = 1.dp,
@@ -244,7 +246,41 @@ private fun ListRow(item: MdBlock.ListItem, style: TextStyle, color: Color) {
             color = color,
             modifier = Modifier.width(if (item.ordered) 26.dp else 16.dp),
         )
+        // A logo at the start of an item sits beside its text, the way a brand logo
+        // sits beside a numbered option in a ChatGPT answer.
+        item.picture?.let { picture ->
+            RemoteImage(
+                url = picture.url,
+                alt = picture.alt,
+                style = PictureStyle.Logo,
+                modifier = Modifier.padding(end = 10.dp),
+            )
+        }
         ProseText(item.spans, style = style, color = color, modifier = Modifier.weight(1f))
+    }
+}
+
+/**
+ * Pictures that came on consecutive lines, drawn as a two-column grid of tiles. An odd
+ * last picture keeps its half-width column, so it never stretches across the bubble.
+ */
+@Composable
+private fun PictureGallery(pictures: List<MdBlock.Picture>) {
+    Column(Modifier.fillMaxWidth()) {
+        pictures.chunked(2).forEachIndexed { row, pair ->
+            if (row > 0) Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (picture in pair) {
+                    RemoteImage(
+                        url = picture.url,
+                        alt = picture.alt,
+                        style = PictureStyle.Tile,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (pair.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
     }
 }
 

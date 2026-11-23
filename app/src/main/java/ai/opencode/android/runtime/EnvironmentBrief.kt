@@ -734,10 +734,27 @@ cell to a few words. Do not put a line break inside a cell. Keep a table to abou
 8 rows. Use a table only for a real comparison; a list is better for steps.
 
 ## Pictures from the web
-Put a picture on its own line, with a short description in the brackets:
+Three layouts. Pick the one that fits the answer:
+
+1. One large picture: put it alone on its own line. It fills the width.
 
 ![Diagram of the request flow](https://example.com/images/flow.png)
 
+2. Several pictures in a grid: put two or more pictures on consecutive lines, with
+   no blank line between them. The chat draws them as two columns of tiles. Use this
+   for a set of examples, screenshots, or products.
+
+![Front view](https://example.com/images/a.jpg)
+![Side view](https://example.com/images/b.jpg)
+![Back view](https://example.com/images/c.jpg)
+
+3. A small logo beside a list item: start the item with the picture. Use this when
+   each list item is a named product, app, or company.
+
+1. ![OpenAI logo](https://example.com/logos/openai.png) **OpenAI Codex CLI** - written in Rust.
+2. ![Anthropic logo](https://example.com/logos/anthropic.png) **Claude Code** - runs non-interactively.
+
+Rules for all three:
 - Only `https` links. The phone downloads the picture itself, in the background.
   Plain `http` links and links to the phone or the local network are refused.
 - Link to the image file itself (.png, .jpg, .webp, .gif). A link to a web page
@@ -749,7 +766,10 @@ Put a picture on its own line, with a short description in the brackets:
   by name, or build a page that shows it.
 - The description is what a screen reader says, and what shows when the picture
   cannot load. Make it one short, plain sentence.
-- Do not put a picture inside a sentence or a list item. Give it its own line.
+- Use pictures when they help the reader see something: a product, a diagram, a
+  place, a screen. Do not add them for decoration.
+- Do not put a picture in the middle of a sentence. It goes on its own line, or at
+  the start of a list item.
 """.trimIndent() + "\n"
 
         return linkedMapOf(

@@ -63,6 +63,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -442,19 +443,18 @@ private fun ThinkingLevelRow(
         ) {
             for ((id, label) in options) {
                 val selected = activeVariant == id
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (selected) primary else MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    textAlign = TextAlign.Center,
+                // 2026-11-23 (owner): the label was not centred in its chip. The chip is a
+                // Box that centres its content, and the text trims its own line padding so
+                // the glyphs sit in the middle, not above it.
+                Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
                         .background(if (selected) primary.copy(alpha = 0.14f) else chat.toolContainer)
                         .border(1.dp, if (selected) primary else chat.toolBorder, RoundedCornerShape(50))
                         .clickable { onPick(id) }
-                        .heightIn(min = 36.dp)
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                        .heightIn(min = 40.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                         .semantics {
                             // Literal tags, written so the static gate-tag check can see them.
                             testTag = if (id.isEmpty()) "thinking_level_default" else "thinking_level_$id"
@@ -462,13 +462,27 @@ private fun ThinkingLevelRow(
                             contentDescription = label
                             this.selected = selected
                         },
-                )
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            lineHeightStyle = LineHeightStyle(
+                                alignment = LineHeightStyle.Alignment.Center,
+                                trim = LineHeightStyle.Trim.Both,
+                            ),
+                        ),
+                        color = if (selected) primary else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.clearAndSetSemantics { },
+                    )
+                }
             }
         }
     }
 }
 
-/** A group header: label + fold marker, tappable. */
+/** A group header. */
 @Composable
 private fun QuickGroupHeader(
     title: String,

@@ -154,7 +154,7 @@ screenshots (16:9 or 9:16, 320-3840 px per side).
 |---|---|---|
 | App icon (512x512) | `docs/store/icon-512.png` | upstream OpenCode icon, `packages/desktop/icons/prod/icon.png` |
 | Feature graphic (1024x500) | `docs/store/feature-graphic-1024x500.png` | composed locally from the upstream icon + wordmark (see the generation note in `docs/store/README.md`) |
-| Phone screenshots | `docs/store/screenshots/*.png` | captured **on device**, from the release-shaped build, by the Phase 10 gate run (`phase6/scripts/20-ui-gates.sh` with `P6_PKG=io.github.mcyber12.opencode`) - the same screens the F1-F4/U1-U8 gates assert on |
+| Phone screenshots | `docs/store/screenshots/*.png` | captured **on device**, from the release-shaped build, by the Phase 10 gate run (`phase6/scripts/20-ui-gates.sh` with `P6_PKG=io.github.NoxiferaDev.opencode`) - the same screens the F1-F4/U1-U8 gates assert on |
 
 Screenshots must show the real UI. Do not stage a screen the gates cannot produce:
 every file in `docs/store/screenshots/` comes from a device run whose verdicts are

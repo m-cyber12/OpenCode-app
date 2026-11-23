@@ -201,4 +201,34 @@ class MarkdownTest {
         assertTrue(blocks("![x](file:///sdcard/a.png)").none { it is MdBlock.Picture })
         assertTrue(blocks("![x](https://example.com/a.png) and more text").none { it is MdBlock.Picture })
     }
+
+    @Test
+    fun picturesOnConsecutiveLinesBecomeOneGalleryInOrder() {
+        val parsed = blocks("![A](https://example.com/a.jpg)\n![B](https://example.com/b.jpg)\n![C](https://example.com/c.jpg)")
+        val gallery = parsed.filterIsInstance<MdBlock.Gallery>().single()
+        assertEquals(listOf("A", "B", "C"), gallery.pictures.map { it.alt })
+        assertTrue(parsed.none { it is MdBlock.Picture })
+    }
+
+    @Test
+    fun aLonePictureStaysASinglePictureNotAGallery() {
+        val parsed = blocks("![A](https://example.com/a.jpg)")
+        assertTrue(parsed.single() is MdBlock.Picture)
+    }
+
+    @Test
+    fun aPictureAtTheStartOfAListItemIsALogoBesideItsText() {
+        val item = blocks("1. ![OpenAI logo](https://example.com/openai.png) **Codex** - runs in Rust.")
+            .filterIsInstance<MdBlock.ListItem>().single()
+        assertEquals("https://example.com/openai.png", item.picture?.url)
+        assertEquals("OpenAI logo", item.picture?.alt)
+        assertEquals("Codex - runs in Rust.", Markdown.plainText(item.spans))
+    }
+
+    @Test
+    fun aPlainHttpLogoInAListItemIsNotPicked() {
+        val item = blocks("- ![x](http://example.com/a.png) text")
+            .filterIsInstance<MdBlock.ListItem>().single()
+        assertTrue(item.picture == null)
+    }
 }

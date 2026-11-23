@@ -124,7 +124,7 @@ VNAME_EXPECT=$(grep -E '^[[:space:]]*versionName = "' "$REPO_ROOT/app/build.grad
 [ -n "$VNAME_EXPECT" ] || fail "could not extract versionName from app/build.gradle.kts"
 for f in "$APK_OUT" "$OUT/$(basename "${AAB:-}")"; do
   [ -f "$f" ] || continue
-  python3 "$CHECK" "$f" --expect-signed --expect-package io.github.mcyber12.opencode \
+  python3 "$CHECK" "$f" --expect-signed --expect-package io.github.NoxiferaDev.opencode \
     --expect-version-name "$VNAME_EXPECT" \
     >> "$REPORT" 2>&1 || echo "NOTE: check-apk.py reported a finding for $(basename "$f") - read $REPORT"
 done

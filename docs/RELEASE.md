@@ -175,7 +175,7 @@ Then confirm the artifact's identity and contents:
 
 ```bash
 python3 phase10/scripts/check-apk.py app-release-signed.apk \
-  --expect-package io.github.mcyber12.opencode \
+  --expect-package io.github.NoxiferaDev.opencode \
   --expect-version-name 1.18.23-phase10 \
   --expect-version-code 8 \
   --expect-not-debuggable --expect-signed --expect-icon --expect-payload \
@@ -183,7 +183,7 @@ python3 phase10/scripts/check-apk.py app-release-signed.apk \
   --expect-native-abi arm64-v8a
 
 python3 phase10/scripts/check-apk.py app-release.aab \
-  --expect-package io.github.mcyber12.opencode \
+  --expect-package io.github.NoxiferaDev.opencode \
   --expect-version-name 1.18.23-phase10 \
   --expect-native-abi arm64-v8a --expect-payload
 ```
@@ -213,7 +213,7 @@ later device run answer "was this really signed with my key?" by itself.
   come from you.
 * Keep "Play App Signing" ON (it is the default for new apps). It is what makes
   a lost upload key recoverable.
-* The package name `io.github.mcyber12.opencode` is **permanent** once published:
+* The package name `io.github.NoxiferaDev.opencode` is **permanent** once published:
   Play will never accept a change of application ID for an existing listing, and
   a new ID starts from zero installs. That is why the ID is deliberate and
   independent of the display name (see `docs/BRANDING.md`).
@@ -327,7 +327,7 @@ To answer "does the *release-shaped* app behave differently from the debug build
 every earlier phase tested?" without putting a release key in CI, Phase 10 adds a
 `smoke` build type:
 
-* same `applicationId` as release (`io.github.mcyber12.opencode`),
+* same `applicationId` as release (`io.github.NoxiferaDev.opencode`),
 * same code shape - `isMinifyEnabled = false` for release, so no R8 stripping,
 * `debuggable = true` and signed with the **public Android debug key**, which is
   what lets `am instrument` and `run-as` see into it,

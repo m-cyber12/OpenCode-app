@@ -11,7 +11,7 @@ owner's decision, taken with the facts stated here.
 |---|---|---|
 | Display name | **OpenCode** | `app/src/main/res/values/strings.xml` (`app_name`, `welcome_title`), `AndroidManifest.xml` `android:label` |
 | Launcher icon | the **upstream OpenCode icon**, as shipped by the desktop app (the `prod` channel set) | `app/src/main/res/mipmap-*/` + `mipmap-anydpi-v26/` |
-| Published package name | **`io.github.mcyber12.opencode`** | `app/build.gradle.kts` `applicationId` |
+| Published package name | **`io.github.NoxiferaDev.opencode`** | `app/build.gradle.kts` `applicationId` |
 | Kotlin namespace | `ai.opencode.android` (internal, not user-visible) | `app/build.gradle.kts` `namespace` |
 
 The icon files are copied from the upstream repository at the pinned commit, from
@@ -43,7 +43,7 @@ The project owner's decision is:
    name.
 
 That third step is why the application ID is **not** `ai.opencode.*`: it is
-`io.github.mcyber12.opencode`, in the developer's own namespace, so a rename is a
+`io.github.NoxiferaDev.opencode`, in the developer's own namespace, so a rename is a
 change of visible strings and resources - not a new Play listing with zero
 installs. **The package name can never change after the first publish** (Play does
 not allow it), which is exactly why it was chosen to survive the rename.

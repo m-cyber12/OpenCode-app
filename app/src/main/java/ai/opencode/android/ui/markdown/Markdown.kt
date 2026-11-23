@@ -36,12 +36,16 @@ sealed class MdBlock {
         val ordered: Boolean,
         val marker: String,
         val spans: List<MdSpan>,
+        /** A small logo at the start of the item, from `![alt](https://...)` (2026-11-23). */
+        val picture: Picture? = null,
     ) : MdBlock()
     data class Quote(val spans: List<MdSpan>) : MdBlock()
     data class Table(val header: List<List<MdSpan>>, val rows: List<List<List<MdSpan>>>) : MdBlock()
     object Rule : MdBlock()
     /** A picture on its own line: `![alt](https://...)`. Only https images are ever shown. */
     data class Picture(val url: String, val alt: String) : MdBlock()
+    /** Two or more pictures on consecutive lines, drawn as a grid of tiles. */
+    data class Gallery(val pictures: List<Picture>) : MdBlock()
 }
 
 sealed class MdSpan {
@@ -77,6 +81,8 @@ object Markdown {
     private val TABLE_SEP = Regex("^\\s*\\|?\\s*:?-{2,}:?\\s*(\\|\\s*:?-{2,}:?\\s*)*\\|?\\s*$")
     private val TABLE_BREAK = Regex("<br\\s*/?>", RegexOption.IGNORE_CASE)
     private val IMAGE_LINE = Regex("^!\\[([^\\]]{0,200})\\]\\((https://[^\\s)]{1,2000})\\)$")
+    // A picture that opens a list item: `1. ![logo](https://...) text`.
+    private val LEAD_IMAGE = Regex("^!\\[([^\\]]{0,200})\\]\\((https://[^\\s)]{1,2000})\\)(?:\\s+(.*))?$")
 
     /** ChatML-style control markers a raw-completion provider can leak. */
     private val LEAKED_TOKEN = Regex("<\\|[a-zA-Z_][a-zA-Z0-9_]{0,31}\\|>")
@@ -131,9 +137,16 @@ object Markdown {
                 }
 
                 IMAGE_LINE.matches(trimmed) -> {
-                    val m = IMAGE_LINE.matchEntire(trimmed)!!
-                    out.add(MdBlock.Picture(url = m.groupValues[2], alt = m.groupValues[1].trim()))
-                    i += 1
+                    // Consecutive picture lines are one gallery; a lone picture stays a picture.
+                    val pictures = ArrayList<MdBlock.Picture>()
+                    var j = i
+                    while (j < lines.size) {
+                        val m = IMAGE_LINE.matchEntire(lines[j].trim()) ?: break
+                        pictures.add(MdBlock.Picture(url = m.groupValues[2], alt = m.groupValues[1].trim()))
+                        j += 1
+                    }
+                    out.add(if (pictures.size == 1) pictures[0] else MdBlock.Gallery(pictures))
+                    i = j
                 }
 
                 HEADING.matches(trimmed) -> {
@@ -313,7 +326,14 @@ object Markdown {
                 j += 1
                 continue
             }
-            out.add(MdBlock.ListItem(depth = depth, ordered = ordered, marker = marker, spans = inline(text)))
+            val lead = LEAD_IMAGE.matchEntire(text)
+            if (lead != null) {
+                val picture = MdBlock.Picture(url = lead.groupValues[2], alt = lead.groupValues[1].trim())
+                val rest = lead.groupValues[3]
+                out.add(MdBlock.ListItem(depth = depth, ordered = ordered, marker = marker, spans = inline(rest), picture = picture))
+            } else {
+                out.add(MdBlock.ListItem(depth = depth, ordered = ordered, marker = marker, spans = inline(text)))
+            }
             j += 1
         }
         return out to j

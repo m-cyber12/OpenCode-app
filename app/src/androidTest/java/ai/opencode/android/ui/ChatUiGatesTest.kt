@@ -122,7 +122,7 @@ class ChatUiGatesTest {
          * while the screen was correct.
          */
         const val FILES_FIXTURE_PATH =
-            "/storage/emulated/0/Android/data/io.github.mcyber12.opencode/files/workspaces/gates"
+            "/storage/emulated/0/Android/data/io.github.NoxiferaDev.opencode/files/workspaces/gates"
 
         /**
          * The folder the v4 workspace step prints and the Settings workspace section
@@ -1013,7 +1013,7 @@ class ChatUiGatesTest {
             status = "completed",
             title = "preview.md",
             input = JSONObject()
-                .put("filePath", "/data/user/0/io.github.mcyber12.opencode/files/xdg/config/opencode/briefs/preview.md")
+                .put("filePath", "/data/user/0/io.github.NoxiferaDev.opencode/files/xdg/config/opencode/briefs/preview.md")
                 .toString(),
             output = "# Preview & layout",
         )

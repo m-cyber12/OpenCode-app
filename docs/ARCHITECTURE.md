@@ -8,7 +8,7 @@ model provider is the only remote party.
 
 ```
 +-------------------------------------------------------------------------+
-| Android app process  (io.github.mcyber12.opencode, Kotlin/Compose)              |
+| Android app process  (io.github.NoxiferaDev.opencode, Kotlin/Compose)              |
 |                                                                         |
 |  UI (Compose)  <--StateFlow--  OpenCodeRepository  <--HTTP/SSE--+       |
 |      |                             |  OpenCodeApi / EventStream |       |
@@ -52,7 +52,7 @@ model provider is the only remote party.
 ### Data layout (runtime app-private; projects app-specific external)
 
 *(Phase 10 renamed the published applicationId from `ai.opencode.android` to
-`io.github.mcyber12.opencode`; the Kotlin namespace - the source package - is
+`io.github.NoxiferaDev.opencode`; the Kotlin namespace - the source package - is
 still `ai.opencode.android`, which is internal and not user-visible. The private
 storage path follows the applicationId.)*
 
@@ -66,7 +66,7 @@ secrets/<name>.enc                  AES-256-GCM blobs (server password, provider
 log/runtime.log, log/crashes/       supervisor log + crash captures
 ```
 
-Everything above stays app-private (`/data/data/io.github.mcyber12.opencode/files`,
+Everything above stays app-private (`/data/data/io.github.NoxiferaDev.opencode/files`,
 mode 0700) - it is machinery, not the user's work.
 
 **Project files are the exception, and deliberately so** (Phase 10 continuation v3):

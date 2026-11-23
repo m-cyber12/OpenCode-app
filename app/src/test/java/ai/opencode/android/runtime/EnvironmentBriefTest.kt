@@ -490,6 +490,10 @@ class EnvironmentBriefTest {
         assertTrue(text.contains("![") && text.contains("](https://"))
         assertTrue(text.contains("Only `https` links"))
         assertTrue(text.contains("Never invent a URL"))
-        assertTrue(text.contains("Do not put a picture inside a sentence"))
+        assertTrue(text.contains("Do not put a picture in the middle of a sentence"))
+        // 2026-11-23 (owner): the three layouts - one large, a grid, a logo in a list item.
+        assertTrue(text.contains("One large picture"))
+        assertTrue(text.contains("Several pictures in a grid"))
+        assertTrue(text.contains("A small logo beside a list item"))
     }
 }

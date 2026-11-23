@@ -288,6 +288,14 @@ class Transcript {
         }
     }
 
+    /** The server confirmed the session is idle: end the turn for the chat. */
+    fun markIdle(sessionID: String) {
+        if (sessionID.isEmpty()) return
+        setBusy(sessionID, false)
+        retries.remove(sessionID)
+        dirty = true
+    }
+
     private fun setBusy(sid: String, value: Boolean) {
         if (sid.isEmpty()) return
         if (busy[sid] != value) {
@@ -303,11 +311,12 @@ class Transcript {
 
     private fun onSessionError(props: JSONObject) {
         val sid = props.optString("sessionID")
-        // 2026-11-21 (owner): a failed turn is over. The server sends no idle frame after an
-        // error, so without this the session stayed busy and the composer kept Pause for good.
+        // 2026-11-23 (owner): an error can arrive in the middle of a reply, and the model
+        // keeps writing. So the error no longer ends the turn here. It is shown, and the
+        // repository asks the server whether the session is idle (see confirmErrorEnded);
+        // a real final error - the server sends no idle frame after it - is ended there.
         if (sid.isNotEmpty()) {
             touch(sid)
-            setBusy(sid, false)
             retries.remove(sid)
         }
         val te = props.optJSONObject("error")?.let { turnErrorOf(it) }

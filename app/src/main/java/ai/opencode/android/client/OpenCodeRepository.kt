@@ -250,13 +250,14 @@ class OpenCodeRepository(
             // authoritative messages for the selected session, which is cheap and
             // bounded (one request per turn, single-flight).
             // A turn that ends in an error sends no idle frame, so the todo poll stops on either.
-            if (EventFrame.isSessionIdle(ev.type) || ev.type == "session.error") stopTodoPoll()
+            if (EventFrame.isSessionIdle(ev.type)) stopTodoPoll()
             if (EventFrame.isSessionIdle(ev.type)) {
                 refreshMessages("turn ended", force = true)
             } else if (ev.type == "session.error") {
-                // 2026-11-21: the failed turn is over; fetch its history once, so the error
-                // sits on its own message and not on the next prompt.
+                // 2026-11-21: fetch the history once, so the error sits on its own message.
+                // 2026-11-23: the turn may still be running (see confirmErrorEnded).
                 refreshMessages("turn failed", force = true)
+                confirmErrorEnded(ev.properties.optString("sessionID"))
             } else if (EventFrame.isSessionStatus(ev.type) &&
                 !hasRows(_state.value.selectedSession)
             ) {
@@ -1707,13 +1708,37 @@ class OpenCodeRepository(
      * otherwise `busy` (an OR of both sources) can never fall back to false
      * and the composer shows Stop until the screen is rebuilt.
      */
+    /**
+     * 2026-11-23 (owner): a model error can arrive in the middle of a reply, and the reply
+     * keeps streaming - so the error must not end the turn by itself. After an error, ask the
+     * server for the session status a few times. Idle (or no entry) ends the turn here; busy
+     * or retrying keeps it running until the real `session.idle` arrives. A final error sends
+     * no idle frame, so this check is what ends it then.
+     */
+    private fun confirmErrorEnded(sid: String) {
+        if (sid.isEmpty()) return
+        scope.launch {
+            for (waitMs in listOf(3_000L, 6_000L, 12_000L)) {
+                delay(waitMs)
+                val status = runCatching { api.sessionStatus() }.getOrNull() ?: continue
+                _state.update { st -> st.copy(sessionStatus = status) }
+                if (status[sid]?.busy != true) {
+                    transcript.markIdle(sid)
+                    stopTodoPoll()
+                    publishTranscript("error confirmed: session idle")
+                    return@launch
+                }
+            }
+        }
+    }
+
     private fun reconcileSessionStatus(type: String, props: JSONObject) {
         val sid = props.optString("sessionID")
         if (sid.isEmpty()) return
         val st = _state.value
         when {
             // 2026-11-21: an error ends the turn as an idle does (no idle frame follows it).
-            EventFrame.isSessionIdle(type) || type == "session.error" -> {
+            EventFrame.isSessionIdle(type) -> {
                 if (st.sessionStatus.containsKey(sid)) {
                     _state.value = st.copy(sessionStatus = st.sessionStatus - sid)
                 }

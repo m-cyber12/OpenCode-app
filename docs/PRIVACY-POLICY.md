@@ -1,6 +1,6 @@
 # Privacy policy
 
-**App:** OpenCode for Android (`io.github.mcyber12.opencode`)
+**App:** OpenCode for Android (`io.github.NoxiferaDev.opencode`)
 **Effective date:** 2026-09-18
 **Contact:** the issue tracker at <https://github.com/m-cyber12/OpenCode-app/issues>
 
