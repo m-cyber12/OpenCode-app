@@ -158,7 +158,7 @@ LOST. The checkout is on its
 `opencode/<project>` branch (token-free origin) and git speaks https.
 YOU push: git identity is already set - never ask for a name or email.
 Commit + push after EVERY logical change, from the first prompt on:
-`git push origin HEAD` (credentials are configured). If that fails: `git push https://x-access-token:${'$'}key@github.com/<owner>/<repo>.git HEAD`.
+`git push origin HEAD` (credentials preset; `git remote get-url origin` names owner/repo). If that fails: `git push https://x-access-token:${'$'}key@github.com/<owner>/<repo>.git HEAD`.
 Stay there -
 no extra branches unless the user asks; never print or commit it;
 `key` also works for GitHub REST via fetch. The project's
