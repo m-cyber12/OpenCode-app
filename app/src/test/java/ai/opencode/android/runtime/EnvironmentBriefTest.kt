@@ -176,7 +176,9 @@ class EnvironmentBriefTest {
         // to mark steps in_progress and completed sat only in briefs/todo.md, which the model
         // never opened. That rule is now a short section here, so every session reads it.
         // -> 880 (measured 865). Owner-driven content, as with the earlier raises.
-        assertTrue("main brief grew to $words words - split or trim it", words < 880)
+        // -> 900 (2026-11-23, measured 884): the chat-format index line for tables and
+        // web pictures. The detail lives in topics/chat-format.md, not in this count.
+        assertTrue("main brief grew to $words words - split or trim it", words < 900)
         // The core product loop and cost discipline stay in the always-read part.
         assertTrue(main.contains("serve.json"))
         // The checklist rule must ride in the always-read part (see the budget note above).
