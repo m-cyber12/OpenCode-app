@@ -267,9 +267,9 @@ private fun TableBlock(table: MdBlock.Table, style: TextStyle, color: Color) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         // Column dividers take 1dp each; the cells share what is left.
         val dividers = (columns - 1).coerceAtLeast(0)
-        val available = maxWidth - 1.dp * dividers
+        val available = maxWidth - dividers.dp
         val sum = ideal.fold(0.dp) { acc, w -> acc + w }
-        val widths = if (sum < available) ideal.map { it * (available / sum) } else ideal
+        val widths = if (sum < available) ideal.map { it * (available.value / sum.value) } else ideal
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.surfaceVariant,
