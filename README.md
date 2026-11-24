@@ -45,10 +45,21 @@ signed with the same key. Release notes list the signing key's fingerprint so yo
 
 **Chat**
 - Streaming replies, with Markdown and syntax-highlighted code.
-- Tool cards show each step: shell commands with their output and exit code, file edits with
-  diffs, and more.
-- Copy, like or dislike a reply. Retry, undo or redo the latest turn.
-- Per-turn time, token and cost summary.
+- Comparisons appear as real tables, the way ChatGPT shows them.
+- Pictures from the web can appear in a reply: one large picture, a grid of pictures, or a
+  small logo beside a list item. They load in the background. Only `https` addresses are used.
+- Tool cards show each step: shell commands with their output and exit code, file reads and
+  edits, searches, and file diffs.
+- While the agent writes a file or runs a command, its output appears as it arrives.
+- A task bar above the message box shows the agent's checklist for the current task.
+- If the model service reports a temporary error in the middle of a reply, the reply keeps
+  going. The app shows the turn as running until the agent has finished.
+- Press and hold a message you sent for one second to copy its text.
+- Tap **Pause** before the model has received your message to take it back. The message is
+  removed from the chat, and its text returns to the box.
+- For models that offer it, choose the thinking level from the model menu.
+- Copy a reply, mark it good or bad, retry, undo or redo the latest turn.
+- Each reply shows its token count and cost.
 
 **Planning and questions**
 - Switch between **Build** mode (the agent makes changes) and **Plan** mode (it proposes a
@@ -60,23 +71,58 @@ signed with the same key. Release notes list the signing key's fingerprint so yo
 
 **Projects and files**
 - Several projects, each isolated in its own directory.
-- A file browser, a Changes view, and a terminal tab.
-- Import and export whole projects.
+- A **Sandbox** tab shows the project's files. If the agent starts a web server on the phone,
+  the tab lists its port, and you can tap it to open the page in the app. The server listens
+  only on the phone's own loopback address (`127.0.0.1`).
+- A **Diff** tab shows the changes the agent has made.
+- Import a copy of a folder, or export a whole project.
 - Long sessions are summarized automatically, so you can keep working past the model's
   context limit.
 
+**Agent instructions, skills and tools**
+- **Agent memory** (Settings): project instructions apply to one project; global instructions
+  apply to every project. The agent reads both in every conversation.
+- **Skills** (Settings): a skill is a folder with a `SKILL.md` file. The agent sees each skill's
+  short description and loads the full instructions only when it needs them.
+- **MCP servers** (Settings): local (stdio) servers work. Remote HTTP and SSE servers do not
+  (see Known limitations).
+
+**Terminal**
+- The **Terminal** tab is a read-only console. It shows every shell command the agent ran in
+  the current conversation, with its output and exit code.
+- You can't type commands into it. To run commands, ask the agent.
+
+**Toolchain inside the app**
+
+The agent's tools are built into the app. You don't install them.
+
+- **Node.js 26.4.0 with npm 11.17.0.** The agent's server runs on Node, and npm is included.
+- **Git 2.48.1.** Version control for your projects: status, diff, log and commit.
+- **ripgrep 15.1.0.** Fast search through project files.
+- **Python 3.13.1.**
+- **jq 1.7.1.** Reads and edits JSON.
+- **curl and wget.** Download files and call web APIs.
+- **OpenSSH client.** `ssh`, `scp`, `sftp`, `ssh-keygen`, `ssh-keyscan`, `ssh-add` and `ssh-agent`.
+  The app does not run an SSH server.
+- **OpenSSL.** Shared cryptography for the tools above.
+- **toybox** and the **mksh** shell, which is the phone's own `/system/bin/sh`. These provide
+  the everyday command-line tools.
+
 **GitHub projects**
-- Create a project from one of your GitHub repositories. The app clones it onto its own branch
-  (`opencode/<project>`).
+- Create a project from one of your GitHub repositories. The app clones it and puts you on its
+  own branch, `opencode/<project>`.
+- After the first clone, the app pushes that branch to GitHub so it exists on the remote.
+  The agent works only on that branch, never on the default branch.
+- Before every message you send, the app refreshes the repository, so the agent always starts
+  from the latest code.
+- An empty repository gets a starter README first, so it can be cloned.
 - To connect, create a GitHub personal access token with the `repo` and `workflow` scopes, and
   paste it into the app.
-- The agent can commit and push to that branch. The app never pushes on its own.
 - Your token is only sent to GitHub projects. Other projects can't see it.
 
-**Web preview**
-- A local preview server shows your web project in the app, the way a deployed site would look.
-- It listens only on the phone's own loopback address. Other devices on your network can't
-  reach it.
+**Welcome and beta notice**
+- The first welcome page says that this version is a beta, and that you should not use it for
+  important projects.
 
 ## Providers and keys
 
@@ -97,8 +143,9 @@ service is working again.
 ## Privacy and security
 
 - The app has no account, no analytics and no advertising.
-- Your code, files and chat stay on your phone. The only network traffic goes to the model
-  provider you configured, and to GitHub if you connect it.
+- Your code, files and chat stay on your phone. The network traffic goes to the model
+  provider you configured, to GitHub if you connect it, and to the web addresses of pictures
+  that the agent puts in a reply.
 - The agent's server listens only on the phone's loopback address (`127.0.0.1`). It is
   protected by a random password that is created on first run and stored encrypted.
 - Full details are in [docs/PRIVACY-POLICY.md](docs/PRIVACY-POLICY.md) and
@@ -106,8 +153,8 @@ service is working again.
 
 ## Known limitations
 
-- **Interactive terminal.** The terminal tab doesn't run full-screen or interactive programs.
-  The agent's shell commands work normally.
+- **No interactive terminal.** The Terminal tab is read-only, and full-screen or interactive
+  programs can't run on the phone. The agent's shell commands work normally.
 - **Git over HTTPS only.** SSH remotes are not supported.
 - **Remote MCP servers over HTTP or SSE** can fail because of an upstream bug.
   Local (stdio) MCP servers work.
