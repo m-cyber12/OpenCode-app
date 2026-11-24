@@ -45,7 +45,7 @@ signed with the same key. Release notes list the signing key's fingerprint so yo
 
 **Chat**
 - Streaming replies, with Markdown and syntax-highlighted code.
-- Comparisons appear as real tables, the way ChatGPT shows them.
+- Comparisons appear as real tables, with rows and columns.
 - Pictures from the web can appear in a reply: one large picture, a grid of pictures, or a
   small logo beside a list item. They load in the background. Only `https` addresses are used.
 - Tool cards show each step: shell commands with their output and exit code, file reads and
