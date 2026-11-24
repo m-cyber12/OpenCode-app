@@ -150,7 +150,7 @@ service is working again.
   protected by a random password that is created on first run and stored encrypted.
 - Full details are in [PRIVACY.md](PRIVACY.md) (a summary), [docs/PRIVACY-POLICY.md](docs/PRIVACY-POLICY.md),
   [SECURITY.md](SECURITY.md) and [docs/SECURITY.md](docs/SECURITY.md).
-- To report a security problem, email **noxifera.dev@gmail.com**. Don't open a public issue for it.
+- To report a security problem, email **noxifera.dev@gmail.com** (private), or open an issue.
 
 ## Known limitations
 

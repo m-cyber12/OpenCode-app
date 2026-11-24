@@ -2,8 +2,11 @@
 
 ## Reporting a vulnerability
 
-Please report security problems in the Android app **privately**, by email to
-**noxifera.dev@gmail.com**. Don't open a public issue for them.
+You can report a security problem in the Android app in either of two ways:
+
+- **Email (private):** send it to **noxifera.dev@gmail.com**. Use this for anything that
+  could put users at risk before a fix is out.
+- **Issue:** open an issue on this repository.
 
 Include:
 
