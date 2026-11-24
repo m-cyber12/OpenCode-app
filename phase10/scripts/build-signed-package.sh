@@ -73,8 +73,14 @@ step "verify the APK signature (v2/v3 required for targetSdk 30+)"
   || { cat "$TMP/apk-signature.txt"; die "apksigner rejects the APK"; }
 grep -q 'Verified using v2 scheme (APK Signature Scheme v2): true' "$TMP/apk-signature.txt" \
   || die "the APK has no v2 signature"
-APK_CERT=$(sed -n 's/^.*Signer #1 certificate SHA-256 digest: //p' "$TMP/apk-signature.txt" | head -1 | tr -d ' ')
-[ -n "$APK_CERT" ] || die "could not read the APK certificate fingerprint"
+# apksigner's wording for the signer line varies by build-tools version, so match the stable part
+# ("certificate SHA-256 digest") and normalise to upper-case hex without separators. Print the
+# raw output on a miss so the next failure is diagnosable from the log.
+APK_CERT=$(grep -a 'certificate SHA-256 digest' "$TMP/apk-signature.txt" | head -1 | sed 's/^.*digest: *//' | tr -d ' \r:' | tr 'a-f' 'A-F' || true)
+if [ -z "$APK_CERT" ]; then
+  echo "apksigner output was:"; cat "$TMP/apk-signature.txt"
+  die "could not read the APK certificate fingerprint"
+fi
 
 step "verify the AAB signature"
 command -v jarsigner >/dev/null 2>&1 || die "jarsigner not found (install a JDK)"
@@ -83,6 +89,8 @@ jarsigner -verify "$AAB_SRC" > "$TMP/aab-signature.txt" 2>&1 \
 grep -q 'jar verified' "$TMP/aab-signature.txt" || die "the AAB is not verified"
 AAB_CERT=$(keytool -printcert -jarfile "$AAB_SRC" 2>/dev/null | sed -n 's/^.*SHA256: //p' | head -1 | tr -d ' ' || true)
 [ -n "$AAB_CERT" ] || die "could not read the AAB certificate fingerprint"
+# keytool prints colon-separated upper-case hex; apksigner prints plain hex. Compare like with like.
+AAB_CERT=$(printf '%s' "$AAB_CERT" | tr -d ' \r:' | tr 'a-f' 'A-F')
 [ "$APK_CERT" = "$AAB_CERT" ] || die "the APK and the AAB are signed by different keys"
 
 if [ -n "${RELEASE_CERT_SHA256:-}" ]; then
