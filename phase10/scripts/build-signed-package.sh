@@ -41,16 +41,19 @@ step() { echo; echo "== $* =="; }
   || die "the embedded runtime payload is missing (phase4/out/engine). Build it first."
 
 GRADLE_FILE="$ROOT/app/build.gradle.kts"
-VNAME=$(grep -E '^[[:space:]]*versionName = "' "$GRADLE_FILE" | head -1 | cut -d'"' -f2)
-VCODE=$(grep -E '^[[:space:]]*versionCode = [0-9]+' "$GRADLE_FILE" | head -1 | grep -oE '[0-9]+$')
-APPID=$(grep -E '^[[:space:]]*applicationId = "' "$GRADLE_FILE" | head -1 | cut -d'"' -f2)
+VNAME=$(grep -E '^[[:space:]]*versionName = "' "$GRADLE_FILE" | head -1 | cut -d'"' -f2 || true)
+# sed, not grep: the versionCode line carries a trailing comment, so a pattern anchored to the
+# end of the line matches nothing, and under `set -e` that silent failure killed the script
+# before its first message (release-signed run 45342373685).
+VCODE=$(sed -n 's/^[[:space:]]*versionCode = \([0-9][0-9]*\).*/\1/p' "$GRADLE_FILE" | head -1)
+APPID=$(grep -E '^[[:space:]]*applicationId = "' "$GRADLE_FILE" | head -1 | cut -d'"' -f2 || true)
 [ -n "$VNAME" ] && [ -n "$VCODE" ] && [ -n "$APPID" ] || die "could not read versionName/versionCode/applicationId"
 LABEL="${LABEL:-$VNAME}"
 SAFE_LABEL=$(printf '%s' "$LABEL" | tr -c 'A-Za-z0-9._-' '-')
 COMMIT=$(git -C "$ROOT" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)
 
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
-find_tool() { find "$SDK/build-tools" -type f -name "$1" 2>/dev/null | sort -V | tail -1; }
+find_tool() { find "$SDK/build-tools" -type f -name "$1" 2>/dev/null | sort -V | tail -1 || true; }
 APKSIGNER="$(find_tool apksigner)"
 [ -n "$APKSIGNER" ] && [ -x "$APKSIGNER" ] || die "apksigner not found under \$ANDROID_HOME/build-tools"
 
@@ -78,7 +81,7 @@ command -v jarsigner >/dev/null 2>&1 || die "jarsigner not found (install a JDK)
 jarsigner -verify "$AAB_SRC" > "$TMP/aab-signature.txt" 2>&1 \
   || { cat "$TMP/aab-signature.txt"; die "jarsigner rejects the AAB"; }
 grep -q 'jar verified' "$TMP/aab-signature.txt" || die "the AAB is not verified"
-AAB_CERT=$(keytool -printcert -jarfile "$AAB_SRC" 2>/dev/null | sed -n 's/^.*SHA256: //p' | head -1 | tr -d ' ')
+AAB_CERT=$(keytool -printcert -jarfile "$AAB_SRC" 2>/dev/null | sed -n 's/^.*SHA256: //p' | head -1 | tr -d ' ' || true)
 [ -n "$AAB_CERT" ] || die "could not read the AAB certificate fingerprint"
 [ "$APK_CERT" = "$AAB_CERT" ] || die "the APK and the AAB are signed by different keys"
 
@@ -91,7 +94,7 @@ fi
 
 # ---- 3. inspect the package (identity, icon, payload, permissions, not debuggable) -----------
 step "inspect the APK and AAB"
-ABIS=$(unzip -Z1 "$APK_SRC" | grep '^lib/' | cut -d/ -f2 | sort -u | tr '\n' ' ' | sed 's/ *$//')
+ABIS=$(unzip -Z1 "$APK_SRC" | grep '^lib/' | cut -d/ -f2 | sort -u | tr '\n' ' ' | sed 's/ *$//' || true)
 [ -n "$ABIS" ] || die "the APK has no native libraries (the payload is missing from it)"
 ABI_TAG=$(printf '%s' "$ABIS" | tr ' ' '+')
 python3 "$ROOT/phase10/scripts/check-apk.py" "$APK_SRC" \
