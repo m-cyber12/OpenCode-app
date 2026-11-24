@@ -312,14 +312,13 @@ Actions → **release-signed** → **Run workflow** → enter the label (for exa
 ### What the zip contains
 
 * `opencode-android-<label>-arm64-v8a.apk`: the signed sideload APK.
-* `opencode-android-<label>.aab`: the signed Play App Bundle. Upload this to Play.
 * `RELEASE-NOTES.txt`: version, commit, native ABI, runtime versions, signing key SHA-256.
 * `VERIFY.txt`: the `apksigner`, `jarsigner` and `check-apk.py` output.
 * `SHA256SUMS.txt`: checksums for every file above.
 
 The APK ships only the `arm64-v8a` ABI. The runtime payload contains arm64 binaries
 only (x86_64 was retired 2026-11-16), so a separate "universal" APK would be the same
-bytes. The AAB is the multi-device form: Play builds the per-device splits from it.
+bytes. The signed AAB is built and verified but is not in the zip for now; add it back to the package when Play upload is ready.
 
 ## 9. The debug-key smoke build (never upload it)
 

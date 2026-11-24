@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build, sign, verify and package the release: one zip with the signed APK, the signed AAB,
+# Build, sign, verify and package the release: one zip with the signed APK (the AAB is built and verified but not packaged),
 # checksums, the signing certificate fingerprint, verification output and release notes.
 #
 # Used by .github/workflows/release-signed.yml (inside the `release` environment, where the
@@ -124,10 +124,9 @@ PKG="opencode-android-$SAFE_LABEL"
 STAGE="$TMP/stage/$PKG"
 mkdir -p "$STAGE"
 APK_NAME="$PKG-$ABI_TAG.apk"
-AAB_NAME="$PKG.aab"
 cp "$APK_SRC" "$STAGE/$APK_NAME"
-cp "$AAB_SRC" "$STAGE/$AAB_NAME"
-APK_BYTES=$(stat -c%s "$STAGE/$APK_NAME"); AAB_BYTES=$(stat -c%s "$STAGE/$AAB_NAME")
+# The AAB is built and verified above but is not packaged for now (owner, 2026-11-24).
+APK_BYTES=$(stat -c%s "$STAGE/$APK_NAME")
 
 MANIFEST_INFO=$(python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); print("OpenCode %s (commit %s), git %s, ripgrep %s, payload %s" % (m.get("opencodeVersion","?"), str(m.get("opencodeCommit","?"))[:12], m.get("gitVersion","?"), m.get("rgVersion","?"), m.get("payloadVersion","?")))' \
   "$ROOT/phase4/out/engine/assets/runtime-manifest.json" 2>/dev/null || echo "see runtime-manifest.json")
@@ -145,7 +144,6 @@ MANIFEST_INFO=$(python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); pri
   echo
   echo "Files"
   echo "  $APK_NAME   sideload APK ($APK_BYTES bytes)"
-  echo "  $AAB_NAME   Play App Bundle, upload this to Google Play ($AAB_BYTES bytes)"
   echo "  SHA256SUMS.txt, VERIFY.txt"
   echo
   echo "Install (sideload): open the APK on the phone and allow installs from this source."
@@ -159,7 +157,7 @@ MANIFEST_INFO=$(python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); pri
   echo; echo "check-apk.py (AAB):"; cat "$TMP/aab-inspect.txt"
 } > "$STAGE/VERIFY.txt"
 
-( cd "$STAGE" && sha256sum "$APK_NAME" "$AAB_NAME" RELEASE-NOTES.txt VERIFY.txt > SHA256SUMS.txt )
+( cd "$STAGE" && sha256sum "$APK_NAME" RELEASE-NOTES.txt VERIFY.txt > SHA256SUMS.txt )
 ( cd "$STAGE" && sha256sum -c SHA256SUMS.txt > /dev/null ) || die "checksum self-test failed"
 
 mkdir -p "$OUT"
