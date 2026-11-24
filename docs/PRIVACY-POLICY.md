@@ -2,7 +2,7 @@
 
 **App:** OpenCode for Android (`io.github.NoxiferaDev.opencode`)
 **Effective date:** 2026-11-24
-**Contact:** the issue tracker at <https://github.com/m-cyber12/OpenCode-app/issues>
+**Contact:** the issue tracker at <https://github.com/noxifera-dev/Opencode-android/issues>
 
 This policy describes what the app actually does on your device. It is written
 from the implementation (the runtime host in `app/src/main/java`, the security
@@ -141,7 +141,7 @@ to its local log and to the notification, and you can share that log yourself.
 The policy is versioned in the same repository as the app. A change that affects
 what the app does is accompanied by a code change in the same commit, and the
 effective date above changes with it. History:
-<https://github.com/m-cyber12/OpenCode-app/commits/main/docs/PRIVACY-POLICY.md>.
+in the project repository.
 
 ## Who is responsible
 

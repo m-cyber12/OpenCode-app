@@ -1,0 +1,251 @@
+# versions.lock — pinned component versions (RELEASE, Phase 10 — 2026-09-18)
+#
+# Status: every pin below is what the release build ships. Checked mechanically:
+# phase9/scripts/check-lock.py compares this file with RuntimeVersion.kt,
+# app/build.gradle.kts versionName and the built runtime-manifest.json (static
+# check + device gate P9_LOCK); phase10/scripts/check-release-invariants.py
+# compares the `app:` block below with app/build.gradle.kts and the manifest.
+# The historical phase notes are kept because they explain WHY a pin is what it
+# is.
+#
+# PHASE 10 (signing + store prep): the RUNTIME pins are unchanged from Phase 9 -
+# no component was rebuilt, no payload byte changed. What changed is the app's
+# PUBLISHED IDENTITY (see `app:` below): Phase 10 chose the Play application ID,
+# which is permanent at first publish, and bumped versionCode for the signed
+# store build. The identity is pinned here for the same reason the runtime is:
+# so "what we ship" and "what we pinned" cannot drift.
+#
+# Originally:
+# Populated from static inspection of upstream OpenCode at
+# commit 05ea5073be967c779d326929b2de6228dda4159d. All entries are NOT TESTED
+# on Android until Phase 2/3 proves them. Regenerate/update whenever the
+# pinned OpenCode version changes (Core Rule 7).
+#
+# NOTE (2026-08-27, Phase 1 correction): upstream org renamed SST -> Anomaly.
+# The canonical repo is now github.com/anomalyco/opencode; github.com/sst/opencode
+# 301-redirects to it (same repository id 975734319 — a rename, not a fork).
+# The default branch is `dev` (there is no `main`/`master`). The pinned commit
+# 05ea5073... is unchanged and is still HEAD of `dev` at package version 1.18.23.
+
+app:                                   # PHASE 10 - the published identity
+  # The Play application ID. PERMANENT at first publish: Play never accepts a
+  # change of application ID for an existing listing, and a new ID means a new
+  # listing with zero installs. It is deliberately in the developer's own
+  # namespace rather than upstream's (ai.opencode.*), which is a domain the
+  # project does not own and which reads as an official package - see
+  # docs/BRANDING.md, including the rename path if the name/logo permission is
+  # not granted (the ID does not change in that case; that is the point).
+  applicationId: io.github.NoxiferaDev.opencode
+  displayName: OpenCode                # what the launcher shows (strings.xml app_name)
+  versionName: 0.0.1-beta              # the app's own version (first beta); must equal app/build.gradle.kts
+  versionCode: "8"                     # Play requires a strictly increasing integer
+  minSdk: "29"                         # W^X: exec only from nativeLibraryDir
+  targetSdk: "36"                      # Play/API 36 requirement; exact API 36 AVD gate required
+  abis: arm64-v8a                      # switch-over (owner 2026-11-16): arm64 only; x86_64 dropped
+  signing: upload-key, human-held      # docs/RELEASE.md; CI can never sign
+  monetization: free                   # no billing code, no ads - docs/STORE-LISTING.md
+
+opencode:
+  upstream: https://github.com/anomalyco/opencode
+  commit: 9bbb8ce18c80f099e0e448775f59d965ead40a21   # tag v2.2.5 (switch-over 2026-11-16: v2 is the only server)
+  version: 2.2.5                                      # packages/*/package.json (v2 release tag)
+  # PHASE 9: the bundle's OPENCODE_VERSION define is the bare "1.18.23" (was
+  # "1.18.23-android" through Phase 8). Upstream config.ts installs
+  # @opencode-ai/plugin@<OPENCODE_VERSION> when a plugin is configured, and
+  # @opencode-ai/plugin@1.18.23-android does not exist on npm -> every plugin
+  # install failed (the carried Phase 5/8 bug). Channel stays "android".
+  # PHASE 9 (run 35132822991): with the bare version the on-device install RAN
+  # and Arborist crashed Bun with SIGSYS (exit 159) every ~8 s. The payload now
+  # ships the installed tree (plugin-seed/ -> xdg/config/opencode/node_modules +
+  # package-lock.json) so upstream's Npm.install short-circuits and never runs
+  # Arborist for the default plugin package.
+  channel: android
+  # v1 only: the v2 payload does not build a plugin seed (switch-over 2026-11-16).
+  plugin_seed: "v1 - @opencode-ai/plugin@1.18.23 (+ deps: @opencode-ai/sdk, zod, effect, @ai-sdk/provider), installed on the build host with --ignore-scripts, types/maps stripped"
+  # NOTE (2026-08-28, Phase 2): the first spike run (evidence commit d161ccd) built the
+  # bundle from `dev` HEAD 755ebdb94ee7 (v1.18.25, "sync release versions for v1.18.25"),
+  # because the artifact script cloned dev without checking out the pinned commit.
+  # That was a real upstream release, one minor newer than the pin — the chain result
+  # is valid evidence, but it is NOT the pinned commit. The script is now fixed to
+  # checkout $PINNED_COMMIT; re-run to re-produce evidence at the exact pin.
+
+runtime:
+  # HISTORY (v1, 2026-08-27; superseded at the switch-over 2026-11-16): the embedded
+  # Android host runtime was Bun-for-Android (official @oven/bun-linux-x64-android / -aarch64-android npm
+  # packages; bionic-linked, interp /system/bin/linker64), pinned to the same 1.3.14
+  # as the repo's packageManager. Bun 1.3.14 does NOT implement node:sqlite, so the
+  # server bundle is built with Bun.build target "bun" to resolve upstream's own
+  # "#db" bun condition (packages/opencode/src/storage/db.bun.ts -> bun:sqlite).
+  # The upstream Node path (desktop sidecar precedent) stays valid for Phase 3 if a
+  # Node-for-Android runtime becomes available; the spike chose the available,
+  # pinned runtime. Evidence: docs/progress/phase2-*.
+  # switch-over: bun_android_* removed (Bun is not in the APK; owner 2026-11-16)
+  bun_build_time: 1.4.4          # CI build time only: bundles the v2 server (phase10-release.yml setup-bun; spike/opencode-v2). NOT in the APK (owner 2026-11-16)
+  node: ">=26.4.0"               # v2 server runtime: Node 26 is the only runtime (switch-over 2026-11-16)
+  node_android_cli: 26.4.0        # switch-over: Node 26 is the only runtime (libnode26.so); Node 24 removed (owner 2026-11-16)
+  npm_android_cli: 11.17.0        # bundled by the exact Node tag (deps/npm); the payload build asserts it (NPM_PIN in 10-build-payload.sh); JS data + sealed native launcher
+  node_termux_patch_commit: 2d6b9d566c2e933c50e675198a0d7847a96deb61   # still used: OpenSSH client patches (termux packages/openssh)
+  node_toolchain_types: 24.12.2
+  # CLI-only runtime (NOT required for the Android server path)
+  bun_types: 1.3.13
+
+native_components:
+  - name: "@lydell/node-pty"          # PTY addon (N-API)
+    version: 1.2.0-beta.12
+    note: "NO Android build; stub. PHASE 3 VERIFIED: the bash tool (tool/bash.ts) spawns the configured shell with stdio pipes (no PTY); PTY is only used by the lazy Pty service for the interactive terminal feature — documented degradation only"
+  - name: bun-pty                     # bun-native PTY addon
+    version: 0.4.8
+    note: "NO Android build; stub (same conclusion as @lydell/node-pty, Phase 3)"
+  - name: "@parcel/watcher"           # file-watcher addon (optional; graceful fallback)
+    version: 2.5.1
+    note: "no Android binding; upstream's graceful fallback (watcher disabled) exercised in spike"
+  - name: ripgrep                     # downloaded ELF at runtime (packages/core/src/ripgrep/binary.ts)
+    version: 15.1.0
+    note: "real upstream source built for x86_64-linux-android and aarch64-linux-android with Cargo + NDK/Bionic; avoids static desktop binaries that SIGSYS under Android's zygote policy"
+  - name: git                         # external, resolved at runtime; bundled Android executable
+    version: v2.48.1                  # real Git source built with the Android NDK/Bionic toolchain
+    note: "Phase 2 NO_PERL blocker fixed: build the Makefile directly with NO_PERL=YesPlease. v9.28: HTTPS ENABLED - git-remote-http built against static curl + Mbed TLS (GPLv2 option), shipped as libgitremotehttp.so; cert trust from the device CA store (GIT_SSL_CAPATH). Bionic-linked rather than static-musl because Android's app seccomp policy cannot be repaired after a static exec."
+  - name: curl                        # static lib inside libgitremotehttp.so (v9.28)
+    version: 8.10.1
+    note: "http(s)-only configure; TLS via Mbed TLS; no baked CA defaults - CAPATH comes from the runtime env"
+  - name: wget-compat                 # native argv translator over the sealed curl executable
+    version: "1"
+    note: "non-recursive Wget CLI (-q/-O/-P/-T/header/resume/spider); reuses curl 8.10.1 + Mbed TLS + Android CAs instead of duplicating a TLS stack; unsupported crawl options fail loudly"
+  - name: openssh                     # client suite only; no sshd in the app
+    version: 10.6p1
+    note: "ssh/scp/sftp/ssh-add/ssh-agent/ssh-keygen/ssh-keyscan; Android client patches pinned with node_termux_patch_commit; source-built as sealed 16 KiB-aligned PIEs"
+  - name: openssl                     # shared crypto dependency of the OpenSSH clients
+    version: 3.6.5
+    note: "one unversioned-SONAME libcrypto.so per ABI is packaged beside the clients in nativeLibraryDir; never writable payload data"
+  - name: mbedtls                     # static lib inside libgitremotehttp.so (v9.28)
+    version: 3.6.2
+    note: "dual Apache-2.0/GPL-2.0-or-later; the GPL option keeps the combined helper compatible with git's GPL-2.0-only"
+  - name: posix-shell                 # sh/bash/zsh/dash/ksh; must be bundled (static)
+    version: android-system           # Android's own /system/bin/sh (mksh, MIRBSD KSH R59) — real shell, TESTED
+    note: "config shell: /system/bin/sh (Shell.preferred honors config 'shell')"
+
+bun_only_components:                  # v1 only (Bun era); not in the v2 APK (switch-over 2026-11-16)
+  - name: "@ff-labs/fff-bun"          # native file search; ripgrep fallback exists
+    version: 0.9.4
+  - name: bun-pty
+    version: 0.4.8
+  - name: "@opentui/core"             # TUI renderer (platform binaries)
+    version: 0.4.5
+
+wasm_components:                      # portable; ship assets with the server bundle
+  - name: "@silvia-odwyer/photon-node"   # image processing
+    version: 0.3.4
+  - name: web-tree-sitter
+    version: 0.25.10
+  - name: tree-sitter-bash
+    version: 0.25.0
+  - name: tree-sitter-powershell
+    version: 0.25.10
+
+key_js_dependencies:
+  - name: "@modelcontextprotocol/sdk"   # MCP stdio/HTTP/SSE
+    version: 1.29.0
+    # PHASE 5: the same pin is used by the host-side REMOTE MCP fixture
+    # (phase5/mcp/remote-mcp-server.mjs: StreamableHTTPServerTransport +
+    # SSEServerTransport) that gate P5-G16 points the on-device OpenCode client
+    # at. Reused from phase4/out/mcp/node_modules when present so both fixtures
+    # are provably the same version; no fixture code ships in the APK.
+    note: "PHASE 3: used as the REAL MCP stdio server+client on-device (G10). npm deps: zod ^3.25||^4, zod-to-json-schema, hono, express, eventsource, jose, ajv, cors, cross-spawn, pkce-challenge, raw-body, content-type"
+  - name: effect                        # core framework
+    version: 4.0.0-beta.83
+  - name: hono                          # HTTP API
+    version: 4.10.7
+  - name: ws                            # WebSocket event stream
+    version: 8.21.0
+  - name: cross-spawn                   # child-process spawning
+    version: 7.0.6
+  - name: which                         # PATH lookup
+    version: 6.0.1
+  - name: xdg-basedir                   # XDG path resolution
+    version: 5.1.0
+  - name: drizzle-orm
+    version: 1.0.0-rc.2
+  - name: bonjour-service               # mDNS (serve/share; degrades silently)
+    version: 1.3.0
+
+model:
+  # PHASE 3 (2026-08-29): OpenRouter is a built-in provider
+  # (packages/llm/src/providers/openrouter.ts; auth via OPENROUTER_API_KEY env).
+  # G15/G12 run the real agent loop against it. Key comes from the GitHub secret
+  # OPENROUTER_API_KEY (never committed); model id overridable via OPENROUTER_MODEL.
+  provider: openrouter
+  base_url: https://openrouter.ai/api/v1
+  model: nvidia/nemotron-3-ultra-550b-a55b:free
+
+abi_scope:
+  priority: arm64-v8a
+  emulator_only: none             # x86_64 dropped from the release (owner 2026-11-16)
+  unsupported: [armeabi-v7a, x86]       # dropped by modern V8/Node & Bun
+
+# ============================================================================
+# PHASE 4 (2026-08-29) — EMBEDDED RUNTIME HOST packaging/layout
+# The app (app/ module, Kotlin/Compose, applicationId ai.opencode.android)
+# ships EVERYTHING in one APK; the user never downloads or installs anything.
+# Executables are packaged as JNI libs (lib<name>.so per ABI) so Android
+# extracts them to the exec-allowed nativeLibraryDir (W^X, API 29+); the JS
+# payload ships as a compressed assets tar.gz, extracted+validated (sha256)
+# into filesDir/runtime on first run.
+# ============================================================================
+android_host:
+  app_module: app/
+  # PHASE 10: the published applicationId moved to the developer's own namespace.
+  # It was ai.opencode.android through Phase 9 - upstream's real domain, which reads
+  # as an official package and is an impersonation risk in review. The authoritative
+  # value for this block is the `app:` block at the top of this file (mechanically
+  # checked against app/build.gradle.kts by phase10/scripts/check-release-invariants.py);
+  # the Kotlin `namespace` is still ai.opencode.android and is not user-visible.
+  application_id: io.github.NoxiferaDev.opencode
+  kotlin_namespace: ai.opencode.android
+  min_sdk: 29            # W^X: exec only from nativeLibraryDir; ABI gate enforces 64-bit
+  target_sdk: 36
+  compile_sdk: 36
+  kotlin: 1.9.24
+  agp: 8.5.2
+  gradle: 8.9
+  compose_bom: 2024.06.00
+  payload_version: 10    # 10 = switch-over: v2 bundle (node26-v2.zip) + tool data (usr/) only; 9 = stdin password + config guard; 8 = noexec shell patch: bash tool runs non-executable path-like commands through their interpreter; 7 = Phase 9: bare OPENCODE_VERSION define + pre-seeded @opencode-ai/plugin tree)
+  # per-ABI JNI executables (Android extracts to nativeLibraryDir, exec-allowed):
+  jni_libs:
+    - { name: libnode26.so, source: "Node 26.4.0 from source (spike/node26/build-node26-android.sh), Android/Bionic arm64", bionic: true }
+    - { name: libgit.so,  source: "Git v2.48.1 from source (NO_PERL=YesPlease, Android NDK/Bionic, NO_CURL/OPENSSL/EXPAT)" }
+    - { name: librg.so,   source: "ripgrep 15.1.0 from source (x86_64/aarch64 Android targets, Cargo + NDK/Bionic, pcre2 feature)" }
+    # The full list is in app/build.gradle.kts (verifyAndStagePayload). libexecshim.so is packaged,
+    # but the v2 launch path does not run it (see docs/RUNTIME.md).
+  # compressed JS payload (assets/, extracted flat into filesDir with sha256 verification; runtime/ holds host metadata):
+  payload_assets:
+    - node26-v2.zip            # v2 server bundle (launcher-v2.mjs, opencode.mjs, wasm); release mode of spike/opencode-v2
+    - usr/ tool data           # Python stdlib zip, npm data, sealed tools; each checked against the manifest
+    - runtime-manifest.json    # versions + per-file sha256/size + payload sha256
+  data_layout:
+    files_dir: "/data/data/<pkg>/files"
+    runtime:   "files/runtime/v2/ (v2 bundle, validated; RuntimePaths.v2Root)"
+    symlinks:  "files/bin/{node,git,rg} -> /data/app/.../lib64/lib{node26,git,rg}.so (Bun removed, switch-over 2026-11-16)"
+    xdg:       "files/xdg/{data,config,state,cache,tmp} (HOME=files/home)"
+    workspaces: "files/workspaces/<project>"
+    logs:      "files/log/runtime.log + files/log/crashes/ + xdg/state/opencode/log/"
+    secrets:   "files/secrets/<name>.enc — AES-256-GCM blobs under a non-exportable AndroidKeyStore key (Phase 5); the pre-Phase-5 plaintext server-password file is migrated and deleted"
+  abi_support:
+    shipping: [arm64-v8a]
+    emulator_ci: []                 # x86_64 retired as a release gate (2026-11-16); no arm64 emulator in CI
+    rejected_with_message: [armeabi-v7a, x86]   # AbiGate -> UNSUPPORTED_DEVICE state
+  lifecycle:
+    foreground_service: "RuntimeService (type specialUse) — keeps the agent + shell/git/MCP child processes alive across background/doze"
+    health: "poll GET /global/health with Basic auth (not 'process launched')"
+    restart: "crash -> bounded exponential backoff (1s..30s, max 8 attempts) then FATAL"
+    stop: "SIGTERM (graceful) -> SIGKILL -> /proc sweep (no zombies/duplicates)"
+    duplicate_prevention: "single RuntimeService + pidfile + /proc launcher.js sweep + single port bind"
+
+# CI build toolchain pin (added 2026-09-06, Phase 5 close-out)
+ci_toolchain:
+  android_ndk_for_shims: 28.2.13676358      # phase4/scripts/10-build-payload.sh; override P4_NDK_VERSION
+  # Why: the runner image added r29.0.14206865 on 2026-09-06 and a "newest wins" glob
+  # switched compilers with no repo change; under r29, x86_64 child-shim.c links as
+  # ET_EXEC and the payload build's own PIE assertion refuses it (correctly - Android
+  # cannot exec a fixed-address binary from nativeLibraryDir). Pinning makes the build
+  # reproducible. NOT TESTED: building the shims with r29 and PIE-forcing flags -
+  # revisit before any toolchain bump (Phase 8 payload work).

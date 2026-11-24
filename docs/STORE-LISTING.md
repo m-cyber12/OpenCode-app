@@ -89,9 +89,9 @@ full_description: |
 | App category | Developer Tools (`Tools` is the fallback if the category is unavailable in a market) |
 | Tags | coding, developer tools, ai, git, terminal |
 | Contact email | the address registered with the Play Console developer account (required field; the public support channel is the issue tracker) |
-| Support / website URL | `https://github.com/m-cyber12/OpenCode-app` |
-| Support channel | `https://github.com/m-cyber12/OpenCode-app/issues` |
-| Privacy policy URL | `https://github.com/m-cyber12/OpenCode-app/blob/main/docs/PRIVACY-POLICY.md` |
+| Support / website URL | `https://github.com/noxifera-dev/Opencode-android` |
+| Support channel | `https://github.com/noxifera-dev/Opencode-android/issues` |
+| Privacy policy URL | `https://github.com/noxifera-dev/Opencode-android/blob/main/docs/PRIVACY-POLICY.md` |
 | Contains ads | No |
 | In-app purchases | No (see Monetization) |
 | Government app | No |
