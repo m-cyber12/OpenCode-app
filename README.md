@@ -148,8 +148,9 @@ service is working again.
   that the agent puts in a reply.
 - The agent's server listens only on the phone's loopback address (`127.0.0.1`). It is
   protected by a random password that is created on first run and stored encrypted.
-- Full details are in [docs/PRIVACY-POLICY.md](docs/PRIVACY-POLICY.md) and
-  [docs/SECURITY.md](docs/SECURITY.md).
+- Full details are in [PRIVACY.md](PRIVACY.md) (a summary), [docs/PRIVACY-POLICY.md](docs/PRIVACY-POLICY.md),
+  [SECURITY.md](SECURITY.md) and [docs/SECURITY.md](docs/SECURITY.md).
+- To report a security problem, email **noxifera.dev@gmail.com**. Don't open a public issue for it.
 
 ## Known limitations
 
@@ -176,6 +177,8 @@ expected to happen. Don't include API keys or GitHub tokens in an issue.
 | Document | What it covers |
 |---|---|
 | [docs/CAPABILITY-MATRIX.md](docs/CAPABILITY-MATRIX.md) | What works on Android, what doesn't, and what has been tested |
+| [PRIVACY.md](PRIVACY.md) | Summary: what the app does with your data |
+| [SECURITY.md](SECURITY.md) | How to report a security problem |
 | [docs/SECURITY.md](docs/SECURITY.md) | How keys and tokens are stored, and the threat model |
 | [docs/PRIVACY-POLICY.md](docs/PRIVACY-POLICY.md) | What the app does with your data |
 | [docs/RUNTIME.md](docs/RUNTIME.md) | How the embedded runtime works, and troubleshooting |

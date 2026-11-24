@@ -1,7 +1,7 @@
 # Privacy policy
 
 **App:** OpenCode for Android (`io.github.NoxiferaDev.opencode`)
-**Effective date:** 2026-09-18
+**Effective date:** 2026-11-24
 **Contact:** the issue tracker at <https://github.com/m-cyber12/OpenCode-app/issues>
 
 This policy describes what the app actually does on your device. It is written
@@ -19,7 +19,9 @@ describing the shipped behaviour.
   developer receives no data about you or your usage, because there is no channel
   for it to arrive through.
 * The only traffic the app initiates on its own is to **the model provider you
-  configure**, plus whatever the agent fetches when it uses a tool you permitted.
+  configure**, plus whatever the agent fetches when it uses a tool you permitted,
+  plus the pictures from web addresses that a reply contains (https only; see
+  "What leaves your device").
 * Provider API keys are stored **encrypted with the Android Keystore**; they are
   never shown again, never exported, and never included in the diagnostics bundle.
 
@@ -64,8 +66,8 @@ app does **not** delete them - open that folder with any file manager to see the
 `Android/data/<app>`, and Android removes that folder when the app is uninstalled -
 use **Export a copy...** for anything you want to keep.) Android backups are
 disabled (`allowBackup="false"`), so this data is not copied into a cloud backup
-by the system. **Export is user-initiated**: when you export a project or share
-diagnostics, the app hands the data to the Android system share/save sheet, and
+by the system. **Export is user-initiated**: when you export a project, the app hands
+the data to the Android system share/save sheet, and
 you choose the destination.
 
 ## Provider API keys
@@ -89,6 +91,7 @@ you choose the destination.
 |---|---|---|
 | The model provider you configured (for example OpenRouter, Anthropic, Google) | your prompts, the conversation context the agent sends, file contents/tool output the agent decides are relevant, and your API key | every turn you send |
 | Web pages and URLs the agent fetches | the request itself, from your device | only when the agent uses a fetch/search tool and your permission policy allows it |
+| Pictures at web addresses in a reply | a plain request for the picture file: no cookies, no credentials and no app headers. The picture's host sees your phone's network address | when a reply contains a picture link. Only `https` addresses are used, and the phone downloads the picture in the background |
 | The npm registry | a package install request | only if you configure a *new* plugin that is not already bundled; the plugin OpenCode needs is pre-installed |
 | Local servers you add (MCP) | depends on that server; a local-process MCP server runs on the device, while a remote HTTP/SSE MCP server is not supported by this runtime | when you configure and connect one |
 
@@ -118,11 +121,11 @@ only to the folder you pick.
 The app is a developer tool, is not directed at children, and collects no personal
 data from anyone. It has no accounts and no user profiles.
 
-## Diagnostics you choose to share
+## Diagnostics you choose to copy
 
-Settings → Agent runtime → *Share diagnostics* produces a text bundle (supervisor
-state, versions, device facts, log tails). It is generated **on your device** and
-only leaves it through the share sheet you operate. It has no automatic upload.
+Settings → Diagnostics → *Copy diagnostics* produces a text bundle (supervisor
+state, versions, device facts, log tails). It is generated **on your device**, and
+it goes to the clipboard only when you copy it. It has no automatic upload.
 The bundle excludes provider API keys and the Keystore-encrypted material; a log
 tail can contain file paths and tool output from your sessions, so read it before
 you post it publicly - the issue tracker is a public place.

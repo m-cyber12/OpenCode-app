@@ -89,6 +89,8 @@ files, and the loopback server that can run a shell in the app's sandbox.
 
 ## Reporting
 
-Security issues in the Android shell: open an issue in this repository.
+Report security issues in the Android app privately, by email to
+`noxifera.dev@gmail.com`. Do not open a public issue for them. The short policy is in
+[SECURITY.md](../SECURITY.md) at the repository root.
 Issues in the agent/server itself belong upstream (`anomalyco/opencode`); the
 bundle here is the unmodified pinned commit.
