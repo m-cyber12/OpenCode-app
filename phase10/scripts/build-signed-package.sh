@@ -110,8 +110,11 @@ python3 "$ROOT/phase10/scripts/check-apk.py" "$APK_SRC" \
   --expect-signed --expect-not-debuggable --expect-icon --expect-payload \
   --expect-min-sdk 29 --expect-target-sdk 36 > "$TMP/apk-inspect.txt" 2>&1 \
   || { cat "$TMP/apk-inspect.txt"; die "check-apk.py found a problem in the APK"; }
+# The AAB's manifest is protobuf, where versionCode is a binary integer that check-apk.py cannot
+# read (run 45357641533 failed on exactly that). versionCode is checked on the APK above, which
+# comes from the same Gradle release build, so it is not repeated here.
 python3 "$ROOT/phase10/scripts/check-apk.py" "$AAB_SRC" \
-  --expect-package "$APPID" --expect-version-name "$VNAME" --expect-version-code "$VCODE" \
+  --expect-package "$APPID" --expect-version-name "$VNAME" \
   --expect-payload > "$TMP/aab-inspect.txt" 2>&1 \
   || { cat "$TMP/aab-inspect.txt"; die "check-apk.py found a problem in the AAB"; }
 
