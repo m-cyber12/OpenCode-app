@@ -86,7 +86,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.semantics.Role
@@ -1102,7 +1101,8 @@ private fun StreamingDots() {
     // every 320 ms, so the row reads as "working". The turn is a plain timer, not an
     // infinite animation - an infinite animation would keep the Compose test clock
     // busy and hang the UI gates (the static gate forbids it under ui/). Each dot's
-    // brighten and grow is a short, finite animation.
+    // brighten is a short, finite animation. The lit dot does NOT grow: a grown dot
+    // spills past the row's right edge and the chat clips it.
     var lit by remember { mutableStateOf(0) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -1127,18 +1127,9 @@ private fun StreamingDots() {
                 animationSpec = tween(durationMillis = 260),
                 label = "working_dot_alpha",
             )
-            val grow by animateFloatAsState(
-                targetValue = if (isLit) 1.35f else 1f,
-                animationSpec = tween(durationMillis = 260),
-                label = "working_dot_grow",
-            )
             Box(
                 Modifier
                     .size(6.dp)
-                    .graphicsLayer {
-                        scaleX = grow
-                        scaleY = grow
-                    }
                     .background(chat.muted.copy(alpha = alpha), CircleShape)
                     .clearAndSetSemantics { },
             )
