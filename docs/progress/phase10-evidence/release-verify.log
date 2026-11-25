@@ -1,5 +1,5 @@
-[2026-11-25T17:57:14Z] expected identity: applicationId=io.github.NoxiferaDev.opencode versionName=0.0.1-beta versionCode=8
-[2026-11-25T17:57:14Z] === gradle :app:assembleRelease :app:bundleRelease ===
+[2026-11-25T19:35:15Z] expected identity: applicationId=<app> versionName=0.0.1-beta versionCode=8
+[2026-11-25T19:35:15Z] === gradle :app:assembleRelease :app:bundleRelease ===
 To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
 Daemon will be stopped at the end of the build 
 
@@ -51,32 +51,32 @@ The AGP Upgrade Assistant can remove the attribute from the AndroidManifest.xml 
 
 > Task :app:processReleaseManifest
 > Task :app:javaPreCompileRelease FROM-CACHE
+> Task :app:processReleaseManifestForPackage
 > Task :app:extractProguardFiles
 > Task :app:mergeReleaseJniLibFolders
-> Task :app:processReleaseManifestForPackage
 > Task :app:mergeReleaseResources
 > Task :app:checkReleaseDuplicateClasses
+> Task :app:mergeReleaseNativeLibs
 > Task :app:desugarReleaseFileDependencies
 > Task :app:mergeReleaseStartupProfile
-> Task :app:mergeReleaseNativeLibs
-> Task :app:processReleaseResources
-> Task :app:mergeExtDexRelease
-> Task :app:mergeReleaseArtProfile
-> Task :app:mergeReleaseShaders
-> Task :app:compileReleaseShaders NO-SOURCE
-> Task :app:generateReleaseAssets
 
 > Task :app:stripReleaseDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libc++_shared.so, libchildshim.so, libcrypto.so, libcurl.so, libexecshim.so, libgit.so, libgitremotehttp.so, libjq.so, libmksh.so, libnode26.so, libnpmcli.so, libocexecprobe.so, libpython3.so, librg.so, libscp.so, libseccompshim.so, libsftp.so, libsshadd.so, libsshagent.so, libsshclient.so, libsshkeygen.so, libsshkeyscan.so, libtoybox.so, libwget.so.
 
-> Task :app:mergeReleaseAssets
+> Task :app:processReleaseResources
+> Task :app:mergeExtDexRelease
 > Task :app:extractReleaseNativeSymbolTables
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:mergeReleaseArtProfile
+> Task :app:mergeReleaseShaders
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets
+> Task :app:mergeReleaseAssets
 > Task :app:extractReleaseVersionControlInfo
 > Task :app:compressReleaseAssets
+> Task :app:optimizeReleaseResources
 > Task :app:collectReleaseDependencies
 > Task :app:sdkReleaseDependencyData
-> Task :app:optimizeReleaseResources
 > Task :app:writeReleaseAppMetadata
 > Task :app:writeReleaseSigningConfigVersions
 > Task :app:processApplicationManifestReleaseForBundle
@@ -150,18 +150,18 @@ w: file:///home/runner/work/OpenCode-app/OpenCode-app/app/src/main/java/ai/openc
 > Task :app:lintVitalRelease
 > Task :app:assembleRelease
 
-BUILD SUCCESSFUL in 2m 41s
+BUILD SUCCESSFUL in 2m 39s
 60 actionable tasks: 56 executed, 4 from cache
-[2026-11-25T17:59:56Z] apk=app-release-unsigned.apk (121068456 bytes)
-[2026-11-25T17:59:56Z] aab=app-release.aab (106752036 bytes)
-[2026-11-25T17:59:57Z] RELEASE_APK PASS :: MANIFEST package=io.github.NoxiferaDev.opencode versionCode=8 versionName=0.0.1-beta minSdk=29 targetSdk=36 debuggable=False
-[2026-11-25T17:59:57Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=327 native_abis=arm64-v8a(24 libs,130.9MB) payload=True manifest_asset=True
-[2026-11-25T17:59:57Z] SIZE PASS :: apkMb=115.5 capMb=230 headroomMb=114.5 native=arm64-v8a(24libs,130.9MB)
-[2026-11-25T17:59:57Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
-[2026-11-25T17:59:58Z] TESTONLY_RELEASE PASS :: installable non-debuggable universal APK bytes=121076560 MiB=115.5 signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
-[2026-11-25T18:00:00Z] TESTONLY_ARM64 PASS :: installable arm64-only APK bytes=121076560 MiB=115.5 x86_64=absent signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
-[2026-11-25T18:00:00Z] RELEASE_AAB PASS :: CONTENTS entries=332 native_abis=arm64-v8a(24 libs,130.9MB) payload=True manifest_asset=True
-[2026-11-25T18:00:00Z] sha256:
-fbaebdd58b208a95227e3d671ac1dbf1f71cb2bea0df78239b74ce97e40aeaa8  ./app-release-unsigned.apk
-905713e467bf0d7b7b474c4367c63ddebee0c9677eace9cce861108ead604108  ./app-release.aab
-[2026-11-25T18:00:00Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/release/HOW-TO-SIGN-ON-PHONE.txt + sha256.txt (phone-signing rules + this build's exact bytes)
+[2026-11-25T19:37:56Z] apk=app-release-unsigned.apk (121068440 bytes)
+[2026-11-25T19:37:56Z] aab=app-release.aab (106752000 bytes)
+[2026-11-25T19:37:56Z] RELEASE_APK PASS :: MANIFEST package=<app> versionCode=8 versionName=0.0.1-beta minSdk=29 targetSdk=36 debuggable=False
+[2026-11-25T19:37:56Z] RELEASE_APK_DETAIL PASS :: CONTENTS entries=327 native_abis=arm64-v8a(24 libs,130.9MB) payload=True manifest_asset=True
+[2026-11-25T19:37:56Z] SIZE PASS :: apkMb=115.5 capMb=230 headroomMb=114.5 native=arm64-v8a(24libs,130.9MB)
+[2026-11-25T19:37:56Z] UNSIGNED PASS :: CI artifact is UNSIGNED, as required: signing is the human step on a machine that holds the key (docs/RELEASE.md); SIGNATURE scheme=none v1_files=0 v2_v3_block=False cert_id=n/a
+[2026-11-25T19:37:58Z] TESTONLY_RELEASE PASS :: installable non-debuggable universal APK bytes=121076560 MiB=115.5 signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
+[2026-11-25T19:37:59Z] TESTONLY_ARM64 PASS :: installable arm64-only APK bytes=121076560 MiB=115.5 x86_64=absent signed=v2/v3 cert_matches_smoke=d55fe225ca569762...
+[2026-11-25T19:38:00Z] RELEASE_AAB PASS :: CONTENTS entries=332 native_abis=arm64-v8a(24 libs,130.9MB) payload=True manifest_asset=True
+[2026-11-25T19:38:00Z] sha256:
+c874c0d8beeaad657f1936bcaacf1064d1a698d63e4e9541d0421cc76e96ef18  ./app-release-unsigned.apk
+0c779168975c5983f5aeac03589eeb9dc13493a3248c0322bd2c581b1faa9527  ./app-release.aab
+[2026-11-25T19:38:00Z] wrote /home/runner/work/OpenCode-app/OpenCode-app/phase10/out/release/HOW-TO-SIGN-ON-PHONE.txt + sha256.txt (phone-signing rules + this build's exact bytes)
