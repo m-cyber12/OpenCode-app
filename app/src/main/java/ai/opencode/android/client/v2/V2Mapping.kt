@@ -173,6 +173,14 @@ object V2Mapping {
         val parts = JSONArray()
         if (type == "user") {
             parts.put(textPart(id, sessionID, "text", 0, o.optString("text")))
+            // The files the user attached are in `files` (upstream's user message). They were
+            // dropped here, so a sent prompt showed no file. Each becomes a file part, which the
+            // chat bubble shows as a chip.
+            val files = o.optJSONArray("files") ?: JSONArray()
+            for (i in 0 until files.length()) {
+                val f = files.optJSONObject(i) ?: continue
+                parts.put(filePart(id, sessionID, i, f))
+            }
         } else {
             val completed = o.optJSONObject("time")?.optLong("completed", 0L) ?: 0L
             if (completed > 0L) info.getJSONObject("time").put("completed", completed)
@@ -573,6 +581,23 @@ object V2Mapping {
             }
         }
         return lines.joinToString("\n")
+    }
+
+    /**
+     * A user file as a file part. Only the name and mime type are kept: the server's `uri` is a
+     * server reference, not a link the phone can open, so `url` stays empty (the composer does not
+     * re-attach it when a turn is restored, which would send an unusable reference).
+     */
+    private fun filePart(messageID: String, sessionID: String, ordinal: Int, f: JSONObject): JSONObject {
+        val name = f.optString("name").ifEmpty { f.optString("uri").substringAfterLast('/') }
+        return JSONObject()
+            .put("id", V2Translator.partID(messageID, "file", ordinal))
+            .put("messageID", messageID)
+            .put("sessionID", sessionID)
+            .put("type", "file")
+            .put("mime", f.optString("mime"))
+            .put("filename", name.ifEmpty { "file" })
+            .put("url", "")
     }
 
     private fun textPart(messageID: String, sessionID: String, kind: String, ordinal: Int, text: String): JSONObject =

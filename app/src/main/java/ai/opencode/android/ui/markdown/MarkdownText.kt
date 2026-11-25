@@ -63,10 +63,12 @@ import androidx.compose.ui.unit.sp
  * re-interprets, trims or "cleans up" an agent's reply.
  *
  * Two deliberate choices:
- *   * prose is selectable ([SelectionContainer]), because copying an answer out of
- *     a chat is the single most common thing a user does with it. A paragraph that
- *     contains a link trades selection for [ClickableText] instead, since Compose
- *     1.6 cannot do both in one node.
+ *   * the whole reply is ONE [SelectionContainer] ([MarkdownBlocks]), because copying
+ *     an answer out of a chat is the single most common thing a user does with it. A
+ *     selection can run across paragraphs, blank lines, lists and tables. A paragraph
+ *     that contains a link is drawn with [ClickableText] instead, since Compose 1.6
+ *     cannot both open a link and select text in one node, so that paragraph is not
+ *     part of a selection.
  *   * code blocks scroll horizontally rather than wrapping: a wrapped shell command
  *     or diff is worse than useless, it is misleading.
  */
@@ -90,8 +92,20 @@ fun MarkdownBlocks(
     style: TextStyle = MaterialTheme.typography.bodyLarge,
     color: Color = MaterialTheme.colorScheme.onSurface,
 ) {
+    // One selection area for the whole reply, so a selection is not cut at each paragraph.
+    SelectionContainer(modifier = modifier.fillMaxWidth()) {
+        MarkdownColumn(blocks = blocks, style = style, color = color)
+    }
+}
+
+@Composable
+private fun MarkdownColumn(
+    blocks: List<MdBlock>,
+    style: TextStyle,
+    color: Color,
+) {
     val chat = ChatTheme.chat
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         for ((index, block) in blocks.withIndex()) {
             if (index > 0) Spacer(Modifier.height(7.dp))
             when (block) {
@@ -177,9 +191,8 @@ fun ProseText(
             },
         )
     } else {
-        SelectionContainer(modifier = modifier) {
-            Text(text = annotated, style = style, color = color, modifier = Modifier.fillMaxWidth())
-        }
+        // No container here: the reply is one selectable area (see MarkdownBlocks).
+        Text(text = annotated, style = style, color = color, modifier = modifier.fillMaxWidth())
     }
 }
 
