@@ -41,7 +41,7 @@ For this app:
   mirrored at the GitHub release linked above.
 * **The build recipe** used for this app, with the toolchain, configure options and patches, is
   published in this repository at
-  [`phase4/scripts/10-build-payload.sh`](https://github.com/noxifera-dev/Opencode-android/blob/main/phase4/scripts/10-build-payload.sh).
+  [`phase4/scripts/10-build-payload.sh`](https://github.com/noxifera-dev/Unofficial-Opencode-for-Android/blob/main/phase4/scripts/10-build-payload.sh).
   The SHA-256 of every file shipped in the runtime is listed in `runtime-manifest.json`, which is
   inside the APK.
 * **This notice is the written offer** required by GPL-2.0. The corresponding source is available
@@ -71,4 +71,4 @@ texts and to this file.
 
 If you think something here is wrong, such as a missing attribution, an incorrect licence, or a
 component you did not expect to find in the app, open an issue at
-<https://github.com/noxifera-dev/Opencode-android/issues>.
+<https://github.com/noxifera-dev/Unofficial-Opencode-for-Android/issues>.

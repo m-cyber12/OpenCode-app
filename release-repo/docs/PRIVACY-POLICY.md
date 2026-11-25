@@ -2,7 +2,7 @@
 
 **App:** OpenCode for Android (`io.github.NoxiferaDev.opencode`)
 **Effective date:** 2026-11-24
-**Contact:** the [issue tracker](https://github.com/noxifera-dev/Opencode-android/issues). For private matters, see [SECURITY.md](../SECURITY.md).
+**Contact:** the [issue tracker](https://github.com/noxifera-dev/Unofficial-Opencode-for-Android/issues). For private matters, see [SECURITY.md](../SECURITY.md).
 
 This policy describes what the app does on your phone.
 

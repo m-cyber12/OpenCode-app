@@ -2,7 +2,7 @@
 
 **App:** OpenCode for Android (`io.github.NoxiferaDev.opencode`)
 **Effective date:** 2026-11-24
-**Contact:** the issue tracker at <https://github.com/noxifera-dev/Opencode-android/issues>
+**Contact:** the issue tracker at <https://github.com/noxifera-dev/Unofficial-Opencode-for-Android/issues>
 
 This policy describes what the app actually does on your device. It is written
 from the implementation (the runtime host in `app/src/main/java`, the security

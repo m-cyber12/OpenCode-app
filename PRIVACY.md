@@ -43,5 +43,5 @@ privacy policy and terms.
 
 ## Questions
 
-Ask in the project's issue tracker: <https://github.com/noxifera-dev/Opencode-android/issues>.
+Ask in the project's issue tracker: <https://github.com/noxifera-dev/Unofficial-Opencode-for-Android/issues>.
 For security problems, see [SECURITY.md](SECURITY.md).

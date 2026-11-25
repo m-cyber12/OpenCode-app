@@ -1,6 +1,6 @@
 # Files for the new repository
 
-Upload these to **noxifera-dev/Opencode-android** (default branch `main`), keeping the same paths.
+Upload these to **noxifera-dev/Unofficial-Opencode-for-Android** (default branch `main`), keeping the same paths.
 Every file here is a copy of a file in this repository, rewritten or checked for users.
 
 | Path in the new repo | Source in this repo | Why |
@@ -16,8 +16,9 @@ Every file here is a copy of a file in this repository, rewritten or checked for
 | `phase4/payload/` (26 files) | copy | patches and sources used by the same recipe |
 | `versions.lock` | copy | pinned versions the notices refer to |
 
+Not uploaded yet: `LICENSE` (GPL). The owner adds it when the source is published.
 Not uploaded: the release APK. Attach it to a GitHub Release as the README describes.
-The in-app links point to `https://github.com/noxifera-dev/Opencode-android/...`, so the paths
+The in-app links point to `https://github.com/noxifera-dev/Unofficial-Opencode-for-Android/...`, so the paths
 above must exist there for those links to work.
 
 ## Security source files (release-repo/security-source/)

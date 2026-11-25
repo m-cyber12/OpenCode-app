@@ -77,6 +77,6 @@ for Git, and links to the upstream licence text and to this file.
 
 If you believe something here is wrong - a missing attribution, an incorrect
 licence, or a component you did not expect to find in the APK - open an issue at
-<https://github.com/noxifera-dev/Opencode-android/issues>. `phase10/scripts/check-apk.py`
+<https://github.com/noxifera-dev/Unofficial-Opencode-for-Android/issues>. `phase10/scripts/check-apk.py`
 can list what is actually inside a build, and the payload manifest lists every
 file with its hash.
