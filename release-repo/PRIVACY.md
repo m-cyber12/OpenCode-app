@@ -14,9 +14,6 @@ summary. The full policy, written from the app's code, is in
   - the model provider you configure, which gets your prompts, the context the agent sends,
     and your API key;
   - web pages the agent fetches, when you allow it;
-  - pictures at web addresses that a reply contains. Only `https` addresses are used. The
-    phone downloads the picture in the background with a plain request, with no cookies,
-    no credentials and no app headers. The picture's host sees your phone's network address;
   - GitHub, if you connect it and use a GitHub project.
 - **Your files stay on your phone.** Project folders are in `Documents/OpenCode` on shared
   storage, so file managers can open them. Conversations, settings and logs are in the app's

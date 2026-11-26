@@ -207,7 +207,7 @@ what cannot have changed; read each topic brief at most once.
 - $briefsDir/extensions.md - MCP servers and skills: where they live, how to
   register one. Read before adding either.
 - $briefsDir/video.md - MP4 videos from code.
-- $briefsDir/chat-format.md - tables and pictures: read first.
+- $briefsDir/chat-format.md - tables in replies: read first.
 - $briefsDir/todo.md - the user's todo-list feature, and the checklist in detail.
 """.trimIndent() + "\n"
     }
@@ -714,12 +714,12 @@ Put the todo list on the page the user will open. Do not bury it in a second fil
 that nothing links to.
 """.trimIndent() + "\n"
 
-        // 2026-11-23 (owner): the chat draws tables and web pictures. The syntax and
-        // the limits live here, so the always-read main brief only points at them.
+        // 2026-11-23 (owner): the chat draws tables. The syntax and the limits live here,
+        // so the always-read main brief only points at them.
         val chatFormat = """
-# Tables and pictures in your reply - read before you write either
+# Tables in your reply - read before you write one
 
-The chat draws standard Markdown, with two structures beyond text and lists.
+The chat draws standard Markdown, with a table beyond text and lists.
 
 ## Tables
 Use a pipe table when you compare two or more things side by side:
@@ -732,58 +732,6 @@ Use a pipe table when you compare two or more things side by side:
 Rules: one header row, then the `|---|` separator row, then the rows. Keep each
 cell to a few words. Do not put a line break inside a cell. Keep a table to about
 8 rows. Use a table only for a real comparison; a list is better for steps.
-
-## Pictures from the web
-Three layouts. Pick the one that fits the answer:
-
-1. One large picture: put it alone on its own line. It fills the width.
-
-![Diagram of the request flow](https://example.com/images/flow.png)
-
-2. Several pictures in a grid: put two or more pictures on consecutive lines, with
-   no blank line between them. The chat draws them as two columns of tiles. Use this
-   for a set of examples, screenshots, or products.
-
-![Front view](https://example.com/images/a.jpg)
-![Side view](https://example.com/images/b.jpg)
-![Back view](https://example.com/images/c.jpg)
-
-3. A small logo beside a list item: start the item with the picture. Use this when
-   each list item is a named product, app, or company.
-
-1. ![OpenAI logo](https://example.com/logos/openai.png) **OpenAI Codex CLI** - written in Rust.
-2. ![Anthropic logo](https://example.com/logos/anthropic.png) **Claude Code** - runs non-interactively.
-
-Rules for all three:
-- Only `https` links. The phone downloads the picture itself, in the background.
-  Plain `http` links and links to the phone or the local network are refused.
-- Link to the picture file itself, ending in .png, .jpg, .webp or .gif, on a site that
-  serves pictures to anyone. Do not link to a web page, and do not open pages to look
-  for a picture: a page link is not drawn, and many sites refuse the phone.
-- Write only Markdown. Never write HTML tags such as <img> or <div>; the chat shows
-  them as plain text.
-- If you do not have a picture-file link you are sure of, leave the picture out.
-- Use only links you know are real and stable: a link the user gave you, or a
-  link on an official site you are sure of. Never invent a URL. If a link is
-  wrong, the chat shows only the description.
-- A picture cannot show a file from the project folder. For that, link the file
-  by name, or build a page that shows it.
-- The description is what a screen reader says, and what shows when the picture
-  cannot load. Make it one short, plain sentence.
-- Use pictures when they help the reader see something: a product, a diagram, a
-  place, a screen. Do not add them for decoration.
-- Do not put a picture in the middle of a sentence. It goes on its own line, or at
-  the start of a list item.
-- Pick the layout by the content: one large picture for a single diagram or scene, a grid
-  of two to four for a set of examples, a logo only for a named product or company.
-- At most four pictures in one answer, and at most two in a short answer.
-- Put each picture beside the sentence it supports. The text must still make sense without them.
-- The chat already prints the site name under each large picture and grid tile, in a small
-  label such as unsplash.com. Do not write a credit line, a "Photo by" line, or the site name
-  in the text.
-- Never put a picture link inside a code block or a table cell.
-- Show a picture only when you are sure it matches the words beside it. If you are not sure,
-  leave the picture out and describe it in words.
 """.trimIndent() + "\n"
 
         return linkedMapOf(

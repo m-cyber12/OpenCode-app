@@ -176,8 +176,8 @@ class EnvironmentBriefTest {
         // to mark steps in_progress and completed sat only in briefs/todo.md, which the model
         // never opened. That rule is now a short section here, so every session reads it.
         // -> 880 (measured 865). Owner-driven content, as with the earlier raises.
-        // -> 900 (2026-11-23, measured 884): the chat-format index line for tables and
-        // web pictures. The detail lives in topics/chat-format.md, not in this count.
+        // -> 900 (2026-11-23, measured 884): the chat-format index line for tables.
+        // The detail lives in topics/chat-format.md, not in this count.
         assertTrue("main brief grew to $words words - split or trim it", words < 900)
         // The core product loop and cost discipline stay in the always-read part.
         assertTrue(main.contains("serve.json"))
@@ -480,29 +480,10 @@ class EnvironmentBriefTest {
     }
 
     @Test
-    fun chatFormatTopicTeachesTablesAndWebPicturesWithTheirLimits() {
-        // 2026-11-23 (owner): the models must know how to draw tables and web pictures,
-        // and the limits that keep those pictures safe (https only, no invented URLs).
+    fun chatFormatTopicTeachesTables() {
+        // 2026-11-23 (owner): the models must know how to draw tables.
         val topic = EnvironmentBrief.topicBriefs()["chat-format.md"]
         assertTrue("chat-format.md must exist", topic != null)
-        val text = topic!!
-        assertTrue(text.contains("|---|"))
-        assertTrue(text.contains("![") && text.contains("](https://"))
-        assertTrue(text.contains("Only `https` links"))
-        assertTrue(text.contains("Never invent a URL"))
-        assertTrue(text.contains("Do not put a picture in the middle of a sentence"))
-        // 2026-11-23 (owner): the three layouts - one large, a grid, a logo in a list item.
-        assertTrue(text.contains("One large picture"))
-        assertTrue(text.contains("Several pictures in a grid"))
-        assertTrue(text.contains("A small logo beside a list item"))
-        // Stronger rules (owner, 2026-11-24): layout by content, limits, no credit lines, no code.
-        assertTrue(text.contains("Pick the layout by the content"))
-        assertTrue(text.contains("At most four pictures"))
-        assertTrue(text.contains("Do not write a credit line"))
-        assertTrue(text.contains("Never put a picture link inside a code block"))
-        // 2026-11-26 (owner, option 1): picture files only, no page links, no HTML.
-        assertTrue(text.contains("Do not link to a web page"))
-        assertTrue(text.contains("Never write HTML tags"))
-        assertTrue(text.contains("leave the picture out"))
+        assertTrue(topic!!.contains("|---|"))
     }
 }

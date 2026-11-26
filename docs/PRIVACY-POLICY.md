@@ -19,8 +19,7 @@ describing the shipped behaviour.
   developer receives no data about you or your usage, because there is no channel
   for it to arrive through.
 * The only traffic the app initiates on its own is to **the model provider you
-  configure**, plus whatever the agent fetches when it uses a tool you permitted,
-  plus the pictures from web addresses that a reply contains (https only; see
+  configure**, plus whatever the agent fetches when it uses a tool you permitted (see
   "What leaves your device").
 * Provider API keys are stored **encrypted with the Android Keystore**; they are
   never shown again, never exported, and never included in the diagnostics bundle.
@@ -91,7 +90,6 @@ you choose the destination.
 |---|---|---|
 | The model provider you configured (for example OpenRouter, Anthropic, Google) | your prompts, the conversation context the agent sends, file contents/tool output the agent decides are relevant, and your API key | every turn you send |
 | Web pages and URLs the agent fetches | the request itself, from your device | only when the agent uses a fetch/search tool and your permission policy allows it |
-| Pictures at web addresses in a reply | a plain request for the picture file: no cookies, no credentials and no app headers. The picture's host sees your phone's network address | when a reply contains a picture link. Only `https` addresses are used, and the phone downloads the picture in the background |
 | The npm registry | a package install request | only if you configure a *new* plugin that is not already bundled; the plugin OpenCode needs is pre-installed |
 | Local servers you add (MCP) | depends on that server; a local-process MCP server runs on the device, while a remote HTTP/SSE MCP server is not supported by this runtime | when you configure and connect one |
 

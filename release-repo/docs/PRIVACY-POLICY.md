@@ -13,8 +13,7 @@ This policy describes what the app does on your phone.
 * **The app has no analytics, no advertising and no crash-reporting SDK.** The developer
   gets no data about you or how you use the app.
 * **The app contacts only:** the model provider you set up; web pages the agent fetches when
-  you allow it; pictures at web addresses in a reply (`https` only); and GitHub, if you connect
-  it. See "What leaves your phone".
+  you allow it; and GitHub, if you connect it. See "What leaves your phone".
 * **Provider API keys are encrypted** with the Android Keystore. They are never shown again,
   never exported, and never included in the diagnostics you copy.
 
@@ -79,7 +78,6 @@ to the Android share or save sheet, and you pick the destination.
 |---|---|---|
 | The model provider you set up (for example OpenRouter, Anthropic or Google) | your prompts, the conversation context the agent sends, file contents and tool output the agent decides are relevant, and your API key | every turn you send |
 | Web pages and addresses the agent fetches | the request itself, from your phone | only when the agent uses a fetch or search tool and your permission settings allow it |
-| Pictures at web addresses in a reply | a plain request for the picture file: no cookies, no credentials and no app headers. The picture's host sees your phone's network address | when a reply contains a picture link. Only `https` addresses are used, and the phone downloads the picture in the background |
 | The npm registry | a package install request | only if you add a *new* plugin that is not already included. The plugin OpenCode needs is pre-installed |
 | Local servers you add (MCP) | depends on that server. A local MCP server runs on your phone. Remote HTTP and SSE MCP servers are not supported by this runtime | when you set one up and connect it |
 

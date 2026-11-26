@@ -24,8 +24,7 @@ above must exist there for those links to work.
 ## Security source files (release-repo/security-source/)
 
 These keep their original paths under `security-source/`. They are the parts the security
-document describes: key storage, the loopback-only server, runtime file checks, the picture
-download policy, and the permission and shell patches for OpenCode v2.2.5. They are excerpts:
+document describes: key storage, the loopback-only server, runtime file checks, and the permission and shell patches for OpenCode v2.2.5. They are excerpts:
 they depend on other project files, so they will not build on their own.
 
 | Path in the new repo | What it does |
@@ -37,6 +36,5 @@ they depend on other project files, so they will not build on their own.
 | `security-source/app/src/main/java/ai/opencode/android/client/LoopbackGuard.kt` | refuses any server address that is not on the phone itself |
 | `security-source/app/src/main/java/ai/opencode/android/runtime/LoopbackAudit.kt` | checks that the server listens only on loopback |
 | `security-source/app/src/main/java/ai/opencode/android/runtime/PayloadExtractor.kt` | checks each runtime file's size and sha256 against the manifest before it is used |
-| `security-source/app/src/main/java/ai/opencode/android/web/WebImagePolicy.kt` | the rule for downloading pictures: https only, and only to public addresses |
 | `security-source/phase4/payload/v2-patches/permission-guard.ts` | keeps config-file writes behind a prompt, even when a session is allowed |
 | `security-source/phase4/payload/v2-patches/noexec-shell.ts` | runs non-executable scripts through their interpreter, after the permission check |

@@ -46,8 +46,6 @@ signed with the same key. Release notes list the signing key's fingerprint so yo
 **Chat**
 - Streaming replies, with Markdown and syntax-highlighted code.
 - Comparisons appear as real tables, with rows and columns.
-- Pictures from the web can appear in a reply: one large picture, a grid of pictures, or a
-  small logo beside a list item. They load in the background. Only `https` addresses are used.
 - Tool cards show each step: shell commands with their output and exit code, file reads and
   edits, searches, and file diffs.
 - While the agent writes a file or runs a command, its output appears as it arrives.
@@ -144,8 +142,7 @@ service is working again.
 
 - The app has no account, no analytics and no advertising.
 - Your code, files and chat stay on your phone. The network traffic goes to the model
-  provider you configured, to GitHub if you connect it, and to the web addresses of pictures
-  that the agent puts in a reply.
+  provider you configured, to GitHub if you connect it.
 - The agent's server listens only on the phone's loopback address (`127.0.0.1`). It is
   protected by a random password that is created on first run and stored encrypted.
 - Full details are in [PRIVACY.md](PRIVACY.md) (a summary), [docs/PRIVACY-POLICY.md](docs/PRIVACY-POLICY.md),

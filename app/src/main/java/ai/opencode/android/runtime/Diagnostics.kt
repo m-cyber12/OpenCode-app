@@ -64,13 +64,6 @@ data class Diagnostics(
             sb.appendLine("restart_count=${state?.restartCount}")
             sb.appendLine("provider_keys_in_keystore=${Secrets.storedProviderIds(context).joinToString(",") { it.ifEmpty { "?" } }}")
             sb.appendLine()
-            // 2026-11-23: website pictures in chat - counts only, never the URLs.
-            val pictures = ai.opencode.android.web.WebImages.stats()
-            sb.appendLine("## Website pictures")
-            sb.appendLine("network_enabled=${ai.opencode.android.web.WebImages.NETWORK_ENABLED}")
-            sb.appendLine("requested=${pictures.requested} cache_hits=${pictures.cacheHits} loaded=${pictures.loaded} blocked=${pictures.blocked} failed=${pictures.failed}")
-            sb.appendLine("average_ms=${pictures.averageMs} memory_cache_kib=${pictures.cacheKib}")
-            sb.appendLine()
             sb.appendLine("## Phase 5 integration (loopback bind + credentials)")
             sb.appendLine("server_bind_policy=loopback-only allowed_hosts=127.0.0.1,localhost,::1")
             sb.appendLine("plaintext_password_file_present=${paths.serverPasswordFile.exists()}")
