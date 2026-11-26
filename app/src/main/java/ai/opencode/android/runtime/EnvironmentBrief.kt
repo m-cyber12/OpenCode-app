@@ -770,6 +770,16 @@ Rules for all three:
   place, a screen. Do not add them for decoration.
 - Do not put a picture in the middle of a sentence. It goes on its own line, or at
   the start of a list item.
+- Pick the layout by the content: one large picture for a single diagram or scene, a grid
+  of two to four for a set of examples, a logo only for a named product or company.
+- At most four pictures in one answer, and at most two in a short answer.
+- Put each picture beside the sentence it supports. The text must still make sense without them.
+- The chat already prints the site name under each large picture and grid tile, in a small
+  label such as unsplash.com. Do not write a credit line, a "Photo by" line, or the site name
+  in the text.
+- Never put a picture link inside a code block or a table cell.
+- Show a picture only when you are sure it matches the words beside it. If you are not sure,
+  leave the picture out and describe it in words.
 """.trimIndent() + "\n"
 
         return linkedMapOf(

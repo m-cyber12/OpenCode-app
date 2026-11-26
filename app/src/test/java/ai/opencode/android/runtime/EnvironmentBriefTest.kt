@@ -495,5 +495,10 @@ class EnvironmentBriefTest {
         assertTrue(text.contains("One large picture"))
         assertTrue(text.contains("Several pictures in a grid"))
         assertTrue(text.contains("A small logo beside a list item"))
+        // Stronger rules (owner, 2026-11-24): layout by content, limits, no credit lines, no code.
+        assertTrue(text.contains("Pick the layout by the content"))
+        assertTrue(text.contains("At most four pictures"))
+        assertTrue(text.contains("Do not write a credit line"))
+        assertTrue(text.contains("Never put a picture link inside a code block"))
     }
 }

@@ -7,6 +7,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.matchParentSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
@@ -15,15 +17,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import ai.opencode.android.web.WebImagePolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -69,21 +76,34 @@ fun RemoteImage(
     when (val s = state) {
         is PictureState.Ready -> {
             val image = remember(s.bitmap) { s.bitmap.asImageBitmap() }
-            val shaped = when (style) {
-                PictureStyle.Full -> modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                PictureStyle.Tile -> modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(RoundedCornerShape(12.dp))
-                PictureStyle.Logo -> modifier.size(44.dp).clip(RoundedCornerShape(8.dp))
+            if (style == PictureStyle.Logo) {
+                Image(
+                    bitmap = image,
+                    contentDescription = description,
+                    contentScale = ContentScale.Fit,
+                    modifier = modifier.size(44.dp).clip(RoundedCornerShape(8.dp)).semantics { testTag = "chat_image" },
+                )
+            } else {
+                // Large pictures and grid tiles carry the site name in a small label (owner, 2026-11-24).
+                val source = WebImagePolicy.sourceName(url)
+                val frame = if (style == PictureStyle.Tile) {
+                    modifier.fillMaxWidth().aspectRatio(4f / 3f)
+                } else {
+                    modifier.fillMaxWidth()
+                }
+                Box(modifier = frame.clip(RoundedCornerShape(12.dp))) {
+                    Image(
+                        bitmap = image,
+                        contentDescription = description,
+                        contentScale = if (style == PictureStyle.Tile) ContentScale.Crop else ContentScale.FillWidth,
+                        modifier = (if (style == PictureStyle.Tile) Modifier.matchParentSize() else Modifier.fillMaxWidth())
+                            .semantics { testTag = "chat_image" },
+                    )
+                    if (source != null) {
+                        SourceLabel(name = source, modifier = Modifier.align(Alignment.BottomStart).padding(6.dp))
+                    }
+                }
             }
-            Image(
-                bitmap = image,
-                contentDescription = description,
-                contentScale = when (style) {
-                    PictureStyle.Full -> ContentScale.FillWidth
-                    PictureStyle.Tile -> ContentScale.Crop
-                    PictureStyle.Logo -> ContentScale.Fit
-                },
-                modifier = shaped.semantics { testTag = "chat_image" },
-            )
         }
         PictureState.Loading -> if (style == PictureStyle.Tile) {
             Box(
@@ -101,4 +121,24 @@ fun RemoteImage(
             modifier = modifier.semantics { testTag = "chat_image_failed" },
         )
     }
+}
+
+/**
+ * The site name under a picture: small, on a translucent black background, bottom-left.
+ * The picture's own description is what a screen reader reads; this label is for sight.
+ */
+@Composable
+private fun SourceLabel(name: String, modifier: Modifier = Modifier) {
+    Text(
+        text = name,
+        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, lineHeight = 11.sp),
+        color = Color.White.copy(alpha = 0.92f),
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(Color.Black.copy(alpha = 0.4f))
+            .padding(horizontal = 5.dp, vertical = 2.dp)
+            .semantics { testTag = "chat_image_source" },
+    )
 }
