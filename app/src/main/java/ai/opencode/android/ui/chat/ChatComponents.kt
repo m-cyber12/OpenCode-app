@@ -1,5 +1,6 @@
 package ai.opencode.android.ui.chat
 
+import ai.opencode.android.visual.VisualMarkers
 import ai.opencode.android.R
 import ai.opencode.android.client.AgentAvailability
 import ai.opencode.android.client.OpenCodeApi
@@ -577,9 +578,12 @@ private fun EnterFromAbove(content: @Composable () -> Unit) {
 
 @Composable
 private fun PartRow(part: Transcript.Part, streaming: Boolean) {
+    // Visual markers (visual.v1) are hidden here. A complete one is not drawn yet: there is no
+    // picture source. A marker still streaming is hidden until it is complete.
+    val shown = if (part.type == "text") VisualMarkers.visibleText(part.text) else ""
     when (part.type) {
-        "text" -> if (part.text.isNotBlank()) {
-            MarkdownText(source = part.text)
+        "text" -> if (shown.isNotBlank()) {
+            MarkdownText(source = shown)
         } else if (streaming) {
             StreamingDots()
         }

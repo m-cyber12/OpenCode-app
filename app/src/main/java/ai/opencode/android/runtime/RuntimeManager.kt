@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 import kotlin.random.Random
 import ai.opencode.android.harness.sealed.HarnessSeal
+import ai.opencode.android.visual.VisualModePrefs
 
 /**
  * The runtime supervisor. Owns the full lifecycle and is the single source of
@@ -97,7 +98,9 @@ class RuntimeManager private constructor(private val appContext: Context) {
      * brief is in place (or was restored).
      */
     fun relockBrief(): Boolean =
-        runCatching { EnvironmentBrief.install(paths.xdgConfigOpencode, briefEngine) }.getOrDefault(false)
+        runCatching {
+            EnvironmentBrief.install(paths.xdgConfigOpencode, briefEngine, VisualModePrefs.read(appContext))
+        }.getOrDefault(false)
 
     /** Called by RuntimeService on start (idempotent). */
     fun start() {
@@ -216,7 +219,9 @@ class RuntimeManager private constructor(private val appContext: Context) {
                 android.webkit.WebView.getCurrentWebViewPackage()?.let { "${it.packageName} ${it.versionName}" }
             }.getOrNull() ?: "unknown"
             briefEngine = engine
-            val briefed = runCatching { EnvironmentBrief.install(paths.xdgConfigOpencode, engine) }.getOrDefault(false)
+            val briefed = runCatching {
+                EnvironmentBrief.install(paths.xdgConfigOpencode, engine, VisualModePrefs.read(appContext))
+            }.getOrDefault(false)
             logger.host("environment brief: " + if (briefed) "installed (config.instructions)" else "skipped (user config left untouched)")
 
             // ---- 2. extraction + validation -------------------------------

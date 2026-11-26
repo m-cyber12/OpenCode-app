@@ -1,6 +1,7 @@
 package ai.opencode.android.runtime
 
 import ai.opencode.android.preview.PortScanner
+import ai.opencode.android.visual.VisualMode
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -50,11 +51,11 @@ object EnvironmentBrief {
      * provider+version (v9.14): preview and screenshots render with THAT
      * engine, and the agent must target it instead of assuming newest Chrome.
      */
-    fun install(configDir: File, engine: String = "unknown"): Boolean = runCatching {
+    fun install(configDir: File, engine: String = "unknown", visualMode: VisualMode = VisualMode.DEFAULT): Boolean = runCatching {
         configDir.mkdirs()
         val dir = File(configDir, BRIEFS_DIR)
         dir.mkdirs()
-        for ((name, text) in topicBriefs(engine)) {
+        for ((name, text) in topicBriefs(engine, visualMode)) {
             lockedWrite(File(dir, name), text)
         }
         val brief = File(configDir, FILE_NAME)
@@ -216,7 +217,42 @@ what cannot have changed; read each topic brief at most once.
      * The topic briefs, each a complete standalone reference for one job.
      * File names are load-bearing: the main brief's index points at them.
      */
-    fun topicBriefs(engine: String = "unknown"): Map<String, String> {
+    /**
+     * The visual-marker part of the chat brief for [mode] (spec 3.3, 5 and 7). Off means
+     * the model is told not to write markers at all. The rule is only guidance; the parser
+     * hides any marker that arrives anyway.
+     */
+    internal fun visualSection(mode: VisualMode): String {
+        if (mode == VisualMode.OFF) {
+            return "\n## Visual markers\n" +
+                "Visuals made from a request are switched off for this user. Do not write any\n" +
+                "`{{visual ...}}` marker. Pictures from the web, described above, are still allowed.\n"
+        }
+        val rule = when (mode) {
+            VisualMode.EXPLICIT_ONLY ->
+                "Write one only when the user asks for a picture, photo, image or diagram."
+            VisualMode.CONSERVATIVE ->
+                "Write one only when a picture makes the answer clearly easier to follow: a real place, " +
+                    "object, animal, product or artwork, or a diagram of how something is built."
+            VisualMode.BALANCED ->
+                "Write one when a real place, object, animal, product or artwork is the subject, or a " +
+                    "diagram would explain a structure. Most replies need none."
+            else -> "Write one whenever a picture or diagram helps the reader see the point."
+        }
+        return "\n## Visual markers\n" + rule + "\n" +
+            "Syntax: on its own line between paragraphs, one JSON object inside the marker:\n" +
+            "{{visual {\"kind\":\"search\",\"query\":\"Gothic architecture flying buttresses\"," +
+            "\"alt\":\"Flying buttresses on a Gothic cathedral\"} }}\n" +
+            "- \"kind\": \"search\" for a real photo (give \"query\"), or \"generate\" for an illustration " +
+            "or diagram (give \"prompt\").\n" +
+            "- \"alt\": one short plain sentence in the language of the reply. A screen reader says it.\n" +
+            "- Never write a URL, a file path or a link inside a marker. The app chooses the source.\n" +
+            "- At most two markers per reply. A marker may not produce a picture, so the text must " +
+            "stand on its own.\n" +
+            "- Do not write a marker inside code, or with a backslash in front of it.\n"
+    }
+
+    fun topicBriefs(engine: String = "unknown", visualMode: VisualMode = VisualMode.DEFAULT): Map<String, String> {
         val watched = PortScanner.CANDIDATE_PORTS.joinToString(", ")
         val preview = """
 # Preview & layout - read once, before the first hand-off
@@ -770,7 +806,7 @@ Rules for all three:
   place, a screen. Do not add them for decoration.
 - Do not put a picture in the middle of a sentence. It goes on its own line, or at
   the start of a list item.
-""".trimIndent() + "\n"
+""".trimIndent() + "\n" + visualSection(visualMode)
 
         return linkedMapOf(
             "chat-format.md" to chatFormat,
