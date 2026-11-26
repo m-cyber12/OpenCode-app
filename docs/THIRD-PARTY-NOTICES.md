@@ -1,27 +1,26 @@
 # Third-party notices
 
-This app is a native Android client that runs other people's software on your
-device. Those components are inside the APK, so their licences travel with it.
-This file is the human-readable half; the in-app copy (Settings → *Open source*)
-shows the same list to every user and links to the licences.
+OpenCode for Android runs other people's software on your phone. Those components are inside
+the app, so their licences come with it. Settings → *Open source* in the app names the main
+components; this page is the complete list, with the licence of each one.
 
-Everything is pinned in [`versions.lock`](../versions.lock) and verified against
-the shipped artifact by `phase10/scripts/check-apk.py` and the device gate
-`P9_LOCK`.
+## Bundled and run by the app
 
-## Bundled and executed
-
-| Component | Version | Licence | How it is shipped | Pinned source |
-|---|---|---|---|---|
-| **OpenCode** (the agent, its tools, its server) | v2.2.5, commit `9bbb8ce18c80f099e0e448775f59d965ead40a21` | **MIT** | bundled JavaScript (v2 server bundle), unmodified apart from the Android adaptation documented in `docs/ARCHITECTURE.md` | <https://github.com/anomalyco/opencode/releases/tag/v2.2.5> |
-| **Node.js** (the JavaScript runtime that executes OpenCode) | 26.4.0 | **MIT** (plus the licences of Node's bundled dependencies, listed in its `LICENSE` file) | `arm64-v8a` bionic-linked executable built for Android, packaged as `libnode26.so` so Android will exec it | <https://github.com/nodejs/node/releases/tag/v26.4.0> |
-| **Git** (the agent's version-control tool) | v2.48.1 | **GPL-2.0-only** | statically built for Android from the official release tarball with the NDK toolchain, packaged as `libgit.so` | <https://github.com/git/git/releases/tag/v2.48.1> |
-| **ripgrep** (the agent's search tool) | 15.1.0 | **MIT** (or the Unlicense, at your option) | built for Android with Cargo + NDK, packaged as `librg.so` | <https://github.com/BurntSushi/ripgrep/releases/tag/15.1.0> |
-| **curl (libcurl)** (HTTP engine of git's `remote-https` helper and wget-compatible downloader) | 8.10.1 | **curl licence** (MIT-like) | static library linked into `libgitremotehttp.so` and the sealed curl CLI; wget is a native argument translator over that CLI | <https://github.com/curl/curl/releases/tag/curl-8_10_1> |
-| **Mbed TLS** (TLS for libcurl above) | 3.6.2 | dual **Apache-2.0 OR GPL-2.0-or-later** — used under the **GPL-2.0-or-later** option so the combined `libgitremotehttp.so` (git GPL-2.0-only + curl + Mbed TLS) is licence-consistent | static library linked into `libgitremotehttp.so` and the sealed curl CLI | <https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.2> |
-| **OpenSSH portable** (client suite; no sshd) | 10.6p1 | BSD-style licences in the upstream `LICENCE` file | Android/Bionic `ssh`, `scp`, `sftp`, agent and key tools, each packaged as a sealed APK native executable | <https://github.com/openssh/openssh-portable/releases/tag/V_10_6_P1> |
-| **OpenSSL libcrypto** (crypto for OpenSSH) | 3.6.5 | **Apache-2.0** | one shared library per ABI, packaged beside the clients in the APK native directory; no writable crypto payload | <https://github.com/openssl/openssl/releases/tag/openssl-3.6.5> |
-| **@opencode-ai/plugin** (+ its dependencies: `@opencode-ai/sdk`, `zod`, `effect`, `@ai-sdk/provider`) | 1.18.23 | MIT (and the respective licences of each package) | pre-installed plugin tree in the runtime payload (`plugin-seed/` → `xdg/config/opencode/node_modules`) | <https://registry.npmjs.org/@opencode-ai/plugin> |
+| Component | Version | Licence | Upstream source |
+|---|---|---|---|
+| **OpenCode** (the agent, its tools and its server) | v2.2.5, commit `9bbb8ce18c80f099e0e448775f59d965ead40a21` | **MIT** | <https://github.com/anomalyco/opencode/releases/tag/v2.2.5> |
+| **Node.js** (runs OpenCode on your phone) | 26.4.0 | **MIT**, plus the licences of Node's bundled dependencies (listed in its `LICENSE` file) | <https://github.com/nodejs/node/releases/tag/v26.4.0> |
+| **Git** (the agent's version-control tool) | v2.48.1 | **GPL-2.0-only** (see the GPL section below) | <https://github.com/git/git/releases/tag/v2.48.1> |
+| **ripgrep** (the agent's search tool) | 15.1.0 | **MIT** (or the Unlicense, at your option) | <https://github.com/BurntSushi/ripgrep/releases/tag/15.1.0> |
+| **curl (libcurl)** (HTTP engine for Git's HTTPS remotes, and the wget-compatible downloader) | 8.10.1 | **curl licence** (MIT-like) | <https://github.com/curl/curl/releases/tag/curl-8_10_1> |
+| **Mbed TLS** (TLS for libcurl) | 3.6.2 | dual **Apache-2.0 OR GPL-2.0-or-later**, used under the **GPL-2.0-or-later** option so the combined Git HTTPS helper is licence-consistent | <https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.2> |
+| **OpenSSH portable** (SSH client tools; no SSH server) | 10.6p1 | BSD-style licences (see the upstream `LICENCE` file) | <https://github.com/openssh/openssh-portable/releases/tag/V_10_6_P1> |
+| **OpenSSL libcrypto** (cryptography for OpenSSH) | 3.6.5 | **Apache-2.0** | <https://github.com/openssl/openssl/releases/tag/openssl-3.6.5> |
+| **Python** (the agent's scripting interpreter) | 3.13.1 | **PSF-2.0** | <https://www.python.org/downloads/release/python-3131/> |
+| **jq** (the agent's JSON tool) | 1.7.1 | **MIT** | <https://github.com/jqlang/jq/releases/tag/jq-1.7.1> |
+| **toybox** (the everyday command-line tools) | built from a pinned commit | **0BSD** | <https://landley.net/toybox/> |
+| **mksh** (the `sh` the agent's shell tool runs) | built from a pinned commit | **MirOS licence** | <http://www.mirbsd.org/mksh.htm> |
+| **tree-sitter** (`web-tree-sitter` 0.25.10, `tree-sitter-bash` 0.25.0) | 0.25.x | **MIT** | <https://github.com/tree-sitter/tree-sitter> |
 
 ## Linked into the app
 
@@ -30,53 +29,51 @@ the shipped artifact by `phase10/scripts/check-apk.py` and the device gate
 | AndroidX (core-ktx, activity-compose, lifecycle, documentfile) | Apache-2.0 |
 | Jetpack Compose (UI, Material 3, Foundation, tooling) | Apache-2.0 |
 | Kotlin standard library and coroutines | Apache-2.0 |
-| Eclipse JGit (`org.eclipse.jgit` 6.10.0; the app's own GitHub clone/push transport - the bundled Git binary is local-only by design) + its `slf4j-api` dependency | EDL-1.0 (BSD-3-Clause); slf4j: MIT |
+| Eclipse JGit 6.10.0 (the app's own GitHub clone and push code) and its `slf4j-api` dependency | EDL-1.0 (BSD-3-Clause); slf4j: MIT |
 
-## GPL compliance for the bundled Git binary
+## GPL notice for the Git program
 
-Git is the only copyleft component, and it is shipped as a **separate program**,
-executed as a child process; the rest of the app is not a derivative work of it
-and is not placed under the GPL. The GPL-2.0 requires that the complete
-corresponding source of a distributed binary be made available, so:
+Git is the only component under a copyleft licence. It ships as a **separate program** that the app
+starts as a child process. The rest of the app is not a derivative work of Git and is not placed
+under the GPL.
 
-* the **exact source** is the upstream release tarball for `v2.48.1`
-  (`https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.48.1.tar.xz`,
-  also mirrored at the GitHub release above);
-* the **exact build recipe** used for this app - toolchain, configure flags,
-  patches (there are none beyond a Bionic-compatibility configure) and the
-  resulting binary's sha256 - is
-  [`phase4/scripts/10-build-payload.sh`](../phase4/scripts/10-build-payload.sh)
-  in this repository, and the sha256 of every shipped file is in the payload's
-  `runtime-manifest.json`;
-* this constitutes the **written offer** required by GPL-2.0 s3: the corresponding
-  source is available from the locations above, for as long as this app is
-  distributed. Requests can also be opened on the issue tracker.
+The GPL-2.0 requires that the complete corresponding source of a distributed binary is made
+available to whoever receives it. A written offer to supply that source satisfies the licence.
+For this app:
 
-Nothing in this app is statically linked against Git, and no Git headers or code
-are compiled into the Kotlin application. `docs/RUNTIME.md` documents how the
-binary is launched.
+* **The Git source** is the upstream release tarball for v2.48.1:
+  `https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.48.1.tar.xz`. It is also
+  mirrored at the GitHub release linked above.
+* **The build recipe and the patches** applied to the pinned upstream sources are **not
+  published**, and are no longer needed to identify the source: every source is the upstream
+  release named above, at the version named above, built with the Android NDK (see
+  `runtime-manifest.json` inside the APK for the SHA-256 of every file shipped).
+* **This notice is the written offer** required by GPL-2.0 §3(b): for three years from the day
+  this app is last distributed, the complete corresponding source of the Git build — the pinned
+  upstream tree plus the exact configure options, toolchain settings and patches used — is
+  available on request by email to **noxifera.dev@gmail.com**. Write "Git source" in the subject
+  line. Nothing is charged beyond the cost of the medium.
 
-## Build-time only (not shipped to users)
+Nothing in this app is statically linked against Git, and no Git code is compiled into the app.
+
+## Used to build the app only (not shipped to your phone)
 
 | Component | Licence | Role |
 |---|---|---|
-| Android Gradle Plugin, Gradle | Apache-2.0 | build |
-| Android NDK / SDK build-tools | Apache-2.0 / proprietary (SDK terms) | build |
-| Cargo / Rust toolchain | MIT / Apache-2.0 | builds ripgrep for Android |
-| Node/npm | MIT | installs the pre-seeded plugin tree at payload-build time |
-| Bun | MIT | bundles the v2 OpenCode server at CI build time (Bun 1.4.4); not shipped |
+| Android Gradle Plugin and Gradle | Apache-2.0 | build |
+| Android NDK and SDK build tools | Apache-2.0 / proprietary (SDK terms) | build |
+| Cargo and the Rust toolchain | MIT / Apache-2.0 | builds ripgrep for Android |
+| Node.js and npm | MIT | toolchain for building the server bundle |
+| Bun | MIT | bundles the OpenCode server at build time; not shipped |
 
 ## Attribution in the app
 
-Settings → *About* states that this is an independent client of the open-source
-OpenCode project, that it is not endorsed by that project, and who the name and
-logo belong to. Settings → *Open source* lists the components above, the GPL note
-for Git, and links to the upstream licence text and to this file.
+Settings → *About* says that this is an independent client of the open-source OpenCode project,
+that it is not endorsed by that project, and who the name and logo belong to. Settings →
+*Open source* lists the components above, the GPL note for Git, and links to the upstream licence
+texts and to this file.
 
 ## Reporting
 
-If you believe something here is wrong - a missing attribution, an incorrect
-licence, or a component you did not expect to find in the APK - open an issue at
-<https://github.com/noxifera-dev/Opencode-android/issues>. `phase10/scripts/check-apk.py`
-can list what is actually inside a build, and the payload manifest lists every
-file with its hash.
+If you think something here is wrong, such as a missing attribution, an incorrect licence, or a
+component you did not expect to find in the app, open an issue in this repository.

@@ -163,9 +163,6 @@ service is working again.
   only. Please report problems on other versions.
 - **64-bit ARM only.** 32-bit phones and x86 emulators aren't supported.
 
-The full capability table, with what is tested and what is not, is in
-[docs/CAPABILITY-MATRIX.md](docs/CAPABILITY-MATRIX.md).
-
 ## Reporting problems
 
 Open an issue on this repository. Include your phone model, Android version, the app
@@ -176,26 +173,18 @@ expected to happen. Don't include API keys or GitHub tokens in an issue.
 
 | Document | What it covers |
 |---|---|
-| [docs/CAPABILITY-MATRIX.md](docs/CAPABILITY-MATRIX.md) | What works on Android, what doesn't, and what has been tested |
 | [PRIVACY.md](PRIVACY.md) | Summary: what the app does with your data |
 | [SECURITY.md](SECURITY.md) | How to report a security problem |
 | [docs/SECURITY.md](docs/SECURITY.md) | How keys and tokens are stored, and the threat model |
 | [docs/PRIVACY-POLICY.md](docs/PRIVACY-POLICY.md) | What the app does with your data |
-| [docs/RUNTIME.md](docs/RUNTIME.md) | How the embedded runtime works, and troubleshooting |
 | [docs/THIRD-PARTY-NOTICES.md](docs/THIRD-PARTY-NOTICES.md) | Open-source components and their licenses |
-
-## Building from source
-
-Developers can build the app themselves. The steps are in
-[docs/TESTING.md](docs/TESTING.md), and signing for releases is in
-[docs/RELEASE.md](docs/RELEASE.md).
-
-```
-bash phase4/scripts/10-build-payload.sh   # embedded runtime (Linux, needs NDK and Node 26)
-./gradlew :app:assembleDebug              # debug APK
-```
 
 ## License
 
-The OpenCode agent is MIT-licensed by its authors. This app's license and the licenses of
-bundled components are listed in [docs/THIRD-PARTY-NOTICES.md](docs/THIRD-PARTY-NOTICES.md).
+The app's own source code is **not published**: this repository carries the app's
+documentation and a few security-relevant excerpts, so that what the app claims can be read
+and checked. The documentation may be read and quoted with a link back to this repository.
+
+The OpenCode agent is MIT-licensed by its authors. The app is not a derivative work of it and
+is not placed under its license. Every other component inside the app, with its license, is
+listed in [docs/THIRD-PARTY-NOTICES.md](docs/THIRD-PARTY-NOTICES.md).

@@ -1,97 +1,72 @@
 # Security
 
-## Model
+This page explains how OpenCode for Android protects your keys, your files and the agent. It
+also lists what the app cannot protect against.
 
-The threat model is a normal, non-rooted Android phone running untrusted apps
-next to this one. The assets are: the user's model-provider keys, the project
-files, and the loopback server that can run a shell in the app's sandbox.
+## Who the app protects you from
 
-| Control | Implementation | Verified (gate) |
-|---|---|---|
-| Runtime internals app-private | runtime payload, XDG dirs, logs, secrets, credentials under `/data/data/io.github.NoxiferaDev.opencode/files` (mode 0700). Unchanged by v3: the All-files-access grant applies to the project root and a folder the user picks, not to this machinery | P5-G18, device `files-layout.txt` (Phase 8 §4 #1) |
-| Project files are ordinary shared-storage files (Phase 10 continuation v3) | projects live under `/storage/emulated/0/Documents/OpenCode/<project>` by default - deliberately readable by the Files app, any file manager, MTP/USB and a non-root `adb shell` while the agent works, because the product promise is that the agent's output is the user's own folder and not a black box. On Android 11+ writing there needs the user to grant **All files access** (`MANAGE_EXTERNAL_STORAGE`) from the app's storage panel; the app requests it, explains why, and works (in the documented, `adb`-visible fallback `Android/data/<pkg>/files/workspaces`) when the user declines | P10_WS_W4_WORKSPACE_VISIBLE (mode-aware) + `92-workspace-visibility.sh` (non-root shell lists, reads AND writes the app-reported root, and the platform's Documents provider returns the folder); P7 W1-W3 re-run on the new root, with and without the grant (`P10_WS_NO_GRANT=1`) |
-| All-files-access grant scope (disclosed risk) | the grant lets the app (and therefore the runtime it supervises) write anywhere on shared storage, not only in the project root. What still bounds it: agent tools run with the project directory as their working directory, upstream's own `FSUtil` path guard refuses escapes, and every tool call that could touch files outside the project is subject to the permission sheet (ask / allow-for-session). What is genuinely lost: if the user (or a lying model) directs a shell command at `/storage/emulated/0`, nothing in Android stops it - the app's own code only ever writes the project root and the folder the user chooses (`StorageChoice.isUsableRoot` probe) | W1-W3 (isolation re-run on the new root), W4 storage gate, `P10_WS_NO_GRANT=1` fallback run; manifest comment, Files-screen panel and `PRIVACY-POLICY.md` all name the permission and its scope |
-| Loopback-only server | `opencode serve --hostname 127.0.0.1 --port 4111`; `LoopbackGuard` refuses any non-loopback base URL in the client; `LoopbackAudit` records `/proc/net/tcp` binds at start | P5-G17 (proc-net audit + external-interface refusal), device `SERVER_BOUND url=http://127.0.0.1:4111/` |
-| Server authentication | HTTP Basic, user `opencode`, per-install random password generated on first run; every app request and every health poll carries it; a wrong password gets 401 (JVM `HealthCheckerTest`) | P5-04, P5-05 |
-| Secrets at rest | `SecretStore`: AES-256-GCM, key = non-exportable `AndroidKeyStore` AES key (`OCS2` blob format, per-secret random IV) in `files/secrets/<name>.enc`; holds the server password and provider keys the user enters; the pre-Phase-5 plaintext password file is migrated and deleted | P5-G18 (blobs, no plaintext, `auth.json` 0600), P8-CLEANUP (revoked key provably gone from Keystore + server) |
-| Provider keys in the server | forwarded to upstream via `PUT /auth/:id` (upstream writes `xdg/data/opencode/auth.json`, 0600) - the same mechanism the desktop app uses; revoke = `DELETE /auth/:id` + blob deletion + instance dispose | P8-CLEANUP PASS (CI + device) |
-| No hardcoded secrets | source/APK/payload scan gate; the CI key travels base64-over-stdin, never in argv or logs | P5-G19 every run |
-| Payload integrity | manifest sha256 per file + tarball; extraction refused on mismatch; tar reader rejects traversal, absolute paths, truncation | JVM `PayloadExtractionValidationTest`; P8-CORRUPT PASS |
-| No root; the one special access is disclosed | needs `INTERNET`, `FOREGROUND_SERVICE(_SPECIAL_USE)`, `POST_NOTIFICATIONS` (13+), and - only to write projects where a file manager can see them - the user-granted `MANAGE_EXTERNAL_STORAGE` special access. No root, no `WRITE_EXTERNAL_STORAGE`/`READ_EXTERNAL_STORAGE`, no location | stock phone runs (Phase 8 device suite); `check-apk.py` asserts exactly this permission set on the built APK (`P10_APK_PERMISSIONS`, 27-check self-test) |
-| Permissions for agent actions | upstream's permission requests surface as a sheet; standing policy (ask / allow-for-session) stored per project; nothing auto-approved by default | P6-U3, P7 permission gates |
-| Preview tap and type (watch and tap) | the agent's `.preview/act.json` runs taps, typing and scrolls inside the open preview WebView only: no shell, no file access, no native bridge. The first batch of each preview session asks the user (Allow / Deny); the pane stays visible, every step is in the result text, and at most 20 steps and 5 s per wait. Values are JSON-quoted before they reach the page script | JVM `PreviewActionsTest` (parse limits, quoting, report); device run pending (owner) |
-| Background tasks (`.tasks/<name>.json`) | the agent can queue a prompt that runs in its own session of the open project, one at a time, with a time limit (1-60 min, abort at the limit) and a completion file. Tools use the same permission gate as chat; nothing is auto-approved, so a prompt the user does not see stalls until the limit. No token budget (upstream does not expose one). Runs only while the app is open | JVM `BackgroundTaskTest` (parse limits, safe relative path, timeout abort, status failures); device run pending (owner) |
-| Workspace boundaries | one OpenCode instance per workspace directory (`?directory=`); tools operate relative to it | P7-W2 |
-| Log hygiene | supervisor/crash logs redact env; the Phase 8 harness redacts provider error URLs (a Google error message embeds the key in the URL - see incident below) | Phase 8 §3.1.8 |
+The app assumes a normal, non-rooted Android phone with other apps installed. What matters most is:
 
-## Runtime change at the switch-over (2026-11-16)
+* your model-provider API keys and GitHub token,
+* your project files,
+* the agent's local server, which can run commands inside the app.
 
-- The server now runs on Node.js 26.4.0 (`libnode26.so`) with OpenCode v2.2.5.
-  Bun is no longer shipped in the APK or on the device, so Bun's native
-  libraries and binaries are no longer part of the app's attack surface.
-- Bun 1.4.4 still runs at CI build time to bundle the v2 server. It runs on the
-  build host, not on the phone.
-- The APK ships arm64-v8a only. Other ABIs are refused at start.
-- Not yet verified on a phone: the seccomp preload and the W^X launch path on
-  Node 26. The owner's device check is pending (see `docs/RUNTIME.md`).
+## What the app protects
 
-## Known limits (permanent or unverified)
+| Protection | How it works |
+|---|---|
+| **Private app files** | The runtime, settings, conversations, logs and secrets are in the app's private storage. Other apps cannot read them. |
+| **Project files you can see** | Projects are ordinary folders in `Documents/OpenCode` by default, so any file manager can open them. Writing there needs the **All files access** permission on Android 11 and newer. You grant it, and the app works without it, in a folder that `adb` can still see. |
+| **Local server only on your phone** | The agent's server listens only on `127.0.0.1`. Other devices on your network cannot reach it. |
+| **Server password** | Every request to the server needs a password. It is random, created on first run, and stored encrypted. A wrong password is refused. |
+| **Encrypted secrets** | Provider keys, the GitHub token and the server password are encrypted with AES-256-GCM. The key is held in the Android Keystore and cannot be exported. The old plain-text password file is migrated and deleted. |
+| **Removing a key** | Deleting a key in the app also deletes it from the agent and removes the encrypted copy. |
+| **Logs** | Logs redact environment variables. |
+| **Runtime integrity** | Every runtime file has a checksum. The app refuses a file that does not match, and it rejects archives that try to write outside their folder or use absolute paths. |
+| **No root, and only disclosed special access** | The app needs the internet, a foreground service, notifications and, only if you grant it, All files access. It does not use root, storage permissions for general file access, or location. |
+| **Approvals for agent actions** | When the agent wants to do something that needs approval, a sheet asks you to allow it once, allow it for the session, or reject it. Nothing is approved automatically by default. Your permission settings are kept per project. |
+| **Config files stay protected** | An "allow for session" approval never covers changes to `opencode.json`, `.mcp.json` or `.opencode/`, nor shell or external-folder requests that name them. Each such request asks you again. |
+| **Preview tap and type** | The agent can tap, type and scroll only inside the preview page that is open. It has no shell and no file access there. The first batch of each preview session asks you to Allow or Deny. Each run is limited to 20 steps and 5 seconds per wait. |
+| **Background tasks** | A background task has a time limit of 1 to 60 minutes and uses the same approval rules as chat. It runs only while the app is open. |
+| **Separate workspaces** | Each project has its own agent instance, and its tools work relative to that project. |
+| **Backups off** | Android backups are disabled, so the app's data is not copied to a cloud backup. |
 
-- **Keystore master key is software-backed** on every tested device
-  (`insideSecureHardware=false`, StrongBox unavailable): CI emulator *and* the
-  real Realme RMX3830 (P8-KEYRESIDENCY, measured). The key is still
-  non-exportable through the Keystore API, but resistance is software-keystore
-  level, not TEE/StrongBox level. The app requests hardware backing and
-  reports what it got; it does not refuse to run without it.
-- The shell tool runs as the app UID with the app's network access. Anything
-  the model is allowed to execute (after the permission prompt) can read the
-  app's own files, including `auth.json` - identical to desktop OpenCode's
-  model, contained here by the app sandbox.
-- Basic auth on loopback protects against other apps on the device only as far
-  as the password stays private; it is stored encrypted and never logged, and
-  the test harness's export of it is gated behind a debug-only marker file.
-  Payload 9: the password is handed to the server on stdin, not in its
-  environment, and the server hides it from every process it starts (the agent's
-  shell, MCP and LSP servers). Before payload 9 the shell could read it from its
-  environment. Not covered: the shell can still read the app's own files, such as
-  `auth.json` (provider keys), because it runs as the app UID.
-- Config files are guarded: a session "allow for session" never covers writes to
-  `opencode.json`, `.mcp.json` or `.opencode/`, nor shell or external-directory
-  requests that name them. Each such request prompts. Limit: the shell check is
-  textual (see `phase4/payload/patches/permission-guard.ts`).
-- Background tasks have a time limit but no token or cost budget, and they run
-  with the app's own permissions. A task can use every tool the user has allowed
-  for the session; there is no separate allow-list for unattended work.
-- Watch and tap runs in the page the user is looking at, so it can press any
-  control on that page, including a payment or a delete button. The gate is
-  the user's Allow, once per preview session; it does not check what the
-  button does. Taps are DOM events, not OS touch.
-- Backups: `android:allowBackup` is off; nothing of the runtime is exported.
+## The runtime
 
-## Incidents and clean-up (Phase 8 -> 9)
+* The agent is OpenCode v2.2.5, running on Node.js 26.4.0 on your phone. Bun is not included in
+  the app or on your phone. It is used only when the app is built.
+* The app ships for 64-bit ARM (arm64-v8a) phones only. Other processor types are refused at start.
+* Some of the runtime's hardening checks are still being verified on real phones.
 
-1. **Leaked Gemini API key** - commit `52e7c4d` added `p8d-out/key-preflight.txt`
-   containing a verbatim Bun connection error whose URL carried
-   `?key=<live Gemini key>`. The working tree is redacted and the harness now
-   redacts all captured errors, but the key remains in Git history and **must
-   be treated as compromised. Revocation at <https://aistudio.google.com/apikey>
-   is the required action and is the repository owner's to perform**; no
-   history rewrite is needed once it is revoked. Status: **revoked by the repository owner on 2026-09-16** (owner's
-   statement; not verifiable from the repository).
-2. **`OPENROUTER_API_KEY` repository secret** (Phase 8 temporary key for
-   model-dependent CI gates). Nothing in the pipeline requires it - without it
-   the model gates SKIP with the reason on record. The automation account
-   cannot manage repository secrets (403); **removed by the repository owner on 2026-09-16**. If a future run needs a live model, add a fresh short-lived key
-   for that run and remove it afterwards.
-3. Every phase suite removes injected credentials from the device at its end
-   (P8-CLEANUP) and the Phase 9 provider gate removes its dummy key
-   (P9_PROVSEL_CLEANUP).
+## Known limits
 
-## Reporting
+* **Key storage on the phones tested so far is software-backed.** The Keystore key cannot be
+  exported, but its protection is at software-keystore level, not hardware level (TEE or
+  StrongBox). The app asks for hardware backing and tells you what it got. It does not refuse
+  to run without it.
+* **The agent's shell runs with the app's own permissions.** Anything the model is allowed to
+  run (after your approval) can read the app's own files, including the saved provider keys. The
+  app's sandbox contains this, but it is not a hard wall.
+* **The server password protects only while it stays private.** It is handed to the server on
+  standard input, not through the environment, and the server hides it from every process it
+  starts. The shell can still read the app's own files, which include the provider key file.
+* **The config-file guard is a text check.** It looks at shell commands as text, so an unusual
+  command could get past it.
+* **Background tasks have a time limit but no token or cost budget.** They use the permissions you
+  have allowed for the session. There is no separate list of allowed actions for unattended work.
+* **Watch and tap acts on the page you are looking at.** It can press any button on that page,
+  including a payment or delete button. Your Allow is the only check, and the app does not check what a
+  button does.
+* **All files access is wider than the project folder.** The permission lets the app write
+  anywhere on shared storage, not only in your project folder. The app limits itself: agent
+  tools run in the project folder, the OpenCode file guard refuses paths that escape it, and
+  actions outside the project go through the approval sheet. Android cannot stop a shell command
+  that is pointed at `/storage/emulated/0`. Grant All files access only if you accept this.
 
-Report security issues in the Android app by email to `noxifera.dev@gmail.com`
-(private), or by opening an issue on this repository. Use email for anything that
-could put users at risk before a fix is out. The short policy is in
-[SECURITY.md](../SECURITY.md) at the repository root.
-Issues in the agent/server itself belong upstream (`anomalyco/opencode`); the
-bundle here is the unmodified pinned commit.
+## Reporting a security problem
+
+Report security problems in the app by email to **noxifera.dev@gmail.com** (private), or by opening an
+issue on this repository. Use email for anything that could put users at risk before a fix is out.
+Do not send API keys or GitHub tokens. Problems in the OpenCode agent itself belong to the
+upstream project, [anomalyco/opencode](https://github.com/anomalyco/opencode). The short
+policy is in [SECURITY.md](../SECURITY.md).

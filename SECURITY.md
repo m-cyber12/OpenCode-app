@@ -17,8 +17,9 @@ Include:
 Don't send API keys or GitHub tokens. If a report needs one, replace it with a placeholder.
 
 Problems in the OpenCode agent itself belong to the upstream project,
-[anomalyco/opencode](https://github.com/anomalyco/opencode). This repository contains the
-Android app and the pinned, unmodified OpenCode build that it runs.
+[anomalyco/opencode](https://github.com/anomalyco/opencode). This repository publishes the
+Android app's documentation and a small set of security-relevant excerpts; the app's source
+code and its build recipe are not published.
 
 ## What the app protects
 
