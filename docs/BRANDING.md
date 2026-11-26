@@ -10,14 +10,14 @@ owner's decision, taken with the facts stated here.
 | Thing | Value | Where it lives |
 |---|---|---|
 | Display name | **OpenCode** | `app/src/main/res/values/strings.xml` (`app_name`, `welcome_title`), `AndroidManifest.xml` `android:label` |
-| Launcher icon | the **app's own icon** (silver plate on a dark tile); vector master `docs/brand/app-icon.svg` | `app/src/main/res/drawable/ic_launcher_*.xml`, `mipmap-anydpi-v26/`, store icon `docs/store/icon-512.png` |
+| Launcher icon | the **app's own icon**: the uploaded artwork `logo-icon.png`, used without edits | `app/src/main/res/drawable-nodpi/ic_launcher_art.png`, `drawable/ic_launcher_art_inset.xml`, `mipmap-anydpi-v26/`, store icon `docs/store/icon-512.png` (resized from the same artwork) |
 | Published package name | **`io.github.NoxiferaDev.opencode`** | `app/build.gradle.kts` `applicationId` |
 | Kotlin namespace | `ai.opencode.android` (internal, not user-visible) | `app/build.gradle.kts` `namespace` |
 
-The launcher icon is the app's own design, drawn as SVG (`docs/brand/app-icon.svg`). The Android
-adaptive icon uses vector copies of it (`app/src/main/res/drawable/ic_launcher_foreground.xml` and
-`ic_launcher_background.xml`); the store icon `docs/store/icon-512.png` is rendered from the SVG. The older
-upstream PNG launcher icons remain in `mipmap-*/` but are not used on Android 8.0 and later (minSdk is 29).
+The launcher icon is the app's own artwork, `logo-icon.png`, used without edits. The Android adaptive icon
+places it inside the safe area (`drawable/ic_launcher_art_inset.xml`); the store icon `docs/store/icon-512.png` is the
+same artwork resized to 512 px. The older upstream PNG launcher icons remain in `mipmap-*/` but are not used on
+Android 8.0 and later (minSdk is 29). `docs/brand/app-icon.svg` and the vector drawables are no longer used by the app.
 
 ## 2. Why the name and icon are upstream's, and what that depends on
 
