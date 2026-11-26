@@ -231,4 +231,12 @@ class MarkdownTest {
             .filterIsInstance<MdBlock.ListItem>().single()
         assertTrue(item.picture == null)
     }
+
+    @Test
+    fun anImageInsideALineReadsAsALinkWithoutTheBang() {
+        // 2026-11-26: a picture written mid-sentence showed a stray "!" before its link.
+        val paragraph = blocks("See ![Pexels](https://www.pexels.com/photo/x-1/) now").single() as MdBlock.Paragraph
+        assertTrue(paragraph.spans.none { it.text.contains("!") })
+        assertTrue(paragraph.spans.any { it is MdSpan.Link && it.text == "Pexels" })
+    }
 }

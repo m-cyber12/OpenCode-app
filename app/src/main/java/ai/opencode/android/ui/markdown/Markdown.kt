@@ -395,6 +395,13 @@ object Markdown {
                 }
             }
 
+            // An image written inside a line (not alone on it): drop the "!" so it reads as a
+            // link, not as broken markup. Alone on its line it is a picture (see parse).
+            if (c == '!' && i + 1 < n && text[i + 1] == '[') {
+                i += 1
+                continue
+            }
+
             // Links: [label](url). An unclosed one stays literal (still streaming).
             if (c == '[') {
                 val closeLabel = findUnescaped(text, i + 1, ']')

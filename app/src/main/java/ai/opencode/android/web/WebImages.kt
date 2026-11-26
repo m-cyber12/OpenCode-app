@@ -17,6 +17,9 @@ import java.util.concurrent.Semaphore
  * [MAX_PARALLEL] downloads run at once, and the rest queue, so a message with many
  * pictures does not stall the chat. The UI layer never opens a socket (phase 6 rule).
  *
+ * A link can be to a picture or to a web page (2026-11-26, owner). For a page, the
+ * loader reads the page's own metadata (see [PagePicture]) and fetches that picture.
+ *
  * Guard rails, all deliberate:
  *  - https only; a cleartext or file URL is never fetched;
  *  - no cookies, no credentials, no headers from the app - a bare GET;
@@ -24,7 +27,8 @@ import java.util.concurrent.Semaphore
  *    refused, so a picture link can never reach the phone's own network or the
  *    embedded server;
  *  - redirects are followed by hand, one hop at a time, with the same checks;
- *  - at most 8 MB downloaded, and any image is decoded at a reduced size;
+ *  - a page is read only up to 512 KB, and only its metadata is used;
+ *  - at most 8 MB downloaded for a picture, and any picture is decoded at a reduced size;
  *  - pictures live in memory only (a small LRU), nothing is written to disk;
  *  - only counts are kept for diagnostics - never the URLs.
  */
@@ -33,6 +37,7 @@ object WebImages {
     const val NETWORK_ENABLED = true
 
     private const val MAX_BYTES = 8 * 1024 * 1024
+    private const val MAX_PAGE_BYTES = 512 * 1024
     private const val MAX_SIDE = 1280
     private const val MAX_HOPS = 3
     private const val CACHE_KIB = 24 * 1024
@@ -78,7 +83,7 @@ object WebImages {
     /** The picture if it is already in memory, else null. Never blocks. */
     fun cached(url: String): Bitmap? = cache.get(url)
 
-    /** Fetches and decodes [url]; null on any failure. Blocking - call from IO only. */
+    /** Fetches and decodes [url] (a picture, or a page with one); null on any failure. Blocking - call from IO only. */
     fun fetch(url: String): Bitmap? {
         cache.get(url)?.let {
             synchronized(lock) { cacheHits += 1 }
@@ -92,7 +97,7 @@ object WebImages {
         val started = System.nanoTime()
         permits.acquire()
         val outcome = try {
-            runCatching { download(url) }.getOrDefault(Outcome.Failed)
+            runCatching { load(url) }.getOrDefault(Outcome.Failed)
         } finally {
             permits.release()
         }
@@ -110,15 +115,34 @@ object WebImages {
                 synchronized(lock) { blocked += 1 }
                 null
             }
-            Outcome.Failed -> {
+            is Outcome.Page, Outcome.Failed -> {
                 synchronized(lock) { failed += 1 }
                 null
             }
         }
     }
 
+    /**
+     * A picture link is fetched directly. A page link is read once, its main picture is
+     * found, and that picture is fetched with the same checks. A page inside a page is
+     * not followed.
+     */
+    private fun load(url: String): Outcome {
+        return when (val first = download(url)) {
+            is Outcome.Page -> {
+                val picture = PagePicture.find(first.finalUrl, first.html) ?: return Outcome.Failed
+                when (val second = download(picture)) {
+                    is Outcome.Page -> Outcome.Failed
+                    else -> second
+                }
+            }
+            else -> first
+        }
+    }
+
     private sealed interface Outcome {
         class Loaded(val bitmap: Bitmap) : Outcome
+        class Page(val finalUrl: String, val html: String) : Outcome
         object Blocked : Outcome
         object Failed : Outcome
     }
@@ -141,7 +165,12 @@ object WebImages {
                     continue
                 }
                 if (code != 200) return Outcome.Failed
-                if (!conn.contentType.orEmpty().startsWith("image/")) return Outcome.Blocked
+                val type = conn.contentType.orEmpty().lowercase()
+                if (type.startsWith("text/html")) {
+                    val html = readUpTo(conn.inputStream, MAX_PAGE_BYTES)
+                    return Outcome.Page(url.toString(), String(html, Charsets.UTF_8))
+                }
+                if (!type.startsWith("image/")) return Outcome.Blocked
                 val bytes = readCapped(conn.inputStream) ?: return Outcome.Blocked
                 val bitmap = decode(bytes) ?: return Outcome.Failed
                 return Outcome.Loaded(bitmap)
@@ -152,6 +181,7 @@ object WebImages {
         return Outcome.Failed
     }
 
+    /** Reads a picture; null when it is larger than [MAX_BYTES]. */
     private fun readCapped(stream: InputStream): ByteArray? {
         stream.use { input ->
             val out = ByteArrayOutputStream()
@@ -161,6 +191,20 @@ object WebImages {
                 if (n < 0) break
                 out.write(buf, 0, n)
                 if (out.size() > MAX_BYTES) return null
+            }
+            return out.toByteArray()
+        }
+    }
+
+    /** Reads a page's first [limit] bytes. A longer page is cut, not refused: its head holds the metadata. */
+    private fun readUpTo(stream: InputStream, limit: Int): ByteArray {
+        stream.use { input ->
+            val out = ByteArrayOutputStream()
+            val buf = ByteArray(16 * 1024)
+            while (out.size() < limit) {
+                val n = input.read(buf)
+                if (n < 0) break
+                out.write(buf, 0, minOf(n, limit - out.size()))
             }
             return out.toByteArray()
         }
