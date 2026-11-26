@@ -6,7 +6,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalContext
 import ai.opencode.android.R
-import ai.opencode.android.visual.VisualMode
 import ai.opencode.android.client.AgentAvailability
 import ai.opencode.android.client.CustomProviderConfig
 import ai.opencode.android.client.OpenCodeApi
@@ -58,7 +57,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -126,9 +124,6 @@ fun SettingsScreen(
     dynamicColor: Boolean,
     onThemeChange: (ThemeChoice) -> Unit,
     onDynamicColorChange: (Boolean) -> Unit,
-    /** How often the model may add a picture or diagram to a reply (defaulted: see VisualMode). */
-    visualMode: VisualMode = VisualMode.DEFAULT,
-    onVisualModeChange: (VisualMode) -> Unit = {},
     // ---- Phase 10 continuation v4 -------------------------------------------------
     // Every addition is defaulted: the Phase 6 UI gates call this screen directly
     // with the parameters they care about, and a new control must not break them.
@@ -293,8 +288,6 @@ fun SettingsScreen(
                         dynamicColor = dynamicColor,
                         onThemeChange = onThemeChange,
                         onDynamicColorChange = onDynamicColorChange,
-                        visualMode = visualMode,
-                        onVisualModeChange = onVisualModeChange,
                     )
                     "about" -> AboutSection(
                         appVersion = appVersion,
@@ -2704,8 +2697,6 @@ private fun AppearanceSection(
     dynamicColor: Boolean,
     onThemeChange: (ThemeChoice) -> Unit,
     onDynamicColorChange: (Boolean) -> Unit,
-    visualMode: VisualMode,
-    onVisualModeChange: (VisualMode) -> Unit,
 ) {
     SectionCard(title = stringResource(R.string.settings_section_appearance), collapsible = true, initiallyExpanded = false) {
         Text(
@@ -2758,55 +2749,6 @@ private fun AppearanceSection(
                 modifier = Modifier.clearAndSetSemantics { },
             )
         }
-        Spacer(Modifier.height(14.dp))
-        Text(
-            text = stringResource(R.string.settings_visual_label),
-            style = MaterialTheme.typography.labelSmall,
-            color = ChatTheme.chat.muted,
-        )
-        Spacer(Modifier.height(4.dp))
-        for (mode in VisualMode.values()) {
-            VisualModeRow(
-                mode = mode,
-                selected = visualMode == mode,
-                onClick = { onVisualModeChange(mode) },
-            )
-        }
-        Text(
-            text = stringResource(R.string.settings_visual_hint),
-            style = MaterialTheme.typography.labelSmall,
-            color = ChatTheme.chat.muted,
-        )
-    }
-}
-
-@Composable
-private fun VisualModeRow(mode: VisualMode, selected: Boolean, onClick: () -> Unit) {
-    val label = when (mode) {
-        VisualMode.OFF -> stringResource(R.string.settings_visual_off)
-        VisualMode.EXPLICIT_ONLY -> stringResource(R.string.settings_visual_explicit)
-        VisualMode.CONSERVATIVE -> stringResource(R.string.settings_visual_conservative)
-        VisualMode.BALANCED -> stringResource(R.string.settings_visual_balanced)
-        VisualMode.RICH -> stringResource(R.string.settings_visual_rich)
-    }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 44.dp)
-            .clickable(onClick = onClick)
-            .semantics {
-                testTag = "visual_mode_${mode.key}"
-                role = Role.RadioButton
-                contentDescription = label
-            },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RadioButton(
-            selected = selected,
-            onClick = null,
-            modifier = Modifier.clearAndSetSemantics { },
-        )
-        Text(text = label, style = MaterialTheme.typography.bodySmall)
     }
 }
 

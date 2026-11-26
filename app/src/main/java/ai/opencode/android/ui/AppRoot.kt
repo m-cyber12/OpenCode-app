@@ -30,8 +30,6 @@ import ai.opencode.android.ui.files.OpenFile
 import ai.opencode.android.ui.common.ProjectTab
 import ai.opencode.android.ui.common.RuntimeSummary
 import ai.opencode.android.ui.common.ThemeChoice
-import ai.opencode.android.visual.VisualMode
-import ai.opencode.android.visual.VisualModePrefs
 import ai.opencode.android.ui.common.toSummary
 import ai.opencode.android.ui.onboarding.PermissionOnboardingScreen
 import ai.opencode.android.ui.onboarding.ProviderOnboardingScreen
@@ -200,9 +198,6 @@ fun AppRoot(onOpenUrl: (String) -> Unit) {
     }
     var dynamicColor by remember {
         mutableStateOf(uiPrefs.getBoolean("dynamic_color", false))
-    }
-    var visualModeKey by remember {
-        mutableStateOf(uiPrefs.getString(VisualModePrefs.KEY, VisualMode.DEFAULT.key) ?: VisualMode.DEFAULT.key)
     }
     // v9.41 (owner item 20): the empty-chat subtitle belongs to the FIRST
     // launch after install; afterwards it returns rarely (one day in thirteen,
@@ -2145,11 +2140,6 @@ fun AppRoot(onOpenUrl: (String) -> Unit) {
                     appVersion = appVersion,
                     theme = theme,
                     dynamicColor = dynamicColor,
-                    visualMode = VisualMode.fromKey(visualModeKey),
-                    onVisualModeChange = {
-                        visualModeKey = it.key
-                        uiPrefs.edit().putString(VisualModePrefs.KEY, it.key).apply()
-                    },
                     onThemeChange = {
                         themeName = it.name
                         uiPrefs.edit().putString("theme", it.name).apply()
