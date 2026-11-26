@@ -17,7 +17,7 @@ owner's decision, taken with the facts stated here.
 The launcher icon is the app's own artwork, `logo-icon.png`, used without edits. The Android adaptive icon
 places it inside the safe area (`drawable/ic_launcher_art_inset.xml`); the store icon `docs/store/icon-512.png` is the
 same artwork resized to 512 px. The older upstream PNG launcher icons remain in `mipmap-*/` but are not used on
-Android 8.0 and later (minSdk is 29). `docs/brand/app-icon.svg` and the vector drawables are no longer used by the app.
+Android 8.0 and later (minSdk is 29). The old upstream launcher PNGs and the earlier vector icon were removed.
 
 ## 2. Why the name and icon are upstream's, and what that depends on
 
@@ -69,7 +69,7 @@ Everything the rename touches is in this list, and nothing else:
 | Change | File(s) |
 |---|---|
 | Display name, notification text, welcome copy | `app/src/main/res/values/strings.xml` |
-| Launcher icon, adaptive icon background | `app/src/main/res/mipmap-*/`, `values/ic_launcher_background.xml` |
+| Launcher icon and adaptive icon background | `app/src/main/res/drawable-nodpi/ic_launcher_art.png`, `drawable/ic_launcher_art_inset.xml`, `mipmap-anydpi-v26/` |
 | Listing copy, screenshots, feature graphic | `docs/STORE-LISTING.md`, `docs/store/` |
 
 **Not** changed: `applicationId` (permanent), the Kotlin namespace, the harness

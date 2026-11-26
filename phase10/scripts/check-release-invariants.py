@@ -237,14 +237,13 @@ def main():
         if needed not in manifest:
             fail("AndroidManifest.xml lacks %s" % needed)
 
+    # minSdk is 29, so every device uses the adaptive icon: the legacy per-density PNGs were
+    # removed. The icon is the uploaded artwork (drawable-nodpi) placed by an inset drawable.
     res = os.path.join(root, "app/src/main/res")
-    for density in ("mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"):
-        for name in ("ic_launcher.png", "ic_launcher_round.png", "ic_launcher_foreground.png"):
-            if not os.path.isfile(os.path.join(res, "mipmap-%s" % density, name)):
-                fail("missing launcher asset mipmap-%s/%s" % (density, name))
     for name in ("mipmap-anydpi-v26/ic_launcher.xml",
                  "mipmap-anydpi-v26/ic_launcher_round.xml",
-                 "values/ic_launcher_background.xml"):
+                 "drawable/ic_launcher_art_inset.xml",
+                 "drawable-nodpi/ic_launcher_art.png"):
         if not os.path.isfile(os.path.join(res, name)):
             fail("missing adaptive-icon resource %s" % name)
 
