@@ -11,6 +11,16 @@ Bun or Termux.
 OpenCode for Android is an independent project. It is not affiliated with or endorsed by the
 OpenCode project.
 
+## Why isn't the source code currently available completely?
+
+The app's commercial future is still uncertain. If the app remains under our team's control,
+the source code will be released soon and made available in this repository.
+
+Thanks a lot for your waiting. If you're one of Anomalyco members, please contact us by using
+**noxifera.dev@gmail.com**.
+
+The Google Play version will also be released soon.
+
 ## What you need
 
 - An Android phone with **64-bit ARM** processor (arm64-v8a). Most phones from the last
