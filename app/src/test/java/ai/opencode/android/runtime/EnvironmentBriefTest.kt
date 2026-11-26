@@ -500,5 +500,9 @@ class EnvironmentBriefTest {
         assertTrue(text.contains("At most four pictures"))
         assertTrue(text.contains("Do not write a credit line"))
         assertTrue(text.contains("Never put a picture link inside a code block"))
+        // 2026-11-26 (owner, option 1): picture files only, no page links, no HTML.
+        assertTrue(text.contains("Do not link to a web page"))
+        assertTrue(text.contains("Never write HTML tags"))
+        assertTrue(text.contains("leave the picture out"))
     }
 }

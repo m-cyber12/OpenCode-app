@@ -757,8 +757,12 @@ Three layouts. Pick the one that fits the answer:
 Rules for all three:
 - Only `https` links. The phone downloads the picture itself, in the background.
   Plain `http` links and links to the phone or the local network are refused.
-- Link to the picture itself (.png, .jpg, .webp, .gif), or to the web page it is on. From
-  a page the phone takes the page's main picture, so a page link works too.
+- Link to the picture file itself, ending in .png, .jpg, .webp or .gif, on a site that
+  serves pictures to anyone. Do not link to a web page, and do not open pages to look
+  for a picture: a page link is not drawn, and many sites refuse the phone.
+- Write only Markdown. Never write HTML tags such as <img> or <div>; the chat shows
+  them as plain text.
+- If you do not have a picture-file link you are sure of, leave the picture out.
 - Use only links you know are real and stable: a link the user gave you, or a
   link on an official site you are sure of. Never invent a URL. If a link is
   wrong, the chat shows only the description.
