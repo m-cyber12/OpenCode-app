@@ -7,8 +7,8 @@ evidence**: the gate verdicts behind them live in
 
 | File | Requirement | Source |
 |---|---|---|
-| `icon-512.png` | 512x512 PNG, the listing icon | `logo-icon.png` (the app's own logo), resized to 512 px |
-| `logo-icon.png` | 1024x1024 PNG, the source artwork for the icon | the app's own logo, used without edits (same file as `app/src/main/res/drawable-nodpi/ic_launcher_art.png`) |
+| `icon-512.png` | 512x512 PNG, the listing icon | `icon.svg` rendered to 1024 px, resized to 512 px |
+| `icon.svg` | the app icon source (SVG), used without edits | the owner's upload (2026-11-26); rendered to `app/src/main/res/drawable-nodpi/ic_launcher_art.png` (1024 px) |
 | `feature-graphic-1024x500.png` | 1024x500 PNG | composed locally (see below) |
 | `screenshots/*.png` | at least 2, 320-3840 px per side, aspect ratio at most 2:1 | captured **on a device** from the app running, by `phase10/scripts/70-device-screenshots.sh` (CI emulator at 1080x1920) or `phase10/scripts/90-real-device-signed.sh` (the signed build on the owner's phone - prefer these) |
 
@@ -31,7 +31,7 @@ convert -size 1024x500 xc:'#F7F8FB' \
   -depth 8 feature-graphic-1024x500.png
 
 # 2. the listing icon is the app's own logo, resized and otherwise unedited
-convert logo-icon.png -resize 512x512 icon-512.png
+convert icon-1024.png -resize 512x512 icon-512.png
 ```
 
 The plate colour (`#F7F8FB`) and text colours (`#14181F`, `#5A6273`) are this
