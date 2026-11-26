@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  OpenCode app icon, adaptive foreground (API 26+). Vector copy of docs/brand/app-icon.svg.
+  The plate sits inside the 66 dp safe circle of the 108 dp canvas. Shadows are drawn as
+  dark copies (VectorDrawable has no blur filter).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+  <!-- Shadow of the plate -->
+  <path android:fillColor="#000000" android:fillAlpha="0.7" android:fillType="evenOdd"
+      android:pathData="M36.268,28.692H71.732V82.508H36.268ZM46.126,37.558H61.936V73.332H46.126ZM40.298,42.642H42.592V73.022H40.298ZM65.408,42.642H67.578V73.022H65.408Z"/>
+  <!-- Brushed-steel plate with its three openings -->
+  <path android:fillType="evenOdd" android:pathData="M36.268,27.092H71.732V80.908H36.268ZM46.126,35.958H61.936V71.732H46.126ZM40.298,41.042H42.592V71.422H40.298ZM65.408,41.042H67.578V71.422H65.408Z">
+    <aapt:attr name="android:fillColor">
+      <gradient android:type="linear"
+          android:startX="36" android:startY="26"
+          android:endX="72" android:endY="82">
+        <item android:offset="0" android:color="#FFF7F8F9"/>
+        <item android:offset="0.42" android:color="#FFC3C6CA"/>
+        <item android:offset="0.72" android:color="#FFE4E6E9"/>
+        <item android:offset="1" android:color="#FFA7ABB0"/>
+      </gradient>
+    </aapt:attr>
+  </path>
+  <!-- Light sheen over the plate -->
+  <path android:fillType="evenOdd" android:pathData="M36.268,27.092H71.732V80.908H36.268ZM46.126,35.958H61.936V71.732H46.126ZM40.298,41.042H42.592V71.422H40.298ZM65.408,41.042H67.578V71.422H65.408Z">
+    <aapt:attr name="android:fillColor">
+      <gradient android:type="radial"
+          android:centerX="42" android:centerY="34" android:gradientRadius="36">
+        <item android:offset="0" android:color="#66FFFFFF"/>
+        <item android:offset="1" android:color="#00FFFFFF"/>
+      </gradient>
+    </aapt:attr>
+  </path>
+  <!-- Shadow of the raised V bar -->
+  <path android:pathData="M42.138,43.592L54.6,60.332L67.062,43.592" android:strokeColor="#BF000000"
+      android:strokeWidth="3.472" android:strokeLineJoin="miter" android:strokeLineCap="butt"/>
+  <!-- Raised V bar -->
+  <path android:pathData="M41.538,42.592L54,59.332L66.462,42.592" android:strokeWidth="3.472"
+      android:strokeLineJoin="miter" android:strokeLineCap="butt">
+    <aapt:attr name="android:strokeColor">
+      <gradient android:type="linear"
+          android:startX="41.352" android:startY="40.112"
+          android:endX="54.372" android:endY="63.052">
+        <item android:offset="0" android:color="#FFA3A6AB"/>
+        <item android:offset="0.55" android:color="#FF55585D"/>
+        <item android:offset="1" android:color="#FF7A7D82"/>
+      </gradient>
+    </aapt:attr>
+  </path>
+</vector>

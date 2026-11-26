@@ -10,17 +10,14 @@ owner's decision, taken with the facts stated here.
 | Thing | Value | Where it lives |
 |---|---|---|
 | Display name | **OpenCode** | `app/src/main/res/values/strings.xml` (`app_name`, `welcome_title`), `AndroidManifest.xml` `android:label` |
-| Launcher icon | the **upstream OpenCode icon**, as shipped by the desktop app (the `prod` channel set) | `app/src/main/res/mipmap-*/` + `mipmap-anydpi-v26/` |
+| Launcher icon | the **app's own icon** (silver plate on a dark tile); vector master `docs/brand/app-icon.svg` | `app/src/main/res/drawable/ic_launcher_*.xml`, `mipmap-anydpi-v26/`, store icon `docs/store/icon-512.png` |
 | Published package name | **`io.github.NoxiferaDev.opencode`** | `app/build.gradle.kts` `applicationId` |
 | Kotlin namespace | `ai.opencode.android` (internal, not user-visible) | `app/build.gradle.kts` `namespace` |
 
-The icon files are copied from the upstream repository at the pinned commit, from
-`packages/desktop/icons/prod/android/mipmap-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}/`
-(`ic_launcher.png`, `ic_launcher_round.png`, `ic_launcher_foreground.png`),
-`packages/desktop/icons/prod/android/mipmap-anydpi-v26/ic_launcher.xml` and
-`packages/desktop/icons/prod/android/values/ic_launcher_background.xml`. Upstream
-ships no round adaptive-icon XML; the `ic_launcher_round.xml` in this repository
-is the same foreground/background pair written out locally.
+The launcher icon is the app's own design, drawn as SVG (`docs/brand/app-icon.svg`). The Android
+adaptive icon uses vector copies of it (`app/src/main/res/drawable/ic_launcher_foreground.xml` and
+`ic_launcher_background.xml`); the store icon `docs/store/icon-512.png` is rendered from the SVG. The older
+upstream PNG launcher icons remain in `mipmap-*/` but are not used on Android 8.0 and later (minSdk is 29).
 
 ## 2. Why the name and icon are upstream's, and what that depends on
 
