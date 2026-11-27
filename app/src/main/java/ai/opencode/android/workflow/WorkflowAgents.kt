@@ -166,11 +166,12 @@ object WorkflowAgents {
 
     /** The model as `provider/model`, whether the config stores it as text or as an object. */
     private fun modelOf(a: JSONObject): String {
-        val text = a.optString("model")
-        if (text.isNotEmpty()) return text
-        val obj = a.optJSONObject("model") ?: return ""
-        val p = obj.optString("providerID")
-        val m = obj.optString("modelID")
-        return if (p.isEmpty() || m.isEmpty()) "" else "$p/$m"
+        // Check the object form first: optString on an object returns its JSON text, not "".
+        a.optJSONObject("model")?.let { obj ->
+            val p = obj.optString("providerID")
+            val m = obj.optString("modelID")
+            return if (p.isEmpty() || m.isEmpty()) "" else "$p/$m"
+        }
+        return a.optString("model")
     }
 }
