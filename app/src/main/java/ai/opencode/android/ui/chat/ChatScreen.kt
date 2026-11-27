@@ -1,5 +1,8 @@
 package ai.opencode.android.ui.chat
 
+import androidx.compose.material3.Button
+import ai.opencode.android.workflow.WorkflowAgents
+import ai.opencode.android.workflow.Worker
 import ai.opencode.android.R
 import ai.opencode.android.client.AgentAvailability
 import ai.opencode.android.client.OpenCodeRepository
@@ -198,6 +201,8 @@ fun ChatScreen(
     onPickModel: (String, String) -> Unit = { _, _ -> },
     /** Build/plan: which built-in agent the next prompt runs as. */
     onPickMode: (String) -> Unit = {},
+    /** Workflow mode's workers: saved to the global config (see OpenCodeRepository.saveWorkers). */
+    onSaveWorkers: (List<Worker>) -> Unit = {},
     /** The reasoning-variant id for the next prompt; "" = model default. */
     onPickThinking: (String) -> Unit = {},
     /** v9.19 token saver: upstream /compact - summarize the history server-side. */
@@ -325,6 +330,8 @@ fun ChatScreen(
             agentMode = state.agentMode,
             onPickModel = onPickModel,
             onPickMode = onPickMode,
+            workflowWorkers = state.workflowWorkers,
+            onSaveWorkers = onSaveWorkers,
             onPickThinking = onPickThinking,
             onOpenProjects = onOpenProjects,
             onNewSession = onNewSession,
@@ -541,6 +548,8 @@ private fun ChatHeader(
     agentMode: String,
     onPickModel: (String, String) -> Unit,
     onPickMode: (String) -> Unit,
+    workflowWorkers: List<Worker> = emptyList(),
+    onSaveWorkers: (List<Worker>) -> Unit = {},
     onPickThinking: (String) -> Unit,
     // v9.41 (owner item 22): the quick switch also lists the FREE models (Zen)
     // and knows each listed model's thinking variants for its inline picker.
@@ -623,7 +632,15 @@ private fun ChatHeader(
             )
         }
         Spacer(Modifier.width(8.dp))
-        ModeSwitch(agentMode = agentMode, onPickMode = onPickMode)
+        ModeSwitch(
+            agentMode = agentMode,
+            workers = workflowWorkers,
+            modelOptions = (freeModels.map { it.ref } + providerGroups.flatMap { g -> g.models.map { it.ref } })
+                .map { "${it.providerID}/${it.modelID}" }
+                .distinct(),
+            onPickMode = onPickMode,
+            onSaveWorkers = onSaveWorkers,
+        )
         Spacer(Modifier.width(8.dp))
         StatusOrb(busy = busy, availability = availability)
     }
@@ -634,21 +651,33 @@ private fun ChatHeader(
 // own question-tool ask now; see the AskArea wiring above.
 
 /**
- * The build/plan switch: a glass capsule to the LEFT of the status orb (the
- * owner's brief), one word - Build or Plan. Tapping opens a two-row menu, each
+ * The build/plan/workflow switch: a glass capsule to the LEFT of the status orb (the
+ * owner's brief), one word - Build, Plan or Workflow (2026-11-27, owner). Tapping opens a two-row menu, each
  * row the mode's name over one line of what it really is: upstream's own
  * `build` ("executes tools based on configured permissions") and `plan`
  * ("disallows all edit tools") agents, sent verbatim as `PromptInput.agent`.
+ * Workflow sends `workflow`, the manager WorkflowAgents writes to the config.
  */
 @Composable
 private fun ModeSwitch(
     agentMode: String,
+    workers: List<Worker>,
+    modelOptions: List<String>,
     onPickMode: (String) -> Unit,
+    onSaveWorkers: (List<Worker>) -> Unit,
 ) {
     val chat = ChatTheme.chat
     var open by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf(false) }
     val plan = agentMode == OpenCodeRepository.AGENT_PLAN
-    val currentLabel = stringResource(if (plan) R.string.chat_mode_plan else R.string.chat_mode_build)
+    val workflow = agentMode == OpenCodeRepository.AGENT_WORKFLOW
+    val currentLabel = stringResource(
+        when {
+            workflow -> R.string.chat_mode_workflow
+            plan -> R.string.chat_mode_plan
+            else -> R.string.chat_mode_build
+        },
+    )
     val switchLabel = stringResource(R.string.chat_mode_switch, currentLabel)
     Box {
         Row(
@@ -668,7 +697,7 @@ private fun ModeSwitch(
         ) {
             // A tiny gold dot marks the non-default mode at a glance; Build
             // stays a quiet word, exactly as "standard" should look.
-            if (plan) {
+            if (plan || workflow) {
                 Box(Modifier.size(7.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
                 Spacer(Modifier.width(7.dp))
             }
@@ -685,11 +714,12 @@ private fun ModeSwitch(
             HalfScreenSheet(tag = "mode_menu", onDismiss = { open = false }) { close ->
                 val buildTitle = stringResource(R.string.chat_mode_build)
                 val planTitle = stringResource(R.string.chat_mode_plan)
+                val workflowTitle = stringResource(R.string.chat_mode_workflow)
                 Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
                     ModeRow(
                         title = buildTitle,
                         body = stringResource(R.string.chat_mode_build_body),
-                        active = !plan,
+                        active = !plan && !workflow,
                         onClick = {
                             close()
                             onPickMode(OpenCodeRepository.AGENT_BUILD)
@@ -712,7 +742,136 @@ private fun ModeSwitch(
                             contentDescription = planTitle
                         },
                     )
+                    // Workflow (2026-11-27, owner): with no worker yet, the tap opens the editor
+                    // first; with workers, it turns the manager on for the next prompt.
+                    ModeRow(
+                        title = workflowTitle,
+                        body = stringResource(R.string.chat_mode_workflow_body),
+                        active = workflow,
+                        onClick = {
+                            if (workers.isEmpty()) {
+                                close()
+                                editing = true
+                            } else {
+                                close()
+                                onPickMode(OpenCodeRepository.AGENT_WORKFLOW)
+                            }
+                        },
+                        modifier = Modifier.semantics {
+                            testTag = "mode_pick_workflow"
+                            contentDescription = workflowTitle
+                        },
+                    )
+                    TextButton(
+                        onClick = {
+                            close()
+                            editing = true
+                        },
+                        modifier = Modifier.padding(horizontal = 16.dp).semantics { testTag = "workflow_workers_open" },
+                    ) {
+                        Text(stringResource(R.string.workflow_workers_row, workers.size))
+                    }
                 }
+            }
+        }
+        if (editing) {
+            WorkersSheet(
+                workers = workers,
+                modelOptions = modelOptions,
+                onSave = onSaveWorkers,
+                onDismiss = { editing = false },
+            )
+        }
+    }
+}
+
+/**
+ * Workflow mode's worker editor (2026-11-27, owner): each worker has a name, a duty and a
+ * model. Adding or removing saves at once; the server reloads the config. The manager uses
+ * the model chosen in the model selector, not one of these.
+ */
+@Composable
+private fun WorkersSheet(
+    workers: List<Worker>,
+    modelOptions: List<String>,
+    onSave: (List<Worker>) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    HalfScreenSheet(tag = "workflow_workers", onDismiss = onDismiss) { _ ->
+        var name by remember { mutableStateOf("") }
+        var duty by remember { mutableStateOf("") }
+        var model by remember { mutableStateOf(modelOptions.firstOrNull().orEmpty()) }
+        var pickingModel by remember { mutableStateOf(false) }
+        val candidate = Worker(name = name.trim(), duty = duty.trim(), model = model)
+        val canAdd = WorkflowAgents.problems(workers + candidate).isEmpty()
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(stringResource(R.string.workflow_workers_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.workflow_workers_body), style = MaterialTheme.typography.bodySmall)
+            if (workers.isEmpty()) {
+                Text(stringResource(R.string.workflow_workers_empty), style = MaterialTheme.typography.bodyMedium)
+            }
+            workers.forEach { w ->
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(w.name, style = MaterialTheme.typography.titleSmall)
+                        Text(w.duty, style = MaterialTheme.typography.bodySmall)
+                        Text(w.model, style = MaterialTheme.typography.labelSmall)
+                    }
+                    TextButton(onClick = { onSave(workers - w) }) {
+                        Text(stringResource(R.string.workflow_remove))
+                    }
+                }
+            }
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                singleLine = true,
+                label = { Text(stringResource(R.string.workflow_name_hint)) },
+                modifier = Modifier.fillMaxWidth().semantics { testTag = "workflow_name" },
+            )
+            OutlinedTextField(
+                value = duty,
+                onValueChange = { duty = it },
+                label = { Text(stringResource(R.string.workflow_duty_hint)) },
+                modifier = Modifier.fillMaxWidth().semantics { testTag = "workflow_duty" },
+            )
+            Box {
+                TextButton(
+                    onClick = { pickingModel = true },
+                    modifier = Modifier.semantics { testTag = "workflow_model" },
+                ) {
+                    Text(model.ifEmpty { stringResource(R.string.workflow_model_pick) })
+                }
+                DropdownMenu(expanded = pickingModel, onDismissRequest = { pickingModel = false }) {
+                    Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
+                        modelOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    model = option
+                                    pickingModel = false
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+            Button(
+                onClick = {
+                    onSave(workers + candidate)
+                    name = ""
+                    duty = ""
+                },
+                enabled = canAdd,
+                modifier = Modifier.fillMaxWidth().semantics { testTag = "workflow_add" },
+            ) {
+                Text(stringResource(R.string.workflow_add))
             }
         }
     }

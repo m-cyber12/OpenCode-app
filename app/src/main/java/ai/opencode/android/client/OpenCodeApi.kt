@@ -704,6 +704,13 @@ class OpenCodeApi(
                     "provider",
                     CustomProviderConfig.mergeProviders(current.optJSONObject("provider"), patch.getJSONObject(key)).toString(2),
                 )
+                // Workflow mode (2026-11-27): the app owns the `wf-*` workers and the `workflow`
+                // manager inside `agents`; hand-written agents are kept by mergeAgents.
+                "agents" -> {
+                    val existing = current.optJSONObject("agents") ?: org.json.JSONObject()
+                    val merged = ai.opencode.android.workflow.WorkflowAgents.mergeAgents(existing, patch.getJSONObject(key))
+                    JsoncEdit.withKey(text, "agents", merged.toString(2))
+                }
                 else -> throw ApiException(501, "", "config key \"$key\" is not written by the app yet")
             }
         }

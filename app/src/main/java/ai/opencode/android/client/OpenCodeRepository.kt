@@ -1,5 +1,7 @@
 package ai.opencode.android.client
 
+import ai.opencode.android.workflow.Worker
+import ai.opencode.android.workflow.WorkflowAgents
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -148,6 +150,8 @@ class OpenCodeRepository(
          * `PromptInput.agent`.
          */
         val agentMode: String = AGENT_BUILD,
+        /** Workflow mode's workers, read from the global config's `agents` (see WorkflowAgents). */
+        val workflowWorkers: List<Worker> = emptyList(),
         /**
          * The reasoning-variant id for the next prompt ("" = the model's own
          * default). Only sent when the current model's catalog row actually
@@ -463,7 +467,12 @@ class OpenCodeRepository(
                 launch {
                     runCatching { api.globalConfig() }.onSuccess { cfg ->
                         val effective = enforceAskDefaults(cfg)
-                        _state.update { st -> st.copy(permissionPolicy = parsePermissionPolicy(effective) + pendingPermission) }
+                        _state.update { st ->
+                            st.copy(
+                                permissionPolicy = parsePermissionPolicy(effective) + pendingPermission,
+                                workflowWorkers = WorkflowAgents.fromConfig(cfg.optJSONObject("agents")),
+                            )
+                        }
                     }.onFailure { errors.add("config: ${it.message}") }
                 }
                 launch(start = CoroutineStart.UNDISPATCHED) {
@@ -1412,8 +1421,42 @@ class OpenCodeRepository(
      * ("Agent not found"), and the switch must not be able to cause one.
      */
     fun setAgentMode(mode: String) {
-        if (mode != AGENT_BUILD && mode != AGENT_PLAN) return
+        if (mode == AGENT_WORKFLOW) {
+            // The manager needs at least one worker; without one the switch is refused.
+            if (_state.value.workflowWorkers.isEmpty()) return
+        } else if (mode != AGENT_BUILD && mode != AGENT_PLAN) {
+            return
+        }
         _state.value = _state.value.copy(agentMode = mode)
+    }
+
+    /**
+     * Workflow mode (2026-11-27, owner): save the workers. They are checked first, then written
+     * to the global config's `agents` and the server reloads, so the manager and the workers
+     * exist before the next prompt. Removing the last worker also leaves workflow mode.
+     */
+    fun saveWorkers(workers: List<Worker>) {
+        val problems = WorkflowAgents.problems(workers)
+        if (problems.isNotEmpty()) {
+            _state.value = _state.value.copy(notice = "workflow: ${problems.first()}")
+            return
+        }
+        scope.launch {
+            runCatching {
+                api.patchGlobalConfig(org.json.JSONObject().put("agents", WorkflowAgents.additions(workers)))
+                api.dispose()
+                api.globalConfig()
+            }.onSuccess { cfg ->
+                _state.update { st ->
+                    val leave = workers.isEmpty() && st.agentMode == AGENT_WORKFLOW
+                    st.copy(
+                        workflowWorkers = WorkflowAgents.fromConfig(cfg.optJSONObject("agents")),
+                        agentMode = if (leave) AGENT_BUILD else st.agentMode,
+                        notice = "workflow: ${workers.size} worker(s) saved",
+                    )
+                }
+            }.onFailure { fail("workflow save", it) }
+        }
     }
 
     /**
@@ -1908,6 +1951,8 @@ class OpenCodeRepository(
          */
         const val AGENT_BUILD = "build"
         const val AGENT_PLAN = "plan"
+        /** Workflow mode: the manager agent WorkflowAgents writes to the config. */
+        const val AGENT_WORKFLOW = "workflow"
 
         /**
          * The permission keys the Settings table edits. Must stay in sync with

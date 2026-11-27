@@ -2454,6 +2454,7 @@ fun AppRoot(onOpenUrl: (String) -> Unit) {
                     // Build/plan mode and the model's own thinking level, both
                     // sent with the next prompt (PromptInput.agent / .variant).
                     onPickMode = { mode -> repository.setAgentMode(mode) },
+                    onSaveWorkers = { workers -> repository.saveWorkers(workers) },
                     onPickThinking = { variant -> repository.setThinkingVariant(variant) },
                     // v9.19 token saver: upstream /compact - the server summarizes
                     // the history so later turns stop resending the whole transcript.
