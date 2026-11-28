@@ -664,7 +664,11 @@ class OpenCodeApi(
         if (!file.isFile) return org.json.JSONObject()
         val v2 = JsoncEdit.parseObject(file.readText())
         val policy = V2Mapping.effectivePolicy(v2.opt("permission"), v2.optJSONArray("permissions"))
-        return org.json.JSONObject().put("permission", policy)
+        // Workflow mode (2026-11-28 bug): the workers are read back from `agents`. Without this key
+        // the read-back was always empty, so a worker never appeared after Add.
+        return org.json.JSONObject()
+            .put("permission", policy)
+            .put("agents", v2.optJSONObject("agents") ?: org.json.JSONObject())
     }
 
     /**

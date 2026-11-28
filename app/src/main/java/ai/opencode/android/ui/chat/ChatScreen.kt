@@ -331,6 +331,9 @@ fun ChatScreen(
             onPickModel = onPickModel,
             onPickMode = onPickMode,
             workflowWorkers = state.workflowWorkers,
+            workflowModels = state.starredModels
+                .filterNot { ZenPolicy.hidden(it.providerID) }
+                .map { "${it.providerID}/${it.modelID}" },
             onSaveWorkers = onSaveWorkers,
             onPickThinking = onPickThinking,
             onOpenProjects = onOpenProjects,
@@ -549,6 +552,7 @@ private fun ChatHeader(
     onPickModel: (String, String) -> Unit,
     onPickMode: (String) -> Unit,
     workflowWorkers: List<Worker> = emptyList(),
+    workflowModels: List<String> = emptyList(),
     onSaveWorkers: (List<Worker>) -> Unit = {},
     onPickThinking: (String) -> Unit,
     // v9.41 (owner item 22): the quick switch also lists the FREE models (Zen)
@@ -635,9 +639,8 @@ private fun ChatHeader(
         ModeSwitch(
             agentMode = agentMode,
             workers = workflowWorkers,
-            modelOptions = (freeModels.map { it.ref } + providerGroups.flatMap { g -> g.models.map { it.ref } })
-                .map { "${it.providerID}/${it.modelID}" }
-                .distinct(),
+            // Starred models only (2026-11-28, owner): the same list as the chat quick switch.
+            modelOptions = workflowModels,
             onPickMode = onPickMode,
             onSaveWorkers = onSaveWorkers,
         )
@@ -841,6 +844,9 @@ private fun WorkersSheet(
                 label = { Text(stringResource(R.string.workflow_duty_hint)) },
                 modifier = Modifier.fillMaxWidth().semantics { testTag = "workflow_duty" },
             )
+            if (modelOptions.isEmpty()) {
+                Text(stringResource(R.string.workflow_no_starred), style = MaterialTheme.typography.bodySmall)
+            }
             Box {
                 TextButton(
                     onClick = { pickingModel = true },
