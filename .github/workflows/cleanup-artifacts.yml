@@ -1,0 +1,33 @@
+
+name: Cleanup Old Artifacts
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete artifacts uploaded before November 2026
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          CUTOFF="2026-11-01T00:00:00Z"
+
+          gh api --paginate \
+            "repos/$GH_REPO/actions/artifacts?per_page=100" \
+            --jq '.artifacts[] | [.id, .created_at, .name] | @tsv' |
+          while IFS=$'\t' read -r id created name; do
+            if [[ "$created" < "$CUTOFF" ]]; then
+              echo "Deleting: $name | $created | ID: $id"
+
+              gh api --method DELETE \
+                "repos/$GH_REPO/actions/artifacts/$id"
+            fi
+          done
+          
